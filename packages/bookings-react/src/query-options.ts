@@ -80,7 +80,11 @@ export function getBookingsQueryOptions(
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
 
-      return fetchWithValidation(`/v1/bookings${qs ? `?${qs}` : ""}`, bookingListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/bookings${qs ? `?${qs}` : ""}`,
+        bookingListResponse,
+        client,
+      )
     },
   })
 }
@@ -94,7 +98,7 @@ export function getBookingQueryOptions(
 
   return queryOptions({
     queryKey: bookingsQueryKeys.booking(id ?? ""),
-    queryFn: () => fetchWithValidation(`/v1/bookings/${id}`, bookingSingleResponse, client),
+    queryFn: () => fetchWithValidation(`/v1/admin/bookings/${id}`, bookingSingleResponse, client),
   })
 }
 
@@ -108,7 +112,7 @@ export function getBookingItemsQueryOptions(
   return queryOptions({
     queryKey: bookingsQueryKeys.items(bookingId ?? ""),
     queryFn: () =>
-      fetchWithValidation(`/v1/bookings/${bookingId}/items`, bookingItemsResponse, client),
+      fetchWithValidation(`/v1/admin/bookings/${bookingId}/items`, bookingItemsResponse, client),
   })
 }
 
@@ -124,7 +128,7 @@ export function getBookingItemTravelersQueryOptions(
     queryKey: bookingsQueryKeys.itemTravelers(bookingId ?? "", itemId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/items/${itemId}/travelers`,
+        `/v1/admin/bookings/${bookingId}/items/${itemId}/travelers`,
         bookingItemTravelersResponse,
         client,
       ),
@@ -142,7 +146,7 @@ export function getBookingTravelerDocumentsQueryOptions(
     queryKey: bookingsQueryKeys.documents(bookingId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/documents`,
+        `/v1/admin/bookings/${bookingId}/documents`,
         bookingTravelerDocumentsResponse,
         client,
       ),
@@ -159,7 +163,11 @@ export function getTravelersQueryOptions(
   return queryOptions({
     queryKey: bookingsQueryKeys.travelers(bookingId ?? ""),
     queryFn: () =>
-      fetchWithValidation(`/v1/bookings/${bookingId}/travelers`, bookingTravelersResponse, client),
+      fetchWithValidation(
+        `/v1/admin/bookings/${bookingId}/travelers`,
+        bookingTravelersResponse,
+        client,
+      ),
   })
 }
 
@@ -171,7 +179,7 @@ export function getSharingGroupsForSlotQueryOptions(
     queryKey: bookingsQueryKeys.sharingGroupsForSlot(slotId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/bookings/sharing-groups?slotId=${encodeURIComponent(slotId ?? "")}`,
+        `/v1/admin/bookings/sharing-groups?slotId=${encodeURIComponent(slotId ?? "")}`,
         bookingTravelerSharingGroupsResponse,
         client,
       ),
@@ -187,7 +195,7 @@ export function getBookingsBySharingGroupQueryOptions(
     queryKey: bookingsQueryKeys.travelersBySharingGroup(slotId ?? "", groupId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/bookings/sharing-groups/${encodeURIComponent(
+        `/v1/admin/bookings/sharing-groups/${encodeURIComponent(
           groupId ?? "",
         )}/travelers?slotId=${encodeURIComponent(slotId ?? "")}`,
         bookingTravelersBySharingGroupResponse,
@@ -212,7 +220,7 @@ export function getTravelerRevealQueryOptions(
     queryKey: ["voyant-bookings", "traveler-reveal", bookingId ?? "", travelerId ?? ""],
     queryFn: () =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/travelers/${travelerId}/reveal`,
+        `/v1/admin/bookings/${bookingId}/travelers/${travelerId}/reveal`,
         bookingTravelerSingleResponse,
         client,
       ),
@@ -234,7 +242,7 @@ export function getSupplierStatusesQueryOptions(
     queryKey: bookingsQueryKeys.supplierStatuses(bookingId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/supplier-statuses`,
+        `/v1/admin/bookings/${bookingId}/supplier-statuses`,
         bookingSupplierStatusesResponse,
         client,
       ),
@@ -251,7 +259,11 @@ export function getBookingActivityQueryOptions(
   return queryOptions({
     queryKey: bookingsQueryKeys.activity(bookingId ?? ""),
     queryFn: () =>
-      fetchWithValidation(`/v1/bookings/${bookingId}/activity`, bookingActivityResponse, client),
+      fetchWithValidation(
+        `/v1/admin/bookings/${bookingId}/activity`,
+        bookingActivityResponse,
+        client,
+      ),
   })
 }
 
@@ -265,7 +277,7 @@ export function getBookingNotesQueryOptions(
   return queryOptions({
     queryKey: bookingsQueryKeys.notes(bookingId ?? ""),
     queryFn: () =>
-      fetchWithValidation(`/v1/bookings/${bookingId}/notes`, bookingNotesResponse, client),
+      fetchWithValidation(`/v1/admin/bookings/${bookingId}/notes`, bookingNotesResponse, client),
   })
 }
 
@@ -315,7 +327,7 @@ export function getBookingGroupsQueryOptions(
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/bookings/groups${qs ? `?${qs}` : ""}`,
+        `/v1/admin/bookings/groups${qs ? `?${qs}` : ""}`,
         bookingGroupListResponse,
         client,
       )
@@ -332,7 +344,7 @@ export function getBookingGroupQueryOptions(
   return queryOptions({
     queryKey: bookingsQueryKeys.group(id ?? ""),
     queryFn: () =>
-      fetchWithValidation(`/v1/bookings/groups/${id}`, bookingGroupDetailResponse, client),
+      fetchWithValidation(`/v1/admin/bookings/groups/${id}`, bookingGroupDetailResponse, client),
   })
 }
 
@@ -346,7 +358,7 @@ export function getBookingGroupForBookingQueryOptions(
     queryKey: bookingsQueryKeys.groupForBooking(bookingId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/group`,
+        `/v1/admin/bookings/${bookingId}/group`,
         bookingGroupForBookingResponse,
         client,
       ),
@@ -366,7 +378,7 @@ export function getPricingPreviewQueryOptions(
   return queryOptions({
     queryKey: bookingsQueryKeys.pricingPreview(filters),
     queryFn: () =>
-      fetchWithValidation("/v1/bookings/pricing-preview", pricingPreviewResponse, client, {
+      fetchWithValidation("/v1/admin/bookings/pricing-preview", pricingPreviewResponse, client, {
         method: "POST",
         body: JSON.stringify({
           productId: filters.productId,

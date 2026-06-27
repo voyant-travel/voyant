@@ -26,7 +26,7 @@ export function useBookingItemMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateBookingItemInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/items`,
+        `/v1/admin/bookings/${bookingId}/items`,
         bookingSingleResponse.extend({
           data: bookingItemsResponse.shape.data.element,
         }),
@@ -44,7 +44,7 @@ export function useBookingItemMutation(bookingId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateBookingItemInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/items/${id}`,
+        `/v1/admin/bookings/${bookingId}/items/${id}`,
         bookingSingleResponse.extend({
           data: bookingItemsResponse.shape.data.element,
         }),
@@ -62,7 +62,7 @@ export function useBookingItemMutation(bookingId: string) {
   const remove = useMutation({
     mutationFn: async (itemId: string) =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/items/${itemId}`,
+        `/v1/admin/bookings/${bookingId}/items/${itemId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

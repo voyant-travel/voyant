@@ -209,7 +209,7 @@ const bookingCreateResponseSchema = z.object({ data: bookingCreateResultSchema }
 export type BookingCreateResult = z.infer<typeof bookingCreateResultSchema>
 
 /**
- * Atomic booking-create: calls `POST /v1/bookings/create` which wraps
+ * Atomic booking-create: calls `POST /v1/admin/bookings/create` which wraps
  * convert-from-product + travelers + payment schedules + voucher redemption
  * + group membership in one transaction. Prefer this over chaining the
  * separate create mutations (convert, group, traveler) from a single submit
@@ -222,7 +222,7 @@ export function useBookingCreateMutation() {
   return useMutation({
     mutationFn: async (input: BookingCreateInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/bookings/create",
+        "/v1/admin/bookings/create",
         bookingCreateResponseSchema,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

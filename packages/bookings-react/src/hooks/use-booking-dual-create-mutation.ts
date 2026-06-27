@@ -55,7 +55,7 @@ const dualCreateResponseSchema = z.object({ data: dualCreateResultSchema })
 export type DualCreateBookingResult = z.infer<typeof dualCreateResultSchema>
 
 /**
- * Atomic dual-booking (partaj) create: calls `POST /v1/bookings/dual-create`
+ * Atomic dual-booking (partaj) create: calls `POST /v1/admin/bookings/dual-create`
  * which wraps two createBooking calls + one booking_group in a single
  * transaction. Use this over calling useBookingCreateMutation twice
  * from a submit handler — a failure on the second call there would leave
@@ -68,7 +68,7 @@ export function useBookingDualCreateMutation() {
   return useMutation({
     mutationFn: async (input: DualCreateBookingInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/bookings/dual-create",
+        "/v1/admin/bookings/dual-create",
         dualCreateResponseSchema,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

@@ -35,7 +35,7 @@ export function getProductsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/products${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products${qs ? `?${qs}` : ""}`,
         productLiteListResponse,
         client,
       )

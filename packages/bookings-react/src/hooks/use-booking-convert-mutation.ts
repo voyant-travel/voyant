@@ -23,7 +23,7 @@ export interface ConvertProductToBookingInput {
 }
 
 /**
- * Creates a draft booking from a product via POST /v1/bookings/from-product.
+ * Creates a draft booking from a product via POST /v1/admin/bookings/from-product.
  * Purpose-built for the operator booking-create flow — the backend seeds items,
  * dates, and pricing from the product definition.
  */
@@ -34,7 +34,7 @@ export function useBookingConvertMutation() {
   return useMutation({
     mutationFn: async (input: ConvertProductToBookingInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/bookings/from-product",
+        "/v1/admin/bookings/from-product",
         bookingSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

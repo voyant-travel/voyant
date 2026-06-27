@@ -28,7 +28,7 @@ export function useTravelerMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateTravelerInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/travelers`,
+        `/v1/admin/bookings/${bookingId}/travelers`,
         bookingSingleResponse.extend({
           data: bookingTravelersResponse.shape.data.element,
         }),
@@ -46,7 +46,7 @@ export function useTravelerMutation(bookingId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateTravelerInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/travelers/${id}`,
+        `/v1/admin/bookings/${bookingId}/travelers/${id}`,
         bookingSingleResponse.extend({
           data: bookingTravelersResponse.shape.data.element,
         }),
@@ -64,7 +64,7 @@ export function useTravelerMutation(bookingId: string) {
   const remove = useMutation({
     mutationFn: async (travelerId: string) =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/travelers/${travelerId}`,
+        `/v1/admin/bookings/${bookingId}/travelers/${travelerId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
