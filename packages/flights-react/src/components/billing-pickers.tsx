@@ -231,7 +231,7 @@ async function fetchContactPoints(
   const entityType = entity === "person" ? "person" : "organization"
   try {
     const res = await fetch(
-      `/v1/identity/entities/${entityType}/${encodeURIComponent(id)}/contact-points`,
+      `/v1/admin/identity/entities/${entityType}/${encodeURIComponent(id)}/contact-points`,
       { headers: { accept: "application/json" } },
     )
     if (!res.ok) return { email: null, phone: null }
