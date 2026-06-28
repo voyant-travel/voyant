@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: scripts; release tarball verification stays co-located because the pack, manifest, artifact, and export checks share one inspection flow.
 // Verifies publish tarballs for public packages in the workspace package roots.
 // By default every package is checked. Pass --package <name> one or more times
 // to check only the packages that are about to be published.
@@ -30,6 +31,37 @@ const LEGACY_VOYANT_SCOPE = `@voyant${"js"}/`
 
 const rootDir = process.cwd()
 const packageRoots = ["packages", "apps"].map((dir) => path.join(rootDir, dir))
+const packedExportChecks = [
+  {
+    packageName: "@voyant-travel/inventory-react",
+    entries: [
+      {
+        path: "dist/components/product-detail.js",
+        label: "runtime",
+        requiredExports: [
+          "getProductMediaQueryOptions",
+          "getProductDetailMediaQueryOptions",
+          "getPricingCategoriesQueryOptions",
+          "getProductDetailPricingCategoriesQueryOptions",
+          "getProductOptionsQueryOptions",
+          "getProductDetailProductOptionsQueryOptions",
+        ],
+      },
+      {
+        path: "dist/components/product-detail.d.ts",
+        label: "declaration",
+        requiredExports: [
+          "getProductMediaQueryOptions",
+          "getProductDetailMediaQueryOptions",
+          "getPricingCategoriesQueryOptions",
+          "getProductDetailPricingCategoriesQueryOptions",
+          "getProductOptionsQueryOptions",
+          "getProductDetailProductOptionsQueryOptions",
+        ],
+      },
+    ],
+  },
+]
 
 function findPackageDirs(dir) {
   const packageJsonPath = path.join(dir, "package.json")
@@ -272,6 +304,38 @@ function collectPackedLegacyVoyantSpecifiers(extractRoot, packInfo) {
   return problems
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function collectPackedExportProblems(extractRoot, packageName) {
+  const check = packedExportChecks.find((candidate) => candidate.packageName === packageName)
+  if (!check) return []
+
+  const problems = []
+  for (const entry of check.entries) {
+    const entryPath = path.join(extractRoot, entry.path)
+    if (!fs.existsSync(entryPath)) {
+      problems.push(`${entry.label} export file ${entry.path} is missing`)
+      continue
+    }
+
+    const source = fs.readFileSync(entryPath, "utf8")
+    const missingExports = entry.requiredExports.filter((name) => {
+      const pattern = new RegExp(`\\b${escapeRegExp(name)}\\b`)
+      return !pattern.test(source)
+    })
+
+    if (missingExports.length > 0) {
+      problems.push(
+        `${entry.label} export file ${entry.path} is missing exports: ${missingExports.join(", ")}`,
+      )
+    }
+  }
+
+  return problems
+}
+
 function collectWorkspaceProtocolDependencies(pkg) {
   const problems = []
   const dependencyFields = [
@@ -351,6 +415,7 @@ async function packAndInspectPackage(packageDir) {
 
   let extensionlessRelativeSpecifiers = []
   let legacyVoyantSpecifiers = []
+  let missingPackedExports = []
   let extracted
   try {
     ;[packInfo] = getPackJson(stdout)
@@ -361,6 +426,7 @@ async function packAndInspectPackage(packageDir) {
       packInfo,
     )
     legacyVoyantSpecifiers = collectPackedLegacyVoyantSpecifiers(extracted.root, packInfo)
+    missingPackedExports = collectPackedExportProblems(extracted.root, packedManifest.name)
   } catch (error) {
     return { error: `could not parse pnpm pack output: ${error.message}` }
   } finally {
@@ -368,11 +434,23 @@ async function packAndInspectPackage(packageDir) {
     fs.rmSync(packDestination, { recursive: true, force: true })
   }
 
-  return { packInfo, packedManifest, extensionlessRelativeSpecifiers, legacyVoyantSpecifiers }
+  return {
+    packInfo,
+    packedManifest,
+    extensionlessRelativeSpecifiers,
+    legacyVoyantSpecifiers,
+    missingPackedExports,
+  }
 }
 
 function collectTarballProblems(
-  { packInfo, packedManifest, extensionlessRelativeSpecifiers, legacyVoyantSpecifiers },
+  {
+    packInfo,
+    packedManifest,
+    extensionlessRelativeSpecifiers,
+    legacyVoyantSpecifiers,
+    missingPackedExports,
+  },
   sourceFiles,
 ) {
   const expectedTargets = getPublishedTargets(packedManifest)
@@ -403,6 +481,9 @@ function collectTarballProblems(
         ", ",
       )}`,
     )
+  }
+  if (missingPackedExports.length > 0) {
+    problems.push(`missing packed exports: ${missingPackedExports.join("; ")}`)
   }
   const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
   if (workspaceProtocolDependencies.length > 0) {
