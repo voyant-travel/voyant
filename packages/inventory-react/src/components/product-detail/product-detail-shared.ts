@@ -68,7 +68,7 @@ export type ProductMediaItem = {
   updatedAt: string
 }
 
-export function getProductDaysQueryOptions(api: ProductDetailApi, id: string) {
+export function getProductDetailDaysQueryOptions(api: ProductDetailApi, id: string) {
   return queryOptions({
     queryKey: ["product-days", id],
     queryFn: () => api.get<{ data: ProductDay[] }>(`/v1/admin/products/${id}/days`),
@@ -95,7 +95,7 @@ export function getProductRulesQueryOptions(api: ProductDetailApi, id: string) {
   })
 }
 
-export function getProductDayServicesQueryOptions(
+export function getProductDetailDayServicesQueryOptions(
   api: ProductDetailApi,
   productId: string,
   dayId: string,
@@ -124,7 +124,7 @@ export function getProductChannelMappingsQueryOptions(api: ProductDetailApi, id:
   })
 }
 
-export function getProductMediaQueryOptions(api: ProductDetailApi, id: string) {
+export function getProductDetailMediaQueryOptions(api: ProductDetailApi, id: string) {
   return queryOptions({
     queryKey: ["product-media", id],
     queryFn: () =>

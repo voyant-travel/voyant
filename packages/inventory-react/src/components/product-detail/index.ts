@@ -11,12 +11,12 @@ export { ProductDetailPage } from "./product-detail-page.js"
 export {
   getChannelsQueryOptions,
   getProductChannelMappingsQueryOptions,
-  getProductMediaQueryOptions,
+  getProductDetailMediaQueryOptions,
   getProductRulesQueryOptions,
   getProductSlotsQueryOptions,
 } from "./product-detail-shared.js"
 export { ProductDetailSkeleton } from "./product-detail-skeleton.js"
 export {
-  getPricingCategoriesQueryOptions,
-  getProductOptionsQueryOptions,
+  getProductDetailPricingCategoriesQueryOptions,
+  getProductDetailProductOptionsQueryOptions,
 } from "./product-options-shared.js"

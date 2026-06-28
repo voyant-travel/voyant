@@ -1,13 +1,14 @@
 import type { EventBus } from "@voyant-travel/core"
 
 import type { InvoiceFxOptions } from "./invoice-fx.js"
-import type { FinanceDocumentRouteOptions, InvoiceDocumentGenerator } from "./routes-documents.js"
+import type { FinanceDocumentRouteOptions } from "./routes-documents.js"
 import type { FinanceSettlementRouteOptions, InvoiceSettlementPoller } from "./routes-settlement.js"
 import type {
   InvoiceDueDateResolver,
   InvoiceLineDescriptionResolver,
   PaymentScheduleLineDescriptionFormat,
 } from "./service.js"
+import type { InvoiceDocumentGenerator } from "./service-documents.js"
 
 export type FinanceRouteRuntime = {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator

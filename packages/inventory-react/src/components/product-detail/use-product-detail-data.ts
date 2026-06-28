@@ -11,7 +11,7 @@ import {
   type DepartureSlot,
   getChannelsQueryOptions,
   getProductChannelMappingsQueryOptions,
-  getProductMediaQueryOptions,
+  getProductDetailMediaQueryOptions,
   getProductRulesQueryOptions,
   getProductSlotsQueryOptions,
   type ProductMediaItem,
@@ -62,7 +62,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   const rulesQuery = useQuery(getProductRulesQueryOptions(api, productId))
   const channelsQuery = useQuery(getChannelsQueryOptions(api))
   const mappingsQuery = useQuery(getProductChannelMappingsQueryOptions(api, productId))
-  const mediaQuery = useQuery(getProductMediaQueryOptions(api, productId))
+  const mediaQuery = useQuery(getProductDetailMediaQueryOptions(api, productId))
 
   const addChannelMapping = useMutation({
     mutationFn: (channelId: string) =>

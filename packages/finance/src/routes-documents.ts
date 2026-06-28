@@ -40,7 +40,7 @@ import {
 } from "./route-runtime.js"
 import { invoiceRenditionSchema } from "./routes-invoice-schemas.js"
 import { financeService } from "./service.js"
-import { financeDocumentsService } from "./service-documents.js"
+import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
 import { generateInvoiceDocumentInputSchema } from "./validation.js"
 
 type Env = {
@@ -51,10 +51,6 @@ type Env = {
     userId?: string
   }
 }
-
-export type InvoiceDocumentGenerator = Parameters<
-  typeof financeDocumentsService.generateInvoiceDocument
->[3]["generator"]
 
 export interface FinanceDocumentRouteOptions {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator

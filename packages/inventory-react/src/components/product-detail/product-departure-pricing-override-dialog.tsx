@@ -18,9 +18,9 @@ import { useVoyantProductsContext } from "../../index.js"
 import { useDeparturePriceOverrideMutation } from "./commerce-client.js"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import {
-  getDeparturePriceOverridesQueryOptions,
-  getOptionUnitsQueryOptions,
-  getPriceCatalogsQueryOptions,
+  getProductDetailDeparturePriceOverridesQueryOptions,
+  getProductDetailOptionUnitsQueryOptions,
+  getProductDetailPriceCatalogsQueryOptions,
 } from "./product-options-shared.js"
 
 interface UnitRow {
@@ -69,15 +69,15 @@ export function DeparturePricingOverrideDialog({
   const enabled = open && !!departureId && !!optionId
 
   const { data: unitsData } = useQuery({
-    ...getOptionUnitsQueryOptions(productsClient, optionId ?? ""),
+    ...getProductDetailOptionUnitsQueryOptions(productsClient, optionId ?? ""),
     enabled: enabled && !!optionId,
   })
   const { data: overridesData, refetch: refetchOverrides } = useQuery({
-    ...getDeparturePriceOverridesQueryOptions(api, departureId ?? ""),
+    ...getProductDetailDeparturePriceOverridesQueryOptions(api, departureId ?? ""),
     enabled: enabled && !!departureId,
   })
   const { data: catalogsData } = useQuery({
-    ...getPriceCatalogsQueryOptions(api),
+    ...getProductDetailPriceCatalogsQueryOptions(api),
     enabled,
   })
   const { create, update, remove } = useDeparturePriceOverrideMutation()

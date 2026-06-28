@@ -62,7 +62,7 @@ export interface PromotionsProjectionOptions {
   now?: () => Date
 }
 
-export interface ProductProjectionExtension {
+interface ProductProjectionExtension {
   readonly name: string
   project(
     db: AnyDrizzleDb,

@@ -14,9 +14,9 @@ import {
   isTravelerCategory,
 } from "./product-options-pricing-helpers.js"
 import {
-  getOptionUnitPriceRulesQueryOptions,
-  getOptionUnitsQueryOptions,
-  getPricingCategoriesQueryOptions,
+  getProductDetailOptionUnitPriceRulesQueryOptions,
+  getProductDetailOptionUnitsQueryOptions,
+  getProductDetailPricingCategoriesQueryOptions,
 } from "./product-options-shared.js"
 import { TravelerCategoryDialog } from "./product-options-traveler-category-dialog.js"
 import type { OptionUnitPriceRuleData } from "./product-unit-price-rule-dialog.js"
@@ -48,12 +48,14 @@ export function UnitPriceMatrix({
   const [preselectedCategoryId, setPreselectedCategoryId] = useState<string | null | undefined>()
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
 
-  const { data: unitsData } = useQuery(getOptionUnitsQueryOptions(productsClient, optionId))
+  const { data: unitsData } = useQuery(
+    getProductDetailOptionUnitsQueryOptions(productsClient, optionId),
+  )
   const { data: categoriesData, refetch: refetchCategories } = useQuery(
-    getPricingCategoriesQueryOptions(api),
+    getProductDetailPricingCategoriesQueryOptions(api),
   )
   const { data: cellsData, refetch: refetchCells } = useQuery(
-    getOptionUnitPriceRulesQueryOptions(api, optionPriceRuleId),
+    getProductDetailOptionUnitPriceRulesQueryOptions(api, optionPriceRuleId),
   )
   const { remove } = useOptionUnitPriceRuleMutation()
 

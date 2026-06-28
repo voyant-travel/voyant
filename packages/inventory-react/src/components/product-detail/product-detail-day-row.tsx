@@ -7,7 +7,7 @@ import { ActionMenu } from "./product-detail-sections.js"
 import {
   type DayService,
   getProductDayMediaQueryOptions,
-  getProductDayServicesQueryOptions,
+  getProductDetailDayServicesQueryOptions,
   type ProductDay,
 } from "./product-detail-shared.js"
 
@@ -61,7 +61,7 @@ export function ProductDetailDayRow({
   const dayRowMessages = messages.products.operations.dayRows
   const serviceMessages = messages.products.operations.services
   const { data: servicesData } = useQuery({
-    ...getProductDayServicesQueryOptions(api, productId, day.id),
+    ...getProductDetailDayServicesQueryOptions(api, productId, day.id),
     enabled: expanded,
   })
 

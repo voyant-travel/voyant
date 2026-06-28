@@ -278,7 +278,6 @@ export { bookingsCreateExtension } from "./routes-booking-create.js"
 export {
   createFinanceAdminDocumentRoutes,
   type FinanceDocumentRouteOptions,
-  type InvoiceDocumentGenerator,
 } from "./routes-documents.js"
 export {
   createFinanceAdminSettlementRoutes,
@@ -434,6 +433,7 @@ export type {
   GeneratedInvoiceDocumentRecord,
   GeneratedInvoiceRenditionArtifact,
   InvoiceDocumentGeneratedEvent,
+  InvoiceDocumentGenerator,
   InvoiceDocumentGeneratorContext,
   InvoiceDocumentRuntimeOptions,
   StorageBackedInvoiceDocumentGeneratorOptions,

@@ -179,11 +179,14 @@ export function createInventoryAdminExtension(
             {
               getChannelsQueryOptions,
               getProductChannelMappingsQueryOptions,
-              getProductMediaQueryOptions,
+              getProductDetailMediaQueryOptions,
               getProductRulesQueryOptions,
               getProductSlotsQueryOptions,
             },
-            { getPricingCategoriesQueryOptions, getProductOptionsQueryOptions },
+            {
+              getProductDetailPricingCategoriesQueryOptions,
+              getProductDetailProductOptionsQueryOptions,
+            },
             { createProductDetailRestApi },
           ] = await Promise.all([
             import("../query-options.js"),
@@ -197,13 +200,13 @@ export function createInventoryAdminExtension(
 
           await queryClient.ensureQueryData(getProductQueryOptions(client, id))
 
-          void queryClient.prefetchQuery(getProductOptionsQueryOptions(client, id))
+          void queryClient.prefetchQuery(getProductDetailProductOptionsQueryOptions(client, id))
           void queryClient.prefetchQuery(getProductSlotsQueryOptions(api, id))
           void queryClient.prefetchQuery(getProductRulesQueryOptions(api, id))
           void queryClient.prefetchQuery(getChannelsQueryOptions(api))
           void queryClient.prefetchQuery(getProductChannelMappingsQueryOptions(api, id))
-          void queryClient.prefetchQuery(getProductMediaQueryOptions(api, id))
-          void queryClient.prefetchQuery(getPricingCategoriesQueryOptions(api))
+          void queryClient.prefetchQuery(getProductDetailMediaQueryOptions(api, id))
+          void queryClient.prefetchQuery(getProductDetailPricingCategoriesQueryOptions(api))
         },
         page: async () => {
           const module = await (detailPageComponent

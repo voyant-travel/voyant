@@ -67,7 +67,7 @@ interface RatePlanPricing {
   basePrices: number[]
 }
 
-export interface ProductProjectionExtension {
+interface ProductProjectionExtension {
   readonly name: string
   project(
     db: AnyDrizzleDb,
