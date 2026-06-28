@@ -54,7 +54,7 @@
     "@cloudflare/workers-types": "^4.20260426.1",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "@voyant-travel/workflows-orchestrator": "workspace:^",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },
   "files": [
