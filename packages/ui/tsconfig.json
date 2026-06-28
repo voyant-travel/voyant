@@ -1,6 +1,7 @@
 {
   "extends": "@voyant-travel/voyant-typescript-config/react.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "baseUrl": ".",
