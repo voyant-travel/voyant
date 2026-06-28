@@ -34,7 +34,7 @@ export async function resolveContractGenerationVariables(
   event: BookingConfirmedLikeEvent,
   options: AutoGenerateContractOptions,
   runtime: AutoGenerateContractRuntime,
-  template: { id: string },
+  template: { id: string; language?: string | null },
 ): Promise<Record<string, unknown>> {
   const travelers = await bookingsService.listTravelers(db, event.bookingId)
   const travelerTravelDetails = await resolveTravelerTravelDetails(
@@ -64,7 +64,13 @@ export async function resolveContractGenerationVariables(
   const startDate = booking.startDate ?? ""
   const endDate = booking.endDate ?? ""
   const durationNights = computeNights(startDate, endDate)
-  const settlement = await resolveBookingSettlementVariables(db, booking.id, sellCurrency)
+  const contractLanguage = options.language ?? template.language ?? "en"
+  const settlement = await resolveBookingSettlementVariables(
+    db,
+    booking.id,
+    sellCurrency,
+    contractLanguage,
+  )
   const amountDueCents = computeAmountDueCents(settlement, totalCents)
   const isPaidInFull =
     amountDueCents <= 0 ||
@@ -810,6 +816,7 @@ async function resolveBookingSettlementVariables(
   db: PostgresJsDatabase,
   bookingId: string,
   bookingCurrency: string,
+  language: string,
 ): Promise<{
   paidAmountCents: number
   balanceDueCents: number | null
@@ -863,7 +870,7 @@ async function resolveBookingSettlementVariables(
     latestCompleted: latestPayment
       ? {
           method: latestPayment.paymentMethod,
-          methodLabel: formatPaymentMethodLabel(latestPayment.paymentMethod),
+          methodLabel: formatPaymentMethodLabel(latestPayment.paymentMethod, language),
           date: latestPayment.paymentDate,
         }
       : undefined,
@@ -890,7 +897,36 @@ function invoiceBalanceInCurrency(invoice: SettlementInvoiceRow, currency: strin
   return 0
 }
 
-function formatPaymentMethodLabel(method: string): string {
+const paymentMethodLabelsByLanguage: Record<string, Record<string, string>> = {
+  en: {
+    bank_transfer: "Bank Transfer",
+    credit_card: "Credit Card",
+    debit_card: "Debit Card",
+    cash: "Cash",
+    cheque: "Cheque",
+    wallet: "Wallet",
+    direct_bill: "Direct Bill",
+    voucher: "Voucher",
+    other: "Other",
+  },
+  ro: {
+    bank_transfer: "Transfer bancar",
+    credit_card: "Card de credit",
+    debit_card: "Card de debit",
+    cash: "Numerar",
+    cheque: "Cec",
+    wallet: "Portofel",
+    direct_bill: "Facturare directa",
+    voucher: "Voucher",
+    other: "Alta",
+  },
+}
+
+function formatPaymentMethodLabel(method: string, language: string): string {
+  const locale = language.trim().toLowerCase().split(/[-_]/)[0] || "en"
+  const localizedLabel = paymentMethodLabelsByLanguage[locale]?.[method]
+  if (localizedLabel) return localizedLabel
+
   return method
     .split("_")
     .filter(Boolean)

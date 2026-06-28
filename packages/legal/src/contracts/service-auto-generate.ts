@@ -185,6 +185,7 @@ export async function autoGenerateContractForBooking(
 
   const variables = await resolveContractGenerationVariables(db, booking, event, options, runtime, {
     id: template.id,
+    language: template.language,
   })
 
   // Preview branch: render the template body with the freshly-resolved

@@ -45,14 +45,14 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     await closeTestDb()
   })
 
-  async function seedTemplate(slug: string) {
+  async function seedTemplate(slug: string, options: { language?: string } = {}) {
     const [template] = await db
       .insert(contractTemplates)
       .values({
         slug,
         name: "Customer Services Contract",
         scope: "customer",
-        language: "en",
+        language: options.language ?? "en",
         body: "",
         active: true,
       })
@@ -468,6 +468,72 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     expect(paymentVariables.method).toBe("Bank Transfer")
     expect(paymentVariables.capturedAt).toBe("2026-05-04")
     expect(bodies[0]).toContain("Paid 32000 | Balance 0 | Due 0 | Full true")
+  })
+
+  it("localizes latest payment method labels to the contract language", async () => {
+    const { template, version } = await seedTemplate("cust-settlement-ro-1", { language: "ro" })
+    await db
+      .update(contractTemplateVersions)
+      .set({
+        body: [
+          "Metoda {{ payment.method }}",
+          "Ultima {{ payment.latestCompleted.methodLabel }}",
+        ].join(" | "),
+      })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking({
+      sellCurrency: "RON",
+      sellAmountCents: 32000,
+    })
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: `INV-${booking.bookingNumber}`,
+        bookingId: booking.id,
+        status: "paid",
+        currency: "RON",
+        subtotalCents: 32000,
+        taxCents: 0,
+        totalCents: 32000,
+        paidCents: 32000,
+        balanceDueCents: 0,
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-10",
+      })
+      .returning()
+    await db.insert(payments).values({
+      invoiceId: invoice!.id,
+      amountCents: 32000,
+      currency: "RON",
+      paymentMethod: "other",
+      status: "completed",
+      paymentDate: "2026-05-04",
+    })
+
+    const bodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    const paymentVariables = variables.payment as Record<string, unknown>
+    const latestCompleted = paymentVariables.latestCompleted as Record<string, unknown>
+
+    expect(contract?.language).toBe("ro")
+    expect(latestCompleted).toMatchObject({
+      method: "other",
+      methodLabel: "Alta",
+      date: "2026-05-04",
+    })
+    expect(paymentVariables.method).toBe("Alta")
+    expect(bodies[0]).toContain("Metoda Alta | Ultima Alta")
   })
 
   it("separates scheduled balance from current amount due for paid-in-full bookings", async () => {
