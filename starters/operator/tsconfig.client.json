@@ -1506,26 +1506,6 @@
       "@voyant-travel/plugin-sanity-cms/types": [
         "../../packages/plugins/sanity-cms/dist/types.d.ts"
       ],
-      "@voyant-travel/plugin-smartbill": ["../../packages/plugins/smartbill/dist/index.d.ts"],
-      "@voyant-travel/plugin-smartbill/client": [
-        "../../packages/plugins/smartbill/dist/client.d.ts"
-      ],
-      "@voyant-travel/plugin-smartbill/hono": ["../../packages/plugins/smartbill/dist/hono.d.ts"],
-      "@voyant-travel/plugin-smartbill/invoice-ui": [
-        "../../packages/plugins/smartbill/dist/invoice-ui.d.ts"
-      ],
-      "@voyant-travel/plugin-smartbill/mock": ["../../packages/plugins/smartbill/dist/mock.d.ts"],
-      "@voyant-travel/plugin-smartbill/plugin": [
-        "../../packages/plugins/smartbill/dist/plugin.d.ts"
-      ],
-      "@voyant-travel/plugin-smartbill/settlement": [
-        "../../packages/plugins/smartbill/dist/settlement.d.ts"
-      ],
-      "@voyant-travel/plugin-smartbill/sync": ["../../packages/plugins/smartbill/dist/sync.d.ts"],
-      "@voyant-travel/plugin-smartbill/types": ["../../packages/plugins/smartbill/dist/types.d.ts"],
-      "@voyant-travel/plugin-smartbill/workflows": [
-        "../../packages/plugins/smartbill/dist/workflows.d.ts"
-      ],
       "@voyant-travel/products-contracts": ["../../packages/products-contracts/dist/index.d.ts"],
       "@voyant-travel/products-contracts/content-shape": [
         "../../packages/products-contracts/dist/content-shape.d.ts"

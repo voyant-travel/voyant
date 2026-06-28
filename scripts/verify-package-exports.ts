@@ -355,16 +355,6 @@ const checks: ExportCheck[] = [
       "netopiaStartPaymentSessionSchema",
     ],
   },
-  {
-    packageName: "@voyant-travel/plugin-smartbill",
-    entry: "packages/plugins/smartbill/dist/index.js",
-    requiredExports: [
-      "createSmartbillClient",
-      "createSmartbillInvoiceSettlementPoller",
-      "mapVoyantInvoiceToSmartbill",
-      "smartbillPlugin",
-    ],
-  },
 ]
 
 function readPackageJson(packageDir: string): PackageJson {

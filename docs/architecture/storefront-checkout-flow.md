@@ -77,7 +77,7 @@ need to write".
 | Bookings state machine | `packages/bookings/src/state-machine.ts` | `transitionBooking()`, status enum (we extend with `awaiting_payment`) |
 | Legal contracts | `packages/legal/src/contracts/` | template render service, `contract_signatures` table, `autoGenerateContractOptions` |
 | Finance | `packages/finance/src/` | `createInvoiceFromBooking`, invoice renditions, number series |
-| SmartBill plugin | `packages/plugins/smartbill/` | subscribers for `invoice.issued`, `invoice.voided`; `createInvoice`, `cancelInvoice`; `createSmartbillInvoiceSettlementPoller` |
+| SmartBill plugin | `@voyant-travel/plugin-smartbill` | subscribers for `invoice.issued`, `invoice.voided`; `createInvoice`, `cancelInvoice`; `createSmartbillInvoiceSettlementPoller` |
 | Netopia plugin | `packages/plugins/netopia/` | `startPaymentSession`, finance routes, webhook callback |
 | EventBus | `packages/core/src/events.ts` | `emit / subscribe`, fire-and-forget |
 | Workflows | `@voyant-travel/workflows` + Node workflow runtime | `createWorkflow`, `step`, async via JobRunner |
@@ -170,7 +170,7 @@ unchanged).
 3. `packages/finance/src/service-create.ts` — emit `invoice.issued`
    and `invoice.proforma.issued` via the configured `EventBus` on
    creation.
-4. `packages/plugins/smartbill/` — add proforma subscriber +
+4. `@voyant-travel/plugin-smartbill` — add proforma subscriber +
    `createProforma` client method.
 
 ### Phase 2 — Contract preview + acceptance
