@@ -8,7 +8,7 @@
  * route families don't inflate the main bundle or the Worker cold start.
  *
  * For deployment-local families that span MULTIPLE absolute path prefixes (e.g.
- * an operator bundle exposing `/v1/uploads`, `/v1/admin/uploads`, `/v1/media/*`),
+ * an operator bundle exposing `/v1/admin/uploads` and `/v1/admin/media/*`),
  * the single-surface loaders don't fit. Such families declare `lazyRoutes`:
  * `{ paths, load }` where `load` returns a sub-app whose routes are ABSOLUTE and
  * `paths` are the explicit matchers the framework installs up front. This is the

@@ -16,10 +16,10 @@
     "./types": "./src/types.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc --noEmit",
     "lint": "biome check src/",
     "test": "vitest run",
-    "build": "pnpm run clean && tsc -p tsconfig.json",
+    "build": "pnpm run clean && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build"
   },

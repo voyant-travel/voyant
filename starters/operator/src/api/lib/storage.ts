@@ -26,7 +26,7 @@ const MIME_BY_EXT: Record<string, string> = {
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 
-/** Best-effort MIME type guess from a file key/path. Used by the /v1/media/* serve route. */
+/** Best-effort MIME type guess from a file key/path. Used by the /v1/admin/media/* serve route. */
 export function guessMimeType(key: string): string {
   const ext = key.split(".").pop()?.toLowerCase() ?? ""
   return MIME_BY_EXT[ext] ?? "application/octet-stream"
@@ -86,14 +86,14 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  *       region: env.S3_REGION ?? "us-east-1",
  *       bucket: env.S3_BUCKET!,
  *       endpoint: env.S3_ENDPOINT, // optional, for S3-compatible services
- *       publicBaseUrl: `${appUrl}/api/v1/media/`,
+ *       publicBaseUrl: `${appUrl}/api/v1/admin/media/`,
  *     })
  *     ```
  *
  *   - **Local in-memory** (dev/tests only):
  *     ```ts
  *     import { createLocalStorageProvider } from "@voyant-travel/storage/providers/local"
- *     return createLocalStorageProvider({ baseUrl: `${appUrl}/api/v1/media/` })
+ *     return createLocalStorageProvider({ baseUrl: `${appUrl}/api/v1/admin/media/` })
  *     ```
  *
  *   - **Custom** (GCS, Azure Blob, etc.): Implement the `StorageProvider`
@@ -105,7 +105,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 export function createMediaStorage(env: CloudflareBindings): StorageProvider | null {
   const appUrl = env.APP_URL?.replace(/\/api$/, "") ?? ""
   return createR2BucketStorage(env.MEDIA_BUCKET, {
-    publicBaseUrl: `${appUrl}/api/v1/media/`,
+    publicBaseUrl: `${appUrl}/api/v1/admin/media/`,
   })
 }
 

@@ -189,11 +189,8 @@ const CATALOG_CONTENT_ROUTE_PATHS = [
 
 const MEDIA_ROUTE_PATHS = [
   "/v1/admin/products/:id/brochure/generate",
-  "/v1/uploads",
   "/v1/admin/uploads",
-  "/v1/uploads/video",
   "/v1/admin/uploads/video",
-  "/v1/media/*",
   "/v1/admin/media/*",
 ] as const
 

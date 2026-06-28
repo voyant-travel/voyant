@@ -37,5 +37,9 @@ export const federatedOperatorApiDispatch = createApiDispatch<CloudflareBindings
   {
     loadApiApp: loadFederatedOperatorApiApp,
     loadAuthApp: loadFederatedOperatorAuthApp,
+    rewriteAppPath: (pathname) =>
+      pathname.startsWith("/v1/media/")
+        ? pathname.replace("/v1/media/", "/v1/admin/media/")
+        : pathname,
   },
 )

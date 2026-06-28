@@ -23,6 +23,14 @@ describe("operator API dispatch wiring", () => {
     expect(forwarded.url).toBe("https://example.test/v1/admin/settings?tab=profile")
   })
 
+  it("rewrites legacy persisted media URLs to the admin media surface", () => {
+    const forwarded = operatorApiDispatch.toAppRequest(
+      new Request("https://example.test/api/v1/media/uploads/photo.png?download=1"),
+    )
+
+    expect(forwarded.url).toBe("https://example.test/v1/admin/media/uploads/photo.png?download=1")
+  })
+
   it("handles auth CORS preflight without loading the full API app", async () => {
     const request = new Request("https://example.test/api/auth/me", {
       method: "OPTIONS",

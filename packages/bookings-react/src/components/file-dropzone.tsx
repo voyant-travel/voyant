@@ -17,7 +17,7 @@ export interface UploadedFile {
 }
 
 export interface FileDropzoneProps {
-  /** URL of the upload endpoint (defaults to /api/v1/uploads). */
+  /** URL of the upload endpoint (defaults to /api/v1/admin/uploads). */
   uploadUrl?: string
   /** MIME types or extensions to accept (same format as <input accept>). */
   accept?: string
@@ -34,7 +34,7 @@ export interface FileDropzoneProps {
 }
 
 export function FileDropzone({
-  uploadUrl = "/api/v1/uploads",
+  uploadUrl = "/api/v1/admin/uploads",
   accept,
   maxSize,
   onUploaded,

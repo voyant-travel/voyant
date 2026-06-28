@@ -29,6 +29,11 @@ export interface CreateApiDispatchOptions<Env, Ctx extends WaitUntilContext = Wa
   loadAuthApp?: AppLoader<Env, Ctx>
   /** Hosting prefix stripped before dispatch. Default `/api`. */
   apiPrefix?: string
+  /**
+   * Optional post-strip app-path rewrite. Runs after `/api` is removed and
+   * before the request is forwarded to the app.
+   */
+  rewriteAppPath?: (pathname: string) => string
   /** Auth sub-prefix served by the lean app. Default `${apiPrefix}/auth`. */
   authPrefix?: string
   /** Background-warm the full app on auth traffic. Default true. */
@@ -69,7 +74,8 @@ export function createApiDispatch<Env, Ctx extends WaitUntilContext = WaitUntilC
   function toAppRequest(request: Request): Request {
     const url = new URL(request.url)
     const stripped = url.pathname.slice(apiPrefix.length) || "/"
-    const appUrl = new URL(stripped, url.origin)
+    const appPath = options.rewriteAppPath?.(stripped) ?? stripped
+    const appUrl = new URL(appPath, url.origin)
     appUrl.search = url.search
 
     const bodyless = request.method === "GET" || request.method === "HEAD"

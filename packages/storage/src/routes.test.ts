@@ -56,7 +56,7 @@ describe("media routes", () => {
     const storage = makeStorage({ get: vi.fn(async () => new TextEncoder().encode("pdf").buffer) })
     const app = mountApp({ resolveStorage: () => storage })
 
-    const response = await app.request("/v1/media/brochures/products/example.pdf")
+    const response = await app.request("/v1/admin/media/brochures/products/example.pdf")
 
     expect(response.status).toBe(200)
     expect(response.headers.get("content-type")).toBe("application/pdf")
@@ -69,7 +69,7 @@ describe("media routes", () => {
     const get = vi.fn(async () => new TextEncoder().encode("private").buffer)
     const app = mountApp({ resolveStorage: () => makeStorage({ get }) })
 
-    const response = await app.request("/v1/media/private/example.pdf")
+    const response = await app.request("/v1/admin/media/private/example.pdf")
 
     expect(response.status).toBe(400)
     expect(get).not.toHaveBeenCalled()
@@ -81,7 +81,7 @@ describe("media routes", () => {
     })
     const app = mountApp({ resolveStorage: () => storage })
 
-    const response = await app.request("/v1/media/uploads/evil.svg")
+    const response = await app.request("/v1/admin/media/uploads/evil.svg")
 
     expect(response.status).toBe(200)
     expect(response.headers.get("content-type")).toBe("application/octet-stream")
@@ -102,7 +102,7 @@ describe("media routes", () => {
 
   it("responds 503 when storage is unconfigured", async () => {
     const app = mountApp({ resolveStorage: () => null })
-    const response = await app.request("/v1/media/uploads/example.pdf")
+    const response = await app.request("/v1/admin/media/uploads/example.pdf")
     expect(response.status).toBe(503)
   })
 
@@ -112,7 +112,7 @@ describe("media routes", () => {
 
     const boundary = "----voyant-test-boundary"
 
-    const response = await app.request("/v1/uploads", {
+    const response = await app.request("/v1/admin/uploads", {
       method: "POST",
       headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
       body: multipartFileBody({
@@ -131,7 +131,7 @@ describe("media routes", () => {
     const upload = vi.fn(
       async (_body: ArrayBuffer, options: { key: string; contentType: string }) => ({
         key: options.key,
-        url: `/api/v1/media/${options.key}`,
+        url: `/api/v1/admin/media/${options.key}`,
       }),
     )
     const app = mountApp({ resolveStorage: () => makeStorage({ upload }) })
@@ -181,7 +181,7 @@ describe("media routes", () => {
     const signVideoUploadTicket = vi.fn()
     const app = mountApp({ signVideoUploadTicket })
 
-    const response = await app.request("/v1/uploads/video", {
+    const response = await app.request("/v1/admin/uploads/video", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ fileSize: -1, maxDurationSeconds: 60 }),

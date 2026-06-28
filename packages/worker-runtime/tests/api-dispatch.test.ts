@@ -58,6 +58,21 @@ describe("createApiDispatch", () => {
     expect(forwarded.url).toBe("https://example.test/?ready=1")
   })
 
+  it("can rewrite stripped app paths before forwarding", () => {
+    const dispatch = createApiDispatch<Env>({
+      loadApiApp: noopLoader,
+      rewriteAppPath: (pathname) =>
+        pathname.startsWith("/v1/media/")
+          ? pathname.replace("/v1/media/", "/v1/admin/media/")
+          : pathname,
+    })
+    const request = new Request("https://example.test/api/v1/media/uploads/photo.png?size=thumb")
+
+    const forwarded = dispatch.toAppRequest(request)
+
+    expect(forwarded.url).toBe("https://example.test/v1/admin/media/uploads/photo.png?size=thumb")
+  })
+
   it("preserves non-GET request method, headers, and body", async () => {
     const dispatch = createApiDispatch<Env>({ loadApiApp: noopLoader })
     const request = new Request("https://example.test/api/v1/public/checkout", {

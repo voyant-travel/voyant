@@ -117,7 +117,7 @@ describe("createFinanceAdminExtension", () => {
   })
 
   it("binds the supplier-invoices routes to their route-backed destinations", () => {
-    // The previously app-owned wiring (uploads to /v1/uploads via the
+    // The previously app-owned wiring (uploads to /v1/admin/uploads via the
     // finance context, inline supplier creation via the suppliers client,
     // cross-domain target search via package query options) now travels
     // package-side, so both contributions ship full implementations and

@@ -48,7 +48,7 @@ import { ServiceDialog } from "./product-service-dialog.js"
 const uploadDayMediaToStorage: ProductMediaUploadHandler = async (file) => {
   const formData = new FormData()
   formData.append("file", file)
-  const res = await fetch("/api/v1/uploads", {
+  const res = await fetch("/api/v1/admin/uploads", {
     method: "POST",
     body: formData,
     credentials: "include",

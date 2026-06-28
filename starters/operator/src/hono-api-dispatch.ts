@@ -52,4 +52,8 @@ export const loadOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>
 export const operatorApiDispatch = createApiDispatch<CloudflareBindings, ExecutionContext>({
   loadApiApp: loadOperatorApiApp,
   loadAuthApp: loadOperatorAuthApp,
+  rewriteAppPath: (pathname) =>
+    pathname.startsWith("/v1/media/")
+      ? pathname.replace("/v1/media/", "/v1/admin/media/")
+      : pathname,
 })

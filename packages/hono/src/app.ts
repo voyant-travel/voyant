@@ -534,24 +534,6 @@ export function mountApp<TBindings extends VoyantBindings>(
   const actorOptions = { basePath: config.basePath }
   app.use("/v1/admin/*", requireActor(actorOptions, "staff"))
   app.use("/v1/public/*", requireActor(actorOptions, "customer", "partner", "supplier"))
-  const requireLegacyActor = requireActor<TBindings>(actorOptions, "staff")
-  app.use("/v1/*", (c, next) => {
-    const pathname = normalizePathname(new URL(c.req.url).pathname, { basePath: config.basePath })
-    if (pathname.startsWith("/v1/admin/") || pathname.startsWith("/v1/public/")) {
-      return next()
-    }
-    // The per-module `routes` legacy mount is gone, so this now backstops bare
-    // absolute bundle/lazy paths (e.g. `/v1/uploads`, `/v1/media/*`) plus passes
-    // anonymous webhooks (ADR-0008) — e.g. a bundle-declared payment-processor
-    // callback at `/v1/finance/...`. `requireAuth` already skipped credential
-    // resolution for these, but it only stamps an actor on `/v1/public/*`, so
-    // without this skip the fail-closed staff guard would 401 a route that is
-    // meant to be reachable without a session.
-    if (matchesPublicPath(pathname, anonymousPaths)) {
-      return next()
-    }
-    return requireLegacyActor(c, next)
-  })
 
   // Admin capability discovery — GET /v1/admin/_meta/capabilities. A built-in
   // framework route (like /health), mounted only when the deployment supplies
