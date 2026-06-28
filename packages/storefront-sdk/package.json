@@ -37,7 +37,7 @@
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.9",
     "zod": "^4.4.3"
   },
