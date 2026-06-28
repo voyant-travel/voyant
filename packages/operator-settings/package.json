@@ -26,7 +26,7 @@
     "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",

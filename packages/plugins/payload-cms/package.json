@@ -20,7 +20,7 @@
   "dependencies": {
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
