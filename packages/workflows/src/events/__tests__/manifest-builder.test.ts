@@ -212,6 +212,8 @@ describe("buildManifest", () => {
     })
 
     expect(bookingManifest.workflows[0]?.inputSchema).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      additionalProperties: false,
       type: "object",
       properties: {
         bookingId: { type: "string" },
@@ -219,6 +221,8 @@ describe("buildManifest", () => {
       required: ["bookingId"],
     })
     expect(bookingManifest.workflows[0]?.outputSchema).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      additionalProperties: false,
       type: "object",
       properties: {
         ok: { type: "boolean" },
@@ -239,6 +243,8 @@ describe("buildManifest", () => {
     })
 
     expect(customerManifest.workflows[0]?.inputSchema).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      additionalProperties: false,
       type: "object",
       properties: {
         customerId: { type: "number" },
