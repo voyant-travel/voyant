@@ -76,7 +76,7 @@
     "react-dom": "^19.2.4",
     "recharts": "3.8.1",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   },
   "files": [
     "dist",

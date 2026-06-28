@@ -43,7 +43,7 @@
     "@voyant-travel/workflows-orchestrator": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   },
   "files": [
     "dist",

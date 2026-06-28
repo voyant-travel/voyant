@@ -95,7 +95,7 @@
     "semver": "^7.7.2",
     "tsx": "^4.21.0",
     "turbo": "^2.9.18",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   },
   "packageManager": "pnpm@10.18.0",
   "engines": {
