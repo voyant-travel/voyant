@@ -33,6 +33,26 @@ The R2 binding provider cannot mint signed URLs by itself. Configure either
 `publicBaseUrl` or a custom `signer` before calling `signedUrl`; otherwise the
 provider throws instead of returning a raw storage key.
 
+For private R2 documents that should be downloaded through an authenticated
+application route, do not use `publicUrl()` or call `signedUrl()` without a real
+signer. Wire the route-level `resolveDocumentDownloadUrl` callback with the
+shared Hono helper instead:
+
+```typescript
+import { createAuthenticatedR2DocumentDownloadResolver } from "@voyant-travel/hono/document-download"
+
+const resolveDocumentDownloadUrl = createAuthenticatedR2DocumentDownloadResolver({
+  apiBaseUrl: (bindings: { API_BASE_URL?: string; DOCUMENTS_BUCKET?: unknown }) =>
+    bindings.API_BASE_URL ?? null,
+  routePrefix: "/v1/admin/documents/files",
+  bucketBindingName: "DOCUMENTS_BUCKET",
+})
+```
+
+That returns an authenticated Worker/app URL such as
+`https://api.example.com/v1/admin/documents/files/contracts/invoice.pdf` while
+preserving folder segments in the storage key.
+
 ## Exports
 
 | Entry | Description |

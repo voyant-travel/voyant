@@ -15,13 +15,19 @@ export {
 } from "./auth/index.js"
 export { type CreateAppConfig, createApp } from "./create-app.js"
 export type {
+  AuthenticatedR2DocumentDownloadResolver,
+  AuthenticatedR2DocumentDownloadResolverOptions,
   DocumentDownloadEnvelope,
   DocumentDownloadResolution,
   DocumentDownloadResolver,
   DocumentDownloadResolverResult,
   StoredDocumentReference,
 } from "./document-download.js"
-export { resolveStoredDocumentDownload } from "./document-download.js"
+export {
+  createAuthenticatedR2DocumentDownloadResolver,
+  encodeStorageKeyPath,
+  resolveStoredDocumentDownload,
+} from "./document-download.js"
 export {
   createLazyRouteHandler,
   type LazyHonoRoutes,

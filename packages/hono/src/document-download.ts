@@ -24,6 +24,31 @@ export type DocumentDownloadResolver<TBindings = unknown> = (
   storageKey: string,
 ) => Promise<DocumentDownloadResolverResult> | DocumentDownloadResolverResult
 
+export type AuthenticatedR2DocumentDownloadResolver<TBindings = unknown> = (
+  bindings: TBindings,
+  storageKey: string,
+) => string | null
+
+export interface AuthenticatedR2DocumentDownloadResolverOptions<TBindings = unknown> {
+  /**
+   * Absolute application/API origin used for authenticated download URLs.
+   * Return `null`/empty when the current deployment cannot expose downloads.
+   */
+  apiBaseUrl: string | ((bindings: TBindings) => string | null | undefined)
+  /**
+   * Authenticated route prefix mounted by the host app. The storage key is
+   * appended after this prefix with each path segment encoded independently.
+   *
+   * Defaults to Voyant's operator document byte route.
+   */
+  routePrefix?: string
+  /**
+   * Optional R2 bucket binding name to require before returning a URL. Defaults
+   * to the operator starter's private document bucket binding.
+   */
+  bucketBindingName?: string | null
+}
+
 export interface StoredDocumentReference {
   storageKey?: string | null
   metadata?: unknown
@@ -46,6 +71,64 @@ function maybeString(value: unknown) {
 function maybeUrl(value: unknown) {
   const candidate = maybeString(value)
   return candidate && /^https?:\/\//i.test(candidate) ? candidate : null
+}
+
+function getRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null
+  }
+
+  return value as Record<string, unknown>
+}
+
+function resolveApiBaseUrl<TBindings>(
+  value: AuthenticatedR2DocumentDownloadResolverOptions<TBindings>["apiBaseUrl"],
+  bindings: TBindings,
+) {
+  const resolved = typeof value === "function" ? value(bindings) : value
+  const trimmed = resolved?.trim()
+  return trimmed ? trimmed.replace(/\/+$/, "") : null
+}
+
+function normalizeRoutePrefix(routePrefix: string) {
+  const trimmed = routePrefix.trim()
+  if (!trimmed) return ""
+  return `/${trimmed.replace(/^\/+|\/+$/g, "")}`
+}
+
+function hasBinding<TBindings>(bindings: TBindings, bindingName: string | null | undefined) {
+  if (!bindingName) return true
+  const record = getRecord(bindings)
+  return Boolean(record?.[bindingName])
+}
+
+export function encodeStorageKeyPath(storageKey: string): string {
+  return storageKey
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/")
+}
+
+export function createAuthenticatedR2DocumentDownloadResolver<TBindings = unknown>(
+  options: AuthenticatedR2DocumentDownloadResolverOptions<TBindings>,
+): AuthenticatedR2DocumentDownloadResolver<TBindings> {
+  const routePrefix = normalizeRoutePrefix(options.routePrefix ?? "/v1/admin/documents/files")
+  const bucketBindingName =
+    options.bucketBindingName === undefined ? "DOCUMENTS_BUCKET" : options.bucketBindingName
+
+  return (bindings, storageKey) => {
+    if (!hasBinding(bindings, bucketBindingName)) {
+      return null
+    }
+
+    const apiBaseUrl = resolveApiBaseUrl(options.apiBaseUrl, bindings)
+    if (!apiBaseUrl) {
+      return null
+    }
+
+    const keyPath = encodeStorageKeyPath(storageKey)
+    return `${apiBaseUrl}${routePrefix}/${keyPath}`
+  }
 }
 
 function maybeIsoString(value: unknown) {
