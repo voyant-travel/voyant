@@ -37,6 +37,7 @@ import {
 } from "@voyant-travel/cruises/service-catalog-plane"
 import { createCruiseCabinFacetProjectionExtension } from "@voyant-travel/cruises/service-catalog-plane-cabins"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { channelProductMappings, channels } from "@voyant-travel/distribution"
 import { productCatalogPolicy } from "@voyant-travel/inventory/catalog-policy"
 import { productDeparturesCatalogPolicy } from "@voyant-travel/inventory/catalog-policy-departures"
 import { productDestinationsCatalogPolicy } from "@voyant-travel/inventory/catalog-policy-destinations"
@@ -51,7 +52,7 @@ import {
 import { createProductDestinationsProjectionExtension } from "@voyant-travel/inventory/service-catalog-plane-destinations"
 import { createProductTaxonomyProjectionExtension } from "@voyant-travel/inventory/service-catalog-plane-taxonomy"
 import { createProductDeparturesProjectionExtension } from "@voyant-travel/operations"
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 
 export const CATALOG_VERTICALS = [
   "products",
@@ -353,6 +354,23 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
   return _registries
 }
 
+async function hasActiveSalesChannelMapping(db: AnyDrizzleDb, productId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: channelProductMappings.id })
+    .from(channelProductMappings)
+    .innerJoin(channels, eq(channels.id, channelProductMappings.channelId))
+    .where(
+      and(
+        eq(channelProductMappings.productId, productId),
+        eq(channelProductMappings.active, true),
+        eq(channels.status, "active"),
+      ),
+    )
+    .limit(1)
+
+  return rows.length > 0
+}
+
 /**
  * Build the products `DocumentBuilder` with all child-entity projection
  * extensions wired in. Single source of truth for both the live catalog
@@ -379,6 +397,7 @@ export function createProductsDocumentBuilder(
       createProductPricingProjectionExtension(),
       createProductPromotionsProjectionExtension({ loadOriginalPrice: loadProductPriceFrom }),
     ],
+    isPublicAudienceListable: ({ db, product }) => hasActiveSalesChannelMapping(db, product.id),
   })
 }
 
