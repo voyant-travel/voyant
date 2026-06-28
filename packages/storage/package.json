@@ -73,12 +73,12 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "hono": "^4.12.10",
+    "hono": "^4.12.27",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "hono": "^4.12.10",
+    "hono": "^4.12.27",
     "typescript": "^6.0.2",
     "vitest": "^4.1.9",
     "zod": "^4.4.3"

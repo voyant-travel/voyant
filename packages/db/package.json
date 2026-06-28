@@ -343,11 +343,11 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=db_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations pg_trgm unaccent"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.2",
+    "@neondatabase/serverless": "^1.1.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/schema-kit": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.8",
+    "postgres": "^3.4.9",
     "typeid-js": "^1.2.0",
     "zod": "^4.4.3"
   },

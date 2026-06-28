@@ -62,7 +62,7 @@
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.60.0",
+    "react-hook-form": "^7.80.0",
     "zod": "^4.0.0",
     "@voyant-travel/operations-react": "workspace:^"
   },
@@ -118,9 +118,9 @@
     "sonner": "^2.0.7"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
@@ -136,9 +136,9 @@
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-hook-form": "^7.60.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-hook-form": "^7.80.0",
     "sonner": "^2.0.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.9",
