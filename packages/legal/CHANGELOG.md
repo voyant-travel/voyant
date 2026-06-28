@@ -1,5 +1,11 @@
 # @voyant-travel/legal
 
+## 0.137.4
+
+### Patch Changes
+
+- bcea95d: Localize generated contract payment method labels from the contract language instead of title-casing raw payment method enum values.
+
 ## 0.137.3
 
 ### Patch Changes
