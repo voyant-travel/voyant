@@ -1,23 +1,29 @@
-import { availabilitySlots } from "@voyant-travel/availability/schema"
+import { availabilityRules, availabilitySlots } from "@voyant-travel/availability/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { RequestValidationError } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
 import { beforeEach, describe, expect, it } from "vitest"
 import { productOptions, products } from "../../../../inventory/src/schema.js"
-import { createSlot, updateSlot } from "../../../src/availability/service-core.js"
+import {
+  createRule,
+  createSlot,
+  updateRule,
+  updateSlot,
+} from "../../../src/availability/service-core.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
 
 const db = DB_AVAILABLE ? createTestDb() : (null as never)
 
-async function seedProduct(name: string) {
+async function seedProduct(name: string, bookingMode = "date") {
   const productId = newId("products")
   await db.insert(products).values({
     id: productId,
     name,
     sellCurrency: "USD",
+    bookingMode,
   })
   return productId
 }
@@ -101,6 +107,43 @@ describe.skipIf(!DB_AVAILABLE)("availability slot option validation", () => {
     if (!slot) throw new Error("failed to create slot")
 
     await expect(updateSlot(db, slot.id, { productId: otherProductId })).rejects.toBeInstanceOf(
+      RequestValidationError,
+    )
+  })
+
+  it("rejects static slots for dynamic products", async () => {
+    const productId = await seedProduct("Open-ended activity", "open")
+
+    await expect(createSlot(db, slotInput(productId))).rejects.toBeInstanceOf(
+      RequestValidationError,
+    )
+  })
+
+  it("rejects active recurrence rules for dynamic products", async () => {
+    const productId = await seedProduct("Hotel stay", "stay")
+
+    await expect(
+      createRule(db, {
+        productId,
+        timezone: "UTC",
+        recurrenceRule: "FREQ=DAILY",
+        maxCapacity: 10,
+        active: true,
+      }),
+    ).rejects.toBeInstanceOf(RequestValidationError)
+
+    const [inactiveRule] = await db
+      .insert(availabilityRules)
+      .values({
+        productId,
+        timezone: "UTC",
+        recurrenceRule: "FREQ=DAILY",
+        maxCapacity: 10,
+        active: false,
+      })
+      .returning()
+
+    await expect(updateRule(db, inactiveRule.id, { active: true })).rejects.toBeInstanceOf(
       RequestValidationError,
     )
   })

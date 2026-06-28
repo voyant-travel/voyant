@@ -65,6 +65,37 @@ async function assertSlotOptionBelongsToProduct(
   }
 }
 
+const DYNAMIC_BOOKING_MODES = new Set(["open", "stay"])
+
+async function getProductBookingMode(db: PostgresJsDatabase, productId: string) {
+  const [product] = await db
+    .select({ bookingMode: productsRef.bookingMode })
+    .from(productsRef)
+    .where(eq(productsRef.id, productId))
+    .limit(1)
+
+  return product?.bookingMode ?? null
+}
+
+async function assertProductAllowsStaticAvailability(
+  db: PostgresJsDatabase,
+  productId: string,
+  kind: "slot" | "rule",
+) {
+  const bookingMode = await getProductBookingMode(db, productId)
+  if (bookingMode && DYNAMIC_BOOKING_MODES.has(bookingMode)) {
+    throw new RequestValidationError(
+      `Dynamic ${bookingMode} products cannot author static availability ${kind}s`,
+      {
+        code: "dynamic_product_static_availability",
+        productId,
+        bookingMode,
+        kind,
+      },
+    )
+  }
+}
+
 export async function listRules(db: PostgresJsDatabase, query: AvailabilityRuleListQuery) {
   const conditions = []
   if (query.productId) conditions.push(eq(availabilityRules.productId, query.productId))
@@ -98,6 +129,10 @@ export async function getRuleById(db: PostgresJsDatabase, id: string) {
 }
 
 export async function createRule(db: PostgresJsDatabase, data: CreateAvailabilityRuleInput) {
+  if (data.active !== false) {
+    await assertProductAllowsStaticAvailability(db, data.productId, "rule")
+  }
+
   const [row] = await db.insert(availabilityRules).values(data).returning()
   return row
 }
@@ -107,6 +142,21 @@ export async function updateRule(
   id: string,
   data: UpdateAvailabilityRuleInput,
 ) {
+  if (data.productId !== undefined || data.active === true) {
+    const [current] = await db
+      .select({ productId: availabilityRules.productId, active: availabilityRules.active })
+      .from(availabilityRules)
+      .where(eq(availabilityRules.id, id))
+      .limit(1)
+    if (!current) return null
+
+    const nextProductId = data.productId ?? current.productId
+    const nextActive = data.active ?? current.active
+    if (nextActive) {
+      await assertProductAllowsStaticAvailability(db, nextProductId, "rule")
+    }
+  }
+
   const [row] = await db
     .update(availabilityRules)
     .set({ ...data, updatedAt: new Date() })
@@ -261,6 +311,8 @@ export async function createSlot(
   data: CreateAvailabilitySlotInput,
   runtime: SlotMutationRuntime = {},
 ) {
+  await assertProductAllowsStaticAvailability(db, data.productId, "slot")
+
   if (data.optionId) {
     await assertSlotOptionBelongsToProduct(db, {
       productId: data.productId,
@@ -308,15 +360,17 @@ export async function updateSlot(
   data: UpdateAvailabilitySlotInput,
   runtime: SlotMutationRuntime = {},
 ) {
-  if (data.productId !== undefined || data.optionId !== undefined) {
-    const [current] = await db
-      .select({ productId: availabilitySlots.productId, optionId: availabilitySlots.optionId })
-      .from(availabilitySlots)
-      .where(eq(availabilitySlots.id, id))
-      .limit(1)
-    if (!current) return null
+  const [current] = await db
+    .select({ productId: availabilitySlots.productId, optionId: availabilitySlots.optionId })
+    .from(availabilitySlots)
+    .where(eq(availabilitySlots.id, id))
+    .limit(1)
+  if (!current) return null
 
-    const nextProductId = data.productId ?? current.productId
+  const nextProductId = data.productId ?? current.productId
+  await assertProductAllowsStaticAvailability(db, nextProductId, "slot")
+
+  if (data.productId !== undefined || data.optionId !== undefined) {
     const nextOptionId = data.optionId === undefined ? current.optionId : data.optionId
     if (nextOptionId) {
       await assertSlotOptionBelongsToProduct(db, {

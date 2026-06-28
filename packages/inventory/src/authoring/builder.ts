@@ -1,4 +1,10 @@
-import { optionPriceRules, optionUnitPriceRules, optionUnitTiers } from "@voyant-travel/commerce"
+import {
+  dropoffPriceRules,
+  optionPriceRules,
+  optionUnitPriceRules,
+  optionUnitTiers,
+  pickupPriceRules,
+} from "@voyant-travel/commerce"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   optionUnits,
@@ -186,6 +192,40 @@ export async function buildProductGraph(
         .returning({ id: optionPriceRules.id })
 
       if (!ruleRow) throw new Error("Failed to insert option price rule")
+
+      if (rule.pickupPriceRules.length) {
+        await tx.insert(pickupPriceRules).values(
+          rule.pickupPriceRules.map((pickupRule) => ({
+            optionPriceRuleId: ruleRow.id,
+            optionId,
+            pickupPointId: pickupRule.pickupPointId,
+            pricingMode: pickupRule.pricingMode,
+            sellAmountCents: pickupRule.sellAmountCents,
+            costAmountCents: pickupRule.costAmountCents,
+            active: pickupRule.active,
+            sortOrder: pickupRule.sortOrder,
+            notes: pickupRule.notes,
+          })),
+        )
+      }
+
+      if (rule.dropoffPriceRules.length) {
+        await tx.insert(dropoffPriceRules).values(
+          rule.dropoffPriceRules.map((dropoffRule) => ({
+            optionPriceRuleId: ruleRow.id,
+            optionId,
+            facilityId: dropoffRule.facilityId,
+            dropoffCode: dropoffRule.dropoffCode,
+            dropoffName: dropoffRule.dropoffName,
+            pricingMode: dropoffRule.pricingMode,
+            sellAmountCents: dropoffRule.sellAmountCents,
+            costAmountCents: dropoffRule.costAmountCents,
+            active: dropoffRule.active,
+            sortOrder: dropoffRule.sortOrder,
+            notes: dropoffRule.notes,
+          })),
+        )
+      }
 
       for (const unitRule of rule.unitPriceRules) {
         const unitId = unitIdByRef.get(unitRule.unitRef)

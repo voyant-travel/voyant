@@ -6,6 +6,7 @@ function spec(partial: {
   bookingMode: ProductGraphSpec["product"]["bookingMode"]
   unitType?: ProductGraphSpec["options"][number]["units"][number]["unitType"]
   days?: number
+  transferEndpoint?: boolean
 }): ProductGraphSpec {
   const days = Array.from({ length: partial.days ?? 0 }, (_, i) => ({
     dayNumber: i + 1,
@@ -42,7 +43,20 @@ function spec(partial: {
             sortOrder: 0,
           },
         ],
-        priceRules: [],
+        priceRules: partial.transferEndpoint
+          ? [
+              {
+                name: "Base transfer",
+                pricingMode: "per_booking",
+                allPricingCategories: true,
+                active: true,
+                isDefault: true,
+                unitPriceRules: [],
+                pickupPriceRules: [{ pickupPointId: "pickup_point_airport", active: true }],
+                dropoffPriceRules: [],
+              },
+            ]
+          : [],
       },
     ] as ProductGraphSpec["options"],
     paxPricingTiers: [],
@@ -87,7 +101,16 @@ describe("validateProductGraph", () => {
   })
 
   it("accepts a transfer with vehicle units and no days", () => {
-    expect(validateProductGraph(spec({ bookingMode: "transfer", unitType: "vehicle" }))).toEqual([])
+    expect(
+      validateProductGraph(
+        spec({ bookingMode: "transfer", unitType: "vehicle", transferEndpoint: true }),
+      ),
+    ).toEqual([])
+  })
+
+  it("rejects a transfer without pickup or dropoff price rules", () => {
+    const issues = validateProductGraph(spec({ bookingMode: "transfer", unitType: "vehicle" }))
+    expect(issues.some((i) => i.code === "transfer_needs_pickup_or_dropoff")).toBe(true)
   })
 
   it("rejects a product with no options", () => {

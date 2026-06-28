@@ -1,4 +1,8 @@
-import { optionPricingModeEnum, optionUnitPricingModeEnum } from "@voyant-travel/commerce"
+import {
+  addonPricingModeEnum,
+  optionPricingModeEnum,
+  optionUnitPricingModeEnum,
+} from "@voyant-travel/commerce"
 import { z } from "zod"
 import {
   optionUnitTypeEnum,
@@ -74,6 +78,28 @@ export const unitPriceRuleSpecSchema = z.object({
   tiers: z.array(unitTierSpecSchema).default([]),
 })
 
+export const pickupPriceRuleSpecSchema = z.object({
+  pickupPointId: z.string().min(1),
+  pricingMode: z.enum(addonPricingModeEnum.enumValues).default("included"),
+  sellAmountCents: money.nullish(),
+  costAmountCents: money.nullish(),
+  active: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+  notes: z.string().nullish(),
+})
+
+export const dropoffPriceRuleSpecSchema = z.object({
+  facilityId: z.string().nullish(),
+  dropoffCode: z.string().nullish(),
+  dropoffName: z.string().min(1).max(255),
+  pricingMode: z.enum(addonPricingModeEnum.enumValues).default("included"),
+  sellAmountCents: money.nullish(),
+  costAmountCents: money.nullish(),
+  active: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+  notes: z.string().nullish(),
+})
+
 export const optionPriceRuleSpecSchema = z.object({
   /**
    * Price catalog the rule points at. Optional: clone reuses the source rule's
@@ -96,6 +122,8 @@ export const optionPriceRuleSpecSchema = z.object({
   notes: z.string().nullish(),
   metadata: jsonRecord.nullish(),
   unitPriceRules: z.array(unitPriceRuleSpecSchema).default([]),
+  pickupPriceRules: z.array(pickupPriceRuleSpecSchema).default([]),
+  dropoffPriceRules: z.array(dropoffPriceRuleSpecSchema).default([]),
 })
 
 export const optionSpecSchema = z.object({
@@ -190,6 +218,8 @@ export const productGraphSpecSchema = z.object({
 export type UnitSpec = z.infer<typeof unitSpecSchema>
 export type UnitTierSpec = z.infer<typeof unitTierSpecSchema>
 export type UnitPriceRuleSpec = z.infer<typeof unitPriceRuleSpecSchema>
+export type PickupPriceRuleSpec = z.infer<typeof pickupPriceRuleSpecSchema>
+export type DropoffPriceRuleSpec = z.infer<typeof dropoffPriceRuleSpecSchema>
 export type OptionPriceRuleSpec = z.infer<typeof optionPriceRuleSpecSchema>
 export type OptionSpec = z.infer<typeof optionSpecSchema>
 export type PaxPricingTierSpec = z.infer<typeof paxPricingTierSpecSchema>

@@ -134,6 +134,7 @@ export async function listProductActionLedger(c: Context<Env>) {
       limit,
       mutationSummariesByActionId: summariesByActionId,
     }) satisfies ProductActionLedgerListResponse,
+    200,
   )
 }
 
