@@ -137,6 +137,6 @@
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "@types/node": "^25.5.2",
     "typescript": "^6.0.2",
-    "vitest": "4.1.2"
+    "vitest": "4.1.9"
   }
 }
