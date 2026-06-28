@@ -349,7 +349,7 @@
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.8",
     "typeid-js": "^1.2.0",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
