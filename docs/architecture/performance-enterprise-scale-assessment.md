@@ -106,7 +106,7 @@ recomputed per request, against the 128 MB ceiling. **This is also the path that
 - `emit` awaits every handler **sequentially, in-request**
   (`packages/core/src/events.ts:118-125`). "Fire-and-forget" only means errors don't propagate.
 - Plugin subscribers make awaited outbound HTTP calls inside that loop — SmartBill
-  (`packages/plugins/smartbill/src/plugin.ts:140-268`), Payload/Sanity CMS sync, channel-push.
+  (`@voyant-travel/plugin-smartbill`), Payload/Sanity CMS sync, channel-push.
   A booking confirmation response waits on every third-party API serially.
 - **No transactional outbox**: events exist only in memory. Worker death after DB commit but
   mid-emit silently loses invoice sync, channel push, workflow triggers. Workflow ingest is
