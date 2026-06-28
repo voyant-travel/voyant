@@ -46,6 +46,11 @@ function attachEmailRequestContext(error: unknown, request: Record<string, unkno
   })
 }
 
+function normalizeSenderAddress(value: string | null | undefined) {
+  const normalized = value?.trim()
+  return normalized ? normalized : null
+}
+
 /**
  * Notification provider that delivers email through the Voyant Cloud
  * `/email/v1/messages` endpoint.
@@ -56,6 +61,7 @@ export function createVoyantCloudEmailProvider(
   return {
     name: "voyant-cloud-email",
     channels: ["email"],
+    defaultFromAddress: normalizeSenderAddress(options.from),
     async send(payload): Promise<NotificationResult> {
       if (payload.channel !== "email") {
         throw new Error(
@@ -70,8 +76,14 @@ export function createVoyantCloudEmailProvider(
             text: JSON.stringify(payload.data ?? {}),
           }
       const attachments = mapAttachments(payload.attachments)
+      const from = normalizeSenderAddress(payload.from) ?? normalizeSenderAddress(options.from)
+      if (!from) {
+        throw new Error(
+          "Voyant Cloud email provider requires a sender address. Configure a verified email sender or pass `from`.",
+        )
+      }
       const request = {
-        from: payload.from ?? options.from,
+        from,
         to: [payload.to],
         subject: payload.subject ?? rendered.subject,
         html: payload.html ?? rendered.html ?? null,

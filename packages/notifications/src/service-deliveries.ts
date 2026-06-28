@@ -30,8 +30,36 @@ import {
   toTimestamp,
 } from "./service-shared.js"
 import { getTemplateById, getTemplateBySlug } from "./service-templates.js"
+import type { NotificationProvider } from "./types.js"
 
 export { resolveNotificationPaymentUrl } from "./service-delivery-metadata.js"
+
+function normalizeSenderAddress(value: string | null | undefined) {
+  const normalized = value?.trim()
+  return normalized ? normalized : null
+}
+
+function resolveDeliverySender(input: {
+  channel: string
+  provider: NotificationProvider
+  inputFrom?: string | null
+  templateFrom?: string | null
+}) {
+  const explicitFrom =
+    normalizeSenderAddress(input.inputFrom) ?? normalizeSenderAddress(input.templateFrom)
+  if (explicitFrom) return explicitFrom
+
+  if (input.channel !== "email") return null
+
+  const from = normalizeSenderAddress(input.provider.defaultFromAddress)
+  if (!from) {
+    throw new NotificationError(
+      `No email sender configured for notification provider "${input.provider.name}". Configure a verified sending domain/sender or pass \`from\`.`,
+    )
+  }
+
+  return from
+}
 
 export async function listDeliveries(db: PostgresJsDatabase, query: NotificationDeliveryListQuery) {
   const conditions = []
@@ -140,7 +168,9 @@ export async function sendNotification(
   if (!provider) {
     throw new NotificationError(`No notification provider available for channel "${channel}"`)
   }
-  if (provider !== defaultProvider?.name && dispatcher.getProviderByName?.(provider) == null) {
+  const selectedProvider =
+    provider === defaultProvider?.name ? defaultProvider : dispatcher.getProviderByName?.(provider)
+  if (!selectedProvider) {
     throw new NotificationError(`No notification provider registered with name "${provider}"`)
   }
 
@@ -149,6 +179,12 @@ export async function sendNotification(
   const text = input.text ?? renderNotificationTemplate(template?.textTemplate, data)
   const attachments = normalizeDeliveryAttachments(input.attachments)
   const attachmentSummary = summarizeNotificationAttachments(attachments)
+  const fromAddress = resolveDeliverySender({
+    channel,
+    provider: selectedProvider,
+    inputFrom: input.from,
+    templateFrom: template?.fromAddress,
+  })
 
   const [pending] = await db
     .insert(notificationDeliveries)
@@ -167,7 +203,7 @@ export async function sendNotification(
       providerMessageId: null,
       status: "pending",
       toAddress: input.to,
-      fromAddress: input.from ?? template?.fromAddress ?? null,
+      fromAddress,
       subject: subject ?? null,
       htmlBody: html ?? null,
       textBody: text ?? null,
@@ -200,7 +236,7 @@ export async function sendNotification(
             provider,
             template: template?.slug ?? input.templateSlug ?? "direct",
             data,
-            from: input.from ?? template?.fromAddress ?? undefined,
+            from: fromAddress ?? undefined,
             subject: subject ?? undefined,
             html: html ?? undefined,
             text: text ?? undefined,
@@ -212,7 +248,7 @@ export async function sendNotification(
             provider,
             template: template?.slug ?? input.templateSlug ?? "direct",
             data,
-            from: input.from ?? template?.fromAddress ?? undefined,
+            from: fromAddress ?? undefined,
             subject: subject ?? undefined,
             html: html ?? undefined,
             text: text ?? undefined,

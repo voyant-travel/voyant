@@ -80,6 +80,12 @@ export interface NotificationProvider {
   readonly name: string
   /** Channels this provider can handle. */
   readonly channels: ReadonlyArray<NotificationChannel>
+  /**
+   * Default sender address/identifier used when a notification does not pass
+   * an explicit `from`. Exposed so delivery logs can persist the resolved
+   * sender before dispatch.
+   */
+  readonly defaultFromAddress?: string | null
   /** Deliver the notification. Throws on failure. */
   send(payload: NotificationPayload): Promise<NotificationResult>
 }

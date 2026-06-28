@@ -28,6 +28,7 @@ describe("createLocalProvider", () => {
   it("defaults to email + sms channels", () => {
     const provider = createLocalProvider({ sink: () => {} })
     expect(provider.channels).toEqual(["email", "sms"])
+    expect(provider.defaultFromAddress).toBe("local@example.test")
   })
 
   it("accepts a custom name and channel list", async () => {
@@ -39,6 +40,7 @@ describe("createLocalProvider", () => {
     })
     expect(provider.name).toBe("dev-console")
     expect(provider.channels).toEqual(["push"])
+    expect(provider.defaultFromAddress).toBeNull()
     const result = await provider.send({
       to: "device-token",
       channel: "push",
