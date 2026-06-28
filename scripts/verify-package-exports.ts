@@ -23,6 +23,14 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const uiStylesExport = "./styles.css"
 const uiStylesSource = "./src/styles.css"
 const packageFilters = getPackageFilters(process.argv.slice(2))
+const financeContractsPaymentValidationExports = [
+  "insertPaymentAuthorizationBodySchema",
+  "insertPaymentSessionBodySchema",
+  "insertSupplierInvoicePaymentBodySchema",
+  "paymentAuthorizationStatusSchema",
+  "updatePaymentAuthorizationBodySchema",
+  "updatePaymentSessionBodySchema",
+]
 
 const checks: ExportCheck[] = [
   {
@@ -106,6 +114,16 @@ const checks: ExportCheck[] = [
       "publicValidateVoucherSchema",
       "publicVoucherValidationSchema",
     ],
+  },
+  {
+    packageName: "@voyant-travel/finance-contracts",
+    entry: "packages/finance-contracts/dist/index.js",
+    requiredExports: financeContractsPaymentValidationExports,
+  },
+  {
+    packageName: "@voyant-travel/finance-contracts/validation",
+    entry: "packages/finance-contracts/dist/validation.js",
+    requiredExports: financeContractsPaymentValidationExports,
   },
   {
     packageName: "@voyant-travel/inventory",

@@ -31,7 +31,39 @@ const LEGACY_VOYANT_SCOPE = `@voyant${"js"}/`
 
 const rootDir = process.cwd()
 const packageRoots = ["packages", "apps"].map((dir) => path.join(rootDir, dir))
+const financeContractsPaymentBodyExports = [
+  "insertPaymentAuthorizationBodySchema",
+  "insertPaymentSessionBodySchema",
+  "insertSupplierInvoicePaymentBodySchema",
+  "updatePaymentAuthorizationBodySchema",
+  "updatePaymentSessionBodySchema",
+]
 const packedExportChecks = [
+  {
+    packageName: "@voyant-travel/finance-contracts",
+    entries: [
+      {
+        path: "dist/validation-payments.js",
+        label: "payment validation runtime",
+        requiredExports: financeContractsPaymentBodyExports,
+      },
+      {
+        path: "dist/validation-payments.d.ts",
+        label: "payment validation declaration",
+        requiredExports: financeContractsPaymentBodyExports,
+      },
+      {
+        path: "dist/validation-shared.js",
+        label: "shared validation runtime",
+        requiredExports: ["paymentAuthorizationStatusSchema"],
+      },
+      {
+        path: "dist/validation-shared.d.ts",
+        label: "shared validation declaration",
+        requiredExports: ["paymentAuthorizationStatusSchema"],
+      },
+    ],
+  },
   {
     packageName: "@voyant-travel/inventory-react",
     entries: [
