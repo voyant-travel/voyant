@@ -76,6 +76,16 @@ const customerSlice: IndexerSlice = {
   market: "default",
 }
 
+const partnerSlice: IndexerSlice = {
+  ...customerSlice,
+  audience: "partner",
+}
+
+const staffAdminSlice: IndexerSlice = {
+  ...customerSlice,
+  audience: "staff-admin",
+}
+
 describe("createProductDocumentBuilder — projection extensions", () => {
   it("returns the base document unchanged when no extensions are provided", async () => {
     const db = stubDb([sampleRow])
@@ -104,14 +114,55 @@ describe("createProductDocumentBuilder — projection extensions", () => {
     expect(doc).toBeNull()
   })
 
+  it("returns null for public audience slices when the product is deactivated", async () => {
+    const db = stubDb([{ ...sampleRow, activated: false }])
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
+    const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
+
+    await expect(build("prod_inactive", customerSlice)).resolves.toBeNull()
+    await expect(build("prod_inactive", partnerSlice)).resolves.toBeNull()
+  })
+
+  it("returns null before running extensions when a public audience predicate rejects the product", async () => {
+    const db = stubDb([sampleRow])
+    const gate = vi.fn().mockResolvedValue(false)
+    const ext: ProductProjectionExtension = {
+      name: "test:should-not-run",
+      project: vi.fn().mockResolvedValue(new Map<string, unknown>()),
+    }
+    const build = createProductDocumentBuilder(
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
+      db as any,
+      { sellerOperatorId: "op_xyz", extensions: [ext], isPublicAudienceListable: gate },
+    )
+
+    const doc = await build("prod_abc", customerSlice)
+
+    expect(doc).toBeNull()
+    expect(gate).toHaveBeenCalledWith({ db, product: sampleRow, slice: customerSlice })
+    expect(ext.project).not.toHaveBeenCalled()
+  })
+
+  it("does not apply the public audience predicate to staff-admin slices", async () => {
+    const db = stubDb([sampleRow])
+    const gate = vi.fn().mockResolvedValue(false)
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
+    const build = createProductDocumentBuilder(db as any, {
+      sellerOperatorId: "op_xyz",
+      isPublicAudienceListable: gate,
+    })
+
+    const doc = await build("prod_abc", staffAdminSlice)
+
+    expect(doc).not.toBeNull()
+    expect(gate).not.toHaveBeenCalled()
+  })
+
   it("keeps non-public products in staff-admin slices", async () => {
     const db = stubDb([{ ...sampleRow, visibility: "private" }])
     // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
     const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
-    const doc = await build("prod_private", {
-      ...customerSlice,
-      audience: "staff-admin",
-    })
+    const doc = await build("prod_private", staffAdminSlice)
     expect(doc).not.toBeNull()
     expect(doc?.fields).toHaveProperty("visibility", "private")
   })

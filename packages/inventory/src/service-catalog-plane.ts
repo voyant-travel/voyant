@@ -44,12 +44,18 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { asc, eq, sql } from "drizzle-orm"
 
 import { productCatalogPolicy } from "./catalog-policy.js"
-import { products } from "./schema-core.js"
+import { type Product, products } from "./schema-core.js"
 import { productDays, productItineraries, productMedia } from "./schema-itinerary.js"
 import { productLocations, productTranslations } from "./schema-settings.js"
 import type { productBookingModeEnum } from "./schema-shared.js"
 
 type ProductBookingMode = (typeof productBookingModeEnum.enumValues)[number]
+
+export type ProductDocumentListabilityPredicate = (input: {
+  db: AnyDrizzleDb
+  product: Product
+  slice: IndexerSlice
+}) => boolean | Promise<boolean>
 
 /**
  * Lazy-initialized registry. Built once per process; the field-policy file
@@ -338,22 +344,32 @@ export function createProductDocumentEmitter(context: {
   }
 }
 
-function isPublicStorefrontProduct(row: typeof products.$inferSelect): boolean {
+function isPublicStorefrontProduct(row: Product): boolean {
   return row.status === "active" && row.activated === true && row.visibility === "public"
 }
 
-function shouldEmitForSlice(row: typeof products.$inferSelect, slice: IndexerSlice): boolean {
+function isPublicAudienceSlice(slice: IndexerSlice): boolean {
+  return (
+    slice.audience === "customer" || slice.audience === "partner" || slice.audience === "supplier"
+  )
+}
+
+async function shouldEmitForSlice(
+  db: AnyDrizzleDb,
+  row: Product,
+  slice: IndexerSlice,
+  isPublicAudienceListable?: ProductDocumentListabilityPredicate,
+): Promise<boolean> {
   // The catalog is a "bookable now" surface — draft and archived
   // products don't belong there, regardless of audience. Operators
   // browsing /catalog get the same active-only set the storefront sees,
   // just with staff-visible attribute columns.
   if (row.status !== "active") return false
-  if (
-    slice.audience === "customer" ||
-    slice.audience === "partner" ||
-    slice.audience === "supplier"
-  ) {
-    return isPublicStorefrontProduct(row)
+  if (isPublicAudienceSlice(slice)) {
+    if (!isPublicStorefrontProduct(row)) return false
+    if (isPublicAudienceListable) {
+      return isPublicAudienceListable({ db, product: row, slice })
+    }
   }
   return true
 }
@@ -380,6 +396,7 @@ export function createProductDocumentBuilder(
     sellerOperatorId: string
     extensions?: ReadonlyArray<ProductProjectionExtension>
     registry?: FieldPolicyRegistry
+    isPublicAudienceListable?: ProductDocumentListabilityPredicate
   },
 ): DocumentBuilder {
   const registry = context.registry ?? getProductsRegistry()
@@ -388,7 +405,7 @@ export function createProductDocumentBuilder(
     const rows = await db.select().from(products).where(eq(products.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
-    if (!shouldEmitForSlice(row, slice)) return null
+    if (!(await shouldEmitForSlice(db, row, slice, context.isPublicAudienceListable))) return null
 
     const baseProjection = productRowToProjection(row, {
       sellerOperatorId: context.sellerOperatorId,
