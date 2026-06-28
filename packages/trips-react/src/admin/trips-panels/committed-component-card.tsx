@@ -199,7 +199,7 @@ export function CommittedComponentCard({
   )
 }
 
-export function ComponentSetupCheckbox({
+function ComponentSetupCheckbox({
   id,
   checked,
   label,
@@ -230,7 +230,7 @@ export interface ComponentBookingSetup {
   generateInvoiceDocument: boolean
 }
 
-export function componentBookingSetupFor(component: TripComponent): ComponentBookingSetup {
+function componentBookingSetupFor(component: TripComponent): ComponentBookingSetup {
   const metadata = recordFromUnknown(component.metadata)
   const bookingSetup = recordFromUnknown(metadata?.bookingSetup)
   const draft = recordFromUnknown(metadata?.bookingDraftV1)

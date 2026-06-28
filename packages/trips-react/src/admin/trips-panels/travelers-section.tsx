@@ -30,7 +30,7 @@ export interface TripTraveler {
   role: TripTravelerRole
 }
 
-export function newTripTraveler(): TripTraveler {
+function newTripTraveler(): TripTraveler {
   return {
     localId: `tt_${Math.random().toString(36).slice(2, 10)}`,
     personId: null,
@@ -118,7 +118,7 @@ export function TripTravelersSection({
   )
 }
 
-export function BillingQuickAdd({
+function BillingQuickAdd({
   billingPersonId,
   existingPersonIds,
   onAdd,
@@ -190,7 +190,7 @@ export function BillingQuickAdd({
   )
 }
 
-export function RelatedPersonChip({
+function RelatedPersonChip({
   personId,
   billingPersonId,
   relationships,
@@ -259,11 +259,11 @@ export function formatPersonName(
   return name || person.email || null
 }
 
-export function formatRelationshipKind(kind: string): string {
+function formatRelationshipKind(kind: string): string {
   return kind.replaceAll("_", " ")
 }
 
-export function TripTravelerRow({
+function TripTravelerRow({
   traveler,
   isLead,
   onPatch,
@@ -432,7 +432,7 @@ export function TripTravelerRow({
   )
 }
 
-export function CategoryToggle({
+function CategoryToggle({
   value,
   onChange,
   disabled,
@@ -464,7 +464,7 @@ export function CategoryToggle({
   )
 }
 
-export function formatDateOnly(iso: string | null): string {
+function formatDateOnly(iso: string | null): string {
   if (!iso) return ""
   const parsed = new Date(iso)
   if (Number.isNaN(parsed.getTime())) return iso

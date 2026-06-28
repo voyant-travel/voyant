@@ -45,7 +45,7 @@ export function CatalogComponentOptions({
   )
 }
 
-export function CatalogProductOptionOptions({
+function CatalogProductOptionOptions({
   draft,
   options,
   onDraftChange,
@@ -128,7 +128,7 @@ export function CatalogProductOptionOptions({
   )
 }
 
-export function setDraftOptionQuantity(
+function setDraftOptionQuantity(
   draft: Draft,
   option: {
     id: string
@@ -161,7 +161,7 @@ export function setDraftOptionQuantity(
   }
 }
 
-export function CatalogAccommodationOptions({
+function CatalogAccommodationOptions({
   draft,
   shape,
   onDraftChange,
@@ -267,7 +267,7 @@ export function CatalogAccommodationOptions({
   )
 }
 
-export function CatalogExtrasOptions({
+function CatalogExtrasOptions({
   draft,
   shape,
   onDraftChange,
@@ -311,7 +311,7 @@ export function CatalogExtrasOptions({
   )
 }
 
-export function CatalogExtraRow({
+function CatalogExtraRow({
   draft,
   item,
   onDraftChange,
@@ -348,7 +348,7 @@ export function CatalogExtraRow({
   )
 }
 
-export function QuantityStepper({
+function QuantityStepper({
   value,
   onDecrement,
   onIncrement,

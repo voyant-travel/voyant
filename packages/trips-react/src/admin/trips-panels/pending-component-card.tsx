@@ -69,7 +69,7 @@ export function PendingComponentCard({
   )
 }
 
-export function PendingBody({
+function PendingBody({
   pending,
   onChange,
   travelers,

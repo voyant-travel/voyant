@@ -107,7 +107,7 @@ export function paymentScheduleToRows(
 // when the operator marks an installment as already-paid in the composer.
 // Operator-facing free text — kept terse and in English at the data layer so
 // the persisted note stays comparable across deploys / locales.
-export function paidScheduleNotes(
+function paidScheduleNotes(
   alreadyPaid: boolean,
   paymentDate: string | null,
   paymentMethod: string,
@@ -282,7 +282,7 @@ export function pendingToAddInput(
   }
 }
 
-export function pricingFromAmount(amountCents: number, pricingCurrency: string) {
+function pricingFromAmount(amountCents: number, pricingCurrency: string) {
   return {
     currency: pricingCurrency,
     subtotalAmountCents: amountCents,
@@ -291,12 +291,12 @@ export function pricingFromAmount(amountCents: number, pricingCurrency: string) 
   }
 }
 
-export function parseAmountCents(raw: string): number {
+function parseAmountCents(raw: string): number {
   const parsed = Number.parseFloat(raw || "0")
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) : 0
 }
 
-export function countAdults(travelers: TripTraveler[]): number {
+function countAdults(travelers: TripTraveler[]): number {
   return travelers.filter((t) => t.role === "lead" || t.role === "adult").length
 }
 
@@ -381,7 +381,7 @@ export function assertTripCreationRequirements(
   }
 }
 
-export function isRealTripEmail(value: string | null | undefined): boolean {
+function isRealTripEmail(value: string | null | undefined): boolean {
   const normalized = value?.trim().toLowerCase() ?? ""
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return false
   return !["noreply@example.com", "tbd@example.com", "traveler@example.com"].includes(normalized)
@@ -467,7 +467,7 @@ export function tripTravelerRoleFromStored(
 // Map our roster shape onto the catalog booking engine's `travelerEntryV1`:
 // drop empty/null fields it can't validate, translate `role` (lead/adult/...)
 // into `band` (adult/child/infant) + `isPrimary`.
-export function serializeTravelersForBookingDraft(
+function serializeTravelersForBookingDraft(
   travelers: TripTraveler[],
   messages: AdminComposerMessages,
 ) {
@@ -549,11 +549,11 @@ export function derivePayerEmail(
   return person?.email ?? ""
 }
 
-export function readRecord(value: unknown): Record<string, unknown> | null {
+function readRecord(value: unknown): Record<string, unknown> | null {
   return isRecord(value) ? value : null
 }
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }
 
@@ -565,7 +565,7 @@ export function stringFromRecord(
   return typeof value === "string" && value.trim().length > 0 ? value : undefined
 }
 
-export function numberFromRecord(
+function numberFromRecord(
   record: Record<string, unknown> | null | undefined,
   key: string,
 ): number | undefined {

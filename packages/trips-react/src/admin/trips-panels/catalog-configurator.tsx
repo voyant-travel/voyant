@@ -206,7 +206,7 @@ export function CatalogConfigurator({
   )
 }
 
-export function createCatalogBookingDraft({
+function createCatalogBookingDraft({
   vertical,
   entityId,
   sourceKind,
@@ -245,7 +245,7 @@ export function createCatalogBookingDraft({
   )
 }
 
-export function useProductDepartures(productId: string | null) {
+function useProductDepartures(productId: string | null) {
   const { baseUrl, fetcher } = useVoyantTripsContext()
   return useQuery({
     queryKey: ["admin-trips-product-departures", productId],
@@ -262,7 +262,7 @@ export function useProductDepartures(productId: string | null) {
   })
 }
 
-export function ProductDeparturePicker({
+function ProductDeparturePicker({
   slots,
   isLoading,
   isError,
@@ -317,7 +317,7 @@ export function ProductDeparturePicker({
   )
 }
 
-export function updateDraftSchedule(draft: Draft, startsAt: string, endsAt: string): Draft {
+function updateDraftSchedule(draft: Draft, startsAt: string, endsAt: string): Draft {
   const departureDate = startsAt ? startsAt.slice(0, 10) : undefined
   const departureTime = startsAt?.includes("T") ? startsAt.slice(11, 16) : undefined
   const dateRange =
@@ -338,7 +338,7 @@ export function updateDraftSchedule(draft: Draft, startsAt: string, endsAt: stri
   }
 }
 
-export function updateDraftDeparture(draft: Draft, slot: AvailabilitySlot): Draft {
+function updateDraftDeparture(draft: Draft, slot: AvailabilitySlot): Draft {
   const scheduledDraft = updateDraftSchedule(draft, slot.startsAt, slot.endsAt ?? "")
   return {
     ...scheduledDraft,
@@ -349,7 +349,7 @@ export function updateDraftDeparture(draft: Draft, slot: AvailabilitySlot): Draf
   }
 }
 
-export function updateDraftPax(draft: Draft, paxAdult: number): Draft {
+function updateDraftPax(draft: Draft, paxAdult: number): Draft {
   return {
     ...draft,
     configure: {
