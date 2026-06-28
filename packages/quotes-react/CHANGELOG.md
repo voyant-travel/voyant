@@ -1,5 +1,15 @@
 # @voyant-travel/crm-react
 
+## 0.135.1
+
+### Patch Changes
+
+- 9a1197b: Move the operator media upload and serve routes off the bare `/v1/*` surface and onto `/v1/admin/*`.
+
+  Uploads now post to `/v1/admin/uploads` and video tickets to `/v1/admin/uploads/video`; stored media is served from `/v1/admin/media/*`. The Hono app no longer mounts the bare `/v1/*` catch-all actor guard, and worker-runtime hosts can use `rewriteAppPath` to preserve compatibility for persisted legacy media URLs.
+
+  - @voyant-travel/quotes@0.123.6
+
 ## 0.135.0
 
 ### Patch Changes

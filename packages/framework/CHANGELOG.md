@@ -1,5 +1,37 @@
 # @voyant-travel/framework
 
+## 0.9.0
+
+### Minor Changes
+
+- 9a1197b: Move the operator media upload and serve routes off the bare `/v1/*` surface and onto `/v1/admin/*`.
+
+  Uploads now post to `/v1/admin/uploads` and video tickets to `/v1/admin/uploads/video`; stored media is served from `/v1/admin/media/*`. The Hono app no longer mounts the bare `/v1/*` catch-all actor guard, and worker-runtime hosts can use `rewriteAppPath` to preserve compatibility for persisted legacy media URLs.
+
+### Patch Changes
+
+- Updated dependencies [9a1197b]
+  - @voyant-travel/hono@0.118.0
+  - @voyant-travel/storefront@0.139.1
+  - @voyant-travel/finance@0.137.1
+  - @voyant-travel/inventory@0.5.6
+  - @voyant-travel/legal@0.137.1
+  - @voyant-travel/accommodations@0.108.3
+  - @voyant-travel/action-ledger@0.105.9
+  - @voyant-travel/bookings@0.137.1
+  - @voyant-travel/catalog@0.135.1
+  - @voyant-travel/commerce@0.19.1
+  - @voyant-travel/distribution@0.127.1
+  - @voyant-travel/flights@0.137.1
+  - @voyant-travel/identity@0.137.1
+  - @voyant-travel/mice@0.6.1
+  - @voyant-travel/notifications@0.116.8
+  - @voyant-travel/operations@0.5.3
+  - @voyant-travel/operator-settings@0.2.19
+  - @voyant-travel/quotes@0.123.6
+  - @voyant-travel/relationships@0.121.6
+  - @voyant-travel/trips@0.128.1
+
 ## 0.8.1
 
 ### Patch Changes
