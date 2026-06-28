@@ -199,6 +199,18 @@ const checks: ExportCheck[] = [
     ],
   },
   {
+    packageName: "@voyant-travel/inventory-react/components/product-detail",
+    entry: "packages/inventory-react/dist/components/product-detail.js",
+    requiredExports: [
+      "getProductMediaQueryOptions",
+      "getProductDetailMediaQueryOptions",
+      "getPricingCategoriesQueryOptions",
+      "getProductDetailPricingCategoriesQueryOptions",
+      "getProductOptionsQueryOptions",
+      "getProductDetailProductOptionsQueryOptions",
+    ],
+  },
+  {
     packageName: "@voyant-travel/storefront",
     entry: "packages/storefront/dist/index.js",
     requiredExports: [
@@ -361,8 +373,21 @@ function getPackageFilters(argv: string[]): Set<string> {
   return packageNames
 }
 
+function getWorkspacePackageName(packageName: string): string {
+  if (!packageName.startsWith("@")) {
+    return packageName.split("/")[0] ?? packageName
+  }
+
+  const parts = packageName.split("/")
+  return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : packageName
+}
+
 function shouldCheckPackage(packageName: string): boolean {
-  return packageFilters.size === 0 || packageFilters.has(packageName)
+  return (
+    packageFilters.size === 0 ||
+    packageFilters.has(packageName) ||
+    packageFilters.has(getWorkspacePackageName(packageName))
+  )
 }
 
 function hasStylesExport(exportsMap: Record<string, unknown> | undefined): boolean {
