@@ -1,5 +1,11 @@
 # @voyant-travel/finance
 
+## 0.137.2
+
+### Patch Changes
+
+- 4eda12a: Republish finance with the current finance-contracts dependency floor so payment-processing schema exports resolve from fresh standalone installs.
+
 ## 0.137.1
 
 ### Patch Changes
