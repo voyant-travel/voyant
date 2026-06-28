@@ -785,10 +785,26 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
       {
         bookingId: booking.id,
         scheduleType: "deposit",
+        status: "expired",
+        dueDate: "2026-04-15",
+        currency: "RON",
+        amountCents: 25000,
+      },
+      {
+        bookingId: booking.id,
+        scheduleType: "deposit",
         status: "paid",
         dueDate: "2026-05-01",
         currency: "RON",
         amountCents: 30000,
+      },
+      {
+        bookingId: booking.id,
+        scheduleType: "balance",
+        status: "cancelled",
+        dueDate: "2026-05-15",
+        currency: "RON",
+        amountCents: 95000,
       },
       {
         bookingId: booking.id,
@@ -822,6 +838,7 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
       balanceDueDate: "2026-06-01",
       roomsSummary: "1× DBL room",
     })
+    expect(paymentVariables.schedule).toHaveLength(2)
     expect(paymentVariables.schedule).toMatchObject([
       {
         index: 1,

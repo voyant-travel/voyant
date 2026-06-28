@@ -290,6 +290,77 @@ describe("buildContractVariableBindings", () => {
     expect(result.contract.source).toBe("self_service")
   })
 
+  it("ignores inactive payment schedule rows when folding contract variables", async () => {
+    const resolve = buildContractVariableBindings({
+      resolveOperatorProfile: () => null,
+      resolveOperatorPaymentInstructions: () => null,
+    })
+
+    const db = stubDb({
+      schedule: [
+        {
+          scheduleType: "deposit",
+          amountCents: 3000,
+          currency: "EUR",
+          dueDate: "2026-01-01",
+          status: "expired",
+        },
+        {
+          scheduleType: "balance",
+          amountCents: 17000,
+          currency: "EUR",
+          dueDate: "2026-01-15",
+          status: "cancelled",
+        },
+        {
+          scheduleType: "deposit",
+          amountCents: 5000,
+          currency: "EUR",
+          dueDate: "2026-02-01",
+          status: "paid",
+        },
+        {
+          scheduleType: "balance",
+          amountCents: 15000,
+          currency: "EUR",
+          dueDate: "2026-03-01",
+          status: "pending",
+        },
+      ],
+    })
+
+    const result = (await resolve({
+      db,
+      booking: { ...bookingBase },
+      travelers: [],
+      defaults: makeDefaults(),
+      bindings: null,
+    })) as AnyRecord
+
+    expect(result.booking.depositAmountCents).toBe(5000)
+    expect(result.booking.depositDueDate).toBe("2026-02-01")
+    expect(result.booking.balanceAmountCents).toBe(15000)
+    expect(result.booking.balanceDueDate).toBe("2026-03-01")
+    expect(result.payment.schedule).toEqual([
+      {
+        index: 1,
+        type: "deposit",
+        amountCents: 5000,
+        currency: "EUR",
+        dueDate: "2026-02-01",
+        status: "paid",
+      },
+      {
+        index: 2,
+        type: "balance",
+        amountCents: 15000,
+        currency: "EUR",
+        dueDate: "2026-03-01",
+        status: "pending",
+      },
+    ])
+  })
+
   it("promotes the acceptance marker and maps manual bookings to staff_issued", async () => {
     const acceptance = {
       templateId: "tpl_9",

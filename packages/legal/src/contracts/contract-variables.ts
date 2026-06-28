@@ -35,6 +35,10 @@ import { relationshipsService } from "@voyant-travel/relationships"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  type PaymentScheduleSummary,
+  summarizeBookingPaymentScheduleRows,
+} from "./payment-schedule-variables.js"
 import type { ResolveContractVariablesFn } from "./service-auto-generate-types.js"
 
 /**
@@ -324,50 +328,17 @@ async function resolveCustomerVariables(
   return null
 }
 
-interface ScheduleSummary {
-  entries: Array<{
-    index: number
-    type: string
-    amountCents: number
-    currency: string
-    dueDate: string
-    status: string
-  }>
-  depositAmountCents: number
-  depositDueDate: string
-  balanceAmountCents: number
-  balanceDueDate: string
-}
-
 async function loadBookingPaymentSchedule(
   db: PostgresJsDatabase,
   bookingId: string,
-): Promise<ScheduleSummary> {
+): Promise<PaymentScheduleSummary> {
   const rows = await db
     .select()
     .from(bookingPaymentSchedules)
     .where(eq(bookingPaymentSchedules.bookingId, bookingId))
     .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
 
-  const entries = rows.map((row, idx) => ({
-    index: idx + 1,
-    type: row.scheduleType,
-    amountCents: row.amountCents,
-    currency: row.currency,
-    dueDate: row.dueDate,
-    status: row.status,
-  }))
-
-  const deposit = rows.find((r) => r.scheduleType === "deposit")
-  const balance = rows.find((r) => r.scheduleType === "balance")
-
-  return {
-    entries,
-    depositAmountCents: deposit?.amountCents ?? 0,
-    depositDueDate: deposit?.dueDate ?? "",
-    balanceAmountCents: balance?.amountCents ?? 0,
-    balanceDueDate: balance?.dueDate ?? "",
-  }
+  return summarizeBookingPaymentScheduleRows(rows)
 }
 
 async function deriveRoomsSummary(db: PostgresJsDatabase, bookingId: string): Promise<string> {

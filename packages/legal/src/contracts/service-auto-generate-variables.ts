@@ -13,6 +13,10 @@ import { bookingPaymentSchedules, invoices, payments } from "@voyant-travel/fina
 import { and, asc, desc, eq, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  type PaymentScheduleSummary,
+  summarizeBookingPaymentScheduleRows,
+} from "./payment-schedule-variables.js"
 import type {
   AutoGenerateContractOptions,
   AutoGenerateContractRuntime,
@@ -363,14 +367,6 @@ interface BookingItemContext {
   roomOptionUnitIds: ReadonlySet<string>
 }
 
-interface PaymentScheduleSummary {
-  entries: DefaultContractVariables["payment"]["schedule"]
-  depositAmountCents: number
-  depositDueDate: string
-  balanceAmountCents: number
-  balanceDueDate: string
-}
-
 async function resolveTravelerTravelDetails(
   db: PostgresJsDatabase,
   bookingId: string,
@@ -548,23 +544,7 @@ async function resolveBookingPaymentScheduleVariables(
     .where(eq(bookingPaymentSchedules.bookingId, bookingId))
     .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
 
-  const deposit = rows.find((row) => row.scheduleType === "deposit")
-  const balance = rows.find((row) => row.scheduleType === "balance")
-
-  return {
-    entries: rows.map((row, index) => ({
-      index: index + 1,
-      type: row.scheduleType,
-      amountCents: row.amountCents,
-      currency: row.currency,
-      dueDate: row.dueDate,
-      status: row.status,
-    })),
-    depositAmountCents: deposit?.amountCents ?? 0,
-    depositDueDate: deposit?.dueDate ?? "",
-    balanceAmountCents: balance?.amountCents ?? 0,
-    balanceDueDate: balance?.dueDate ?? "",
-  }
+  return summarizeBookingPaymentScheduleRows(rows)
 }
 
 function deriveRoomsSummary(
