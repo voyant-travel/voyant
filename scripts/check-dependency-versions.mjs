@@ -1,31 +1,12 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
+import path from "node:path"
 
 const dependencySections = ["dependencies", "devDependencies", "optionalDependencies"]
 
 const catalogDependencies = readDefaultCatalogDependencies()
-const packageJsonFiles = execFileSync(
-  "rg",
-  [
-    "--files",
-    "-g",
-    "package.json",
-    "-g",
-    "!node_modules/**",
-    "-g",
-    "!dist/**",
-    "-g",
-    "!build/**",
-    "-g",
-    "!.claude/worktrees/**",
-  ],
-  { encoding: "utf8" },
-)
-  .trim()
-  .split("\n")
-  .filter(Boolean)
+const packageJsonFiles = listPackageJsonFiles(".")
 
 const violations = []
 
@@ -106,4 +87,33 @@ function readDefaultCatalogDependencies() {
   }
 
   return dependencies
+}
+
+function listPackageJsonFiles(rootDir) {
+  const packageJsonFiles = []
+  const ignoredDirectories = new Set([".git", ".turbo", "build", "dist", "node_modules"])
+
+  walk(rootDir)
+
+  return packageJsonFiles.sort()
+
+  function walk(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const fullPath = path.join(directory, entry.name)
+      const relativePath = path.relative(rootDir, fullPath).split(path.sep).join("/")
+
+      if (entry.isDirectory()) {
+        if (ignoredDirectories.has(entry.name) || relativePath.startsWith(".claude/worktrees/")) {
+          continue
+        }
+
+        walk(fullPath)
+        continue
+      }
+
+      if (entry.isFile() && entry.name === "package.json") {
+        packageJsonFiles.push(relativePath)
+      }
+    }
+  }
 }
