@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, vi } from "vitest"
 
 import { createLocalProvider } from "../../src/providers/local.js"
 import { createNotificationsRoutes } from "../../src/routes.js"
+import type { NotificationProvider } from "../../src/types.js"
 
 export const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -40,7 +41,10 @@ async function cleanupNotificationsTestData(
   `)
 }
 
-export function createNotificationsTestContext(options?: { eventBus?: EventBus }) {
+export function createNotificationsTestContext(options?: {
+  eventBus?: EventBus
+  providers?: ReadonlyArray<NotificationProvider>
+}) {
   let app!: Hono
   let db!: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
   const sink = vi.fn()
@@ -497,7 +501,7 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
     app.route(
       "/",
       createNotificationsRoutes({
-        providers: [createLocalProvider({ sink, channels: ["email"] })],
+        providers: options?.providers ?? [createLocalProvider({ sink, channels: ["email"] })],
         eventBus: options?.eventBus,
       }),
     )

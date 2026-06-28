@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@hono/zod-openapi": "catalog:",
+    "@types/node": "catalog:",
     "@voyant-travel/framework": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
