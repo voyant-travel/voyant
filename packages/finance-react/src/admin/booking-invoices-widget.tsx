@@ -59,7 +59,7 @@ export type BookingInvoicesWidgetProps = BookingDetailHostSlotContext
  * §4.7 cycle resolution: this package depends on `@voyant-travel/bookings-react/ui`, so
  * the bookings host cannot import the card — finance contributes it instead).
  *
- * Attachment uploads post to the starter-level `/v1/uploads` route through
+ * Attachment uploads post to the starter-level `/v1/admin/uploads` route through
  * the shared finance provider context (`baseUrl` + credentialed fetcher).
  */
 export function BookingInvoicesWidget({
@@ -80,7 +80,7 @@ export function BookingInvoicesWidget({
   const uploadInvoiceAttachment = async (file: File): Promise<BookingInvoiceDialogUpload> => {
     const body = new FormData()
     body.append("file", file)
-    const response = await fetcher(`${baseUrl}/v1/uploads`, { method: "POST", body })
+    const response = await fetcher(`${baseUrl}/v1/admin/uploads`, { method: "POST", body })
     if (!response.ok) {
       throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
     }

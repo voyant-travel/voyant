@@ -1,4 +1,5 @@
 import type { EventBus } from "@voyant-travel/core"
+import type { PaymentSession } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { createNetopiaClient, resolveNetopiaRuntimeOptions } from "./client.js"
@@ -26,7 +27,7 @@ export async function handleCallback(
     offset: 0,
   })
 
-  let session = lookup.data[0] ?? null
+  let session: PaymentSession | null = lookup.data[0] ?? null
   if (!session) {
     session = await financeService.getPaymentSessionById(db, orderId)
   }

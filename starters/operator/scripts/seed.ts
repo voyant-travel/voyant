@@ -2577,7 +2577,7 @@ async function seedBookingsAndFinance() {
         bookingId,
         type: "other",
         fileName: `${b.number}-voucher.pdf`,
-        fileUrl: `/v1/media/seed/${b.number}-voucher.pdf`,
+        fileUrl: `/v1/admin/media/seed/${b.number}-voucher.pdf`,
       })
     }
 

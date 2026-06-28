@@ -77,7 +77,7 @@ export interface BookingInvoiceDialogProps {
    * the dialog can attach it to the newly-created invoice. When omitted,
    * the attachments dropzone is hidden — the SmartBill-off branch can
    * still create the invoice, it just won't surface uploads. The
-   * template owns the upload endpoint (e.g. `/api/v1/uploads`) so the
+   * template owns the upload endpoint (e.g. `/api/v1/admin/uploads`) so the
    * dialog stays transport-agnostic.
    */
   uploadFile?: (file: File) => Promise<BookingInvoiceDialogUpload>

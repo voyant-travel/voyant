@@ -177,7 +177,7 @@ export interface CreateFinanceAdminExtensionOptions {
  * Cross-route links resolve through the semantic destinations declared
  * above. The supplier-invoices pages carry their previously app-owned wiring
  * package-side now: attachment uploads post to the starter-level
- * `/v1/uploads` route through the shared finance provider context (the
+ * `/v1/admin/uploads` route through the shared finance provider context (the
  * `BookingInvoicesWidget` precedent), inline supplier creation rides the
  * suppliers package's `useSupplierMutation`, and the allocation dialog's
  * cross-domain target search composes the bookings / products /

@@ -19,7 +19,7 @@ import { api } from "@/lib/api-client"
 const uploadMedia: NonNullable<ProductDetailHostValue["uploadMedia"]> = async (file) => {
   const formData = new FormData()
   formData.append("file", file)
-  const res = await fetch("/api/v1/uploads", {
+  const res = await fetch("/api/v1/admin/uploads", {
     method: "POST",
     body: formData,
     credentials: "include",
@@ -50,7 +50,7 @@ const renderOptionExtras = (productId: string, optionId: string) => (
  * `detailPageComponent` seam on `createInventoryAdminExtension`). The
  * package cannot compose these app-owned seams itself: the
  * availability-react option resource templates panel (a dependency cycle —
- * availability-react depends on products-react), the app's `/api/v1/uploads`
+ * availability-react depends on products-react), the app's `/api/v1/admin/uploads`
  * storage route, and the product-pre-selected new-booking deep link.
  */
 export function ProductDetailPage({ id }: { id: string }) {

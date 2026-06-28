@@ -101,7 +101,7 @@ export interface SupplierInvoiceDetailPageProps {
   onDownloadDocument?: () => void
   /**
    * Upload a file's bytes to durable storage (R2) and return its location.
-   * The template owns the upload endpoint (e.g. `/api/v1/uploads`). When
+   * The template owns the upload endpoint (e.g. `/api/v1/admin/uploads`). When
    * omitted, the attachment upload control is hidden.
    */
   uploadFile?: (file: File) => Promise<SupplierInvoiceAttachmentUpload>

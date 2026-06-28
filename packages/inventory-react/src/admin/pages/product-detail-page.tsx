@@ -24,7 +24,7 @@ import { createProductDetailRestApi } from "../product-detail-api.js"
  * code — REST transport from the shared products provider context,
  * messages/locale/breadcrumbs from `@voyant-travel/admin`, navigation through
  * semantic destinations (RFC §4.7), and a media upload handler that posts
- * to the starter-level `/v1/uploads` storage route.
+ * to the starter-level `/v1/admin/uploads` storage route.
  *
  * Hosts that need app-owned composition (e.g. the operator's
  * availability-react option resource templates panel — a cycle from here,
@@ -62,7 +62,7 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
     () => async (file) => {
       const formData = new FormData()
       formData.append("file", file)
-      const response = await fetcher(joinUrl(baseUrl, "/v1/uploads"), {
+      const response = await fetcher(joinUrl(baseUrl, "/v1/admin/uploads"), {
         method: "POST",
         body: formData,
       })

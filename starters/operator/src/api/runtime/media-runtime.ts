@@ -32,7 +32,7 @@ function resolveStorage(c: Context) {
   return createMediaStorage(c.env)
 }
 
-/** Build the upload + serve routes (`/v1/uploads`, `/v1/media/*`, …). */
+/** Build the upload + serve routes (`/v1/admin/uploads`, `/v1/admin/media/*`, …). */
 function buildMediaUploadAndServeRoutes() {
   return createMediaRoutes({
     resolveStorage,

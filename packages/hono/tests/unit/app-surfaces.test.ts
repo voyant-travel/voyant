@@ -159,19 +159,19 @@ describe("mountApp surface mounting", () => {
     expect(body.surface).toBe("public")
   })
 
-  // The per-module legacy `/v1/{name}` mount is gone (voyant#2276 step 4), but the
-  // catch-all guard still fail-closes bare `/v1/*` paths (e.g. lazy/bundle routes
-  // like `/v1/uploads`) to staff-only.
-  it("blocks non-staff actors on bare /v1/{name} paths", async () => {
+  // Bare `/v1/{name}` no longer has a catch-all actor guard. Only explicitly
+  // mounted webhook routes can live there; ordinary module surfaces stay under
+  // `/v1/admin/*` or `/v1/public/*`.
+  it("does not mount ordinary modules on bare /v1/{name} paths", async () => {
     const app = build("customer", [makeModule({ name: "things" })])
     const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(404)
   })
 
-  it("returns 401 on bare /v1/{name} paths when actor is unresolved", async () => {
+  it("returns 404 on bare /v1/{name} paths when actor is unresolved", async () => {
     const app = build(undefined, [makeModule({ name: "things" })])
     const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(404)
   })
 
   it("blocks customer on /v1/admin/*", async () => {

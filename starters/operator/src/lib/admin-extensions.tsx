@@ -577,7 +577,7 @@ function createPromotionsExtension(messages: AdminExtensionNavMessages) {
 // composes the app-owned pieces the package cannot import — the
 // availability-react option resource templates panel (availability-react
 // depends on products-react, so importing it there would be a cycle), the
-// app's /api/v1/uploads storage route, and the product-pre-selected
+// app's /api/v1/admin/uploads storage route, and the product-pre-selected
 // new-booking deep link.
 function createProductsExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.inventory({

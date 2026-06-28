@@ -6,16 +6,12 @@
  * shares the same content-type safety + key-parsing helpers; splitting it would
  * scatter a single storage-backed contract.
  *
- *   POST /v1/uploads               — multipart file upload → storage ticket
- *   POST /v1/admin/uploads         — (admin alias)
- *   POST /v1/uploads/video         — video upload ticket (deployment signer)
- *   POST /v1/admin/uploads/video   — (admin alias)
- *   GET  /v1/media/*               — serve stored bytes (hardened)
- *   GET  /v1/admin/media/*         — (admin alias)
+ *   POST /v1/admin/uploads         — multipart file upload → storage ticket
+ *   POST /v1/admin/uploads/video   — video upload ticket (deployment signer)
+ *   GET  /v1/admin/media/*         — serve stored bytes (hardened)
  *
- * These routes register ABSOLUTE paths (both the public `/v1/*` and the
- * `/v1/admin/*` aliases), so a deployment mounts the returned `Hono` at the
- * app root rather than under a module prefix.
+ * These routes register ABSOLUTE admin paths, so a deployment mounts the
+ * returned `Hono` at the app root rather than under a module prefix.
  *
  * The deployment supplies the storage-backed specifics via `options`:
  *   - `resolveStorage(c)` — the R2-backed `StorageProvider` for this request
@@ -277,7 +273,6 @@ export function createMediaRoutes(options: MediaRoutesOptions): Hono {
     })
   }
 
-  hono.post("/v1/uploads", handleUpload)
   hono.post("/v1/admin/uploads", handleUpload)
 
   const handleVideoUploadTicket = async (c: Context) => {
@@ -295,7 +290,6 @@ export function createMediaRoutes(options: MediaRoutesOptions): Hono {
     return c.json(ticket)
   }
 
-  hono.post("/v1/uploads/video", handleVideoUploadTicket)
   hono.post("/v1/admin/uploads/video", handleVideoUploadTicket)
 
   const handleMediaServe = async (c: Context) => {
@@ -324,7 +318,6 @@ export function createMediaRoutes(options: MediaRoutesOptions): Hono {
     return new Response(buffer, { headers })
   }
 
-  hono.get("/v1/media/*", handleMediaServe)
   hono.get("/v1/admin/media/*", handleMediaServe)
 
   return hono

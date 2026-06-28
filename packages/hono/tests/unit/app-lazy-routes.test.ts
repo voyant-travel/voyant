@@ -121,11 +121,12 @@ describe("mountApp lazy route mounting", () => {
 
   it("mounts a multi-prefix lazyRoutes family at explicit absolute paths, context bridged", async () => {
     const load = vi.fn(async () =>
-      // Absolute routes spanning several prefixes — a deployment-local bundle.
+      // Absolute routes spanning several admin prefixes — a deployment-local bundle.
       new Hono()
-        .get("/v1/uploads", (c) => c.json({ at: "uploads", db: (c.get("db") as string) ?? null }))
-        .get("/v1/media/x", (c) => c.json({ at: "media" }))
-        .get("/v1/admin/uploads", (c) => c.json({ at: "admin-uploads" })),
+        .get("/v1/admin/uploads", (c) =>
+          c.json({ at: "uploads", db: (c.get("db") as string) ?? null }),
+        )
+        .get("/v1/admin/media/x", (c) => c.json({ at: "media" })),
     )
     const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: structural db client -- owner: hono.
@@ -134,7 +135,7 @@ describe("mountApp lazy route mounting", () => {
         {
           module: { name: "media" },
           lazyRoutes: {
-            paths: ["/v1/uploads", "/v1/media/*", "/v1/admin/uploads"],
+            paths: ["/v1/admin/uploads", "/v1/admin/media/*"],
             load,
           },
         },
@@ -142,13 +143,13 @@ describe("mountApp lazy route mounting", () => {
       auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
     })
 
-    const uploads = await app.request("/v1/uploads", {}, TEST_ENV, TEST_CTX)
+    const uploads = await app.request("/v1/admin/uploads", {}, TEST_ENV, TEST_CTX)
     expect(uploads.status).toBe(200)
     const body = (await uploads.json()) as { at: string; db: string }
     expect(body.at).toBe("uploads")
     expect(body.db).toBe("leased-db") // context bridged across the forward
 
-    const media = await app.request("/v1/media/x", {}, TEST_ENV, TEST_CTX)
+    const media = await app.request("/v1/admin/media/x", {}, TEST_ENV, TEST_CTX)
     expect(media.status).toBe(200)
     expect(((await media.json()) as { at: string }).at).toBe("media")
 

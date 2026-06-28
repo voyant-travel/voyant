@@ -54,7 +54,7 @@ describe("product brochure routes", () => {
       filename: "brochure-prod_1.pdf",
       sizeBytes: 1234,
       storageKey: "brochures/products/prod_1/brochure-prod_1.pdf",
-      url: "/api/v1/media/brochures/products/prod_1/brochure-prod_1.pdf",
+      url: "/api/v1/admin/media/brochures/products/prod_1/brochure-prod_1.pdf",
     })
     const storage = storageStub()
     const app = mountApp(() => storage)

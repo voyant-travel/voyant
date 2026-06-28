@@ -17,7 +17,7 @@ export interface CreateQuoteMediaInput {
   altText?: string | null
 }
 
-/** Attach / remove quote media (the upload itself goes through `/v1/uploads`). */
+/** Attach / remove quote media (the upload itself goes through `/v1/admin/uploads`). */
 export function useQuoteMediaMutation() {
   const { baseUrl, fetcher } = useVoyantContext()
   const queryClient = useQueryClient()
@@ -39,14 +39,14 @@ export function useQuoteMediaMutation() {
     onSuccess: (_data, vars) => invalidate(vars.quoteId),
   })
 
-  // Upload a file to the deployment's media store (`/v1/uploads`), then attach
+  // Upload a file to the deployment's media store (`/v1/admin/uploads`), then attach
   // the resulting object to the quote. Multipart upload uses a raw cookie-auth
   // fetch (the shared JSON fetcher can't carry FormData).
   const upload = useMutation({
     mutationFn: async ({ quoteId, file }: { quoteId: string; file: File }) => {
       const form = new FormData()
       form.append("file", file)
-      const res = await fetch(`${baseUrl}/v1/uploads`, {
+      const res = await fetch(`${baseUrl}/v1/admin/uploads`, {
         method: "POST",
         body: form,
         credentials: "include",

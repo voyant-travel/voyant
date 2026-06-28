@@ -520,7 +520,7 @@ pages (trips, action-ledger, settings, account, flights, channel-sync,
 products editor, compose/journey pages, index redirects), two extension
 routes remain host route files: `finance/supplier-invoices/` index + detail.
 Their pages are wired to app-owned capabilities the contribution contract
-does not carry yet — direct file uploads to the app's `/v1/uploads`, inline
+does not carry yet — direct file uploads to the app's `/v1/admin/uploads`, inline
 supplier creation, and cross-domain target search — so their contributions
 stay metadata-only until the finance package API can express that wiring.
 `/bookings/new` is a new app-custom file (the owned-product picker +

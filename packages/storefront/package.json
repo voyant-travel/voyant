@@ -32,7 +32,7 @@
     "lint": "biome check src/",
     "test": "vitest run",
     "build": "pnpm run clean && tsc -p tsconfig.build.json",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
     "prepack": "pnpm run build",
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=storefront_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },

@@ -32,7 +32,7 @@ function openInNewTab(url: string): void {
  * `$id` param onto {@link SupplierInvoiceDetailPage} and carries the wiring
  * the operator route file used to hand-supply —
  *
- * - attachment uploads post to the starter-level `/v1/uploads` route
+ * - attachment uploads post to the starter-level `/v1/admin/uploads` route
  *   through the shared finance provider context (`baseUrl` + credentialed
  *   fetcher), the same path `BookingInvoicesWidget` uses;
  * - the allocation dialog's cross-domain target search composes the
@@ -64,7 +64,7 @@ export default function SupplierInvoiceDetailRoutePage({ params }: AdminRoutePag
   const uploadAttachment = async (file: File): Promise<SupplierInvoiceAttachmentUpload> => {
     const body = new FormData()
     body.append("file", file)
-    const response = await fetcher(`${baseUrl}/v1/uploads`, { method: "POST", body })
+    const response = await fetcher(`${baseUrl}/v1/admin/uploads`, { method: "POST", body })
     if (!response.ok) {
       throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
     }
