@@ -297,6 +297,49 @@ describe("Typesense catalog indexer", () => {
       hasOffer: true,
     })
   })
+
+  it("deletes documents through Typesense's reserved id field filter", async () => {
+    const documentsById = new Map<string, Record<string, unknown>>()
+    const client: TypesenseClient = {
+      collections: () => ({
+        create: async () => undefined,
+        update: async () => undefined,
+        delete: async () => undefined,
+        retrieve: async () => ({ name: "unused", fields: [] }),
+        documents: () => ({
+          import: async (documents: unknown[]) => {
+            for (const rawDocument of documents) {
+              const indexedDocument = rawDocument as Record<string, unknown>
+              documentsById.set(String(indexedDocument.id), indexedDocument)
+            }
+            return {}
+          },
+          delete: async (query) => {
+            if (query.filter_by !== "id:[prod_abc,prod_def]") {
+              return { num_deleted: 0 }
+            }
+            let numDeleted = 0
+            for (const id of ["prod_abc", "prod_def"]) {
+              if (documentsById.delete(id)) {
+                numDeleted += 1
+              }
+            }
+            return { num_deleted: numDeleted }
+          },
+          search: async () => ({ hits: [], found: documentsById.size }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({ client })
+
+    await indexer.upsert(slice, [
+      { id: "prod_abc", fields: { name: "Retreat" } },
+      { id: "prod_def", fields: { name: "Cruise" } },
+    ])
+    await indexer.delete(slice, ["prod_abc", "prod_def"])
+
+    expect([...documentsById.keys()]).toEqual([])
+  })
 })
 
 const document: IndexerDocument = { id: "prod_abc", fields: { name: "Retreat" } }
