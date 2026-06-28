@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter-tight";
 
 /* Tailwind v4 auto-detection does not scan published package code under
