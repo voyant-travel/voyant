@@ -1,8 +1,6 @@
+import { createAuthenticatedR2DocumentDownloadResolver } from "@voyant-travel/hono/document-download"
 import type { StorageProvider } from "@voyant-travel/storage"
-import {
-  createR2Provider,
-  R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE,
-} from "@voyant-travel/storage/providers/r2"
+import { createR2Provider } from "@voyant-travel/storage/providers/r2"
 
 const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
@@ -45,8 +43,6 @@ function createR2BucketStorage(
     ...(options.publicBaseUrl ? { publicBaseUrl: options.publicBaseUrl } : {}),
   })
 }
-
-const DEFAULT_DOCUMENT_URL_EXPIRES_IN = 60 * 5
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer)
@@ -134,35 +130,15 @@ export async function readDocumentContentBase64(
 export async function resolveDocumentDownloadUrl(
   env: CloudflareBindings,
   storageKey: string,
-  expiresIn = DEFAULT_DOCUMENT_URL_EXPIRES_IN,
+  _expiresIn?: number,
 ): Promise<string | null> {
-  const storage = createDocumentStorage(env)
-  if (!storage) return null
-  try {
-    return await storage.signedUrl(storageKey, expiresIn)
-  } catch (error) {
-    if (!isR2SignedUrlConfigurationError(error)) throw error
-  }
-  const apiBase = (
-    env.APP_URL?.trim() ||
-    env.API_BASE_URL?.trim() ||
-    env.DOCUMENTS_BASE_URL?.trim() ||
-    ""
-  ).replace(/\/$/, "")
-  const path = `/v1/admin/documents/files/${encodeStorageKeyPath(storageKey)}`
-  if (!apiBase) {
-    return path
-  }
-  return `${apiBase}${path}`
+  return authenticatedDocumentDownloadResolver(env, storageKey)
 }
 
-export function encodeStorageKeyPath(key: string): string {
-  return key
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/")
-}
-
-function isR2SignedUrlConfigurationError(error: unknown): boolean {
-  return error instanceof Error && error.message === R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE
-}
+const authenticatedDocumentDownloadResolver =
+  createAuthenticatedR2DocumentDownloadResolver<CloudflareBindings>({
+    apiBaseUrl: (env) =>
+      env.APP_URL?.trim() || env.API_BASE_URL?.trim() || env.DOCUMENTS_BASE_URL?.trim() || null,
+    routePrefix: "/v1/admin/documents/files",
+    bucketBindingName: "DOCUMENTS_BUCKET",
+  })

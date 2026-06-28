@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { resolveStoredDocumentDownload } from "../../src/document-download.js"
+import {
+  createAuthenticatedR2DocumentDownloadResolver,
+  encodeStorageKeyPath,
+  resolveStoredDocumentDownload,
+} from "../../src/document-download.js"
 
 describe("resolveStoredDocumentDownload", () => {
   it("uses resolver URLs for storage-backed documents and derives filenames", async () => {
@@ -102,5 +106,67 @@ describe("resolveStoredDocumentDownload", () => {
     await expect(
       resolveStoredDocumentDownload({ storageKey: "invoices/inv_123.pdf" }, { bindings: {} }),
     ).resolves.toEqual({ status: "resolver_not_configured" })
+  })
+})
+
+describe("createAuthenticatedR2DocumentDownloadResolver", () => {
+  it("builds authenticated route URLs and encodes storage key path segments", () => {
+    const resolver = createAuthenticatedR2DocumentDownloadResolver<{
+      API_BASE_URL: string
+      DOCUMENTS_BUCKET: unknown
+    }>({
+      apiBaseUrl: (bindings) => bindings.API_BASE_URL,
+      routePrefix: "/v1/admin/documents/files/",
+    })
+
+    expect(
+      resolver(
+        {
+          API_BASE_URL: "https://api.example.com/",
+          DOCUMENTS_BUCKET: {},
+        },
+        "contracts/2026 June/invoice #1.pdf",
+      ),
+    ).toBe(
+      "https://api.example.com/v1/admin/documents/files/contracts/2026%20June/invoice%20%231.pdf",
+    )
+  })
+
+  it("returns null when the expected bucket binding is absent", () => {
+    const resolver = createAuthenticatedR2DocumentDownloadResolver({
+      apiBaseUrl: "https://api.example.com",
+    })
+
+    expect(resolver({}, "contracts/example.pdf")).toBeNull()
+  })
+
+  it("allows deployments to disable the bucket binding guard", () => {
+    const resolver = createAuthenticatedR2DocumentDownloadResolver({
+      apiBaseUrl: "https://api.example.com/api",
+      routePrefix: "v1/admin/documents/files",
+      bucketBindingName: null,
+    })
+
+    expect(resolver({}, "contracts/example.pdf")).toBe(
+      "https://api.example.com/api/v1/admin/documents/files/contracts/example.pdf",
+    )
+  })
+
+  it("returns null when the API base URL is not configured", () => {
+    const resolver = createAuthenticatedR2DocumentDownloadResolver<{
+      DOCUMENTS_BUCKET: unknown
+    }>({
+      apiBaseUrl: () => "",
+    })
+
+    expect(resolver({ DOCUMENTS_BUCKET: {} }, "contracts/example.pdf")).toBeNull()
+  })
+})
+
+describe("encodeStorageKeyPath", () => {
+  it("encodes path segments without flattening folders", () => {
+    expect(encodeStorageKeyPath("contracts/2026 June/invoice #1.pdf")).toBe(
+      "contracts/2026%20June/invoice%20%231.pdf",
+    )
   })
 })

@@ -25,6 +25,26 @@ Routes must resolve envelopes through `resolveStoredDocumentDownload(...)` from
 fallbacks, filename derivation, and the `resolver_not_configured` state used by
 redirect-style download routes.
 
+For private Cloudflare R2 documents served through an authenticated Worker
+route, do not call `storage.signedUrl(storageKey)` unless the R2 provider has a
+real signer configured. Wire `resolveDocumentDownloadUrl` with
+`createAuthenticatedR2DocumentDownloadResolver(...)` instead:
+
+```ts
+import { createAuthenticatedR2DocumentDownloadResolver } from "@voyant-travel/hono/document-download"
+
+const resolveDocumentDownloadUrl = createAuthenticatedR2DocumentDownloadResolver({
+  apiBaseUrl: (bindings) => bindings.API_BASE_URL,
+  routePrefix: "/v1/admin/documents/files",
+  bucketBindingName: "DOCUMENTS_BUCKET",
+})
+```
+
+The resolver returns the authenticated application route and encodes each
+storage-key path segment independently, so folder structure is preserved.
+`publicUrl()` is only for permanent unauthenticated URLs and is not appropriate
+for sensitive documents.
+
 Generation routes omit `download` when no URL can be resolved. Redirect-style
 `/download` routes may convert `resolver_not_configured` into `501` and
 `not_available` into `404`.
