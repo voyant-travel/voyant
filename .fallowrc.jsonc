@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "apps/agent-control-plane/**",
+    "apps/agent-runner/**",
+    "apps/registry/**",
+    "packages/plugins/voyant-connect/**",
+    "packages/workflows-orchestrator-node/**"
+  ]
+}

@@ -10,6 +10,18 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { z } from "zod"
 import {
+  availabilityPickupPoints,
+  availabilityRules,
+  availabilitySlotPickups,
+  availabilitySlots,
+  availabilityStartTimes,
+  customPickupAreas,
+  locationPickupTimes,
+  pickupGroups,
+  pickupLocations,
+  productMeetingConfigs,
+} from "../../../packages/availability/src/schema.ts"
+import {
   bookingPiiAccessLog,
   bookings,
   bookingTravelers,
@@ -83,18 +95,6 @@ import {
 } from "../../../packages/inventory/src/schema-taxonomy.ts"
 import { legalTerms } from "../../../packages/legal/src/terms/schema.ts"
 import {
-  availabilityPickupPoints,
-  availabilityRules,
-  availabilitySlotPickups,
-  availabilitySlots,
-  availabilityStartTimes,
-  customPickupAreas,
-  locationPickupTimes,
-  pickupGroups,
-  pickupLocations,
-  productMeetingConfigs,
-} from "../../../packages/operations/src/availability/schema.ts"
-import {
   pipelines,
   quoteParticipants,
   quoteProducts,
@@ -117,7 +117,6 @@ import {
   activityLinks,
   activityParticipants,
   customFieldDefinitions,
-  customFieldValues,
 } from "../../../packages/relationships/src/schema-activities.ts"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -876,6 +875,10 @@ async function seedCustomers(ctx: SeedContext, plan: WorldPlan) {
         source: "operator_seed",
         sourceRef: ctx.labelSlug,
         tags: ["seeded", ctx.labelSlug, index === 0 ? "vip" : "standard"],
+        customFields: {
+          [customFieldDefinition.key]:
+            index === 0 ? "VIP experiential travel" : "Managed FIT and group travel",
+        },
         notes: customer.notes,
       })
       .returning()
@@ -885,14 +888,6 @@ async function seedCustomers(ctx: SeedContext, plan: WorldPlan) {
       organizationId: organization.id,
       authorId: ctx.ownerUserId,
       content: `Seeded account note: ${customer.notes}`,
-    })
-
-    await ctx.db.insert(customFieldValues).values({
-      id: newId("custom_field_values"),
-      definitionId: customFieldDefinition.id,
-      entityType: "organization",
-      entityId: organization.id,
-      textValue: index === 0 ? "VIP experiential travel" : "Managed FIT and group travel",
     })
 
     const contactIds: string[] = []
