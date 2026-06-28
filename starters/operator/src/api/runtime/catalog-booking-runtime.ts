@@ -26,11 +26,11 @@ import {
 
 const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
 
-export function getCatalogBookingDb(c: Context): AnyDrizzleDb {
+function getCatalogBookingDb(c: Context): AnyDrizzleDb {
   return (c.var as { db: AnyDrizzleDb }).db
 }
 
-export function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOptions {
+function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOptions {
   return {
     resolveDb: getCatalogBookingDb,
     resolveSourceRegistry: getBookingEngineRegistryFromContext,
@@ -98,7 +98,7 @@ async function listAvailabilitySlots(
  * deployment, including the three cross-package readers the package can't
  * import statically (would cycle through inventory/operations → catalog).
  */
-export function createOperatorCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
+function createOperatorCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
   return {
     booking: createOperatorCatalogBookingRoutesOptions(),
     resolveRegistry: getBookingEngineRegistryFromContext,

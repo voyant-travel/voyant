@@ -25,16 +25,8 @@ import type { Context } from "hono"
 import { resolveVoyantApiKey } from "../../lib/voyant-cloud"
 import { cardPaymentStarter } from "./card-payment"
 
-// Re-export the billing helpers so existing operator callers keep their import
-// surface (now sourced from the trips package).
-export {
-  formatTripBillingName,
-  readTripBilling,
-  splitTripBillingName,
-} from "@voyant-travel/trips/checkout"
-
 /** Build the deployment-specific trip-checkout dependencies for a request. */
-export function createTripCheckoutDeps(c: Context): TripCheckoutDeps {
+function createTripCheckoutDeps(c: Context): TripCheckoutDeps {
   return {
     db: getDb(c),
     quoteFx: (sourceCurrency, targetCurrency) => quoteFx(c, sourceCurrency, targetCurrency),
