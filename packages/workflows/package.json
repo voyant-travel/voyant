@@ -109,14 +109,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "zod": "^4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^20.19.43",
+    "@types/node": "catalog:",
     "esbuild": "0.28.1",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "zod": "^3.23.0 || ^4.0.0"

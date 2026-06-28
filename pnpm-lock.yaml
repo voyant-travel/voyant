@@ -4,6 +4,39 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@biomejs/biome':
+      specifier: ^2.5.1
+      version: 2.5.1
+    '@cloudflare/workers-types':
+      specifier: ^4.20260628.1
+      version: 4.20260628.1
+    '@hono/zod-openapi':
+      specifier: ^1.4.0
+      version: 1.4.0
+    '@types/node':
+      specifier: ^25.5.2
+      version: 25.5.2
+    drizzle-orm:
+      specifier: ^0.45.2
+      version: 0.45.2
+    tsx:
+      specifier: ^4.22.4
+      version: 4.22.4
+    typescript:
+      specifier: ^6.0.3
+      version: 6.0.3
+    vite:
+      specifier: ^8.1.0
+      version: 8.1.0
+    vitest:
+      specifier: ^4.1.9
+      version: 4.1.9
+    zod:
+      specifier: ^4.4.3
+      version: 4.4.3
+
 overrides:
   '@vercel/node>typescript': ^5.9.0
   '@vercel/node>ts-node': 10.9.2
@@ -30,7 +63,7 @@ importers:
   .:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.5.1
+        specifier: 'catalog:'
         version: 2.5.1
       '@changesets/apply-release-plan':
         specifier: ^7.1.1
@@ -84,13 +117,13 @@ importers:
         specifier: ^7.8.5
         version: 7.8.5
       tsx:
-        specifier: ^4.22.4
+        specifier: 'catalog:'
         version: 4.22.4
       turbo:
         specifier: ^2.10.0
         version: 2.10.0
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   apps/catalog-demo-api:
@@ -108,7 +141,7 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
@@ -120,11 +153,11 @@ importers:
         specifier: ^3.4.9
         version: 3.4.9
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/node':
-        specifier: ^25.5.2
+        specifier: 'catalog:'
         version: 25.5.2
       '@types/pg':
         specifier: ^8.15.6
@@ -136,13 +169,13 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       tsx:
-        specifier: ^4.22.4
+        specifier: 'catalog:'
         version: 4.22.4
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   apps/flights-demo-api:
@@ -157,7 +190,7 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
@@ -169,11 +202,11 @@ importers:
         specifier: ^3.4.9
         version: 3.4.9
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/node':
-        specifier: ^25.5.2
+        specifier: 'catalog:'
         version: 25.5.2
       '@types/pg':
         specifier: ^8.15.6
@@ -185,13 +218,13 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       tsx:
-        specifier: ^4.22.4
+        specifier: 'catalog:'
         version: 4.22.4
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   apps/scripts:
@@ -224,29 +257,29 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/node':
-        specifier: ^25.5.2
+        specifier: 'catalog:'
         version: 25.5.2
       tsx:
-        specifier: ^4.22.4
+        specifier: 'catalog:'
         version: 4.22.4
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/accommodations:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/accommodations-contracts':
         specifier: workspace:^
@@ -273,13 +306,13 @@ importers:
         specifier: workspace:^
         version: link:../operations
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -289,10 +322,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/accommodations-contracts:
@@ -301,23 +334,23 @@ importers:
         specifier: workspace:^
         version: link:../catalog-contracts
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/action-ledger:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
@@ -329,13 +362,13 @@ importers:
         specifier: workspace:^
         version: link:../hono
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -345,10 +378,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/action-ledger-react:
@@ -400,10 +433,10 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/admin:
@@ -455,10 +488,10 @@ importers:
         specifier: 3.9.0
         version: 3.9.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react-is@18.3.1)(react@19.2.7)(redux@5.0.1)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/admin-app:
@@ -509,10 +542,10 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/admin-client:
@@ -521,17 +554,17 @@ importers:
         specifier: workspace:^
         version: link:../admin-contracts
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/admin-contracts:
@@ -552,17 +585,17 @@ importers:
         specifier: workspace:^
         version: link:../relationships-contracts
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/admin-react:
@@ -596,13 +629,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/allotments:
@@ -611,10 +644,10 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/auth:
@@ -632,17 +665,17 @@ importers:
         specifier: 1.6.22
         version: 1.6.22(@cloudflare/workers-types@4.20260628.1)(@opentelemetry/api@1.9.0)(@tanstack/react-start@1.168.26(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(rollup@4.60.2)(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9))(mongodb@7.1.0(socks@2.8.7))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(solid-js@1.9.11)(vitest@4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)))
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
     devDependencies:
       '@types/node':
-        specifier: 25.5.2
+        specifier: 'catalog:'
         version: 25.5.2
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/auth-react:
@@ -688,13 +721,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/availability:
@@ -703,7 +736,7 @@ importers:
         specifier: workspace:^
         version: link:../db
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -713,16 +746,16 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/bookings:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/action-ledger':
         specifier: workspace:^
@@ -746,13 +779,13 @@ importers:
         specifier: workspace:^
         version: link:../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -762,7 +795,7 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/bookings-contracts:
@@ -771,17 +804,17 @@ importers:
         specifier: workspace:^
         version: link:../schema-kit
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/bookings-react:
@@ -866,19 +899,19 @@ importers:
         specifier: ^7.80.0
         version: 7.80.0(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/catalog:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
@@ -893,13 +926,13 @@ importers:
         specifier: workspace:^
         version: link:../hono
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -909,10 +942,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/catalog-authoring:
@@ -946,32 +979,32 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/catalog-contracts:
     dependencies:
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/catalog-react:
@@ -1029,19 +1062,19 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/charters:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/bookings':
         specifier: workspace:^
@@ -1065,13 +1098,13 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-test-utils':
@@ -1084,26 +1117,26 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/charters-contracts:
     dependencies:
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/charters-react:
@@ -1149,19 +1182,19 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/commerce:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/bookings':
         specifier: workspace:^
@@ -1197,7 +1230,7 @@ importers:
         specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
@@ -1206,7 +1239,7 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/legal':
@@ -1222,10 +1255,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/commerce-react:
@@ -1283,13 +1316,13 @@ importers:
         specifier: ^7.80.0
         version: 7.80.0(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/core:
@@ -1298,13 +1331,13 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/cruises:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/bookings':
         specifier: workspace:^
@@ -1328,13 +1361,13 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-test-utils':
@@ -1347,10 +1380,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/cruises-contracts:
@@ -1359,17 +1392,17 @@ importers:
         specifier: workspace:^
         version: link:../catalog-contracts
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/cruises-react:
@@ -1415,13 +1448,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/db:
@@ -1436,7 +1469,7 @@ importers:
         specifier: workspace:^
         version: link:../schema-kit
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       postgres:
         specifier: ^3.4.9
@@ -1445,7 +1478,7 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -1455,16 +1488,16 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/distribution:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/bookings':
         specifier: workspace:^
@@ -1494,13 +1527,13 @@ importers:
         specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -1510,7 +1543,7 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/distribution-react:
@@ -1571,35 +1604,35 @@ importers:
         specifier: ^7.80.0
         version: 7.80.0(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/extras-contracts:
     dependencies:
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/finance:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/action-ledger':
         specifier: workspace:^
@@ -1632,7 +1665,7 @@ importers:
         specifier: workspace:^
         version: link:../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       fflate:
         specifier: ^0.8.2
@@ -1641,7 +1674,7 @@ importers:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -1651,7 +1684,7 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/finance-contracts:
@@ -1660,17 +1693,17 @@ importers:
         specifier: workspace:^
         version: link:../schema-kit
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/finance-react:
@@ -1740,13 +1773,13 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/flights:
@@ -1767,13 +1800,13 @@ importers:
         specifier: workspace:^
         version: link:../hono
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -1783,10 +1816,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/flights-contracts:
@@ -1795,17 +1828,17 @@ importers:
         specifier: workspace:^
         version: link:../catalog-contracts
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/flights-react:
@@ -1863,13 +1896,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/framework:
@@ -1933,7 +1966,7 @@ importers:
         version: link:../trips
     devDependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/hono':
         specifier: workspace:^
@@ -1945,10 +1978,10 @@ importers:
         specifier: 4.12.25
         version: 4.12.25
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/framework-migrations:
@@ -1963,16 +1996,16 @@ importers:
         specifier: ^8.22.0
         version: 8.22.0
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/hono:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
@@ -1993,17 +2026,17 @@ importers:
         specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20260628.1
+        specifier: 'catalog:'
         version: 4.20260628.1
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
@@ -2012,10 +2045,10 @@ importers:
         specifier: workspace:^
         version: link:../workflows-orchestrator
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/i18n:
@@ -2036,13 +2069,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/identity:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
@@ -2060,13 +2093,13 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -2076,7 +2109,7 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/identity-contracts:
@@ -2085,17 +2118,17 @@ importers:
         specifier: workspace:^
         version: link:../schema-kit
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/identity-react:
@@ -2156,19 +2189,19 @@ importers:
         specifier: ^7.80.0
         version: 7.80.0(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/inventory:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/action-ledger':
         specifier: workspace:^
@@ -2207,7 +2240,7 @@ importers:
         specifier: workspace:^
         version: link:../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
@@ -2222,7 +2255,7 @@ importers:
         specifier: ^2.17.5
         version: 2.17.5
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/sanitize-html':
@@ -2235,10 +2268,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/inventory-react:
@@ -2311,19 +2344,19 @@ importers:
         specifier: ^7.80.0
         version: 7.80.0(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/legal:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/action-ledger':
         specifier: workspace:^
@@ -2362,13 +2395,13 @@ importers:
         specifier: workspace:^
         version: link:../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-test-utils':
@@ -2381,10 +2414,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/legal-contracts:
@@ -2396,17 +2429,17 @@ importers:
         specifier: workspace:^
         version: link:../templating
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/legal-react:
@@ -2476,19 +2509,19 @@ importers:
         specifier: ^7.80.0
         version: 7.80.0(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/mice:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/accommodations':
         specifier: workspace:^
@@ -2506,13 +2539,13 @@ importers:
         specifier: workspace:^
         version: link:../operations
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -2522,10 +2555,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/mice-react:
@@ -2574,19 +2607,19 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/notifications:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/bookings':
         specifier: workspace:^
@@ -2613,7 +2646,7 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
@@ -2622,7 +2655,7 @@ importers:
         specifier: ^10.27.1
         version: 10.27.1
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -2632,10 +2665,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/notifications-react:
@@ -2690,13 +2723,13 @@ importers:
         specifier: ^7.80.0
         version: 7.80.0(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/observability-sentry:
@@ -2708,10 +2741,10 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/octo:
@@ -2735,26 +2768,26 @@ importers:
         specifier: workspace:^
         version: link:../operations
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/openapi:
     devDependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.27)(zod@4.4.3)
       '@voyant-travel/framework':
         specifier: workspace:^
@@ -2766,16 +2799,16 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: 4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/operations:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/allotments':
         specifier: workspace:^
@@ -2802,13 +2835,13 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -2818,10 +2851,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/operations-react:
@@ -2882,19 +2915,19 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/operator-settings:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/db':
         specifier: workspace:^
@@ -2906,13 +2939,13 @@ importers:
         specifier: workspace:^
         version: link:../hono
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -2922,10 +2955,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/catalog-demo:
@@ -2938,10 +2971,10 @@ importers:
         specifier: workspace:^
         version: link:../../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/flights-demo:
@@ -2953,10 +2986,10 @@ importers:
         specifier: workspace:^
         version: link:../../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/netopia:
@@ -2977,23 +3010,23 @@ importers:
         specifier: workspace:^
         version: link:../../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/payload-cms:
@@ -3005,17 +3038,17 @@ importers:
         specifier: workspace:^
         version: link:../../utils
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/sanity-cms:
@@ -3027,17 +3060,17 @@ importers:
         specifier: workspace:^
         version: link:../../utils
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/smartbill:
@@ -3058,13 +3091,13 @@ importers:
         specifier: workspace:^
         version: link:../../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@tanstack/react-query':
@@ -3095,10 +3128,10 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/products-contracts:
@@ -3110,23 +3143,23 @@ importers:
         specifier: workspace:^
         version: link:../schema-kit
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/quotes:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
@@ -3147,13 +3180,13 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -3163,23 +3196,23 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/quotes-contracts:
     dependencies:
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/quotes-react:
@@ -3234,13 +3267,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/react:
@@ -3261,10 +3294,10 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/realtime:
@@ -3283,10 +3316,10 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/realtime-react:
@@ -3313,16 +3346,16 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/relationships:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/action-ledger':
         specifier: workspace:^
@@ -3349,13 +3382,13 @@ importers:
         specifier: workspace:^
         version: link:../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -3365,7 +3398,7 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/relationships-contracts:
@@ -3374,17 +3407,17 @@ importers:
         specifier: workspace:^
         version: link:../schema-kit
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/relationships-react:
@@ -3436,13 +3469,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/schema-kit:
@@ -3451,17 +3484,17 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/storage:
@@ -3473,19 +3506,19 @@ importers:
         specifier: 4.12.25
         version: 4.12.25
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/storefront:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/bookings':
         specifier: workspace:^
@@ -3512,13 +3545,13 @@ importers:
         specifier: workspace:^
         version: link:../utils
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/identity':
@@ -3543,10 +3576,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/storefront-react:
@@ -3583,13 +3616,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/storefront-sdk:
@@ -3607,13 +3640,13 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/suppliers-contracts:
@@ -3622,17 +3655,17 @@ importers:
         specifier: workspace:^
         version: link:../schema-kit
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/templating:
@@ -3645,10 +3678,10 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/test-utils:
@@ -3661,22 +3694,22 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/trips:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/bookings':
         specifier: workspace:^
@@ -3706,13 +3739,13 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -3722,10 +3755,10 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/trips-react:
@@ -3789,13 +3822,13 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/types:
@@ -3804,17 +3837,17 @@ importers:
         specifier: workspace:^
         version: link:../db
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: 4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/typescript-config: {}
@@ -3912,15 +3945,15 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.3.1
         version: 4.3.1
       '@types/node':
-        specifier: ^20.19.43
-        version: 20.19.43
+        specifier: 'catalog:'
+        version: 25.5.2
       '@types/react':
         specifier: ^19.2.17
         version: 19.2.17
@@ -3937,7 +3970,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
   packages/utils:
@@ -3949,7 +3982,7 @@ importers:
         specifier: workspace:^
         version: link:../types
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       liquidjs:
         specifier: ^10.27.1
@@ -3958,20 +3991,20 @@ importers:
         specifier: ^1.17.1
         version: 1.17.1
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/node':
-        specifier: ^25.5.2
+        specifier: 'catalog:'
         version: 25.5.2
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: 4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/vite-config:
@@ -3980,13 +4013,13 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vite:
-        specifier: ^8.1.0
+        specifier: 'catalog:'
         version: 8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/worker-runtime:
@@ -3995,16 +4028,16 @@ importers:
         specifier: workspace:^
         version: link:../typescript-config
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/workflow-runs:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
@@ -4022,13 +4055,13 @@ importers:
         specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
         version: 4.12.25
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
@@ -4041,21 +4074,21 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/workflows:
     dependencies:
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/node':
-        specifier: ^20.19.43
-        version: 20.19.43
+        specifier: 'catalog:'
+        version: 25.5.2
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -4063,11 +4096,11 @@ importers:
         specifier: 0.28.1
         version: 0.28.1
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
-        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@20.19.43)(typescript@6.0.3))(vite@8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/workflows-orchestrator:
     dependencies:
@@ -4075,15 +4108,15 @@ importers:
         specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       pg:
         specifier: ^8.22.0
         version: 8.22.0
     devDependencies:
       '@types/node':
-        specifier: ^20.19.43
-        version: 20.19.43
+        specifier: 'catalog:'
+        version: 25.5.2
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
@@ -4094,11 +4127,11 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
-        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@20.19.43)(typescript@6.0.3))(vite@8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/workflows-react:
     dependencies:
@@ -4137,10 +4170,10 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   starters/federated-operator:
@@ -4152,7 +4185,7 @@ importers:
         specifier: ^5.2.7
         version: 5.2.7
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@neondatabase/serverless':
         specifier: ^1.1.0
@@ -4224,7 +4257,7 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono:
         specifier: 4.12.25
@@ -4266,7 +4299,7 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
       zustand:
         specifier: ^5.0.14
@@ -4276,7 +4309,7 @@ importers:
         specifier: ^1.42.3
         version: 1.42.3(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@4.20260628.1))
       '@cloudflare/workers-types':
-        specifier: ^4.20260628.1
+        specifier: 'catalog:'
         version: 4.20260628.1
       '@tailwindcss/vite':
         specifier: ^4.3.1
@@ -4285,7 +4318,7 @@ importers:
         specifier: ^0.8.1
         version: 0.8.1(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       '@types/node':
-        specifier: ^25.5.2
+        specifier: 'catalog:'
         version: 25.5.2
       '@types/pg':
         specifier: ^8.15.6
@@ -4318,16 +4351,16 @@ importers:
         specifier: ^29.1.1
         version: 29.1.1(@noble/hashes@2.2.0)
       tsx:
-        specifier: ^4.22.4
+        specifier: 'catalog:'
         version: 4.22.4
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vite:
-        specifier: ^8.1.0
+        specifier: 'catalog:'
         version: 8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       wrangler:
         specifier: ^4.105.0
@@ -4348,7 +4381,7 @@ importers:
         specifier: ^5.2.7
         version: 5.2.7
       '@hono/zod-openapi':
-        specifier: ^1.4.0
+        specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@neondatabase/serverless':
         specifier: ^1.1.0
@@ -4606,7 +4639,7 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       embla-carousel-react:
         specifier: ^8.6.0
@@ -4669,17 +4702,17 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20260628.1
+        specifier: 'catalog:'
         version: 4.20260628.1
       '@tanstack/devtools-vite':
         specifier: ^0.8.1
         version: 0.8.1(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       '@types/node':
-        specifier: ^25.5.2
+        specifier: 'catalog:'
         version: 25.5.2
       '@types/pg':
         specifier: ^8.15.6
@@ -4715,16 +4748,16 @@ importers:
         specifier: ^7.0.1
         version: 7.0.1(rolldown@1.1.3)(rollup@4.60.2)
       tsx:
-        specifier: ^4.22.4
+        specifier: 'catalog:'
         version: 4.22.4
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vite:
-        specifier: ^8.1.0
+        specifier: 'catalog:'
         version: 8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)
       vitest:
-        specifier: ^4.1.9
+        specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       wrangler:
         specifier: ^4.105.0
@@ -7056,9 +7089,6 @@ packages:
 
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
-
-  '@types/node@20.19.43':
-    resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
 
   '@types/node@25.5.2':
     resolution: {integrity: sha512-tO4ZIRKNC+MDWV4qKVZe3Ql/woTnmHDr5JD8UI5hn2pwBrHEwOEMZK7WlNb5RKB6EoJ02gwmQS9OrjuFnZYdpg==}
@@ -10118,9 +10148,6 @@ packages:
   uncrypto@0.1.3:
     resolution: {integrity: sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==}
 
-  undici-types@6.21.0:
-    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
-
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
@@ -11568,34 +11595,12 @@ snapshots:
   '@inquirer/ansi@1.0.2':
     optional: true
 
-  '@inquirer/confirm@5.1.21(@types/node@20.19.43)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
-    optionalDependencies:
-      '@types/node': 20.19.43
-    optional: true
-
   '@inquirer/confirm@5.1.21(@types/node@25.5.2)':
     dependencies:
       '@inquirer/core': 10.3.2(@types/node@25.5.2)
       '@inquirer/type': 3.0.10(@types/node@25.5.2)
     optionalDependencies:
       '@types/node': 25.5.2
-    optional: true
-
-  '@inquirer/core@10.3.2(@types/node@20.19.43)':
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
-      cli-width: 4.1.0
-      mute-stream: 2.0.0
-      signal-exit: 4.1.0
-      wrap-ansi: 6.2.0
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 20.19.43
     optional: true
 
   '@inquirer/core@10.3.2(@types/node@25.5.2)':
@@ -11620,11 +11625,6 @@ snapshots:
       '@types/node': 25.5.2
 
   '@inquirer/figures@1.0.15':
-    optional: true
-
-  '@inquirer/type@3.0.10(@types/node@20.19.43)':
-    optionalDependencies:
-      '@types/node': 20.19.43
     optional: true
 
   '@inquirer/type@3.0.10(@types/node@25.5.2)':
@@ -12896,10 +12896,6 @@ snapshots:
 
   '@types/node@12.20.55': {}
 
-  '@types/node@20.19.43':
-    dependencies:
-      undici-types: 6.21.0
-
   '@types/node@25.5.2':
     dependencies:
       undici-types: 7.18.2
@@ -12959,15 +12955,6 @@ snapshots:
       '@vitest/utils': 4.1.9
       chai: 6.2.2
       tinyrainbow: 3.1.0
-
-  '@vitest/mocker@4.1.9(msw@2.12.14(@types/node@20.19.43)(typescript@6.0.3))(vite@8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))':
-    dependencies:
-      '@vitest/spy': 4.1.9
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      msw: 2.12.14(@types/node@20.19.43)(typescript@6.0.3)
-      vite: 8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)
 
   '@vitest/mocker@4.1.9(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))':
     dependencies:
@@ -14725,32 +14712,6 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msw@2.12.14(@types/node@20.19.43)(typescript@6.0.3):
-    dependencies:
-      '@inquirer/confirm': 5.1.21(@types/node@20.19.43)
-      '@mswjs/interceptors': 0.41.9
-      '@open-draft/deferred-promise': 2.2.0
-      '@types/statuses': 2.0.6
-      cookie: 1.1.1
-      graphql: 16.14.2
-      headers-polyfill: 4.0.3
-      is-node-process: 1.2.0
-      outvariant: 1.4.3
-      path-to-regexp: 6.3.0
-      picocolors: 1.1.1
-      rettime: 0.10.1
-      statuses: 2.0.2
-      strict-event-emitter: 0.5.1
-      tough-cookie: 6.0.1
-      type-fest: 5.7.0
-      until-async: 3.0.2
-      yargs: 17.7.3
-    optionalDependencies:
-      typescript: 6.0.3
-    transitivePeerDependencies:
-      - '@types/node'
-    optional: true
-
   msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3):
     dependencies:
       '@inquirer/confirm': 5.1.21(@types/node@25.5.2)
@@ -16001,8 +15962,6 @@ snapshots:
   uncrypto@0.1.3:
     optional: true
 
-  undici-types@6.21.0: {}
-
   undici-types@7.18.2: {}
 
   undici@7.28.0: {}
@@ -16101,23 +16060,6 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
-  vite@8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3):
-    dependencies:
-      lightningcss: 1.32.0
-      picomatch: 4.0.4
-      postcss: 8.5.15
-      rolldown: 1.1.3
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 20.19.43
-      esbuild: 0.28.1
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      sass: 1.77.4
-      terser: 5.16.9
-      tsx: 4.22.4
-      yaml: 2.8.3
-
   vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3):
     dependencies:
       lightningcss: 1.32.0
@@ -16138,35 +16080,6 @@ snapshots:
   vitefu@1.1.3(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)):
     optionalDependencies:
       vite: 8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)
-
-  vitest@4.1.9(@opentelemetry/api@1.9.0)(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@20.19.43)(typescript@6.0.3))(vite@8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)):
-    dependencies:
-      '@vitest/expect': 4.1.9
-      '@vitest/mocker': 4.1.9(msw@2.12.14(@types/node@20.19.43)(typescript@6.0.3))(vite@8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-      '@vitest/pretty-format': 4.1.9
-      '@vitest/runner': 4.1.9
-      '@vitest/snapshot': 4.1.9
-      '@vitest/spy': 4.1.9
-      '@vitest/utils': 4.1.9
-      es-module-lexer: 2.1.0
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.1.3
-      pathe: 2.0.3
-      picomatch: 4.0.4
-      std-env: 4.1.0
-      tinybench: 2.9.0
-      tinyexec: 1.2.4
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.0
-      vite: 8.1.0(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.0
-      '@types/node': 20.19.43
-      jsdom: 29.1.1(@noble/hashes@2.2.0)
-    transitivePeerDependencies:
-      - msw
 
   vitest@4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.0(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)):
     dependencies:

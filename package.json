@@ -45,7 +45,7 @@
     "verify:framework-bom": "node scripts/generate-framework-bom.mjs",
     "verify:framework-migration-bundle": "node scripts/generate-framework-migration-bundle.mjs",
     "verify:migration-replay-parity": "node scripts/verify-migration-replay-parity.mjs",
-    "verify:architecture": "pnpm verify:tenant-scoping && pnpm verify:route-authoring && pnpm verify:public-cache-policy && pnpm verify:cloudflare-entrypoints && pnpm verify:client-package-boundaries && pnpm verify:workflows-package-surface && pnpm verify:accommodation-resale-boundary && pnpm verify:retail-spine-closure && pnpm verify:migration-boundaries && pnpm verify:migration-cutline && pnpm verify:v1-package-cleanup && pnpm verify:lockstep-membership && pnpm verify:admin-composition-drift && pnpm verify:framework-bom && pnpm verify:migration-replay-parity && pnpm verify:dep-paths && pnpm verify:dist-configs",
+    "verify:architecture": "pnpm verify:tenant-scoping && pnpm verify:route-authoring && pnpm verify:public-cache-policy && pnpm verify:cloudflare-entrypoints && pnpm verify:client-package-boundaries && pnpm verify:workflows-package-surface && pnpm verify:accommodation-resale-boundary && pnpm verify:retail-spine-closure && pnpm verify:migration-boundaries && pnpm verify:migration-cutline && pnpm verify:v1-package-cleanup && pnpm verify:lockstep-membership && pnpm verify:admin-composition-drift && pnpm verify:framework-bom && pnpm verify:migration-replay-parity && pnpm verify:dep-paths && pnpm verify:dist-configs && pnpm verify:dependency-versions",
     "verify:agent-quality": "node scripts/check-agent-code-quality.mjs",
     "verify:agent-quality:changed": "node scripts/check-agent-code-quality.mjs --changed",
     "verify:fast": "pnpm lint:changed && pnpm verify:agent-quality:changed && pnpm verify:date-picker-single-source && pnpm verify:ui-components-barrel && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck:affected && pnpm test:affected && pnpm verify:architecture",
@@ -58,6 +58,7 @@
     "test": "node scripts/run-tests.cjs",
     "test:affected": "turbo run test --affected --continue --output-logs=new-only",
     "test:bookings:integration": "node scripts/run-bookings-integration-tests.mjs",
+    "verify:dependency-versions": "node scripts/check-dependency-versions.mjs",
     "deps:outdated": "pnpm -r outdated",
     "deps:unused": "pnpm -r exec npx --yes depcheck --json || true",
     "db:build": "turbo run build --filter=\"@voyant-travel/db\"",
@@ -75,7 +76,7 @@
     "verify:dist-configs": "node scripts/check-package-dist-configs.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.1",
+    "@biomejs/biome": "catalog:",
     "@changesets/apply-release-plan": "^7.1.1",
     "@changesets/assemble-release-plan": "^6.0.10",
     "@changesets/cli": "^2.31.0",
@@ -93,9 +94,9 @@
     "playwright": "1.61.1",
     "secretlint": "^11.4.1",
     "semver": "^7.8.5",
-    "tsx": "^4.22.4",
+    "tsx": "catalog:",
     "turbo": "^2.10.0",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   },
   "packageManager": "pnpm@10.18.0",
   "engines": {

@@ -36,12 +36,12 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "zod": "^4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "repository": {
     "type": "git",

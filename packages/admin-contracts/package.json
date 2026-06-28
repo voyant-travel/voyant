@@ -35,12 +35,12 @@
     "@voyant-travel/finance-contracts": "workspace:^",
     "@voyant-travel/legal-contracts": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
-    "zod": "^4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "repository": {
     "type": "git",

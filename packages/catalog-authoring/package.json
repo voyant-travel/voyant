@@ -31,10 +31,10 @@
     "@voyant-travel/voyant-test-utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.27",
-    "typescript": "^6.0.3",
-    "zod": "^4.4.3"
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "typescript": "catalog:",
+    "zod": "catalog:"
   },
   "files": [
     "dist",

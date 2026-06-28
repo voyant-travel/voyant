@@ -20,8 +20,8 @@
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "pg": "^8.22.0",
     "@types/pg": "^8.11.10",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist",
