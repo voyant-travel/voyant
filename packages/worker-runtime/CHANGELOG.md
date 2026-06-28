@@ -1,5 +1,13 @@
 # @voyant-travel/worker-runtime
 
+## 0.2.0
+
+### Minor Changes
+
+- 9a1197b: Move the operator media upload and serve routes off the bare `/v1/*` surface and onto `/v1/admin/*`.
+
+  Uploads now post to `/v1/admin/uploads` and video tickets to `/v1/admin/uploads/video`; stored media is served from `/v1/admin/media/*`. The Hono app no longer mounts the bare `/v1/*` catch-all actor guard, and worker-runtime hosts can use `rewriteAppPath` to preserve compatibility for persisted legacy media URLs.
+
 ## 0.1.0
 
 ### Minor Changes
