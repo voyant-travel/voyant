@@ -202,6 +202,7 @@ export const generateContractForBookingInputSchema = z.object({
   channelId: z.string().optional().nullable(),
   fallbackLanguages: z.array(z.string().min(2).max(10)).optional().default([]),
   requireNumberSeries: z.boolean().default(true),
+  forceRecompute: z.boolean().default(false),
   publicDelivery: z.boolean().default(false),
   publicDeliveryTtlSeconds: z
     .number()

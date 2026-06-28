@@ -613,6 +613,112 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     expect(bodies[0]).toContain("PaidFull false | Due 5000 | BalanceDue 5000 | Paid 32000")
   })
 
+  it("recomputes variables and replaces the document when forceRecompute is set", async () => {
+    const { template, version } = await seedTemplate("cust-force-recompute-2291")
+    await db
+      .update(contractTemplateVersions)
+      .set({
+        body: [
+          "PaidFull {{ booking.isPaidInFull }}",
+          "Due {{ booking.amountDueCents }}",
+          "BalanceDue {{ booking.balanceDueCents }}",
+          "Paid {{ booking.paidAmountCents }}",
+        ].join(" | "),
+      })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking({
+      sellCurrency: "RON",
+      sellAmountCents: 32000,
+    })
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: `INV-${booking.bookingNumber}`,
+        bookingId: booking.id,
+        status: "issued",
+        currency: "RON",
+        subtotalCents: 32000,
+        taxCents: 0,
+        totalCents: 32000,
+        paidCents: 0,
+        balanceDueCents: 32000,
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-10",
+      })
+      .returning()
+
+    const bodies: string[] = []
+    const initial = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(initial.status).toBe("ok")
+    if (initial.status !== "ok") return
+
+    const initialContract = await contractRecordsService.getContractById(db, initial.contractId)
+    const initialVariables = initialContract?.variables as Record<string, unknown>
+    expect(initialVariables.booking).toMatchObject({
+      paidAmountCents: 0,
+      amountDueCents: 32000,
+      balanceDueCents: 32000,
+      isPaidInFull: false,
+    })
+    expect(bodies[0]).toContain("PaidFull false | Due 32000 | BalanceDue 32000 | Paid 0")
+
+    await db
+      .update(invoices)
+      .set({ status: "paid", paidCents: 32000, balanceDueCents: 0 })
+      .where(eq(invoices.id, invoice!.id))
+    await db.insert(payments).values({
+      invoiceId: invoice!.id,
+      amountCents: 32000,
+      currency: "RON",
+      paymentMethod: "bank_transfer",
+      status: "completed",
+      paymentDate: "2026-05-04",
+    })
+
+    const idempotent = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(idempotent).toEqual(initial)
+    expect(bodies).toHaveLength(1)
+
+    const recomputed = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug, forceRecompute: true },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(recomputed.status).toBe("ok")
+    if (recomputed.status !== "ok") return
+    expect(recomputed.contractId).toBe(initial.contractId)
+    expect(recomputed.attachmentId).not.toBe(initial.attachmentId)
+
+    const contract = await contractRecordsService.getContractById(db, recomputed.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    expect(variables.booking).toMatchObject({
+      paidAmountCents: 32000,
+      amountDueCents: 0,
+      balanceDueCents: 0,
+      isPaidInFull: true,
+    })
+    expect(bodies[1]).toContain("PaidFull true | Due 0 | BalanceDue 0 | Paid 32000")
+
+    const attachmentRows = await db
+      .select()
+      .from(contractAttachments)
+      .where(eq(contractAttachments.contractId, recomputed.contractId))
+    expect(attachmentRows).toHaveLength(1)
+    expect(attachmentRows[0]?.id).toBe(recomputed.attachmentId)
+  })
+
   it("derives payment schedule aliases and rooms summary from the booking", async () => {
     const { template, version } = await seedTemplate("cust-schedule-rooms-1")
     await db

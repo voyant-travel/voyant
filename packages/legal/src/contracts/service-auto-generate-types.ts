@@ -391,6 +391,12 @@ export interface AutoGenerateContractOptions {
    * preview always reflects the current template + booking state.
    */
   previewMode?: boolean
+  /**
+   * When an issued booking contract already has a document attachment,
+   * recompute variables from the current booking state and replace the
+   * document instead of returning the existing attachment.
+   */
+  forceRecompute?: boolean
 }
 
 export interface AutoGenerateContractRuntime {

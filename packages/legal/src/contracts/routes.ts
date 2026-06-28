@@ -1084,7 +1084,13 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
   const generateForBookingRoute = createRoute({
     method: "post",
     path: "/bookings/{bookingId}/generate-document",
-    request: { params: z.object({ bookingId: idSchema }) },
+    request: {
+      params: z.object({ bookingId: idSchema }),
+      body: {
+        required: false,
+        content: { "application/json": { schema: generateContractForBookingInputSchema } },
+      },
+    },
     responses: {
       201: {
         description: "The generated contract + document for the booking",
