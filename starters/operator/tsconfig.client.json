@@ -1478,14 +1478,6 @@
       ],
       "@voyant-travel/plugin-catalog-demo": ["../../packages/plugins/catalog-demo/dist/index.d.ts"],
       "@voyant-travel/plugin-flights-demo": ["../../packages/plugins/flights-demo/dist/index.d.ts"],
-      "@voyant-travel/plugin-netopia": ["../../packages/plugins/netopia/dist/index.d.ts"],
-      "@voyant-travel/plugin-netopia/client": ["../../packages/plugins/netopia/dist/client.d.ts"],
-      "@voyant-travel/plugin-netopia/plugin": ["../../packages/plugins/netopia/dist/plugin.d.ts"],
-      "@voyant-travel/plugin-netopia/service": ["../../packages/plugins/netopia/dist/service.d.ts"],
-      "@voyant-travel/plugin-netopia/types": ["../../packages/plugins/netopia/dist/types.d.ts"],
-      "@voyant-travel/plugin-netopia/validation": [
-        "../../packages/plugins/netopia/dist/validation.d.ts"
-      ],
       "@voyant-travel/plugin-payload-cms": ["../../packages/plugins/payload-cms/dist/index.d.ts"],
       "@voyant-travel/plugin-payload-cms/client": [
         "../../packages/plugins/payload-cms/dist/client.d.ts"

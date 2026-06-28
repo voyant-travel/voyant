@@ -78,7 +78,7 @@ need to write".
 | Legal contracts | `packages/legal/src/contracts/` | template render service, `contract_signatures` table, `autoGenerateContractOptions` |
 | Finance | `packages/finance/src/` | `createInvoiceFromBooking`, invoice renditions, number series |
 | SmartBill plugin | `@voyant-travel/plugin-smartbill` | subscribers for `invoice.issued`, `invoice.voided`; `createInvoice`, `cancelInvoice`; `createSmartbillInvoiceSettlementPoller` |
-| Netopia plugin | `packages/plugins/netopia/` | `startPaymentSession`, finance routes, webhook callback |
+| Netopia plugin | `@voyant-travel/plugin-netopia` | `startPaymentSession`, finance routes, webhook callback |
 | EventBus | `packages/core/src/events.ts` | `emit / subscribe`, fire-and-forget |
 | Workflows | `@voyant-travel/workflows` + Node workflow runtime | `createWorkflow`, `step`, async via JobRunner |
 | Booking journey UI | `packages/bookings-react/src/journey/` | `<BookingJourney />`, descriptor-driven Review step, render-prop slots |
@@ -225,7 +225,7 @@ unchanged).
    helper that creates a `payment_sessions` row targeting the
    booking, then asks the Netopia plugin's `startPaymentSession` for
    the redirect URL.
-2. `packages/plugins/netopia/src/service-callback.ts` — after
+2. `voyant-travel/plugin-netopia/src/service-callback.ts` — after
    `completePaymentSession`, emit `payment.completed` with
    `{ bookingId, paymentSessionId, amount, currency }`.
 3. `starters/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx`

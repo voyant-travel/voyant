@@ -325,7 +325,7 @@ packages, not new ones to create:
 packages/finance               ← state plus checkout orchestration: payment sessions, invoices, collection plans, paymentStarters seam, bank-transfer details
 packages/finance-react         ← hooks and UI: usePublicPaymentSession, usePublicBookingPaymentOptions, <PaymentStep>, <PaymentLinkLandingPage>
 packages/notifications         ← payment-link emails / SMS
-packages/plugins/netopia       ← @voyant-travel/plugin-netopia — real Netopia integration with sandbox mode
+voyant-travel/plugin-netopia   ← @voyant-travel/plugin-netopia — real Netopia integration with sandbox mode
 packages/plugins/<future>      ← Stripe / Mollie / EuPlatesc plugins as needed
 ```
 

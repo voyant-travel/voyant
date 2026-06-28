@@ -43,7 +43,7 @@ So SCIM/SAML/OIDC are **out of scope as framework deliverables**. Where we can m
 ## CRITICAL
 
 ### C1 — Forged payment callback confirms bookings without payment
-**`packages/plugins/netopia/src/service-callback.ts:43-130`, `packages/plugins/netopia/src/plugin.ts:209`, `starters/operator/src/api/app.ts:175-181`**
+**`voyant-travel/plugin-netopia/src/service-callback.ts:43-130`, `voyant-travel/plugin-netopia/src/plugin.ts:209`, `starters/operator/src/api/app.ts:175-181`**
 
 The Netopia payment callback is mounted as a fully unauthenticated public route (it is listed in the operator's `publicPaths`) and performs **no signature / HMAC / source verification**. The handler's own comment states the design assumption:
 

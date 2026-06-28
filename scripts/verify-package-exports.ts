@@ -344,17 +344,6 @@ const checks: ExportCheck[] = [
       "confirmSmsVerificationChallengeSchema",
     ],
   },
-  {
-    packageName: "@voyant-travel/plugin-netopia",
-    entry: "packages/plugins/netopia/dist/index.js",
-    requiredExports: [
-      "createNetopiaCheckoutStarter",
-      "createNetopiaFinanceExtension",
-      "createNetopiaFinanceRoutes",
-      "netopiaService",
-      "netopiaStartPaymentSessionSchema",
-    ],
-  },
 ]
 
 function readPackageJson(packageDir: string): PackageJson {
