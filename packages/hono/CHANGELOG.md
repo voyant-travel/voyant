@@ -1,5 +1,11 @@
 # @voyant-travel/hono
 
+## 0.118.1
+
+### Patch Changes
+
+- 154a6c2: Add an authenticated R2 document download resolver helper for private Worker-route downloads.
+
 ## 0.118.0
 
 ### Minor Changes
