@@ -527,7 +527,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     async delete(slice, ids) {
       if (ids.length === 0) return
       const name = collectionName(slice, collectionPrefix)
-      const filterValue = ids.map((id) => `"${id}"`).join(",")
+      const filterValue = ids.join(",")
       await client
         .collections(name)
         .documents()
