@@ -1,5 +1,11 @@
 # @voyant-travel/finance-contracts
 
+## 0.105.5
+
+### Patch Changes
+
+- 5d94caa: Republish the validation entrypoints with the payment-processing body schema exports required by finance routes.
+
 ## 0.105.4
 
 ### Patch Changes
