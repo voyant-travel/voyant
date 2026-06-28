@@ -1,5 +1,13 @@
 # @voyant-travel/legal
 
+## 0.137.2
+
+### Patch Changes
+
+- d2df4c1: Add a `forceRecompute` flag to booking contract document generation so issued contracts can refresh stored variables from corrected booking data and replace stale documents.
+- Updated dependencies [d2df4c1]
+  - @voyant-travel/legal-contracts@0.106.5
+
 ## 0.137.1
 
 ### Patch Changes

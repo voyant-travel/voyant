@@ -1,5 +1,11 @@
 # @voyant-travel/operations
 
+## 0.5.4
+
+### Patch Changes
+
+- fcb8b88: Add catalog-authoring validation for transfer pickup/dropoff rules, block static availability for dynamic products, and require scheduled products to have a future open departure before publishing.
+
 ## 0.5.3
 
 ### Patch Changes
