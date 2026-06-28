@@ -67,7 +67,8 @@ export const getOperatorDashboardBookingsAggregates = createServerFn({ method: "
     const { from } = buildDashboardSixMonthWindow()
     return withDashboardDb(env, async (db) => {
       const { bookingsService } = await import("@voyant-travel/bookings")
-      return bookingsService.getBookingAggregates(db, { from, upcomingLimit: 8 })
+      const serviceDb = db as unknown as Parameters<typeof bookingsService.getBookingAggregates>[0]
+      return bookingsService.getBookingAggregates(serviceDb, { from, upcomingLimit: 8 })
     })
   })
 
@@ -77,7 +78,8 @@ export const getOperatorDashboardProductsAggregates = createServerFn({ method: "
     const env = await requireAuthenticatedOperatorRequest(context)
     return withDashboardDb(env, async (db) => {
       const { productsService } = await import("@voyant-travel/inventory")
-      return productsService.getProductAggregates(db)
+      const serviceDb = db as unknown as Parameters<typeof productsService.getProductAggregates>[0]
+      return productsService.getProductAggregates(serviceDb)
     })
   })
 
@@ -87,7 +89,10 @@ export const getOperatorDashboardSuppliersAggregates = createServerFn({ method: 
     const env = await requireAuthenticatedOperatorRequest(context)
     return withDashboardDb(env, async (db) => {
       const { suppliersService } = await import("@voyant-travel/distribution")
-      return suppliersService.getSupplierAggregates(db)
+      const serviceDb = db as unknown as Parameters<
+        typeof suppliersService.getSupplierAggregates
+      >[0]
+      return suppliersService.getSupplierAggregates(serviceDb)
     })
   })
 
@@ -98,7 +103,8 @@ export const getOperatorDashboardFinanceAggregates = createServerFn({ method: "G
     const { from } = buildDashboardSixMonthWindow()
     return withDashboardDb(env, async (db) => {
       const { financeService } = await import("@voyant-travel/finance")
-      return financeService.getFinanceAggregates(db, { from, outstandingTopLimit: 5 })
+      const serviceDb = db as unknown as Parameters<typeof financeService.getFinanceAggregates>[0]
+      return financeService.getFinanceAggregates(serviceDb, { from, outstandingTopLimit: 5 })
     })
   })
 

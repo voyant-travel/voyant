@@ -129,10 +129,8 @@ describe("createCatalogOffersAdminRoutes", () => {
   })
 
   it("decodes cruise ids and maps sailing pricing to the cheapest per cabin", async () => {
-    const cruiseId = `crus_sr_${Buffer.from(
-      JSON.stringify({ connectionId: "conn-c", externalId: "CR1" }),
-    )
-      .toString("base64")
+    const cruiseId = `crus_sr_${globalThis
+      .btoa(JSON.stringify({ connectionId: "conn-c", externalId: "CR1" }))
       .replace(/\+/g, "-")
       .replace(/\//g, "_")}`
     const client: CatalogOffersConnectClient = {

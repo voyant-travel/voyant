@@ -46,6 +46,7 @@ describe("operator API dispatch wiring", () => {
     } as CloudflareBindings
     const ctx: ExecutionContext = {
       props: undefined,
+      tracing: {} as ExecutionContext["tracing"],
       waitUntil: vi.fn(),
       passThroughOnException: vi.fn(),
     }

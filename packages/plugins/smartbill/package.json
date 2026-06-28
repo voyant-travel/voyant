@@ -30,7 +30,7 @@
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
+    "hono": "^4.12.27",
     "zod": "^4.4.3"
   },
   "peerDependencies": {
@@ -62,15 +62,15 @@
     }
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.100.11",
-    "@types/react": "^19.2.14",
+    "@tanstack/react-query": "^5.101.2",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },

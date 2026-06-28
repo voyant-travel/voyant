@@ -3,7 +3,11 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { createDbClient } from "./index.js"
 
-const TEST_DB_PORT = process.env.TEST_DATABASE_PORT ?? "5436"
+type RuntimeEnv = Record<string, string | undefined>
+
+const runtimeEnv = (globalThis as { process?: { env?: RuntimeEnv } }).process?.env ?? {}
+
+const TEST_DB_PORT = runtimeEnv.TEST_DATABASE_PORT ?? "5436"
 const TEST_DB_NAME = "voyant_test"
 const TEST_DB_USER = "test"
 const TEST_DB_PASSWORD = "test"
@@ -17,7 +21,7 @@ function buildDefaultTestDbUrl(port: string) {
   return url.toString()
 }
 
-const TEST_DB_URL = process.env.TEST_DATABASE_URL ?? buildDefaultTestDbUrl(TEST_DB_PORT)
+const TEST_DB_URL = runtimeEnv.TEST_DATABASE_URL ?? buildDefaultTestDbUrl(TEST_DB_PORT)
 
 type PostgresJsDatabaseWithClient = PostgresJsDatabase & {
   $client?: {

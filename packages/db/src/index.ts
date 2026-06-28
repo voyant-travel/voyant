@@ -75,12 +75,18 @@ export type AnyDrizzleDb<TSchema extends Record<string, unknown> = Record<string
   | NeonHttpDatabase<TSchema>
   | NeonWsDatabase<TSchema>
 
+type RuntimeEnv = Record<string, string | undefined>
+
+function runtimeEnv(): RuntimeEnv {
+  return (globalThis as { process?: { env?: RuntimeEnv } }).process?.env ?? {}
+}
+
 export function createDbClient<TSchema extends Record<string, unknown> = Record<string, never>>(
   connectionString: string,
   options?: DbClientOptions<TSchema>,
 ) {
   const {
-    adapter = (process.env.DB_ADAPTER as DbAdapter) || "edge",
+    adapter = (runtimeEnv().DB_ADAPTER as DbAdapter) || "edge",
     schema,
     replicas = [],
     nodeMaxConnections,
@@ -224,7 +230,7 @@ export async function withServerlessDb<
  * (Single-database deployments; region is chosen per deployment.)
  */
 export function getDb(adapter?: DbAdapter) {
-  const url = process.env.DATABASE_URL!
+  const url = runtimeEnv().DATABASE_URL!
   return createDbClient(url, { adapter })
 }
 
@@ -233,7 +239,7 @@ let _defaultDb: ReturnType<typeof createDbClient> | null = null
 
 function getDefaultDbInstance() {
   if (!_defaultDb) {
-    const defaultAdapter = (process.env.DB_ADAPTER as DbAdapter) || "edge"
+    const defaultAdapter = (runtimeEnv().DB_ADAPTER as DbAdapter) || "edge"
     if (defaultAdapter === "serverless") {
       throw new Error(
         "The global @voyant-travel/db proxy cannot use DB_ADAPTER=serverless. Use createServerlessDbClient() per request and dispose it after use.",

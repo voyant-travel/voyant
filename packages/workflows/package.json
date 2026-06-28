@@ -112,7 +112,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^20.12.0",
+    "@types/node": "^20.19.43",
     "esbuild": "0.28.1",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.3",

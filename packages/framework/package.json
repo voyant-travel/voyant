@@ -41,13 +41,13 @@
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/hono": "workspace:^",
-    "hono": "^4.12.10"
+    "hono": "^4.12.27"
   },
   "devDependencies": {
     "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "hono": "^4.12.10",
+    "hono": "^4.12.27",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },
