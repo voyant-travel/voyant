@@ -1,5 +1,11 @@
 # @voyant-travel/inventory-react
 
+## 0.19.2
+
+### Patch Changes
+
+- cbd5046: Republish the product-detail entrypoint with the canonical query-option exports in the published package.
+
 ## 0.19.1
 
 ### Patch Changes
