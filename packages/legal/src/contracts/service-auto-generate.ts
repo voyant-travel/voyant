@@ -61,6 +61,7 @@ export async function generateContractForBookingFromDefaults(
     templateSlug: template.slug,
     scope: input.scope,
     language: input.language ?? template.language,
+    forceRecompute: input.forceRecompute,
   }
 
   if (input.requireNumberSeries) {
@@ -135,6 +136,7 @@ export async function autoGenerateContractForBooking(
   // operators wanting a fresh one use the regenerate admin route.
   const scope = options.scope ?? "customer"
   const isPreview = options.previewMode === true
+  const forceRecompute = options.forceRecompute === true
   // Preview always reflects the current template + booking state, so
   // skip the "existing contract → return its attachment" idempotency
   // branch. We still walk the rest of the pipeline (template lookup,
@@ -151,7 +153,7 @@ export async function autoGenerateContractForBooking(
   if (existing) {
     const attachments = await contractRecordsService.listAttachments(db, existing.id)
     const documentAttachment = attachments.find((a) => a.kind === "document")
-    if (documentAttachment) {
+    if (documentAttachment && !forceRecompute) {
       return {
         status: "ok",
         contractId: existing.id,
@@ -290,6 +292,7 @@ export async function autoGenerateContractForBooking(
       eventBus: runtime.eventBus,
       lifecycleHooks: runtime.lifecycleHooks,
     },
+    { regenerated: forceRecompute, forceRerender: forceRecompute },
   )
 
   if (result.status === "generated") {
