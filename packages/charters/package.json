@@ -44,7 +44,7 @@
     "@voyant-travel/voyant-test-utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },
   "files": [

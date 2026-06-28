@@ -115,7 +115,7 @@
     "@types/node": "^20.19.43",
     "esbuild": "0.28.1",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },
   "peerDependencies": {

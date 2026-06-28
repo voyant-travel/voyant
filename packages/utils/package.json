@@ -126,17 +126,17 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyant-travel/templating": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "liquidjs": "^10.27.1",
     "pdf-lib": "^1.17.1",
-    "zod": "^4.4.3",
-    "@voyant-travel/templating": "workspace:^"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^25.5.2",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "@types/node": "^20.19.43",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "4.1.9"
   }
 }

@@ -10,7 +10,11 @@ import { describe } from "vitest"
 
 export { cleanupTestDb, createTestDb }
 
-const TEST_DB_PORT = process.env.TEST_DATABASE_PORT ?? "5436"
+type RuntimeEnv = Record<string, string | undefined>
+
+const runtimeEnv = (globalThis as { process?: { env?: RuntimeEnv } }).process?.env ?? {}
+
+const TEST_DB_PORT = runtimeEnv.TEST_DATABASE_PORT ?? "5436"
 const TEST_DB_NAME = "voyant_test"
 const TEST_DB_USER = "test"
 const TEST_DB_PASSWORD = "test"
@@ -28,8 +32,7 @@ function buildDefaultTestDbUrl(port: string) {
  * Resolved test database URL. Falls back to the docker-compose.test.yml default
  * when `TEST_DATABASE_URL` is not set.
  */
-export const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? buildDefaultTestDbUrl(TEST_DB_PORT)
+export const TEST_DATABASE_URL = runtimeEnv.TEST_DATABASE_URL ?? buildDefaultTestDbUrl(TEST_DB_PORT)
 
 /**
  * `true` when the `TEST_DATABASE_URL` env var is set. Cheap synchronous check —
@@ -37,7 +40,7 @@ export const TEST_DATABASE_URL =
  *
  * Use this for `describe.skipIf(!DB_AVAILABLE)` in simple cases.
  */
-export const DB_ENV_SET = !!process.env.TEST_DATABASE_URL
+export const DB_ENV_SET = !!runtimeEnv.TEST_DATABASE_URL
 
 /**
  * Attempts a `SELECT 1` against the test database to confirm connectivity.

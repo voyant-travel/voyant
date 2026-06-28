@@ -10,7 +10,10 @@ import {
 } from "./service-option-rules.js"
 import { insertOptionPriceRuleSchema } from "./validation.js"
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
+type RuntimeEnv = Record<string, string | undefined>
+
+const runtimeEnv = (globalThis as { process?: { env?: RuntimeEnv } }).process?.env ?? {}
+const TEST_DATABASE_URL = runtimeEnv.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
 const db = DB_AVAILABLE ? createTestDb() : (null as never)
 

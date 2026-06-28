@@ -65,7 +65,7 @@
     "lucide-react": "^0.475.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.9",
     "zod": "^4.4.3"
   },

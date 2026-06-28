@@ -68,8 +68,8 @@
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/auth-react": "workspace:^",
-    "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
@@ -77,7 +77,7 @@
     "lucide-react": "^0.475.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.9",
     "zod": "^4.4.3"
   },

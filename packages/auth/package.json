@@ -111,8 +111,8 @@
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
+    "@types/node": "25.5.2",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "@types/node": "20.19.43",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   }
 }
