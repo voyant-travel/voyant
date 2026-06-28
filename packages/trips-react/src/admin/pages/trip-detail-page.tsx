@@ -9,6 +9,7 @@ import { TripDetailHost } from "../trip-detail-host.js"
  * the detail page (and the composer behind its Edit mode) lands in its own
  * chunk.
  */
+// fallow-ignore-next-line unused-export
 export default function TripDetailPage({ params }: AdminRoutePageProps) {
   return <TripDetailHost id={params.id ?? ""} />
 }

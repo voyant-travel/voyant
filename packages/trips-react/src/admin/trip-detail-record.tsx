@@ -267,7 +267,7 @@ async function fetchPublicCheckoutBaseUrl(apiBaseUrl: string): Promise<string | 
   }
 }
 
-export function BillingRecord({
+function BillingRecord({
   travelerParty,
   messages,
 }: {
@@ -343,7 +343,7 @@ export function BillingRecord({
   )
 }
 
-export function TravelersRecord({
+function TravelersRecord({
   travelerParty,
   messages,
 }: {
@@ -379,7 +379,7 @@ export function TravelersRecord({
   )
 }
 
-export function TravelerRecordRow({
+function TravelerRecordRow({
   traveler,
   index,
   messages,
@@ -415,7 +415,7 @@ export function TravelerRecordRow({
   )
 }
 
-export function PersonLink({ personId, children }: { personId: string; children: ReactNode }) {
+function PersonLink({ personId, children }: { personId: string; children: ReactNode }) {
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
   return (
@@ -432,7 +432,7 @@ export function PersonLink({ personId, children }: { personId: string; children:
   )
 }
 
-export function SummaryCard({
+function SummaryCard({
   label,
   value,
   icon: Icon,
@@ -456,7 +456,7 @@ export function SummaryCard({
   )
 }
 
-export function ComponentRow({
+function ComponentRow({
   component,
   messages,
   onOpenBooking,
@@ -521,7 +521,7 @@ export function ComponentRow({
   )
 }
 
-export function tripScheduleLabel(components: Trip["components"]) {
+function tripScheduleLabel(components: Trip["components"]) {
   const labels = components
     .map(formatScheduleLabel)
     .filter((label): label is string => Boolean(label))
@@ -530,7 +530,7 @@ export function tripScheduleLabel(components: Trip["components"]) {
   return `${labels[0]} -> ${labels.at(-1)}`
 }
 
-export function SummaryLine({
+function SummaryLine({
   label,
   value,
   strong = false,
@@ -547,28 +547,25 @@ export function SummaryLine({
   )
 }
 
-export function componentIcon(component: TripComponent) {
+function componentIcon(component: TripComponent) {
   if (component.kind === "flight_placeholder" || component.kind === "flight_order") return Plane
   if (component.entityModule === "accommodations") return BedDouble
   if (component.entityModule === "cruises") return Ship
   return RouteIcon
 }
 
-export function formatStatus(value: string) {
+function formatStatus(value: string) {
   return value.replaceAll("_", " ")
 }
 
-export function formatDate(value: Date | string | null | undefined) {
+function formatDate(value: Date | string | null | undefined) {
   if (!value) return "-"
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return "-"
   return date.toLocaleDateString()
 }
 
-export function formatMoney(
-  amountCents: number | null | undefined,
-  currency: string | null | undefined,
-) {
+function formatMoney(amountCents: number | null | undefined, currency: string | null | undefined) {
   if (amountCents == null) return "-"
   return (amountCents / 100).toLocaleString(undefined, {
     style: "currency",

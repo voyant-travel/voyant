@@ -13,7 +13,7 @@ import { Hono } from "hono"
  * warm-up live in the package and arrive via version bumps.
  */
 
-export const loadOperatorApiApp = lazyApp<CloudflareBindings, ExecutionContext>(() =>
+const loadOperatorApiApp = lazyApp<CloudflareBindings, ExecutionContext>(() =>
   import("./api/app").then((mod) => ({
     fetch: (request, env, ctx) => mod.app.fetch(request, env as CloudflareBindings, ctx),
   })),
@@ -29,7 +29,7 @@ const loadOperatorAuthHandler = lazyApp<CloudflareBindings, ExecutionContext>(()
  * Lean auth app: CORS + the Better Auth handler, nothing else. Keeps
  * `/api/auth/*` (including preflight) off the full API module graph.
  */
-export const loadOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>(async () => {
+const loadOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>(async () => {
   const authApp = new Hono<{ Bindings: CloudflareBindings }>()
   authApp.use("*", cors())
   authApp.use("*", securityHeaders())

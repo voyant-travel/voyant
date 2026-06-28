@@ -123,7 +123,7 @@ export function TripPreviewRail({
   )
 }
 
-export function PreviewComponentRow({ component }: { component: TripComponent }) {
+function PreviewComponentRow({ component }: { component: TripComponent }) {
   const Icon = componentIcon(component)
   const coverUrl = componentThumbnailFor(component)
   const name = componentTitleFor(component)
@@ -162,7 +162,7 @@ export function PreviewComponentRow({ component }: { component: TripComponent })
   )
 }
 
-export function BillingPreview({ billing }: { billing: PersonPickerValue }) {
+function BillingPreview({ billing }: { billing: PersonPickerValue }) {
   const t = useAdminMessages().trips.adminComposer.panels
   const personQuery = usePerson(billing.personId || undefined, {
     enabled: billing.mode === "existing" && Boolean(billing.personId),
@@ -183,7 +183,7 @@ export function BillingPreview({ billing }: { billing: PersonPickerValue }) {
   )
 }
 
-export function TravelersPreview({
+function TravelersPreview({
   travelers,
   billingPersonId,
 }: {
@@ -216,7 +216,7 @@ export function TravelersPreview({
   )
 }
 
-export function TravelerPreviewRow({
+function TravelerPreviewRow({
   traveler,
   index,
   isLead,
@@ -247,7 +247,7 @@ export function TravelerPreviewRow({
   )
 }
 
-export function CurrencyTotals({ components }: { components: TripComponent[] }) {
+function CurrencyTotals({ components }: { components: TripComponent[] }) {
   const t = useAdminMessages().trips.adminComposer.panels
   const buckets = React.useMemo(() => aggregateByCurrency(components), [components])
   if (buckets.length === 0) return null
@@ -281,7 +281,7 @@ interface CurrencyBucket {
   total: number
 }
 
-export function aggregateByCurrency(components: TripComponent[]): CurrencyBucket[] {
+function aggregateByCurrency(components: TripComponent[]): CurrencyBucket[] {
   const map = new Map<string, CurrencyBucket>()
   for (const component of components) {
     const code = component.componentCurrency
@@ -361,7 +361,7 @@ export function PrimaryAction({
   )
 }
 
-export function PreviewLabel({ children }: { children: React.ReactNode }) {
+function PreviewLabel({ children }: { children: React.ReactNode }) {
   return (
     <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
       {children}

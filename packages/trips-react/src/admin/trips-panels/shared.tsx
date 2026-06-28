@@ -111,7 +111,7 @@ export type PendingComponent =
       commitError: string | null
     }
 
-export function verticalsFor(messages: PanelsMessages): Array<{
+function verticalsFor(messages: PanelsMessages): Array<{
   kind: PendingVerticalKind
   label: string
   description: string
@@ -130,7 +130,7 @@ export function verticalForKind(kind: "product" | "stay"): CatalogVertical {
   return kind === "stay" ? "accommodations" : "products"
 }
 
-export function genLocalId() {
+function genLocalId() {
   return `pc_${Math.random().toString(36).slice(2, 10)}`
 }
 

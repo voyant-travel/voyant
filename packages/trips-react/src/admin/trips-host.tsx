@@ -49,6 +49,7 @@ type SortDir = NonNullable<ListTripsParams["sortDir"]>
  * contribution's loader so the SSR-seeded cache entry and the page's first
  * `useQuery` line up on the same key.
  */
+// fallow-ignore-next-line unused-export
 export const initialTripsListParams: ListTripsParams = {
   limit: PAGE_SIZE,
   offset: 0,
