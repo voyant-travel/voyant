@@ -1,5 +1,13 @@
 # @voyant-travel/notifications
 
+## 0.116.9
+
+### Patch Changes
+
+- 89cc2c4: Resolve and persist email sender addresses before dispatch, and reject email sends when no sender can be resolved so deliveries cannot report `sent` with `fromAddress: null`.
+- Updated dependencies [4eda12a]
+  - @voyant-travel/finance@0.137.2
+
 ## 0.116.8
 
 ### Patch Changes
