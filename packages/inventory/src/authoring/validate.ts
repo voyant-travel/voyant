@@ -84,6 +84,22 @@ export function validateProductGraph(spec: ProductGraphSpec): AuthoringIssue[] {
         fix: "Set the unit's unitType to 'vehicle' or 'person'.",
       })
     }
+    const hasActiveEndpointRule = spec.options.some((option) =>
+      option.priceRules.some(
+        (rule) =>
+          rule.active &&
+          (rule.pickupPriceRules.some((pickupRule) => pickupRule.active) ||
+            rule.dropoffPriceRules.some((dropoffRule) => dropoffRule.active)),
+      ),
+    )
+    if (!hasActiveEndpointRule) {
+      issues.push({
+        code: "transfer_needs_pickup_or_dropoff",
+        field: "options[].priceRules[].pickupPriceRules",
+        message: "Transfer products require at least one active pickup or dropoff price rule.",
+        fix: "Add an active pickupPriceRules[] or dropoffPriceRules[] entry under an active option price rule.",
+      })
+    }
   }
 
   return issues

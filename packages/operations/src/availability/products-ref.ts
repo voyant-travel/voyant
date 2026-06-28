@@ -4,6 +4,7 @@ import { boolean, integer, pgTable, text } from "drizzle-orm/pg-core"
 export const productsRef = pgTable("products", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  bookingMode: text("booking_mode").notNull(),
 })
 
 /** Minimal reference to product_options for validating explicit slot option links. */

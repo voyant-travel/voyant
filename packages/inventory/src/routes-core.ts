@@ -31,6 +31,7 @@ import {
 import { emitProductContentChanged } from "./events.js"
 import type { Env } from "./route-env.js"
 import { productsService } from "./service.js"
+import { ProductPublishReadinessError } from "./service-core.js"
 import * as validation from "./validation.js"
 
 const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=30"
@@ -47,6 +48,16 @@ function cacheDashboardAggregates(c: {
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
+const readinessIssueSchema = z.object({
+  code: z.string(),
+  field: z.string(),
+  message: z.string(),
+  fix: z.string(),
+})
+const readinessErrorResponseSchema = z.object({
+  error: z.literal("product_not_ready_to_publish"),
+  issues: z.array(readinessIssueSchema),
+})
 const idParamSchema = z.object({ id: z.string() })
 
 /** §17: timestamp columns are ISO strings over the wire; money/pax stay numbers. */
@@ -166,6 +177,10 @@ const createProductRoute = createRoute({
       description: "invalid_request: request body failed validation",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    422: {
+      description: "product_not_ready_to_publish: scheduled product lacks publish readiness",
+      content: { "application/json": { schema: readinessErrorResponseSchema } },
+    },
   },
 })
 
@@ -201,6 +216,9 @@ const getProductActionLedgerRoute = createRoute({
   },
 })
 
+const getProductActionLedgerHandler: RouteHandler<typeof getProductActionLedgerRoute, Env> = (c) =>
+  listProductActionLedger(c)
+
 const updateProductRoute = createRoute({
   method: "patch",
   path: "/{id}",
@@ -223,6 +241,10 @@ const updateProductRoute = createRoute({
     404: {
       description: "Product not found",
       content: { "application/json": { schema: errorResponseSchema } },
+    },
+    422: {
+      description: "product_not_ready_to_publish: scheduled product lacks publish readiness",
+      content: { "application/json": { schema: readinessErrorResponseSchema } },
     },
   },
 })
@@ -263,7 +285,15 @@ export const productCoreRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVali
   // POST / — Create product
   .openapi(createProductRoute, async (c) => {
     const input = c.req.valid("json")
-    const row = await productsService.createProduct(c.get("db"), input)
+    let row: Awaited<ReturnType<typeof productsService.createProduct>>
+    try {
+      row = await productsService.createProduct(c.get("db"), input)
+    } catch (error) {
+      if (error instanceof ProductPublishReadinessError) {
+        return c.json({ error: "product_not_ready_to_publish" as const, issues: error.issues }, 422)
+      }
+      throw error
+    }
     await appendProductMutationLedgerEntry(c, {
       action: "create",
       productId: row.id,
@@ -285,10 +315,7 @@ export const productCoreRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVali
   // helper (no explicit status literal), so the typed-response contract is
   // relaxed for this one leg (Hard rule 3: bare-Response escape hatch). The
   // runtime shape matches the declared `actionLedgerPageSchema`.
-  .openapi(
-    getProductActionLedgerRoute,
-    listProductActionLedger as unknown as RouteHandler<typeof getProductActionLedgerRoute, Env>,
-  )
+  .openapi(getProductActionLedgerRoute, getProductActionLedgerHandler)
   // PATCH /{id} — Update product
   .openapi(updateProductRoute, async (c) => {
     const productId = c.req.valid("param").id
@@ -298,7 +325,15 @@ export const productCoreRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVali
     }
 
     const input = c.req.valid("json")
-    const row = await productsService.updateProduct(c.get("db"), productId, input)
+    let row: Awaited<ReturnType<typeof productsService.updateProduct>>
+    try {
+      row = await productsService.updateProduct(c.get("db"), productId, input)
+    } catch (error) {
+      if (error instanceof ProductPublishReadinessError) {
+        return c.json({ error: "product_not_ready_to_publish" as const, issues: error.issues }, 422)
+      }
+      throw error
+    }
 
     if (!row) {
       return c.json({ error: "Product not found" }, 404)

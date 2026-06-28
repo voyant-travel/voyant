@@ -1,3 +1,4 @@
+import { availabilitySlots } from "@voyant-travel/operations"
 import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -17,6 +18,75 @@ import type {
 type ProductListQuery = z.infer<typeof productListQuerySchema>
 type CreateProductInput = z.infer<typeof insertProductSchema>
 type UpdateProductInput = z.infer<typeof updateProductSchema>
+
+export interface ProductReadinessIssue {
+  code: string
+  field: string
+  message: string
+  fix: string
+}
+
+export class ProductPublishReadinessError extends Error {
+  readonly code = "product_not_ready_to_publish"
+  readonly status = 422
+  readonly issues: ProductReadinessIssue[]
+
+  constructor(issues: ProductReadinessIssue[]) {
+    super("Product is not ready to publish")
+    this.name = "ProductPublishReadinessError"
+    this.issues = issues
+  }
+}
+
+const DYNAMIC_BOOKING_MODES = new Set(["open", "stay"])
+
+type PublishableProductState = {
+  id?: string
+  bookingMode: string
+  status: string
+  visibility: string
+  activated: boolean
+}
+
+function isScheduledBookingMode(bookingMode: string) {
+  return !DYNAMIC_BOOKING_MODES.has(bookingMode)
+}
+
+function isPublicPublishedState(product: PublishableProductState) {
+  return product.status === "active" && product.visibility === "public" && product.activated
+}
+
+async function hasFutureOpenDeparture(db: PostgresJsDatabase, productId: string) {
+  const [row] = await db
+    .select({ id: availabilitySlots.id })
+    .from(availabilitySlots)
+    .where(
+      and(
+        eq(availabilitySlots.productId, productId),
+        eq(availabilitySlots.status, "open"),
+        gte(availabilitySlots.startsAt, new Date()),
+      ),
+    )
+    .limit(1)
+
+  return !!row
+}
+
+async function assertReadyToPublish(db: PostgresJsDatabase, product: PublishableProductState) {
+  if (!isPublicPublishedState(product) || !isScheduledBookingMode(product.bookingMode)) return
+
+  if (!product.id || !(await hasFutureOpenDeparture(db, product.id))) {
+    throw new ProductPublishReadinessError([
+      {
+        code: "no_future_open_departure",
+        field: "availabilitySlots",
+        message:
+          "Scheduled products need at least one future open departure before they can be published.",
+        fix: "Create a future availability slot with status 'open', then publish the product again.",
+      },
+    ])
+  }
+}
 
 async function getDefaultItinerary(
   db: PostgresJsDatabase,
@@ -243,6 +313,8 @@ export const coreProductsService = {
   },
 
   async createProduct(db: PostgresJsDatabase, data: CreateProductInput) {
+    await assertReadyToPublish(db, data)
+
     const [row] = await db.insert(products).values(data).returning()
     if (!row) {
       throw new Error("Failed to create product")
@@ -253,6 +325,11 @@ export const coreProductsService = {
   },
 
   async updateProduct(db: PostgresJsDatabase, id: string, data: UpdateProductInput) {
+    const [current] = await db.select().from(products).where(eq(products.id, id)).limit(1)
+    if (!current) return null
+
+    await assertReadyToPublish(db, { ...current, ...data })
+
     const [row] = await db
       .update(products)
       .set({ ...data, updatedAt: new Date() })
