@@ -11,6 +11,8 @@ import type {
 export interface LocalProviderOptions {
   /** Channels this provider advertises. Defaults to `["email", "sms"]`. */
   channels?: ReadonlyArray<NotificationChannel>
+  /** Default sender used for local email delivery logs. */
+  defaultFromAddress?: string | null
   /**
    * Optional sink for captured payloads. Defaults to `console.log`.
    * Tests can pass a vi.fn() to capture notifications without console noise.
@@ -28,6 +30,8 @@ export interface LocalProviderOptions {
 export function createLocalProvider(options: LocalProviderOptions = {}): NotificationProvider {
   const name = options.name ?? "local"
   const channels = options.channels ?? ["email", "sms"]
+  const defaultFromAddress =
+    options.defaultFromAddress ?? (channels.includes("email") ? "local@example.test" : null)
   const sink =
     options.sink ??
     ((payload: NotificationPayload) => {
@@ -38,6 +42,7 @@ export function createLocalProvider(options: LocalProviderOptions = {}): Notific
   return {
     name,
     channels,
+    defaultFromAddress,
     async send(payload): Promise<NotificationResult> {
       counter += 1
       sink(payload)

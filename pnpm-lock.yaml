@@ -2789,6 +2789,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.27)(zod@4.4.3)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.5.2
       '@voyant-travel/framework':
         specifier: workspace:^
         version: link:../framework

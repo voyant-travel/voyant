@@ -26,6 +26,8 @@ describe("createVoyantCloudEmailProvider", () => {
       }),
     })
 
+    expect(provider.defaultFromAddress).toBe("noreply@example.com")
+
     const result = await provider.send({
       to: "traveler@example.com",
       channel: "email",
@@ -153,5 +155,23 @@ describe("createVoyantCloudEmailProvider", () => {
         template: "x",
       }),
     ).rejects.toThrow(/only supports the "email" channel/)
+  })
+
+  it("rejects email sends when no sender is configured", async () => {
+    const { sendMessage, client } = makeFakeClient({ id: "em_47" })
+
+    const provider = createVoyantCloudEmailProvider({
+      client,
+      from: " ",
+    })
+
+    await expect(
+      provider.send({
+        to: "x@example.com",
+        channel: "email",
+        template: "welcome",
+      }),
+    ).rejects.toThrow(/requires a sender address/)
+    expect(sendMessage).not.toHaveBeenCalled()
   })
 })

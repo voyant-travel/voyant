@@ -51,6 +51,12 @@ The bring-your-own path is first-class: any project can implement
 `NotificationProvider` against another transport (raw Resend, Twilio, SES, …)
 and register it in place of the cloud adapters.
 
+Email sends resolve the sender from the request `from`, the template
+`fromAddress`, or the provider's `defaultFromAddress` before dispatch. Custom
+email providers that use a provider-side default sender should expose it through
+`defaultFromAddress`; otherwise direct email sends without an explicit sender
+fail before the provider is called.
+
 For the Hono module:
 
 ```ts
