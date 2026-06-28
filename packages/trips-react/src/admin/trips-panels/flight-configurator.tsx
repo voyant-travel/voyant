@@ -323,7 +323,7 @@ export function FlightConfigurator({
   )
 }
 
-export function CabinSelector({
+function CabinSelector({
   value,
   onChange,
 }: {
@@ -391,7 +391,7 @@ export function flightPricingFromPending(
   }
 }
 
-export function flightAncillaryAmountCents(
+function flightAncillaryAmountCents(
   pending: Extract<PendingComponent, { kind: "flight" }>,
   currencyCode: string,
 ): number {
@@ -429,12 +429,12 @@ export function flightAncillaryAmountCents(
   return fareBundleTotal + baggageTotal + assistanceTotal + extrasTotal
 }
 
-export function legOffer(offer: FlightOffer, index: number): FlightOffer {
+function legOffer(offer: FlightOffer, index: number): FlightOffer {
   const itinerary = offer.itineraries[index]
   return itinerary ? { ...offer, itineraries: [itinerary] } : offer
 }
 
-export function moneyToCents(amount: string): number {
+function moneyToCents(amount: string): number {
   const parsed = Number.parseFloat(amount)
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0
 }
@@ -456,7 +456,7 @@ export function passengerCountsFromTripTravelers(travelers: TripTraveler[]): Pas
   }
 }
 
-export function flightPassengersFromTripTravelers(travelers: TripTraveler[]): FlightPassenger[] {
+function flightPassengersFromTripTravelers(travelers: TripTraveler[]): FlightPassenger[] {
   return travelers.map((traveler, index) => {
     const type =
       traveler.role === "child" ? "child" : traveler.role === "infant" ? "infant" : "adult"
@@ -476,7 +476,7 @@ export function flightPassengersFromTripTravelers(travelers: TripTraveler[]): Fl
   })
 }
 
-export function fallbackDobForPassengerType(type: FlightPassenger["type"]): string {
+function fallbackDobForPassengerType(type: FlightPassenger["type"]): string {
   if (type === "child") return "2016-01-01"
   if (type === "infant") return "2025-01-01"
   return "1990-01-01"

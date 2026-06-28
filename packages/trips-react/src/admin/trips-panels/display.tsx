@@ -76,7 +76,7 @@ export function componentIcon(component: TripComponent) {
   return RouteIcon
 }
 
-export function readComponentSchedule(component: TripComponent): {
+function readComponentSchedule(component: TripComponent): {
   start: string | null
   end: string | null
 } {
@@ -136,7 +136,7 @@ export function sortComponentsBySchedule(components: TripComponent[]): TripCompo
   })
 }
 
-export function readPendingSchedule(pending: PendingComponent): {
+function readPendingSchedule(pending: PendingComponent): {
   start: string | null
   end: string | null
 } {
@@ -154,7 +154,7 @@ export function readPendingSchedule(pending: PendingComponent): {
   return { start: pending.startsAt || null, end: pending.endsAt || null }
 }
 
-export function readFlightOfferSchedule(offer: FlightOffer | null): {
+function readFlightOfferSchedule(offer: FlightOffer | null): {
   start: string | null
   end: string | null
 } {
@@ -169,7 +169,7 @@ export function readFlightOfferSchedule(offer: FlightOffer | null): {
   }
 }
 
-export function toRange(start: string | null, end: string | null): [number, number] | null {
+function toRange(start: string | null, end: string | null): [number, number] | null {
   if (!start) return null
   const startMs = new Date(start).getTime()
   if (Number.isNaN(startMs)) return null
@@ -309,7 +309,7 @@ export function componentOptionSummaryFor(component: TripComponent): string | nu
   return labels.length > 0 ? labels.join(", ") : null
 }
 
-export function flightSelectionLabels(
+function flightSelectionLabels(
   offer: FlightOffer | null,
   ancillaries: AncillarySelection | null,
 ): string[] {
@@ -348,7 +348,7 @@ export function componentThumbnailFor(component: TripComponent): string | null {
   return cleanDisplayLabel(metadata?.catalogItem?.thumbnailUrl)
 }
 
-export function componentReferenceLabelFor(component: TripComponent): string {
+function componentReferenceLabelFor(component: TripComponent): string {
   const reference =
     component.providerRef ??
     component.supplierRef ??
@@ -361,7 +361,7 @@ export function componentReferenceLabelFor(component: TripComponent): string {
   return reference.length > 18 ? reference.slice(0, 18) : reference
 }
 
-export function cleanDisplayLabel(value: string | null | undefined): string | null {
+function cleanDisplayLabel(value: string | null | undefined): string | null {
   const trimmed = value?.trim()
   if (!trimmed) return null
   const normalized = trimmed.toLowerCase()
@@ -413,7 +413,7 @@ export function isUserVisibleWarning(code: string): boolean {
   return true
 }
 
-export function formatDateTime(iso: string): string {
+function formatDateTime(iso: string): string {
   const parsed = new Date(iso)
   if (Number.isNaN(parsed.getTime())) return iso
   const hasTime = iso.includes("T") || iso.includes(" ")
