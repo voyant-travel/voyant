@@ -281,10 +281,15 @@ function createTypesenseFetchClient(host: string, apiKey: string): TypesenseClie
         documents() {
           if (!name) throw new Error("documents() requires a collection name")
           return {
-            async import(
+            // Defined as an arrow-assigned property rather than a method named
+            // `import` so Vite/rolldown's import-analysis doesn't mistake the
+            // `import(` token for a dynamic import expression (which corrupts
+            // the parse). The public API shape (`documents().import(...)`) is
+            // unchanged.
+            import: async (
               documents: unknown[],
               options?: { action?: "upsert" | "create" },
-            ): Promise<unknown> {
+            ): Promise<unknown> => {
               const action = options?.action ?? "create"
               const ndjson = documents.map((d) => JSON.stringify(d)).join("\n")
               const res = await fetch(
