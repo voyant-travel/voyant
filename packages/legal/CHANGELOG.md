@@ -1,5 +1,12 @@
 # @voyant-travel/legal
 
+## 0.137.3
+
+### Patch Changes
+
+- 5145a69: Ignore inactive booking payment schedule rows when resolving contract payment schedule variables, so cancelled or expired deposit and balance rows no longer render as owed.
+- bcea95d: Localize generated contract payment method labels from the contract language instead of title-casing raw payment method enum values.
+
 ## 0.137.2
 
 ### Patch Changes
