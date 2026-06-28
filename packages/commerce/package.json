@@ -21,7 +21,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=commerce_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.4.0",
+    "@hono/zod-openapi": "catalog:",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
@@ -33,10 +33,10 @@
     "@voyant-travel/products-contracts": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.27",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
     "rrule": "^2.8.1",
-    "zod": "^4.4.3"
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "@voyant-travel/legal": "workspace:^",
@@ -55,8 +55,8 @@
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist",

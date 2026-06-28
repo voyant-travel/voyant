@@ -20,12 +20,12 @@
   "dependencies": {
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
-    "zod": "^4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist"

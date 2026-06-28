@@ -15,13 +15,13 @@
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "dotenv": "^17.4.2",
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "catalog:",
     "postgres": "^3.4.9",
-    "zod": "^4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

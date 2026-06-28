@@ -110,15 +110,15 @@
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/flights-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.27",
-    "zod": "^4.4.3"
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "repository": {
     "type": "git",

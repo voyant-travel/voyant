@@ -25,13 +25,13 @@
   },
   "dependencies": {
     "@voyant-travel/db": "workspace:^",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist",

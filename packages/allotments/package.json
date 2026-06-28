@@ -16,8 +16,8 @@
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist"

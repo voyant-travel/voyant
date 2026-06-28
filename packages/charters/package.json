@@ -28,7 +28,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=charters_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.4.0",
+    "@hono/zod-openapi": "catalog:",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/charters-contracts": "workspace:^",
     "@voyant-travel/core": "workspace:^",
@@ -36,16 +36,16 @@
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.27",
-    "zod": "^4.4.3"
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@voyant-travel/voyant-test-utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist",
