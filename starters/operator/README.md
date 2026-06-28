@@ -6,7 +6,7 @@ The Voyant starter for tour operators. A single Cloudflare Worker that serves th
 
 - **Runtime**: Cloudflare Workers (Vite + `@cloudflare/vite-plugin`)
 - **Framework**: TanStack Start + React 19
-- **UI**: Local shadcn copy + Tailwind CSS v4
+- **UI**: Shared `@voyant-travel/ui` components and styles + Tailwind CSS v4
 - **DB**: Neon Postgres via the serverless HTTP driver (one secret, `DATABASE_URL`; no Hyperdrive binding required)
 - **Auth**: Better Auth
 - **Jobs**: Voyant Workflows
