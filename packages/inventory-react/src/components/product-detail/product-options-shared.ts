@@ -60,26 +60,32 @@ export function deriveOptionPricingLayout(
   }
 }
 
-export function getProductOptionsQueryOptions(client: OptionsClient, productId: string) {
+export function getProductDetailProductOptionsQueryOptions(
+  client: OptionsClient,
+  productId: string,
+) {
   return getSharedProductOptionsQueryOptions(client, { productId, limit: 100 })
 }
 
-export function getOptionUnitsQueryOptions(client: OptionsClient, optionId: string) {
+export function getProductDetailOptionUnitsQueryOptions(client: OptionsClient, optionId: string) {
   return getSharedOptionUnitsQueryOptions(client, { optionId, limit: 100 })
 }
 
-export function getOptionPriceRulesQueryOptions(client: ProductDetailApi, optionId: string) {
+export function getProductDetailOptionPriceRulesQueryOptions(
+  client: ProductDetailApi,
+  optionId: string,
+) {
   return getSharedOptionPriceRulesQueryOptions(client, {
     optionId,
     limit: 100,
   })
 }
 
-export function getPricingCategoriesQueryOptions(client: ProductDetailApi) {
+export function getProductDetailPricingCategoriesQueryOptions(client: ProductDetailApi) {
   return getSharedPricingCategoriesQueryOptions(client, { limit: 100 })
 }
 
-export function getOptionUnitPriceRulesQueryOptions(
+export function getProductDetailOptionUnitPriceRulesQueryOptions(
   client: ProductDetailApi,
   optionPriceRuleId: string,
 ) {
@@ -89,11 +95,11 @@ export function getOptionUnitPriceRulesQueryOptions(
   })
 }
 
-export function getPriceCatalogsQueryOptions(client: ProductDetailApi) {
+export function getProductDetailPriceCatalogsQueryOptions(client: ProductDetailApi) {
   return getSharedPriceCatalogsQueryOptions(client, { limit: 100 })
 }
 
-export function getDeparturePriceOverridesQueryOptions(
+export function getProductDetailDeparturePriceOverridesQueryOptions(
   client: ProductDetailApi,
   departureId: string,
 ) {

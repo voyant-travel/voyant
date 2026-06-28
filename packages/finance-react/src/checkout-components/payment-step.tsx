@@ -19,7 +19,7 @@ import type {
  * UI-side extension of the `PaymentStepExtraOption` from finance-react —
  * adds an optional `icon` slot since the icon is a presentation concern.
  */
-export interface PaymentStepExtraOption extends CheckoutPaymentStepExtraOption {
+export interface PaymentStepUiExtraOption extends CheckoutPaymentStepExtraOption {
   icon?: ReactNode
 }
 
@@ -41,7 +41,7 @@ export interface PaymentStepProps {
    * Vertical-specific always-available options. Rendered after the
    * capability-gated sections, before the universal Hold option.
    */
-  extraOptions?: ReadonlyArray<PaymentStepExtraOption>
+  extraOptions?: ReadonlyArray<PaymentStepUiExtraOption>
 
   /** Hide the universal "Hold — pay later" option (some verticals don't support it). */
   hideHoldOption?: boolean
@@ -192,7 +192,7 @@ function AltMethodsSection({
   value: PaymentChoice | null
   onChange: (next: PaymentChoice | null) => void
   showNewCard: boolean
-  extraOptions: ReadonlyArray<PaymentStepExtraOption>
+  extraOptions: ReadonlyArray<PaymentStepUiExtraOption>
   hideHoldOption?: boolean
 }) {
   const messages = useCheckoutUiMessagesOrDefault().paymentStep.otherOptions

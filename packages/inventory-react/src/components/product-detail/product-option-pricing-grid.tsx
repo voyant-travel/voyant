@@ -25,11 +25,11 @@ import {
   TravelerCategoryDialog,
 } from "./product-options-pricing.js"
 import {
-  getOptionPriceRulesQueryOptions,
-  getOptionUnitPriceRulesQueryOptions,
-  getOptionUnitsQueryOptions,
-  getPriceCatalogsQueryOptions,
-  getPricingCategoriesQueryOptions,
+  getProductDetailOptionPriceRulesQueryOptions,
+  getProductDetailOptionUnitPriceRulesQueryOptions,
+  getProductDetailOptionUnitsQueryOptions,
+  getProductDetailPriceCatalogsQueryOptions,
+  getProductDetailPricingCategoriesQueryOptions,
   type OptionPricingLayout,
 } from "./product-options-shared.js"
 import { UnitDialog } from "./product-unit-dialog.js"
@@ -89,21 +89,21 @@ export function OptionPricingGrid({
   const priceRuleMessages = messages.products.operations.priceRules
 
   const { data: unitsData, refetch: refetchUnits } = useQuery(
-    getOptionUnitsQueryOptions(productsClient, optionId),
+    getProductDetailOptionUnitsQueryOptions(productsClient, optionId),
   )
   const { data: rulesData, refetch: refetchRules } = useQuery(
-    getOptionPriceRulesQueryOptions(api, optionId),
+    getProductDetailOptionPriceRulesQueryOptions(api, optionId),
   )
   const { data: categoriesData, refetch: refetchCategories } = useQuery(
-    getPricingCategoriesQueryOptions(api),
+    getProductDetailPricingCategoriesQueryOptions(api),
   )
-  const { data: catalogsData } = useQuery(getPriceCatalogsQueryOptions(api))
+  const { data: catalogsData } = useQuery(getProductDetailPriceCatalogsQueryOptions(api))
 
   const rules = rulesData?.data ?? []
   const defaultRule = rules.find((rule) => rule.isDefault) ?? rules[0]
 
   const { data: cellsData, refetch: refetchCells } = useQuery({
-    ...getOptionUnitPriceRulesQueryOptions(api, defaultRule?.id ?? "__none__"),
+    ...getProductDetailOptionUnitPriceRulesQueryOptions(api, defaultRule?.id ?? "__none__"),
     enabled: Boolean(defaultRule?.id),
   })
 

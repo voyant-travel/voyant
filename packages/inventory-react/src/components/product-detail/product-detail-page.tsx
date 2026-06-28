@@ -29,7 +29,7 @@ import { ProductMarketRulesSection } from "./product-market-rules-section.js"
 import { PricingPanel } from "./product-options-pricing.js"
 import {
   deriveOptionPricingLayout,
-  getDeparturePriceOverridesQueryOptions,
+  getProductDetailDeparturePriceOverridesQueryOptions,
 } from "./product-options-shared.js"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section.js"
 import { ScheduleDialog } from "./product-schedule-dialog.js"
@@ -51,7 +51,7 @@ export function ProductDetailPage({ id }: { id: string }) {
 
   const overrideQueries = useQueries({
     queries: slots.map((slot) => ({
-      ...getDeparturePriceOverridesQueryOptions(api, slot.id),
+      ...getProductDetailDeparturePriceOverridesQueryOptions(api, slot.id),
       enabled: !!slot.id,
     })),
   })

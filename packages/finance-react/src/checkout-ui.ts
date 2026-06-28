@@ -9,8 +9,9 @@ export {
 } from "./checkout-components/payment-link-landing-page.js"
 export {
   PaymentStep,
-  type PaymentStepExtraOption,
   type PaymentStepProps,
+  type PaymentStepUiExtraOption as PaymentStepExtraOption,
+  type PaymentStepUiExtraOption,
 } from "./checkout-components/payment-step.js"
 export type { CheckoutPaymentTargetType, CheckoutUiMessages } from "./checkout-i18n/index.js"
 export {

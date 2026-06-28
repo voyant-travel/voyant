@@ -11,12 +11,15 @@ export { ProductDetailPage } from "./product-detail-page.js"
 export {
   getChannelsQueryOptions,
   getProductChannelMappingsQueryOptions,
-  getProductMediaQueryOptions,
+  getProductDetailMediaQueryOptions as getProductMediaQueryOptions,
+  getProductDetailMediaQueryOptions,
   getProductRulesQueryOptions,
   getProductSlotsQueryOptions,
 } from "./product-detail-shared.js"
 export { ProductDetailSkeleton } from "./product-detail-skeleton.js"
 export {
-  getPricingCategoriesQueryOptions,
-  getProductOptionsQueryOptions,
+  getProductDetailPricingCategoriesQueryOptions as getPricingCategoriesQueryOptions,
+  getProductDetailPricingCategoriesQueryOptions,
+  getProductDetailProductOptionsQueryOptions as getProductOptionsQueryOptions,
+  getProductDetailProductOptionsQueryOptions,
 } from "./product-options-shared.js"

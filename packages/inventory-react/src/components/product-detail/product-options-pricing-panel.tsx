@@ -20,7 +20,7 @@ import { OptionPricingGrid } from "./product-option-pricing-grid.js"
 import { ExtraPriceRulesPanel } from "./product-options-extra-price-rules.js"
 import { formatProductMoney } from "./product-options-pricing-helpers.js"
 import {
-  getOptionPriceRulesQueryOptions,
+  getProductDetailOptionPriceRulesQueryOptions,
   type OptionPricingLayout,
 } from "./product-options-shared.js"
 import { UnitPriceMatrix } from "./product-options-unit-price-matrix.js"
@@ -141,7 +141,7 @@ function AdvancedRatePlans({
   const priceRuleMessages = messages.products.operations.priceRules
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<OptionPriceRuleData | undefined>()
-  const { data, refetch } = useQuery(getOptionPriceRulesQueryOptions(api, optionId))
+  const { data, refetch } = useQuery(getProductDetailOptionPriceRulesQueryOptions(api, optionId))
   const { remove: removeRule } = useOptionPriceRuleMutation()
   const deleteMutation = useMutation({
     mutationFn: (id: string) => removeRule.mutateAsync(id),
