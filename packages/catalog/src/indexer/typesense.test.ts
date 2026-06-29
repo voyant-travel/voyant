@@ -256,6 +256,72 @@ describe("Typesense catalog indexer", () => {
     ])
   })
 
+  it("skips collection updates when the existing schema and metadata already match", async () => {
+    const existingSchema = buildCollectionSchema(slice, registry)
+    let updateCalls = 0
+    const client: TypesenseClient = {
+      collections: () => ({
+        create: async () => {
+          throw new Error("already exists")
+        },
+        update: async () => {
+          updateCalls += 1
+        },
+        delete: async () => undefined,
+        retrieve: async () => existingSchema,
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search: async () => ({ hits: [], found: 0 }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({ client })
+
+    await indexer.ensureCollection(slice, registry)
+
+    expect(updateCalls).toBe(0)
+  })
+
+  it("retries transient Typesense collection update conflicts", async () => {
+    const existingSchema = buildCollectionSchema(slice, registry)
+    let updateCalls = 0
+    const client: TypesenseClient = {
+      collections: () => ({
+        create: async () => {
+          throw new Error("already exists")
+        },
+        update: async () => {
+          updateCalls += 1
+          if (updateCalls < 3) {
+            throw new Error(
+              'Typesense PATCH /collections/products__en-GB__customer__default 422: {"message":"Another collection update operation is in progress."}',
+            )
+          }
+        },
+        delete: async () => undefined,
+        retrieve: async () => ({
+          name: existingSchema.name,
+          fields: existingSchema.fields,
+          enable_nested_fields: true,
+        }),
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search: async () => ({ hits: [], found: 0 }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({
+      client,
+      collectionUpdateRetryDelaysMs: [0, 0],
+    })
+
+    await indexer.ensureCollection(slice, registry)
+
+    expect(updateCalls).toBe(3)
+  })
+
   it("upserts storefront card values without stringifying typed fields", async () => {
     const imported: unknown[][] = []
     const client: TypesenseClient = {
