@@ -3,7 +3,7 @@ import type { Context } from "hono"
 import { contractsService } from "./service.js"
 import { isContractTemplateSyntaxError, type RenderTemplateInput } from "./service-shared.js"
 
-export function contractTemplateSyntaxResponse(c: Context, error: unknown) {
+function contractTemplateSyntaxResponse(c: Context, error: unknown) {
   if (!isContractTemplateSyntaxError(error)) {
     throw error
   }

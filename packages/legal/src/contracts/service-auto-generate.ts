@@ -16,16 +16,12 @@ import { contractTemplatesService } from "./service-templates.js"
 import type { GenerateContractForBookingInput } from "./validation.js"
 
 export type {
-  AcceptanceContextVariables,
   AutoGenerateContractOptions,
   AutoGenerateContractResult,
   AutoGenerateContractRuntime,
   BookingConfirmedLikeEvent,
-  ContractItemVariable,
-  ContractTravelerVariable,
   DefaultContractVariables,
   GenerateContractForBookingResult,
-  OperatorContextVariables,
   ResolveContractVariablesFn,
 } from "./service-auto-generate-types.js"
 
