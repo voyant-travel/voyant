@@ -2,7 +2,10 @@
 
 import {
   Button,
+  CurrencyCombobox,
+  DatePicker,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -165,7 +168,7 @@ export function ProgramFormDialog({
         <DialogHeader>
           <DialogTitle>{editing ? "Edit program" : "New program"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="program-name">Name</Label>
             <Input
@@ -179,7 +182,7 @@ export function ProgramFormDialog({
             <div className="space-y-2">
               <Label htmlFor="program-type">Type</Label>
               <Select value={type} onValueChange={(value) => setType(value as ProgramType)}>
-                <SelectTrigger id="program-type">
+                <SelectTrigger id="program-type" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -194,7 +197,7 @@ export function ProgramFormDialog({
             <div className="space-y-2">
               <Label htmlFor="program-status">Status</Label>
               <Select value={status} onValueChange={(value) => setStatus(value as ProgramStatus)}>
-                <SelectTrigger id="program-status">
+                <SelectTrigger id="program-status" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -219,20 +222,20 @@ export function ProgramFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="program-start">Start date</Label>
-              <Input
-                id="program-start"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+              <DatePicker
+                value={startDate || null}
+                onChange={(value) => setStartDate(value ?? "")}
+                placeholder="Start date"
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="program-end">End date</Label>
-              <Input
-                id="program-end"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+              <DatePicker
+                value={endDate || null}
+                onChange={(value) => setEndDate(value ?? "")}
+                placeholder="End date"
+                className="w-full"
               />
             </div>
           </div>
@@ -263,11 +266,10 @@ export function ProgramFormDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="program-currency">Currency</Label>
-              <Input
-                id="program-currency"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                placeholder="EUR"
+              <CurrencyCombobox
+                value={currency || null}
+                onChange={(value) => setCurrency(value ?? "")}
+                className="w-full"
               />
             </div>
           </div>
@@ -289,7 +291,7 @@ export function ProgramFormDialog({
           ) : budgetInvalid ? (
             <p className="text-destructive text-xs">Budget must be 0 or more.</p>
           ) : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={pending}>
             Cancel

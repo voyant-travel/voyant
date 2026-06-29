@@ -3,6 +3,8 @@
 import {
   AdminWidgetSlotRenderer,
   type OperatorAdminMessages,
+  useAdminBreadcrumbs,
+  useAdminHref,
   useAdminNavigate,
   useOperatorAdminMessages,
 } from "@voyant-travel/admin"
@@ -18,9 +20,19 @@ import {
   AlertDialogTrigger,
   Badge,
   Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
 } from "@voyant-travel/ui/components"
-import { ArrowLeft, ArrowRightLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
+import { ArrowRightLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { InvoiceActionLedgerCard } from "../components/invoice-action-ledger-card.js"
 import { InvoiceDialog } from "../components/invoice-dialog.js"
@@ -88,11 +100,13 @@ export interface InvoiceDetailHostProps {
 export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
   const messages = useOperatorAdminMessages()
   const navigateTo = useAdminNavigate()
+  const resolveHref = useAdminHref()
   const [editOpen, setEditOpen] = useState(false)
   const [lineItemDialogOpen, setLineItemDialogOpen] = useState(false)
   const [editingLineItem, setEditingLineItem] = useState<LineItem | undefined>()
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const [creditNoteDialogOpen, setCreditNoteDialogOpen] = useState(false)
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false)
   const [noteContent, setNoteContent] = useState("")
   const [actionError, setActionError] = useState<string | null>(null)
   const [voidDialogOpen, setVoidDialogOpen] = useState(false)
@@ -106,6 +120,17 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
   const { convertToInvoice, remove: deleteInvoice, voidInvoice } = useInvoiceMutation()
   const { remove: deleteLineItem } = useInvoiceLineItemMutation(id)
   const addNoteMutation = useInvoiceNoteMutation(id)
+
+  const invoicesHref = resolveHref("invoice.list", {})
+  const invoiceForBreadcrumb = invoiceData?.data
+  useAdminBreadcrumbs(
+    invoiceForBreadcrumb
+      ? [
+          { label: messages.finance.invoicesPageTitle, href: invoicesHref },
+          { label: invoiceForBreadcrumb.invoiceNumber },
+        ]
+      : [{ label: messages.finance.invoicesPageTitle, href: invoicesHref }],
+  )
 
   if (isPending) {
     return <InvoiceDetailSkeleton />
@@ -136,23 +161,18 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
     error instanceof Error ? error.message : fallback
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigateTo("invoice.list", {})}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">{invoice.invoiceNumber}</h1>
-          <div className="mt-1 flex items-center gap-2">
-            <Badge
-              variant={invoiceStatusVariant[invoice.status] ?? "secondary"}
-              className="capitalize"
-            >
-              {getInvoiceStatusLabel(messages, invoice.status)}
-            </Badge>
-          </div>
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{invoice.invoiceNumber}</h1>
+          <Badge
+            variant={invoiceStatusVariant[invoice.status] ?? "secondary"}
+            className="capitalize"
+          >
+            {getInvoiceStatusLabel(messages, invoice.status)}
+          </Badge>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {canConvertProforma ? (
             <Button
               variant="outline"
@@ -287,67 +307,143 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
       <InvoiceInfoCards
         invoice={invoice}
         onOpenBooking={() => navigateTo("booking.detail", { bookingId: invoice.bookingId })}
+        onOpenPerson={(personId) => navigateTo("person.detail", { personId })}
+        onOpenOrganization={(organizationId) =>
+          navigateTo("organization.detail", { organizationId })
+        }
       />
       <AdminWidgetSlotRenderer
         slot="invoice.details.after-summary"
         props={{ invoice, lineItems, payments, creditNotes, notes }}
       />
 
-      <InvoiceLineItemsCard
-        lineItems={lineItems}
-        onCreate={() => {
-          setEditingLineItem(undefined)
-          setLineItemDialogOpen(true)
+      <Tabs defaultValue="line-items">
+        <TabsList className="max-w-full justify-start overflow-x-auto">
+          <TabsTrigger value="line-items">
+            {messages.finance.detailSections.lineItemsTitle}
+          </TabsTrigger>
+          <TabsTrigger value="payments">
+            {messages.finance.detailSections.paymentsTitle}
+          </TabsTrigger>
+          <TabsTrigger value="credit-notes">
+            {messages.finance.detailSections.creditNotesTitle}
+          </TabsTrigger>
+          <TabsTrigger value="attachments">
+            {messages.finance.detailSections.attachmentsTitle}
+          </TabsTrigger>
+          <TabsTrigger value="notes">{messages.finance.detailSections.notesTitle}</TabsTrigger>
+          <TabsTrigger value="action-ledger">
+            {messages.finance.detailSections.actionLedgerTitle}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="line-items">
+          <InvoiceLineItemsCard
+            lineItems={lineItems}
+            onCreate={() => {
+              setEditingLineItem(undefined)
+              setLineItemDialogOpen(true)
+            }}
+            onEdit={(lineItem) => {
+              setEditingLineItem(lineItem)
+              setLineItemDialogOpen(true)
+            }}
+            onDelete={(lineId) => {
+              if (confirm(messages.finance.detailPage.deleteLineItemConfirm)) {
+                setActionError(null)
+                deleteLineItem.mutate(lineId, {
+                  onError: (error) => {
+                    setActionError(
+                      getMutationErrorMessage(messages.finance.detailPage.deleteLineItemFailed)(
+                        error,
+                      ),
+                    )
+                  },
+                })
+              }
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <InvoicePaymentsCard
+            payments={payments}
+            onCreate={() => setPaymentDialogOpen(true)}
+            canCreate={invoice.status !== "void"}
+          />
+        </TabsContent>
+
+        <TabsContent value="credit-notes">
+          <InvoiceCreditNotesCard
+            creditNotes={creditNotes}
+            onCreate={() => setCreditNoteDialogOpen(true)}
+          />
+        </TabsContent>
+
+        <TabsContent value="attachments">
+          <InvoiceAttachmentsCard invoiceId={id} />
+        </TabsContent>
+
+        <TabsContent value="notes">
+          <InvoiceNotesCard notes={notes} onAddNote={() => setNoteDialogOpen(true)} />
+        </TabsContent>
+
+        <TabsContent value="action-ledger">
+          <InvoiceActionLedgerCard invoiceId={invoice.id} bare />
+        </TabsContent>
+      </Tabs>
+
+      <Dialog
+        open={noteDialogOpen}
+        onOpenChange={(open) => {
+          setNoteDialogOpen(open)
+          if (!open) setNoteContent("")
         }}
-        onEdit={(lineItem) => {
-          setEditingLineItem(lineItem)
-          setLineItemDialogOpen(true)
-        }}
-        onDelete={(lineId) => {
-          if (confirm(messages.finance.detailPage.deleteLineItemConfirm)) {
-            setActionError(null)
-            deleteLineItem.mutate(lineId, {
-              onError: (error) => {
-                setActionError(
-                  getMutationErrorMessage(messages.finance.detailPage.deleteLineItemFailed)(error),
-                )
-              },
-            })
-          }
-        }}
-      />
-
-      <InvoiceAttachmentsCard invoiceId={id} />
-
-      <InvoicePaymentsCard
-        payments={payments}
-        onCreate={() => setPaymentDialogOpen(true)}
-        canCreate={invoice.status !== "void"}
-      />
-
-      <InvoiceCreditNotesCard
-        creditNotes={creditNotes}
-        onCreate={() => setCreditNoteDialogOpen(true)}
-      />
-
-      <InvoiceNotesCard
-        noteContent={noteContent}
-        isAdding={addNoteMutation.isPending}
-        notes={notes}
-        onNoteChange={setNoteContent}
-        onAddNote={() =>
-          addNoteMutation.mutate(
-            { content: noteContent.trim() },
-            {
-              onSuccess: () => {
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{messages.finance.detailSections.addNote}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <Textarea
+              value={noteContent}
+              onChange={(event) => setNoteContent(event.target.value)}
+              placeholder={messages.finance.detailSections.addInternalNotePlaceholder}
+              className="min-h-24"
+            />
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNoteDialogOpen(false)
                 setNoteContent("")
-              },
-            },
-          )
-        }
-      />
-
-      <InvoiceActionLedgerCard invoiceId={invoice.id} />
+              }}
+            >
+              {messages.finance.detailPage.cancel}
+            </Button>
+            <Button
+              disabled={addNoteMutation.isPending || !noteContent.trim()}
+              onClick={() =>
+                addNoteMutation.mutate(
+                  { content: noteContent.trim() },
+                  {
+                    onSuccess: () => {
+                      setNoteContent("")
+                      setNoteDialogOpen(false)
+                    },
+                  },
+                )
+              }
+            >
+              {addNoteMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : null}
+              {messages.finance.detailSections.addNote}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <InvoiceDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
 

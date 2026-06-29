@@ -69,6 +69,11 @@ export const productRecordSchema = z.object({
   endDate: z.string().nullable(),
   pax: z.number().int().nullable(),
   productTypeId: z.string().nullable(),
+  // List view only — the detail/create/update responses omit these, so keep
+  // them optional. `productTypeName` resolves the type id to a label and
+  // `nextDeparture` is the earliest upcoming open departure (ISO string).
+  productTypeName: z.string().nullable().optional(),
+  nextDeparture: z.string().nullable().optional(),
   contractTemplateId: z.string().nullable().optional(),
   taxClassId: z.string().nullable(),
   customerPaymentPolicy: productPaymentPolicySchema.nullable().optional(),

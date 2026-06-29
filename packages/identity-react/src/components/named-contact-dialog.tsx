@@ -18,6 +18,7 @@ import {
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
@@ -155,7 +156,10 @@ export function NamedContactDialog({
               : messages.namedContactDialog.titles.create}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
@@ -219,7 +223,10 @@ export function NamedContactDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.namedContactDialog.fields.phone}</Label>
-                <Input {...form.register("phone")} />
+                <PhoneInput
+                  value={form.watch("phone") ?? ""}
+                  onChange={(next) => form.setValue("phone", next, { shouldDirty: true })}
+                />
               </div>
             </div>
 

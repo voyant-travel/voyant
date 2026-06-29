@@ -3,7 +3,9 @@
 import {
   Badge,
   Button,
+  CurrencyCombobox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -194,7 +196,7 @@ function CreateRfpDialog({ programId, open, onOpenChange }: CreateRfpDialogProps
         <DialogHeader>
           <DialogTitle>New RFP</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="rfp-title">Title</Label>
             <Input
@@ -207,7 +209,7 @@ function CreateRfpDialog({ programId, open, onOpenChange }: CreateRfpDialogProps
           <div className="space-y-2">
             <Label htmlFor="rfp-status">Status</Label>
             <Select value={status} onValueChange={(value) => setStatus(value as RfpEditableStatus)}>
-              <SelectTrigger id="rfp-status">
+              <SelectTrigger id="rfp-status" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -219,7 +221,7 @@ function CreateRfpDialog({ programId, open, onOpenChange }: CreateRfpDialogProps
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button
             variant="outline"
@@ -319,93 +321,93 @@ function ManageRfpDialog({ rfpId, onOpenChange }: ManageRfpDialogProps) {
           </DialogTitle>
         </DialogHeader>
 
-        {isLoading && !rfp ? (
-          <div className="py-6 text-center text-muted-foreground text-sm">Loading…</div>
-        ) : (
-          <div className="space-y-6">
-            <Bids
-              bids={bids}
-              awarded={awarded}
-              awardPending={award.isPending}
-              onAward={submitAward}
-            />
+        <DialogBody>
+          {isLoading && !rfp ? (
+            <div className="py-6 text-center text-muted-foreground text-sm">Loading…</div>
+          ) : (
+            <div className="space-y-6">
+              <Bids
+                bids={bids}
+                awarded={awarded}
+                awardPending={award.isPending}
+                onAward={submitAward}
+              />
 
-            {awarded ? null : (
-              <div className="space-y-4 border-t pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rfp-bid-supplier">Record a bid</Label>
-                  <div className="flex flex-wrap items-end gap-2">
-                    <Input
-                      id="rfp-bid-supplier"
-                      className="min-w-40 flex-1"
-                      value={bidSupplierId}
-                      onChange={(e) => setBidSupplierId(e.target.value)}
-                      placeholder="Supplier ID (supl_…)"
-                    />
-                    <Input
-                      className="w-28"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={bidTotal}
-                      onChange={(e) => setBidTotal(e.target.value)}
-                      placeholder="Total"
-                      aria-invalid={bidTotalInvalid || undefined}
-                    />
-                    <Input
-                      className="w-20"
-                      value={bidCurrency}
-                      onChange={(e) => setBidCurrency(e.target.value)}
-                      placeholder="EUR"
-                      aria-invalid={bidCurrencyMissing || undefined}
-                    />
-                    <Button onClick={() => void submitBid()} disabled={!canSubmitBid}>
-                      {createBid.isPending ? (
-                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                      ) : null}
-                      Add bid
-                    </Button>
+              {awarded ? null : (
+                <div className="space-y-4 border-t pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rfp-bid-supplier">Record a bid</Label>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <Input
+                        id="rfp-bid-supplier"
+                        className="min-w-40 flex-1"
+                        value={bidSupplierId}
+                        onChange={(e) => setBidSupplierId(e.target.value)}
+                        placeholder="Supplier ID (supl_…)"
+                      />
+                      <Input
+                        className="w-28"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={bidTotal}
+                        onChange={(e) => setBidTotal(e.target.value)}
+                        placeholder="Total"
+                        aria-invalid={bidTotalInvalid || undefined}
+                      />
+                      <CurrencyCombobox
+                        className="w-32"
+                        value={bidCurrency || null}
+                        onChange={(value) => setBidCurrency(value ?? "")}
+                      />
+                      <Button onClick={() => void submitBid()} disabled={!canSubmitBid}>
+                        {createBid.isPending ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : null}
+                        Add bid
+                      </Button>
+                    </div>
+                    {bidTotalInvalid ? (
+                      <p className="text-destructive text-xs">Total must be 0 or more.</p>
+                    ) : bidCurrencyMissing ? (
+                      <p className="text-destructive text-xs">
+                        A priced bid needs a currency (e.g. EUR).
+                      </p>
+                    ) : null}
                   </div>
-                  {bidTotalInvalid ? (
-                    <p className="text-destructive text-xs">Total must be 0 or more.</p>
-                  ) : bidCurrencyMissing ? (
-                    <p className="text-destructive text-xs">
-                      A priced bid needs a currency (e.g. EUR).
-                    </p>
-                  ) : null}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="rfp-invite-supplier">Invite a supplier</Label>
-                  <div className="flex flex-wrap items-end gap-2">
-                    <Input
-                      id="rfp-invite-supplier"
-                      className="min-w-40 flex-1"
-                      value={supplierId}
-                      onChange={(e) => setSupplierId(e.target.value)}
-                      placeholder="Supplier ID (supl_…)"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => void submitInvite()}
-                      disabled={!supplierId.trim() || invite.isPending}
-                    >
-                      {invite.isPending ? (
-                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                      ) : null}
-                      Invite
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="rfp-invite-supplier">Invite a supplier</Label>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <Input
+                        id="rfp-invite-supplier"
+                        className="min-w-40 flex-1"
+                        value={supplierId}
+                        onChange={(e) => setSupplierId(e.target.value)}
+                        placeholder="Supplier ID (supl_…)"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => void submitInvite()}
+                        disabled={!supplierId.trim() || invite.isPending}
+                      >
+                        {invite.isPending ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : null}
+                        Invite
+                      </Button>
+                    </div>
+                    {rfp && rfp.invitations.length > 0 ? (
+                      <p className="text-muted-foreground text-xs">
+                        {rfp.invitations.length} supplier(s) invited.
+                      </p>
+                    ) : null}
                   </div>
-                  {rfp && rfp.invitations.length > 0 ? (
-                    <p className="text-muted-foreground text-xs">
-                      {rfp.invitations.length} supplier(s) invited.
-                    </p>
-                  ) : null}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </DialogBody>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>

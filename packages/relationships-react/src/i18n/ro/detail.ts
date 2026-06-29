@@ -29,6 +29,7 @@ export const crmUiRoDetailMessages = {
       fields: {
         name: "Nume",
         legalName: "Denumire legala",
+        taxId: "Cod fiscal",
         website: "Website",
         industry: "Industrie",
         relation: "Relatie",

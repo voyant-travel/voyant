@@ -10,7 +10,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@voyant-travel/ui/components/combobox"
-import { Input } from "@voyant-travel/ui/components/input"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useMemo, useState } from "react"
 
@@ -123,12 +123,10 @@ export function JourneyDeparturePicker({
     return (
       <div className="space-y-1">
         <Label htmlFor="bj-departure-date">{messages.fields.departure}</Label>
-        <Input
-          id="bj-departure-date"
-          type="date"
-          className="sm:max-w-xs"
+        <DatePicker
+          className="w-full sm:max-w-xs"
           value={departureDate ?? ""}
-          onChange={(e) => onChange({ departureDate: e.target.value || null })}
+          onChange={(value) => onChange({ departureDate: value || null })}
         />
       </div>
     )

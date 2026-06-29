@@ -103,7 +103,10 @@ export function AvailabilityCloseoutDialog(props: {
             {isEditing ? closeoutMessages.editTitle : closeoutMessages.newTitle}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <ProductSelect
               label={closeoutMessages.productLabel}

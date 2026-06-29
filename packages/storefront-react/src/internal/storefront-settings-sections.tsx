@@ -16,6 +16,7 @@ import {
   FieldLegend,
   FieldSet,
 } from "@voyant-travel/ui/components/field"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { AlertCircle, Plus, Trash2 } from "lucide-react"
 
@@ -175,10 +176,10 @@ export function SupportSection({ form, setField, updateSupportLink }: SupportSec
             </Field>
             <Field>
               <FieldLabel htmlFor="storefront-support-phone">Phone</FieldLabel>
-              <Input
+              <PhoneInput
                 id="storefront-support-phone"
-                value={form.supportPhone}
-                onChange={(event) => setField("supportPhone", event.target.value)}
+                value={form.supportPhone ?? ""}
+                onChange={(value) => setField("supportPhone", value)}
               />
             </Field>
           </div>

@@ -84,8 +84,8 @@ export function AdminCoreSettingsLayout({
   const isActive = (href: string) => pathname.replace(/\/$/, "") === href
 
   return (
-    <div className="flex h-[calc(100vh-0px)]">
-      <aside className="w-64 shrink-0 overflow-y-auto border-r p-6">
+    <div className="flex flex-col md:h-[calc(100vh-0px)] md:flex-row">
+      <aside className="w-full shrink-0 border-b p-6 md:w-64 md:overflow-y-auto md:border-r md:border-b-0">
         <h1 className="text-xl font-semibold tracking-tight">{messages.settings.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{messages.settings.description}</p>
         <nav className="mt-6 flex flex-col gap-6">
@@ -116,7 +116,7 @@ export function AdminCoreSettingsLayout({
           ))}
         </nav>
       </aside>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 md:overflow-y-auto">
         <Outlet />
       </div>
     </div>

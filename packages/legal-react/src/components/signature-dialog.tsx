@@ -101,7 +101,10 @@ export function SignatureDialog({
         <DialogHeader>
           <DialogTitle>{messages.signatureDialog.title}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{messages.signatureDialog.fields.signerName}</Label>

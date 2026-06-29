@@ -25,6 +25,7 @@ export type OrganizationData = Pick<
   | "source"
   | "status"
   | "tags"
+  | "taxId"
   | "updatedAt"
   | "website"
 >

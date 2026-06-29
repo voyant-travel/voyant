@@ -15,6 +15,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -275,7 +276,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? dialogMessages.titles.edit : dialogMessages.titles.create}
@@ -283,7 +284,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           <DialogDescription>{dialogMessages.description}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
+        <DialogBody className="grid gap-4 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-name">{dialogMessages.fields.name}</Label>
@@ -515,7 +516,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
+        </DialogBody>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>

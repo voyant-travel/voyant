@@ -3,6 +3,8 @@
 import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
+  DatePicker,
+  DateTimePicker,
   Dialog,
   DialogBody,
   DialogContent,
@@ -142,7 +144,10 @@ export function ResourceSlotAssignmentDialog({
             {isEditing ? dialogMessages.editTitle : dialogMessages.newTitle}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid gap-2">
               <Label>{dialogMessages.slotLabel}</Label>
@@ -251,7 +256,13 @@ export function ResourceSlotAssignmentDialog({
               </div>
               <div className="grid gap-2">
                 <Label>{dialogMessages.releasedAtLabel}</Label>
-                <Input {...form.register("releasedAt")} type="datetime-local" />
+                <DateTimePicker
+                  value={form.watch("releasedAt") || null}
+                  onChange={(value) =>
+                    form.setValue("releasedAt", value ?? "", { shouldDirty: true })
+                  }
+                  className="w-full"
+                />
               </div>
             </div>
             <div className="grid gap-2">
@@ -361,7 +372,10 @@ export function ResourceCloseoutDialog({
             {isEditing ? dialogMessages.editTitle : dialogMessages.newTitle}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid gap-2">
               <Label>{dialogMessages.resourceLabel}</Label>
@@ -385,15 +399,34 @@ export function ResourceCloseoutDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{dialogMessages.dateLabel}</Label>
-                <Input {...form.register("dateLocal")} type="date" />
+                <DatePicker
+                  value={form.watch("dateLocal") || null}
+                  onChange={(value) =>
+                    form.setValue("dateLocal", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  className="w-full"
+                />
               </div>
               <div className="grid gap-2">
                 <Label>{dialogMessages.startsAtLabel}</Label>
-                <Input {...form.register("startsAt")} type="datetime-local" />
+                <DateTimePicker
+                  value={form.watch("startsAt") || null}
+                  onChange={(value) =>
+                    form.setValue("startsAt", value ?? "", { shouldDirty: true })
+                  }
+                  className="w-full"
+                />
               </div>
               <div className="grid gap-2">
                 <Label>{dialogMessages.endsAtLabel}</Label>
-                <Input {...form.register("endsAt")} type="datetime-local" />
+                <DateTimePicker
+                  value={form.watch("endsAt") || null}
+                  onChange={(value) => form.setValue("endsAt", value ?? "", { shouldDirty: true })}
+                  className="w-full"
+                />
               </div>
               <div className="grid gap-2">
                 <Label>{dialogMessages.createdByLabel}</Label>

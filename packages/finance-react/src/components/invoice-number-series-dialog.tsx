@@ -171,7 +171,10 @@ export function InvoiceNumberSeriesDialog({
         <DialogHeader>
           <DialogTitle>{isEditing ? dialog.titleEdit : dialog.titleNew}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
               <FieldError label={dialog.fields.code} error={form.formState.errors.code?.message}>

@@ -3,6 +3,7 @@
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -148,8 +149,8 @@ export function PersonDocumentDialog({
             {revealError instanceof Error ? revealError.message : dialog.revealFailed}
           </p>
         ) : null}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 overflow-hidden">
+          <DialogBody className="grid grid-cols-2 gap-3">
             <div className="col-span-2 flex flex-col gap-1.5">
               <Label htmlFor="doc-type">{dialog.fields.type}</Label>
               <Select
@@ -231,7 +232,7 @@ export function PersonDocumentDialog({
                 rows={3}
               />
             </div>
-          </div>
+          </DialogBody>
           {updateError ? (
             <p className="text-sm text-destructive">
               {updateError instanceof Error ? updateError.message : dialog.saveFailed}

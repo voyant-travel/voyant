@@ -209,7 +209,7 @@ function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-body"
-      className={cn("min-h-0 flex-1 overflow-y-auto py-4 pr-1", className)}
+      className={cn("min-h-0 flex-1 content-start overflow-y-auto py-4 pr-1", className)}
       {...props}
     />
   )
@@ -238,7 +238,11 @@ function SheetContent({
 
 function SheetBody({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="sheet-body" className={cn("overflow-y-auto px-4 py-4", className)} {...props} />
+    <div
+      data-slot="sheet-body"
+      className={cn("min-h-0 flex-1 content-start overflow-y-auto px-4 py-4", className)}
+      {...props}
+    />
   )
 }
 

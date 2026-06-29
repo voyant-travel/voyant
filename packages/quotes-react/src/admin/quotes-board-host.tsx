@@ -92,7 +92,7 @@ export function QuotesBoardHost() {
           <h1 className="font-bold text-2xl tracking-tight">{t.title}</h1>
           <p className="text-muted-foreground text-sm">{t.description}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select
             value={selectedPipelineId ?? undefined}
             onValueChange={(value) => setSelectedPipelineId(value)}

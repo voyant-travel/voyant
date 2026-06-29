@@ -3,6 +3,7 @@
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -67,7 +68,7 @@ export function PersonMergeDialog({
           <DialogTitle>{dialogMessages.title}</DialogTitle>
           <DialogDescription>{dialogMessages.description}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
+        <DialogBody className="grid gap-3">
           <div className="rounded-md border bg-muted/30 p-3 text-sm">
             <div className="font-medium">{dialogMessages.keepLabel}</div>
             <div className="mt-1 text-muted-foreground">
@@ -92,7 +93,7 @@ export function PersonMergeDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {messages.common.cancel}
@@ -158,7 +159,7 @@ export function OrganizationMergeDialog({
           <DialogTitle>{dialogMessages.title}</DialogTitle>
           <DialogDescription>{dialogMessages.description}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
+        <DialogBody className="grid gap-3">
           <div className="rounded-md border bg-muted/30 p-3 text-sm">
             <div className="font-medium">{dialogMessages.keepLabel}</div>
             <div className="mt-1 text-muted-foreground">{keepOrganization.name}</div>
@@ -181,7 +182,7 @@ export function OrganizationMergeDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {messages.common.cancel}

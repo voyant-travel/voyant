@@ -182,7 +182,10 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
             {isEditing ? messages.policyDialog.titles.edit : messages.policyDialog.titles.create}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{messages.policyDialog.fields.name}</Label>

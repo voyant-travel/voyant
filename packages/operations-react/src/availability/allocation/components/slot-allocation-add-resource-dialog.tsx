@@ -65,7 +65,7 @@ export function AddResourceDialog({
         <DialogHeader>
           <DialogTitle>{messages.addResource}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <DialogBody className="grid gap-4">
             {resourceOptions.length > 0 ? (
               <div className="grid gap-1.5">

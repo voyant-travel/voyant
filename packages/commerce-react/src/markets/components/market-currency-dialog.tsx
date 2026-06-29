@@ -127,7 +127,10 @@ export function MarketCurrencyDialog({
               : messages.marketCurrencyDialog.titles.create}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">

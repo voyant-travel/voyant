@@ -2,7 +2,8 @@
 
 import { Input } from "@voyant-travel/ui/components/input"
 import { Label } from "@voyant-travel/ui/components/label"
-import { Mail, Phone } from "lucide-react"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
+import { Mail } from "lucide-react"
 import { flightsUiEn } from "../i18n/en.js"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
@@ -48,17 +49,11 @@ export function FlightContactForm({ value, onChange }: FlightContactFormProps) {
           <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
             {messages.phone}
           </Label>
-          <div className="relative">
-            <Phone className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="tel"
-              autoComplete="tel"
-              value={value.phone ?? ""}
-              onChange={(e) => onChange({ ...value, phone: e.target.value })}
-              placeholder={messages.phonePlaceholder}
-              className="pl-9"
-            />
-          </div>
+          <PhoneInput
+            value={value.phone ?? ""}
+            onChange={(v) => onChange({ ...value, phone: v })}
+            placeholder={messages.phonePlaceholder}
+          />
         </div>
       </div>
     </div>

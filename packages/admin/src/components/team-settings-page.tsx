@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -284,57 +285,66 @@ function InviteMemberDialog() {
           </DialogHeader>
 
           {result ? (
-            <div className="space-y-4">
-              <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                <p>
-                  {formatMessage(messages.team.inviteCreated, {
-                    email: result.email,
-                  })}{" "}
-                  {result.emailSent
-                    ? messages.team.inviteEmailSentSuffix
-                    : messages.team.inviteManualShareSuffix}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>{messages.team.acceptLink}</Label>
-                <div className="flex gap-2">
-                  <Input value={result.acceptUrl} readOnly className="font-mono text-xs" />
-                  <Button type="button" variant="outline" size="sm" onClick={() => void copyLink()}>
-                    <Copy className="mr-1 h-3.5 w-3.5" />
-                    {copied ? messages.team.copied : messages.team.copy}
-                  </Button>
+            <>
+              <DialogBody className="space-y-4">
+                <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                  <p>
+                    {formatMessage(messages.team.inviteCreated, {
+                      email: result.email,
+                    })}{" "}
+                    {result.emailSent
+                      ? messages.team.inviteEmailSentSuffix
+                      : messages.team.inviteManualShareSuffix}
+                  </p>
                 </div>
-              </div>
+                <div className="space-y-2">
+                  <Label>{messages.team.acceptLink}</Label>
+                  <div className="flex gap-2">
+                    <Input value={result.acceptUrl} readOnly className="font-mono text-xs" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void copyLink()}
+                    >
+                      <Copy className="mr-1 h-3.5 w-3.5" />
+                      {copied ? messages.team.copied : messages.team.copy}
+                    </Button>
+                  </div>
+                </div>
+              </DialogBody>
               <DialogFooter>
                 <Button onClick={close}>{messages.team.done}</Button>
               </DialogFooter>
-            </div>
+            </>
           ) : (
             <form
-              className="space-y-4"
+              className="flex flex-1 flex-col overflow-hidden"
               onSubmit={(e) => {
                 e.preventDefault()
                 create.mutate()
               }}
             >
-              {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  {error}
+              <DialogBody className="space-y-4">
+                {error && (
+                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="invite-email">{messages.team.emailLabel}</Label>
+                  <Input
+                    id="invite-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={messages.team.emailPlaceholder}
+                    required
+                    autoComplete="off"
+                    autoFocus
+                  />
                 </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="invite-email">{messages.team.emailLabel}</Label>
-                <Input
-                  id="invite-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={messages.team.emailPlaceholder}
-                  required
-                  autoComplete="off"
-                  autoFocus
-                />
-              </div>
+              </DialogBody>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={close}>
                   {messages.team.cancel}

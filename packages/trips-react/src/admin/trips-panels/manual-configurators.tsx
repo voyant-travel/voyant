@@ -3,6 +3,7 @@
 import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
 import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { DateTimeField } from "@voyant-travel/ui/components/date-time-field"
 import {
   Empty,
@@ -30,10 +31,10 @@ export function CruiseConfigurator({
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t.cruisePlaceholder.embarkationDate}>
-          <Input
-            type="date"
-            value={pending.embarkationDate}
-            onChange={(event) => onChange({ ...pending, embarkationDate: event.target.value })}
+          <DatePicker
+            value={pending.embarkationDate || null}
+            onChange={(value) => onChange({ ...pending, embarkationDate: value ?? "" })}
+            className="w-full"
           />
         </Field>
         <Field label={t.cruisePlaceholder.cabin}>

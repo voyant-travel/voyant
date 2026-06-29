@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -200,12 +201,12 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
         <DialogHeader>
           <DialogTitle>Add delegate</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="delegate-role">Role</Label>
               <Select value={role} onValueChange={(value) => setRole(value as DelegateRole)}>
-                <SelectTrigger id="delegate-role">
+                <SelectTrigger id="delegate-role" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -220,7 +221,7 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
             <div className="space-y-2">
               <Label htmlFor="delegate-status">Status</Label>
               <Select value={status} onValueChange={(value) => setStatus(value as DelegateStatus)}>
-                <SelectTrigger id="delegate-status">
+                <SelectTrigger id="delegate-status" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -242,7 +243,7 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
               placeholder="prsn_…"
             />
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button
             variant="outline"
@@ -300,11 +301,11 @@ function EnrollDelegateDialog({ programId, delegate, onOpenChange }: EnrollDeleg
         <DialogHeader>
           <DialogTitle>Enroll delegate in session</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="enroll-session">Session</Label>
             <Select value={sessionId} onValueChange={(value) => setSessionId(value ?? "")}>
-              <SelectTrigger id="enroll-session">
+              <SelectTrigger id="enroll-session" className="w-full">
                 <SelectValue placeholder="Select a session" />
               </SelectTrigger>
               <SelectContent>
@@ -324,7 +325,7 @@ function EnrollDelegateDialog({ programId, delegate, onOpenChange }: EnrollDeleg
           <div className="space-y-2">
             <Label htmlFor="enroll-status">Status</Label>
             <Select value={status} onValueChange={(value) => setStatus(value as EnrollmentStatus)}>
-              <SelectTrigger id="enroll-status">
+              <SelectTrigger id="enroll-status" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -336,7 +337,7 @@ function EnrollDelegateDialog({ programId, delegate, onOpenChange }: EnrollDeleg
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button
             variant="outline"
