@@ -1,5 +1,11 @@
 # @voyant-travel/hono
 
+## 0.118.2
+
+### Patch Changes
+
+- 24413e3: Use a live operation-scoped database client for request outbox settlement so deferred subscriber completion or failure bookkeeping does not reuse a disposed request pool.
+
 ## 0.118.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voyant-travel/ui
 
+## 0.108.5
+
+### Patch Changes
+
+- d4f27d5: Remove unused UI package runtime dependencies and declare the PostCSS config type dependency.
+
 ## 0.108.4
 
 ### Patch Changes
