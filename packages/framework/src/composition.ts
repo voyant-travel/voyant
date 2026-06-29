@@ -343,6 +343,11 @@ export interface FrameworkProviders {
    * the finance module defaults.
    */
   financeCheckoutPolicy?: FinanceHonoModuleOptions["policy"]
+  /**
+   * Deployment invoice payment-schedule line description format override.
+   * Optional: omitted deployments keep the finance module default.
+   */
+  financePaymentScheduleLineDescriptionFormat?: FinanceHonoModuleOptions["paymentScheduleLineDescriptionFormat"]
   /** The configured pay-by-link starter (Netopia; env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
   /**
@@ -509,6 +514,8 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
             netopia: capabilities.netopiaCheckoutStarter,
           }),
           policy: capabilities.financeCheckoutPolicy,
+          paymentScheduleLineDescriptionFormat:
+            capabilities.financePaymentScheduleLineDescriptionFormat,
           resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
           resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
           listBookingReminderRuns: async (db, bookingId, query) => {
