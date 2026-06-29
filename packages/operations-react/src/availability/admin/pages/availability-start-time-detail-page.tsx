@@ -8,6 +8,7 @@ import { AvailabilityStartTimeDetailHost } from "../start-time-detail-host.js"
  * the packaged host. Resolved lazily through the contribution's `page`
  * loader so the detail page lands in its own chunk.
  */
+// fallow-ignore-next-line unused-export
 export default function AvailabilityStartTimeDetailRoutePage({ params }: AdminRoutePageProps) {
   return <AvailabilityStartTimeDetailHost startTimeId={params.id ?? ""} />
 }
