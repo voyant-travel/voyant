@@ -1,4 +1,6 @@
 import type { getDb } from "@voyant-travel/db"
+import { authMember, authSession, authUser } from "@voyant-travel/db/schema/iam"
+import { and, asc, eq } from "drizzle-orm"
 
 import {
   type ApiTokenRotationOptions,
@@ -14,6 +16,10 @@ import {
 type BetterAuthApiKeySession = {
   user: {
     id: string
+  }
+  session?: {
+    id?: string
+    activeOrganizationId?: string | null
   }
 }
 
@@ -51,6 +57,43 @@ export type AccountProfileUpdateHandler = (
   db: ReturnType<typeof getDb>,
   input: UpdateCurrentUserProfileInput,
 ) => Promise<CurrentUser | null>
+
+export interface OrganizationMembersListInput {
+  userId: string
+  organizationId?: string
+  activeOrganizationId?: string | null
+  sessionId?: string
+}
+
+export type OrganizationMemberRecord = {
+  id: string
+  userId: string
+  organizationId: string
+  role: string
+  createdAt: string
+  user: {
+    id: string
+    email: string | null
+    name?: string | null
+    image?: string | null
+  }
+}
+
+export type OrganizationMembersListHandler = (
+  db: ReturnType<typeof getDb>,
+  input: OrganizationMembersListInput,
+) => Promise<OrganizationMemberRecord[]>
+
+export interface HandleOrganizationMembersRequestOptions {
+  /**
+   * Auth route mount path. Voyant operator APIs mount Better Auth under
+   * `/auth`, which makes the organization member route
+   * `/auth/organization/list-members`.
+   */
+  basePath?: string
+  db: ReturnType<typeof getDb>
+  listOrganizationMembers?: OrganizationMembersListHandler
+}
 
 type ApiTokenErrorStatus = 400 | 401 | 403 | 404 | 405 | 429 | 500
 
@@ -135,6 +178,14 @@ function accountProfileFacadePath(pathname: string, basePath: string): string | 
   const normalizedPath = pathname.replace(/\/+$/g, "") || "/"
 
   return normalizedPath === `${normalizedBase}/me` ? "/me" : null
+}
+
+function organizationMembersFacadePath(pathname: string, basePath: string): string | null {
+  const trimmedBase = basePath.replace(/^\/+|\/+$/g, "")
+  const normalizedBase = trimmedBase ? `/${trimmedBase}` : ""
+  const normalizedPath = pathname.replace(/\/+$/g, "") || "/"
+
+  return normalizedPath === `${normalizedBase}/organization/list-members` ? "/list-members" : null
 }
 
 function readApiKeyQuery(request: Request): Record<string, unknown> {
@@ -226,6 +277,105 @@ async function requireAccountProfileSession(auth: BetterAuthApiTokenManagement, 
   return session
 }
 
+async function requireOrganizationMembersSession(
+  auth: BetterAuthApiTokenManagement,
+  headers: Headers,
+) {
+  const session = await auth.api.getSession({ headers })
+  if (!session) {
+    throw Object.assign(new Error("Unauthorized"), { status: 401 })
+  }
+  return session
+}
+
+function readOrganizationMembersQuery(request: Request) {
+  const params = new URL(request.url).searchParams
+  const organizationId = params.get("organizationId")?.trim()
+  return {
+    organizationId: organizationId || undefined,
+  }
+}
+
+function serializeMemberCreatedAt(createdAt: Date | string | null | undefined): string {
+  if (createdAt instanceof Date) return createdAt.toISOString()
+  if (typeof createdAt === "string" && createdAt.length > 0) return createdAt
+  return new Date(0).toISOString()
+}
+
+async function resolveOrganizationIdForMemberList(
+  db: ReturnType<typeof getDb>,
+  input: OrganizationMembersListInput,
+): Promise<string | null> {
+  if (input.organizationId) return input.organizationId
+  if (input.activeOrganizationId) return input.activeOrganizationId
+
+  if (input.sessionId) {
+    const [session] = await db
+      .select({ activeOrganizationId: authSession.activeOrganizationId })
+      .from(authSession)
+      .where(eq(authSession.id, input.sessionId))
+      .limit(1)
+    if (session?.activeOrganizationId) return session.activeOrganizationId
+  }
+
+  const [membership] = await db
+    .select({ organizationId: authMember.organizationId })
+    .from(authMember)
+    .where(eq(authMember.userId, input.userId))
+    .limit(1)
+
+  return membership?.organizationId ?? null
+}
+
+async function listOrganizationMembersFromDb(
+  db: ReturnType<typeof getDb>,
+  input: OrganizationMembersListInput,
+): Promise<OrganizationMemberRecord[]> {
+  const organizationId = await resolveOrganizationIdForMemberList(db, input)
+  if (!organizationId) return []
+
+  const [currentMember] = await db
+    .select({ id: authMember.id })
+    .from(authMember)
+    .where(and(eq(authMember.organizationId, organizationId), eq(authMember.userId, input.userId)))
+    .limit(1)
+
+  if (!currentMember) {
+    throw Object.assign(new Error("Forbidden"), { status: 403 })
+  }
+
+  const rows = await db
+    .select({
+      id: authMember.id,
+      userId: authMember.userId,
+      organizationId: authMember.organizationId,
+      role: authMember.role,
+      createdAt: authMember.createdAt,
+      userIdValue: authUser.id,
+      userEmail: authUser.email,
+      userName: authUser.name,
+      userImage: authUser.image,
+    })
+    .from(authMember)
+    .innerJoin(authUser, eq(authUser.id, authMember.userId))
+    .where(eq(authMember.organizationId, organizationId))
+    .orderBy(asc(authMember.createdAt))
+
+  return rows.map((row) => ({
+    id: row.id,
+    userId: row.userId,
+    organizationId: row.organizationId,
+    role: row.role,
+    createdAt: serializeMemberCreatedAt(row.createdAt),
+    user: {
+      id: row.userIdValue,
+      email: row.userEmail,
+      name: row.userName,
+      image: row.userImage,
+    },
+  }))
+}
+
 /** Handles Voyant's stable `PATCH /auth/me` account-profile facade. */
 export async function handleAccountProfileRequest(
   request: Request,
@@ -253,6 +403,42 @@ export async function handleAccountProfileRequest(
     }
 
     return jsonResponse(profile)
+  } catch (error) {
+    return authApiErrorResponse(error)
+  }
+}
+
+/** Handles Voyant's stable `GET /auth/organization/list-members` facade. */
+export async function handleOrganizationMembersRequest(
+  request: Request,
+  auth: { api: unknown },
+  options: HandleOrganizationMembersRequestOptions,
+): Promise<Response | null> {
+  const path = organizationMembersFacadePath(
+    new URL(request.url).pathname,
+    options.basePath ?? "/auth",
+  )
+  if (path === null) return null
+
+  try {
+    if (request.method !== "GET") return methodNotAllowed(["GET"])
+
+    const session = await requireOrganizationMembersSession(
+      { api: auth.api as BetterAuthApiKeyApi },
+      request.headers,
+    )
+    const query = readOrganizationMembersQuery(request)
+    const members = await (options.listOrganizationMembers ?? listOrganizationMembersFromDb)(
+      options.db,
+      {
+        userId: session.user.id,
+        sessionId: session.session?.id,
+        activeOrganizationId: session.session?.activeOrganizationId,
+        organizationId: query.organizationId,
+      },
+    )
+
+    return jsonResponse({ members })
   } catch (error) {
     return authApiErrorResponse(error)
   }

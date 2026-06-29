@@ -1,4 +1,8 @@
-import { createBetterAuth, handleApiTokenManagementRequest } from "@voyant-travel/auth/server"
+import {
+  createBetterAuth,
+  handleApiTokenManagementRequest,
+  handleOrganizationMembersRequest,
+} from "@voyant-travel/auth/server"
 import { ensureCurrentUserProfile } from "@voyant-travel/auth/workspace"
 import { authUser, type SelectApikey, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyant-travel/hono"
@@ -296,9 +300,24 @@ async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
   }
 }
 
+async function handleOrganizationMembersFacade(c: Context<AuthHonoEnv>) {
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db)
+    return (
+      (await handleOrganizationMembersRequest(c.req.raw, betterAuth, {
+        db,
+      })) ?? c.json({ error: "Not found" }, 404)
+    )
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+}
+
 auth.all("/auth/api-tokens", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId/rotate", handleApiTokensFacade)
+auth.get("/auth/organization/list-members", handleOrganizationMembersFacade)
 
 auth.all("/auth/*", async (c) => {
   const { db, dispose } = dbFromEnvForApp(c.env)
