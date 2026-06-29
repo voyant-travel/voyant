@@ -1,5 +1,14 @@
 # @voyant-travel/bookings-react
 
+## 0.137.4
+
+### Patch Changes
+
+- 61410dd: Preserve catalog sourced-entry provenance when packaged detail pages start the booking journey.
+- Updated dependencies [61410dd]
+  - @voyant-travel/catalog-react@0.135.3
+  - @voyant-travel/bookings@0.137.4
+
 ## 0.137.3
 
 ### Patch Changes
