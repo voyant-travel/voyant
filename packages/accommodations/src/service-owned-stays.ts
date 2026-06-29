@@ -32,6 +32,7 @@ export interface QuoteOwnedStayInput {
   checkOut: string
   roomCount?: number
   occupancy?: OwnedStayOccupancy
+  occupancies?: ReadonlyArray<OwnedStayOccupancy>
   currency?: string
 }
 
@@ -150,7 +151,8 @@ export function resolveOwnedStayQuote(
   ) {
     return { status: "rate_plan_not_found" }
   }
-  if (!fitsOccupancy(records.room, input.occupancy)) {
+  const occupancies = occupanciesForQuote(input)
+  if (occupancies?.some((occupancy) => !fitsOccupancy(records.room, occupancy))) {
     return { status: "room_occupancy_exceeded" }
   }
 
@@ -201,7 +203,7 @@ export function resolveOwnedStayQuote(
   const nightlyRates = nights.map((date) => {
     const rate = ratesByDate.get(date)
     if (!rate) throw new Error(`missing rate for already-validated night ${date}`)
-    const quantity = rateQuantity(rate.occupancyBasis, roomCount, input.occupancy)
+    const quantity = rateQuantity(rate.occupancyBasis, roomCount, occupancies)
     const totalAmount = rate.sellAmountCents * quantity
     totalAmountCents += totalAmount
     return {
@@ -331,10 +333,14 @@ export async function searchOwnedStays(
       and(
         eq(ratePlans.active, true),
         inArray(ratePlans.propertyId, distinct(roomRows.map((r) => r.propertyId))),
+        input.criteria.refundableOnly ? eq(ratePlans.refundable, true) : undefined,
       ),
     )
     .orderBy(asc(ratePlans.sortOrder), asc(ratePlans.name))
-  if (ratePlanRows.length === 0) return { matches: [] }
+  const eligibleRatePlanRows = input.criteria.refundableOnly
+    ? ratePlanRows.filter((plan) => plan.refundable)
+    : ratePlanRows
+  if (eligibleRatePlanRows.length === 0) return { matches: [] }
 
   const mappingRows = await db
     .select()
@@ -344,7 +350,7 @@ export async function searchOwnedStays(
         eq(ratePlanRoomTypes.active, true),
         inArray(
           ratePlanRoomTypes.ratePlanId,
-          ratePlanRows.map((r) => r.id),
+          eligibleRatePlanRows.map((r) => r.id),
         ),
       ),
     )
@@ -358,11 +364,16 @@ export async function searchOwnedStays(
 
   const requestedRooms = input.criteria.rooms.length
   const occupancy = aggregateOccupancy(input.criteria.rooms)
+  const occupancies = input.criteria.rooms.map((room) => ({
+    adults: room.adults,
+    children: room.children,
+    infants: room.infants,
+  }))
   const matches: AccommodationSearchMatch[] = []
   const limit = Math.max(1, Math.min(input.limit ?? 50, 100))
 
   for (const room of roomRows) {
-    const plans = ratePlanRows.filter((plan) => {
+    const plans = eligibleRatePlanRows.filter((plan) => {
       if (plan.propertyId !== room.propertyId) return false
       const mappedRoomIds = mappingsByPlan.get(plan.id)
       return !mappedRoomIds || mappedRoomIds.has(room.id)
@@ -375,6 +386,7 @@ export async function searchOwnedStays(
         checkOut: input.criteria.checkOut,
         roomCount: requestedRooms,
         occupancy,
+        occupancies,
         currency: input.scope.currency,
       })
       if (quote.status !== "ok" || !quote.available) continue
@@ -395,7 +407,12 @@ export async function searchOwnedStays(
   }
 
   matches.sort((a, b) => Number(a.price.amount) - Number(b.price.amount))
-  return { matches: matches.slice(0, limit) }
+  const offset = parseOwnedSearchCursor(input.cursor)
+  const end = offset + limit
+  return {
+    matches: matches.slice(offset, end),
+    nextCursor: end < matches.length ? formatOwnedSearchCursor(end) : undefined,
+  }
 }
 
 export function eachStayNight(checkIn: string, checkOut: string): string[] {
@@ -486,12 +503,33 @@ function aggregateOccupancy(
   )
 }
 
+function occupanciesForQuote(
+  input: QuoteOwnedStayInput,
+): ReadonlyArray<OwnedStayOccupancy> | undefined {
+  if (input.occupancies && input.occupancies.length > 0) return input.occupancies
+  return input.occupancy ? [input.occupancy] : undefined
+}
+
+function aggregateOwnedOccupancies(
+  occupancies: ReadonlyArray<OwnedStayOccupancy> | undefined,
+): OwnedStayOccupancy {
+  return (occupancies ?? []).reduce<OwnedStayOccupancy>(
+    (sum, room) => ({
+      adults: (sum.adults ?? 0) + (room.adults ?? 0),
+      children: (sum.children ?? 0) + (room.children ?? 0),
+      infants: (sum.infants ?? 0) + (room.infants ?? 0),
+    }),
+    { adults: 0, children: 0, infants: 0 },
+  )
+}
+
 function rateQuantity(
   occupancyBasis: string | null | undefined,
   roomCount: number,
-  occupancy: OwnedStayOccupancy | undefined,
+  occupancies: ReadonlyArray<OwnedStayOccupancy> | undefined,
 ): number {
   if (occupancyBasis === "per_person") {
+    const occupancy = aggregateOwnedOccupancies(occupancies)
     return Math.max(
       1,
       (occupancy?.adults ?? 0) + (occupancy?.children ?? 0) + (occupancy?.infants ?? 0),
@@ -528,6 +566,18 @@ function distinct(values: string[]): string[] {
 
 function centsToDecimal(cents: number): string {
   return (cents / 100).toFixed(2)
+}
+
+function parseOwnedSearchCursor(cursor: string | undefined): number {
+  if (!cursor) return 0
+  const raw = cursor.startsWith("owned:") ? cursor.slice("owned:".length) : cursor
+  if (!/^\d+$/.test(raw)) return 0
+  const offset = Number(raw)
+  return Number.isSafeInteger(offset) && offset > 0 ? offset : 0
+}
+
+function formatOwnedSearchCursor(offset: number): string {
+  return `owned:${offset}`
 }
 
 function normalizedStars(value: number | null, scale: number | null): number {
