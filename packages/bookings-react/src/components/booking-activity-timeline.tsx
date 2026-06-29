@@ -1,6 +1,6 @@
 "use client"
 
-import { usePublicBookingPayments } from "@voyant-travel/finance-react"
+import { useAdminBookingPayments, usePublicBookingPayments } from "@voyant-travel/finance-react"
 import { Badge, Button } from "@voyant-travel/ui/components"
 import {
   Pagination,
@@ -32,6 +32,13 @@ import { useBookingActivity, useBookingTravelerDocuments } from "../index.js"
 
 export interface BookingActivityTimelineProps {
   bookingId: string
+  /**
+   * Which finance API surface should provide payment events. Public/customer
+   * contexts use the public endpoint by default; admin booking pages must use
+   * the admin endpoint because public checkout capabilities are not present in
+   * an operator session.
+   */
+  paymentsVariant?: "public" | "admin"
   /**
    * Extra events to merge into the timeline alongside the built-in
    * activity / document / payment sources. Operator starters pass
@@ -87,6 +94,7 @@ type Filter = TimelineSource | "all"
 
 export function BookingActivityTimeline({
   bookingId,
+  paymentsVariant = "public",
   additionalEvents,
   footer,
   pageSize = 10,
@@ -95,7 +103,14 @@ export function BookingActivityTimeline({
   const [pageIndex, setPageIndex] = React.useState(0)
   const { data: activityData } = useBookingActivity(bookingId)
   const { data: documentsData } = useBookingTravelerDocuments(bookingId)
-  const { data: paymentsData } = usePublicBookingPayments(bookingId)
+  const publicPaymentsQuery = usePublicBookingPayments(bookingId, {
+    enabled: paymentsVariant === "public",
+  })
+  const adminPaymentsQuery = useAdminBookingPayments(bookingId, {
+    enabled: paymentsVariant === "admin",
+  })
+  const paymentsData =
+    paymentsVariant === "admin" ? adminPaymentsQuery.data : publicPaymentsQuery.data
   const { formatNumber } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
 

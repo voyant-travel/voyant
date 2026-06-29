@@ -566,6 +566,7 @@ export function BookingDetailPage({
           <BookingNotes bookingId={id} />
           <BookingActivityTimeline
             bookingId={id}
+            paymentsVariant="admin"
             additionalEvents={slots?.activityExtraEvents}
             footer={slots?.activityTimelineFooter}
           />
