@@ -14,7 +14,6 @@ import type {
   InvokeApi,
   InvokeOptions,
   MetadataApi,
-  MetadataValue,
   ParallelApi,
   RunContext,
   StepApi,
@@ -871,6 +870,3 @@ function toMs(d: Duration): number {
       throw new Error(`invalid duration unit: ${m[2]}`)
   }
 }
-
-// Re-exports used by the executor for metadata type checking.
-export type { MetadataValue }

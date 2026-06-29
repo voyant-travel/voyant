@@ -60,19 +60,3 @@ export function emptyJournal(): JournalSlice {
     streamsCompleted: {},
   }
 }
-
-/**
- * Clone the journal into a slice that the body sees. Each step /
- * waitpoint the body replays is *consumed* from the slice so we can
- * detect leftover journal entries that the code no longer produces
- * (which is a versioning hazard — see §6.7 of design.md).
- */
-export function forkJournal(j: JournalSlice): JournalSlice {
-  return {
-    stepResults: { ...j.stepResults },
-    waitpointsResolved: { ...j.waitpointsResolved },
-    compensationsRun: { ...j.compensationsRun },
-    metadataState: { ...j.metadataState },
-    streamsCompleted: { ...j.streamsCompleted },
-  }
-}

@@ -8,7 +8,7 @@
 import type { EventFilterManifestEntry } from "../protocol/index.js"
 import type { EventFilterDeclaration } from "../trigger.js"
 import { type InputMapper, validateInputMapper } from "./input-mapper.js"
-import { canonicalJson, sha256 } from "./payload-hash.js"
+import { canonicalJson } from "./payload-hash.js"
 import { type PredicateExpr, validatePredicate } from "./predicate.js"
 import { type EventFilterRuntimeEntry, getEventFilterRegistry } from "./registry.js"
 
@@ -20,105 +20,6 @@ export class EventFilterCompileError extends Error {
     this.name = "EventFilterCompileError"
     this.errors = errors
   }
-}
-
-/**
- * Compile an authored declaration into a runtime entry. Throws
- * `EventFilterCompileError` on shape errors so authoring problems fail
- * at module-load time.
- */
-export async function compileEventFilter<T>(
-  eventType: string,
-  declaration: EventFilterDeclaration<T>,
-): Promise<EventFilterRuntimeEntry> {
-  if (typeof eventType !== "string" || eventType.length === 0) {
-    throw new EventFilterCompileError(
-      `trigger.on(eventType, ...): eventType must be a non-empty string`,
-    )
-  }
-  if (typeof declaration !== "object" || declaration === null) {
-    throw new EventFilterCompileError(
-      `trigger.on("${eventType}", ...): declaration must be an object`,
-    )
-  }
-  if (!declaration.target || typeof declaration.target !== "object") {
-    throw new EventFilterCompileError(
-      `trigger.on("${eventType}", ...): "target" must be a workflow definition (got ${typeof declaration.target})`,
-    )
-  }
-  const targetWorkflowId =
-    typeof (declaration.target as { id?: unknown }).id === "string"
-      ? (declaration.target as { id: string }).id
-      : ""
-  if (targetWorkflowId.length === 0) {
-    throw new EventFilterCompileError(
-      `trigger.on("${eventType}", ...): "target.id" must be a non-empty string`,
-    )
-  }
-
-  // Validate `where` if supplied.
-  const where = (declaration as { where?: PredicateExpr }).where
-  if (where !== undefined) {
-    const result = validatePredicate(where)
-    if (!result.ok) {
-      throw new EventFilterCompileError(
-        `trigger.on("${eventType}", target=${targetWorkflowId}): invalid where clause`,
-        result.errors,
-      )
-    }
-  }
-
-  // Validate `input` if supplied.
-  const input = (declaration as { input?: InputMapper }).input
-  if (input !== undefined) {
-    const result = validateInputMapper(input)
-    if (!result.ok) {
-      throw new EventFilterCompileError(
-        `trigger.on("${eventType}", target=${targetWorkflowId}): invalid input mapper`,
-        result.errors,
-      )
-    }
-  }
-
-  // Reject the legacy `match` callback explicitly so authoring errors are obvious.
-  if (typeof (declaration as { match?: unknown }).match === "function") {
-    throw new EventFilterCompileError(
-      `trigger.on("${eventType}"): the "match" callback is no longer supported. ` +
-        `Use the structured "where" predicate instead. See architecture doc §12.`,
-    )
-  }
-
-  // Canonical content-derived id. Stable across re-deploys because the
-  // canonicalized JSON of the declaration is identical for byte-equivalent
-  // sources.
-  const canonicalDeclaration = {
-    eventType,
-    where: where ?? null,
-    input: input ?? null,
-    targetWorkflowId,
-  }
-  const fullHash = await sha256(canonicalDeclaration)
-  const payloadHash = fullHash
-  // Filter id seeds from the same hash but stays human-friendly in logs.
-  const id = `ef_${fullHash.slice(0, 16)}`
-
-  const manifest: EventFilterManifestEntry = {
-    id,
-    eventType,
-    payloadHash,
-    targetWorkflowId,
-    ...(where !== undefined ? { where } : {}),
-    ...(input !== undefined ? { input } : {}),
-  }
-
-  const entry: EventFilterRuntimeEntry = {
-    id,
-    eventType,
-    manifest,
-    declaration: declaration as EventFilterDeclaration<unknown>,
-    targetWorkflowId,
-  }
-  return entry
 }
 
 /**
