@@ -52,7 +52,7 @@ export interface FormState {
   notes: string
 }
 
-export function todayIso(): string {
+function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
 

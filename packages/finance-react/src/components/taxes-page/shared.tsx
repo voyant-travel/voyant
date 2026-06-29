@@ -32,13 +32,13 @@ export interface TaxesPageProps {
 
 export const TaxesPageApiContext = createContext<TaxesPageApi | null>(null)
 
-export function joinUrl(baseUrl: string, path: string) {
+function joinUrl(baseUrl: string, path: string) {
   const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
   const trimmedPath = path.startsWith("/") ? path : `/${path}`
   return `${trimmedBase}${trimmedPath}`
 }
 
-export async function readJson<T>(response: Response): Promise<T> {
+async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let body: unknown
     try {
@@ -199,7 +199,7 @@ export type PolicyRuleFormState = {
   active: boolean
 }
 
-export const EMPTY_FORM: TaxFormState = {
+const EMPTY_FORM: TaxFormState = {
   taxClassLabel: "",
   taxClassCode: "",
   taxClassDescription: "",
@@ -213,7 +213,7 @@ export const EMPTY_FORM: TaxFormState = {
   active: true,
 }
 
-export const EMPTY_POLICY_PROFILE_FORM: PolicyProfileFormState = {
+const EMPTY_POLICY_PROFILE_FORM: PolicyProfileFormState = {
   name: "",
   code: "",
   jurisdiction: "RO",
@@ -221,7 +221,7 @@ export const EMPTY_POLICY_PROFILE_FORM: PolicyProfileFormState = {
   active: true,
 }
 
-export const EMPTY_POLICY_RULE_FORM: PolicyRuleFormState = {
+const EMPTY_POLICY_RULE_FORM: PolicyRuleFormState = {
   profileId: "",
   side: "sell",
   priority: "100",
@@ -304,7 +304,7 @@ export function initialPolicyRuleForm(
   }
 }
 
-export function parsePolicyCondition(
+function parsePolicyCondition(
   condition: Record<string, unknown> | null,
 ): Pick<PolicyRuleFormState, "conditionMode" | "conditions"> {
   if (!condition || condition.always === true) {
@@ -327,7 +327,7 @@ export function parsePolicyCondition(
   }
 }
 
-export function parsePolicyConditionExpression(
+function parsePolicyConditionExpression(
   expression: unknown,
 ): PolicyRuleFormState["conditions"][number] | null {
   if (typeof expression !== "object" || expression === null || Array.isArray(expression)) {
@@ -398,7 +398,7 @@ export function summarizeCondition(
   return `${prefix}: ${labels.join("; ")}`
 }
 
-export function summarizeConditionRow(
+function summarizeConditionRow(
   messages: FinanceUiMessages,
   condition: PolicyRuleFormState["conditions"][number],
 ) {

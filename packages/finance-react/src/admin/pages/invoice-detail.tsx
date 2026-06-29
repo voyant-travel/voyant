@@ -9,6 +9,7 @@ import { InvoiceDetailHost } from "../invoice-detail-host.js"
  * `finance-invoices-detail`): binds the matched `$id` path param onto
  * {@link InvoiceDetailHost}, which owns the operator-grade detail page.
  */
+// fallow-ignore-next-line unused-export
 export default function FinanceInvoiceDetailRoutePage({ params }: AdminRoutePageProps) {
   return <InvoiceDetailHost id={params.id ?? ""} />
 }

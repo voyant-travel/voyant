@@ -28,6 +28,7 @@ function exportUrl(
  * app-supplied URL prop. Exports open in a new tab (browser-only; guarded
  * for SSR render passes).
  */
+// fallow-ignore-next-line unused-export
 export default function FinanceProfitabilityRoutePage() {
   useAdminBreadcrumbs([{ label: "Profitability" }])
   const { baseUrl } = useVoyantFinanceContext()
