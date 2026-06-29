@@ -23,6 +23,26 @@ import {
   toTimestamp,
 } from "./service-shared.js"
 
+type InvoiceNumberSeriesLockRow = {
+  id: string
+  prefix: string
+  separator: string
+  pad_length: number
+  current_sequence: number
+  reset_strategy: "never" | "annual" | "monthly"
+  reset_at: Date | null
+  active: boolean
+}
+
+function firstRawExecuteRow<T>(result: unknown): T | undefined {
+  if (Array.isArray(result)) return result[0] as T | undefined
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows?: unknown }).rows
+    if (Array.isArray(rows)) return rows[0] as T | undefined
+  }
+  return undefined
+}
+
 export const financeInvoiceNumberingService = {
   async listInvoiceNumberSeries(db: PostgresJsDatabase, query: InvoiceNumberSeriesListQuery) {
     const conditions = []
@@ -272,18 +292,7 @@ export const financeInvoiceNumberingService = {
         // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`SELECT id, prefix, separator, pad_length, current_sequence, reset_strategy, reset_at, active FROM invoice_number_series WHERE id = ${seriesId} FOR UPDATE`,
       )
-      const row = lockResult[0] as
-        | {
-            id: string
-            prefix: string
-            separator: string
-            pad_length: number
-            current_sequence: number
-            reset_strategy: "never" | "annual" | "monthly"
-            reset_at: Date | null
-            active: boolean
-          }
-        | undefined
+      const row = firstRawExecuteRow<InvoiceNumberSeriesLockRow>(lockResult)
       if (!row) return { status: "not_found" as const }
       if (!row.active) return { status: "inactive" as const }
 
