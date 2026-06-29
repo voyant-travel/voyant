@@ -23,6 +23,7 @@ import {
 } from "@voyant-travel/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search } from "lucide-react"
 import * as React from "react"
+import { BOOKING_STATUS_ALL } from "../booking-list-constants.js"
 import {
   formatMessage,
   useBookingsUiI18nOrDefault,
@@ -35,7 +36,7 @@ import {
   useBookings,
 } from "../index.js"
 import { BookingDialog } from "./booking-dialog.js"
-import { BOOKING_STATUS_ALL, BookingListFiltersPopover } from "./booking-list-filters.js"
+import { BookingListFiltersPopover } from "./booking-list-filters.js"
 import { StatusBadge } from "./status-badge.js"
 
 /**
@@ -46,7 +47,7 @@ import { StatusBadge } from "./status-badge.js"
  */
 export interface BookingListFiltersState {
   search: string
-  /** `BOOKING_STATUS_ALL` ("all") or any booking status value. */
+  /** `BOOKING_STATUS_ALL` ("all statuses") or any booking status value. */
   status: string
   productId: string | null
   optionId: string | null
