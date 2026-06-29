@@ -1,5 +1,11 @@
 # @voyant-travel/catalog-react
 
+## 0.135.4
+
+### Patch Changes
+
+- 598be39: Route generic Packages product detail pages through sourced catalog content and slots instead of the Connect package-detail endpoint.
+
 ## 0.135.3
 
 ### Patch Changes
