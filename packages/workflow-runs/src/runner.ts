@@ -116,14 +116,17 @@ export class WorkflowRunnerRegistry {
     this.runners.set(runner.name, runner)
   }
 
+  // fallow-ignore-next-line unused-class-member
   get(name: string): WorkflowRunner | null {
     return this.runners.get(name) ?? null
   }
 
+  // fallow-ignore-next-line unused-class-member
   has(name: string): boolean {
     return this.runners.has(name)
   }
 
+  // fallow-ignore-next-line unused-class-member
   list(): ReadonlyArray<WorkflowRunner> {
     return Array.from(this.runners.values())
   }
