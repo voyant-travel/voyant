@@ -141,7 +141,13 @@ const productOptionCoreSchema = z.object({
   availableTo: z.string().optional().nullable(),
 })
 export const insertProductOptionSchema = productOptionCoreSchema
-export const updateProductOptionSchema = productOptionCoreSchema.partial()
+export const updateProductOptionSchema = productOptionCoreSchema
+  .extend({
+    status: productOptionStatusSchema,
+    isDefault: z.boolean(),
+    sortOrder: z.number().int(),
+  })
+  .partial()
 export const productOptionListQuerySchema = z.object({
   productId: z.string().optional(),
   status: productOptionStatusSchema.optional(),
@@ -216,19 +222,27 @@ export const insertOptionUnitSchema = optionUnitCoreSchema.superRefine((data, ct
 // patch alone. The "unitType room/vehicle requires occupancyMin" rule needs
 // the merged record state, so it lives in the service layer below
 // (validateMergedOptionUnit).
-export const updateOptionUnitSchema = optionUnitCoreSchema.partial().superRefine((data, ctx) => {
-  if (
-    data.occupancyMin != null &&
-    data.occupancyMax != null &&
-    data.occupancyMax < data.occupancyMin
-  ) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["occupancyMax"],
-      message: "occupancyMax must be ≥ occupancyMin",
-    })
-  }
-})
+export const updateOptionUnitSchema = optionUnitCoreSchema
+  .extend({
+    unitType: optionUnitTypeSchema,
+    isRequired: z.boolean(),
+    isHidden: z.boolean(),
+    sortOrder: z.number().int(),
+  })
+  .partial()
+  .superRefine((data, ctx) => {
+    if (
+      data.occupancyMin != null &&
+      data.occupancyMax != null &&
+      data.occupancyMax < data.occupancyMin
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["occupancyMax"],
+        message: "occupancyMax must be ≥ occupancyMin",
+      })
+    }
+  })
 
 /**
  * Validate the merged state of an option unit — the persisted record with a
