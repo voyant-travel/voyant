@@ -11,14 +11,9 @@
  */
 
 import type { HonoExtension } from "@voyant-travel/hono/module"
-import {
-  createQuoteVersionSnapshotRoutes,
-  tripSnapshotToQuoteVersionApply,
-} from "@voyant-travel/quotes"
+import { createQuoteVersionSnapshotRoutes } from "@voyant-travel/quotes"
 
 import { createQuoteProposalRoutesOptions } from "../runtime/quote-proposal-runtime"
-
-export { tripSnapshotToQuoteVersionApply }
 
 /** Build the quote-version-snapshot extension wired with this deployment's options. */
 export function createOperatorQuoteVersionSnapshotExtension(): HonoExtension {

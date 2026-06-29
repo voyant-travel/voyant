@@ -185,6 +185,3 @@ export function createCatalogCheckoutBundle(opts: {
     },
   }
 }
-
-/** @deprecated Kept for callers that still import the static bundle. */
-export const catalogCheckoutBundle = createCatalogCheckoutBundle({})

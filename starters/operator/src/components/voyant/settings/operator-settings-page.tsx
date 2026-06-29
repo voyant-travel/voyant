@@ -88,7 +88,7 @@ const EMPTY_FORM: OperatorProfileForm = {
   invoicePayUrlTemplate: "",
 }
 
-export function OperatorProfilePage() {
+function OperatorProfilePage() {
   const queryClient = useQueryClient()
   const t = useAdminMessages().settings.operatorProfilePage
 

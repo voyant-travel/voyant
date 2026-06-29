@@ -48,64 +48,70 @@ async function requireAuthenticatedOperatorRequest(
   return env
 }
 
-async function withDashboardDb<T>(
+async function withDashboardDb<TDb, T>(
   env: CloudflareBindings,
-  fn: (db: ReturnType<typeof dbFromEnvForApp>["db"]) => Promise<T>,
+  fn: (db: TDb) => Promise<T>,
 ): Promise<T> {
   const { db, dispose } = dbFromEnvForApp(env)
   try {
-    return await fn(db)
+    return await fn(db as TDb)
   } finally {
     await dispose()
   }
 }
 
-export const getOperatorDashboardBookingsAggregates = createServerFn({ method: "GET" })
+const getOperatorDashboardBookingsAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
     const env = await requireAuthenticatedOperatorRequest(context)
     const { from } = buildDashboardSixMonthWindow()
-    return withDashboardDb(env, async (db) => {
-      const { bookingsService } = await import("@voyant-travel/bookings")
-      const serviceDb = db as unknown as Parameters<typeof bookingsService.getBookingAggregates>[0]
-      return bookingsService.getBookingAggregates(serviceDb, { from, upcomingLimit: 8 })
-    })
+    const { bookingsService } = await import("@voyant-travel/bookings")
+    return withDashboardDb(
+      env,
+      async (db: Parameters<typeof bookingsService.getBookingAggregates>[0]) => {
+        return bookingsService.getBookingAggregates(db, { from, upcomingLimit: 8 })
+      },
+    )
   })
 
-export const getOperatorDashboardProductsAggregates = createServerFn({ method: "GET" })
+const getOperatorDashboardProductsAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
     const env = await requireAuthenticatedOperatorRequest(context)
-    return withDashboardDb(env, async (db) => {
-      const { productsService } = await import("@voyant-travel/inventory")
-      const serviceDb = db as unknown as Parameters<typeof productsService.getProductAggregates>[0]
-      return productsService.getProductAggregates(serviceDb)
-    })
+    const { productsService } = await import("@voyant-travel/inventory")
+    return withDashboardDb(
+      env,
+      async (db: Parameters<typeof productsService.getProductAggregates>[0]) => {
+        return productsService.getProductAggregates(db)
+      },
+    )
   })
 
-export const getOperatorDashboardSuppliersAggregates = createServerFn({ method: "GET" })
+const getOperatorDashboardSuppliersAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
     const env = await requireAuthenticatedOperatorRequest(context)
-    return withDashboardDb(env, async (db) => {
-      const { suppliersService } = await import("@voyant-travel/distribution")
-      const serviceDb = db as unknown as Parameters<
-        typeof suppliersService.getSupplierAggregates
-      >[0]
-      return suppliersService.getSupplierAggregates(serviceDb)
-    })
+    const { suppliersService } = await import("@voyant-travel/distribution")
+    return withDashboardDb(
+      env,
+      async (db: Parameters<typeof suppliersService.getSupplierAggregates>[0]) => {
+        return suppliersService.getSupplierAggregates(db)
+      },
+    )
   })
 
-export const getOperatorDashboardFinanceAggregates = createServerFn({ method: "GET" })
+const getOperatorDashboardFinanceAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
     const env = await requireAuthenticatedOperatorRequest(context)
     const { from } = buildDashboardSixMonthWindow()
-    return withDashboardDb(env, async (db) => {
-      const { financeService } = await import("@voyant-travel/finance")
-      const serviceDb = db as unknown as Parameters<typeof financeService.getFinanceAggregates>[0]
-      return financeService.getFinanceAggregates(serviceDb, { from, outstandingTopLimit: 5 })
-    })
+    const { financeService } = await import("@voyant-travel/finance")
+    return withDashboardDb(
+      env,
+      async (db: Parameters<typeof financeService.getFinanceAggregates>[0]) => {
+        return financeService.getFinanceAggregates(db, { from, outstandingTopLimit: 5 })
+      },
+    )
   })
 
 export function getOperatorDashboardBookingsAggregatesQueryOptions() {

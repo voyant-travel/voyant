@@ -1,26 +1,18 @@
 /**
  * API client for the admin dashboard.
  *
- * Uses Hono RPC for end-to-end type-safe API calls.
  * The browser sends requests directly to the API with credentials: "include".
  * The session cookie (better-auth.session_token) is sent automatically.
  */
 
-import { hc } from "hono/client"
-
-import type { AppType } from "../api/api-types"
 import { getApiUrl } from "./env"
 import { operatorFetcher } from "./voyant-fetcher"
-
-export const client = hc<AppType>(getApiUrl(), {
-  init: { credentials: "include" },
-})
 
 // ---------------------------------------------------------------------------
 // Legacy client — kept for incremental migration of non-module routes
 // ---------------------------------------------------------------------------
 
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
@@ -48,7 +40,7 @@ function extractErrorMessage(status: number, statusText: string, body: unknown):
   return message
 }
 
-export async function apiCall<T = unknown>(path: string, options: ApiCallOptions = {}): Promise<T> {
+async function apiCall<T = unknown>(path: string, options: ApiCallOptions = {}): Promise<T> {
   const { headers: customHeaders, ...fetchOptions } = options
   const apiUrl = getApiUrl()
 

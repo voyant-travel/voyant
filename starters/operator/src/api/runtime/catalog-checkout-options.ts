@@ -63,7 +63,7 @@ async function resolveBankTransferInstructions(
 }
 
 /** Shared checkout-module options (materialization + tax). */
-export function createOperatorCheckoutModuleOptions(): CheckoutModuleOptions {
+function createOperatorCheckoutModuleOptions(): CheckoutModuleOptions {
   return {
     resolveBookingTaxSettings,
     getOwnedProductName,

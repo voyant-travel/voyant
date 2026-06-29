@@ -24,7 +24,7 @@ import type { ReactNode } from "react"
 
 const fallbackLocale = "en"
 
-export const storefrontMessagesEn = {
+const storefrontMessagesEn = {
   layout: {
     brand: "Voyant Storefront",
     signIn: "Sign in",
@@ -218,7 +218,7 @@ export const storefrontMessagesEn = {
 
 export type StorefrontMessages = typeof storefrontMessagesEn
 
-export const storefrontMessagesRo: StorefrontMessages = {
+const storefrontMessagesRo: StorefrontMessages = {
   layout: {
     brand: "Magazin Voyant",
     signIn: "Autentificare",
@@ -440,7 +440,6 @@ export function StorefrontMessagesProvider({ children }: { children: ReactNode }
   )
 }
 
-export const useStorefrontI18n = storefrontContext.useI18n
 export const useStorefrontMessages = storefrontContext.useMessages
 
 export function useStorefrontMessagesOrDefault(): StorefrontMessages {

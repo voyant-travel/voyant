@@ -8,7 +8,6 @@
 
 import { createIndexerService } from "@voyant-travel/catalog"
 import { refreshExternalCruiseCatalog } from "@voyant-travel/cruises/service-external-refresh"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type BookingEngineEnv, ensureBookingEngineRegistry } from "../lib/booking-engine-runtime"
 import {
   buildEmbeddingProvider,
@@ -18,15 +17,14 @@ import {
   withEmbedding,
 } from "../lib/catalog-runtime"
 import { withDbFromEnv } from "../lib/db"
-
-export { EXTERNAL_CRUISE_CATALOG_REFRESH_CRON } from "../../scheduled-crons"
+import { operatorPostgresDb } from "../runtime/operator-runtime-adapter"
 
 export async function runScheduledExternalCruiseCatalogRefresh(
   _event: ScheduledController,
   env: CloudflareBindings & BookingEngineEnv,
 ) {
   return withDbFromEnv(env, async (rawDb) => {
-    const db = rawDb as unknown as PostgresJsDatabase
+    const db = operatorPostgresDb(rawDb)
     const embeddings = buildEmbeddingProvider(env)
     const indexer = buildTypesenseIndexer(env, embeddings)
 

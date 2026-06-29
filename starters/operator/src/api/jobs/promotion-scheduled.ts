@@ -40,9 +40,6 @@ import {
 import { withDbFromEnv } from "../lib/db"
 import { operatorWorkflowCloudEnv } from "../runtime/operator-runtime-adapter"
 
-/** Cron expression — declared in `wrangler.jsonc` and matched against `event.cron` in `entry.ts`. */
-export { PROMOTION_BOUNDARY_SCHEDULER_CRON } from "../../scheduled-crons"
-
 export async function runScheduledPromotionBoundary(
   _event: ScheduledController,
   env: CloudflareBindings & { TENANT_ID?: string },

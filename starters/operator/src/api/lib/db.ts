@@ -1,4 +1,4 @@
-import { createDbClient, createServerlessDbClient, type DbAdapter } from "@voyant-travel/db"
+import { createDbClient, createServerlessDbClient } from "@voyant-travel/db"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres"
 import { Pool as NodePgPool } from "pg"
@@ -32,18 +32,6 @@ function openDb(connectionString: string): {
     }
   }
   return createServerlessDbClient(connectionString)
-}
-
-/**
- * Database client helpers with NO schema passing.
- * Queries import table definitions directly for optimal tree-shaking.
- * All data is in a single EU database - no multi-region routing needed.
- */
-
-export function getDb(adapter?: DbAdapter) {
-  const url = process.env.DATABASE_URL ?? ""
-  const effectiveAdapter = adapter || (process.env.DB_ADAPTER as DbAdapter) || "edge"
-  return createDbClient(url, { adapter: effectiveAdapter })
 }
 
 /**

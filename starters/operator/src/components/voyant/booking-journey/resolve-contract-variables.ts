@@ -74,7 +74,7 @@ export interface OperatorInfoVariables {
   signatoryRole?: string
 }
 
-export interface AcceptanceContextVariables {
+interface AcceptanceContextVariables {
   ipAddress?: string
   userAgent?: string
   acceptedAt?: string

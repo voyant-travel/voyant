@@ -190,7 +190,7 @@ const resolveTripData: PaymentLinkRoutesOptions["resolveTripData"] = async (
 }
 
 /** Build the payment-link route-module options for this deployment. */
-export function createOperatorPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
+function createOperatorPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
   return {
     resolveBankTransferDetails,
     resolvePublicCheckoutBaseUrl: (c) =>
