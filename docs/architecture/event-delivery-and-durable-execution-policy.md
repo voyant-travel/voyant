@@ -255,7 +255,7 @@ Policy outcome:
 
 Subscriber paths:
 
-- [`payloadCmsPlugin(...)`](../../packages/plugins/payload-cms/src/plugin.ts)
+- [`payloadCmsPlugin(...)`](https://github.com/voyant-travel/plugin-payload)
   subscribes to `product.created`, `product.updated`, and `product.deleted`
 - [`sanityCmsPlugin(...)`](../../packages/plugins/sanity-cms/src/plugin.ts)
   does the same

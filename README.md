@@ -186,7 +186,7 @@ live under `@voyant-travel/bookings-react/requirements`; checkout UI lives under
 | --- | --- |
 | [`@voyant-travel/plugin-netopia`](https://github.com/voyant-travel/plugin-netopia) | Netopia payments |
 | [`@voyant-travel/plugin-smartbill`](./packages/plugins/smartbill/README.md) | SmartBill e-invoicing (Romanian tax compliance) |
-| [`@voyant-travel/plugin-payload-cms`](./packages/plugins/payload-cms/README.md) | Payload CMS sync |
+| [`@voyant-travel/plugin-payload-cms`](https://github.com/voyant-travel/plugin-payload) | Payload CMS sync |
 | [`@voyant-travel/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) | Sanity CMS sync |
 
 ## Architecture

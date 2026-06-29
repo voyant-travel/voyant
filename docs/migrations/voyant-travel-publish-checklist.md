@@ -75,7 +75,6 @@ Publishable workspace package names at this point:
 - `@voyant-travel/operations-react`
 - `@voyant-travel/operations`
 - `@voyant-travel/plugin-netopia`
-- `@voyant-travel/plugin-payload-cms`
 - `@voyant-travel/plugin-sanity-cms`
 - `@voyant-travel/plugin-smartbill`
 - `@voyant-travel/products-contracts`

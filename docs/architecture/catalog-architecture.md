@@ -392,7 +392,7 @@ The architecture supports all of these from day one; the contract does not chang
 The overlay store is **not** Voyant-admin-UI-only. It accepts writes from multiple sources, all governed by the same field-policy contract:
 
 - **Voyant admin UI** — the built-in editorial surface; default writer for deployments that don't run an external CMS.
-- **External CMS plugins** — Sanity, Payload, Contentful, WordPress, Strapi. Each CMS has a Voyant plugin (the inbound mirror of the existing outbound `@voyant-travel/voyant-plugin-payload-cms`) that listens to CMS webhooks and writes overlay rows. Marketing teams keep their existing tools; their edits land in the overlay store.
+- **External CMS plugins** — Sanity, Payload, Contentful, WordPress, Strapi. Each CMS has a Voyant plugin (the inbound mirror of the existing outbound `@voyant-travel/plugin-payload-cms`) that listens to CMS webhooks and writes overlay rows. Marketing teams keep their existing tools; their edits land in the overlay store.
 - **Bulk import** — CSV upload, spreadsheet sync, batch operations for migration or large editorial moves.
 - **AI-generated copy** — automated SEO copywriters, alt-text generators, multilingual translation pipelines.
 - **Storefront-driven** — analytics-driven auto-tuning (e.g. underperforming titles get rewritten), gated by overlay-friction policies.
@@ -418,7 +418,7 @@ Per-field canonical-writer configuration (e.g. "Sanity is the only writer that m
 
 **Bidirectional CMS sync.** A typical CMS plugin handles both directions:
 
-- **Outbound** (already implemented in `@voyant-travel/voyant-plugin-payload-cms`): listens for `catalog.entity.*` events, upserts the corresponding doc in the CMS so editors see the entity in their tool.
+- **Outbound** (already implemented in `@voyant-travel/plugin-payload-cms`): listens for `catalog.entity.*` events, upserts the corresponding doc in the CMS so editors see the entity in their tool.
 - **Inbound** (new for this architecture): listens for CMS webhooks, writes overlay rows when editors save changes.
 
 Single package per CMS, two subscriber sets, one bidirectional contract.
