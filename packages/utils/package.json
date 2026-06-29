@@ -129,7 +129,6 @@
     "@voyant-travel/templating": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "catalog:",
-    "liquidjs": "^10.27.1",
     "pdf-lib": "^1.17.1",
     "zod": "catalog:"
   },

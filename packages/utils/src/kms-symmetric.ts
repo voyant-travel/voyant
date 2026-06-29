@@ -36,6 +36,7 @@ export function generateSymmetricKmsKey(): string {
 }
 
 export abstract class SymmetricAesGcmKmsProvider implements KmsProvider {
+  // fallow-ignore-next-line unused-class-member
   abstract readonly name: KmsProvider["name"]
   protected abstract readonly prefix: string
   protected abstract readonly label: string
