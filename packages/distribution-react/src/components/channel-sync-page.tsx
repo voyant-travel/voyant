@@ -39,6 +39,7 @@ import {
   type ChannelRecord,
   type ChannelSyncPageProps,
   type ChannelsResponse,
+  channelPushAdminPaths,
   fetchJson,
   formatChannelKind,
   formatRelative,
@@ -86,7 +87,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       if (statusFilter !== "all") params.set("status", statusFilter)
       if (bookingId) params.set("bookingId", bookingId)
       if (channelId) params.set("channelId", channelId)
-      return fetchJson<LinksResponse>(`/v1/admin/distribution?${params}`, client)
+      return fetchJson<LinksResponse>(`${channelPushAdminPaths.links}?${params}`, client)
     },
     refetchInterval: LINKS_REFETCH_MS,
     refetchIntervalInBackground: false,
@@ -94,7 +95,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const throttlingQuery = useQuery<ThrottlingResponse>({
     queryKey: ["channel-push-throttling"],
-    queryFn: () => fetchJson<ThrottlingResponse>("/v1/admin/distribution", client),
+    queryFn: () => fetchJson<ThrottlingResponse>(channelPushAdminPaths.throttling, client),
     refetchInterval: THROTTLING_REFETCH_MS,
   })
 
@@ -117,7 +118,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const retryMutation = useMutation({
     mutationFn: (id: string) =>
-      fetchJson<{ ok: boolean; bookingId: string }>(`/v1/admin/distribution/${id}`, client, {
+      fetchJson<{ ok: boolean; bookingId: string }>(channelPushAdminPaths.retry(id), client, {
         method: "POST",
       }),
     onSuccess: () => {
@@ -127,7 +128,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const reconcileMutation = useMutation({
     mutationFn: (flow: "bookings" | "availability" | "content") =>
-      fetchJson<ReconcilerResult>(`/v1/admin/distribution/${flow}`, client, {
+      fetchJson<ReconcilerResult>(channelPushAdminPaths.reconcile(flow), client, {
         method: "POST",
       }),
     onSuccess: () => {

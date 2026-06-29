@@ -88,4 +88,11 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/public/operator-profile")).not.toBe(404)
     expect(await status("/v1/public/payment-link-config")).not.toBe(404)
   })
+
+  it("mounts distribution channel-push admin routes used by channel sync", async () => {
+    expect(await status("/v1/admin/distribution/links?limit=100")).not.toBe(404)
+    expect(await status("/v1/admin/distribution/throttling")).not.toBe(404)
+    expect(await status("/v1/admin/distribution/retry/booking_123", "POST")).not.toBe(404)
+    expect(await status("/v1/admin/distribution/reconcile/bookings", "POST")).not.toBe(404)
+  })
 })

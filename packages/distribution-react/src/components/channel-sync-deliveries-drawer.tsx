@@ -20,6 +20,7 @@ import { Loader2 } from "lucide-react"
 import type { useDistributionUiMessagesOrDefault } from "../i18n/index.js"
 import type { VoyantFetcher } from "../index.js"
 import {
+  channelPushAdminPaths,
   type DeliveriesResponse,
   fetchJson,
   formatRelative,
@@ -43,7 +44,7 @@ export function DeliveriesDrawer({
     queryKey: ["channel-push-deliveries", bookingId],
     queryFn: () => {
       const params = new URLSearchParams({ bookingId: bookingId ?? "", limit: "200" })
-      return fetchJson<DeliveriesResponse>(`/v1/admin/distribution?${params}`, client)
+      return fetchJson<DeliveriesResponse>(`${channelPushAdminPaths.deliveries}?${params}`, client)
     },
   })
 
