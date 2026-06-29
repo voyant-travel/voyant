@@ -140,6 +140,7 @@ export type PackageProductDetail = z.infer<typeof packageProductDetailSchema>
 
 export const packageDetailSourceSchema = z
   .object({
+    kind: z.string().nullable().optional(),
     connectionId: z.string(),
     ref: z.string().nullable(),
   })
@@ -177,8 +178,22 @@ export type CruiseSailingPricingResponse = z.infer<typeof cruiseSailingPricingRe
 
 /* ── cruise content (opaque payload, mapped by the consumer) ─────────── */
 
+export const catalogContentProvenanceSchema = z.object({
+  source_kind: z.string(),
+  source_provider: z.string().nullable().optional(),
+  source_connection_id: z.string().nullable().optional(),
+  source_ref: z.string().nullable().optional(),
+})
+export type CatalogContentProvenance = z.infer<typeof catalogContentProvenanceSchema>
+
 export const cruiseContentResponseSchema = z.object({
-  data: z.object({ content: z.unknown() }).partial().optional(),
+  data: z
+    .object({
+      content: z.unknown(),
+      provenance: catalogContentProvenanceSchema.optional(),
+    })
+    .partial()
+    .optional(),
 })
 export type CruiseContentResponse = z.infer<typeof cruiseContentResponseSchema>
 

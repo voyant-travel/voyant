@@ -20,7 +20,7 @@ export interface ProductDetailHostProps {
 /**
  * Packaged admin host for `ProductDetailPage` — injects the localized
  * "Packages" label, navigation to the booking journey (pinned to the resolved
- * Connect source), and breadcrumbs.
+ * source when available), and breadcrumbs.
  *
  * Proof-of-contract for semantic destinations (packaged-admin RFC §4.7): no
  * host route tree is imported — the `catalog.browse` / `bookingJourney.start`
@@ -46,14 +46,17 @@ export function ProductDetailHost({ productId, adults, nights, locale }: Product
       productsLabel={productsLabel}
       productsHref={productsHref}
       onBreadcrumbs={setCrumbs}
-      // Connect-sourced product → the unified journey. The picked offer's date
-      // + rate pin (room + rate plan) drive the quote so the adapter re-resolves
-      // the exact offer; name/image preview the side panel.
-      onBook={(id, _source, selection) =>
-        navigateTo("bookingJourney.start", {
+      // Product detail → the unified journey. Preserve the resolved source
+      // pointer when available; otherwise the journey APIs resolve provenance
+      // server-side from (entityModule, entityId).
+      onBook={(id, source, selection) => {
+        const sourceKind = source.kind?.trim()
+        return navigateTo("bookingJourney.start", {
           entityModule: "products",
           entityId: id,
-          sourceKind: "voyant-connect",
+          ...(sourceKind ? { sourceKind } : {}),
+          ...(source.connectionId ? { sourceConnectionId: source.connectionId } : {}),
+          ...(source.ref ? { sourceRef: source.ref } : {}),
           ...(selection?.checkIn ? { departureDate: selection.checkIn.slice(0, 10) } : {}),
           ...(selection?.roomTypeId ? { roomTypeId: selection.roomTypeId } : {}),
           ...(selection?.ratePlanId ? { ratePlanId: selection.ratePlanId } : {}),
@@ -61,7 +64,7 @@ export function ProductDetailHost({ productId, adults, nights, locale }: Product
           ...(selection?.name ? { entityName: selection.name } : {}),
           ...(selection?.heroImageUrl ? { entityImageUrl: selection.heroImageUrl } : {}),
         })
-      }
+      }}
     />
   )
 }

@@ -112,6 +112,7 @@ export interface GetProductContentOptions {
 export interface ResolvedProductContent {
   content: ProductContent
   resolution: ContentLocaleResolution<{ locale: string; payload: ProductContent }>
+  provenance: ResolvedProductContentProvenance
   /** Where the resolved content came from. */
   source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
   /** True when the cache row was stale and a background refresh was scheduled. */
@@ -120,6 +121,13 @@ export interface ResolvedProductContent {
   synthesized: boolean
   /** True when the upstream marked this content machine-translated. */
   machine_translated: boolean
+}
+
+export interface ResolvedProductContentProvenance {
+  source_kind: string
+  source_provider?: string
+  source_connection_id?: string
+  source_ref?: string
 }
 
 /**
@@ -167,6 +175,7 @@ export async function getProductContent(
         served_locale: owned.servedLocale,
         match_kind: owned.matchKind,
       },
+      provenance: { source_kind: "owned" },
       source: "owned",
       served_stale: false,
       synthesized: false,
@@ -194,6 +203,7 @@ export async function getProductContent(
     first_seen_at: sourcedEntry.first_seen_at,
     last_seen_at: sourcedEntry.last_seen_at,
   }
+  const resultProvenance = sourcedEntryToContentProvenance(sourcedEntry)
 
   const adapter = sourcedEntry.source_connection_id
     ? (options.registry.resolveByConnection(sourcedEntry.source_connection_id) ??
@@ -219,7 +229,7 @@ export async function getProductContent(
       market,
       currency: scope.currency,
     })
-    return finalizeFresh(db, entityId, fresh, scope, options)
+    return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
   }
 
   if (options.forceFresh && adapter?.getContent) {
@@ -237,7 +247,7 @@ export async function getProductContent(
       options,
     )
     if (fresh) {
-      return finalizeFresh(db, entityId, fresh, scope, options)
+      return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
     }
   }
 
@@ -255,7 +265,7 @@ export async function getProductContent(
     : false
 
   if (best && !isStale(best.candidate) && !shouldRefreshLegacyAvailability) {
-    return finalizeFromCache(db, entityId, best, "sourced-cache", false, options)
+    return finalizeFromCache(db, entityId, best, "sourced-cache", false, options, resultProvenance)
   }
 
   if (best && (isStale(best.candidate) || shouldRefreshLegacyAvailability)) {
@@ -272,12 +282,12 @@ export async function getProductContent(
       }
       if (shouldRefreshLegacyAvailability) {
         const fresh = await fetchFreshContent(db, adapter, adapterCtx, refreshRequest, options)
-        if (fresh) return finalizeFresh(db, entityId, fresh, scope, options)
+        if (fresh) return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
       } else {
         void scheduleRefresh(db, adapter, adapterCtx, refreshRequest)
       }
     }
-    return finalizeFromCache(db, entityId, best, "sourced-cache", true, options)
+    return finalizeFromCache(db, entityId, best, "sourced-cache", true, options, resultProvenance)
   }
 
   // No cache row at all — must produce content somehow.
@@ -292,7 +302,7 @@ export async function getProductContent(
         overlays: overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
       },
     )
-    return wrapSynthesized(synthesized, scope, false)
+    return wrapSynthesized(synthesized, scope, false, resultProvenance)
   }
 
   // Cache miss with a rich adapter — block on the adapter, dedupe
@@ -321,10 +331,10 @@ export async function getProductContent(
         overlays: overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
       },
     )
-    return wrapSynthesized(synthesized, scope, false)
+    return wrapSynthesized(synthesized, scope, false, resultProvenance)
   }
 
-  return finalizeFresh(db, entityId, fresh, scope, options)
+  return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -505,6 +515,7 @@ async function finalizeFromCache(
   source: "sourced-cache",
   servedStale: boolean,
   options: GetProductContentOptions,
+  provenance: ResolvedProductContentProvenance,
 ): Promise<ResolvedProductContent> {
   const cachedPayload = best.candidate.payload
   const validation = validateProductContent(cachedPayload)
@@ -538,6 +549,7 @@ async function finalizeFromCache(
       served_locale: best.candidate.returned_locale,
       match_kind: best.match_kind,
     },
+    provenance,
     source,
     served_stale: servedStale,
     synthesized: false,
@@ -551,6 +563,7 @@ async function finalizeFresh(
   fresh: GetContentResult,
   scope: ProductContentScope,
   options: GetProductContentOptions,
+  provenance: ResolvedProductContentProvenance,
 ): Promise<ResolvedProductContent> {
   const cachedContent = productContentSchema.parse(fresh.content)
   const overlays = await fetchOverlaysForEntity(db, "products", entityId)
@@ -574,6 +587,7 @@ async function finalizeFresh(
       served_locale: fresh.returned_locale,
       match_kind: scope.preferredLocales[0] === fresh.returned_locale ? "exact" : "language_match",
     },
+    provenance,
     source: "sourced-fresh",
     served_stale: false,
     synthesized: false,
@@ -585,6 +599,7 @@ function wrapSynthesized(
   synthesized: SynthesizedProductContent,
   scope: ProductContentScope,
   servedStale: boolean,
+  provenance: ResolvedProductContentProvenance,
 ): ResolvedProductContent {
   return {
     content: synthesized.content,
@@ -593,10 +608,27 @@ function wrapSynthesized(
       served_locale: synthesized.served_locale,
       match_kind: scope.preferredLocales[0] === synthesized.served_locale ? "exact" : "any",
     },
+    provenance,
     source: "synthesized",
     served_stale: servedStale,
     synthesized: true,
     machine_translated: false,
+  }
+}
+
+function sourcedEntryToContentProvenance(sourcedEntry: {
+  source_kind: string
+  source_provider?: string | null
+  source_connection_id?: string | null
+  source_ref?: string | null
+}): ResolvedProductContentProvenance {
+  return {
+    source_kind: sourcedEntry.source_kind,
+    ...(sourcedEntry.source_provider ? { source_provider: sourcedEntry.source_provider } : {}),
+    ...(sourcedEntry.source_connection_id
+      ? { source_connection_id: sourcedEntry.source_connection_id }
+      : {}),
+    ...(sourcedEntry.source_ref ? { source_ref: sourcedEntry.source_ref } : {}),
   }
 }
 

@@ -74,8 +74,9 @@ describe("createBookingsAdminExtension", () => {
       sourceKind: "owned",
       departureId: "as_1",
     })
-    // The journey's provenance is required — key presence is meaningful.
-    expect(() => journey?.validateSearch?.({})).toThrow()
+    // The journey can omit provenance and let catalog booking APIs resolve it
+    // server-side from (entityModule, entityId).
+    expect(journey?.validateSearch?.({})).toMatchObject({})
   })
 
   it("binds the route-backed booking.create destination on the new-booking route", () => {

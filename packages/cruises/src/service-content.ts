@@ -70,10 +70,18 @@ export interface GetCruiseContentOptions {
 export interface ResolvedCruiseContent {
   content: CruiseContent
   resolution: ContentLocaleResolution<{ locale: string; payload: CruiseContent }>
+  provenance: ResolvedCruiseContentProvenance
   source: "sourced-cache" | "sourced-fresh" | "synthesized"
   served_stale: boolean
   synthesized: boolean
   machine_translated: boolean
+}
+
+export interface ResolvedCruiseContentProvenance {
+  source_kind: string
+  source_provider?: string
+  source_connection_id?: string
+  source_ref?: string
 }
 
 export async function getCruiseContent(
@@ -103,6 +111,7 @@ export async function getCruiseContent(
     first_seen_at: sourcedEntry.first_seen_at,
     last_seen_at: sourcedEntry.last_seen_at,
   }
+  const resultProvenance = sourcedEntryToContentProvenance(sourcedEntry)
 
   const adapter = sourcedEntry.source_connection_id
     ? (options.registry.resolveByConnection(sourcedEntry.source_connection_id) ??
@@ -128,7 +137,7 @@ export async function getCruiseContent(
       market,
       currency: scope.currency,
     })
-    return finalizeFresh(db, entityId, fresh, scope, options)
+    return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
   }
 
   const cachedRows = await fetchCacheCandidates(db, entityId, market)
@@ -140,7 +149,7 @@ export async function getCruiseContent(
   )
 
   if (best && !isStale(best.candidate)) {
-    return finalizeFromCache(db, entityId, best, false, options)
+    return finalizeFromCache(db, entityId, best, false, options, resultProvenance)
   }
 
   if (best && isStale(best.candidate)) {
@@ -153,7 +162,7 @@ export async function getCruiseContent(
         currency: scope.currency,
       })
     }
-    return finalizeFromCache(db, entityId, best, true, options)
+    return finalizeFromCache(db, entityId, best, true, options, resultProvenance)
   }
 
   if (!adapter?.getContent) {
@@ -165,7 +174,7 @@ export async function getCruiseContent(
         overlays: overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
       },
     )
-    return wrapSynthesized(synthesized, scope, false)
+    return wrapSynthesized(synthesized, scope, false, resultProvenance)
   }
 
   const fresh = await fetchFreshContent(db, adapter, adapterCtx, {
@@ -184,10 +193,10 @@ export async function getCruiseContent(
         overlays: overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
       },
     )
-    return wrapSynthesized(synthesized, scope, false)
+    return wrapSynthesized(synthesized, scope, false, resultProvenance)
   }
 
-  return finalizeFresh(db, entityId, fresh, scope, options)
+  return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
 }
 
 export interface CruiseSailingPricingRow {
@@ -389,6 +398,7 @@ async function finalizeFromCache(
   best: NonNullable<ReturnType<typeof pickBestCachedLocale<SelectCruisesSourcedContent>>>,
   servedStale: boolean,
   options: GetCruiseContentOptions,
+  provenance: ResolvedCruiseContentProvenance,
 ): Promise<ResolvedCruiseContent> {
   const validation = validateCruiseContent(best.candidate.payload)
   if (!validation.valid) {
@@ -417,6 +427,7 @@ async function finalizeFromCache(
       served_locale: best.candidate.returned_locale,
       match_kind: best.match_kind,
     },
+    provenance,
     source: "sourced-cache",
     served_stale: servedStale,
     synthesized: false,
@@ -430,6 +441,7 @@ async function finalizeFresh(
   fresh: GetContentResult,
   scope: CruiseContentScope,
   options: GetCruiseContentOptions,
+  provenance: ResolvedCruiseContentProvenance,
 ): Promise<ResolvedCruiseContent> {
   const cachedContent = cruiseContentSchema.parse(fresh.content)
   const overlays = await fetchOverlaysForEntity(db, "cruises", entityId)
@@ -453,6 +465,7 @@ async function finalizeFresh(
       served_locale: fresh.returned_locale,
       match_kind: scope.preferredLocales[0] === fresh.returned_locale ? "exact" : "language_match",
     },
+    provenance,
     source: "sourced-fresh",
     served_stale: false,
     synthesized: false,
@@ -464,6 +477,7 @@ function wrapSynthesized(
   synthesized: SynthesizedCruiseContent,
   scope: CruiseContentScope,
   servedStale: boolean,
+  provenance: ResolvedCruiseContentProvenance,
 ): ResolvedCruiseContent {
   return {
     content: synthesized.content,
@@ -472,10 +486,27 @@ function wrapSynthesized(
       served_locale: synthesized.served_locale,
       match_kind: scope.preferredLocales[0] === synthesized.served_locale ? "exact" : "any",
     },
+    provenance,
     source: "synthesized",
     served_stale: servedStale,
     synthesized: true,
     machine_translated: false,
+  }
+}
+
+function sourcedEntryToContentProvenance(sourcedEntry: {
+  source_kind: string
+  source_provider?: string | null
+  source_connection_id?: string | null
+  source_ref?: string | null
+}): ResolvedCruiseContentProvenance {
+  return {
+    source_kind: sourcedEntry.source_kind,
+    ...(sourcedEntry.source_provider ? { source_provider: sourcedEntry.source_provider } : {}),
+    ...(sourcedEntry.source_connection_id
+      ? { source_connection_id: sourcedEntry.source_connection_id }
+      : {}),
+    ...(sourcedEntry.source_ref ? { source_ref: sourcedEntry.source_ref } : {}),
   }
 }
 

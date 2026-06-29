@@ -478,6 +478,7 @@ async function handlePackageDetail(
   const db = c.get("db") as PostgresJsDatabase
   const [entry] = await db
     .select({
+      sourceKind: catalogSourcedEntriesTable.source_kind,
       connectionId: catalogSourcedEntriesTable.source_connection_id,
       sourceRef: catalogSourcedEntriesTable.source_ref,
     })
@@ -515,7 +516,7 @@ async function handlePackageDetail(
     product,
     offers: offers.map(mapOffer),
     retryable,
-    source: { connectionId, ref: entry?.sourceRef ?? null },
+    source: { kind: entry?.sourceKind ?? null, connectionId, ref: entry?.sourceRef ?? null },
   })
 }
 

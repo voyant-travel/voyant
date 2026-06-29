@@ -34,9 +34,17 @@ import type { Context } from "hono"
 
 import { getProductContent, type ProductContentScope } from "./service-content.js"
 
+const contentProvenanceSchema = z.object({
+  source_kind: z.string(),
+  source_provider: z.string().optional(),
+  source_connection_id: z.string().optional(),
+  source_ref: z.string().optional(),
+})
+
 const contentResponseSchema = z.object({
   data: z.object({
     content: productContentSchema,
+    provenance: contentProvenanceSchema,
     served_locale: z.string(),
     match_kind: z.enum(["exact", "language_match", "fallback_chain", "any"]),
     source: z.enum(["sourced-cache", "sourced-fresh", "synthesized", "owned"]),
@@ -133,6 +141,7 @@ export function createProductContentRoutes(
       {
         data: {
           content: result.content,
+          provenance: result.provenance,
           served_locale: result.resolution.served_locale,
           match_kind: result.resolution.match_kind,
           source: result.source,

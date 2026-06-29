@@ -123,6 +123,11 @@ describe("createCruiseContentRoutes — GET /:key/content", () => {
         served_locale: "en-GB",
         match_kind: "exact",
       },
+      provenance: {
+        source_kind: "voyant-connect",
+        source_connection_id: "conn_1",
+        source_ref: "cruise-abc",
+      },
       source: "sourced-fresh",
       served_stale: false,
       synthesized: false,
@@ -135,6 +140,11 @@ describe("createCruiseContentRoutes — GET /:key/content", () => {
     expect(body.data.content.cruise.name).toBe("Greek Isles")
     expect(body.data.served_locale).toBe("en-GB")
     expect(body.data.source).toBe("sourced-fresh")
+    expect(body.data.provenance).toEqual({
+      source_kind: "voyant-connect",
+      source_connection_id: "conn_1",
+      source_ref: "cruise-abc",
+    })
   })
 
   it("dispatches owned keys when allowOwnedKeys: true", async () => {

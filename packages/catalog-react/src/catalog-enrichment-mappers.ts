@@ -3,6 +3,7 @@ import type { CatalogDetailEnrichment, CatalogSlotAvailability } from "./catalog
 export interface ContentResponseEnvelope {
   data: {
     content: SourcedContentPayload
+    provenance?: ContentProvenancePayload
     served_locale: string
     match_kind: "exact" | "language_match" | "fallback_chain" | "any"
     source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
@@ -10,6 +11,13 @@ export interface ContentResponseEnvelope {
     synthesized: boolean
     machine_translated: boolean
   }
+}
+
+interface ContentProvenancePayload {
+  source_kind: string
+  source_provider?: string | null
+  source_connection_id?: string | null
+  source_ref?: string | null
 }
 
 type SourcedContentPayload =
@@ -159,6 +167,7 @@ export function mapContentToEnrichment(
     served_stale,
     synthesized,
     machine_translated,
+    provenance,
   } = payload.data
   const base = isCruiseContent(content)
     ? mapCruiseContentToEnrichment(content)
@@ -171,6 +180,10 @@ export function mapContentToEnrichment(
     servedLocale: served_locale,
     matchKind: match_kind,
     source,
+    sourceKind: provenance?.source_kind,
+    sourceProvider: provenance?.source_provider ?? undefined,
+    sourceConnectionId: provenance?.source_connection_id ?? undefined,
+    sourceRef: provenance?.source_ref ?? undefined,
     servedStale: served_stale,
     synthesized,
     machineTranslated: machine_translated,

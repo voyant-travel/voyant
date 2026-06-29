@@ -37,20 +37,24 @@ export function CruiseDetailHost({ id, locale }: CruiseDetailHostProps) {
       cruisesLabel={cruisesLabel}
       cruisesHref={cruisesHref}
       onBreadcrumbs={setCrumbs}
-      // Connect-sourced cruise → the unified journey. The sailing's date locks
-      // the departure step; cabin is the option; name/hero preview the panel.
-      onBook={(cruiseId, opts) =>
-        navigateTo("bookingJourney.start", {
+      // Cruise detail → the unified journey. Preserve sourced-entry provenance
+      // when the content route exposed it; otherwise let the journey APIs
+      // resolve provenance server-side from (entityModule, entityId).
+      onBook={(cruiseId, opts) => {
+        const sourceKind = opts.sourceKind?.trim()
+        return navigateTo("bookingJourney.start", {
           entityModule: "cruises",
           entityId: cruiseId,
-          sourceKind: "voyant-connect",
+          ...(sourceKind ? { sourceKind } : {}),
+          ...(opts.sourceConnectionId ? { sourceConnectionId: opts.sourceConnectionId } : {}),
+          ...(opts.sourceRef ? { sourceRef: opts.sourceRef } : {}),
           ...(opts.departureId ? { departureId: opts.departureId } : {}),
           ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
           ...(opts.optionId ? { optionId: opts.optionId } : {}),
           ...(opts.name ? { entityName: opts.name } : {}),
           ...(opts.heroImageUrl ? { entityImageUrl: opts.heroImageUrl } : {}),
         })
-      }
+      }}
     />
   )
 }

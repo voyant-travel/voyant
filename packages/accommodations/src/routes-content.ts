@@ -54,6 +54,7 @@ export function createAccommodationContentRoutes(
     return c.json({
       data: {
         content: result.content,
+        provenance: result.provenance,
         served_locale: result.resolution.served_locale,
         match_kind: result.resolution.match_kind,
         source: result.source,
