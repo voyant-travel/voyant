@@ -18,7 +18,11 @@ import {
   buildClearCloudAdminAuthStateCookie,
   createCloudAdminAuthStart,
 } from "@voyant-travel/auth/cloud-broker"
-import { createBetterAuth, handleApiTokenManagementRequest } from "@voyant-travel/auth/server"
+import {
+  createBetterAuth,
+  handleApiTokenManagementRequest,
+  handleOrganizationMembersRequest,
+} from "@voyant-travel/auth/server"
 import { ensureCurrentUserProfile } from "@voyant-travel/auth/workspace"
 import {
   authUser,
@@ -649,6 +653,52 @@ async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
   }
 }
 
+async function handleOrganizationMembersFacade(c: Context<AuthHonoEnv>) {
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db)
+    const cloudAuthDb = db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"]
+
+    if (isVoyantCloudAuthMode(c.env)) {
+      const revalidateConfig = getCloudAuthRevalidateConfig(c.env)
+      if (!revalidateConfig) {
+        return c.json(
+          { error: "Cloud-mode organization member lookup requires membership revalidation" },
+          501,
+        )
+      }
+
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) {
+        return c.json({ error: "Unauthorized" }, 401)
+      }
+
+      try {
+        const revalidation = await revalidateVoyantCloudAdminAuthSession({
+          db: cloudAuthDb,
+          sessionId: session.session.id,
+          config: revalidateConfig,
+        })
+
+        if (!revalidation.ok) {
+          return c.json({ error: "Voyant Cloud access revoked" }, 403)
+        }
+      } catch (error) {
+        console.error("[auth/organization-members] Cloud revalidation failed:", error)
+        return c.json({ error: "Voyant Cloud access could not be revalidated" }, 503)
+      }
+    }
+
+    return (
+      (await handleOrganizationMembersRequest(c.req.raw, betterAuth, {
+        db,
+      })) ?? c.json({ error: "Not found" }, 404)
+    )
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+}
+
 auth.get("/auth/cloud/start", async (c) => {
   if (!isVoyantCloudAuthMode(c.env)) {
     return c.json({ error: "Not found" }, 404)
@@ -709,6 +759,7 @@ auth.get("/auth/cloud/callback", async (c) => {
 auth.all("/auth/api-tokens", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId/rotate", handleApiTokensFacade)
+auth.get("/auth/organization/list-members", handleOrganizationMembersFacade)
 
 /**
  * Catch-all: delegate to Better Auth handler.

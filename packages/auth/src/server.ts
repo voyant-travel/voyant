@@ -33,8 +33,16 @@ export type {
   BetterAuthApiTokenManagement,
   HandleAccountProfileRequestOptions,
   HandleApiTokenManagementRequestOptions,
+  HandleOrganizationMembersRequestOptions,
+  OrganizationMemberRecord,
+  OrganizationMembersListHandler,
+  OrganizationMembersListInput,
 } from "./auth-facades.js"
-export { handleAccountProfileRequest, handleApiTokenManagementRequest } from "./auth-facades.js"
+export {
+  handleAccountProfileRequest,
+  handleApiTokenManagementRequest,
+  handleOrganizationMembersRequest,
+} from "./auth-facades.js"
 
 type DefinedBetterAuthUserOptions<UserOptions extends BetterAuthOptions["user"]> =
   UserOptions extends undefined ? Record<PropertyKey, never> : NonNullable<UserOptions>
