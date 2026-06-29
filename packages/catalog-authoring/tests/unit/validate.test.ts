@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { ProductGraphSpec } from "../../src/spec.js"
-import { validateProductGraph } from "../../src/validate.js"
+import { type ProductGraphSpec, validateProductGraph } from "../../src/index.js"
 
 function spec(partial: {
   bookingMode: ProductGraphSpec["product"]["bookingMode"]

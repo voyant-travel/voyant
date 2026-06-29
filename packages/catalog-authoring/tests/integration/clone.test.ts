@@ -1,9 +1,7 @@
 import { priceCatalogs } from "@voyant-travel/commerce"
 import { createTestDb, describeIfDb } from "@voyant-travel/voyant-test-utils/db"
 import { beforeAll, expect, it } from "vitest"
-import { buildProductGraph } from "../../src/builder.js"
-import { cloneProduct } from "../../src/clone.js"
-import type { ProductGraphSpec } from "../../src/spec.js"
+import { buildProductGraph, cloneProduct, type ProductGraphSpec } from "../../src/index.js"
 
 describeIfDb("cloneProduct", () => {
   const db = createTestDb()
