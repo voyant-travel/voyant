@@ -47,9 +47,9 @@ export interface DemoCatalogAdapterOptions {
    */
   baseUrl: string
   /**
-   * Verticals this adapter feeds projections for. Defaults to `["products"]`,
-   * matching the tracer scope. Other values must match the `entityModule`
-   * on the demo-api's inventory rows.
+   * Verticals this adapter feeds projections and sourced content for. Defaults
+   * to `["products"]`; the demo API also serves cruise and accommodation
+   * content payloads for multi-vertical starters.
    */
   verticals?: ReadonlyArray<string>
   /** Custom fetch implementation — useful for tests. Defaults to `globalThis.fetch`. */
@@ -60,7 +60,7 @@ export interface DemoCatalogAdapterOptions {
 
 export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): SourceAdapter {
   const baseUrl = options.baseUrl.replace(/\/$/, "")
-  const verticals = options.verticals?.length ? Array.from(options.verticals) : ["products"]
+  const verticals = normalizeDemoVerticals(options.verticals)
   const fetchImpl = options.fetch ?? globalThis.fetch
   const timeoutMs = options.timeoutMs ?? 8_000
 
@@ -222,4 +222,14 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
       })
     },
   }
+}
+
+function normalizeDemoVerticals(verticals: DemoCatalogAdapterOptions["verticals"]): string[] {
+  if (!verticals?.length) return ["products"]
+  const supported = new Set(["products", "cruises", "accommodations"])
+  const unsupported = verticals.filter((vertical) => !supported.has(vertical))
+  if (unsupported.length > 0) {
+    throw new Error(`catalog-demo adapter does not support vertical(s): ${unsupported.join(", ")}`)
+  }
+  return [...new Set(verticals)]
 }
