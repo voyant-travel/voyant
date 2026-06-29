@@ -15,13 +15,15 @@ for `flights`.
   whose lifecycle methods (`connect`, `pause`, `disconnect`, `getState`,
   `discover`, `liveResolve`, `reserve`, `cancel`) all hit endpoints on
   the demo-api.
-- `kind: "demo"` and `verticals: ["products"]`.
+- `kind: "demo"` and default `verticals: ["products"]`. Pass
+  `verticals: ["products", "cruises", "accommodations"]` for
+  multi-vertical demo catalog sync.
 - Capability declaration: `supportsLiveResolution`, `supportsBookingForwarding`,
   `postBookOperations: ["cancel", "status"]`.
 
-The demo catalog API serves product-shaped discovery and content payloads.
-`createDemoCatalogAdapter` therefore rejects non-product verticals until the
-demo service has vertical-specific cruise/accommodation content contracts.
+The demo catalog API serves vertical-specific discovery and content payloads for
+products, cruises, and accommodations. The adapter rejects unsupported verticals
+instead of advertising content routes that the demo API cannot serve.
 
 It does **not** implement `freshnessCheck` (no upstream to check) or
 `onDrift` (no drift signal). The plugin is purely synchronous fetch

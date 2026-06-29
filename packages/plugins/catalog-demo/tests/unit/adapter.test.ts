@@ -41,21 +41,21 @@ describe("createDemoCatalogAdapter", () => {
     expect(adapter.capabilities.verticals).toEqual(["products"])
   })
 
-  it("accepts an explicit products vertical list", () => {
+  it("accepts supported demo verticals", () => {
     const adapter = createDemoCatalogAdapter({
       baseUrl: "http://demo",
-      verticals: ["products"],
+      verticals: ["products", "cruises", "accommodations"],
     })
-    expect(adapter.capabilities.verticals).toEqual(["products"])
+    expect(adapter.capabilities.verticals).toEqual(["products", "cruises", "accommodations"])
   })
 
-  it("rejects non-product verticals because demo content is product-shaped", () => {
+  it("rejects verticals the demo API cannot serve", () => {
     expect(() =>
       createDemoCatalogAdapter({
         baseUrl: "http://demo",
-        verticals: ["products", "cruises"],
+        verticals: ["products", "charters"],
       }),
-    ).toThrow("catalog-demo adapter only supports the products vertical")
+    ).toThrow("catalog-demo adapter does not support vertical(s): charters")
   })
 
   it("declares the booking-forwarding capability", () => {

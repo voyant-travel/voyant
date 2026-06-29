@@ -18,6 +18,7 @@
  * with appropriate HTTP statuses.
  */
 
+import { Buffer } from "node:buffer"
 import type {
   CatalogProjection,
   DiscoveryPage,
@@ -73,19 +74,23 @@ const SOURCE_KIND = "demo"
 const DEMO_SUPPLIER_ID = "Demo Tours"
 
 export function buildDemoCatalogProjection(row: CatalogDemoInventoryRow): CatalogProjection {
+  const entityId = demoEntityIdForRow(row)
   return {
     entity_module: row.entityModule,
-    entity_id: row.id,
+    entity_id: entityId,
     provenance: {
       source_kind: SOURCE_KIND,
       source_freshness: "sync",
       source_ref: row.id,
     },
-    fields: buildDemoProjectionFields(row),
+    fields: buildDemoProjectionFields(row, entityId),
   }
 }
 
-function buildDemoProjectionFields(row: CatalogDemoInventoryRow): Record<string, unknown> {
+function buildDemoProjectionFields(
+  row: CatalogDemoInventoryRow,
+  entityId: string,
+): Record<string, unknown> {
   const metadata = row.metadata ?? {}
   const departures = upcomingOpenDepartures(metadata)
   const nextDeparture = departures[0] ?? null
@@ -101,10 +106,10 @@ function buildDemoProjectionFields(row: CatalogDemoInventoryRow): Record<string,
       ? remainingValues.reduce((sum, remaining) => sum + (remaining ?? 0), 0)
       : null
 
-  return {
+  const baseFields: Record<string, unknown> = {
     "source.kind": SOURCE_KIND,
     "source.ref": row.id,
-    id: row.id,
+    id: entityId,
     name: row.name,
     description: row.description,
     status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
@@ -138,6 +143,31 @@ function buildDemoProjectionFields(row: CatalogDemoInventoryRow): Record<string,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }
+
+  if (row.entityModule === "cruises") {
+    return {
+      ...baseFields,
+      cruiseLine: stringOr(metadata.cruiseLine, DEMO_SUPPLIER_ID),
+      shipName: stringOr(metadata.shipName, null),
+      durationNights: durationNightsFromMetadata(metadata),
+      embarkationPort: stringOr(metadata.embarkationPort, stringOr(metadata.departureCity, null)),
+      disembarkationPort: stringOr(metadata.disembarkationPort, null),
+    }
+  }
+
+  if (row.entityModule === "accommodations") {
+    return {
+      ...baseFields,
+      hotelName: row.name,
+      brand: stringOr(metadata.brand, DEMO_SUPPLIER_ID),
+      starRating: numberOr(metadata.starRating, null),
+      city: stringOr(metadata.city, stringOr(metadata.departureCity, null)),
+      country: stringOr(metadata.country, null),
+      roomTypeName: stringOr(metadata.roomTypeName, "Standard room"),
+    }
+  }
+
+  return baseFields
 }
 
 export function createRoutes(db: CatalogDemoDb): Hono {
@@ -178,13 +208,17 @@ export function createRoutes(db: CatalogDemoDb): Hono {
       return c.json({ error: "ids array is required" }, 400)
     }
 
-    const inventory = await store.getInventoryByIds(db, body.ids)
+    const sourceRefsByEntityId = new Map(
+      body.ids.map((entityId) => [entityId, demoSourceRefFromEntityId(entityId)]),
+    )
+    const inventory = await store.getInventoryByIds(db, [...new Set(sourceRefsByEntityId.values())])
     const requestedDepartureId = readDepartureId(body.parameters)
     const billablePax = readBillablePax(body.parameters)
     const values: Record<string, Record<string, unknown>> = {}
     const failed: LiveResolveResult["failed"] = {}
     for (const id of body.ids) {
-      const row = inventory.get(id)
+      const sourceRef = sourceRefsByEntityId.get(id) ?? id
+      const row = inventory.get(sourceRef)
       if (!row) {
         failed[id] = "not_found"
         continue
@@ -262,102 +296,13 @@ export function createRoutes(db: CatalogDemoDb): Hono {
     if (!body?.entity_id) {
       return c.json({ error: "entity_id is required" }, 400)
     }
-    const inventory = await store.getInventoryByIds(db, [body.entity_id])
-    const row = inventory.get(body.entity_id)
+    const sourceRef = demoSourceRefFromEntityId(body.entity_id)
+    const inventory = await store.getInventoryByIds(db, [sourceRef])
+    const row = inventory.get(sourceRef)
     if (!row) {
       return c.json({ error: "not_found" }, 404)
     }
-    const meta = (row.metadata ?? {}) as Record<string, unknown>
-    const heroImageUrl = stringOr(meta.heroImageUrl, null)
-    const highlights = stringArrayOr(meta.highlights, [])
-    const tags = stringArrayOr(meta.tags, [])
-    const days = mapArray(meta.days, (d) => ({
-      day_number: numberOr((d as Record<string, unknown>).dayNumber, 1) ?? 1,
-      title: stringOr((d as Record<string, unknown>).title, null),
-      description: stringOr((d as Record<string, unknown>).description, null),
-      location: stringOr((d as Record<string, unknown>).location, null),
-      services: [],
-    }))
-    const options = mapArray(meta.options, (o) => ({
-      id: stringOr((o as Record<string, unknown>).id, "opt") ?? "opt",
-      name: stringOr((o as Record<string, unknown>).name, "Option") ?? "Option",
-      description: stringOr((o as Record<string, unknown>).description, null),
-      units: [],
-      inclusions: [],
-    }))
-    const baseMedia = heroImageUrl
-      ? [{ url: heroImageUrl, type: "image" as const, caption: null, alt: null }]
-      : []
-    const extraMedia = mapArray(meta.media, (m) => ({
-      url: stringOr((m as Record<string, unknown>).url, "") ?? "",
-      type: (stringOr((m as Record<string, unknown>).type, "image") ?? "image") as
-        | "image"
-        | "video"
-        | "document",
-      caption: stringOr((m as Record<string, unknown>).caption, null),
-      alt: stringOr((m as Record<string, unknown>).alt, null),
-    })).filter((m) => m.url.length > 0)
-    const media = [...baseMedia, ...extraMedia]
-    const policies: Array<{
-      kind: "cancellation" | "payment" | "supplier_notes" | "requirements"
-      body: string
-    }> = []
-    const cancel = stringOr(meta.cancellationPolicy, null)
-    if (cancel) policies.push({ kind: "cancellation", body: cancel })
-    const payment = stringOr(meta.paymentTerms, null)
-    if (payment) policies.push({ kind: "payment", body: payment })
-    const supplierNotes = stringOr(meta.supplierNotes, null)
-    if (supplierNotes) policies.push({ kind: "supplier_notes", body: supplierNotes })
-
-    const departures = mapArray(meta.departures, (d) => {
-      const dr = d as Record<string, unknown>
-      const capacity = numberOr(dr.capacity, row.available)
-      const remaining = Math.min(numberOr(dr.remaining, capacity), capacity)
-      return {
-        id: stringOr(dr.id, "") ?? "",
-        starts_at: stringOr(dr.starts_at, "") ?? "",
-        ends_at: stringOr(dr.ends_at, null),
-        status: stringOr(dr.status, null),
-        capacity,
-        remaining,
-        lowest_price_cents: numberOr(dr.lowest_price_cents, row.priceCents),
-        currency: stringOr(dr.currency, row.currency),
-        note: stringOr(dr.note, null),
-      }
-    }).filter((d) => d.id.length > 0 && d.starts_at.length > 0)
-
-    const content = {
-      product: {
-        id: row.id,
-        name: row.name,
-        status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
-        description: row.description ?? null,
-        highlights,
-        hero_image_url: heroImageUrl,
-        duration_days: numberOr(meta.durationDays, null),
-        sell_currency: row.currency,
-        supplier: DEMO_SUPPLIER_ID,
-        country: stringOr(meta.country, null),
-        departure_city: stringOr(meta.departureCity, null),
-        tags,
-      },
-      options,
-      days,
-      media,
-      policies,
-      departures,
-    }
-
-    const result: GetContentResult = {
-      entity_module: body.entity_module,
-      entity_id: body.entity_id,
-      source_ref: row.id,
-      returned_locale: body.locale,
-      content,
-      content_schema_version: "products/v1",
-      source_updated_at: row.updatedAt,
-    }
-    return c.json(result)
+    return c.json(buildDemoGetContentResult(row, body))
   })
 
   // ── Reserve ───────────────────────────────────────────────────────────
@@ -372,8 +317,9 @@ export function createRoutes(db: CatalogDemoDb): Hono {
       return c.json({ error: "entity_id is required" }, 400)
     }
 
-    const inventory = await store.getInventoryByIds(db, [body.entity_id])
-    const row = inventory.get(body.entity_id)
+    const sourceRef = demoSourceRefFromEntityId(body.entity_id)
+    const inventory = await store.getInventoryByIds(db, [sourceRef])
+    const row = inventory.get(sourceRef)
     if (!row) {
       const result: ReserveResult = {
         upstream_ref: "",
@@ -433,7 +379,7 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const order = await store.createOrder(db, {
       inventoryId: row.id,
-      entityId: row.id,
+      entityId: body.entity_id,
       entityModule: row.entityModule,
       status: orderStatus,
       pricedCents: slotPrice,
@@ -594,6 +540,145 @@ export function createRoutes(db: CatalogDemoDb): Hono {
   return app
 }
 
+export function buildDemoGetContentResult(
+  row: CatalogDemoInventoryRow,
+  request: GetContentRequest,
+): GetContentResult {
+  const content = buildDemoContent(row)
+  return {
+    entity_module: row.entityModule,
+    entity_id: request.entity_id,
+    source_ref: row.id,
+    returned_locale: request.locale,
+    content: content.payload,
+    content_schema_version: content.schemaVersion,
+    source_updated_at: row.updatedAt,
+  }
+}
+
+function buildDemoContent(row: CatalogDemoInventoryRow): {
+  payload: unknown
+  schemaVersion: string
+} {
+  if (row.entityModule === "cruises") {
+    return { payload: buildCruiseContent(row), schemaVersion: "cruises/v1" }
+  }
+  if (row.entityModule === "accommodations") {
+    return { payload: buildAccommodationContent(row), schemaVersion: "accommodations/v1" }
+  }
+  return { payload: buildProductContent(row), schemaVersion: "products/v1" }
+}
+
+function buildProductContent(row: CatalogDemoInventoryRow): Record<string, unknown> {
+  const meta = row.metadata ?? {}
+  const heroImageUrl = stringOr(meta.heroImageUrl, null)
+  const highlights = stringArrayOr(meta.highlights, [])
+  const tags = stringArrayOr(meta.tags, [])
+  const days = mapArray(meta.days, (d) => ({
+    day_number: numberOr((d as Record<string, unknown>).dayNumber, 1) ?? 1,
+    title: stringOr((d as Record<string, unknown>).title, null),
+    description: stringOr((d as Record<string, unknown>).description, null),
+    location: stringOr((d as Record<string, unknown>).location, null),
+    services: [],
+  }))
+  const options = mapArray(meta.options, (o) => ({
+    id: stringOr((o as Record<string, unknown>).id, "opt") ?? "opt",
+    name: stringOr((o as Record<string, unknown>).name, "Option") ?? "Option",
+    description: stringOr((o as Record<string, unknown>).description, null),
+    units: [],
+    inclusions: [],
+  }))
+  const media = buildDemoMedia(meta, heroImageUrl)
+  const departures = buildProductDepartures(row)
+
+  return {
+    product: {
+      id: row.id,
+      name: row.name,
+      status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
+      description: row.description ?? null,
+      highlights,
+      hero_image_url: heroImageUrl,
+      duration_days: numberOr(meta.durationDays, null),
+      sell_currency: row.currency,
+      supplier: DEMO_SUPPLIER_ID,
+      country: stringOr(meta.country, null),
+      departure_city: stringOr(meta.departureCity, null),
+      tags,
+    },
+    options,
+    days,
+    media,
+    policies: buildPolicies(meta, ["cancellation", "payment", "supplier_notes"]),
+    departures,
+  }
+}
+
+function buildCruiseContent(row: CatalogDemoInventoryRow): Record<string, unknown> {
+  const meta = row.metadata ?? {}
+  const heroImageUrl = stringOr(meta.heroImageUrl, null)
+  const itineraryStops = buildCruiseItineraryStops(meta)
+  const durationNights = durationNightsFromMetadata(meta)
+
+  return {
+    cruise: {
+      id: demoEntityIdForRow(row),
+      name: row.name,
+      status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
+      description: row.description ?? null,
+      cruise_type: stringOr(meta.cruiseType, null),
+      hero_image_url: heroImageUrl,
+      highlights: stringArrayOr(meta.highlights, []),
+      cruise_line: stringOr(meta.cruiseLine, DEMO_SUPPLIER_ID),
+      duration_nights: durationNights,
+      embarkation_port: stringOr(meta.embarkationPort, stringOr(meta.departureCity, null)),
+      disembarkation_port: stringOr(meta.disembarkationPort, null),
+    },
+    ship: buildCruiseShip(meta, heroImageUrl),
+    sailings: buildCruiseSailings(row, meta, durationNights, itineraryStops),
+    cabin_categories: buildCruiseCabinCategories(meta, heroImageUrl),
+    itinerary_stops: itineraryStops,
+    policies: buildPolicies(meta, ["cancellation", "payment", "supplier_notes", "requirements"]),
+  }
+}
+
+function buildAccommodationContent(row: CatalogDemoInventoryRow): Record<string, unknown> {
+  const meta = row.metadata ?? {}
+  const heroImageUrl = stringOr(meta.heroImageUrl, null)
+  const roomTypes = buildAccommodationRoomTypes(row, meta, heroImageUrl)
+
+  return {
+    hotel: {
+      id: row.id,
+      name: row.name,
+      description: row.description ?? null,
+      star_rating: numberOr(meta.starRating, null),
+      hero_image_url: heroImageUrl,
+      highlights: stringArrayOr(meta.highlights, []),
+      brand: stringOr(meta.brand, DEMO_SUPPLIER_ID),
+      country: stringOr(meta.country, null),
+      city: stringOr(meta.city, stringOr(meta.departureCity, null)),
+      address: stringOr(meta.address, null),
+      postal_code: stringOr(meta.postalCode, null),
+      latitude: numberOr(meta.latitude, null),
+      longitude: numberOr(meta.longitude, null),
+      check_in_time: stringOr(meta.checkInTime, null),
+      check_out_time: stringOr(meta.checkOutTime, null),
+    },
+    room_types: roomTypes,
+    rate_plans: buildAccommodationRatePlans(meta, roomTypes),
+    meal_plans: [],
+    amenities: buildAccommodationAmenities(meta),
+    policies: buildPolicies(meta, [
+      "cancellation",
+      "payment",
+      "supplier_notes",
+      "requirements",
+      "check_in",
+    ]),
+  }
+}
+
 function readIntentType(intent: ReserveRequest["payment_intent"]): string | undefined {
   if (!intent || typeof intent !== "object") return undefined
   const t = (intent as Record<string, unknown>).type
@@ -624,12 +709,353 @@ function mapArray<T>(value: unknown, project: (item: unknown) => T): T[] {
   return value.map(project)
 }
 
+function buildDemoMedia(
+  metadata: Record<string, unknown>,
+  heroImageUrl: string | null,
+): Array<Record<string, unknown>> {
+  const baseMedia = heroImageUrl
+    ? [{ url: heroImageUrl, type: "image" as const, caption: null, alt: null }]
+    : []
+  const extraMedia = mapArray(metadata.media, (m) => ({
+    url: stringOr((m as Record<string, unknown>).url, "") ?? "",
+    type: (stringOr((m as Record<string, unknown>).type, "image") ?? "image") as
+      | "image"
+      | "video"
+      | "document",
+    caption: stringOr((m as Record<string, unknown>).caption, null),
+    alt: stringOr((m as Record<string, unknown>).alt, null),
+  })).filter((m) => m.url.length > 0)
+  return [...baseMedia, ...extraMedia]
+}
+
+function buildProductDepartures(row: CatalogDemoInventoryRow): Array<Record<string, unknown>> {
+  return mapArray(row.metadata?.departures, (d) => {
+    const dr = d as Record<string, unknown>
+    const capacity = numberOr(dr.capacity, row.available)
+    const remaining = Math.min(numberOr(dr.remaining, capacity), capacity)
+    return {
+      id: stringOr(dr.id, "") ?? "",
+      starts_at: stringOr(dr.starts_at, "") ?? "",
+      ends_at: stringOr(dr.ends_at, null),
+      status: stringOr(dr.status, null),
+      capacity,
+      remaining,
+      lowest_price_cents: numberOr(dr.lowest_price_cents, row.priceCents),
+      currency: stringOr(dr.currency, row.currency),
+      note: stringOr(dr.note, null),
+    }
+  }).filter((d) => typeof d.id === "string" && d.id.length > 0 && typeof d.starts_at === "string")
+}
+
+function buildPolicies(
+  metadata: Record<string, unknown>,
+  allowedKinds: readonly string[],
+): Array<Record<string, unknown>> {
+  const policies: Array<Record<string, unknown>> = []
+  const sources: Array<{ kind: string; field: string }> = [
+    { kind: "cancellation", field: "cancellationPolicy" },
+    { kind: "payment", field: "paymentTerms" },
+    { kind: "supplier_notes", field: "supplierNotes" },
+    { kind: "requirements", field: "requirements" },
+    { kind: "check_in", field: "checkInPolicy" },
+  ]
+  for (const source of sources) {
+    if (!allowedKinds.includes(source.kind)) continue
+    const body = stringOr(metadata[source.field], null)
+    if (body) policies.push({ kind: source.kind, body })
+  }
+  return policies
+}
+
+function buildCruiseShip(
+  metadata: Record<string, unknown>,
+  heroImageUrl: string | null,
+): Record<string, unknown> | null {
+  const explicit = metadata.ship && typeof metadata.ship === "object" ? metadata.ship : null
+  const ship = (explicit ?? metadata) as Record<string, unknown>
+  const name = stringOr(ship.shipName, stringOr(ship.name, null))
+  if (!name) return null
+  return {
+    id: stringOr(ship.id, null),
+    name,
+    ship_type: stringOr(ship.shipType, null),
+    description: stringOr(ship.shipDescription, null),
+    deck_plan_url: stringOr(ship.deckPlanUrl, null),
+    deck_plans: [],
+    capacity: numberOr(ship.capacity, null),
+    decks: numberOr(ship.decks, null),
+    year_built: numberOr(ship.yearBuilt, null),
+    gallery: stringArrayOr(ship.gallery, heroImageUrl ? [heroImageUrl] : []),
+  }
+}
+
+function buildCruiseSailings(
+  row: CatalogDemoInventoryRow,
+  metadata: Record<string, unknown>,
+  durationNights: number | null,
+  itineraryStops: Array<Record<string, unknown>>,
+): Array<Record<string, unknown>> {
+  return mapArray<Record<string, unknown> | null>(metadata.sailings ?? metadata.departures, (d) => {
+    const departure = parseDeparture(d)
+    if (!departure) return null
+    const startDate = datePart(departure.starts_at)
+    const endDate = datePart(departure.ends_at ?? departure.starts_at)
+    if (!startDate || !endDate) return null
+    return {
+      id: departure.id || `sailing_${startDate}`,
+      source_ref: departure.id || null,
+      start_date: startDate,
+      end_date: endDate,
+      duration_nights: durationNights,
+      status: departure.status ?? "open",
+      embarkation_port: stringOr(metadata.embarkationPort, stringOr(metadata.departureCity, null)),
+      disembarkation_port: stringOr(metadata.disembarkationPort, null),
+      itinerary_stops: itineraryStops,
+      lowest_price_cents: departure.lowest_price_cents ?? row.priceCents,
+      currency: departure.currency ?? row.currency,
+    }
+  }).filter((sailing): sailing is Record<string, unknown> => sailing != null)
+}
+
+function buildCruiseItineraryStops(
+  metadata: Record<string, unknown>,
+): Array<Record<string, unknown>> {
+  const explicitStops = mapArray(metadata.itineraryStops, projectCruiseStop).filter(
+    (stop): stop is Record<string, unknown> => stop != null,
+  )
+  if (explicitStops.length > 0) return explicitStops
+  return mapArray(metadata.days, (day) => {
+    const row = day as Record<string, unknown>
+    return {
+      day_number: numberOr(row.dayNumber, 1) ?? 1,
+      date: stringOr(row.date, null),
+      port_name: stringOr(row.location, stringOr(row.title, "At sea")),
+      arrival_time: stringOr(row.arrivalTime, null),
+      departure_time: stringOr(row.departureTime, null),
+      description: stringOr(row.description, null),
+      is_at_sea: typeof row.isAtSea === "boolean" ? row.isAtSea : false,
+    }
+  })
+}
+
+function projectCruiseStop(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") return null
+  const row = value as Record<string, unknown>
+  return {
+    day_number: numberOr(row.dayNumber ?? row.day_number, 1) ?? 1,
+    date: stringOr(row.date, null),
+    port_name: stringOr(row.portName ?? row.port_name, "At sea"),
+    arrival_time: stringOr(row.arrivalTime ?? row.arrival_time, null),
+    departure_time: stringOr(row.departureTime ?? row.departure_time, null),
+    description: stringOr(row.description, null),
+    is_at_sea: typeof row.isAtSea === "boolean" ? row.isAtSea : row.is_at_sea === true,
+  }
+}
+
+function buildCruiseCabinCategories(
+  metadata: Record<string, unknown>,
+  heroImageUrl: string | null,
+): Array<Record<string, unknown>> {
+  const categories = mapArray<Record<string, unknown> | null>(
+    metadata.cabinCategories,
+    (category) => {
+      const row = category as Record<string, unknown>
+      const id = stringOr(row.id, "") ?? ""
+      const name = stringOr(row.name, "") ?? ""
+      if (!id || !name) return null
+      return {
+        id,
+        code: stringOr(row.code, null),
+        name,
+        description: stringOr(row.description, null),
+        type: stringOr(row.type, null),
+        capacity_min: numberOr(row.capacityMin, null),
+        capacity_max: numberOr(row.capacityMax, null),
+        images: stringArrayOr(row.images, []),
+        floorplan_images: stringArrayOr(row.floorplanImages, []),
+        square_feet: stringOr(row.squareFeet, null),
+        grade_codes: stringArrayOr(row.gradeCodes, []),
+        wheelchair_accessible: row.wheelchairAccessible === true,
+        inclusions: stringArrayOr(row.inclusions, []),
+        feature_codes: [],
+        bed_configurations: [],
+        accessibility_features: [],
+        view_type: null,
+      }
+    },
+  ).filter((category): category is Record<string, unknown> => category != null)
+
+  if (categories.length > 0) return categories
+  return [
+    {
+      id: "cabin_standard",
+      code: "STD",
+      name: stringOr(metadata.cabinCategoryName, "Standard cabin"),
+      description: stringOr(metadata.cabinCategoryDescription, null),
+      type: "outside",
+      capacity_min: 1,
+      capacity_max: 2,
+      images: heroImageUrl ? [heroImageUrl] : [],
+      floorplan_images: [],
+      grade_codes: [],
+      wheelchair_accessible: false,
+      inclusions: [],
+      feature_codes: [],
+      bed_configurations: [],
+      accessibility_features: [],
+      view_type: null,
+    },
+  ]
+}
+
+function buildAccommodationRoomTypes(
+  row: CatalogDemoInventoryRow,
+  metadata: Record<string, unknown>,
+  heroImageUrl: string | null,
+): Array<Record<string, unknown>> {
+  const roomTypes = mapArray(metadata.roomTypes, (roomType) => {
+    const room = roomType as Record<string, unknown>
+    const id = stringOr(room.id, "") ?? ""
+    const name = stringOr(room.name, "") ?? ""
+    if (!id || !name) return null
+    return projectAccommodationRoom(room, id, name)
+  }).filter((roomType): roomType is Record<string, unknown> => roomType != null)
+
+  if (roomTypes.length > 0) return roomTypes
+  return [
+    projectAccommodationRoom(
+      {
+        description: row.description,
+        images: heroImageUrl ? [heroImageUrl] : [],
+        maxOccupancy: row.available > 0 ? Math.min(row.available, 4) : 2,
+      },
+      "room_standard",
+      stringOr(metadata.roomTypeName, "Standard room"),
+    ),
+  ]
+}
+
+function projectAccommodationRoom(
+  room: Record<string, unknown>,
+  id: string,
+  name: string,
+): Record<string, unknown> {
+  return {
+    id,
+    code: stringOr(room.code, null),
+    name,
+    description: stringOr(room.description, null),
+    room_class: stringOr(room.roomClass, null),
+    view: stringOr(room.view, null),
+    bedrooms: numberOr(room.bedrooms, null),
+    beds: stringArrayOr(room.beds, []),
+    size_sqm: numberOr(room.sizeSqm, null),
+    max_adults: numberOr(room.maxAdults, null),
+    max_children: numberOr(room.maxChildren, null),
+    max_occupancy: numberOr(room.maxOccupancy, null),
+    amenities: stringArrayOr(room.amenities, []),
+    images: stringArrayOr(room.images, []),
+  }
+}
+
+function buildAccommodationRatePlans(
+  metadata: Record<string, unknown>,
+  roomTypes: Array<Record<string, unknown>>,
+): Array<Record<string, unknown>> {
+  const ratePlans = mapArray<Record<string, unknown> | null>(metadata.ratePlans, (ratePlan) => {
+    const plan = ratePlan as Record<string, unknown>
+    const id = stringOr(plan.id, "") ?? ""
+    const name = stringOr(plan.name, "") ?? ""
+    if (!id || !name) return null
+    return {
+      id,
+      code: stringOr(plan.code, null),
+      name,
+      description: stringOr(plan.description, null),
+      charge_frequency:
+        plan.chargeFrequency === "per_stay" || plan.chargeFrequency === "per_night"
+          ? plan.chargeFrequency
+          : "per_night",
+      applies_to_room_type_ids: stringArrayOr(plan.appliesToRoomTypeIds, []),
+      cancellation_policy: stringOr(
+        plan.cancellationPolicy,
+        stringOr(metadata.cancellationPolicy, null),
+      ),
+      inclusions: stringArrayOr(plan.inclusions, []),
+    }
+  }).filter((ratePlan): ratePlan is Record<string, unknown> => ratePlan != null)
+
+  if (ratePlans.length > 0) return ratePlans
+  return [
+    {
+      id: "rate_flexible",
+      code: "FLEX",
+      name: "Flexible rate",
+      charge_frequency: "per_night",
+      applies_to_room_type_ids: roomTypes
+        .map((roomType) => roomType.id)
+        .filter((id): id is string => typeof id === "string"),
+      cancellation_policy: stringOr(metadata.cancellationPolicy, null),
+      inclusions: [],
+    },
+  ]
+}
+
+function buildAccommodationAmenities(
+  metadata: Record<string, unknown>,
+): Array<Record<string, unknown>> {
+  return mapArray<Record<string, unknown> | null>(metadata.amenities, (amenity) => {
+    if (typeof amenity === "string") {
+      return {
+        id: amenity.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+        name: amenity,
+      }
+    }
+    const row = amenity as Record<string, unknown>
+    const name = stringOr(row.name, "") ?? ""
+    if (!name) return null
+    return {
+      id: stringOr(row.id, name.toLowerCase().replace(/[^a-z0-9]+/g, "_")),
+      category: stringOr(row.category, null),
+      name,
+      description: stringOr(row.description, null),
+      is_free: typeof row.isFree === "boolean" ? row.isFree : undefined,
+    }
+  }).filter((amenity): amenity is Record<string, unknown> => amenity != null)
+}
+
 function uniqueStrings(values: Array<string | null>): string[] {
   return [...new Set(values.filter((value): value is string => typeof value === "string"))]
 }
 
 function datePart(value: string): string | null {
   return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null
+}
+
+function demoEntityIdForRow(row: CatalogDemoInventoryRow): string {
+  if (row.entityModule !== "cruises") return row.id
+  return `crus_${encodeDemoSourceRef(row.id)}`
+}
+
+function demoSourceRefFromEntityId(entityId: string): string {
+  if (!entityId.startsWith("crus_")) return entityId
+  const decoded = decodeDemoSourceRef(entityId.slice("crus_".length))
+  return decoded ?? entityId
+}
+
+function encodeDemoSourceRef(externalId: string): string {
+  const sourceRef = JSON.stringify({ externalId })
+  return `sr_${Buffer.from(sourceRef, "utf8").toString("base64url")}`
+}
+
+function decodeDemoSourceRef(value: string): string | null {
+  if (!value.startsWith("sr_")) return null
+  try {
+    const decoded = JSON.parse(Buffer.from(value.slice("sr_".length), "base64url").toString("utf8"))
+    return decoded && typeof decoded.externalId === "string" ? decoded.externalId : null
+  } catch {
+    return null
+  }
 }
 
 function countryCodesFromMetadata(metadata: Record<string, unknown>): string[] {
@@ -646,6 +1072,13 @@ function supplyModelFromMetadata(
   const explicit = stringOr(metadata.supplyModel, null)
   if (explicit === "dynamic" || explicit === "scheduled") return explicit
   return departures.length > 0 ? "scheduled" : "dynamic"
+}
+
+function durationNightsFromMetadata(metadata: Record<string, unknown>): number | null {
+  const explicit = numberOr(metadata.durationNights, null)
+  if (explicit != null) return explicit
+  const durationDays = numberOr(metadata.durationDays, null)
+  return durationDays == null ? null : Math.max(durationDays - 1, 0)
 }
 
 function priceFrom(

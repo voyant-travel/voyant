@@ -47,9 +47,9 @@ export interface DemoCatalogAdapterOptions {
    */
   baseUrl: string
   /**
-   * Verticals this adapter feeds projections for. The demo catalog API only
-   * serves product-shaped content today, so this must be omitted or set to
-   * `["products"]`.
+   * Verticals this adapter feeds projections and sourced content for. Defaults
+   * to `["products"]`; the demo API also serves cruise and accommodation
+   * content payloads for multi-vertical starters.
    */
   verticals?: ReadonlyArray<string>
   /** Custom fetch implementation — useful for tests. Defaults to `globalThis.fetch`. */
@@ -226,13 +226,10 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
 
 function normalizeDemoVerticals(verticals: DemoCatalogAdapterOptions["verticals"]): string[] {
   if (!verticals?.length) return ["products"]
-  const unsupported = verticals.filter((vertical) => vertical !== "products")
+  const supported = new Set(["products", "cruises", "accommodations"])
+  const unsupported = verticals.filter((vertical) => !supported.has(vertical))
   if (unsupported.length > 0) {
-    throw new Error(
-      `catalog-demo adapter only supports the products vertical; unsupported vertical(s): ${unsupported.join(
-        ", ",
-      )}`,
-    )
+    throw new Error(`catalog-demo adapter does not support vertical(s): ${unsupported.join(", ")}`)
   }
-  return ["products"]
+  return [...new Set(verticals)]
 }
