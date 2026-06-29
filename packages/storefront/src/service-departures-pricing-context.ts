@@ -94,7 +94,7 @@ export function amountToCents(amount: number) {
   return Math.round(amount * 100)
 }
 
-export function convertCents(cents: number | null | undefined, rate: number | null | undefined) {
+function convertCents(cents: number | null | undefined, rate: number | null | undefined) {
   if (cents == null) {
     return null
   }
@@ -131,7 +131,7 @@ export function selectUnitTier(
   )
 }
 
-export function selectTierAmount(
+function selectTierAmount(
   unitRule: PricingContext["unitRules"][number] | undefined,
   tiers: PricingContext["tiers"],
   quantity: number,

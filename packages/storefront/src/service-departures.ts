@@ -34,7 +34,6 @@ export {
   buildTravelerRequestedUnits,
   getStorefrontProductExtensions,
   previewStorefrontDeparturePrice,
-  type StorefrontDeparturePricePreviewOfferResolvers,
 } from "./service-departures-pricing.js"
 
 async function buildDeparture(
