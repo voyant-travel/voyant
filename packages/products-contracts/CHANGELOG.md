@@ -1,5 +1,11 @@
 # @voyant-travel/products-contracts
 
+## 0.105.15
+
+### Patch Changes
+
+- db1acc4: Prevent partial product option and option unit update schemas from reapplying insert defaults to omitted fields.
+
 ## 0.105.14
 
 ### Patch Changes

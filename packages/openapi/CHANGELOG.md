@@ -1,5 +1,11 @@
 # @voyant-travel/openapi
 
+## 0.2.1
+
+### Patch Changes
+
+- eb9285a: Prevent partial pricing update schemas from reapplying insert defaults to omitted fields.
+
 ## 0.2.0
 
 ### Minor Changes
