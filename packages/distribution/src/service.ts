@@ -1,13 +1,10 @@
-import { channelServiceOperations } from "./service/channels.js"
-
-export type { HydratedChannel } from "./service/channels.js"
-
 import {
   linkExternalReference,
   reconcileCounterpartyActivity,
   resolveCounterparty,
   routeCounterpartyEvent,
 } from "./interface.js"
+import { channelServiceOperations } from "./service/channels.js"
 import { commercialServiceOperations } from "./service/commercial.js"
 import { inventoryServiceOperations } from "./service/inventory.js"
 import { settlementPolicyServiceOperations } from "./service/settlement-policies.js"

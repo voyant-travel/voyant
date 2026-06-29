@@ -8,7 +8,6 @@ import type {
 import { and, eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type { Channel } from "../schema.js"
 import { channelContactProjections, channels } from "../schema.js"
 import type { ChannelListQuery, CreateChannelInput, UpdateChannelInput } from "./types.js"
 
@@ -405,5 +404,3 @@ export const channelServiceOperations = {
     return row
   },
 }
-
-export type HydratedChannel = Channel & ChannelHydratedFields

@@ -8,7 +8,6 @@ import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import type { Supplier } from "./schema.js"
 import { supplierDirectoryProjections, suppliers } from "./schema.js"
 import type {
   availabilityQuerySchema,
@@ -39,8 +38,8 @@ export type CreateContractInput = z.infer<typeof insertContractSchema>
 export type UpdateContractInput = z.infer<typeof updateContractSchema>
 
 export const supplierEntityType = "supplier"
-export const supplierBaseIdentitySource = "suppliers.base"
-export const supplierPrimaryNamedContactSource = "suppliers.primary_contact"
+const supplierBaseIdentitySource = "suppliers.base"
+const supplierPrimaryNamedContactSource = "suppliers.primary_contact"
 
 export type SupplierIdentityInput = Pick<
   CreateSupplierInput,
@@ -66,8 +65,6 @@ export type SupplierHydratedFields = {
   contactEmail: string | null
   contactPhone: string | null
 }
-
-export type HydratedSupplier = Supplier & SupplierHydratedFields
 
 type SupplierDirectoryProjectionValues = Omit<
   typeof supplierDirectoryProjections.$inferInsert,
@@ -237,10 +234,7 @@ export async function rebuildSupplierDirectoryProjection(
   return rebuildSupplierDirectoryProjections(db, [supplierId])
 }
 
-export async function rebuildSupplierDirectoryProjections(
-  db: PostgresJsDatabase,
-  supplierIds: string[],
-) {
+async function rebuildSupplierDirectoryProjections(db: PostgresJsDatabase, supplierIds: string[]) {
   const ids = [...new Set(supplierIds)]
   if (ids.length === 0) {
     return
