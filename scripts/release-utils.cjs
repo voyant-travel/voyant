@@ -20,26 +20,6 @@ function sortPackageNames(packageNames) {
   return [...packageNames].sort((left, right) => left.localeCompare(right))
 }
 
-function getPackageFilters(argv) {
-  const packageNames = []
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index]
-
-    if (arg === "--package") {
-      packageNames.push(argv[index + 1])
-      index += 1
-      continue
-    }
-
-    if (arg.startsWith("--package=")) {
-      packageNames.push(arg.slice("--package=".length))
-    }
-  }
-
-  return new Set(packageNames.filter(Boolean))
-}
-
 function formatRepeatedArg(flag, values) {
   return values.map((value) => `${flag}=${value}`).join(" ")
 }
@@ -101,7 +81,6 @@ async function getVoyantReleasePlan(cwd, packages, config) {
 
 module.exports = {
   formatRepeatedArg,
-  getPackageFilters,
   getPublishablePackages,
   getVoyantReleasePlan,
   sortPackageNames,

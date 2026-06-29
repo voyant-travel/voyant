@@ -40,11 +40,10 @@ function csv(name) {
     .filter((part) => part.length > 0)
 }
 
-export const BASE_URL = requireEnv("TARGET_URL").replace(/\/+$/, "")
+const BASE_URL = requireEnv("TARGET_URL").replace(/\/+$/, "")
 export const PUBLIC_BASE = `${BASE_URL}/v1/public`
-export const ADMIN_BASE = `${BASE_URL}/v1/admin`
 
-export const API_TOKEN = __ENV.API_TOKEN ? String(__ENV.API_TOKEN).trim() : null
+const API_TOKEN = __ENV.API_TOKEN ? String(__ENV.API_TOKEN).trim() : null
 export const PRODUCT_IDS = csv("PRODUCT_IDS")
 export const PRODUCT_SLUGS = csv("PRODUCT_SLUGS")
 export const DEPARTURE_ID = __ENV.DEPARTURE_ID ? String(__ENV.DEPARTURE_ID).trim() : null

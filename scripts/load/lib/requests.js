@@ -69,7 +69,7 @@ export function priceDeparture(departureId, tags, pax) {
  *     session: { sellCurrency, items: [{ title, availabilitySlotId }] } }
  * At least one session item must reference slotId.
  */
-export function buildBootstrapBody(target) {
+function buildBootstrapBody(target) {
   return {
     departureId: target.departureId,
     slotId: target.slotId,
