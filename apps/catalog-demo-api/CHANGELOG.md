@@ -1,5 +1,11 @@
 # catalog-demo-api
 
+## 0.20.35
+
+### Patch Changes
+
+- 5980772: Serve vertical-specific demo content for cruise and accommodation catalog rows.
+
 ## 0.20.34
 
 ### Patch Changes
