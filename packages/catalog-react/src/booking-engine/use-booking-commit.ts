@@ -20,7 +20,7 @@ export interface UseBookingCommitOptions extends BookingJourneyApiOptions {
   onCommitted?: (result: BookResponseV1) => void
 }
 
-export interface CommitInput {
+interface CommitInput {
   /** Either-or: pass the draft for context-aware commit, or just a
    *  quoteId when the journey hasn't materialized a draft yet. */
   draft?: BookingDraftV1
