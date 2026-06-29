@@ -3,6 +3,7 @@
 import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
+  DatePicker,
   Dialog,
   DialogBody,
   DialogContent,
@@ -153,7 +154,10 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle>{messages.finance.paymentDialog.title}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
@@ -255,7 +259,16 @@ export function PaymentDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.finance.paymentDialog.paymentDateLabel}</Label>
-                <Input {...form.register("paymentDate")} type="date" />
+                <DatePicker
+                  value={form.watch("paymentDate") || null}
+                  onChange={(value) =>
+                    form.setValue("paymentDate", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  className="w-full"
+                />
                 {form.formState.errors.paymentDate ? (
                   <p className="text-xs text-destructive">
                     {form.formState.errors.paymentDate.message}

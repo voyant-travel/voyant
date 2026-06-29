@@ -4,7 +4,9 @@ import {
   Badge,
   Button,
   Checkbox,
+  DatePicker,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -191,7 +193,7 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
         <DialogHeader>
           <DialogTitle>New session</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="session-title">Title</Label>
             <Input
@@ -208,7 +210,7 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
                 value={sessionType}
                 onValueChange={(value) => setSessionType(value as SessionType)}
               >
-                <SelectTrigger id="session-type">
+                <SelectTrigger id="session-type" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -222,11 +224,11 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
             </div>
             <div className="space-y-2">
               <Label htmlFor="session-day">Day</Label>
-              <Input
-                id="session-day"
-                type="date"
-                value={dayDate}
-                onChange={(e) => setDayDate(e.target.value)}
+              <DatePicker
+                value={dayDate || null}
+                onChange={(value) => setDayDate(value ?? "")}
+                placeholder="Day"
+                className="w-full"
               />
             </div>
           </div>
@@ -266,7 +268,7 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
             />
             <Label htmlFor="session-requires-registration">Requires registration</Label>
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button
             variant="outline"

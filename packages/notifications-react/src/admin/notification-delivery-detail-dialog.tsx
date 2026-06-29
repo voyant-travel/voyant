@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -38,7 +39,7 @@ export function NotificationDeliveryDetailDialog({
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-1">
+        <DialogBody className="space-y-4">
           {isPending ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -141,7 +142,7 @@ export function NotificationDeliveryDetailDialog({
               </Section>
             </>
           ) : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {t.close}

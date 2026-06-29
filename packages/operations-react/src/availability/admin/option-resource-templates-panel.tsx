@@ -413,7 +413,7 @@ export function OptionResourceTemplatesPanel({
               {editingKind ? formatMessage(t.editTitle, { kind: editingKind }) : t.newTitle}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={submit}>
+          <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <DialogBody className="grid gap-4">
               <div className="grid gap-1.5">
                 <Label htmlFor="resource-template-kind">{t.kindLabel}</Label>

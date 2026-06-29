@@ -189,7 +189,7 @@ export function CustomFieldDefinitionSheet({
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit custom field" : "New custom field"}</SheetTitle>
         </SheetHeader>
-        <form onSubmit={onSubmit} className="flex flex-1 flex-col overflow-hidden">
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <SheetBody className="grid gap-5">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-2">

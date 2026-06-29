@@ -1,7 +1,7 @@
 "use client"
 
 import type { useOperatorAdminMessages } from "@voyant-travel/admin"
-import { Input } from "@voyant-travel/ui/components"
+import { DatePicker, Input } from "@voyant-travel/ui/components"
 import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
 import { languages } from "@voyant-travel/utils/languages"
 import type { UseFormSetValue, UseFormWatch } from "react-hook-form"
@@ -230,15 +230,15 @@ export function VariableValueField({
 
   if (row.type === "date") {
     return (
-      <Input
-        type="date"
-        value={watch(valuePath) || ""}
-        onChange={(event) =>
-          setValue(valuePath, event.target.value, {
+      <DatePicker
+        value={watch(valuePath) || null}
+        onChange={(next) =>
+          setValue(valuePath, next ?? "", {
             shouldDirty: true,
             shouldValidate: true,
           })
         }
+        className="w-full"
       />
     )
   }

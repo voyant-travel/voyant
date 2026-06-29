@@ -20,6 +20,7 @@ import {
   Globe,
   Hash,
   Languages,
+  Receipt,
   Tag,
   Users,
 } from "lucide-react"
@@ -177,6 +178,12 @@ export function OrganizationSidebar({
             label={messages.organizationDetail.sidebar.fields.legalName}
             value={org.legalName}
             onSave={(next) => onUpdateField({ legalName: next })}
+          />
+          <InlineField
+            icon={Receipt}
+            label={messages.organizationDetail.sidebar.fields.taxId}
+            value={org.taxId}
+            onSave={(next) => onUpdateField({ taxId: next })}
           />
           <InlineField
             icon={Globe}

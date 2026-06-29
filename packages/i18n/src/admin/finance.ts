@@ -147,6 +147,7 @@ export const adminFinanceMessages = {
         addInternalNotePlaceholder: "Add an internal note...",
         addNote: "Add Note",
         noNotes: "No notes yet.",
+        actionLedgerTitle: "Action Log",
         noValue: "-",
       },
       lineItemDialog: {
@@ -399,6 +400,7 @@ export const adminFinanceMessages = {
         addInternalNotePlaceholder: "Adauga o nota interna...",
         addNote: "Adauga nota",
         noNotes: "Nu exista note momentan.",
+        actionLedgerTitle: "Jurnal actiuni",
         noValue: "-",
       },
       lineItemDialog: {

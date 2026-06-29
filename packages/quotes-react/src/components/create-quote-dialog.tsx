@@ -1,6 +1,7 @@
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -78,7 +79,7 @@ export function CreateQuoteDialog({
         <DialogHeader>
           <DialogTitle>{messages.createQuoteDialog.title}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-3 py-2">
+        <DialogBody className="flex flex-col gap-3 py-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="registry-quote-title">{messages.createQuoteDialog.fields.title}</Label>
             <Input
@@ -114,7 +115,7 @@ export function CreateQuoteDialog({
             </Select>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {messages.common.cancel}

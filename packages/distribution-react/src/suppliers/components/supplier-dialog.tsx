@@ -19,6 +19,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
@@ -145,7 +146,10 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
         <DialogHeader>
           <DialogTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
@@ -208,7 +212,11 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
                 />
               </Field>
               <Field label={dialog.phoneLabel}>
-                <Input {...form.register("phone")} placeholder={dialog.phonePlaceholder} />
+                <PhoneInput
+                  value={form.watch("phone") ?? ""}
+                  onChange={(next) => form.setValue("phone", next, { shouldDirty: true })}
+                  placeholder={dialog.phonePlaceholder}
+                />
               </Field>
             </div>
             <Field label={dialog.websiteLabel} error={form.formState.errors.website?.message}>
@@ -275,8 +283,9 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
                 />
               </Field>
               <Field label={dialog.contactPhoneLabel}>
-                <Input
-                  {...form.register("contactPhone")}
+                <PhoneInput
+                  value={form.watch("contactPhone") ?? ""}
+                  onChange={(next) => form.setValue("contactPhone", next, { shouldDirty: true })}
                   placeholder={dialog.contactPhonePlaceholder}
                 />
               </Field>

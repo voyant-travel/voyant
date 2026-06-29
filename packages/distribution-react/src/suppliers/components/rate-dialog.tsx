@@ -121,7 +121,10 @@ export function RateDialog({
         <DialogHeader>
           <DialogTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <Field label={dialog.seasonNameLabel} error={form.formState.errors.name?.message}>
               <Input {...form.register("name")} placeholder={dialog.seasonNamePlaceholder} />

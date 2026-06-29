@@ -295,6 +295,7 @@ export const productsUiCoreEn = {
   productList: {
     searchPlaceholder: "Search products...",
     newProduct: "New product",
+    createFailed: "Could not create the product. Please try again.",
     filters: {
       button: "Filters",
       statusLabel: "Status",
@@ -311,8 +312,9 @@ export const productsUiCoreEn = {
       name: "Name",
       status: "Status",
       sellAmount: "Sell Amount",
-      pax: "Pax",
-      startDate: "Start Date",
+      type: "Type",
+      bookingMode: "Booking Mode",
+      nextDeparture: "Next Departure",
     },
     loadFailed: "Failed to load products.",
     empty: "No products found.",

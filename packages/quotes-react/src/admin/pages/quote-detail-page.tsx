@@ -18,6 +18,7 @@ import {
   CardTitle,
   ConfirmActionButton,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -766,13 +767,15 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
           <DialogHeader>
             <DialogTitle>{t.lostDialog.title}</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground text-sm">{t.lostDialog.description}</p>
-          <Textarea
-            value={lostReasonDraft}
-            onChange={(event) => setLostReasonDraft(event.target.value)}
-            placeholder={t.lostDialog.placeholder}
-            rows={3}
-          />
+          <DialogBody className="space-y-4">
+            <p className="text-muted-foreground text-sm">{t.lostDialog.description}</p>
+            <Textarea
+              value={lostReasonDraft}
+              onChange={(event) => setLostReasonDraft(event.target.value)}
+              placeholder={t.lostDialog.placeholder}
+              rows={3}
+            />
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowLostDialog(false)}>
               {messages.common.cancel}

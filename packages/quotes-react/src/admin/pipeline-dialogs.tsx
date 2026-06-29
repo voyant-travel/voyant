@@ -4,6 +4,7 @@ import {
   Button,
   Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -69,7 +70,7 @@ export function CreatePipelineDialog({
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-3 py-2">
+        <DialogBody className="flex flex-col gap-3 py-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pipeline-name">{t.nameLabel}</Label>
             <Input
@@ -91,7 +92,7 @@ export function CreatePipelineDialog({
             </Label>
           </div>
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {messages.common.cancel}
@@ -182,7 +183,7 @@ export function ManageStagesDialog({
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-3 py-2">
+        <DialogBody className="flex flex-col gap-3 py-2">
           {stages.length === 0 ? (
             <p className="text-muted-foreground text-sm">{t.empty}</p>
           ) : (
@@ -243,7 +244,7 @@ export function ManageStagesDialog({
           </div>
 
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {messages.common.done}

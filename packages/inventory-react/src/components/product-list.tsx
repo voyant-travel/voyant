@@ -26,11 +26,13 @@ import {
 } from "@voyant-travel/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, ListFilter, Plus, Search, X } from "lucide-react"
 import * as React from "react"
+import { toast } from "sonner"
 import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
 import {
   type ProductRecord,
   type ProductsListSortDir,
   type ProductsListSortField,
+  useProductMutation,
   useProducts,
 } from "../index.js"
 import { ProductDialog } from "./product-dialog.js"
@@ -44,18 +46,16 @@ const STATUS_ALL = "__all__"
 
 const PRODUCT_STATUSES = ["draft", "active", "archived"] as const
 
-type SortableField = Exclude<ProductsListSortField, "createdAt" | "endDate">
+type SortableField = Extract<ProductsListSortField, "name" | "status" | "sellAmount">
 
 const SORTABLE_COLUMNS = {
   name: "name",
   status: "status",
   sellAmount: "sellAmount",
-  pax: "pax",
-  startDate: "startDate",
 } as const satisfies Record<SortableField, SortableField>
 
 const SKELETON_ROW_COUNT = 6
-const TABLE_COLUMN_COUNT = 5
+const TABLE_COLUMN_COUNT = 6
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",
@@ -65,12 +65,26 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 
 function formatAmount(cents: number | null, currency: string, fallback: string): string {
   if (cents == null) return fallback
-  return `${(cents / 100).toFixed(2)} ${currency}`
+  const amount = cents / 100
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount)
+  } catch {
+    // Unknown/invalid ISO currency — fall back to a plain amount + code.
+    return `${amount.toFixed(2)} ${currency}`
+  }
+}
+
+function formatDepartureDate(value: string | null | undefined, fallback: string): string {
+  if (!value) return fallback
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return fallback
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(parsed)
 }
 
 export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps = {}) {
   const messages = useProductsUiMessagesOrDefault()
   const productMessages = messages.productList
+  const { create } = useProductMutation()
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<string>(STATUS_ALL)
   const [dateRange, setDateRange] = React.useState<{
@@ -160,9 +174,25 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
     setDialogOpen(true)
   }
 
-  const handleCreate = () => {
-    setEditing(undefined)
-    setDialogOpen(true)
+  const handleCreate = async () => {
+    // Standalone usage (no navigation host): keep the inline create dialog.
+    if (!onSelectProduct) {
+      setEditing(undefined)
+      setDialogOpen(true)
+      return
+    }
+    // With a host wired, skip the dialog — create an empty draft and drop the
+    // user straight into its detail page to fill in the rest.
+    try {
+      const created = await create.mutateAsync({
+        name: messages.catalogCard.untitled,
+        status: "draft",
+        sellCurrency: "EUR", // i18n-literal-ok ISO default currency
+      })
+      onSelectProduct(created)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : productMessages.createFailed)
+    }
   }
 
   return (
@@ -318,7 +348,11 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
         )}
 
         <div className="ml-auto">
-          <Button onClick={handleCreate} data-slot="product-list-create">
+          <Button
+            onClick={handleCreate}
+            disabled={create.isPending}
+            data-slot="product-list-create"
+          >
             <Plus className="mr-2 size-4" aria-hidden="true" />
             {productMessages.newProduct}
           </Button>
@@ -356,24 +390,9 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead>
-                <SortHeader
-                  label={productMessages.columns.pax}
-                  field={SORTABLE_COLUMNS.pax}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-              </TableHead>
-              <TableHead>
-                <SortHeader
-                  label={productMessages.columns.startDate}
-                  field={SORTABLE_COLUMNS.startDate}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-              </TableHead>
+              <TableHead>{productMessages.columns.type}</TableHead>
+              <TableHead>{productMessages.columns.bookingMode}</TableHead>
+              <TableHead>{productMessages.columns.nextDeparture}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -417,8 +436,13 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                       productMessages.noValue,
                     )}
                   </TableCell>
-                  <TableCell>{product.pax ?? productMessages.noValue}</TableCell>
-                  <TableCell>{product.startDate ?? productMessages.noValue}</TableCell>
+                  <TableCell>{product.productTypeName ?? productMessages.noValue}</TableCell>
+                  <TableCell>
+                    {messages.common.productBookingModeLabels[product.bookingMode]}
+                  </TableCell>
+                  <TableCell>
+                    {formatDepartureDate(product.nextDeparture, productMessages.noValue)}
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -507,7 +531,10 @@ function ProductTableSkeleton({ rows }: { rows: number }) {
             <Skeleton className="h-4 w-24" />
           </TableCell>
           <TableCell>
-            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-4 w-20" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-20" />
           </TableCell>
           <TableCell>
             <Skeleton className="h-4 w-24" />

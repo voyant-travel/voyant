@@ -12,12 +12,15 @@ export interface InvoiceActionLedgerCardProps {
   invoiceId: string
   limit?: number
   className?: string
+  /** When true, render only the entries without the bordered section + title bar. */
+  bare?: boolean
 }
 
 export function InvoiceActionLedgerCard({
   invoiceId,
   limit = 20,
   className,
+  bare,
 }: InvoiceActionLedgerCardProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const detail = messages.invoiceDetailPage
@@ -33,6 +36,7 @@ export function InvoiceActionLedgerCard({
       emptyLabel={detail.states.noActionLedger}
       loadFailedLabel={detail.states.actionLedgerLoadFailed}
       className={className}
+      bare={bare}
       cursor={cursor}
       setCursor={setCursor}
       query={actionLedgerQuery}
@@ -79,6 +83,7 @@ function FinanceActionLedgerCard({
   emptyLabel,
   loadFailedLabel,
   className,
+  bare,
   cursor,
   setCursor,
   query,
@@ -89,6 +94,7 @@ function FinanceActionLedgerCard({
   emptyLabel: string
   loadFailedLabel: string
   className?: string
+  bare?: boolean
   cursor: FinanceActionLedgerListResponse["pageInfo"]["nextCursor"]
   setCursor: (cursor: FinanceActionLedgerListResponse["pageInfo"]["nextCursor"]) => void
   query:
@@ -114,7 +120,7 @@ function FinanceActionLedgerCard({
   const nextCursor = pages.at(-1)?.pageInfo.nextCursor ?? null
 
   return (
-    <ActionLedgerSection dataSlot={dataSlot} title={title} className={className}>
+    <ActionLedgerSection dataSlot={dataSlot} title={title} className={className} bare={bare}>
       {query.isPending && entries.length === 0 ? (
         <ActionLedgerLoadingRow />
       ) : query.isError && entries.length === 0 ? (
@@ -192,12 +198,22 @@ function ActionLedgerSection({
   title,
   children,
   className,
+  bare,
 }: {
   dataSlot: string
   title: string
   children: ReactNode
   className?: string
+  bare?: boolean
 }) {
+  if (bare) {
+    return (
+      <div data-slot={dataSlot} className={className}>
+        {children}
+      </div>
+    )
+  }
+
   return (
     <section data-slot={dataSlot} className={cn("rounded-md border bg-background", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">

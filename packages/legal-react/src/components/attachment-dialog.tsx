@@ -200,7 +200,10 @@ export function AttachmentDialog({
               : messages.attachmentDialog.titles.create}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <input type="hidden" {...form.register("mimeType")} />
             <input type="hidden" {...form.register("fileSize")} />

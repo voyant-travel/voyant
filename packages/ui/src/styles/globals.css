@@ -7,6 +7,16 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Base UI components (tabs, button-group, slider, toggle-group, separator,
+   scroll-area, field) expose orientation via `data-orientation="horizontal|
+   vertical"`, but our component classes style with the shorthand
+   `data-horizontal:` / `data-vertical:` variants. Tailwind v4 would otherwise
+   compile those to `[data-horizontal]` / `[data-vertical]` — attributes Base UI
+   never emits — so the orientation-dependent styles (tab-list height, indicator
+   placement, axis switches) silently no-op. Remap them to the real attribute. */
+@custom-variant data-horizontal (&[data-orientation="horizontal"]);
+@custom-variant data-vertical (&[data-orientation="vertical"]);
+
 /* Voyant 1.0 brand theme.
  *
  * Ink-on-warm-paper neutrals with a single hot-orange brand accent
@@ -56,6 +66,10 @@
   --sidebar-accent-foreground: oklch(0.2 0.004 55);
   --sidebar-border: oklch(0.89 0.005 85);
   --sidebar-ring: oklch(0.675 0.222 38);
+  /* Thin, neutral scrollbar (calm by design — brand orange stays reserved
+     for accents). Derived from --foreground so it tracks the theme. */
+  --scrollbar-thumb: color-mix(in oklab, var(--foreground) 20%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 34%, transparent);
 }
 
 .dark {
@@ -101,6 +115,9 @@
   --sidebar-accent-foreground: oklch(0.92 0.002 80);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.7 0.21 40);
+  /* Softer on dark so the thumb doesn't glare against the near-black UI. */
+  --scrollbar-thumb: color-mix(in oklab, var(--foreground) 16%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 30%, transparent);
 }
 
 @theme inline {
@@ -163,9 +180,45 @@
   background-color: color-mix(in oklab, var(--muted) 35%, transparent);
 }
 
+/* Fully hide the native scrollbar while keeping the element scrollable.
+   Used by dense popovers (command palette, combobox) that manage their own
+   affordances. Wins over the global base styling below via class specificity. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  /* App-wide thin, rounded, theme-aware scrollbar. Firefox honors the
+     two-value `scrollbar-color`; WebKit/Chromium use the pseudo-elements.
+     The thumb is inset with a transparent border + padding-box clip so it
+     reads as a slim pill rather than a full-width slab. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
   }
   body {
     @apply bg-background font-sans text-foreground antialiased;

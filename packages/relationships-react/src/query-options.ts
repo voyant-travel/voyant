@@ -17,7 +17,7 @@ import {
   personSingleResponse,
 } from "./schemas.js"
 
-const basePath = "/v1/relationships"
+const basePath = "/v1/admin/relationships"
 
 export function getActivitiesQueryOptions(
   client: FetchWithValidationOptions,

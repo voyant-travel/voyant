@@ -1,6 +1,7 @@
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -118,7 +119,7 @@ export function CreateQuoteVersionDialog({
         <DialogHeader>
           <DialogTitle>{messages.createQuoteVersionDialog.title}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-3">
+        <DialogBody className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <Label>{messages.createQuoteVersionDialog.fields.quote}</Label>
             <Combobox
@@ -210,7 +211,7 @@ export function CreateQuoteVersionDialog({
           </div>
 
           {error ? <p className="text-xs text-destructive">{error}</p> : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {messages.common.cancel}

@@ -29,6 +29,7 @@ export const crmUiEnDetailMessages = {
       fields: {
         name: "Name",
         legalName: "Legal name",
+        taxId: "Tax ID",
         website: "Website",
         industry: "Industry",
         relation: "Relation",

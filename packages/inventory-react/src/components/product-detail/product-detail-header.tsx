@@ -36,14 +36,14 @@ export function ProductDetailHeader({
     ])
   }, [setBreadcrumbs, productMessages.breadcrumbProducts, product.name])
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">{product.name}</h1>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{product.name}</h1>
         <Badge variant={statusVariant[product.status] ?? "secondary"}>
           {getProductStatusLabel(product.status, messages)}
         </Badge>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={onEdit}>
           <Pencil className="h-4 w-4" />
           {productMessages.edit}

@@ -22,6 +22,7 @@ import {
   Label,
   Textarea,
 } from "@voyant-travel/ui/components"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -282,10 +283,10 @@ export function OperatorProfilePage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="op-phone">{t.contact.phoneLabel}</Label>
-            <Input
+            <PhoneInput
               id="op-phone"
               value={form.phone ?? ""}
-              onChange={(e) => setField("phone", e.target.value)}
+              onChange={(value) => setField("phone", value)}
             />
           </div>
           <div className="space-y-1">

@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -283,72 +284,81 @@ function CloudInviteMemberDialog() {
           </DialogHeader>
 
           {result ? (
-            <div className="space-y-4">
-              <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                <p>{formatMessage(messages.team.inviteCreated, { email: result.email })}</p>
-              </div>
-              <div className="space-y-2">
-                <Label>{messages.team.acceptLink}</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={result.acceptInvitationUrl}
-                    readOnly
-                    className="font-mono text-xs"
-                  />
-                  <Button type="button" variant="outline" size="sm" onClick={() => void copyLink()}>
-                    <Copy className="mr-1 h-3.5 w-3.5" />
-                    {copied ? messages.team.copied : messages.team.copy}
-                  </Button>
+            <>
+              <DialogBody className="space-y-4">
+                <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                  <p>{formatMessage(messages.team.inviteCreated, { email: result.email })}</p>
                 </div>
-              </div>
+                <div className="space-y-2">
+                  <Label>{messages.team.acceptLink}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={result.acceptInvitationUrl}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void copyLink()}
+                    >
+                      <Copy className="mr-1 h-3.5 w-3.5" />
+                      {copied ? messages.team.copied : messages.team.copy}
+                    </Button>
+                  </div>
+                </div>
+              </DialogBody>
               <DialogFooter>
                 <Button onClick={close}>{messages.team.done}</Button>
               </DialogFooter>
-            </div>
+            </>
           ) : (
             <form
-              className="space-y-4"
+              className="flex flex-1 flex-col overflow-hidden"
               onSubmit={(e) => {
                 e.preventDefault()
                 create.mutate()
               }}
             >
-              {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="cloud-invite-email">{messages.team.emailLabel}</Label>
-                <Input
-                  id="cloud-invite-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={messages.team.emailPlaceholder}
-                  required
-                  autoComplete="off"
-                  autoFocus
-                />
-              </div>
-              {roles.length > 0 && (
+              <DialogBody className="space-y-4">
+                {error && (
+                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
                 <div className="space-y-2">
-                  <Label htmlFor="cloud-invite-role">{messages.team.members.roleLabel}</Label>
-                  <select
-                    id="cloud-invite-role"
-                    value={roleSlug}
-                    onChange={(e) => setRoleSlug(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                  >
-                    <option value="">{messages.team.members.role}</option>
-                    {roles.map((role) => (
-                      <option key={role.slug} value={role.slug}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Label htmlFor="cloud-invite-email">{messages.team.emailLabel}</Label>
+                  <Input
+                    id="cloud-invite-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={messages.team.emailPlaceholder}
+                    required
+                    autoComplete="off"
+                    autoFocus
+                  />
                 </div>
-              )}
+                {roles.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cloud-invite-role">{messages.team.members.roleLabel}</Label>
+                    <select
+                      id="cloud-invite-role"
+                      value={roleSlug}
+                      onChange={(e) => setRoleSlug(e.target.value)}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                    >
+                      <option value="">{messages.team.members.role}</option>
+                      {roles.map((role) => (
+                        <option key={role.slug} value={role.slug}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </DialogBody>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={close}>
                   {messages.team.cancel}
@@ -467,70 +477,72 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
             <DialogDescription>{messages.team.members.permissionsDescription}</DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {messages.team.members.presetLabel}:
-            </span>
-            <Button
-              type="button"
-              variant={wildcard ? "default" : "secondary"}
-              size="sm"
-              onClick={applyFullAccess}
-            >
-              {MEMBER_ROLE_PRESETS.admin.label}
-            </Button>
-            {SCOPE_PRESETS.map((preset) => (
+          <DialogBody className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {messages.team.members.presetLabel}:
+              </span>
               <Button
-                key={preset.key}
                 type="button"
-                variant="secondary"
+                variant={wildcard ? "default" : "secondary"}
                 size="sm"
-                onClick={() => applyPreset(preset.scopes)}
+                onClick={applyFullAccess}
               >
-                {preset.label}
+                {MEMBER_ROLE_PRESETS.admin.label}
               </Button>
-            ))}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setWildcard(false)
-                setSelected(new Set())
-              }}
-            >
-              {messages.team.members.noAccess}
-            </Button>
-          </div>
-
-          <ScrollArea className="h-80 pr-4">
-            <div className="flex flex-col gap-4">
-              {API_KEY_PERMISSION_GROUPS.map((group) => (
-                <div key={group.resource} className="space-y-2">
-                  <p className="text-sm font-medium">{group.label}</p>
-                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                    {group.permissions.map((perm) => {
-                      const key = `${perm.resource}:${perm.action}`
-                      return (
-                        <label
-                          key={key}
-                          htmlFor={`perm-${key}`}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <Checkbox
-                            id={`perm-${key}`}
-                            checked={selected.has(key)}
-                            onCheckedChange={(c) => toggle(key, c === true)}
-                          />
-                          <span>{perm.label}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                </div>
+              {SCOPE_PRESETS.map((preset) => (
+                <Button
+                  key={preset.key}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => applyPreset(preset.scopes)}
+                >
+                  {preset.label}
+                </Button>
               ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setWildcard(false)
+                  setSelected(new Set())
+                }}
+              >
+                {messages.team.members.noAccess}
+              </Button>
             </div>
-          </ScrollArea>
+
+            <ScrollArea className="h-80 pr-4">
+              <div className="flex flex-col gap-4">
+                {API_KEY_PERMISSION_GROUPS.map((group) => (
+                  <div key={group.resource} className="space-y-2">
+                    <p className="text-sm font-medium">{group.label}</p>
+                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                      {group.permissions.map((perm) => {
+                        const key = `${perm.resource}:${perm.action}`
+                        return (
+                          <label
+                            key={key}
+                            htmlFor={`perm-${key}`}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <Checkbox
+                              id={`perm-${key}`}
+                              checked={selected.has(key)}
+                              onCheckedChange={(c) => toggle(key, c === true)}
+                            />
+                            <span>{perm.label}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogBody>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

@@ -1,5 +1,5 @@
 import { availabilitySlots } from "@voyant-travel/operations"
-import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, getTableColumns, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import {
@@ -263,8 +263,22 @@ export const coreProductsService = {
 
     const [rows, countResult] = await Promise.all([
       db
-        .select()
+        .select({
+          ...getTableColumns(products),
+          // Readable product-type name for the list view; `productTypeId`
+          // still rides on the row via the spread above.
+          productTypeName: productTypes.name,
+          // Earliest upcoming open departure (null when none is scheduled).
+          nextDeparture: sql<Date | null>`(
+            select min(${availabilitySlots.startsAt})
+            from ${availabilitySlots}
+            where ${availabilitySlots.productId} = ${products.id}
+              and ${availabilitySlots.status} = 'open'
+              and ${availabilitySlots.startsAt} >= now()
+          )`,
+        })
         .from(products)
+        .leftJoin(productTypes, eq(productTypes.id, products.productTypeId))
         .where(where)
         .limit(query.limit)
         .offset(query.offset)

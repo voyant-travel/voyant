@@ -295,6 +295,7 @@ export const productsUiCoreRo = {
   productList: {
     searchPlaceholder: "Cauta produse...",
     newProduct: "Produs nou",
+    createFailed: "Produsul nu a putut fi creat. Incearca din nou.",
     filters: {
       button: "Filtre",
       statusLabel: "Status",
@@ -311,8 +312,9 @@ export const productsUiCoreRo = {
       name: "Nume",
       status: "Status",
       sellAmount: "Pret vanzare",
-      pax: "Pax",
-      startDate: "Data inceput",
+      type: "Tip",
+      bookingMode: "Mod rezervare",
+      nextDeparture: "Urmatoarea plecare",
     },
     loadFailed: "Produsele nu au putut fi incarcate.",
     empty: "Nu au fost gasite produse.",

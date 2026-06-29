@@ -103,6 +103,9 @@ const productSchema = z.object({
   endDate: z.string().nullable(),
   pax: z.number().int().nullable(),
   productTypeId: z.string().nullable(),
+  // List view only — detail/create/update responses omit these.
+  productTypeName: z.string().nullable().optional(),
+  nextDeparture: isoTimestamp.nullable().optional(),
   contractTemplateId: z.string().nullable(),
   taxClassId: z.string().nullable(),
   customerPaymentPolicy: z.unknown().nullable(),

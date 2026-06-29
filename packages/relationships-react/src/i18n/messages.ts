@@ -332,6 +332,7 @@ export type CrmUiMessages = {
       fields: {
         name: string
         legalName: string
+        taxId: string
         website: string
         industry: string
         relation: string

@@ -7,7 +7,7 @@ import {
 } from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 import { useBookingQuote } from "@voyant-travel/catalog-react/booking-engine"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
-import { Input } from "@voyant-travel/ui/components/input"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useMemo, useState } from "react"
 
@@ -39,7 +39,6 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
   })
 
   const today = new Date().toISOString().slice(0, 10)
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   const [checkIn, setCheckIn] = useState(today)
   const [checkOut, setCheckOut] = useState(
     new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -153,22 +152,18 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label htmlFor="hp-checkin">{t.checkIn}</Label>
-              <Input
-                id="hp-checkin"
-                type="date"
-                min={today}
-                value={checkIn}
-                onChange={(e) => setCheckIn(e.target.value)}
+              <DatePicker
+                value={checkIn || null}
+                onChange={(value) => setCheckIn(value ?? "")}
+                className="w-full"
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="hp-checkout">{t.checkOut}</Label>
-              <Input
-                id="hp-checkout"
-                type="date"
-                min={tomorrow}
-                value={checkOut}
-                onChange={(e) => setCheckOut(e.target.value)}
+              <DatePicker
+                value={checkOut || null}
+                onChange={(value) => setCheckOut(value ?? "")}
+                className="w-full"
               />
             </div>
           </div>

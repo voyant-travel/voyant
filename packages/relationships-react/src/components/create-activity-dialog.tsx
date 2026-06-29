@@ -1,5 +1,6 @@
 import {
   Button,
+  DialogBody,
   Input,
   Select,
   SelectContent,
@@ -117,7 +118,7 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
           <DialogTitle>{messages.createActivityDialog.title}</DialogTitle>
           <DialogDescription>{messages.createActivityDialog.description}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3">
+        <DialogBody className="flex flex-col gap-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground" htmlFor="act-subject">
               {messages.createActivityDialog.fields.subject}
@@ -217,7 +218,7 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
             </div>
           </div>
           {error ? <p className="text-xs text-destructive">{error}</p> : null}
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {messages.common.cancel}

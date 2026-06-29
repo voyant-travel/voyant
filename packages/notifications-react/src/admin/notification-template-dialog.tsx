@@ -5,13 +5,13 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   Input,
   Label,
-  ScrollArea,
   Switch,
   Tabs,
   TabsContent,
@@ -300,12 +300,12 @@ function NotificationTemplateDialogInner({
       <DialogContent size="xl" className="h-[calc(100vh-2rem)]">
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <DialogHeader>
             <DialogTitle>{isEditing ? t.editTitle : t.createTitle}</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="min-h-0 flex-1">
+          <DialogBody className="p-0">
             <div className="grid gap-4 py-4 pr-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
@@ -567,7 +567,7 @@ function NotificationTemplateDialogInner({
                 <Label className="cursor-pointer">{t.markActiveLabel}</Label>
               </div>
             </div>
-          </ScrollArea>
+          </DialogBody>
 
           <DialogFooter className="mt-0">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

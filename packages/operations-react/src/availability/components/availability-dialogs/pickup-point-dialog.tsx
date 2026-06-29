@@ -99,7 +99,10 @@ export function AvailabilityPickupPointDialog(props: {
             {isEditing ? pickupPointMessages.editTitle : pickupPointMessages.newTitle}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <ProductSelect
               label={pickupPointMessages.productLabel}

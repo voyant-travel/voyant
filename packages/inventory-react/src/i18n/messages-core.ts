@@ -280,6 +280,7 @@ export type ProductsUiCoreMessages = {
   productList: {
     searchPlaceholder: string
     newProduct: string
+    createFailed: string
     filters: {
       button: string
       statusLabel: string
@@ -296,8 +297,9 @@ export type ProductsUiCoreMessages = {
       name: string
       status: string
       sellAmount: string
-      pax: string
-      startDate: string
+      type: string
+      bookingMode: string
+      nextDeparture: string
     }
     loadFailed: string
     empty: string

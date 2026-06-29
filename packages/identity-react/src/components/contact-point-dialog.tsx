@@ -18,6 +18,7 @@ import {
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
@@ -132,7 +133,10 @@ export function ContactPointDialog({
               : messages.contactPointDialog.titles.create}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
@@ -168,10 +172,18 @@ export function ContactPointDialog({
 
             <div className="flex flex-col gap-2">
               <Label>{messages.contactPointDialog.fields.value}</Label>
-              <Input
-                {...form.register("value")}
-                placeholder={messages.contactPointDialog.placeholders.value}
-              />
+              {form.watch("kind") === "phone" ? (
+                <PhoneInput
+                  value={form.watch("value") ?? ""}
+                  onChange={(next) => form.setValue("value", next, { shouldDirty: true })}
+                  placeholder={messages.contactPointDialog.placeholders.value}
+                />
+              ) : (
+                <Input
+                  {...form.register("value")}
+                  placeholder={messages.contactPointDialog.placeholders.value}
+                />
+              )}
               {form.formState.errors.value ? (
                 <p className="text-xs text-destructive">{form.formState.errors.value.message}</p>
               ) : null}
