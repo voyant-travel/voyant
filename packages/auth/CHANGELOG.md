@@ -1,5 +1,12 @@
 # @voyant-travel/auth
 
+## 0.118.2
+
+### Patch Changes
+
+- 5ffd426: Add a stable `/auth/organization/list-members` facade backed by Better Auth
+  member tables so operator quote owner lookups no longer fall through to a 404.
+
 ## 0.118.1
 
 ## 0.118.0
