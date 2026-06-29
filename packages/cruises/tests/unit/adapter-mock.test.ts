@@ -77,6 +77,24 @@ describe("MockCruiseAdapter — fetch round-trips", () => {
     adapter.addCruise(seedCruise, [seedSailing])
     expect(await adapter.listSailingsForCruise(seedCruise.sourceRef)).toEqual([seedSailing])
   })
+
+  it("adds sailings to an existing seeded cruise", async () => {
+    const adapter = new MockCruiseAdapter()
+    const laterSailing = {
+      ...seedSailing,
+      sourceRef: { externalId: "ext-sl-2" },
+      departureDate: "2026-07-15",
+      returnDate: "2026-07-22",
+    }
+    adapter.addCruise(seedCruise)
+    adapter.addSailing(seedCruise.sourceRef, seedSailing)
+    adapter.addSailing(seedCruise.sourceRef, laterSailing)
+
+    expect(await adapter.listSailingsForCruise(seedCruise.sourceRef)).toEqual([
+      seedSailing,
+      laterSailing,
+    ])
+  })
 })
 
 describe("MockCruiseAdapter — listEntries", () => {
