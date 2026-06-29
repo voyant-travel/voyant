@@ -16,6 +16,7 @@ import type { FlightsIndexSearchParams } from "../index.js"
  * the `flightBooking.start` destination (host-resolved — its href carries
  * the pax/cabin search params).
  */
+// fallow-ignore-next-line unused-export
 export default function FlightsIndexPage({ search, updateSearch }: AdminRoutePageProps) {
   const navigateTo = useAdminNavigate()
 
