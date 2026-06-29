@@ -97,6 +97,18 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
   const totalPax = adultCount + childCount
   const datesValid = checkIn && checkOut && new Date(checkOut) > new Date(checkIn)
 
+  // Calendar guards (replacing the old native `min` constraints): check-in can't
+  // be in the past, and check-out must be after check-in. Parse date-only strings
+  // at local midnight so the matcher doesn't shift a day in negative-offset zones.
+  const parseLocalDate = (value: string) => new Date(`${value}T00:00:00`)
+  const minCheckInDate = parseLocalDate(today)
+  const minCheckOutDate = (() => {
+    const base = checkIn ? parseLocalDate(checkIn) : minCheckInDate
+    const next = new Date(base)
+    next.setDate(next.getDate() + 1)
+    return next
+  })()
+
   return (
     <DetailLayout
       body={
@@ -155,6 +167,7 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
               <DatePicker
                 value={checkIn || null}
                 onChange={(value) => setCheckIn(value ?? "")}
+                dateDisabled={{ before: minCheckInDate }}
                 className="w-full"
               />
             </div>
@@ -163,6 +176,7 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
               <DatePicker
                 value={checkOut || null}
                 onChange={(value) => setCheckOut(value ?? "")}
+                dateDisabled={{ before: minCheckOutDate }}
                 className="w-full"
               />
             </div>
