@@ -96,6 +96,33 @@ describe("handleRequest health endpoints", () => {
   })
 })
 
+describe("handleRequest resume endpoints", () => {
+  it("rejects invalid seeded step ids before resuming", async () => {
+    let resumeCalled = false
+    const response = await handleRequest(
+      {
+        method: "POST",
+        url: "http://local/api/runs/run_1/resume",
+        body: JSON.stringify({ seedResults: { "bad\nstep": 1 } }),
+      },
+      {
+        store: emptyStore,
+        resumeRun: async () => {
+          resumeCalled = true
+          throw new Error("resumeRun should not be called")
+        },
+      },
+    )
+
+    expect(response.status).toBe(400)
+    expect(JSON.parse(String(response.body))).toMatchObject({
+      error: "invalid_body",
+      message: "seedResults step ids must not contain control characters",
+    })
+    expect(resumeCalled).toBe(false)
+  })
+})
+
 describe("createSelfHostDeps validation", () => {
   it("fails clearly when the workflow entry file does not exist", async () => {
     await expect(

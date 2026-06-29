@@ -3,7 +3,7 @@ import type { ServiceResolver } from "@voyant-travel/workflows/driver"
 import type { WaitpointInjection } from "./core.js"
 import type { ChunkBus } from "./dashboard-chunks.js"
 import type { SchedulerHandle } from "./scheduler.js"
-import type { ListFilter, SnapshotRunStore, StoredRun } from "./snapshot-run-store.js"
+import type { SnapshotRunStore, StoredRun } from "./snapshot-run-store.js"
 
 export interface ServeDeps {
   store: SnapshotRunStore
@@ -102,5 +102,3 @@ export interface SelfHostServerOptions {
   wakeupLeaseMs?: number
   wakeupLeaseOwner?: string
 }
-
-export type DashboardListFilter = ListFilter

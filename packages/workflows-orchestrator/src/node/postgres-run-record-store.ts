@@ -16,7 +16,7 @@
 
 import { and, desc, eq } from "drizzle-orm"
 import type { drizzle } from "drizzle-orm/node-postgres"
-import type { OrchestratorRunStatus, RunRecord, RunRecordStore } from "./core.js"
+import type { RunRecord, RunRecordStore } from "./core.js"
 
 import { snapshotRunsTable } from "./postgres-schema.js"
 
@@ -177,7 +177,3 @@ function normalizeRequiredJson<T>(value: T): T {
     JSON.stringify(value, (_key, nested) => (typeof nested === "bigint" ? Number(nested) : nested)),
   ) as T
 }
-
-// Re-export for type discoverability — the orchestrator's status union
-// shows up frequently in consumer code that filters runs by status.
-export type { OrchestratorRunStatus }

@@ -7,6 +7,7 @@ export { handleRunSseStream, handleSseStream } from "./dashboard-sse.js"
 export { createStaticReader, findDashboardDir } from "./dashboard-static.js"
 export type {
   HandlerResponse,
+  // fallow-ignore-next-line unused-type
   HealthReport,
   MetricsSnapshot,
   RequestHandlerDeps,

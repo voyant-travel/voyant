@@ -2,7 +2,7 @@
 // orchestrator harnesses. The production store is Postgres-backed
 // and lives in voyant-cloud.
 
-import type { OrchestratorRunStatus, RunRecord, RunRecordStore } from "./types.js"
+import type { RunRecord, RunRecordStore } from "./types.js"
 
 export function createInMemoryRunStore(): RunRecordStore {
   const records = new Map<string, RunRecord>()
@@ -39,6 +39,3 @@ export function createInMemoryRunStore(): RunRecordStore {
 function clone<T>(value: T): T {
   return structuredClone(value)
 }
-
-/** Keep the unused import happy — guards against accidental type-only drift. */
-export type { OrchestratorRunStatus }
