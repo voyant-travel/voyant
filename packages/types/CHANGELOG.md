@@ -1,5 +1,11 @@
 # @voyant-travel/types
 
+## 0.106.1
+
+### Patch Changes
+
+- ebf59f1: Add quotes and trips to the grantable API key permission catalog.
+
 ## 0.106.0
 
 ### Minor Changes
