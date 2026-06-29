@@ -27,6 +27,49 @@ function stubDb(bookingRows: unknown[]) {
   } as never
 }
 
+function queuedDb(selectRows: unknown[][]) {
+  const calls = {
+    inserts: 0,
+    updates: 0,
+  }
+  const nextRows = () => selectRows.shift() ?? []
+  type QueuedSelectChain = {
+    from: () => QueuedSelectChain
+    where: () => QueuedSelectChain
+    orderBy: () => QueuedSelectChain
+    limit: () => Promise<unknown[]>
+  }
+  const selectChain: QueuedSelectChain = {
+    from: () => selectChain,
+    where: () => selectChain,
+    orderBy: () => selectChain,
+    limit: async () => nextRows(),
+  }
+  return {
+    calls,
+    db: {
+      select: () => selectChain,
+      insert: () => {
+        calls.inserts += 1
+        return {
+          values: () => ({
+            onConflictDoNothing: () => ({ returning: async () => [] }),
+            returning: async () => [],
+          }),
+        }
+      },
+      update: () => {
+        calls.updates += 1
+        return {
+          set: () => ({
+            where: async () => undefined,
+          }),
+        }
+      },
+    } as never,
+  }
+}
+
 describe("startCatalogCheckout", () => {
   it("places a hold for an existing booking", async () => {
     const booking = { id: "bk_1", status: "on_hold", holdExpiresAt: null }
@@ -51,6 +94,40 @@ describe("startCatalogCheckout", () => {
     ).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(CatalogCheckoutStartError)
     expect(err).toMatchObject({ code: "booking_not_found", status: 404 })
+  })
+
+  it("rejects bank-transfer checkout before materializing a snapshot booking when no proforma series is active", async () => {
+    const { db, calls } = queuedDb([[], [{ id: "snap_1" }], []])
+
+    const err = await startCatalogCheckout(
+      { db, env: {}, options: stubOptions() },
+      { bookingId: "book_checkout_1", paymentIntent: "bank_transfer" },
+    ).catch((e: unknown) => e)
+
+    expect(err).toBeInstanceOf(CatalogCheckoutStartError)
+    expect(err).toMatchObject({
+      code: "bank_transfer_proforma_number_series_missing",
+      status: 422,
+    })
+    expect(calls.inserts).toBe(0)
+    expect(calls.updates).toBe(0)
+  })
+
+  it("does not mark an existing booking awaiting payment when no proforma series is active", async () => {
+    const booking = { id: "bk_1", status: "on_hold", holdExpiresAt: null }
+    const { db, calls } = queuedDb([[booking], []])
+
+    const err = await startCatalogCheckout(
+      { db, env: {}, options: stubOptions() },
+      { bookingId: "bk_1", paymentIntent: "bank_transfer" },
+    ).catch((e: unknown) => e)
+
+    expect(err).toBeInstanceOf(CatalogCheckoutStartError)
+    expect(err).toMatchObject({
+      code: "bank_transfer_proforma_number_series_missing",
+      status: 422,
+    })
+    expect(calls.updates).toBe(0)
   })
 })
 
