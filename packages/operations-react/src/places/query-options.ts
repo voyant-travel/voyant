@@ -229,10 +229,3 @@ export function getPropertyGroupMemberQueryOptions(client: FetchWithValidationOp
     },
   })
 }
-
-export const getPlacesQueryOptions = getFacilitiesQueryOptions
-export const getPlaceQueryOptions = getFacilityQueryOptions
-export const getPlaceFeaturesQueryOptions = getFacilityFeaturesQueryOptions
-export const getPlaceFeatureQueryOptions = getFacilityFeatureQueryOptions
-export const getPlaceOperationSchedulesQueryOptions = getFacilityOperationSchedulesQueryOptions
-export const getPlaceOperationScheduleQueryOptions = getFacilityOperationScheduleQueryOptions

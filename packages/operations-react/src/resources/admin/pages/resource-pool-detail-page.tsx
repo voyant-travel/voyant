@@ -8,6 +8,7 @@ import { ResourcePoolDetailHost } from "../detail-hosts.js"
  * host. Resolved lazily through the contribution's `page` loader so the
  * detail page lands in its own chunk.
  */
+// fallow-ignore-next-line unused-export
 export default function ResourcePoolDetailRoutePage({ params }: AdminRoutePageProps) {
   return <ResourcePoolDetailHost id={params.id ?? ""} />
 }

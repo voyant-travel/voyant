@@ -8,6 +8,7 @@ import { AvailabilitySlotDetailHost } from "../slot-detail-host.js"
  * host. Resolved lazily through the contribution's `page` loader so the
  * detail page lands in its own chunk.
  */
+// fallow-ignore-next-line unused-export
 export default function AvailabilitySlotDetailRoutePage({ params }: AdminRoutePageProps) {
   return <AvailabilitySlotDetailHost slotId={params.id ?? ""} />
 }
