@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.137.2
+
+### Patch Changes
+
+- c6e872d: Fix the admin bookings list so the all-status UI sentinel is omitted from route search state and admin API requests.
+  - @voyant-travel/bookings@0.137.2
+
 ## 0.137.1
 
 ### Patch Changes
