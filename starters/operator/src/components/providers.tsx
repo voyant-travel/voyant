@@ -17,7 +17,9 @@ import { RealtimeLiveProvider } from "./realtime-live"
 // VoyantAvailabilityProvider needs a baseUrl prop — wrap it once so it
 // fits the child-only AdminChildProvider shape used by the admin shell.
 const AvailabilityProvider: AdminChildProvider = ({ children }) => (
-  <VoyantAvailabilityProvider baseUrl={getApiUrl()}>{children}</VoyantAvailabilityProvider>
+  <VoyantAvailabilityProvider baseUrl={getApiUrl()} fetcher={operatorFetcher}>
+    {children}
+  </VoyantAvailabilityProvider>
 )
 
 const appProviders = [
