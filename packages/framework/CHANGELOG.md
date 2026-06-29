@@ -1,5 +1,15 @@
 # @voyant-travel/framework
 
+## 0.9.13
+
+### Patch Changes
+
+- Updated dependencies [61410dd]
+  - @voyant-travel/accommodations@0.109.1
+  - @voyant-travel/catalog@0.135.3
+  - @voyant-travel/inventory@0.5.9
+  - @voyant-travel/bookings@0.137.4
+
 ## 0.9.12
 
 ### Patch Changes

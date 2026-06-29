@@ -1,5 +1,11 @@
 # @voyant-travel/catalog
 
+## 0.135.3
+
+### Patch Changes
+
+- 61410dd: Preserve catalog sourced-entry provenance when packaged detail pages start the booking journey.
+
 ## 0.135.2
 
 ### Patch Changes
