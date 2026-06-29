@@ -2,6 +2,7 @@
 
 import { queryOptions } from "@tanstack/react-query"
 
+import { BOOKING_STATUS_ALL } from "./booking-list-constants.js"
 import { type FetchWithValidationOptions, fetchWithValidation } from "./client.js"
 import type { UseBookingOptions } from "./hooks/use-booking.js"
 import type { UseBookingActivityOptions } from "./hooks/use-booking-activity.js"
@@ -52,7 +53,9 @@ export function getBookingsQueryOptions(
     queryKey: bookingsQueryKeys.bookingsList(filters),
     queryFn: () => {
       const params = new URLSearchParams()
-      if (filters.status) params.set("status", filters.status)
+      if (filters.status && filters.status !== BOOKING_STATUS_ALL) {
+        params.set("status", filters.status)
+      }
       if (filters.excludeStatuses && filters.excludeStatuses.length > 0) {
         // Send as a single comma-separated value rather than repeated
         // params. The server's `parseQuery` uses

@@ -32,10 +32,9 @@ import {
 } from "@voyant-travel/ui/components/select"
 import { ListFilter, X } from "lucide-react"
 import * as React from "react"
+import { BOOKING_STATUS_ALL } from "../booking-list-constants.js"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { type BookingStatus, bookingStatuses } from "../index.js"
-
-export const BOOKING_STATUS_ALL = "__all__"
 
 export interface BookingListFiltersPopoverProps {
   open: boolean

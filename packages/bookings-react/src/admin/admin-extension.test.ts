@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import { BOOKING_STATUS_ALL } from "../booking-list-constants.js"
+import { getBookingsQueryOptions } from "../query-options.js"
 import { BookingDetailHost } from "./booking-detail-host.js"
 import { BookingInvoiceSheet } from "./booking-invoice-sheet.js"
 import { BookingsHost } from "./bookings-host.js"
@@ -147,7 +149,7 @@ describe("bookings list search contract", () => {
   it("drops defaults so the unfiltered list keeps a clean URL", () => {
     const projected = bookingsFiltersToSearch({
       search: "",
-      status: "all",
+      status: BOOKING_STATUS_ALL,
       productId: null,
       optionId: null,
       supplierId: null,
@@ -164,6 +166,27 @@ describe("bookings list search contract", () => {
       offset: 0,
     })
     expect(Object.values(projected).every((value) => value === undefined)).toBe(true)
+  })
+
+  it("omits the all-status sentinel from direct bookings API requests", async () => {
+    const urls: string[] = []
+    const options = getBookingsQueryOptions(
+      {
+        baseUrl: "https://example.test",
+        fetcher: async (url) => {
+          urls.push(url)
+          return Response.json({ data: [], total: 0, limit: 25, offset: 0 })
+        },
+      },
+      { status: BOOKING_STATUS_ALL, limit: 25, offset: 0 },
+    )
+
+    const queryFn = options.queryFn
+    if (typeof queryFn !== "function") throw new Error("Expected bookings query function")
+
+    await queryFn({} as Parameters<typeof queryFn>[0])
+
+    expect(urls).toEqual(["https://example.test/v1/admin/bookings?limit=25&offset=0"])
   })
 
   it("rejects unknown tabs on the detail contract", () => {

@@ -18,6 +18,7 @@ import { z } from "zod"
 // skeletons. Query options and page data helpers resolve via dynamic import
 // inside the loaders so the data layer (clients + response schemas) stays
 // out of the workspace-chrome chunk that evaluates this factory.
+import { BOOKING_STATUS_ALL } from "../booking-list-constants.js"
 import { defaultFetcher } from "../client.js"
 import type { BookingDetailTabValue } from "../components/booking-detail-page.js"
 import type { BookingListFiltersState } from "../components/booking-list.js"
@@ -184,7 +185,10 @@ export function bookingsFiltersToSearch(
 ): BookingsIndexSearchParams {
   return {
     search: filters.search || undefined,
-    status: filters.status === "all" ? undefined : filters.status,
+    status:
+      filters.status === BOOKING_STATUS_ALL || filters.status === "all"
+        ? undefined
+        : filters.status,
     productId: filters.productId ?? undefined,
     optionId: filters.optionId ?? undefined,
     supplierId: filters.supplierId ?? undefined,
