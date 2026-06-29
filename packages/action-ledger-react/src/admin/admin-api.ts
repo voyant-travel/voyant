@@ -14,7 +14,7 @@ import { actionLedgerQueryKeys } from "./query-keys.js"
  */
 export type ActionLedgerAdminClient = VoyantActionLedgerContextValue
 
-export class ActionLedgerApiError extends Error {
+class ActionLedgerApiError extends Error {
   readonly status: number
   readonly body: unknown
 

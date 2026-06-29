@@ -149,8 +149,6 @@ export const actionLedgerEntryListQuerySchema = z
         : undefined,
   }))
 
-export type ActionLedgerEntryListQuery = z.infer<typeof actionLedgerEntryListQuerySchema>
-
 export const actionLedgerRelayOutboxListQuerySchema = z
   .object({
     actionId: z.string().trim().min(1).optional(),
@@ -200,10 +198,6 @@ export const actionLedgerRelayOutboxListQuerySchema = z
           : undefined,
     }),
   )
-
-export type ActionLedgerRelayOutboxListQuery = z.infer<
-  typeof actionLedgerRelayOutboxListQuerySchema
->
 
 export const actionApprovalListQuerySchema = z
   .object({
@@ -264,8 +258,6 @@ export const actionApprovalListQuerySchema = z
           : undefined,
     }),
   )
-
-export type ActionApprovalListQuery = z.infer<typeof actionApprovalListQuerySchema>
 
 const nullableTrimmedString = z
   .string()
@@ -331,8 +323,6 @@ export const requestActionApprovalBodySchema = z
     },
   }))
 
-export type RequestActionApprovalBody = z.infer<typeof requestActionApprovalBodySchema>
-
 const actionLedgerApprovalDecisionStatusValues = [
   "approved",
   "denied",
@@ -380,8 +370,6 @@ export const decideActionApprovalBodySchema = z
     ...body,
     decidedAt: decidedAt ? new Date(decidedAt) : undefined,
   }))
-
-export type DecideActionApprovalBody = z.infer<typeof decideActionApprovalBodySchema>
 
 const actionLedgerReversalActionBodySchema = z.object({
   actionName: z.string().trim().min(1),
@@ -438,8 +426,6 @@ export const recordActionLedgerReversalBodySchema = z.object({
     .optional(),
 })
 
-export type RecordActionLedgerReversalBody = z.infer<typeof recordActionLedgerReversalBodySchema>
-
 export const actionDelegationListQuerySchema = z
   .object({
     rootPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
@@ -492,5 +478,3 @@ export const actionDelegationListQuerySchema = z
           : undefined,
     }),
   )
-
-export type ActionDelegationListQuery = z.infer<typeof actionDelegationListQuerySchema>

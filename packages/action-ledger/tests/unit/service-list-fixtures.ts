@@ -150,7 +150,7 @@ export function makeDelegationListDb(rows: ActionDelegation[]) {
   return { db, calls }
 }
 
-export function makeRelayOutboxSqlRow(row: ActionLedgerRelayOutbox) {
+function makeRelayOutboxSqlRow(row: ActionLedgerRelayOutbox) {
   return {
     id: row.id,
     action_id: row.actionId,
