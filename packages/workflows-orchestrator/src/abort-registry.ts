@@ -34,8 +34,3 @@ export function signalRunAbort(runId: string, reason?: string): boolean {
 export function unregisterRunAbort(runId: string): void {
   controllers.delete(runId)
 }
-
-/** For tests. */
-export function __clearAbortRegistry(): void {
-  controllers.clear()
-}

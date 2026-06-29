@@ -1,4 +1,5 @@
 import { URL } from "node:url"
+import { validateSeedResults } from "../resume-run.js"
 import type { WaitpointInjection } from "./core.js"
 import { renderMetrics } from "./dashboard-metrics.js"
 import { mimeFor } from "./dashboard-static.js"
@@ -392,13 +393,18 @@ function parseResumeRequestBody(body: string | undefined):
       message: "`tags` must be an array of strings when provided",
     }
   }
-  if (parsed.seedResults !== undefined && !isPlainObject(parsed.seedResults)) {
-    return {
-      ok: false,
-      status: 400,
-      error: "invalid_body",
-      message: "`seedResults` must be an object when provided",
+  let seedResults: Record<string, unknown> | undefined
+  if (parsed.seedResults !== undefined) {
+    const validation = validateSeedResults(parsed.seedResults)
+    if (!validation.ok) {
+      return {
+        ok: false,
+        status: 400,
+        error: "invalid_body",
+        message: validation.message,
+      }
     }
+    seedResults = validation.seedResults
   }
   return {
     ok: true,
@@ -406,7 +412,7 @@ function parseResumeRequestBody(body: string | undefined):
       input: parsed.input,
       workflowId: parsed.workflowId as string | undefined,
       resumeFromStep: parsed.resumeFromStep,
-      seedResults: parsed.seedResults as Record<string, unknown> | undefined,
+      seedResults,
       runId: parsed.runId,
       tags: parsed.tags as string[] | undefined,
       triggeredByUserId: parsed.triggeredByUserId as string | null | undefined,
