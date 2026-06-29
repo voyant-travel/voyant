@@ -23,6 +23,7 @@
  */
 import { existsSync as fsExists, readFileSync as fsRead } from "node:fs"
 import { isAbsolute, join } from "node:path"
+import { fileURLToPath } from "node:url"
 
 /** The collector source name for the deployment's own migrations folder. */
 export const DEPLOYMENT_SOURCE = "deployment"
@@ -63,12 +64,13 @@ export interface DiscoverOptions {
 export function packageRootOfSchemaPath(
   schemaPath: string,
 ): { rootRel: string; name: string } | null {
+  const fsPath = schemaPath.startsWith("file:") ? fileURLToPath(schemaPath) : schemaPath
   // npm / pnpm: the LAST `node_modules/@voyant-travel/<name>` wins (pnpm nests a
   // second node_modules under `.pnpm/<pkg>@<ver>_<hash>/`).
-  const npm = schemaPath.match(/^(.*\/node_modules\/@voyant-travel\/([^/]+))\//)
+  const npm = fsPath.match(/^(.*\/node_modules\/@voyant-travel\/([^/]+))\//)
   if (npm) return { rootRel: npm[1] as string, name: npm[2] as string }
   // monorepo: `…/packages/<dir>/…`.
-  const mono = schemaPath.match(/^(.*packages\/([^/]+))\//)
+  const mono = fsPath.match(/^(.*packages\/([^/]+))\//)
   if (mono) return { rootRel: mono[1] as string, name: mono[2] as string }
   return null // ./drizzle.links.generated.ts, ./src/… → deployment-local
 }
