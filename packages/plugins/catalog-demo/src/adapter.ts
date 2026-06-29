@@ -47,9 +47,9 @@ export interface DemoCatalogAdapterOptions {
    */
   baseUrl: string
   /**
-   * Verticals this adapter feeds projections for. Defaults to `["products"]`,
-   * matching the tracer scope. Other values must match the `entityModule`
-   * on the demo-api's inventory rows.
+   * Verticals this adapter feeds projections for. The demo catalog API only
+   * serves product-shaped content today, so this must be omitted or set to
+   * `["products"]`.
    */
   verticals?: ReadonlyArray<string>
   /** Custom fetch implementation — useful for tests. Defaults to `globalThis.fetch`. */
@@ -60,7 +60,7 @@ export interface DemoCatalogAdapterOptions {
 
 export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): SourceAdapter {
   const baseUrl = options.baseUrl.replace(/\/$/, "")
-  const verticals = options.verticals?.length ? Array.from(options.verticals) : ["products"]
+  const verticals = normalizeDemoVerticals(options.verticals)
   const fetchImpl = options.fetch ?? globalThis.fetch
   const timeoutMs = options.timeoutMs ?? 8_000
 
@@ -222,4 +222,17 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
       })
     },
   }
+}
+
+function normalizeDemoVerticals(verticals: DemoCatalogAdapterOptions["verticals"]): string[] {
+  if (!verticals?.length) return ["products"]
+  const unsupported = verticals.filter((vertical) => vertical !== "products")
+  if (unsupported.length > 0) {
+    throw new Error(
+      `catalog-demo adapter only supports the products vertical; unsupported vertical(s): ${unsupported.join(
+        ", ",
+      )}`,
+    )
+  }
+  return ["products"]
 }
