@@ -15,6 +15,7 @@ import { supplierDetailPaymentPolicySlot } from "./slots.js"
 // other domains' admin extension factories (evaluated with workspace chrome)
 // can import it without pulling this host into the entry chunk.
 // Re-exported here for backwards compatibility.
+// fallow-ignore-next-line unused-export
 export { supplierDetailPaymentPolicySlot }
 
 /**

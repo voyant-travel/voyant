@@ -8,6 +8,7 @@ import { SupplierDetailHost } from "../supplier-detail-host.js"
  * host. Resolved lazily through the contribution's `page` loader so the
  * detail page lands in its own chunk.
  */
+// fallow-ignore-next-line unused-export
 export default function SupplierDetailPage({ params }: AdminRoutePageProps) {
   return <SupplierDetailHost id={params.id ?? ""} />
 }
