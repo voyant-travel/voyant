@@ -35,7 +35,7 @@ export function dbFromEnvForApp(env: CloudflareBindings): {
 
 const httpDbCache = new Map<string, NeonDatabase>()
 
-export function parseReplicaUrls(raw: string | undefined, primaryUrl: string): string[] {
+function parseReplicaUrls(raw: string | undefined, primaryUrl: string): string[] {
   if (!raw) return []
   return raw
     .split(",")
@@ -61,16 +61,4 @@ export function httpDbFromEnvForApp(
     httpDbCache.set(cacheKey, db)
   }
   return db
-}
-
-export async function withDbFromEnv<T>(
-  env: CloudflareBindings,
-  fn: (db: NeonDatabase) => Promise<T>,
-): Promise<T> {
-  const { db, dispose } = openDb(env.DATABASE_URL)
-  try {
-    return await fn(db)
-  } finally {
-    await dispose()
-  }
 }

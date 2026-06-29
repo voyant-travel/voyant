@@ -170,7 +170,7 @@ export async function validateApiTokenAccess(
   return true
 }
 
-export class CurrentUserNotFoundError extends Error {
+class CurrentUserNotFoundError extends Error {
   constructor() {
     super("User not found")
     this.name = "CurrentUserNotFoundError"
