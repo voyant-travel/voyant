@@ -356,7 +356,6 @@ function SpecGrid({
                       // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row. -- owner: availability-react; existing suppression is intentional pending typed cleanup.
                       key={`spec-${rowIndex}-${cellIndex}`}
                       kind="void"
-                      rowNumber={rowNumber}
                     />
                   )
                 }
@@ -384,7 +383,6 @@ function SpecGrid({
                   // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row. -- owner: availability-react; existing suppression is intentional pending typed cleanup.
                   key={`spec-${rowIndex}-${cellIndex}`}
                   kind={cell}
-                  rowNumber={rowNumber}
                 />
               )
             })}
@@ -395,13 +393,7 @@ function SpecGrid({
   )
 }
 
-function SpacerCell({
-  kind,
-  rowNumber: _rowNumber,
-}: {
-  kind: Exclude<SeatLayoutCell, "seat">
-  rowNumber: number
-}) {
+function SpacerCell({ kind }: { kind: Exclude<SeatLayoutCell, "seat"> }) {
   if (kind === "door") {
     return (
       <div className="flex min-h-24 items-center justify-center rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300">
