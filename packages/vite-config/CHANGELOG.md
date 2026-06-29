@@ -1,5 +1,11 @@
 # @voyant-travel/vite-config
 
+## 0.1.2
+
+### Patch Changes
+
+- a155321: Declare `rollup-plugin-visualizer` as an optional peer for the opt-in bundle analysis helper.
+
 ## 0.1.1
 
 ### Patch Changes
