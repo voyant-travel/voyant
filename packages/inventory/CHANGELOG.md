@@ -1,5 +1,13 @@
 # @voyant-travel/inventory
 
+## 0.5.8
+
+### Patch Changes
+
+- 98e270c: Add a public-audience listability predicate to the product document builder so deployments can tombstone non-listable customer catalog documents.
+- Updated dependencies [d2351e0]
+  - @voyant-travel/catalog@0.135.2
+
 ## 0.5.7
 
 ### Patch Changes

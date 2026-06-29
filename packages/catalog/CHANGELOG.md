@@ -1,5 +1,11 @@
 # @voyant-travel/catalog
 
+## 0.135.2
+
+### Patch Changes
+
+- d2351e0: Fix the Typesense indexer delete filter for reserved document ids so catalog documents are actually removed from search collections.
+
 ## 0.135.1
 
 ### Patch Changes
