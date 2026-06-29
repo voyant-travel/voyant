@@ -37,6 +37,7 @@ import type {
 import { Hono } from "hono"
 
 import type { CatalogDemoDb } from "./db.js"
+import type { CatalogDemoInventoryRow } from "./schema.js"
 import { buildDefaultDemoInventory, seedInventory } from "./seed.js"
 import * as store from "./store.js"
 
@@ -71,6 +72,74 @@ const SOURCE_KIND = "demo"
  */
 const DEMO_SUPPLIER_ID = "Demo Tours"
 
+export function buildDemoCatalogProjection(row: CatalogDemoInventoryRow): CatalogProjection {
+  return {
+    entity_module: row.entityModule,
+    entity_id: row.id,
+    provenance: {
+      source_kind: SOURCE_KIND,
+      source_freshness: "sync",
+      source_ref: row.id,
+    },
+    fields: buildDemoProjectionFields(row),
+  }
+}
+
+function buildDemoProjectionFields(row: CatalogDemoInventoryRow): Record<string, unknown> {
+  const metadata = row.metadata ?? {}
+  const departures = upcomingOpenDepartures(metadata)
+  const nextDeparture = departures[0] ?? null
+  const departureDates = uniqueStrings(departures.map((departure) => datePart(departure.starts_at)))
+  const departureMonths = uniqueStrings(departureDates.map((date) => date.slice(0, 7)))
+  const countryCodes = countryCodesFromMetadata(metadata)
+  const priceFromAmountCents = priceFrom(row, departures)
+  const mediaUrl = stringOr(metadata.heroImageUrl, null)
+  const remainingValues = departures.map((departure) => departure.remaining)
+  const availableUnitsTotal =
+    remainingValues.length > 0 &&
+    remainingValues.every((remaining) => typeof remaining === "number")
+      ? remainingValues.reduce((sum, remaining) => sum + (remaining ?? 0), 0)
+      : null
+
+  return {
+    "source.kind": SOURCE_KIND,
+    "source.ref": row.id,
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
+    activated: isInventorySellable(row.available, row.metadata),
+    visibility: "public",
+    // Demo upstream models its rows as operated by a single brand. A real
+    // adapter (TUI direct, Voyant Connect peer) emits the upstream's
+    // own supplier identifier; the operator maps it to a local
+    // suppliers row at integration time.
+    supplierId: DEMO_SUPPLIER_ID,
+    sellAmountCents: row.priceCents,
+    sellCurrency: row.currency,
+    supplyModel: supplyModelFromMetadata(metadata, departures),
+    durationDays: numberOr(metadata.durationDays, null),
+    countryCodes,
+    departureCity: stringOr(metadata.departureCity, null),
+    priceFromAmountCents,
+    priceFromCurrency: priceFromAmountCents == null ? null : row.currency,
+    hasPricing: priceFromAmountCents != null,
+    primaryMediaUrl: mediaUrl,
+    thumbnailUrl: mediaUrl,
+    coverMediaUrl: mediaUrl,
+    nextDepartureAt: nextDeparture?.starts_at ?? null,
+    nextDepartureDate: nextDeparture ? datePart(nextDeparture.starts_at) : null,
+    hasUpcomingDeparture: departures.length > 0,
+    upcomingDepartureCount: departures.length,
+    availableDeparturesCount: departures.length,
+    departureDates,
+    departureMonths,
+    availableUnitsTotal,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  }
+}
+
 export function createRoutes(db: CatalogDemoDb): Hono {
   const app = new Hono()
 
@@ -89,34 +158,7 @@ export function createRoutes(db: CatalogDemoDb): Hono {
       limit: body.limit,
       entityModules: body.entityModules,
     })
-    const projections: CatalogProjection[] = result.rows.map((row) => ({
-      entity_module: row.entityModule,
-      entity_id: row.id,
-      provenance: {
-        source_kind: SOURCE_KIND,
-        source_freshness: "sync",
-        source_ref: row.id,
-      },
-      fields: {
-        "source.kind": SOURCE_KIND,
-        "source.ref": row.id,
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
-        activated: isInventorySellable(row.available, row.metadata),
-        visibility: "public",
-        // Demo upstream models its rows as operated by a single brand. A real
-        // adapter (TUI direct, Voyant Connect peer) emits the upstream's
-        // own supplier identifier; the operator maps it to a local
-        // suppliers row at integration time.
-        supplierId: DEMO_SUPPLIER_ID,
-        sellAmountCents: row.priceCents,
-        sellCurrency: row.currency,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-      },
-    }))
+    const projections: CatalogProjection[] = result.rows.map(buildDemoCatalogProjection)
     const page: DiscoveryPage = {
       projections,
       next_cursor: result.nextCursor,
@@ -580,6 +622,72 @@ function stringArrayOr(value: unknown, fallback: string[]): string[] {
 function mapArray<T>(value: unknown, project: (item: unknown) => T): T[] {
   if (!Array.isArray(value)) return []
   return value.map(project)
+}
+
+function uniqueStrings(values: Array<string | null>): string[] {
+  return [...new Set(values.filter((value): value is string => typeof value === "string"))]
+}
+
+function datePart(value: string): string | null {
+  return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null
+}
+
+function countryCodesFromMetadata(metadata: Record<string, unknown>): string[] {
+  const explicit = stringArrayOr(metadata.countryCodes, [])
+  if (explicit.length > 0) return explicit.map((code) => code.toUpperCase())
+  const country = stringOr(metadata.country, null)
+  return country ? [country.toUpperCase()] : []
+}
+
+function supplyModelFromMetadata(
+  metadata: Record<string, unknown>,
+  departures: readonly DemoDeparture[],
+): "dynamic" | "scheduled" {
+  const explicit = stringOr(metadata.supplyModel, null)
+  if (explicit === "dynamic" || explicit === "scheduled") return explicit
+  return departures.length > 0 ? "scheduled" : "dynamic"
+}
+
+function priceFrom(
+  row: CatalogDemoInventoryRow,
+  departures: readonly DemoDeparture[],
+): number | null {
+  const departurePrices = departures
+    .map((departure) => departure.lowest_price_cents)
+    .filter((value): value is number => typeof value === "number" && value > 0)
+  if (departurePrices.length > 0) return Math.min(...departurePrices)
+  return row.priceCents > 0 ? row.priceCents : null
+}
+
+function upcomingOpenDepartures(metadata: Record<string, unknown>): DemoDeparture[] {
+  const now = Date.now()
+  return mapArray(metadata.departures, parseDeparture)
+    .filter((departure): departure is DemoDeparture => departure != null)
+    .filter((departure) => {
+      if (isClosedDeparture(departure)) return false
+      if (!departure.starts_at) return false
+      const startsAt = Date.parse(departure.starts_at)
+      if (!Number.isFinite(startsAt) || startsAt < now) return false
+      return departure.remaining == null || departure.remaining > 0
+    })
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))
+}
+
+function parseDeparture(value: unknown): DemoDeparture | null {
+  if (!value || typeof value !== "object") return null
+  const row = value as Record<string, unknown>
+  const startsAt = stringOr(row.starts_at, "")
+  if (!startsAt) return null
+  return {
+    id: stringOr(row.id, ""),
+    starts_at: startsAt,
+    ends_at: stringOr(row.ends_at, null),
+    status: stringOr(row.status, null),
+    lowest_price_cents: numberOr(row.lowest_price_cents, undefined),
+    currency: stringOr(row.currency, undefined),
+    capacity: numberOr(row.capacity, undefined),
+    remaining: numberOr(row.remaining, undefined),
+  }
 }
 
 function readDepartureId(parameters: Record<string, unknown> | undefined): string | null {
