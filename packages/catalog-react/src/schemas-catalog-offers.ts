@@ -178,7 +178,7 @@ export type CruiseSailingPricingResponse = z.infer<typeof cruiseSailingPricingRe
 
 /* ── cruise content (opaque payload, mapped by the consumer) ─────────── */
 
-export const catalogContentProvenanceSchema = z.object({
+const catalogContentProvenanceSchema = z.object({
   source_kind: z.string(),
   source_provider: z.string().nullable().optional(),
   source_connection_id: z.string().nullable().optional(),
