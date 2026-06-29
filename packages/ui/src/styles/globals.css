@@ -7,13 +7,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Base UI components (tabs, button-group, slider, toggle-group, separator,
-   scroll-area, field) expose orientation via `data-orientation="horizontal|
-   vertical"`, but our component classes style with the shorthand
-   `data-horizontal:` / `data-vertical:` variants. Tailwind v4 would otherwise
-   compile those to `[data-horizontal]` / `[data-vertical]` — attributes Base UI
-   never emits — so the orientation-dependent styles (tab-list height, indicator
-   placement, axis switches) silently no-op. Remap them to the real attribute. */
+/* Keep Voyant's shorthand orientation variants available for downstream
+   consumers. Package components use explicit `data-[orientation=...]`
+   selectors so generated CSS does not depend on host registration order. */
 @custom-variant data-horizontal (&[data-orientation="horizontal"]);
 @custom-variant data-vertical (&[data-orientation="vertical"]);
 
