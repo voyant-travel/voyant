@@ -15,6 +15,13 @@
       "when": 1782147397477,
       "tag": "0001_accommodations_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782715571564,
+      "tag": "0002_accommodations_baseline",
+      "breakpoints": true
     }
   ]
 }

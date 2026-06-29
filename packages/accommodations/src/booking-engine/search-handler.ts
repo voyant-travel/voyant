@@ -6,12 +6,12 @@
  * (`fanOutAvailabilitySearch`, RFC #2081/#2093) so owned and sourced supply
  * land in one ranked candidate list.
  *
- * Like the booking handler, this is a thin shell that delegates the actual
- * inventory query to a caller-supplied **bridge**. Owned accommodations have no
- * date-aware rate/availability table in the schema yet, and the location lookup
- * spans the operations (places/facility) schema — both deployment-specific — so
- * the handler owns the vertical-agnostic parts (criteria validation, nights,
- * candidate assembly) and the deployment owns the data access.
+ * Like the booking handler, this is a thin shell: it owns the
+ * vertical-agnostic parts (criteria validation, nights, candidate assembly) and
+ * delegates rate + availability resolution to a bridge. By default that bridge
+ * is the first-party accommodations rate/availability service; deployments can
+ * still inject their own bridge when an external owned-rate source is
+ * authoritative.
  */
 
 import type { OwnedAvailabilitySearchHandler, OwnedSearchContext } from "@voyant-travel/catalog"
@@ -20,6 +20,8 @@ import type {
   AvailabilitySearchRequest,
   AvailabilitySearchResult,
 } from "@voyant-travel/catalog/adapter/contract"
+
+import { createFirstPartyAccommodationSearchBridge } from "../service-owned-stays.js"
 
 /** Occupancy for one requested room. Mirrors the sourced stay-search shape. */
 export interface AccommodationSearchOccupancy {
@@ -82,11 +84,10 @@ export type AccommodationSearchBridge = (
 
 export interface CreateAccommodationSearchHandlerOptions {
   /**
-   * Resolves owned accommodation availability for a stay. Wired by the
-   * deployment to its owned room/rate query (joins through the operations
-   * places/facility schema + the deployment's rate source).
+   * Resolves owned accommodation availability for a stay. When omitted, the
+   * handler uses the first-party accommodations rate/availability service.
    */
-  searchBridge: AccommodationSearchBridge
+  searchBridge?: AccommodationSearchBridge
 }
 
 export function createAccommodationOwnedSearchHandler(
@@ -100,7 +101,8 @@ export function createAccommodationOwnedSearchHandler(
     ): Promise<AvailabilitySearchResult> {
       const criteria = parseAccommodationCriteria(request.criteria)
       const nights = nightsBetween(criteria.checkIn, criteria.checkOut)
-      const { matches, nextCursor } = await options.searchBridge(ctx, {
+      const searchBridge = options.searchBridge ?? createFirstPartyAccommodationSearchBridge()
+      const { matches, nextCursor } = await searchBridge(ctx, {
         criteria,
         nights,
         scope: request.scope,

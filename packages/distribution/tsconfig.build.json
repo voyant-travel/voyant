@@ -29,6 +29,9 @@
       "@voyant-travel/accommodations/service-content-synthesizer": [
         "../accommodations/dist/service-content-synthesizer.d.ts"
       ],
+      "@voyant-travel/accommodations/service-owned-stays": [
+        "../accommodations/dist/service-owned-stays.d.ts"
+      ],
       "@voyant-travel/action-ledger": ["../action-ledger/dist/index.d.ts"],
       "@voyant-travel/action-ledger-react": ["../action-ledger-react/dist/index.d.ts"],
       "@voyant-travel/action-ledger-react/admin": ["../action-ledger-react/dist/admin/index.d.ts"],
