@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.137.3
+
+### Patch Changes
+
+- 8ced473: Fix the admin booking activity timeline so payment events load through the admin finance payments endpoint instead of the public checkout endpoint.
+  - @voyant-travel/bookings@0.137.3
+
 ## 0.137.2
 
 ### Patch Changes
