@@ -238,6 +238,3 @@ async function writeWatermark(db: AnyDrizzleDb, tickedAt: Date): Promise<void> {
       },
     })
 }
-
-// Exposed for tests so they can probe the watermark without recreating the SQL.
-export const __test__ = { SINGLETON_KEY, readWatermark, writeWatermark }

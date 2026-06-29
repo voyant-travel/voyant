@@ -1,15 +1,6 @@
-import type {
-  CreateMarketInput,
-  MarketCurrencyRecord,
-  MarketLocaleRecord,
-  MarketRecord,
-} from "../index.js"
+import type { CreateMarketInput } from "../index.js"
 
 export type MarketStatus = NonNullable<CreateMarketInput["status"]>
-export type MarketLocaleLanguageTag = MarketLocaleRecord["languageTag"]
-export type MarketCurrencyCode = MarketCurrencyRecord["currencyCode"]
-export type MarketRegionCode = MarketRecord["regionCode"]
-export type MarketCountryCode = MarketRecord["countryCode"]
 
 export type MarketsUiMessages = {
   common: {

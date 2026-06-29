@@ -157,5 +157,3 @@ export async function recordPromotionRedemptionsForBooking(
  *     and the wiring template-side mirrors the existing catalog-bridge
  *     subscriber pattern.
  */
-
-export const __test__ = { recordPromotionRedemptionsForBooking }

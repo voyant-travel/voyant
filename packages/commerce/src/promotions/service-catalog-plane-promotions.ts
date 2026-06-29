@@ -34,7 +34,6 @@ import {
   type AppliedOffer,
   type ConditionalOffer,
   createDrizzleOfferDataSource,
-  type EvaluationResult,
   evaluateOffersForProduct,
 } from "./service-evaluator.js"
 
@@ -178,8 +177,3 @@ async function defaultLoadOriginalPrice(
     currency: first?.sell_currency ?? null,
   }
 }
-
-// Internal exports for unit tests — kept off the public surface.
-export const __test__ = { toProjectionMap, EMPTY_PROJECTION, sliceAudience }
-
-export type { EvaluationResult }

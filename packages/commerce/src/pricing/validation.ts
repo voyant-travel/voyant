@@ -42,7 +42,7 @@ const stripDefaultsFromShape = <T extends z.ZodRawShape>(shape: T): StripDefault
 const partialWithoutDefaults = <T extends z.ZodRawShape>(schema: z.ZodObject<T>) =>
   z.object(stripDefaultsFromShape(schema.shape)).partial()
 
-export const pricingCategoryCoreSchema = z.object({
+const pricingCategoryCoreSchema = z.object({
   productId: z.string().nullable().optional(),
   optionId: z.string().nullable().optional(),
   unitId: z.string().nullable().optional(),
@@ -71,7 +71,7 @@ export const pricingCategoryListQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
 })
 
-export const pricingCategoryDependencyCoreSchema = z.object({
+const pricingCategoryDependencyCoreSchema = z.object({
   pricingCategoryId: z.string(),
   masterPricingCategoryId: z.string(),
   dependencyType: pricingDependencyTypeSchema.default("requires"),
@@ -92,7 +92,7 @@ export const pricingCategoryDependencyListQuerySchema = paginationSchema.extend(
   active: booleanQueryParam.optional(),
 })
 
-export const cancellationPolicyCoreSchema = z.object({
+const cancellationPolicyCoreSchema = z.object({
   code: z.string().max(100).nullable().optional(),
   name: z.string().min(1).max(255),
   policyType: cancellationPolicyTypeSchema.default("custom"),
@@ -112,7 +112,7 @@ export const cancellationPolicyListQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
 })
 
-export const cancellationPolicyRuleCoreSchema = z.object({
+const cancellationPolicyRuleCoreSchema = z.object({
   cancellationPolicyId: z.string(),
   sortOrder: z.number().int().default(0),
   cutoffMinutesBefore: z.number().int().min(0).nullable().optional(),
@@ -132,7 +132,7 @@ export const cancellationPolicyRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const priceCatalogCoreSchema = z.object({
+const priceCatalogCoreSchema = z.object({
   code: z.string().min(1).max(100),
   name: z.string().min(1).max(255),
   currencyCode: currencyCodeSchema.nullable().optional(),
@@ -152,7 +152,7 @@ export const priceCatalogListQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
 })
 
-export const priceScheduleCoreSchema = z.object({
+const priceScheduleCoreSchema = z.object({
   priceCatalogId: z.string(),
   code: z.string().max(100).nullable().optional(),
   name: z.string().min(1).max(255),
@@ -178,7 +178,7 @@ export const priceScheduleListQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
 })
 
-export const optionPriceRuleCoreSchema = z.object({
+const optionPriceRuleCoreSchema = z.object({
   productId: z.string(),
   optionId: z.string(),
   priceCatalogId: z.string(),
@@ -211,7 +211,7 @@ export const optionPriceRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const optionUnitPriceRuleCoreSchema = z.object({
+const optionUnitPriceRuleCoreSchema = z.object({
   optionPriceRuleId: z.string(),
   optionId: z.string(),
   unitId: z.string(),
@@ -237,7 +237,7 @@ export const optionUnitPriceRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const optionStartTimeRuleCoreSchema = z.object({
+const optionStartTimeRuleCoreSchema = z.object({
   optionPriceRuleId: z.string(),
   optionId: z.string(),
   startTimeId: z.string(),
@@ -259,7 +259,7 @@ export const optionStartTimeRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const optionUnitTierCoreSchema = z.object({
+const optionUnitTierCoreSchema = z.object({
   optionUnitPriceRuleId: z.string(),
   minQuantity: z.number().int().min(1),
   maxQuantity: z.number().int().min(1).nullable().optional(),
@@ -276,7 +276,7 @@ export const optionUnitTierListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const pickupPriceRuleCoreSchema = z.object({
+const pickupPriceRuleCoreSchema = z.object({
   optionPriceRuleId: z.string(),
   optionId: z.string(),
   pickupPointId: z.string(),
@@ -297,7 +297,7 @@ export const pickupPriceRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const dropoffPriceRuleCoreSchema = z.object({
+const dropoffPriceRuleCoreSchema = z.object({
   optionPriceRuleId: z.string(),
   optionId: z.string(),
   facilityId: z.string().nullable().optional(),
@@ -320,7 +320,7 @@ export const dropoffPriceRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const extraPriceRuleCoreSchema = z.object({
+const extraPriceRuleCoreSchema = z.object({
   optionPriceRuleId: z.string(),
   optionId: z.string(),
   productExtraId: z.string().nullable().optional(),
@@ -344,7 +344,7 @@ export const extraPriceRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
-export const departurePriceOverrideCoreSchema = z.object({
+const departurePriceOverrideCoreSchema = z.object({
   departureId: z.string(),
   optionId: z.string(),
   optionUnitId: z.string(),

@@ -30,25 +30,6 @@ export type UnitPricingMode =
   | "free"
   | "on_request"
 
-export const pricingCategoryTypes = [
-  "adult",
-  "child",
-  "infant",
-  "senior",
-  "group",
-  "room",
-  "vehicle",
-  "service",
-  "other",
-] as const
-
-export const pricingDependencyTypes = [
-  "requires",
-  "limits_per_master",
-  "limits_sum",
-  "excludes",
-] as const
-
 export type PricingUiMessages = {
   common: {
     cancel: string
