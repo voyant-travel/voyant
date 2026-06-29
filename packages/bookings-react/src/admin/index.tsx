@@ -250,7 +250,7 @@ export type BookingNewSearchParams = z.infer<typeof bookingNewSearchSchema>
  * only the fields their selection actually carries.
  */
 export const bookingJourneySearchSchema = z.object({
-  sourceKind: z.string().min(1),
+  sourceKind: z.string().min(1).optional(),
   sourceConnectionId: z.string().optional(),
   sourceRef: z.string().optional(),
   departureId: z.string().optional(),

@@ -58,21 +58,24 @@ export function VerticalDetailHost({ surface, id, locale }: VerticalDetailHostPr
       locale={locale}
       formatSupplier={formatSupplier}
       onBreadcrumbs={setCrumbs}
-      // Connect-sourced vertical (accommodation/excursion/tour) → the unified
-      // journey. The picked departure's date locks the departure step; name/hero
-      // preview the panel.
-      onBook={(entityModule, entityId, opts) =>
-        navigateTo("bookingJourney.start", {
+      // Vertical detail → the unified journey. Preserve sourced-entry provenance
+      // when content enrichment exposed it; otherwise let the journey APIs
+      // resolve provenance server-side from (entityModule, entityId).
+      onBook={(entityModule, entityId, opts) => {
+        const sourceKind = opts.sourceKind?.trim()
+        return navigateTo("bookingJourney.start", {
           entityModule,
           entityId,
-          sourceKind: "voyant-connect",
+          ...(sourceKind ? { sourceKind } : {}),
+          ...(opts.sourceConnectionId ? { sourceConnectionId: opts.sourceConnectionId } : {}),
+          ...(opts.sourceRef ? { sourceRef: opts.sourceRef } : {}),
           ...(opts.departureId ? { departureId: opts.departureId } : {}),
           ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
           ...(opts.optionId ? { optionId: opts.optionId } : {}),
           ...(opts.name ? { entityName: opts.name } : {}),
           ...(opts.heroImageUrl ? { entityImageUrl: opts.heroImageUrl } : {}),
         })
-      }
+      }}
     />
   )
 }

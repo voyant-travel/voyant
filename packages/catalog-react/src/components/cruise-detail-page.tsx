@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-react; existing cruise detail surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Badge } from "@voyant-travel/ui/components/badge"
@@ -12,6 +13,7 @@ import {
   fetchCruiseSailingPricing,
   useVoyantCatalogContext,
 } from "../index.js"
+import type { CatalogContentProvenance } from "../schemas-catalog-offers.js"
 import {
   AvailabilityCalendar,
   compareMonth,
@@ -45,6 +47,9 @@ export interface CruiseDetailPageProps {
       departureDate?: string | null
       name?: string | null
       heroImageUrl?: string | null
+      sourceKind?: string | null
+      sourceConnectionId?: string | null
+      sourceRef?: string | null
     },
   ) => void
   onBreadcrumbs?: (crumbs: Array<{ label: string; href?: string }>) => void
@@ -66,6 +71,7 @@ export function CruiseDetailPage({
   const { locale: resolvedLocale } = useCatalogUiI18nOrDefault()
 
   const [detail, setDetail] = useState<CruiseDetail | null>(null)
+  const [provenance, setProvenance] = useState<CatalogContentProvenance | null>(null)
   // Cruise-level "from" price (from Connect; the content route carries none).
   const [cruisePrice, setCruisePrice] = useState<{
     fromAmountMinor: number | null
@@ -86,6 +92,7 @@ export function CruiseDetailPage({
     let cancelled = false
     setStatus("loading")
     setDetail(null)
+    setProvenance(null)
     setCruisePrice(null)
     void (async () => {
       try {
@@ -100,6 +107,7 @@ export function CruiseDetailPage({
           return
         }
         setDetail(mapped)
+        setProvenance(contentJson.data?.provenance ?? null)
         setStatus("ready")
         if (priceJson) {
           setCruisePrice({
@@ -231,6 +239,9 @@ export function CruiseDetailPage({
       departureDate: sail.startDate,
       name: detail?.name ?? null,
       heroImageUrl: detail?.heroImageUrl ?? null,
+      sourceKind: provenance?.source_kind ?? null,
+      sourceConnectionId: provenance?.source_connection_id ?? null,
+      sourceRef: provenance?.source_ref ?? null,
     })
 
   if (status === "loading") {

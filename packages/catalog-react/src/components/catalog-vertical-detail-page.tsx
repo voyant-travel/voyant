@@ -64,6 +64,10 @@ export interface CatalogVerticalDetailPageProps {
       departureDate?: string | null
       name?: string | null
       heroImageUrl?: string | null
+      sourceKind?: string | null
+      sourceProvider?: string | null
+      sourceConnectionId?: string | null
+      sourceRef?: string | null
     },
   ) => void
   /** Publish breadcrumbs as the resolved name changes (host feeds its breadcrumb sink). */
@@ -157,6 +161,10 @@ export function CatalogVerticalDetailPage({
       departureDate: departureDate ?? null,
       name: enrichment?.name ?? null,
       heroImageUrl: enrichment?.heroImageUrl ?? null,
+      sourceKind: enrichment?.sourceKind ?? null,
+      sourceProvider: enrichment?.sourceProvider ?? null,
+      sourceConnectionId: enrichment?.sourceConnectionId ?? null,
+      sourceRef: enrichment?.sourceRef ?? null,
     })
   }
 

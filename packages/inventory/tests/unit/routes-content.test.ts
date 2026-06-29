@@ -125,6 +125,11 @@ describe("createProductContentRoutes — GET /:id/content", () => {
         served_locale: "ro-RO",
         match_kind: "exact",
       },
+      provenance: {
+        source_kind: "demo",
+        source_connection_id: "conn_demo",
+        source_ref: "demo_prod_abc",
+      },
       source: "sourced-cache",
       served_stale: false,
       synthesized: false,
@@ -138,6 +143,11 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     expect(body.data.served_locale).toBe("ro-RO")
     expect(body.data.match_kind).toBe("exact")
     expect(body.data.source).toBe("sourced-cache")
+    expect(body.data.provenance).toEqual({
+      source_kind: "demo",
+      source_connection_id: "conn_demo",
+      source_ref: "demo_prod_abc",
+    })
     expect(body.data.served_stale).toBe(false)
     expect(body.data.synthesized).toBe(false)
   })

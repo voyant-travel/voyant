@@ -134,6 +134,12 @@ describe("getProductContent cache ownership", () => {
     expect(db.insert).not.toHaveBeenCalled()
     expect(catalogMocks.withContentRefreshLock).not.toHaveBeenCalled()
     expect(first?.source).toBe("sourced-fresh")
+    expect(first?.provenance).toEqual({
+      source_kind: "direct:test",
+      source_provider: "test",
+      source_connection_id: "conn_1",
+      source_ref: "upstream_prod_1",
+    })
     expect(second?.source).toBe("sourced-fresh")
   })
 

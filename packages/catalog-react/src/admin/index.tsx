@@ -35,8 +35,8 @@ declare module "@voyant-travel/admin" {
       /** Entity module owning the bookable entity (e.g. `"products"`, `"cruises"`). */
       entityModule: string
       entityId: string
-      /** Offer source kind (e.g. `"owned"`, `"voyant-connect"`). */
-      sourceKind: string
+      /** Offer source kind (e.g. `"owned"`, `"voyant-connect"`), when known. */
+      sourceKind?: string
       sourceConnectionId?: string
       sourceRef?: string
       departureId?: string

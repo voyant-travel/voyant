@@ -75,13 +75,13 @@ export interface ProductDetailPageProps {
   /** Href of the packages browse page, e.g. `/catalog/products`. */
   productsHref: string
   /**
-   * Route to the booking journey, pinned to the resolved Connect source.
+   * Route to the booking journey, pinned to the resolved source when known.
    * `selection` carries the offer the user clicked Book on, so the journey can
    * pre-fill the date and show a preview instead of starting blank.
    */
   onBook: (
     productId: string,
-    source: { connectionId?: string; ref?: string | null },
+    source: { kind?: string | null; connectionId?: string; ref?: string | null },
     selection?: ProductBookSelection,
   ) => void
   /** Publish breadcrumbs as the resolved name changes. */
@@ -107,9 +107,9 @@ export function ProductDetailPage({
     product: ProductDetail | null
     offers: Offer[]
     retryable: boolean
-    /** Connect provenance for this package — pins the booking to the exact
-     *  connection so multi-connection deployments quote/book the right one. */
-    source: { connectionId: string; ref: string | null } | null
+    /** Sourced-entry provenance for this package — pins the booking to the exact
+     *  provider/connection so multi-connection deployments quote/book the right one. */
+    source: { kind?: string | null; connectionId: string; ref: string | null } | null
   }>({ status: "loading", product: null, offers: [], retryable: false, source: null })
   const [monthCursor, setMonthCursor] = useState<MonthCursor | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -238,7 +238,11 @@ export function ProductDetailPage({
   const bookOffer = (offer: Offer) =>
     onBook(
       productId,
-      { connectionId: state.source?.connectionId, ref: state.source?.ref },
+      {
+        kind: state.source?.kind,
+        connectionId: state.source?.connectionId,
+        ref: state.source?.ref,
+      },
       {
         checkIn: offer.checkIn,
         name: state.product?.name ?? null,

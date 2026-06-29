@@ -111,6 +111,10 @@ export interface CatalogDetailEnrichment {
   servedLocale?: string
   matchKind?: string
   source?: string
+  sourceKind?: string
+  sourceProvider?: string
+  sourceConnectionId?: string
+  sourceRef?: string
   servedStale?: boolean
   synthesized?: boolean
   machineTranslated?: boolean

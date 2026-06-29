@@ -77,10 +77,18 @@ export interface GetAccommodationContentOptions {
 export interface ResolvedAccommodationContent {
   content: AccommodationContent
   resolution: ContentLocaleResolution<{ locale: string; payload: AccommodationContent }>
+  provenance: ResolvedAccommodationContentProvenance
   source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
   served_stale: boolean
   synthesized: boolean
   machine_translated: boolean
+}
+
+export interface ResolvedAccommodationContentProvenance {
+  source_kind: string
+  source_provider?: string
+  source_connection_id?: string
+  source_ref?: string
 }
 
 export async function getAccommodationContent(
@@ -116,6 +124,7 @@ export async function getAccommodationContent(
         served_locale: owned.servedLocale,
         match_kind: owned.matchKind,
       },
+      provenance: { source_kind: "owned" },
       source: "owned",
       served_stale: false,
       synthesized: false,
@@ -141,6 +150,7 @@ export async function getAccommodationContent(
     first_seen_at: sourcedEntry.first_seen_at,
     last_seen_at: sourcedEntry.last_seen_at,
   }
+  const resultProvenance = sourcedEntryToContentProvenance(sourcedEntry)
 
   const adapter = sourcedEntry.source_connection_id
     ? (options.registry.resolveByConnection(sourcedEntry.source_connection_id) ??
@@ -166,7 +176,7 @@ export async function getAccommodationContent(
       market,
       currency: scope.currency,
     })
-    return finalizeFresh(db, entityId, fresh, scope, options)
+    return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
   }
 
   const cachedRows = await fetchCacheCandidates(db, entityId, market)
@@ -178,7 +188,7 @@ export async function getAccommodationContent(
   )
 
   if (best && !isStale(best.candidate)) {
-    return finalizeFromCache(db, entityId, best, false, options)
+    return finalizeFromCache(db, entityId, best, false, options, resultProvenance)
   }
 
   if (best && isStale(best.candidate)) {
@@ -191,7 +201,7 @@ export async function getAccommodationContent(
         currency: scope.currency,
       })
     }
-    return finalizeFromCache(db, entityId, best, true, options)
+    return finalizeFromCache(db, entityId, best, true, options, resultProvenance)
   }
 
   if (!adapter?.getContent) {
@@ -203,7 +213,7 @@ export async function getAccommodationContent(
         overlays: overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
       },
     )
-    return wrapSynthesized(synthesized, scope, false)
+    return wrapSynthesized(synthesized, scope, false, resultProvenance)
   }
 
   const fresh = await fetchFreshContent(db, adapter, adapterCtx, {
@@ -222,10 +232,10 @@ export async function getAccommodationContent(
         overlays: overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
       },
     )
-    return wrapSynthesized(synthesized, scope, false)
+    return wrapSynthesized(synthesized, scope, false, resultProvenance)
   }
 
-  return finalizeFresh(db, entityId, fresh, scope, options)
+  return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
 }
 
 async function fetchCacheCandidates(
@@ -373,6 +383,7 @@ async function finalizeFromCache(
   best: NonNullable<ReturnType<typeof pickBestCachedLocale<SelectAccommodationSourcedContent>>>,
   servedStale: boolean,
   options: GetAccommodationContentOptions,
+  provenance: ResolvedAccommodationContentProvenance,
 ): Promise<ResolvedAccommodationContent> {
   const validation = validateAccommodationContent(best.candidate.payload)
   if (!validation.valid) {
@@ -401,6 +412,7 @@ async function finalizeFromCache(
       served_locale: best.candidate.returned_locale,
       match_kind: best.match_kind,
     },
+    provenance,
     source: "sourced-cache",
     served_stale: servedStale,
     synthesized: false,
@@ -414,6 +426,7 @@ async function finalizeFresh(
   fresh: GetContentResult,
   scope: AccommodationContentScope,
   options: GetAccommodationContentOptions,
+  provenance: ResolvedAccommodationContentProvenance,
 ): Promise<ResolvedAccommodationContent> {
   const cachedContent = accommodationContentSchema.parse(fresh.content)
   const overlays = await fetchOverlaysForEntity(db, "accommodations", entityId)
@@ -437,6 +450,7 @@ async function finalizeFresh(
       served_locale: fresh.returned_locale,
       match_kind: scope.preferredLocales[0] === fresh.returned_locale ? "exact" : "language_match",
     },
+    provenance,
     source: "sourced-fresh",
     served_stale: false,
     synthesized: false,
@@ -448,6 +462,7 @@ function wrapSynthesized(
   synthesized: SynthesizedAccommodationContent,
   scope: AccommodationContentScope,
   servedStale: boolean,
+  provenance: ResolvedAccommodationContentProvenance,
 ): ResolvedAccommodationContent {
   return {
     content: synthesized.content,
@@ -456,10 +471,27 @@ function wrapSynthesized(
       served_locale: synthesized.served_locale,
       match_kind: scope.preferredLocales[0] === synthesized.served_locale ? "exact" : "any",
     },
+    provenance,
     source: "synthesized",
     served_stale: servedStale,
     synthesized: true,
     machine_translated: false,
+  }
+}
+
+function sourcedEntryToContentProvenance(sourcedEntry: {
+  source_kind: string
+  source_provider?: string | null
+  source_connection_id?: string | null
+  source_ref?: string | null
+}): ResolvedAccommodationContentProvenance {
+  return {
+    source_kind: sourcedEntry.source_kind,
+    ...(sourcedEntry.source_provider ? { source_provider: sourcedEntry.source_provider } : {}),
+    ...(sourcedEntry.source_connection_id
+      ? { source_connection_id: sourcedEntry.source_connection_id }
+      : {}),
+    ...(sourcedEntry.source_ref ? { source_ref: sourcedEntry.source_ref } : {}),
   }
 }
 
