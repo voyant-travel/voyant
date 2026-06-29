@@ -40,6 +40,9 @@ export async function materializeBookingFromSnapshot(
   bookingId: string,
   env: Record<string, unknown>,
   options: CheckoutModuleOptions,
+  hooks: {
+    beforeMaterialize?: () => Promise<void>
+  } = {},
 ): Promise<typeof bookings.$inferSelect | null> {
   const { bookingCatalogSnapshotTable } = await import("@voyant-travel/catalog")
   const { bookingDraftsTable } = await import("@voyant-travel/catalog/booking-engine")
@@ -49,6 +52,7 @@ export async function materializeBookingFromSnapshot(
     .where(eq(bookingCatalogSnapshotTable.booking_id, bookingId))
     .limit(1)
   if (!snapshot) return null
+  await hooks.beforeMaterialize?.()
 
   const baseAmount = snapshot.pricing_base_amount
     ? Number.parseFloat(String(snapshot.pricing_base_amount))

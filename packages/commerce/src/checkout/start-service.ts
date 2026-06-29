@@ -7,6 +7,7 @@ import type { EventBus } from "@voyant-travel/core"
 import {
   type CreateInvoiceFromBookingInput,
   financeService,
+  InvoiceNumberAllocationError,
   issueProformaFromBooking,
 } from "@voyant-travel/finance"
 import { eq } from "drizzle-orm"
@@ -88,7 +89,7 @@ export type CatalogCheckoutStartResult =
 export class CatalogCheckoutStartError extends Error {
   constructor(
     public readonly code: string,
-    public readonly status: 404 | 409 | 500 | 502,
+    public readonly status: 404 | 409 | 422 | 500 | 502,
   ) {
     super(code)
     this.name = "CatalogCheckoutStartError"
@@ -120,7 +121,18 @@ export async function startCatalogCheckout(
   // can operate on a normal booking. Owned products already have
   // the row written by their OwnedBookingHandler.commit.
   if (!booking) {
-    booking = await materializeBookingFromSnapshot(db, body.bookingId, context.env, context.options)
+    booking = await materializeBookingFromSnapshot(
+      db,
+      body.bookingId,
+      context.env,
+      context.options,
+      {
+        beforeMaterialize:
+          body.paymentIntent === "bank_transfer"
+            ? () => ensureBankTransferProformaPrerequisites(db)
+            : undefined,
+      },
+    )
   }
   if (!booking) throw new CatalogCheckoutStartError("booking_not_found", 404)
   if (
@@ -389,7 +401,7 @@ async function startBankTransferCheckout(
   booking: typeof bookings.$inferSelect,
 ): Promise<CatalogCheckoutStartResult> {
   const db = context.db
-  await markAwaitingPayment(db, booking)
+  await ensureBankTransferProformaPrerequisites(db)
 
   // Issue a proforma synchronously so the customer leaves with a
   // document reference. SmartBill (subscribing to
@@ -414,31 +426,41 @@ async function startBankTransferCheckout(
     .from(bookingItems)
     .where(eq(bookingItems.bookingId, booking.id))
 
-  const proforma = await issueProformaFromBooking(
-    db,
-    proformaInput,
-    {
-      booking: {
-        id: booking.id,
-        bookingNumber: booking.bookingNumber,
-        personId: booking.personId,
-        organizationId: booking.organizationId,
-        sellCurrency: booking.sellCurrency,
-        baseCurrency: booking.baseCurrency,
-        fxRateSetId: null,
-        sellAmountCents: booking.sellAmountCents,
-        baseSellAmountCents: booking.baseSellAmountCents,
+  let proforma: Awaited<ReturnType<typeof issueProformaFromBooking>>
+  try {
+    proforma = await issueProformaFromBooking(
+      db,
+      proformaInput,
+      {
+        booking: {
+          id: booking.id,
+          bookingNumber: booking.bookingNumber,
+          personId: booking.personId,
+          organizationId: booking.organizationId,
+          sellCurrency: booking.sellCurrency,
+          baseCurrency: booking.baseCurrency,
+          fxRateSetId: null,
+          sellAmountCents: booking.sellAmountCents,
+          baseSellAmountCents: booking.baseSellAmountCents,
+        },
+        items: bookingItemRows.map((item) => ({
+          id: item.id,
+          title: item.title,
+          quantity: item.quantity,
+          unitSellAmountCents: item.unitSellAmountCents,
+          totalSellAmountCents: item.totalSellAmountCents,
+        })),
       },
-      items: bookingItemRows.map((item) => ({
-        id: item.id,
-        title: item.title,
-        quantity: item.quantity,
-        unitSellAmountCents: item.unitSellAmountCents,
-        totalSellAmountCents: item.totalSellAmountCents,
-      })),
-    },
-    { eventBus },
-  )
+      { eventBus },
+    )
+  } catch (err) {
+    if (err instanceof InvoiceNumberAllocationError && err.scope === "proforma") {
+      throw bankTransferProformaSeriesError()
+    }
+    throw err
+  }
+
+  await markAwaitingPayment(db, booking)
 
   // Create a payment session targeting the booking + proforma so the
   // operator can mark it received via the existing
@@ -476,6 +498,15 @@ async function startBankTransferCheckout(
       dueAt: dueDate,
     },
   }
+}
+
+async function ensureBankTransferProformaPrerequisites(db: PostgresJsDatabase): Promise<void> {
+  const series = await financeService.resolveDefaultInvoiceNumberSeries(db, "proforma")
+  if (!series) throw bankTransferProformaSeriesError()
+}
+
+function bankTransferProformaSeriesError(): CatalogCheckoutStartError {
+  return new CatalogCheckoutStartError("bank_transfer_proforma_number_series_missing", 422)
 }
 
 /**

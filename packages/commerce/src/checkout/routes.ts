@@ -12,7 +12,7 @@
  * (voyant#2114 — commerce checkout sub-batch). The request body reuses the
  * existing `checkoutStartSchema`; the success response documents the
  * `CatalogCheckoutStartResult` discriminated union. The typed
- * `CatalogCheckoutStartError` status union (404/409/500/502) is inlined per the
+ * `CatalogCheckoutStartError` status union (404/409/422/500/502) is inlined per the
  * single leg. The factory returns an `OpenAPIHono` so the build-time
  * `mergeLazyOpenApiPaths` replay can read its `.openapi()` registry (a plain
  * `Hono` carries no registry and would be skipped).
@@ -105,6 +105,10 @@ const checkoutStartRoute = createRoute({
     },
     409: {
       description: "Hold expired",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    422: {
+      description: "Checkout setup is incomplete",
       content: { "application/json": { schema: errorResponseSchema } },
     },
     500: {
