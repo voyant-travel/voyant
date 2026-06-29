@@ -9,7 +9,26 @@
     "starters/operator/scripts/backfill-custom-fields.ts",
     // Link definitions are generator input for `voyant db sync-links
     // --emit-drizzle`; the generated table schema is migrated separately.
-    "starters/operator/src/links/index.ts"
+    "starters/operator/src/links/index.ts",
+    // The federated starter manifest is loaded by CLI/schema tooling, not
+    // imported by the runtime app graph.
+    "starters/federated-operator/voyant.config.ts",
+    // GitHub Actions selects k6 scenarios by string interpolation in
+    // .github/workflows/load-test.yml; scenario imports keep shared helpers live.
+    "scripts/load/storefront-firehose.js",
+    "scripts/load/payday-spike.js",
+    "scripts/load/mixed.js",
+    // One-off migration ownership helper kept as an operator-run script.
+    "scripts/migrations/scaffold-package-migrations.mjs",
+    // Migration collector validation harnesses are documented architecture
+    // evidence and run directly against throwaway databases.
+    "spikes/d1-migration-collector/run.mjs",
+    "spikes/d2-migration-collector/run.mjs",
+    // Workflow examples are compiled by `pnpm --filter @voyant-travel/workflows
+    // build:examples`; simple-greeting is a standalone CLI demo workflow.
+    "packages/workflows/examples/drive.ts",
+    "packages/workflows/examples/simple-greeting.ts",
+    "packages/workflows/examples-dist/simple-greeting.js"
   ],
   "dynamicallyLoaded": [
     // Deployment-local generated Drizzle schema consumed through config string
