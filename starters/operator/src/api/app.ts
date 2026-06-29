@@ -1,3 +1,4 @@
+import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { createVoyantApp } from "@voyant-travel/framework"
 import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
@@ -12,6 +13,7 @@ import {
   deploymentLocalExtensions,
   deploymentLocalModules,
 } from "./composition"
+import { createBulkReindexProductsService } from "./lib/bulk-reindex-service"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
 import { channelPushBundle } from "./routes/channel-push"
@@ -102,6 +104,15 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
     "/v1/public/payment-policy",
   ],
   plugins: [
+    {
+      name: "operator-promotions-runtime",
+      bootstrap: ({ bindings, container }) => {
+        container.register(
+          BULK_REINDEX_SERVICE_KEY,
+          createBulkReindexProductsService(bindings as CloudflareBindings),
+        )
+      },
+    },
     // bookingScheduleBundle subscribes to booking.confirmed BEFORE
     // legal's auto-generate-contract subscriber so the rendered
     // contract reads the freshly-written deposit/balance rows.

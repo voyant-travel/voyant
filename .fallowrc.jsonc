@@ -1,5 +1,21 @@
 {
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    // Drizzle CLI loads this config by path when regenerating the framework
+    // migration bundle; it is not imported by runtime code.
+    "starters/operator/drizzle.framework-bundle.config.ts",
+    // One-time operator upgrade script referenced by the custom-fields
+    // retirement migration/docs and run directly with tsx.
+    "starters/operator/scripts/backfill-custom-fields.ts",
+    // Link definitions are generator input for `voyant db sync-links
+    // --emit-drizzle`; the generated table schema is migrated separately.
+    "starters/operator/src/links/index.ts"
+  ],
+  "dynamicallyLoaded": [
+    // Deployment-local generated Drizzle schema consumed through config string
+    // paths in `voyant.config.ts` and Drizzle migration configs.
+    "starters/operator/drizzle.links.generated.ts"
+  ],
   "ignorePatterns": [
     "apps/agent-control-plane/**",
     "apps/agent-runner/**",
