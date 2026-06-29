@@ -62,6 +62,24 @@ describe("frameworkComposition policy injection", () => {
     )
   })
 
+  it("passes injected finance payment-schedule line format to the standard finance module", () => {
+    frameworkComposition.modules["@voyant-travel/finance"]?.(
+      compositionContext({ financePaymentScheduleLineDescriptionFormat: "product_only" }),
+    )
+
+    expect(mocks.createFinanceHonoModule).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentScheduleLineDescriptionFormat: "product_only" }),
+    )
+  })
+
+  it("leaves finance payment-schedule line format unset by default", () => {
+    frameworkComposition.modules["@voyant-travel/finance"]?.(compositionContext())
+
+    expect(mocks.createFinanceHonoModule).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentScheduleLineDescriptionFormat: undefined }),
+    )
+  })
+
   it("passes injected notifications auto-dispatch policy to the standard notifications module", () => {
     const autoConfirmAndDispatch = {
       enabled: false,
