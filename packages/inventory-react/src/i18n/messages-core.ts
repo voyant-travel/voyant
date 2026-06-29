@@ -188,6 +188,7 @@ export type ProductsUiCoreMessages = {
       taxClass: string
       contractTemplate: string
       visibility: string
+      activated: string
       capacityMode: string
       timezone: string
       pax: string

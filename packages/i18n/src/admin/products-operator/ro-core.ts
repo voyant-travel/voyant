@@ -57,6 +57,13 @@ export const operatorAdminProductsMessagesRoCore = {
   tagInputPlaceholder: "Scrie o eticheta si apasa Enter",
   statusLabel: "Status",
   bookingModeLabel: "Mod rezervare",
+  visibilityLabel: "Vizibilitate",
+  visibilityPublic: "Public",
+  visibilityPrivate: "Privat",
+  visibilityHidden: "Ascuns",
+  activatedLabel: "Vizibil pe site",
+  activatedHint:
+    "Indexurile storefront pentru clienti includ produsele active doar cand aceasta optiune este pornita.",
   productTypeLabel: "Tip produs",
   productTypeNone: "Niciunul",
   taxClassLabel: "Clasa de taxe",

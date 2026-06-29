@@ -203,6 +203,7 @@ export const productsUiCoreEn = {
       taxClass: "Tax Class",
       contractTemplate: "Contract Template",
       visibility: "Visibility",
+      activated: "Visible on site",
       capacityMode: "Capacity Mode",
       timezone: "Timezone",
       pax: "Pax",

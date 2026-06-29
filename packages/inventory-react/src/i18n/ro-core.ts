@@ -203,6 +203,7 @@ export const productsUiCoreRo = {
       taxClass: "Clasa fiscala",
       contractTemplate: "Sablon contract",
       visibility: "Vizibilitate",
+      activated: "Vizibil pe site",
       capacityMode: "Mod capacitate",
       timezone: "Fus orar",
       pax: "Pax",
