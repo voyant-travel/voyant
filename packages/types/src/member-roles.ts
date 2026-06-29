@@ -44,6 +44,8 @@ const EDITOR_READ_WRITE_RESOURCES = [
   "catalog",
   "products",
   "bookings",
+  "quotes",
+  "trips",
   "crm",
   "availability",
   "pricing",
