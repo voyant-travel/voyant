@@ -11,6 +11,7 @@ import { useSupplierPicker } from "../use-supplier-picker.js"
  * supplier picker (search + inline create) through the suppliers package's
  * own client — see {@link useSupplierPicker}.
  */
+// fallow-ignore-next-line unused-export
 export default function SupplierInvoicesIndexPage(_props: AdminRoutePageProps) {
   const navigateTo = useAdminNavigate()
   const { searchSuppliers, createSupplier } = useSupplierPicker()

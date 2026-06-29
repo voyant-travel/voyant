@@ -10,6 +10,7 @@ import { InvoicesPage } from "../../components/invoices-page.js"
  * `invoice.detail` semantic destination (packaged-admin RFC §4.7), so the
  * page stays host-agnostic — no router import, no route file in the host.
  */
+// fallow-ignore-next-line unused-export
 export default function FinanceInvoicesIndexRoutePage() {
   const navigateTo = useAdminNavigate()
 

@@ -14,6 +14,7 @@ import { RecordPaymentDialog } from "../record-payment-dialog.js"
  * the record-payment dialog, and resolves row activation through the shared
  * `payment.detail` semantic destination (packaged-admin RFC §4.7).
  */
+// fallow-ignore-next-line unused-export
 export default function FinancePaymentsIndexRoutePage() {
   const navigateTo = useAdminNavigate()
   const [supplierSearch, setSupplierSearch] = useState("")

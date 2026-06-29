@@ -492,5 +492,4 @@ export {
 export {
   getInvoiceActionLedgerQueryOptions,
   getPaymentSessionActionLedgerQueryOptions,
-  type UseFinanceActionLedgerOptions,
 } from "./query-options-action-ledger.js"

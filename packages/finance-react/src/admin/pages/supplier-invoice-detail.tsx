@@ -44,6 +44,7 @@ function openInNewTab(url: string): void {
  *   through the finance API origin and the `supplierInvoice.list`
  *   destination.
  */
+// fallow-ignore-next-line unused-export
 export default function SupplierInvoiceDetailRoutePage({ params }: AdminRoutePageProps) {
   const id = params.id ?? ""
   const navigateTo = useAdminNavigate()
