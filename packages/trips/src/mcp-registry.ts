@@ -2,8 +2,6 @@
  * Transport-agnostic registry for trips agent tools.
  */
 
-import type { z } from "zod"
-
 import type { McpToolContext, McpToolDefinition, McpToolResult } from "./mcp-contract.js"
 import { McpToolError } from "./mcp-contract.js"
 
@@ -135,7 +133,3 @@ export function enforceAudienceAuthorization(
     { actor, requestedAudiences },
   )
 }
-
-// Re-export zod for tool authors who want to define schemas without
-// adding a separate dep.
-export type { z }

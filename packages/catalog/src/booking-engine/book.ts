@@ -473,6 +473,3 @@ function serializeQuote(quote: SelectCatalogQuote): Record<string, unknown> {
     expires_at: quote.expires_at,
   }
 }
-
-// Re-export for callers that read the snapshot row shape directly.
-export type { SelectBookingCatalogSnapshot }

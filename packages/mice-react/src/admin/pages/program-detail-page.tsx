@@ -11,6 +11,7 @@ import { ProgramDetailPage } from "../../components/program-detail-page.js"
  * rooming / RFP surfaces here. The route is registered with the
  * `mice.program.detail` destination so other surfaces can link to it.
  */
+// fallow-ignore-next-line unused-export
 export default function ProgramDetailRoute({ params }: AdminRoutePageProps) {
   const programId = params.id ?? ""
   if (!programId) {

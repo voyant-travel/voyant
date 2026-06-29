@@ -8,10 +8,7 @@ import { useVoyantAuthContext } from "../provider.js"
 import { authQueryKeys } from "../query-keys.js"
 import { useUpdateAccountProfile } from "./use-update-account-profile.js"
 
-export type {
-  UpdateAccountProfileInput,
-  UpdateAccountProfileResult,
-} from "./use-update-account-profile.js"
+export type { UpdateAccountProfileInput } from "./use-update-account-profile.js"
 export {
   updateAccountProfile,
   useUpdateAccountProfile,
