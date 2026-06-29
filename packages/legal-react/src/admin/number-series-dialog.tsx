@@ -41,7 +41,7 @@ const seriesFormSchema = z.object({
 type FormValues = z.input<typeof seriesFormSchema>
 type FormOutput = z.output<typeof seriesFormSchema>
 
-export type NumberSeriesData = LegalContractNumberSeriesRecord
+type NumberSeriesData = LegalContractNumberSeriesRecord
 
 type NumberSeriesDialogProps = {
   open: boolean

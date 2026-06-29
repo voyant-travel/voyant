@@ -100,7 +100,7 @@ export function objectToEntries(record: Record<string, unknown> | null | undefin
   }))
 }
 
-export function parseLooseValue(value: string) {
+function parseLooseValue(value: string) {
   const trimmed = value.trim()
   if (!trimmed) return undefined
   if (trimmed === "true") return true
