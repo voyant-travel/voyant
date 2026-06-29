@@ -10,6 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
 } from "@voyant-travel/ui/components"
 import {
   Combobox,
@@ -47,6 +48,8 @@ export type ProductData = {
   exclusionsHtml: string | null
   termsHtml: string | null
   bookingMode: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
+  visibility: "public" | "private" | "hidden"
+  activated: boolean
   productTypeId: string | null
   taxClassId: string | null
   sellCurrency: string
@@ -84,6 +87,8 @@ function initialValues(product: ProductData | undefined) {
       exclusionsHtml: product.exclusionsHtml ?? "",
       termsHtml: product.termsHtml ?? "",
       bookingMode: product.bookingMode,
+      visibility: product.visibility,
+      activated: product.activated,
       productTypeId: product.productTypeId ?? "",
       taxClassId: product.taxClassId ?? "",
       sellCurrency: product.sellCurrency,
@@ -99,6 +104,8 @@ function initialValues(product: ProductData | undefined) {
     exclusionsHtml: "",
     termsHtml: "",
     bookingMode: "itinerary" as const,
+    visibility: "private" as const,
+    activated: false,
     productTypeId: "",
     taxClassId: "",
     sellCurrency: "EUR",
@@ -120,6 +127,8 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
     exclusionsHtml: z.string().optional().nullable(),
     termsHtml: z.string().optional().nullable(),
     bookingMode: z.enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]),
+    visibility: z.enum(["public", "private", "hidden"]),
+    activated: z.boolean(),
     productTypeId: z.string().optional().nullable(),
     taxClassId: z.string().optional().nullable(),
     sellCurrency: z
@@ -147,6 +156,11 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
     { value: "transfer", label: productMessages.bookingModeTransfer },
     { value: "open", label: productMessages.bookingModeOpen },
     { value: "other", label: productMessages.bookingModeOther },
+  ] as const
+  const visibilityOptions = [
+    { value: "public", label: productMessages.visibilityPublic },
+    { value: "private", label: productMessages.visibilityPrivate },
+    { value: "hidden", label: productMessages.visibilityHidden },
   ] as const
 
   const form = useForm<ProductFormValues, unknown, ProductFormOutput>({
@@ -200,6 +214,8 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       exclusionsHtml: values.exclusionsHtml || null,
       termsHtml: values.termsHtml || null,
       bookingMode: values.bookingMode,
+      visibility: values.visibility,
+      activated: values.activated,
       productTypeId: values.productTypeId || null,
       taxClassId: values.taxClassId || null,
       sellCurrency: values.sellCurrency,
@@ -414,6 +430,32 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
             </Select>
           </div>
           <div className="flex flex-col gap-2">
+            <Label>{productMessages.visibilityLabel}</Label>
+            <Select
+              value={form.watch("visibility")}
+              onValueChange={(v) =>
+                form.setValue("visibility", v as ProductFormValues["visibility"], {
+                  shouldDirty: true,
+                })
+              }
+              items={visibilityOptions}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {visibilityOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
             <Label>{productMessages.productTypeLabel}</Label>
             <Select
               value={form.watch("productTypeId") ?? ""}
@@ -439,6 +481,19 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex flex-col gap-2 rounded-md border p-3">
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="product-detail-activated">{productMessages.activatedLabel}</Label>
+              <Switch
+                id="product-detail-activated"
+                checked={form.watch("activated")}
+                onCheckedChange={(checked) =>
+                  form.setValue("activated", checked, { shouldDirty: true })
+                }
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">{productMessages.activatedHint}</p>
           </div>
         </div>
 
