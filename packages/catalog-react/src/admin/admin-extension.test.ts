@@ -1,3 +1,4 @@
+import type * as React from "react"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -106,6 +107,26 @@ describe("packaged catalog admin hosts", () => {
     ]) {
       expect(typeof host).toBe("function")
     }
+  })
+
+  it("routes products detail through the generic sourced catalog detail host", () => {
+    const element = ProductDetailHost({
+      productId: "cdmi_demo_dynamic_pkg_20260629",
+      adults: 2,
+      nights: 7,
+      locale: "en-GB",
+    }) as React.ReactElement<{
+      surface: string
+      id: string
+      locale?: string
+    }>
+
+    expect(element.type).toBe(VerticalDetailHost)
+    expect(element.props).toMatchObject({
+      surface: "products",
+      id: "cdmi_demo_dynamic_pkg_20260629",
+      locale: "en-GB",
+    })
   })
 })
 
