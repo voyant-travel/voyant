@@ -10,12 +10,6 @@ import {
 import { PersonDetailPage } from "../components/person-detail-page.js"
 import { type PersonDetailBookingsTabContext, personDetailBookingsTabSlot } from "./slots.js"
 
-// The slot id + its context type live in `./slots.js` — a lean,
-// component-free module — so other domains' admin extension factories
-// (evaluated with workspace chrome) can import them without pulling this
-// host into the entry chunk. Re-exported here for backwards compatibility.
-export { type PersonDetailBookingsTabContext, personDetailBookingsTabSlot }
-
 export interface PersonDetailHostProps {
   id: string
 }
