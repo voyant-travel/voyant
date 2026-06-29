@@ -266,7 +266,14 @@ export interface TypesenseIndexerOptions {
   onImportFailure?: (summary: ImportFailureSummary) => void
   /** Number of representative row errors included in summaries. Default 5. */
   importErrorSampleSize?: number
+  /**
+   * Retry delays for Typesense's transient collection-schema update lock.
+   * Default is short exponential backoff; tests may pass zeroes.
+   */
+  collectionUpdateRetryDelaysMs?: readonly number[]
 }
+
+const DEFAULT_COLLECTION_UPDATE_RETRY_DELAYS_MS = [100, 250, 500, 1_000] as const
 
 const TYPESENSE_CAPABILITIES: IndexerCapabilities = {
   supportsKeywordSearch: true,
@@ -276,6 +283,38 @@ const TYPESENSE_CAPABILITIES: IndexerCapabilities = {
   maxVectorsPerDocument: null,
   supportsCrossAudienceFederation: true,
   supportsAdminDenormalization: true,
+}
+
+function sameJson(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+}
+
+function isTransientCollectionUpdateError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err)
+  return (
+    /another collection update operation is in progress/i.test(message) ||
+    (/422/.test(message) && /collection update operation/i.test(message))
+  )
+}
+
+async function retryTransientCollectionUpdate(
+  operation: () => Promise<void>,
+  delaysMs: readonly number[],
+): Promise<void> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await operation()
+      return
+    } catch (err) {
+      if (!isTransientCollectionUpdateError(err) || attempt >= delaysMs.length) {
+        throw err
+      }
+      const delayMs = delaysMs[attempt] ?? 0
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+      }
+    }
+  }
 }
 
 /**
@@ -431,6 +470,8 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
   const importFailureMode = options.importFailureMode ?? "throw"
   const importErrorSampleSize = options.importErrorSampleSize ?? 5
   const reportImportFailure = options.onImportFailure ?? defaultImportFailureReporter
+  const collectionUpdateRetryDelaysMs =
+    options.collectionUpdateRetryDelaysMs ?? DEFAULT_COLLECTION_UPDATE_RETRY_DELAYS_MS
 
   // Inspect an import response for row-level failures. Typesense returns HTTP
   // 200 even when individual rows fail, so without this the index can silently
@@ -510,7 +551,13 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
       if (updates.length > 0) {
         updatePayload.fields = updates as TypesenseFieldSchema[]
       }
-      await client.collections(schema.name).update(updatePayload)
+      if (updates.length === 0 && sameJson(existing.metadata, schema.metadata)) {
+        return
+      }
+      await retryTransientCollectionUpdate(
+        () => client.collections(schema.name).update(updatePayload),
+        collectionUpdateRetryDelaysMs,
+      )
     },
 
     async upsert(slice, documents) {

@@ -8,7 +8,6 @@ import {
   type EventFilterDescriptor,
   type WorkflowDescriptor,
 } from "@voyant-travel/core"
-import { createOutboxEventStore } from "@voyant-travel/db/outbox"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
 import type { Hono } from "hono"
 
@@ -24,6 +23,7 @@ import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
 import { matchesPublicPath, normalizePathname } from "./lib/public-paths.js"
 import { requestScopedEventBus } from "./lib/request-event-bus.js"
+import { createRequestOutboxStore } from "./lib/request-outbox-store.js"
 import { requireAuth } from "./middleware/auth.js"
 import {
   DEFAULT_REQUEST_BODY_LIMIT_BYTES,
@@ -396,15 +396,11 @@ export function mountApp<TBindings extends VoyantBindings>(
   // lazily at capture time. Outbox writes are single statements — the
   // cheap http client on non-transactional surfaces handles them fine.
   const buildOutboxStore = config.outbox
-    ? (c: { get(key: never): unknown }) =>
-        createOutboxEventStore(() => {
-          const requestDb = c.get("db" as never) as VoyantDb | undefined
-          if (!requestDb) {
-            throw new Error(
-              "[voyant] outbox capture needs the per-request db — emit ran before the db middleware",
-            )
-          }
-          return requestDb
+    ? (c: { env: TBindings; get(key: never): unknown }) =>
+        createRequestOutboxStore({
+          env: c.env,
+          operationDbFactory: config.db,
+          requestDb: () => c.get("db" as never) as VoyantDb | undefined,
         })
     : undefined
 
