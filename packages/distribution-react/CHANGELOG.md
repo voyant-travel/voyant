@@ -1,5 +1,12 @@
 # @voyant-travel/distribution-react
 
+## 0.127.2
+
+### Patch Changes
+
+- ddab21f: Point the channel sync UI at the package-owned channel-push admin routes for links, throttling, deliveries, retry, and reconcile requests.
+  - @voyant-travel/distribution@0.127.2
+
 ## 0.127.1
 
 ### Patch Changes
