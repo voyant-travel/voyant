@@ -5,12 +5,10 @@ import {
   listStorefrontSlots,
   type StorefrontSlotResourceAvailability,
   type StorefrontSlotRow,
-  type StorefrontSlotStatus,
 } from "./service-boundary-sql.js"
 
 export type SlotResourceAvailability = StorefrontSlotResourceAvailability
 export type SlotRow = StorefrontSlotRow
-export type SlotStatus = StorefrontSlotStatus
 export {
   countStorefrontSlots as countSlots,
   listDefaultItineraryIdsByProductIds,
