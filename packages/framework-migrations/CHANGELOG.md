@@ -1,5 +1,11 @@
 # @voyant-travel/framework-migrations
 
+## 0.6.1
+
+### Patch Changes
+
+- 40036f5: Fix migration source discovery for schema manifests that contain `file://` URLs, so published starters resolve package-owned `migrations/` folders from installed `@voyant-travel` packages.
+
 ## 0.6.0
 
 ### Minor Changes
