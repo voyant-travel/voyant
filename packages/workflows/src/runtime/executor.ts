@@ -6,17 +6,11 @@
 
 import type { SerializedError } from "../protocol/index.js"
 import { durationToMs, type RateLimiter } from "../rate-limit/index.js"
-import type { RunStatus, RunTrigger, WaitpointKind } from "../types.js"
+import type { RunTrigger, WaitpointKind } from "../types.js"
 import type { StepOptions, WorkflowDefinition } from "../workflow.js"
 import { buildCtx, type RuntimeCallbacks, type RuntimeEnvironment } from "./ctx.js"
 import { createClock, createRandom } from "./determinism.js"
-import {
-  isCompensateRequested,
-  isRunCancelled,
-  isWaitpointPending,
-  RunCancelledSignal,
-  WaitpointPendingSignal,
-} from "./errors.js"
+import { isCompensateRequested, isRunCancelled, isWaitpointPending } from "./errors.js"
 import type { JournalSlice, StepJournalEntry } from "./journal.js"
 
 export type StepRunner = (
@@ -424,6 +418,3 @@ async function acquireRateLimit(args: {
   }
   await args.limiter.acquire({ key, limit, units, windowMs, onLimit, signal: args.signal })
 }
-
-export type { RunStatus }
-export { RunCancelledSignal, WaitpointPendingSignal }
