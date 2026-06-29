@@ -7,8 +7,12 @@ describe("normalizeOperatorAdminApiUrl", () => {
     ["/api/v1/operations/resources", "/api/v1/admin/operations/resources"],
     ["/api/v1/products", "/api/v1/admin/products"],
     ["/api/v1/markets/markets#active", "/api/v1/admin/markets/markets#active"],
+    ["/api/v1/bookings?limit=25&offset=0", "/api/v1/admin/bookings?limit=25&offset=0"],
+    ["/api/v1/suppliers?limit=25&offset=0", "/api/v1/admin/suppliers?limit=25&offset=0"],
     ["/v1/relationships/organizations", "/v1/admin/relationships/organizations"],
     ["/v1/operations/availability/slots", "/v1/admin/operations/availability/slots"],
+    ["/v1/bookings/bkg_123", "/v1/admin/bookings/bkg_123"],
+    ["/v1/suppliers/sup_123", "/v1/admin/suppliers/sup_123"],
   ])("rewrites package admin paths from %s to %s", (input, expected) => {
     expect(normalizeOperatorAdminApiUrl(input)).toBe(expected)
   })
