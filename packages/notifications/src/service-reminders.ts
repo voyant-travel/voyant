@@ -36,14 +36,9 @@ import type {
 import { listBookingNotificationItems, resolveReminderRecipient } from "./service-shared.js"
 
 export {
-  type BookingEventReminderRuntimeOptions,
   bookingIsPaidInFullForNotification,
   dispatchReminderEventRules,
 } from "./service-reminder-events.js"
-export {
-  queueStageBasedDueReminders,
-  runStageBasedDueReminders,
-} from "./service-reminder-stage-runs.js"
 
 async function sendQueuedBookingPaymentScheduleReminder(
   db: PostgresJsDatabase,

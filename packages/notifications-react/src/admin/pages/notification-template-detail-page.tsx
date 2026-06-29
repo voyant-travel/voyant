@@ -6,6 +6,7 @@ import { NotificationTemplateDetailHost } from "../notification-template-detail-
  * Route page for the `notifications-templates-detail` contribution: binds
  * the matched route's `$id` param onto {@link NotificationTemplateDetailHost}.
  */
+// fallow-ignore-next-line unused-export
 export default function NotificationTemplateDetailPage({ params }: AdminRoutePageProps) {
   return <NotificationTemplateDetailHost id={params.id ?? ""} />
 }

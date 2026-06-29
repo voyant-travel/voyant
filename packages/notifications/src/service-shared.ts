@@ -34,8 +34,6 @@ import type {
   updateNotificationTemplateSchema,
 } from "./validation.js"
 
-export { normalizeNotificationTemplateData } from "./service-template-data.js"
-
 export type NotificationTemplateListQuery = z.infer<typeof notificationTemplateListQuerySchema>
 export type NotificationDeliveryListQuery = z.infer<typeof notificationDeliveryListQuerySchema>
 export type CreateNotificationTemplateInput = z.infer<typeof insertNotificationTemplateSchema>

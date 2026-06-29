@@ -7,6 +7,7 @@ import { NotificationReminderRuleDetailHost } from "../notification-reminder-rul
  * binds the matched route's `$id` param onto
  * {@link NotificationReminderRuleDetailHost}.
  */
+// fallow-ignore-next-line unused-export
 export default function NotificationReminderRuleDetailPage({ params }: AdminRoutePageProps) {
   return <NotificationReminderRuleDetailHost id={params.id ?? ""} />
 }

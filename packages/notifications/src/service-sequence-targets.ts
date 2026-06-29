@@ -44,7 +44,7 @@ export function computeAnchorDateEnvelope(
   }
 }
 
-export type DateEnvelopes = {
+type DateEnvelopes = {
   /** When set, only fetch payment schedules whose `due_date` falls in this range. */
   paymentScheduleDueDate?: { from: string; to: string }
   /** When set, only fetch invoices whose `due_date` falls in this range. */
@@ -60,7 +60,7 @@ const PAYABLE_BOOKING_STATUSES = [
   "in_progress",
 ] as const
 
-export async function fetchOpenPaymentScheduleTargets(
+async function fetchOpenPaymentScheduleTargets(
   db: PostgresJsDatabase,
   envelopes: DateEnvelopes = {},
 ): Promise<ReminderTargetSnapshot[]> {
@@ -98,7 +98,7 @@ export async function fetchOpenPaymentScheduleTargets(
   }))
 }
 
-export async function fetchOpenInvoiceTargets(
+async function fetchOpenInvoiceTargets(
   db: PostgresJsDatabase,
   envelopes: DateEnvelopes = {},
 ): Promise<ReminderTargetSnapshot[]> {

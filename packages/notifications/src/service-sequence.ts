@@ -18,9 +18,6 @@ import { addUtcDays, startOfUtcDay } from "./service-shared.js"
 
 export {
   computeAnchorDateEnvelope,
-  type DateEnvelopes,
-  fetchOpenInvoiceTargets,
-  fetchOpenPaymentScheduleTargets,
   fetchTargetsForRule,
 } from "./service-sequence-targets.js"
 
