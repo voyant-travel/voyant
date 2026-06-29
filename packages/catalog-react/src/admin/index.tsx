@@ -52,8 +52,9 @@ declare module "@voyant-travel/admin" {
     /** A catalog surface's browse page (e.g. Packages, Cruises). */
     "catalog.browse": { surface: CatalogDetailSurface }
     /**
-     * A catalog surface's dedicated detail page. `adults`/`nights` carry the
-     * package search context so live offers match what was searched.
+     * A catalog surface's dedicated detail page. `adults`/`nights` are retained
+     * for older package-offer links; sourced catalog details resolve runtime
+     * availability from the content/slots routes.
      */
     "catalog.detail": {
       surface: CatalogDetailSurface
@@ -112,10 +113,9 @@ export type { ScheduledCatalogHostProps } from "./scheduled-catalog-host.js"
 export type { VerticalDetailHostProps } from "./vertical-detail-host.js"
 
 /**
- * Search context carried onto the product detail page so live offers match
- * what the operator searched (occupancy + length of stay) and the right
- * locale loads. Package-owned so the detail page and its hosts validate the
- * same contract.
+ * Back-compatible search context carried onto product detail URLs. Generic
+ * sourced product detail uses the content/slots routes; `adults`/`nights`
+ * remain accepted so existing package-offer links keep validating.
  */
 export const productDetailSearchSchema = z.object({
   adults: z.coerce.number().int().min(1).optional(),

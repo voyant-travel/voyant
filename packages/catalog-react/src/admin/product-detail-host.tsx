@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  useAdminBreadcrumbs,
-  useAdminHref,
-  useAdminNavigate,
-  useOperatorAdminMessages,
-} from "@voyant-travel/admin"
-import { useState } from "react"
-
-import { ProductDetailPage } from "../components/product-detail-page.js"
+import { VerticalDetailHost } from "./vertical-detail-host.js"
 
 export interface ProductDetailHostProps {
   productId: string
@@ -18,53 +10,14 @@ export interface ProductDetailHostProps {
 }
 
 /**
- * Packaged admin host for `ProductDetailPage` — injects the localized
- * "Packages" label, navigation to the booking journey (pinned to the resolved
- * source when available), and breadcrumbs.
+ * Generic package/product detail host. `/catalog/products/:id` is a catalog
+ * product route, so it uses the same sourced content and booking path as the
+ * tour/excursion detail pages instead of the Connect package-offer endpoint.
  *
- * Proof-of-contract for semantic destinations (packaged-admin RFC §4.7): no
- * host route tree is imported — the `catalog.browse` / `bookingJourney.start`
- * keys declared in `./index.tsx` resolve through the resolvers the workspace
- * shell registered.
+ * `adults`/`nights` remain on the public props for URL/search-param
+ * compatibility with older package-offer links. Generic sourced product detail
+ * resolves availability through catalog slots instead.
  */
-export function ProductDetailHost({ productId, adults, nights, locale }: ProductDetailHostProps) {
-  const resolveHref = useAdminHref()
-  const navigateTo = useAdminNavigate()
-  const productsLabel = useOperatorAdminMessages().nav.catalogProducts
-  const productsHref = resolveHref("catalog.browse", { surface: "products" })
-  const [crumbs, setCrumbs] = useState<Array<{ label: string; href?: string }>>([
-    { label: productsLabel, href: productsHref },
-  ])
-  useAdminBreadcrumbs(crumbs)
-
-  return (
-    <ProductDetailPage
-      productId={productId}
-      adults={adults}
-      nights={nights}
-      locale={locale}
-      productsLabel={productsLabel}
-      productsHref={productsHref}
-      onBreadcrumbs={setCrumbs}
-      // Product detail → the unified journey. Preserve the resolved source
-      // pointer when available; otherwise the journey APIs resolve provenance
-      // server-side from (entityModule, entityId).
-      onBook={(id, source, selection) => {
-        const sourceKind = source.kind?.trim()
-        return navigateTo("bookingJourney.start", {
-          entityModule: "products",
-          entityId: id,
-          ...(sourceKind ? { sourceKind } : {}),
-          ...(source.connectionId ? { sourceConnectionId: source.connectionId } : {}),
-          ...(source.ref ? { sourceRef: source.ref } : {}),
-          ...(selection?.checkIn ? { departureDate: selection.checkIn.slice(0, 10) } : {}),
-          ...(selection?.roomTypeId ? { roomTypeId: selection.roomTypeId } : {}),
-          ...(selection?.ratePlanId ? { ratePlanId: selection.ratePlanId } : {}),
-          ...(selection?.board ? { board: selection.board } : {}),
-          ...(selection?.name ? { entityName: selection.name } : {}),
-          ...(selection?.heroImageUrl ? { entityImageUrl: selection.heroImageUrl } : {}),
-        })
-      }}
-    />
-  )
+export function ProductDetailHost({ productId, locale }: ProductDetailHostProps) {
+  return <VerticalDetailHost surface="products" id={productId} locale={locale} />
 }
