@@ -60,6 +60,16 @@ describe("packageRootOfSchemaPath", () => {
     })
   })
 
+  it("maps an npm file URL to a filesystem package root", () => {
+    const p =
+      "file:///work/app/node_modules/.pnpm/@voyant-travel+db@0.109.4_hash/node_modules/@voyant-travel/db/dist/schema/index.js"
+    expect(packageRootOfSchemaPath(p)).toEqual({
+      rootRel:
+        "/work/app/node_modules/.pnpm/@voyant-travel+db@0.109.4_hash/node_modules/@voyant-travel/db",
+      name: "db",
+    })
+  })
+
   it("maps a plain node_modules path (hoisted, no .pnpm) too", () => {
     expect(
       packageRootOfSchemaPath(
@@ -130,6 +140,29 @@ describe("discoverMigrationSources", () => {
     })
     expect(got.map((s) => s.name)).toEqual(["db", "identity"])
     expect(got.find((s) => s.name === "identity")?.migrationsDir).toBe(join(idR, "migrations"))
+    expect(got.every((s) => s.hasMigrations)).toBe(true)
+  })
+
+  it("resolves migrations from npm file URL schema paths", () => {
+    const dbR =
+      "/work/app/node_modules/.pnpm/@voyant-travel+db@0.109.4_h/node_modules/@voyant-travel/db"
+    const idR =
+      "/work/app/node_modules/.pnpm/@voyant-travel+identity@0.127.0_h/node_modules/@voyant-travel/identity"
+    const fs = fakeFs({
+      pkgs: {
+        [dbR]: { name: "@voyant-travel/db" },
+        [idR]: { name: "@voyant-travel/identity", requires: ["@voyant-travel/db"] },
+      },
+      withJournal: [dbR, idR],
+    })
+    const schema = [`file://${idR}/dist/schema.js`, `file://${dbR}/dist/schema/index.js`]
+    const got = discoverMigrationSources(schema, {
+      baseDir: BASE,
+      deploymentMigrationsDir: DEPLOY_MIGRATIONS,
+      fs,
+    })
+    expect(got.map((s) => s.name)).toEqual(["db", "identity"])
+    expect(got.find((s) => s.name === "db")?.migrationsDir).toBe(join(dbR, "migrations"))
     expect(got.every((s) => s.hasMigrations)).toBe(true)
   })
 

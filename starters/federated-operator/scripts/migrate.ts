@@ -38,8 +38,11 @@ try {
   for (let i = 0; i < discovered.length; i++) {
     const d = discovered[i] as (typeof discovered)[number]
     if (!d.hasMigrations) {
-      console.warn(`migration source '${d.name}' has no migrations folder; skipping.`)
-      continue
+      throw new Error(
+        `migration source '${d.name}' has no migrations folder at ${d.migrationsDir}. ` +
+          "Regenerate the schema list and verify the owning package publishes migrations/*.sql " +
+          "and migrations/meta/_journal.json.",
+      )
     }
     sources.push({
       name: d.name,
