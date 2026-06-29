@@ -144,6 +144,16 @@ describe("computePaymentSchedule", () => {
       { scheduleType: "full", amountCents: 0, currency: "EUR", dueDate: "2026-01-01" },
     ])
   })
+
+  it("falls back to no-deposit instead of throwing for malformed policy JSON", () => {
+    const rows = computePaymentSchedule(
+      { totalCents: 100_000, currency: "EUR", departureDate: "2026-06-15", today: fixedToday },
+      {} as PaymentPolicy,
+    )
+    expect(rows).toEqual([
+      { scheduleType: "full", amountCents: 100_000, currency: "EUR", dueDate: "2026-01-01" },
+    ])
+  })
 })
 
 describe("resolveEffectivePaymentPolicy", () => {
@@ -192,6 +202,25 @@ describe("resolveEffectivePaymentPolicy", () => {
       operatorDefault: noDepositPolicy,
     })
     expect(result.source).toBe("booking")
+  })
+
+  it("skips malformed policy layers and falls back to the next valid layer", () => {
+    const result = resolveEffectivePaymentPolicy({
+      bookingPolicy: {} as PaymentPolicy,
+      listingPolicy: { deposit: {} } as PaymentPolicy,
+      categoryPolicy: fiftyFifty,
+      operatorDefault: noDepositPolicy,
+    })
+    expect(result.source).toBe("category")
+    expect(result.policy).toBe(fiftyFifty)
+  })
+
+  it("falls back to no-deposit when the operator default is malformed", () => {
+    const result = resolveEffectivePaymentPolicy({
+      operatorDefault: {} as PaymentPolicy,
+    })
+    expect(result.source).toBe("operator_default")
+    expect(result.policy).toEqual(noDepositPolicy)
   })
 })
 

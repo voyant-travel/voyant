@@ -53,7 +53,7 @@
 import { bookingItems } from "@voyant-travel/bookings/schema"
 import {
   type CaptureSnapshotInput,
-  captureSnapshotGraph,
+  captureSnapshotGraphIdempotent,
   createIndexerService,
 } from "@voyant-travel/catalog"
 import { recordPromotionRedemptionsForBooking } from "@voyant-travel/commerce"
@@ -314,7 +314,7 @@ export const catalogBridgeBundle: HonoBundle = {
         }
 
         if (inputs.length > 0) {
-          await captureSnapshotGraph(db, data.bookingId, inputs)
+          await captureSnapshotGraphIdempotent(db, data.bookingId, inputs)
         }
       })
     })

@@ -95,7 +95,57 @@ export async function captureSnapshotGraph(
 ): Promise<SelectBookingCatalogSnapshot[]> {
   if (inputs.length === 0) return []
 
-  const rows = inputs.map((input) => ({
+  const rows = buildSnapshotGraphRows(bookingId, inputs)
+
+  const inserted = await db.insert(bookingCatalogSnapshotTable).values(rows).returning()
+  return inserted as SelectBookingCatalogSnapshot[]
+}
+
+/**
+ * Idempotent graph capture for at-least-once event delivery.
+ *
+ * `captureSnapshotGraph` remains strict for commit-time callers: a duplicate
+ * `(booking_id, entity_module, entity_id)` still exposes a logic error. Event
+ * subscribers and outbox drains can use this helper so redelivering the same
+ * `booking.confirmed` event observes the existing immutable rows instead of
+ * failing the subscriber.
+ */
+export async function captureSnapshotGraphIdempotent(
+  db: AnyDrizzleDb,
+  bookingId: string,
+  inputs: ReadonlyArray<Omit<CaptureSnapshotInput, "bookingId">>,
+): Promise<SelectBookingCatalogSnapshot[]> {
+  if (inputs.length === 0) return []
+
+  const rows = buildSnapshotGraphRows(bookingId, inputs)
+  await db
+    .insert(bookingCatalogSnapshotTable)
+    .values(rows)
+    .onConflictDoNothing({
+      target: [
+        bookingCatalogSnapshotTable.booking_id,
+        bookingCatalogSnapshotTable.entity_module,
+        bookingCatalogSnapshotTable.entity_id,
+      ],
+    })
+
+  const requestedKeys = new Set(inputs.map(snapshotGraphKey))
+  const snapshots = await fetchSnapshotsForBooking(db, bookingId)
+  return snapshots.filter((snapshot) =>
+    requestedKeys.has(
+      snapshotGraphKey({
+        entityModule: snapshot.entity_module,
+        entityId: snapshot.entity_id,
+      }),
+    ),
+  )
+}
+
+function buildSnapshotGraphRows(
+  bookingId: string,
+  inputs: ReadonlyArray<Omit<CaptureSnapshotInput, "bookingId">>,
+) {
+  return inputs.map((input) => ({
     id: newId("booking_catalog_snapshot"),
     booking_id: bookingId,
     entity_module: input.entityModule,
@@ -115,10 +165,12 @@ export async function captureSnapshotGraph(
     pricing_currency: input.pricingBasis?.currency,
     pricing_breakdown: input.pricingBasis?.breakdown,
     pricing_applied_offers: input.pricingBasis?.appliedOffers,
+    idempotency_key: input.idempotencyKey,
   }))
+}
 
-  const inserted = await db.insert(bookingCatalogSnapshotTable).values(rows).returning()
-  return inserted as SelectBookingCatalogSnapshot[]
+function snapshotGraphKey(input: Pick<CaptureSnapshotInput, "entityModule" | "entityId">): string {
+  return `${input.entityModule}\0${input.entityId}`
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
