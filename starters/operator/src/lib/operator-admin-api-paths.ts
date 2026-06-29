@@ -3,6 +3,8 @@ const ADMIN_API_PREFIXES = [
   "/v1/operations",
   "/v1/products",
   "/v1/markets",
+  "/v1/bookings",
+  "/v1/suppliers",
 ] as const
 
 function rewriteAdminPath(pathname: string): string {
