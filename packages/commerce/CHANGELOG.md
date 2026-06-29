@@ -1,5 +1,13 @@
 # @voyant-travel/commerce
 
+## 0.19.2
+
+### Patch Changes
+
+- eb9285a: Prevent partial pricing update schemas from reapplying insert defaults to omitted fields.
+- Updated dependencies [db1acc4]
+  - @voyant-travel/products-contracts@0.105.15
+
 ## 0.19.1
 
 ### Patch Changes
