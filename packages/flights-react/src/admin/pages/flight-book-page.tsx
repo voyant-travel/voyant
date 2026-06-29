@@ -29,6 +29,7 @@ function openHrefInNewTab(href: string): void {
  * passenger-contact jump to `person.list` (new tab), and the post-booking
  * landing on `booking.detail` (a flight order confirms into a booking).
  */
+// fallow-ignore-next-line unused-export
 export default function FlightBookRoutePage({ params, search }: AdminRoutePageProps) {
   const navigateTo = useAdminNavigate()
   const resolveHref = useAdminHref()
