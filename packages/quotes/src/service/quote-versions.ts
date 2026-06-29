@@ -37,6 +37,7 @@ type AcceptQuoteVersionInput = z.infer<typeof acceptQuoteVersionSchema>
 type DeclineQuoteVersionInput = z.infer<typeof declineQuoteVersionSchema>
 type ExpireQuoteVersionsInput = z.infer<typeof expireQuoteVersionsSchema>
 
+// fallow-ignore-next-line unused-type
 export interface QuoteVersionProposalReadModel {
   quote: Quote
   quoteVersion: QuoteVersion

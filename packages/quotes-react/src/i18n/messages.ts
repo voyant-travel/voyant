@@ -1,11 +1,11 @@
 // agent-quality: file-size exception -- owner: quotes-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
-export const crmRelationTypes = ["client", "partner", "supplier", "other"] as const
-export const crmRecordStatuses = ["active", "inactive", "archived"] as const
-export const crmActivityTypes = ["note", "call", "email", "meeting", "task", "follow_up"] as const
-export const crmActivityStatuses = ["planned", "done", "cancelled"] as const
-export const crmEntityTypes = ["none", "person", "organization", "quote", "activity"] as const
+const crmRelationTypes = ["client", "partner", "supplier", "other"] as const
+const crmRecordStatuses = ["active", "inactive", "archived"] as const
+const crmActivityTypes = ["note", "call", "email", "meeting", "task", "follow_up"] as const
+const crmActivityStatuses = ["planned", "done", "cancelled"] as const
+const crmEntityTypes = ["none", "person", "organization", "quote", "activity"] as const
 export const crmQuoteStatuses = ["open", "won", "lost", "archived"] as const
-export const crmQuoteVersionStatuses = [
+const crmQuoteVersionStatuses = [
   "draft",
   "sent",
   "accepted",

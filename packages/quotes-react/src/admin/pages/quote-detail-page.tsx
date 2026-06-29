@@ -175,6 +175,7 @@ function serializeDraft(draft: QuoteDraft): string {
  * relationships-react / auth-react; links resolve via the shared
  * `person.detail` / `organization.detail` semantic destinations.
  */
+// fallow-ignore-next-line unused-export
 export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   const id = params.id ?? ""
   const i18n = useCrmUiI18nOrDefault()
