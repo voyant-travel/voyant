@@ -141,7 +141,7 @@ export interface RunBookingDocumentBundleLifecycleInput {
   event: BookingDocumentBundleLifecycleEvent
 }
 
-export interface BookingDocumentBundleLifecycleRuntime {
+interface BookingDocumentBundleLifecycleRuntime {
   eventBus?: EventBus
   attachmentResolver?: BookingDocumentAttachmentResolver
   resolveContext?: (
