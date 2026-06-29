@@ -27,7 +27,7 @@ const draftRowSchema = z.object({
   updated_at: z.string(),
 })
 
-export type DraftRow = z.infer<typeof draftRowSchema>
+type DraftRow = z.infer<typeof draftRowSchema>
 
 export interface UseBookingDraftOptions extends BookingJourneyApiOptions {
   /** Stable draft id — caller generates and persists in URL or

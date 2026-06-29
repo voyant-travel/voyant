@@ -6,7 +6,9 @@
  */
 export {
   __resetEnrichmentFetcherWarnings,
+  // fallow-ignore-next-line unused-type
   type CatalogDeparturePricingRow,
+  // fallow-ignore-next-line unused-type
   type CatalogDetailEnrichment,
   type CatalogEnrichmentFetchers,
   type CatalogEnrichmentFetchersOptions,

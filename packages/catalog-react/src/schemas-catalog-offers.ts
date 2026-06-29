@@ -61,7 +61,7 @@ export type PackageSearchResponse = z.infer<typeof packageSearchResponseSchema>
 
 /* ── package detail (single product) ─────────────────────────────────── */
 
-export const packageOfferFlightSchema = z.object({
+const packageOfferFlightSchema = z.object({
   origin: z.string().nullable(),
   destination: z.string().nullable(),
   departureAt: z.string().nullable(),

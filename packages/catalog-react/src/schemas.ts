@@ -85,5 +85,4 @@ export const catalogSearchResponseSchema = z.object({
 export type CatalogSearchResponse = z.infer<typeof catalogSearchResponseSchema>
 export type CatalogSearchHit = z.infer<typeof searchHitSchema>
 export type CatalogSearchDocument = z.infer<typeof indexerDocumentSchema>
-export type StorefrontCatalogCard = z.infer<typeof storefrontCatalogCardSchema>
 export type CatalogFacetBucket = z.infer<typeof facetBucketSchema>
