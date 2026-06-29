@@ -1,5 +1,13 @@
 # @voyant-travel/catalog
 
+## 0.135.5
+
+### Patch Changes
+
+- 24413e3: Avoid redundant Typesense collection schema patches when the existing collection already matches the desired fields and metadata, and retry transient collection-update conflicts during ensureCollection.
+- Updated dependencies [24413e3]
+  - @voyant-travel/hono@0.118.2
+
 ## 0.135.4
 
 ## 0.135.3

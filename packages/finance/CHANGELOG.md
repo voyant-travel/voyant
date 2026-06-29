@@ -1,5 +1,13 @@
 # @voyant-travel/finance
 
+## 0.137.4
+
+### Patch Changes
+
+- 951409a: Read raw Postgres execute row results when allocating local invoice numbers so active default series resolve correctly during bank-transfer checkout.
+- Updated dependencies [24413e3]
+  - @voyant-travel/hono@0.118.2
+
 ## 0.137.3
 
 ### Patch Changes
