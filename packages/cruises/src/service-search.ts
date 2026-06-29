@@ -25,12 +25,7 @@ import type {
 } from "./service-search-types.js"
 import type { SearchIndexQuery } from "./validation-search.js"
 
-export type {
-  BulkSearchIndexEntry,
-  ExternalAdapterRefreshResult,
-  RebuildResult,
-  SearchIndexQueryResult,
-} from "./service-search-types.js"
+export type { ExternalAdapterRefreshResult } from "./service-search-types.js"
 
 export const cruisesSearchService = {
   // ---------- queries ----------
