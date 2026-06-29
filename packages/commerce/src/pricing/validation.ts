@@ -26,6 +26,22 @@ const currencyCodeSchema = z
 const nullableDateSchema = z.string().date().nullable().optional()
 const moneySchema = z.number().int().min(0).nullable().optional()
 
+type StripDefault<T extends z.core.SomeType> = T extends z.ZodDefault<infer U> ? U : T
+type StripDefaultShape<T extends z.ZodRawShape> = {
+  [K in keyof T]: StripDefault<T[K]>
+}
+
+const stripDefaultsFromShape = <T extends z.ZodRawShape>(shape: T): StripDefaultShape<T> =>
+  Object.fromEntries(
+    Object.entries(shape).map(([key, schema]) => [
+      key,
+      schema instanceof z.ZodDefault ? schema.unwrap() : schema,
+    ]),
+  ) as StripDefaultShape<T>
+
+const partialWithoutDefaults = <T extends z.ZodRawShape>(schema: z.ZodObject<T>) =>
+  z.object(stripDefaultsFromShape(schema.shape)).partial()
+
 export const pricingCategoryCoreSchema = z.object({
   productId: z.string().nullable().optional(),
   optionId: z.string().nullable().optional(),
@@ -45,7 +61,7 @@ export const pricingCategoryCoreSchema = z.object({
 })
 
 export const insertPricingCategorySchema = pricingCategoryCoreSchema
-export const updatePricingCategorySchema = pricingCategoryCoreSchema.partial()
+export const updatePricingCategorySchema = partialWithoutDefaults(pricingCategoryCoreSchema)
 export const pricingCategoryListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
   optionId: z.string().optional(),
@@ -66,7 +82,9 @@ export const pricingCategoryDependencyCoreSchema = z.object({
 })
 
 export const insertPricingCategoryDependencySchema = pricingCategoryDependencyCoreSchema
-export const updatePricingCategoryDependencySchema = pricingCategoryDependencyCoreSchema.partial()
+export const updatePricingCategoryDependencySchema = partialWithoutDefaults(
+  pricingCategoryDependencyCoreSchema,
+)
 export const pricingCategoryDependencyListQuerySchema = paginationSchema.extend({
   pricingCategoryId: z.string().optional(),
   masterPricingCategoryId: z.string().optional(),
@@ -86,7 +104,7 @@ export const cancellationPolicyCoreSchema = z.object({
 })
 
 export const insertCancellationPolicySchema = cancellationPolicyCoreSchema
-export const updateCancellationPolicySchema = cancellationPolicyCoreSchema.partial()
+export const updateCancellationPolicySchema = partialWithoutDefaults(cancellationPolicyCoreSchema)
 export const cancellationPolicyListQuerySchema = paginationSchema.extend({
   policyType: cancellationPolicyTypeSchema.optional(),
   active: booleanQueryParam.optional(),
@@ -106,7 +124,9 @@ export const cancellationPolicyRuleCoreSchema = z.object({
 })
 
 export const insertCancellationPolicyRuleSchema = cancellationPolicyRuleCoreSchema
-export const updateCancellationPolicyRuleSchema = cancellationPolicyRuleCoreSchema.partial()
+export const updateCancellationPolicyRuleSchema = partialWithoutDefaults(
+  cancellationPolicyRuleCoreSchema,
+)
 export const cancellationPolicyRuleListQuerySchema = paginationSchema.extend({
   cancellationPolicyId: z.string().optional(),
   active: booleanQueryParam.optional(),
@@ -124,7 +144,7 @@ export const priceCatalogCoreSchema = z.object({
 })
 
 export const insertPriceCatalogSchema = priceCatalogCoreSchema
-export const updatePriceCatalogSchema = priceCatalogCoreSchema.partial()
+export const updatePriceCatalogSchema = partialWithoutDefaults(priceCatalogCoreSchema)
 export const priceCatalogListQuerySchema = paginationSchema.extend({
   currencyCode: currencyCodeSchema.optional(),
   catalogType: priceCatalogTypeSchema.optional(),
@@ -151,7 +171,7 @@ export const priceScheduleCoreSchema = z.object({
 })
 
 export const insertPriceScheduleSchema = priceScheduleCoreSchema
-export const updatePriceScheduleSchema = priceScheduleCoreSchema.partial()
+export const updatePriceScheduleSchema = partialWithoutDefaults(priceScheduleCoreSchema)
 export const priceScheduleListQuerySchema = paginationSchema.extend({
   priceCatalogId: z.string().optional(),
   active: booleanQueryParam.optional(),
@@ -180,7 +200,7 @@ export const optionPriceRuleCoreSchema = z.object({
 })
 
 export const insertOptionPriceRuleSchema = optionPriceRuleCoreSchema
-export const updateOptionPriceRuleSchema = optionPriceRuleCoreSchema.partial()
+export const updateOptionPriceRuleSchema = partialWithoutDefaults(optionPriceRuleCoreSchema)
 export const optionPriceRuleListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
   optionId: z.string().optional(),
@@ -208,7 +228,7 @@ export const optionUnitPriceRuleCoreSchema = z.object({
 })
 
 export const insertOptionUnitPriceRuleSchema = optionUnitPriceRuleCoreSchema
-export const updateOptionUnitPriceRuleSchema = optionUnitPriceRuleCoreSchema.partial()
+export const updateOptionUnitPriceRuleSchema = partialWithoutDefaults(optionUnitPriceRuleCoreSchema)
 export const optionUnitPriceRuleListQuerySchema = paginationSchema.extend({
   optionPriceRuleId: z.string().optional(),
   optionId: z.string().optional(),
@@ -231,7 +251,7 @@ export const optionStartTimeRuleCoreSchema = z.object({
 })
 
 export const insertOptionStartTimeRuleSchema = optionStartTimeRuleCoreSchema
-export const updateOptionStartTimeRuleSchema = optionStartTimeRuleCoreSchema.partial()
+export const updateOptionStartTimeRuleSchema = partialWithoutDefaults(optionStartTimeRuleCoreSchema)
 export const optionStartTimeRuleListQuerySchema = paginationSchema.extend({
   optionPriceRuleId: z.string().optional(),
   optionId: z.string().optional(),
@@ -250,7 +270,7 @@ export const optionUnitTierCoreSchema = z.object({
 })
 
 export const insertOptionUnitTierSchema = optionUnitTierCoreSchema
-export const updateOptionUnitTierSchema = optionUnitTierCoreSchema.partial()
+export const updateOptionUnitTierSchema = partialWithoutDefaults(optionUnitTierCoreSchema)
 export const optionUnitTierListQuerySchema = paginationSchema.extend({
   optionUnitPriceRuleId: z.string().optional(),
   active: booleanQueryParam.optional(),
@@ -269,7 +289,7 @@ export const pickupPriceRuleCoreSchema = z.object({
 })
 
 export const insertPickupPriceRuleSchema = pickupPriceRuleCoreSchema
-export const updatePickupPriceRuleSchema = pickupPriceRuleCoreSchema.partial()
+export const updatePickupPriceRuleSchema = partialWithoutDefaults(pickupPriceRuleCoreSchema)
 export const pickupPriceRuleListQuerySchema = paginationSchema.extend({
   optionPriceRuleId: z.string().optional(),
   optionId: z.string().optional(),
@@ -292,7 +312,7 @@ export const dropoffPriceRuleCoreSchema = z.object({
 })
 
 export const insertDropoffPriceRuleSchema = dropoffPriceRuleCoreSchema
-export const updateDropoffPriceRuleSchema = dropoffPriceRuleCoreSchema.partial()
+export const updateDropoffPriceRuleSchema = partialWithoutDefaults(dropoffPriceRuleCoreSchema)
 export const dropoffPriceRuleListQuerySchema = paginationSchema.extend({
   optionPriceRuleId: z.string().optional(),
   optionId: z.string().optional(),
@@ -315,7 +335,7 @@ export const extraPriceRuleCoreSchema = z.object({
 })
 
 export const insertExtraPriceRuleSchema = extraPriceRuleCoreSchema
-export const updateExtraPriceRuleSchema = extraPriceRuleCoreSchema.partial()
+export const updateExtraPriceRuleSchema = partialWithoutDefaults(extraPriceRuleCoreSchema)
 export const extraPriceRuleListQuerySchema = paginationSchema.extend({
   optionPriceRuleId: z.string().optional(),
   optionId: z.string().optional(),
@@ -337,7 +357,9 @@ export const departurePriceOverrideCoreSchema = z.object({
 })
 
 export const insertDeparturePriceOverrideSchema = departurePriceOverrideCoreSchema
-export const updateDeparturePriceOverrideSchema = departurePriceOverrideCoreSchema.partial()
+export const updateDeparturePriceOverrideSchema = partialWithoutDefaults(
+  departurePriceOverrideCoreSchema,
+)
 export const departurePriceOverrideListQuerySchema = paginationSchema.extend({
   departureId: z.string().optional(),
   optionId: z.string().optional(),
