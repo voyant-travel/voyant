@@ -56,6 +56,7 @@ function series(overrides: Record<string, unknown> = {}) {
 function makeDb(options: {
   explicitSeries?: Record<string, unknown> | null
   defaultSeries?: Record<string, unknown> | null
+  executeRowsObject?: boolean
   invoiceInsertError?: unknown
   invoiceLineItemsReturning?: Array<Record<string, unknown>>
 }) {
@@ -64,7 +65,7 @@ function makeDb(options: {
   const insertedInvoiceLineItems: Array<Record<string, unknown>> = []
   const execute = vi.fn(async () => {
     const row = options.explicitSeries ?? options.defaultSeries
-    return row
+    const rows = row
       ? [
           {
             id: row.id,
@@ -78,6 +79,7 @@ function makeDb(options: {
           },
         ]
       : []
+    return options.executeRowsObject ? { rows } : rows
   })
 
   const tx = {
@@ -233,6 +235,31 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
       invoiceNumber: "INV-0010",
       seriesId: "ins_default",
       sequence: 10,
+    })
+  })
+
+  it("allocates when raw Postgres execution returns a rows object", async () => {
+    const { db, insertedInvoices } = makeDb({
+      explicitSeries: series(),
+      executeRowsObject: true,
+    })
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        seriesId: "ins_123",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+      },
+      bookingData,
+    )
+
+    expect(insertedInvoices[0]).toMatchObject({
+      invoiceNumber: "INV-0010",
+      seriesId: "ins_123",
+      sequence: 10,
+      status: "draft",
     })
   })
 
