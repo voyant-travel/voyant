@@ -36,6 +36,8 @@ import { BOOKING_STATUS_ALL } from "../booking-list-constants.js"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { type BookingStatus, bookingStatuses } from "../index.js"
 
+export { BOOKING_STATUS_ALL }
+
 export interface BookingListFiltersPopoverProps {
   open: boolean
   onOpenChange: (open: boolean) => void
