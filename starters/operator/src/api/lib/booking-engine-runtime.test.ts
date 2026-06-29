@@ -80,9 +80,8 @@ describe("ensureBookingEngineRegistry", () => {
   })
 
   it("memoizes the warm per isolate (one enumeration regardless of callers)", async () => {
-    const { ensureBookingEngineRegistry, warmBookingEngineConnectSources } = await loadRuntime()
+    const { ensureBookingEngineRegistry } = await loadRuntime()
     await ensureBookingEngineRegistry(CONNECT_ENV)
-    await warmBookingEngineConnectSources(CONNECT_ENV)
     await ensureBookingEngineRegistry(CONNECT_ENV)
     expect(prepareVoyantConnectSources).toHaveBeenCalledTimes(1)
   })

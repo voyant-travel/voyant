@@ -10,6 +10,10 @@
     // Link definitions are generator input for `voyant db sync-links
     // --emit-drizzle`; the generated table schema is migrated separately.
     "starters/operator/src/links/index.ts",
+    // Generated typed-link route scaffolding consumed by the operator router.
+    // Individual route constants are intentionally codegen exports so the
+    // route maps can reference their `typeof` shapes.
+    "starters/operator/src/admin.routes.generated.tsx",
     // The federated starter manifest is loaded by CLI/schema tooling, not
     // imported by the runtime app graph.
     "starters/federated-operator/voyant.config.ts",

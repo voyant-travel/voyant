@@ -339,7 +339,7 @@ export function BodyMissing({
 // Helpers
 // ─────────────────────────────────────────────────────────────────
 
-export function formatSlotLabel(
+function formatSlotLabel(
   slot: AvailabilitySlot,
   leftLabel: string,
   nightsShort: string,

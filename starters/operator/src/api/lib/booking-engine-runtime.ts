@@ -84,7 +84,7 @@ export function getBookingEngineRegistry(env: BookingEngineEnv): SourceAdapterRe
  * keeps sourced bookings dispatching in the meantime. Resolves to a no-op when
  * Connect is unconfigured (no network). See #2044.
  */
-export function warmBookingEngineConnectSources(env: BookingEngineEnv): Promise<void> {
+function warmBookingEngineConnectSources(env: BookingEngineEnv): Promise<void> {
   if (_connectWarm) return _connectWarm
   const registry = ensureRegistry(env)
   _connectWarm = prepareVoyantConnectSources(env, {

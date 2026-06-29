@@ -432,7 +432,7 @@ export async function hasAuthPermission(
   return auth !== null
 }
 
-export class CurrentUserNotFoundError extends Error {
+class CurrentUserNotFoundError extends Error {
   constructor() {
     super("User not found")
     this.name = "CurrentUserNotFoundError"

@@ -77,7 +77,7 @@ let _configured: CruiseAdapter[] | undefined
  * Voyant Connect is intentionally NOT listed here — its cruise adapters arrive
  * through the catalog plane and are back-filled by `syncVerticalRegistryFromCatalog`.
  */
-export function configuredCruiseAdapters(_env: CruiseAdapterEnv): CruiseAdapter[] {
+function configuredCruiseAdapters(_env: CruiseAdapterEnv): CruiseAdapter[] {
   if (!_configured) {
     const adapters: CruiseAdapter[] = []
     // ── Register deployment-owned cruise connectors here ──────────────────

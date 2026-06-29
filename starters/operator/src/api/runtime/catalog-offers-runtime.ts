@@ -166,7 +166,7 @@ async function resolveAirportLabels(
 }
 
 /** Build the catalog offer route-module options for this deployment. */
-export function createOperatorCatalogOffersRouteModuleOptions(): CatalogOffersRouteModuleOptions {
+function createOperatorCatalogOffersRouteModuleOptions(): CatalogOffersRouteModuleOptions {
   return {
     resolveConnectClient,
     fetchIndexFields,

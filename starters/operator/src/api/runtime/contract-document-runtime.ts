@@ -85,7 +85,7 @@ export function generateContractPdfForBooking(
   return contractDocumentService(env).generate(db, eventBus, bookingId, options)
 }
 
-export function previewContractForBooking(
+function previewContractForBooking(
   env: CloudflareBindings,
   db: PostgresJsDatabase,
   bookingId: string,

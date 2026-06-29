@@ -6,14 +6,11 @@
  * exposes the thin factories the composition wires as the `proposal` extension.
  */
 import {
-  buildQuoteVersionProposalUrl,
   createQuoteProposalAdminRoutes,
   createQuoteProposalPublicRoutes,
 } from "@voyant-travel/quotes"
 
 import { createQuoteProposalRoutesOptions } from "../runtime/quote-proposal-runtime"
-
-export { buildQuoteVersionProposalUrl }
 
 /** Build the admin proposal routes wired with this deployment's options. */
 export function createProposalAdminRoutes() {
