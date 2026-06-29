@@ -33,14 +33,14 @@ export const publicAvailabilitySnapshotQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 })
 
-export const publicPriceCatalogSchema = z.object({
+const publicPriceCatalogSchema = z.object({
   id: z.string(),
   code: z.string(),
   name: z.string(),
   currencyCode: z.string().nullable(),
 })
 
-export const publicPricingTierSchema = z.object({
+const publicPricingTierSchema = z.object({
   id: z.string(),
   minQuantity: z.number().int(),
   maxQuantity: z.number().int().nullable(),
@@ -48,7 +48,7 @@ export const publicPricingTierSchema = z.object({
   sortOrder: z.number().int(),
 })
 
-export const publicOptionUnitPriceSchema = z.object({
+const publicOptionUnitPriceSchema = z.object({
   id: z.string(),
   unitId: z.string(),
   unitName: z.string(),
@@ -62,7 +62,7 @@ export const publicOptionUnitPriceSchema = z.object({
   tiers: z.array(publicPricingTierSchema),
 })
 
-export const publicStartTimeAdjustmentSchema = z.object({
+const publicStartTimeAdjustmentSchema = z.object({
   id: z.string(),
   startTimeId: z.string(),
   label: z.string().nullable(),
@@ -73,7 +73,7 @@ export const publicStartTimeAdjustmentSchema = z.object({
   adjustmentBasisPoints: z.number().int().nullable(),
 })
 
-export const publicOptionPricingRuleSchema = z.object({
+const publicOptionPricingRuleSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
@@ -87,7 +87,7 @@ export const publicOptionPricingRuleSchema = z.object({
   startTimeAdjustments: z.array(publicStartTimeAdjustmentSchema),
 })
 
-export const publicPricedOptionSchema = z.object({
+const publicPricedOptionSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
@@ -102,37 +102,6 @@ export const publicProductPricingSnapshotSchema = z.object({
   productId: z.string(),
   catalog: publicPriceCatalogSchema,
   options: z.array(publicPricedOptionSchema),
-})
-
-export const publicAvailabilityStartTimeSchema = z.object({
-  id: z.string(),
-  label: z.string().nullable(),
-  startTimeLocal: z.string(),
-  durationMinutes: z.number().int().nullable(),
-})
-
-export const publicAvailabilitySlotSchema = z.object({
-  id: z.string(),
-  optionId: z.string().nullable(),
-  dateLocal: z.string(),
-  startsAt: z.string(),
-  endsAt: z.string().nullable(),
-  timezone: z.string(),
-  status: publicAvailabilitySlotStatusSchema,
-  unlimited: z.boolean(),
-  remainingPax: z.number().int().nullable(),
-  remainingResources: z.number().int().nullable(),
-  pastCutoff: z.boolean(),
-  tooEarly: z.boolean(),
-  startTime: publicAvailabilityStartTimeSchema.nullable(),
-})
-
-export const publicAvailabilitySnapshotSchema = z.object({
-  productId: z.string(),
-  slots: z.array(publicAvailabilitySlotSchema),
-  total: z.number().int(),
-  limit: z.number().int(),
-  offset: z.number().int(),
 })
 
 export type PublicProductPricingQuery = z.infer<typeof publicProductPricingQuerySchema>

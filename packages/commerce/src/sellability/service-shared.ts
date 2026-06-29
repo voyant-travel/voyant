@@ -1,23 +1,5 @@
 import { listResponse } from "@voyant-travel/types"
-import type { z } from "zod"
-import type {
-  insertOfferExpirationEventSchema,
-  insertOfferRefreshRunSchema,
-  insertSellabilityExplanationSchema,
-  insertSellabilityPolicyResultSchema,
-  insertSellabilityPolicySchema,
-  offerExpirationEventListQuerySchema,
-  offerRefreshRunListQuerySchema,
-  SellabilityResolveQuery,
-  sellabilityExplanationListQuerySchema,
-  sellabilityPolicyListQuerySchema,
-  sellabilityPolicyResultListQuerySchema,
-  updateOfferExpirationEventSchema,
-  updateOfferRefreshRunSchema,
-  updateSellabilityExplanationSchema,
-  updateSellabilityPolicyResultSchema,
-  updateSellabilityPolicySchema,
-} from "./validation.js"
+import type { SellabilityResolveQuery } from "./validation.js"
 
 export type { SellabilityResolveQuery } from "./validation.js"
 
@@ -44,24 +26,6 @@ export type SellabilitySnapshotItemListQuery = {
   slotId?: string
   unitId?: string
 }
-
-export type SellabilityPolicyListQuery = z.infer<typeof sellabilityPolicyListQuerySchema>
-export type CreateSellabilityPolicyInput = z.infer<typeof insertSellabilityPolicySchema>
-export type UpdateSellabilityPolicyInput = z.infer<typeof updateSellabilityPolicySchema>
-export type SellabilityPolicyResultListQuery = z.infer<
-  typeof sellabilityPolicyResultListQuerySchema
->
-export type CreateSellabilityPolicyResultInput = z.infer<typeof insertSellabilityPolicyResultSchema>
-export type UpdateSellabilityPolicyResultInput = z.infer<typeof updateSellabilityPolicyResultSchema>
-export type OfferRefreshRunListQuery = z.infer<typeof offerRefreshRunListQuerySchema>
-export type CreateOfferRefreshRunInput = z.infer<typeof insertOfferRefreshRunSchema>
-export type UpdateOfferRefreshRunInput = z.infer<typeof updateOfferRefreshRunSchema>
-export type OfferExpirationEventListQuery = z.infer<typeof offerExpirationEventListQuerySchema>
-export type CreateOfferExpirationEventInput = z.infer<typeof insertOfferExpirationEventSchema>
-export type UpdateOfferExpirationEventInput = z.infer<typeof updateOfferExpirationEventSchema>
-export type SellabilityExplanationListQuery = z.infer<typeof sellabilityExplanationListQuerySchema>
-export type CreateSellabilityExplanationInput = z.infer<typeof insertSellabilityExplanationSchema>
-export type UpdateSellabilityExplanationInput = z.infer<typeof updateSellabilityExplanationSchema>
 
 export type ResolvedPriceBreakdown = {
   requestRef: string | null
@@ -95,7 +59,7 @@ export type ResolvedPriceComponent = {
   tierId: string | null
 }
 
-export function weekdayCandidates(dateLocal: string) {
+function weekdayCandidates(dateLocal: string) {
   const weekday = new Date(`${dateLocal}T00:00:00Z`).getUTCDay()
   const names = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
   const longNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
@@ -235,10 +199,6 @@ export function toNumeric(value: string | number | null | undefined) {
   return typeof value === "number" ? value : Number(value)
 }
 
-export function compactObject<T extends Record<string, unknown>>(value: T) {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T
-}
-
 export async function paginate<T extends object>(
   rowsQuery: Promise<T[]>,
   countQuery: Promise<Array<{ count: number }>>,
@@ -252,5 +212,3 @@ export async function paginate<T extends object>(
 export function normalizeDateTime(value: string | null | undefined) {
   return value ? new Date(value) : null
 }
-
-export type PaginatedResult<T extends object> = Awaited<ReturnType<typeof paginate<T>>>

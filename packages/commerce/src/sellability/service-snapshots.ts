@@ -18,7 +18,7 @@ function normalizeDateTime(value: string | null | undefined) {
   return value ? new Date(value) : null
 }
 
-export async function persistResolvedSnapshot(
+async function persistResolvedSnapshot(
   db: PostgresJsDatabase,
   input: {
     query: SellabilityResolveQuery

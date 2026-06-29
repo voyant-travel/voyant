@@ -470,6 +470,3 @@ export async function evaluateOffersForProduct(
     codeStatus,
   }
 }
-
-// Internal exports for unit tests — kept off the public surface.
-export const __test__ = { activeAutoOfferPredicate }

@@ -29,6 +29,7 @@ export function getPricingCategoryQueryOptions(client: FetchWithValidationOption
   })
 }
 
+// fallow-ignore-next-line unused-export
 export function getPricingCategoriesQueryOptions(
   client: FetchWithValidationOptions,
   options: UsePricingCategoriesOptions = {},
@@ -58,6 +59,7 @@ export function getPricingCategoriesQueryOptions(
   })
 }
 
+// fallow-ignore-next-line unused-export
 export function getPricingCategoryDependenciesQueryOptions(
   client: FetchWithValidationOptions,
   options: UsePricingCategoryDependenciesOptions = {},

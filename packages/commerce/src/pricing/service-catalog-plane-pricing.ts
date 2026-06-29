@@ -481,11 +481,3 @@ function toProjectionMap(a: PricingAggregate): ReadonlyMap<string, unknown> {
     ["hasPricing", a.hasPricing],
   ])
 }
-
-// Internal exports for unit tests - kept off the public surface.
-export const __test__ = {
-  aggregatePricing,
-  EMPTY_AGGREGATE,
-  firstPositiveMin,
-  isMissingCatalogPricingDependencyError,
-}

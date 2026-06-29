@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: promotions; storefront offer resolution stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Storefront resolvers — populate the previously-empty
  * `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug`
@@ -535,12 +536,4 @@ function buildConflict(input: {
         ? "The manually applied offer composes with selected auto-applied offers because every selected offer is stackable."
         : "The best discount wins when a manually applied or code offer competes with non-stackable auto-applied offers.",
   }
-}
-
-export const __test__ = {
-  buildConflict,
-  codeStatusToReason,
-  currentValidityStatus,
-  matchesProduct,
-  toStorefrontDto,
 }
