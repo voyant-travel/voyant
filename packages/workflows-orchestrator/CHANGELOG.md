@@ -1,5 +1,12 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.111.11
+
+### Patch Changes
+
+- 5b432f6: Validate self-host resume `seedResults` with the existing bounded, serializable payload checks.
+  - @voyant-travel/workflows@0.111.11
+
 ## 0.111.10
 
 ### Patch Changes
