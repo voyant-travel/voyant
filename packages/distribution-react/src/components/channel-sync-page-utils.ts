@@ -97,6 +97,15 @@ export interface ChannelSyncPageProps {
   className?: string
 }
 
+export const channelPushAdminPaths = {
+  links: "/v1/admin/distribution/links",
+  throttling: "/v1/admin/distribution/throttling",
+  deliveries: "/v1/admin/distribution/deliveries",
+  retry: (bookingId: string) => `/v1/admin/distribution/retry/${encodeURIComponent(bookingId)}`,
+  reconcile: (flow: "bookings" | "availability" | "content") =>
+    `/v1/admin/distribution/reconcile/${flow}`,
+} as const
+
 // Fetch helpers
 
 export async function fetchJson<T>(
