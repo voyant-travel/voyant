@@ -1,5 +1,11 @@
 # catalog-demo-api
 
+## 0.20.34
+
+### Patch Changes
+
+- 9a71c8e: Emit catalog browse fields from demo product metadata so synced demo sources appear in packages, excursions, and tours admin surfaces.
+
 ## 0.20.33
 
 ### Patch Changes
