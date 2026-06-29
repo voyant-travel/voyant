@@ -1,5 +1,12 @@
 # @voyant-travel/ui
 
+## 0.108.3
+
+### Patch Changes
+
+- 4bf1c7b: Release the sidebar scrollbar styling fix so published consumers receive the
+  `no-scrollbar` utility emitted by UI components.
+
 ## 0.108.2
 
 ### Patch Changes
