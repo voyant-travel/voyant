@@ -10,6 +10,7 @@
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
+    "./service-owned-stays": "./src/service-owned-stays.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./draft-shape": "./src/draft-shape.ts",
@@ -82,6 +83,11 @@
         "types": "./dist/service-content-synthesizer.d.ts",
         "import": "./dist/service-content-synthesizer.js",
         "default": "./dist/service-content-synthesizer.js"
+      },
+      "./service-owned-stays": {
+        "types": "./dist/service-owned-stays.d.ts",
+        "import": "./dist/service-owned-stays.js",
+        "default": "./dist/service-owned-stays.js"
       },
       "./catalog-policy": {
         "types": "./dist/catalog-policy.d.ts",

@@ -1,6 +1,7 @@
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -191,6 +192,64 @@ export const ratePlanRoomTypes = pgTable(
   ],
 )
 
+export const ratePlanDailyRates = pgTable(
+  "rate_plan_daily_rates",
+  {
+    id: typeId("rate_plan_daily_rates"),
+    ratePlanId: typeIdRef("rate_plan_id")
+      .notNull()
+      .references(() => ratePlans.id, { onDelete: "cascade" }),
+    roomTypeId: typeIdRef("room_type_id")
+      .notNull()
+      .references(() => roomTypes.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    sellCurrency: text("sell_currency").notNull(),
+    sellAmountCents: integer("sell_amount_cents").notNull(),
+    costCurrency: text("cost_currency"),
+    costAmountCents: integer("cost_amount_cents"),
+    taxAmountCents: integer("tax_amount_cents"),
+    feeAmountCents: integer("fee_amount_cents"),
+    occupancyBasis: text("occupancy_basis").notNull().default("room"),
+    includedAdults: integer("included_adults").notNull().default(2),
+    includedChildren: integer("included_children").notNull().default(0),
+    includedInfants: integer("included_infants").notNull().default(0),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_rate_plan_daily_rates_date").on(table.date),
+    index("idx_rate_plan_daily_rates_room_date").on(table.roomTypeId, table.date),
+    index("idx_rate_plan_daily_rates_rate_plan_date").on(table.ratePlanId, table.date),
+    uniqueIndex("uidx_rate_plan_daily_rates_plan_room_date").on(
+      table.ratePlanId,
+      table.roomTypeId,
+      table.date,
+    ),
+  ],
+)
+
+export const roomTypeDailyInventory = pgTable(
+  "room_type_daily_inventory",
+  {
+    id: typeId("room_type_daily_inventory"),
+    roomTypeId: typeIdRef("room_type_id")
+      .notNull()
+      .references(() => roomTypes.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    capacity: integer("capacity").notNull().default(0),
+    closed: boolean("closed").notNull().default(false),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_room_type_daily_inventory_date").on(table.date),
+    index("idx_room_type_daily_inventory_room_date").on(table.roomTypeId, table.date),
+    uniqueIndex("uidx_room_type_daily_inventory_room_date").on(table.roomTypeId, table.date),
+  ],
+)
+
 export type RoomType = typeof roomTypes.$inferSelect
 export type NewRoomType = typeof roomTypes.$inferInsert
 export type RoomTypeBedConfig = typeof roomTypeBedConfigs.$inferSelect
@@ -201,3 +260,7 @@ export type RatePlan = typeof ratePlans.$inferSelect
 export type NewRatePlan = typeof ratePlans.$inferInsert
 export type RatePlanRoomType = typeof ratePlanRoomTypes.$inferSelect
 export type NewRatePlanRoomType = typeof ratePlanRoomTypes.$inferInsert
+export type RatePlanDailyRate = typeof ratePlanDailyRates.$inferSelect
+export type NewRatePlanDailyRate = typeof ratePlanDailyRates.$inferInsert
+export type RoomTypeDailyInventory = typeof roomTypeDailyInventory.$inferSelect
+export type NewRoomTypeDailyInventory = typeof roomTypeDailyInventory.$inferInsert

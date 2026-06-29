@@ -6,10 +6,10 @@
  * Phase B scope (deliberately narrow):
  *   - `computeQuote` projects the property's accommodation content
  *     into a `BookingDraftShape` with date-range + occupancy
- *     sub-steps and a Rooms accommodation step. Pricing is best-
- *     effort: `nights × room_count × baseRateHint` when the content
- *     surfaces a rate hint; otherwise no pricing returned (the
- *     wizard hides the total until a real quote lands).
+ *     sub-steps and a Rooms accommodation step. Pricing is resolved
+ *     from first-party date-aware owned rates + inventory when the
+ *     draft has a selected room and rate plan; otherwise no pricing
+ *     is returned yet.
  *   - `commit` uses a caller-supplied bridge when the host template has a
  *     resale booking write path. Without one, it fails explicitly.
  *
@@ -26,11 +26,15 @@ import type {
   ComputeQuoteResult,
   OwnedBookingHandler,
   OwnedHandlerContext,
-  RoomOption,
 } from "@voyant-travel/catalog/booking-engine"
 
 import type { AccommodationContent } from "../content-shape.js"
 import { buildAccommodationDraftShape } from "../draft-shape.js"
+import {
+  type OwnedStayQuoteResult,
+  type QuoteOwnedStayInput,
+  quoteOwnedStay,
+} from "../service-owned-stays.js"
 
 interface DraftLike {
   configure?: {
@@ -162,17 +166,20 @@ export function createAccommodationBookingHandler(
       })
 
       const draft = (request.draft ?? {}) as DraftLike
-      const pricing = computeBestEffortPricing(shape, draft)
+      const quoteInput = quoteInputFromDraft(draft, request.scope.currency)
+      const quote = quoteInput ? await quoteOwnedStay(ctx.db, quoteInput) : undefined
+      const pricing = quote?.status === "ok" ? pricingFromOwnedStayQuote(quote) : undefined
 
       return {
-        available: true,
+        available: quote?.status === "ok" ? quote.available : true,
+        invalidReason: quoteInvalidReason(quote),
         pricing,
         shape,
       }
     },
 
     async commit(
-      _ctx: OwnedHandlerContext,
+      ctx: OwnedHandlerContext,
       request: CommitOwnedRequest,
     ): Promise<CommitOwnedResult> {
       if (!options.commitBridge) {
@@ -244,21 +251,6 @@ export function createAccommodationBookingHandler(
         })
       }
 
-      // Per-night rate hint from the draft's pricing breakdown
-      // (computed by the handler earlier). The bridge expects
-      // `dailyRates[]` with one entry per night — we replicate the
-      // averaged hint across nights as a placeholder; production
-      // needs supplier-provided rate-plan rows.
-      const nights = nightsBetween(range.checkIn, range.checkOut)
-      const totalCents = readPricingTotalCents(request.pricing)
-      const perNightCents =
-        nights > 0 && totalCents > 0 ? Math.round(totalCents / nights / firstRoom.quantity) : 0
-      const currency = readPricingCurrency(request.pricing) ?? "EUR"
-      const dailyRates = Array.from({ length: nights }, () => ({
-        sellCurrency: currency,
-        sellAmountCents: perNightCents,
-      }))
-
       // The journey now surfaces rate-plan choice via the descriptor's
       // `RoomOption.ratePlans`. When the user hasn't picked one — e.g.
       // the property has no rate plans configured — the commit fails
@@ -274,17 +266,42 @@ export function createAccommodationBookingHandler(
         }
       }
 
-      const bridge = await options.commitBridge({
-        propertyId: request.entityId,
+      const quote = await quoteOwnedStay(ctx.db, {
         roomTypeId: firstRoom.optionUnitId,
         ratePlanId: firstRoom.ratePlanId,
+        checkIn: range.checkIn,
+        checkOut: range.checkOut,
+        roomCount: firstRoom.quantity,
+        occupancy: { adults, children, infants },
+        currency: readPricingCurrency(request.pricing),
+      })
+      if (quote.status !== "ok" || !quote.available) {
+        return {
+          status: "failed",
+          orderRef: "",
+          upstreamPayload: {
+            reason: quote.status === "ok" ? "accommodation_commit_not_available" : quote.status,
+          },
+        }
+      }
+
+      const bridge = await options.commitBridge({
+        propertyId: quote.propertyId,
+        roomTypeId: quote.roomTypeId,
+        ratePlanId: quote.ratePlanId,
+        mealPlanId: quote.mealPlanId,
         checkInDate: range.checkIn,
         checkOutDate: range.checkOut,
         roomCount: firstRoom.quantity,
         adults,
         children,
         infants,
-        dailyRates,
+        dailyRates: quote.nightlyRates.map((rate) => ({
+          sellCurrency: rate.sellCurrency,
+          sellAmountCents: rate.sellAmountCents,
+          costCurrency: rate.costCurrency,
+          costAmountCents: rate.costAmountCents,
+        })),
         personId: extractPersonId(request.party),
         organizationId: extractOrganizationId(request.party),
         contact,
@@ -323,78 +340,59 @@ export function createAccommodationBookingHandler(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Pricing heuristic
-// ─────────────────────────────────────────────────────────────────
-
-function computeBestEffortPricing(
-  shape: BookingDraftShape,
+function quoteInputFromDraft(
   draft: DraftLike,
-):
-  | {
-      base_amount: number
-      taxes: number
-      fees: number
-      surcharges: number
-      currency: string
-      breakdown: Record<string, unknown>
-    }
-  | undefined {
+  currency: string | undefined,
+): QuoteOwnedStayInput | undefined {
   const range = draft.configure?.dateRange
-  if (!range?.checkIn || !range?.checkOut) return undefined
-
-  const nights = nightsBetween(range.checkIn, range.checkOut)
-  if (nights <= 0) return undefined
-
-  const rooms = draft.accommodation?.rooms ?? []
-  const totalRooms = rooms.length === 0 ? 1 : rooms.reduce((sum, r) => sum + r.quantity, 0)
-  if (totalRooms <= 0) return undefined
-
-  // Pick the cheapest available room option's hint (when surfaced).
-  // The journey's Configure step doesn't pin a rate until the user
-  // picks a room — this is just a starter total.
-  const roomOptions = (shape.accommodation?.roomOptions ?? []) as ReadonlyArray<RoomOption>
-  const hint = roomOptions
-    .map((r) => r.baseRateHint ?? 0)
-    .filter((n) => n > 0)
-    .sort((a, b) => a - b)[0]
-  if (!hint) return undefined
-
-  const totalCents = hint * nights * totalRooms
+  const firstRoom = draft.accommodation?.rooms?.[0]
+  if (!range?.checkIn || !range?.checkOut || !firstRoom?.ratePlanId) return undefined
   return {
-    base_amount: totalCents,
+    roomTypeId: firstRoom.optionUnitId,
+    ratePlanId: firstRoom.ratePlanId,
+    checkIn: range.checkIn,
+    checkOut: range.checkOut,
+    roomCount: firstRoom.quantity,
+    occupancy: {
+      adults: draft.configure?.pax?.adult ?? draft.travelers?.length ?? 1,
+      children: draft.configure?.pax?.child ?? 0,
+      infants: draft.configure?.pax?.infant ?? 0,
+    },
+    currency,
+  }
+}
+
+function pricingFromOwnedStayQuote(
+  quote: Extract<OwnedStayQuoteResult, { status: "ok" }>,
+): NonNullable<ComputeQuoteResult["pricing"]> {
+  return {
+    base_amount: quote.totalAmountCents,
     taxes: 0,
     fees: 0,
     surcharges: 0,
-    // Currency is unknown until the rate plan is picked — fall back
-    // to EUR as the most common storefront default. Real commits
-    // override at quote time.
-    currency: "EUR",
+    currency: quote.currency,
     breakdown: {
-      lines: [
-        {
-          kind: "accommodations",
-          label: `${totalRooms} room × ${nights} night${nights === 1 ? "" : "s"}`,
-          quantity: nights * totalRooms,
-          unitAmount: hint,
-          totalAmount: totalCents,
-        },
-      ],
-      subtotal: totalCents,
+      lines: quote.nightlyRates.map((rate) => ({
+        kind: "accommodations",
+        label: rate.date,
+        quantity: rate.quantity,
+        unitAmount: rate.sellAmountCents,
+        totalAmount: rate.totalAmountCents,
+      })),
+      subtotal: quote.totalAmountCents,
       taxTotal: 0,
-      total: totalCents,
-      nights,
-      rooms: totalRooms,
+      total: quote.totalAmountCents,
+      nights: quote.nights,
+      rooms: quote.roomCount,
+      nightlyRates: quote.nightlyRates,
+      availability: quote.availability,
     },
   }
 }
 
-function nightsBetween(checkIn: string, checkOut: string): number {
-  const inDate = new Date(checkIn)
-  const outDate = new Date(checkOut)
-  if (Number.isNaN(inDate.getTime()) || Number.isNaN(outDate.getTime())) return 0
-  const ms = outDate.getTime() - inDate.getTime()
-  return Math.round(ms / (1000 * 60 * 60 * 24))
+function quoteInvalidReason(quote: OwnedStayQuoteResult | undefined): string | undefined {
+  if (!quote || quote.status === "ok") return undefined
+  return quote.status
 }
 
 function extractPersonId(party: Record<string, unknown> | undefined): string | undefined {
@@ -407,13 +405,6 @@ function extractOrganizationId(party: Record<string, unknown> | undefined): stri
   if (!party) return undefined
   const v = party.organizationId
   return typeof v === "string" && v.length > 0 ? v : undefined
-}
-
-function readPricingTotalCents(
-  pricing: { base_amount?: number; taxes?: number } | undefined,
-): number {
-  if (!pricing) return 0
-  return (pricing.base_amount ?? 0) + (pricing.taxes ?? 0)
 }
 
 function readPricingCurrency(pricing: { currency?: string } | undefined): string | undefined {
