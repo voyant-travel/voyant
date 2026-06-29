@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.9.7
+
+### Patch Changes
+
+- d2ec289: Expose a framework provider override for finance payment-schedule line description formatting.
+
 ## 0.9.6
 
 ### Patch Changes
