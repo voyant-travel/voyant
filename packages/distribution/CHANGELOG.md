@@ -1,5 +1,7 @@
 # @voyant-travel/distribution
 
+## 0.127.2
+
 ## 0.127.1
 
 ### Patch Changes
