@@ -1,5 +1,7 @@
 # @voyant-travel/catalog
 
+## 0.135.4
+
 ## 0.135.3
 
 ### Patch Changes

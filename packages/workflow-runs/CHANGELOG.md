@@ -1,5 +1,12 @@
 # @voyant-travel/workflow-runs
 
+## 0.111.12
+
+### Patch Changes
+
+- 4ae4889: Remove an unused runtime package dependency from the workflow-runs manifest.
+  - @voyant-travel/workflows@0.111.12
+
 ## 0.111.11
 
 ### Patch Changes

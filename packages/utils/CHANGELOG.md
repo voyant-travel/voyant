@@ -1,5 +1,11 @@
 # @voyant-travel/utils
 
+## 0.105.5
+
+### Patch Changes
+
+- 6bb0425: Remove an unused direct Liquid dependency from the utils package manifest.
+
 ## 0.105.4
 
 ### Patch Changes
