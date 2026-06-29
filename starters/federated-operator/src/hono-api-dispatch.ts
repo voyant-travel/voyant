@@ -6,7 +6,7 @@ import { createApiDispatch, lazyApp } from "@voyant-travel/worker-runtime"
 import type { FetchApp } from "@voyant-travel/worker-runtime/types"
 import { Hono } from "hono"
 
-export const loadFederatedOperatorApiApp = lazyApp<CloudflareBindings, ExecutionContext>(() =>
+const loadFederatedOperatorApiApp = lazyApp<CloudflareBindings, ExecutionContext>(() =>
   import("./api/app").then((mod) => ({
     fetch: (request, env, ctx) => mod.app.fetch(request, env as CloudflareBindings, ctx),
   })),
@@ -18,20 +18,18 @@ const loadFederatedOperatorAuthHandler = lazyApp<CloudflareBindings, ExecutionCo
   })),
 )
 
-export const loadFederatedOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>(
-  async () => {
-    const authApp = new Hono<{ Bindings: CloudflareBindings }>()
-    authApp.use("*", cors())
-    authApp.use("*", securityHeaders())
-    authApp.use("*", requestBodyLimit({ maxBytes: 1024 * 1024 }))
-    authApp.use("*", rateLimit({ bucket: "auth", max: 10, windowSeconds: 60 }))
-    authApp.all("*", async (c) => {
-      const authHandler = await loadFederatedOperatorAuthHandler()
-      return authHandler.fetch(c.req.raw, c.env, c.executionCtx as ExecutionContext)
-    })
-    return authApp as FetchApp<CloudflareBindings, ExecutionContext>
-  },
-)
+const loadFederatedOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>(async () => {
+  const authApp = new Hono<{ Bindings: CloudflareBindings }>()
+  authApp.use("*", cors())
+  authApp.use("*", securityHeaders())
+  authApp.use("*", requestBodyLimit({ maxBytes: 1024 * 1024 }))
+  authApp.use("*", rateLimit({ bucket: "auth", max: 10, windowSeconds: 60 }))
+  authApp.all("*", async (c) => {
+    const authHandler = await loadFederatedOperatorAuthHandler()
+    return authHandler.fetch(c.req.raw, c.env, c.executionCtx as ExecutionContext)
+  })
+  return authApp as FetchApp<CloudflareBindings, ExecutionContext>
+})
 
 export const federatedOperatorApiDispatch = createApiDispatch<CloudflareBindings, ExecutionContext>(
   {

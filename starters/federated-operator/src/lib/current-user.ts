@@ -1,6 +1,6 @@
 import { createMiddleware, createServerFn } from "@tanstack/react-start"
 
-export type { AuthMode, BootstrapStatus, CurrentUser } from "./current-user-model"
+export type { CurrentUser } from "./current-user-model"
 
 import type { BootstrapStatus, CurrentUser } from "./current-user-model"
 import { getFederatedOperatorStartEnv } from "./operator-start-context"
