@@ -1,5 +1,11 @@
 # @voyant-travel/accommodations
 
+## 0.109.0
+
+### Minor Changes
+
+- 6d3e0a5: Add first-party owned accommodation daily rates, room-night inventory, and a service-backed booking/search quote path.
+
 ## 0.108.3
 
 ### Patch Changes

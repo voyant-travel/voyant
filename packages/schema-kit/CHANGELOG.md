@@ -1,5 +1,11 @@
 # @voyant-travel/schema-kit
 
+## 0.111.1
+
+### Patch Changes
+
+- 6d3e0a5: Add first-party owned accommodation daily rates, room-night inventory, and a service-backed booking/search quote path.
+
 ## 0.111.0
 
 ### Minor Changes

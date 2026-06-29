@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.9.8
+
+### Patch Changes
+
+- Updated dependencies [6d3e0a5]
+  - @voyant-travel/accommodations@0.109.0
+  - @voyant-travel/mice@0.6.2
+
 ## 0.9.7
 
 ### Patch Changes
