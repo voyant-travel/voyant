@@ -20,7 +20,7 @@ export function priceCentsFromString(s: string): number {
   return negative ? -cents : cents
 }
 
-export function passengerCompositionFromPassengers(
+function passengerCompositionFromPassengers(
   passengers: CruiseBookingPassenger[],
 ): ExternalPassengerComposition {
   let adults = 0
@@ -84,11 +84,11 @@ export function assertPassengerCompositionMatchesPassengers(
   return supplied
 }
 
-export function sourceRefKey(ref: SourceRef): string {
+function sourceRefKey(ref: SourceRef): string {
   return JSON.stringify(sortValue(ref))
 }
 
-export function sortValue(value: unknown): unknown {
+function sortValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortValue)
   if (!value || typeof value !== "object") return value
   const out: Record<string, unknown> = {}
