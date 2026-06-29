@@ -4,8 +4,8 @@ export const crmRecordStatuses = ["active", "inactive", "archived"] as const
 export const crmActivityTypes = ["note", "call", "email", "meeting", "task", "follow_up"] as const
 export const crmActivityStatuses = ["planned", "done", "cancelled"] as const
 export const crmEntityTypes = ["none", "person", "organization", "quote", "activity"] as const
-export const crmQuoteStatuses = ["open", "won", "lost", "archived"] as const
-export const crmQuoteVersionStatuses = [
+const crmQuoteStatuses = ["open", "won", "lost", "archived"] as const
+const crmQuoteVersionStatuses = [
   "draft",
   "sent",
   "accepted",

@@ -8,11 +8,11 @@ import { z } from "zod"
  * resource) so we assemble typed schemas from those envelopes here.
  */
 
-export const paginatedEnvelope = listResponseSchema
+const paginatedEnvelope = listResponseSchema
 
-export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })
+const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })
 
-export const listEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: z.array(item) })
+const listEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: z.array(item) })
 
 export const successEnvelope = z.object({ success: z.boolean() })
 
@@ -188,11 +188,10 @@ export type PersonDocumentRecord = z.infer<typeof personDocumentRecordSchema>
 export const personDocumentListResponse = listEnvelope(personDocumentRecordSchema)
 export const personDocumentSingleResponse = singleEnvelope(personDocumentRecordSchema)
 
-export const personDocumentRevealSchema = z.object({
+const personDocumentRevealSchema = z.object({
   documentId: z.string(),
   number: z.string().nullable(),
 })
-export type PersonDocumentReveal = z.infer<typeof personDocumentRevealSchema>
 export const personDocumentRevealResponse = singleEnvelope(personDocumentRevealSchema)
 
 export const customerSignalKindSchema = z.enum([

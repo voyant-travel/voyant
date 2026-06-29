@@ -11,23 +11,6 @@ export function formatCrmDate(i18n: CrmUiI18n, value: string | null | undefined)
   })
 }
 
-export function formatCrmMoney(
-  i18n: CrmUiI18n,
-  cents: number | null | undefined,
-  currency: string | null | undefined,
-): string {
-  if (cents == null) return i18n.messages.common.none
-  const amount = cents / 100
-  try {
-    return i18n.formatNumber(amount, {
-      style: "currency",
-      currency: currency ?? "USD",
-    })
-  } catch {
-    return `${amount.toFixed(2)} ${currency ?? ""}`.trim()
-  }
-}
-
 export function formatCrmRelative(i18n: CrmUiI18n, value: string): string {
   const date = new Date(value)
   const diff = Date.now() - date.getTime()
