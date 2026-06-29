@@ -12,7 +12,7 @@ import type {
   ActionSensitiveReadDetail,
 } from "../../src/schema.js"
 
-export const baseDate = new Date("2026-05-15T10:00:00.000Z")
+const baseDate = new Date("2026-05-15T10:00:00.000Z")
 
 export function makeEntry(overrides: Partial<ActionLedgerEntry> = {}): ActionLedgerEntry {
   return {

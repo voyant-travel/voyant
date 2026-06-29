@@ -29,7 +29,7 @@ import * as React from "react"
 import { useVoyantActionLedgerContext } from "../provider.js"
 import { listWorkflowRuns, type WorkflowRunSummary } from "./admin-api.js"
 
-export const ANY = "__all__"
+const ANY = "__all__"
 export const RISK_ALL = ANY
 export const STATUS_ALL = ANY
 export const PRINCIPAL_TYPE_ALL = ANY

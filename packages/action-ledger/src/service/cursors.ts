@@ -63,7 +63,6 @@ function parseCursorDate(value: Date | string): Date {
 export {
   normalizeListLimit,
   parseCursorDate,
-  serializeCursorDate,
   toActionApprovalListCursor,
   toActionDelegationListCursor,
   toActionLedgerListCursor,
