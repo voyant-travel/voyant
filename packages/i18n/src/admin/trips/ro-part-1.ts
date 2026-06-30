@@ -344,6 +344,12 @@ export const adminTripsMessagesRoPart1 = {
         reservingTrip: "Rezerva calatoria si creeaza linkul de plata…",
         retryReserve: "Reincearca rezervarea",
         reserveAndCreateLink: "Rezerva si creeaza linkul de plata",
+        paymentScheduleDueDateRequired:
+          "Introdu o data scadenta pentru graficul de plata inainte de rezervare.",
+        paymentScheduleSplitRowsRequired:
+          "Introdu sume si date scadente pentru fiecare transa inainte de rezervare.",
+        paymentScheduleSplitTotalMismatch:
+          "Transeele trebuie sa insumeze totalul componentei inainte de rezervare.",
       },
     },
   },

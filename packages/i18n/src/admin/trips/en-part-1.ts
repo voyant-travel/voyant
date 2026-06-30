@@ -340,6 +340,12 @@ export const adminTripsMessagesEnPart1 = {
         reservingTrip: "Reserving trip and creating payment link…",
         retryReserve: "Retry reserve",
         reserveAndCreateLink: "Reserve and create payment link",
+        paymentScheduleDueDateRequired:
+          "Enter a due date for the payment schedule before reserving.",
+        paymentScheduleSplitRowsRequired:
+          "Enter amounts and due dates for every split installment before reserving.",
+        paymentScheduleSplitTotalMismatch:
+          "Split installments must add up to the component total before reserving.",
       },
     },
   },

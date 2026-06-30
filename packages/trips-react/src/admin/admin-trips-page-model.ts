@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: trips-react; composer model helpers stay co-located with the existing tests until the admin composer is split further.
 import type { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
 import { emptyPersonPickerValue } from "@voyant-travel/bookings-react/components/person-picker-section"
 import { emptyVoucherPickerValue } from "@voyant-travel/bookings-react/components/voucher-picker-section"
@@ -22,6 +23,11 @@ import {
 export type AdminComposerMessages = ReturnType<typeof useAdminMessages>["trips"]["adminComposer"]
 
 export const defaultPaymentCurrency = "EUR"
+
+export type ReservePaymentScheduleValidationReason =
+  | "paymentScheduleDueDateRequired"
+  | "paymentScheduleSplitRowsRequired"
+  | "paymentScheduleSplitTotalMismatch"
 
 type ComponentPaymentScheduleRow = {
   scheduleType: "deposit" | "installment" | "balance" | "hold" | "other"
@@ -101,6 +107,74 @@ export function paymentScheduleToRows(
     })
   }
   return rows
+}
+
+export function paymentScheduleReserveValidationReason(
+  components: TripComponent[],
+): ReservePaymentScheduleValidationReason | null {
+  for (const component of components) {
+    if (component.status === "removed" || component.status === "cancelled") continue
+    if (component.kind !== "catalog_booking" || component.bookingId) continue
+
+    const paymentSchedule = explicitPaymentScheduleFromComponent(component)
+    if (!paymentSchedule) continue
+
+    if (paymentSchedule.mode === "full") {
+      if (!paymentSchedule.installments[0]?.dueDate) return "paymentScheduleDueDateRequired"
+      continue
+    }
+
+    if (paymentSchedule.installments.length < 2) return "paymentScheduleSplitRowsRequired"
+    for (const installment of paymentSchedule.installments) {
+      if (!installment.dueDate || installment.amountCents == null) {
+        return "paymentScheduleSplitRowsRequired"
+      }
+    }
+
+    const total = component.componentTotalAmountCents
+    if (typeof total === "number") {
+      const scheduled = paymentSchedule.installments.reduce(
+        (sum, installment) => sum + (installment.amountCents ?? 0),
+        0,
+      )
+      if (scheduled !== total) return "paymentScheduleSplitTotalMismatch"
+    }
+  }
+  return null
+}
+
+function explicitPaymentScheduleFromComponent(
+  component: TripComponent,
+): PaymentScheduleValue | null {
+  const metadata = readRecord(component.metadata)
+  const bookingSetup = readRecord(metadata?.bookingSetup)
+  const paymentSchedule = readRecord(bookingSetup?.paymentSchedule)
+  if (!paymentSchedule) return null
+  const mode = paymentSchedule.mode
+  if (mode !== "full" && mode !== "split") return null
+  const installments = Array.isArray(paymentSchedule.installments)
+    ? paymentSchedule.installments.flatMap((raw) => {
+        const installment = readRecord(raw)
+        if (!installment) return []
+        return [
+          {
+            id: stringFromUnknown(installment.id) || "",
+            amountCents:
+              typeof installment.amountCents === "number" ? installment.amountCents : null,
+            dueDate: stringFromUnknown(installment.dueDate),
+            alreadyPaid: installment.alreadyPaid === true,
+            paymentDate: stringFromUnknown(installment.paymentDate),
+            paymentMethod: stringFromUnknown(installment.paymentMethod) || "bank_transfer",
+            paymentReference: stringFromUnknown(installment.paymentReference) || "",
+          },
+        ]
+      })
+    : []
+
+  return {
+    mode,
+    installments,
+  }
 }
 
 // Returns a single-line audit note persisted on the booking's payment schedule
@@ -551,6 +625,10 @@ export function derivePayerEmail(
 
 function readRecord(value: unknown): Record<string, unknown> | null {
   return isRecord(value) ? value : null
+}
+
+function stringFromUnknown(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

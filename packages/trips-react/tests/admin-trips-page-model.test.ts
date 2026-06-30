@@ -1,9 +1,10 @@
+import type { TripComponent } from "@voyant-travel/trips"
 import { describe, expect, it } from "vitest"
-
 import {
   hydrateBilling,
   hydrateTravelers,
   hydrateVoucher,
+  paymentScheduleReserveValidationReason,
   paymentScheduleToRows,
   tripTravelerRoleFromStored,
 } from "../src/admin/admin-trips-page-model.js"
@@ -91,8 +92,119 @@ describe("admin trips page model", () => {
     ])
   })
 
+  it("allows reserve when an explicit full payment schedule covers the component total", () => {
+    expect(
+      paymentScheduleReserveValidationReason([
+        tripComponentWithPaymentSchedule({
+          mode: "full",
+          installments: [
+            {
+              id: "inst_full",
+              amountCents: null,
+              dueDate: "2026-07-15",
+              alreadyPaid: false,
+              paymentDate: null,
+              paymentMethod: "bank_transfer",
+              paymentReference: "",
+            },
+          ],
+        }),
+      ]),
+    ).toBeNull()
+  })
+
+  it("blocks reserve when split installments no longer match the component total", () => {
+    expect(
+      paymentScheduleReserveValidationReason([
+        tripComponentWithPaymentSchedule({
+          mode: "split",
+          installments: [
+            {
+              id: "inst_1",
+              amountCents: 64950,
+              dueDate: "2026-06-30",
+              alreadyPaid: false,
+              paymentDate: null,
+              paymentMethod: "bank_transfer",
+              paymentReference: "",
+            },
+            {
+              id: "inst_2",
+              amountCents: 64000,
+              dueDate: "2026-07-14",
+              alreadyPaid: false,
+              paymentDate: null,
+              paymentMethod: "bank_transfer",
+              paymentReference: "",
+            },
+          ],
+        }),
+      ]),
+    ).toBe("paymentScheduleSplitTotalMismatch")
+  })
+
+  it("recomputes reserve validation from split back to full immediately", () => {
+    const splitComponent = tripComponentWithPaymentSchedule({
+      mode: "split",
+      installments: [
+        {
+          id: "inst_1",
+          amountCents: null,
+          dueDate: "2026-06-30",
+          alreadyPaid: false,
+          paymentDate: null,
+          paymentMethod: "bank_transfer",
+          paymentReference: "",
+        },
+        {
+          id: "inst_2",
+          amountCents: 129900,
+          dueDate: "2026-07-14",
+          alreadyPaid: false,
+          paymentDate: null,
+          paymentMethod: "bank_transfer",
+          paymentReference: "",
+        },
+      ],
+    })
+    const fullComponent = tripComponentWithPaymentSchedule({
+      mode: "full",
+      installments: [
+        {
+          id: "inst_full",
+          amountCents: null,
+          dueDate: "2026-06-30",
+          alreadyPaid: false,
+          paymentDate: null,
+          paymentMethod: "bank_transfer",
+          paymentReference: "",
+        },
+      ],
+    })
+
+    expect(paymentScheduleReserveValidationReason([splitComponent])).toBe(
+      "paymentScheduleSplitRowsRequired",
+    )
+    expect(paymentScheduleReserveValidationReason([fullComponent])).toBeNull()
+  })
+
   it("falls back to lead role for the first stored traveler", () => {
     expect(tripTravelerRoleFromStored(undefined, 0)).toBe("lead")
     expect(tripTravelerRoleFromStored("unknown", 1)).toBe("adult")
   })
 })
+
+function tripComponentWithPaymentSchedule(paymentSchedule: Record<string, unknown>): TripComponent {
+  return {
+    id: "trcp_123",
+    kind: "catalog_booking",
+    status: "priced",
+    bookingId: null,
+    componentTotalAmountCents: 129900,
+    metadata: {
+      bookingSetup: {
+        paymentSchedule,
+      },
+    },
+  } as TripComponent
+}
