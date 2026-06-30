@@ -1,5 +1,11 @@
 # @voyant-travel/ui
 
+## 0.108.6
+
+### Patch Changes
+
+- f3fd455: Keep the Trips Cruise embarkation field on the same shared accessible date picker path as Flight, and ensure shared calendar days expose named button controls for assistive tooling.
+
 ## 0.108.5
 
 ### Patch Changes
