@@ -7,7 +7,8 @@
  * price changes / expiry) and books the held flight order lives here:
  *   - flight preflight + price-change detection (`validateBeforeReserve`),
  *   - passenger-roster building (DOB / contact fallbacks) + billing mapping,
- *   - reserve (book the held flight order).
+ *   - reserve (book the held flight order),
+ *   - cancellation mapping to the flight connector order.
  *
  * WHY THE FLIGHT ADAPTER IS INJECTED (not imported):
  *
@@ -23,6 +24,10 @@
  * `trips-flight-runtime.ts`.
  */
 import type {
+  FlightCancelReason,
+  FlightCancelResponse,
+} from "@voyant-travel/flights/contract/adapter"
+import type {
   AncillarySelection,
   FlightBookRequest,
   FlightOffer,
@@ -33,6 +38,10 @@ import type {
 
 import { formatTripBillingName, readTripBilling, splitTripBillingName } from "./checkout/index.js"
 import type {
+  CancelComponentInput,
+  CancelComponentResult,
+  ComponentCancellationPreview,
+  ComponentCancellationPreviewInput,
   ReserveComponentInput,
   ReserveComponentPreflightResult,
   ReserveComponentResult,
@@ -54,6 +63,11 @@ export interface FlightComponentAdapter {
     request: { offerId: string; offer?: FlightOffer },
   ): Promise<{ offer: FlightOffer; valid: boolean; invalidReason?: string }>
   bookFlight(ctx: FlightAdapterContext, request: FlightBookRequest): Promise<{ order: FlightOrder }>
+  cancelOrder(
+    ctx: FlightAdapterContext,
+    orderId: string,
+    reason?: FlightCancelReason,
+  ): Promise<FlightCancelResponse>
 }
 
 /** Deployment-supplied, request-scoped flight wiring. */
@@ -70,6 +84,10 @@ export interface FlightComponentAdapterApi {
     input: ReserveComponentInput,
   ): Promise<ReserveComponentPreflightResult | null>
   reserve(input: ReserveComponentInput): Promise<ReserveComponentResult | null>
+  previewCancellation(
+    input: ComponentCancellationPreviewInput,
+  ): Promise<ComponentCancellationPreview>
+  cancel(input: CancelComponentInput): Promise<CancelComponentResult>
 }
 
 /**
@@ -182,7 +200,88 @@ export function createFlightComponentAdapter(
     }
   }
 
-  return { validateBeforeReserve, reserve }
+  async function previewCancellation(
+    input: ComponentCancellationPreviewInput,
+  ): Promise<ComponentCancellationPreview> {
+    return previewFlightCancellation(input)
+  }
+
+  async function cancel(input: CancelComponentInput): Promise<CancelComponentResult> {
+    const component = input.component
+    if (component.kind !== "flight_placeholder") {
+      return { status: "refused", reason: "not_flight_component" }
+    }
+    if (!component.orderId) {
+      return { status: "refused", reason: "missing_flight_order_ref" }
+    }
+
+    const response = await adapter.cancelOrder(
+      adapterContext,
+      component.orderId,
+      toFlightCancelReason(input.reason),
+    )
+    const orderStatus = response.order.status
+    if (orderStatus !== "cancelled") {
+      return {
+        status: "refused",
+        reason: `flight_order_not_cancelled:${orderStatus}`,
+        snapshot: flightCancelSnapshot(response, component),
+      }
+    }
+
+    return {
+      status: "cancelled",
+      refundAmountCents: response.refundedAmount
+        ? moneyToCents(response.refundedAmount.amount)
+        : input.preview.refundAmountCents,
+      refundCurrency: response.refundedAmount?.currency ?? input.preview.refundCurrency,
+      snapshot: flightCancelSnapshot(response, component),
+    }
+  }
+
+  return { validateBeforeReserve, reserve, previewCancellation, cancel }
+}
+
+export function previewFlightCancellation(
+  input: ComponentCancellationPreviewInput,
+): Promise<ComponentCancellationPreview> {
+  const component = input.component
+  if (component.kind !== "flight_placeholder") {
+    return Promise.resolve({
+      componentId: component.id,
+      action: "staff_remediation",
+      currentStatus: component.status,
+      staffActionRequired: true,
+      reason: "not_flight_component",
+    })
+  }
+
+  if (!component.orderId) {
+    return Promise.resolve({
+      componentId: component.id,
+      action: "staff_remediation",
+      currentStatus: component.status,
+      staffActionRequired: true,
+      reason: "missing_flight_order_ref",
+    })
+  }
+
+  return Promise.resolve({
+    componentId: component.id,
+    action: "cancel",
+    currentStatus: component.status,
+    staffActionRequired: false,
+    refundAmountCents: 0,
+    refundCurrency: component.componentCurrency ?? undefined,
+    penaltyAmountCents: 0,
+    policySummary:
+      "Flight supplier cancellation preview is not available; cancellation result is authoritative.",
+    snapshot: {
+      orderId: component.orderId,
+      providerRef: component.providerRef,
+      supplierRef: component.supplierRef,
+    },
+  })
 }
 
 // ── Pure helpers (vertical-agnostic) ────────────────────────────────────────
@@ -190,6 +289,33 @@ export function createFlightComponentAdapter(
 function moneyToCents(amount: string): number {
   const parsed = Number.parseFloat(amount)
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0
+}
+
+function toFlightCancelReason(reason: string | undefined): FlightCancelReason | undefined {
+  if (isFlightCancelReason(reason)) return reason
+  return reason ? "customer_request" : undefined
+}
+
+function isFlightCancelReason(reason: string | undefined): reason is FlightCancelReason {
+  return (
+    reason === "customer_request" ||
+    reason === "schedule_change" ||
+    reason === "operational" ||
+    reason === "fraud"
+  )
+}
+
+function flightCancelSnapshot(
+  response: FlightCancelResponse,
+  component: { orderId: string | null; providerRef: string | null; supplierRef: string | null },
+): Record<string, unknown> {
+  return {
+    orderId: response.order.orderId,
+    orderStatus: response.order.status,
+    providerRef: component.providerRef,
+    supplierRef: component.supplierRef,
+    refundedAmount: response.refundedAmount ?? null,
+  }
 }
 
 function isExpiredOffer(offer: FlightOffer): boolean {

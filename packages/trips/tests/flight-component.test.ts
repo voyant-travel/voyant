@@ -87,6 +87,14 @@ function stubAdapter(over: Partial<FlightComponentAdapter> = {}): FlightComponen
         paymentDeadline: "2026-06-01T00:00:00.000Z",
       } as never,
     })),
+    cancelOrder: vi.fn(async () => ({
+      order: {
+        orderId: "ord_1",
+        status: "cancelled",
+        totalPrice: { amount: "200.00", currency: "EUR" },
+      } as never,
+      refundedAmount: { amount: "200.00", currency: "EUR" },
+    })),
     ...over,
   }
 }
@@ -303,5 +311,131 @@ describe("flight component adapter — reserve passenger mapping", () => {
     const api = createFlightComponentAdapter({ adapter: stubAdapter(), adapterContext: ctx })
     const component = flightComponent({ flightDraft: {} })
     await expect(api.reserve(input(component))).rejects.toThrow("flight_offer_required")
+  })
+})
+
+describe("flight component adapter — cancellation", () => {
+  it("previews a connected flight order cancellation", async () => {
+    const api = createFlightComponentAdapter({ adapter: stubAdapter(), adapterContext: ctx })
+    const component = flightComponent({ flightDraft: { selectedOffer: offer() } })
+    component.orderId = "ord_1"
+    component.providerRef = "VD0001"
+    component.supplierRef = "ord_1"
+
+    const result = await api.previewCancellation({
+      envelope: envelope(),
+      component,
+      requestedAt: new Date("2026-06-01T00:00:00.000Z"),
+      request: {},
+    })
+
+    expect(result).toMatchObject({
+      componentId: "trcp_flight",
+      action: "cancel",
+      staffActionRequired: false,
+      snapshot: {
+        orderId: "ord_1",
+        providerRef: "VD0001",
+        supplierRef: "ord_1",
+      },
+    })
+  })
+
+  it("requires an order id before flight cancellation", async () => {
+    const api = createFlightComponentAdapter({ adapter: stubAdapter(), adapterContext: ctx })
+    const result = await api.previewCancellation({
+      envelope: envelope(),
+      component: flightComponent({ flightDraft: { selectedOffer: offer() } }),
+      requestedAt: new Date("2026-06-01T00:00:00.000Z"),
+      request: {},
+    })
+
+    expect(result).toMatchObject({
+      componentId: "trcp_flight",
+      action: "staff_remediation",
+      reason: "missing_flight_order_ref",
+    })
+  })
+
+  it("calls the flight adapter cancelOrder path for connected orders", async () => {
+    const cancelOrder = vi.fn(async () => ({
+      order: {
+        orderId: "ord_1",
+        status: "cancelled",
+        totalPrice: { amount: "200.00", currency: "EUR" },
+      } as never,
+      refundedAmount: { amount: "150.50", currency: "EUR" },
+    }))
+    const api = createFlightComponentAdapter({
+      adapter: stubAdapter({ cancelOrder }),
+      adapterContext: ctx,
+    })
+    const component = flightComponent({ flightDraft: { selectedOffer: offer() } })
+    component.orderId = "ord_1"
+    component.providerRef = "VD0001"
+    component.supplierRef = "ord_1"
+
+    const result = await api.cancel({
+      envelope: envelope(),
+      component,
+      reason: "schedule_change",
+      requestedAt: new Date("2026-06-01T00:00:00.000Z"),
+      request: {},
+      preview: {
+        componentId: component.id,
+        action: "cancel",
+        currentStatus: component.status,
+        staffActionRequired: false,
+      },
+    })
+
+    expect(cancelOrder).toHaveBeenCalledWith(ctx, "ord_1", "schedule_change")
+    expect(result).toEqual({
+      status: "cancelled",
+      refundAmountCents: 15050,
+      refundCurrency: "EUR",
+      snapshot: {
+        orderId: "ord_1",
+        orderStatus: "cancelled",
+        providerRef: "VD0001",
+        supplierRef: "ord_1",
+        refundedAmount: { amount: "150.50", currency: "EUR" },
+      },
+    })
+  })
+
+  it("refuses cancellation when the supplier order remains active", async () => {
+    const api = createFlightComponentAdapter({
+      adapter: stubAdapter({
+        cancelOrder: vi.fn(async () => ({
+          order: {
+            orderId: "ord_1",
+            status: "confirmed",
+            totalPrice: { amount: "200.00", currency: "EUR" },
+          } as never,
+        })),
+      }),
+      adapterContext: ctx,
+    })
+    const component = flightComponent({ flightDraft: { selectedOffer: offer() } })
+    component.orderId = "ord_1"
+
+    const result = await api.cancel({
+      envelope: envelope(),
+      component,
+      requestedAt: new Date("2026-06-01T00:00:00.000Z"),
+      request: {},
+      preview: {
+        componentId: component.id,
+        action: "cancel",
+        currentStatus: component.status,
+        staffActionRequired: false,
+      },
+    })
+
+    expect(result).toMatchObject({
+      status: "refused",
+      reason: "flight_order_not_cancelled:confirmed",
+    })
   })
 })

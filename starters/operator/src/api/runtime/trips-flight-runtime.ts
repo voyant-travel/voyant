@@ -12,6 +12,10 @@
  */
 import { createDemoFlightAdapter } from "@voyant-travel/plugin-flights-demo"
 import type {
+  CancelComponentInput,
+  CancelComponentResult,
+  ComponentCancellationPreview,
+  ComponentCancellationPreviewInput,
   ReserveComponentInput,
   ReserveComponentPreflightResult,
   ReserveComponentResult,
@@ -19,6 +23,7 @@ import type {
 import {
   createFlightComponentAdapter,
   type FlightAdapterContext,
+  previewFlightCancellation,
 } from "@voyant-travel/trips/flight-component"
 import type { Context } from "hono"
 
@@ -43,6 +48,19 @@ export function reserveNonCatalogComponent(
   input: ReserveComponentInput,
 ): Promise<ReserveComponentResult | null> {
   return flightComponentAdapter(c).reserve(input)
+}
+
+export function previewFlightComponentCancellation(
+  input: ComponentCancellationPreviewInput,
+): Promise<ComponentCancellationPreview> {
+  return previewFlightCancellation(input)
+}
+
+export function cancelFlightComponent(
+  c: Context,
+  input: CancelComponentInput,
+): Promise<CancelComponentResult> {
+  return flightComponentAdapter(c).cancel(input)
 }
 
 function getFlightAdapter(c: Context) {

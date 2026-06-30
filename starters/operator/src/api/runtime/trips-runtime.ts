@@ -9,12 +9,11 @@ import {
   type TripsRoutesOptions,
   tripsService,
 } from "@voyant-travel/trips"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { withDbFromEnv } from "../lib/db"
 import {
-  cancelComponent,
-  previewComponentCancellation,
+  cancelComponent as cancelCatalogComponent,
+  previewComponentCancellation as previewCatalogComponentCancellation,
   quoteCatalogComponent,
   releaseReservedComponent,
   reserveCatalogComponent,
@@ -22,6 +21,8 @@ import {
 } from "./trips-catalog-runtime"
 import { startTripCheckout } from "./trips-checkout-runtime"
 import {
+  cancelFlightComponent,
+  previewFlightComponentCancellation,
   reserveNonCatalogComponent,
   validateNonCatalogComponentBeforeReserve,
 } from "./trips-flight-runtime"
@@ -43,8 +44,7 @@ export const tripsPaymentBundle: HonoBundle = {
       if (data.targetType !== "other" || !data.targetId?.startsWith("trip_")) return
 
       try {
-        await withDbFromEnv(env, async (rawDb) => {
-          const db = rawDb as unknown as PostgresJsDatabase
+        await withDbFromEnv(env, async (db) => {
           await tripsService.completeTripCheckout(db, {
             envelopeId: data.targetId ?? undefined,
             paymentSessionId: data.paymentSessionId,
@@ -142,7 +142,13 @@ export function createStartCheckoutDeps(c: Context): StartCheckoutDeps {
 
 export function createCancelTripComponentsDeps(c: Context): CancelTripComponentsDeps {
   return {
-    previewComponentCancellation: (input) => previewComponentCancellation(input),
-    cancelComponent: (input) => cancelComponent(c, input),
+    previewComponentCancellation: (input) =>
+      input.component.kind === "flight_placeholder"
+        ? previewFlightComponentCancellation(input)
+        : previewCatalogComponentCancellation(input),
+    cancelComponent: (input) =>
+      input.component.kind === "flight_placeholder"
+        ? cancelFlightComponent(c, input)
+        : cancelCatalogComponent(c, input),
   }
 }

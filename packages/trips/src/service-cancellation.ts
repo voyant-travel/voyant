@@ -216,7 +216,11 @@ async function previewComponentCancellation(
 }
 
 function canCancelComponentLocally(component: TripComponent): boolean {
-  if (component.kind === "manual_placeholder" || component.kind === "flight_placeholder") {
+  if (component.kind === "manual_placeholder") {
+    return true
+  }
+
+  if (component.kind === "flight_placeholder" && !hasCommittedComponentReference(component)) {
     return true
   }
 
