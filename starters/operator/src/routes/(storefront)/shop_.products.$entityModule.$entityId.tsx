@@ -1,8 +1,11 @@
 "use client"
 
 import { createFileRoute, useParams } from "@tanstack/react-router"
+import { isStorefrontCustomerBookableProductVertical } from "@voyant-travel/storefront-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import type React from "react"
 
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { AccommodationDetailPage } from "./shop-product-detail-accommodations"
 import { CruiseDetailPage } from "./shop-product-detail-cruises"
 import { ProductDetailPageProducts } from "./shop-product-detail-products"
@@ -15,6 +18,20 @@ function DetailPage(): React.ReactElement {
   const { entityModule, entityId } = useParams({
     from: "/(storefront)/shop_/products/$entityModule/$entityId",
   })
+  const t = useStorefrontMessagesOrDefault().shop
+
+  if (!isStorefrontCustomerBookableProductVertical(entityModule)) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.nonBookableTitle}</CardTitle>
+        </CardHeader>
+        <CardContent className="text-muted-foreground text-sm">
+          {t.nonBookableBody.replace("{vertical}", formatVerticalLabel(entityModule, t))}
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (entityModule === "cruises") {
     return <CruiseDetailPage entityId={entityId} />
@@ -23,4 +40,15 @@ function DetailPage(): React.ReactElement {
     return <AccommodationDetailPage entityId={entityId} />
   }
   return <ProductDetailPageProducts entityModule={entityModule} entityId={entityId} />
+}
+
+function formatVerticalLabel(
+  vertical: string,
+  messages: ReturnType<typeof useStorefrontMessagesOrDefault>["shop"],
+): string {
+  if (vertical === "products") return messages.verticalProducts
+  if (vertical === "cruises") return messages.verticalCruises
+  if (vertical === "accommodations") return messages.verticalAccommodations
+  if (vertical === "charters") return messages.verticalCharters
+  return vertical
 }
