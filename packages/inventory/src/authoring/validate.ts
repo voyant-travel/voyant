@@ -6,9 +6,13 @@ import type { ProductGraphSpec } from "./spec.js"
  * wrong-shape spec is rejected with descriptive, agent-recoverable issues
  * instead of producing a malformed-but-bookable product.
  *
- * Keyed on `bookingMode` (the structural classifier that exists in the schema
- * today; `supplyModel` is still proposed). See the voyant-travel/platform authoring
- * spec for the canonical per-category rules.
+ * Keyed on `bookingMode` (the structural classifier in the schema). `supplyModel`
+ * is a read-time projection derived from `bookingMode` (see
+ * `deriveProductSupplyModel`), not a stored or authored field; the scheduled/dynamic
+ * supply rules are enforced at the publish path (`no_future_open_departure`) and the
+ * availability path (`dynamic_product_static_availability`), not here. Whether to
+ * promote `supplyModel` to a first-class field is tracked in voyant-travel/voyant#2644.
+ * See the voyant-travel/platform authoring spec for the canonical per-category rules.
  *
  * Scope: the generic products graph — excursion (`date`/`date_time`), multi-day
  * tour/package (`itinerary`), transfer (`transfer`). Other modes (`stay`,
