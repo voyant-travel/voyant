@@ -8,6 +8,10 @@ import {
   toDateOrNull,
   toNullableTrimmed,
 } from "../../src/service/helpers.js"
+import {
+  QuoteVersionConflictError,
+  resolveQuoteVersionSnapshotCurrency,
+} from "../../src/service/quote-versions.js"
 
 describe("paginate", () => {
   it("resolves rows and count, computes total", async () => {
@@ -36,6 +40,26 @@ describe("paginate", () => {
 
     expect(result.limit).toBe(25)
     expect(result.offset).toBe(100)
+  })
+})
+
+describe("resolveQuoteVersionSnapshotCurrency", () => {
+  it("uses the only explicit product currency over a missing quote currency", () => {
+    expect(resolveQuoteVersionSnapshotCurrency(null, [null, "EUR"])).toBe("EUR")
+  })
+
+  it("falls back to the quote currency when products do not carry currency", () => {
+    expect(resolveQuoteVersionSnapshotCurrency("GBP", [null, undefined, ""])).toBe("GBP")
+  })
+
+  it("defaults to USD when neither quote nor products carry currency", () => {
+    expect(resolveQuoteVersionSnapshotCurrency(null, [])).toBe("USD")
+  })
+
+  it("rejects mixed explicit product currencies", () => {
+    expect(() => resolveQuoteVersionSnapshotCurrency("USD", ["EUR", "GBP"])).toThrow(
+      QuoteVersionConflictError,
+    )
   })
 })
 

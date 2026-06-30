@@ -188,6 +188,85 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(body.error).toContain("draft")
     })
 
+    it("snapshots a quote using its explicit product currency", async () => {
+      const { quote } = await seedQuote()
+      await app.request(`/quotes/${quote.id}/products`, {
+        method: "POST",
+        ...json({
+          nameSnapshot: "Hotel room",
+          quantity: 2,
+          unitPriceAmountCents: 15000,
+          currency: "EUR",
+        }),
+      })
+
+      const res = await app.request(`/quotes/${quote.id}/versions/snapshot`, {
+        method: "POST",
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data.currency).toBe("EUR")
+      expect(body.data.totalAmountCents).toBe(30000)
+
+      const linesRes = await app.request(`/quote-versions/${body.data.id}/lines`, { method: "GET" })
+      const linesBody = await linesRes.json()
+      expect(linesBody.data).toMatchObject([{ currency: "EUR", totalAmountCents: 30000 }])
+    })
+
+    it("snapshots blank product currency lines using the resolved version currency", async () => {
+      const { quote } = await seedQuote()
+      await app.request(`/quotes/${quote.id}/products`, {
+        method: "POST",
+        ...json({
+          nameSnapshot: "Hotel room",
+          quantity: 2,
+          unitPriceAmountCents: 15000,
+          currency: "",
+        }),
+      })
+
+      const res = await app.request(`/quotes/${quote.id}/versions/snapshot`, {
+        method: "POST",
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data.currency).toBe("USD")
+
+      const linesRes = await app.request(`/quote-versions/${body.data.id}/lines`, { method: "GET" })
+      const linesBody = await linesRes.json()
+      expect(linesBody.data).toMatchObject([{ currency: "USD", totalAmountCents: 30000 }])
+    })
+
+    it("rejects snapshotting quote products with mixed currencies", async () => {
+      const { quote } = await seedQuote()
+      await app.request(`/quotes/${quote.id}/products`, {
+        method: "POST",
+        ...json({
+          nameSnapshot: "Hotel room",
+          unitPriceAmountCents: 15000,
+          currency: "EUR",
+        }),
+      })
+      await app.request(`/quotes/${quote.id}/products`, {
+        method: "POST",
+        ...json({
+          nameSnapshot: "Tour",
+          unitPriceAmountCents: 5000,
+          currency: "GBP",
+        }),
+      })
+
+      const res = await app.request(`/quotes/${quote.id}/versions/snapshot`, {
+        method: "POST",
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("single currency")
+    })
+
     it("deletes a quote version", async () => {
       const { quote } = await seedQuote()
       const createRes = await app.request(`/quotes/${quote.id}/versions`, {
@@ -264,6 +343,35 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(body.data.lines[0].description).toBe("Airport transfer")
     })
 
+    it("rejects applying a trip snapshot with mixed line currency", async () => {
+      const { quoteVersion } = await seedQuoteVersion()
+
+      const res = await app.request(`/quote-versions/${quoteVersion.id}/trip-snapshot`, {
+        method: "POST",
+        ...json({
+          tripSnapshotId: "trsn_snapshot_1",
+          currency: "EUR",
+          subtotalAmountCents: 10000,
+          taxAmountCents: 900,
+          totalAmountCents: 10900,
+          lines: [
+            {
+              componentId: "trcp_123",
+              description: "Airport transfer",
+              quantity: 1,
+              unitPriceAmountCents: 10000,
+              totalAmountCents: 10900,
+              currency: "USD",
+            },
+          ],
+        }),
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("currency")
+    })
+
     it("rejects applying a trip snapshot to a non-draft quote version", async () => {
       const { quoteVersion } = await seedQuoteVersion()
       await applySnapshot(quoteVersion.id)
@@ -289,17 +397,21 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(body.error).toContain("draft")
     })
 
-    it("requires a trip snapshot before sending a quote version", async () => {
+    it("sends a product-only quote version when line currencies match", async () => {
       const { quoteVersion } = await seedQuoteVersion()
+      await app.request(`/quote-versions/${quoteVersion.id}/lines`, {
+        method: "POST",
+        ...json({ description: "Hotel Transfer", quantity: 1, currency: "USD" }),
+      })
 
       const res = await app.request(`/quote-versions/${quoteVersion.id}/send`, {
         method: "POST",
         ...json({ validUntil: "2099-01-01" }),
       })
 
-      expect(res.status).toBe(409)
+      expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.error).toContain("Trip snapshot")
+      expect(body.data.status).toBe("sent")
     })
 
     it("sends, tracks view, and declines quote versions through lifecycle routes", async () => {
@@ -440,6 +552,28 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       const body = await res.json()
       expect(body.data.description).toBe("Hotel Transfer")
       expect(body.data.quoteVersionId).toBe(quoteVersion.id)
+    })
+
+    it("rejects quote version lines in a different currency from the version", async () => {
+      const { quoteVersion } = await seedQuoteVersion()
+
+      const createRes = await app.request(`/quote-versions/${quoteVersion.id}/lines`, {
+        method: "POST",
+        ...json({ description: "Hotel Transfer", quantity: 1, currency: "EUR" }),
+      })
+      expect(createRes.status).toBe(409)
+
+      const usdLineRes = await app.request(`/quote-versions/${quoteVersion.id}/lines`, {
+        method: "POST",
+        ...json({ description: "Hotel Transfer", quantity: 1, currency: "USD" }),
+      })
+      const { data: line } = await usdLineRes.json()
+
+      const updateRes = await app.request(`/quote-version-lines/${line.id}`, {
+        method: "PATCH",
+        ...json({ currency: "EUR" }),
+      })
+      expect(updateRes.status).toBe(409)
     })
 
     it("lists quote version lines", async () => {

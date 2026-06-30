@@ -69,6 +69,33 @@ function toDateString(value: Date) {
   return value.toISOString().slice(0, 10)
 }
 
+function uniqueCurrencies(currencies: ReadonlyArray<string | null | undefined>) {
+  return Array.from(new Set(currencies.filter((currency): currency is string => Boolean(currency))))
+}
+
+export function resolveQuoteVersionSnapshotCurrency(
+  quoteCurrency: string | null | undefined,
+  productCurrencies: ReadonlyArray<string | null | undefined>,
+) {
+  const currencies = uniqueCurrencies(productCurrencies)
+  if (currencies.length > 1) {
+    throw new QuoteVersionConflictError(
+      "Quote products must use a single currency before creating a Quote Version snapshot",
+    )
+  }
+  return currencies[0] ?? quoteCurrency ?? "USD"
+}
+
+function assertQuoteVersionLineCurrency(
+  versionCurrency: string,
+  lines: ReadonlyArray<{ currency: string }>,
+  message: string,
+) {
+  if (lines.some((line) => line.currency !== versionCurrency)) {
+    throw new QuoteVersionConflictError(message)
+  }
+}
+
 export const quoteVersionsService = {
   async listQuoteVersions(db: PostgresJsDatabase, query: QuoteVersionListQuery) {
     const conditions = []
@@ -151,12 +178,15 @@ export const quoteVersionsService = {
       const [quote] = await tx.select().from(quotes).where(eq(quotes.id, quoteId)).limit(1)
       if (!quote) return null
 
-      const currency = quote.valueCurrency ?? "USD"
       const products = await tx
         .select()
         .from(quoteProducts)
         .where(eq(quoteProducts.quoteId, quoteId))
         .orderBy(quoteProducts.createdAt)
+      const currency = resolveQuoteVersionSnapshotCurrency(
+        quote.valueCurrency,
+        products.map((product) => product.currency),
+      )
 
       const lines = products.map((product) => {
         const unit = product.unitPriceAmountCents ?? 0
@@ -167,7 +197,7 @@ export const quoteVersionsService = {
           quantity: product.quantity,
           unitPriceAmountCents: unit,
           totalAmountCents: unit * product.quantity - (product.discountAmountCents ?? 0),
-          currency: product.currency ?? currency,
+          currency: product.currency || currency,
         }
       })
       const subtotal = lines.reduce((sum, line) => sum + line.totalAmountCents, 0)
@@ -281,6 +311,12 @@ export const quoteVersionsService = {
     id: string,
     data: ApplyTripSnapshotToQuoteVersionInput,
   ) {
+    assertQuoteVersionLineCurrency(
+      data.currency,
+      data.lines,
+      "Trip snapshot lines must use the Quote Version currency",
+    )
+
     return db.transaction(async (tx) => {
       const [quoteVersion] = await tx
         .update(quoteVersions)
@@ -343,6 +379,16 @@ export const quoteVersionsService = {
       if (validUntil && validUntil < toDateString(now)) {
         throw new QuoteVersionConflictError("Quote Version validUntil must be today or later")
       }
+
+      const lines = await tx
+        .select({ currency: quoteVersionLines.currency })
+        .from(quoteVersionLines)
+        .where(eq(quoteVersionLines.quoteVersionId, id))
+      assertQuoteVersionLineCurrency(
+        existing.currency,
+        lines,
+        "Quote Version lines must use the Quote Version currency before sending",
+      )
 
       const [row] = await tx
         .update(quoteVersions)
@@ -594,7 +640,7 @@ export const quoteVersionsService = {
     data: CreateQuoteVersionLineInput,
   ) {
     const [quoteVersion] = await db
-      .select({ status: quoteVersions.status })
+      .select({ currency: quoteVersions.currency, status: quoteVersions.status })
       .from(quoteVersions)
       .where(eq(quoteVersions.id, quoteVersionId))
       .limit(1)
@@ -602,6 +648,9 @@ export const quoteVersionsService = {
     if (!quoteVersion) return null
     if (quoteVersion.status !== "draft") {
       throw new QuoteVersionConflictError("Quote Version lines can only be edited while draft")
+    }
+    if (data.currency !== quoteVersion.currency) {
+      throw new QuoteVersionConflictError("Quote Version lines must use the Quote Version currency")
     }
 
     const [row] = await db
@@ -618,6 +667,7 @@ export const quoteVersionsService = {
   ) {
     const [existing] = await db
       .select({
+        currency: quoteVersions.currency,
         status: quoteVersions.status,
       })
       .from(quoteVersionLines)
@@ -628,6 +678,9 @@ export const quoteVersionsService = {
     if (!existing) return null
     if (existing.status !== "draft") {
       throw new QuoteVersionConflictError("Quote Version lines can only be edited while draft")
+    }
+    if (data.currency !== undefined && data.currency !== existing.currency) {
+      throw new QuoteVersionConflictError("Quote Version lines must use the Quote Version currency")
     }
 
     const [row] = await db
