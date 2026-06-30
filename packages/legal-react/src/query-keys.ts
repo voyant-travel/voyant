@@ -71,6 +71,7 @@ export interface ResolvePolicyFilters {
 }
 
 export interface LegalPolicyAcceptancesListFilters {
+  policyId?: string | undefined
   policyVersionId?: string | undefined
   personId?: string | undefined
   bookingId?: string | undefined

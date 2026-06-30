@@ -144,6 +144,7 @@ const policyAcceptanceCoreSchema = z.object({
 export const insertPolicyAcceptanceSchema = policyAcceptanceCoreSchema
 
 export const policyAcceptanceListQuerySchema = paginationSchema.extend({
+  policyId: z.string().optional(),
   policyVersionId: z.string().optional(),
   personId: z.string().optional(),
   bookingId: z.string().optional(),

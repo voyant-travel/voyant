@@ -96,7 +96,11 @@ export function PolicyDetailPage({
   const { data: assignmentsData, refetch: refetchAssignments } = useLegalPolicyAssignments({
     policyId: id,
   })
-  const { data: acceptancesData } = useLegalPolicyAcceptances({ limit: 50, offset: 0 })
+  const { data: acceptancesData } = useLegalPolicyAcceptances({
+    policyId: id,
+    limit: 50,
+    offset: 0,
+  })
   const assignments = assignmentsData?.data ?? []
   const acceptances = acceptancesData?.data ?? []
 
