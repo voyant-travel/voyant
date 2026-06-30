@@ -104,10 +104,10 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@better-auth/api-key": "1.6.22",
+    "@better-auth/api-key": "1.6.23",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
-    "better-auth": "1.6.22",
+    "better-auth": "1.6.23",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
