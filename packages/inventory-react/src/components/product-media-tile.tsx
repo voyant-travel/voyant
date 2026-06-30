@@ -36,6 +36,7 @@ export function MediaTile({
   const messages = useProductsUiMessagesOrDefault()
   const sectionMessages = messages.productMediaSection
   const mediaTypeLabel = messages.common.mediaTypeLabels[item.mediaType]
+  const canBeCover = item.mediaType === "image"
 
   return (
     <li
@@ -93,7 +94,7 @@ export function MediaTile({
           </button>
         )}
 
-        {item.isCover ? (
+        {item.isCover && canBeCover ? (
           <Badge className="absolute left-2 top-2 gap-1 bg-black/70 text-white hover:bg-black/70">
             <Star className="size-3 fill-yellow-400 text-yellow-400" aria-hidden="true" />
             {sectionMessages.coverBadge}
@@ -111,7 +112,7 @@ export function MediaTile({
           </div>
         ) : (
           <div className="pointer-events-none absolute inset-0 flex items-end justify-end gap-1.5 bg-gradient-to-t from-black/65 via-black/0 to-black/0 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            {!item.isCover ? (
+            {!item.isCover && canBeCover ? (
               <Button
                 type="button"
                 size="sm"

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: inventory; existing media route groups stay co-located to preserve static-before-dynamic mount ordering until a dedicated route split preserves behavior and tests.
 /**
  * Admin product media + brochure routes — media metadata CRUD (product- and
  * day-level), cover selection, ordering, and the canonical/versioned brochure
@@ -126,6 +127,10 @@ const setCoverMediaRoute = createRoute({
       description: "Media not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    400: {
+      description: "Only image media can be set as cover",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
     500: {
       description: "Failed to set cover",
       content: { "application/json": { schema: errorResponseSchema } },
@@ -162,6 +167,9 @@ const mediaItemRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
     if (!media) {
       return c.json({ error: "Media not found" }, 404)
     }
+    if (media.mediaType !== "image") {
+      return c.json({ error: "Only image media can be set as cover" }, 400)
+    }
     const row = await productsService.setCoverMedia(
       c.get("db"),
       media.productId,
@@ -189,6 +197,11 @@ const mediaItemRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
     const before = await productsService.getMediaById(c.get("db"), mediaId)
     if (!before) {
       return c.json({ error: "Media not found" }, 404)
+    }
+    const nextMediaType = body.mediaType ?? before.mediaType
+    const nextIsCover = body.isCover ?? before.isCover
+    if (nextIsCover && nextMediaType !== "image") {
+      return c.json({ error: "Only image media can be set as cover" }, 400)
     }
 
     const row = await productsService.updateMedia(c.get("db"), mediaId, body)
@@ -557,6 +570,9 @@ const productMediaNestedRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVali
   .openapi(createProductMediaRoute, async (c) => {
     const productId = c.req.valid("param").id
     const body = c.req.valid("json")
+    if (body.isCover && body.mediaType !== "image") {
+      return c.json({ error: "Only image media can be set as cover" }, 400)
+    }
     const row = await productsService.createMedia(c.get("db"), productId, body)
     if (!row) {
       return c.json({ error: "Product not found or invalid dayId" }, 404)
@@ -585,6 +601,9 @@ const productMediaNestedRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVali
   .openapi(createDayMediaRoute, async (c) => {
     const { id: productId, dayId } = c.req.valid("param")
     const body = c.req.valid("json")
+    if (body.isCover && body.mediaType !== "image") {
+      return c.json({ error: "Only image media can be set as cover" }, 400)
+    }
     const row = await productsService.createMedia(c.get("db"), productId, {
       ...body,
       dayId,

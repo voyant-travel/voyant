@@ -235,7 +235,7 @@ export function ProductMediaGallery({
                       {item.mediaType}
                     </div>
                   )}
-                  {item.isCover ? (
+                  {item.isCover && item.mediaType === "image" ? (
                     <Star className="absolute left-0.5 top-0.5 h-3 w-3 fill-yellow-400 text-yellow-400" />
                   ) : null}
                 </button>
@@ -268,6 +268,8 @@ function MediaPreview({
   onDelete: (id: string) => void
   mediaMessages: ReturnType<typeof useProductDetailMessages>["products"]["operations"]["media"]
 }) {
+  const isImageCover = item.mediaType === "image" && item.isCover
+
   return (
     <div className="group relative aspect-[16/9] w-full overflow-hidden rounded-lg border bg-muted">
       {item.mediaType === "image" ? (
@@ -286,14 +288,14 @@ function MediaPreview({
           {item.mediaType}
         </div>
       )}
-      {item.isCover ? (
+      {isImageCover ? (
         <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white">
           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
           {mediaMessages.cover}
         </div>
       ) : null}
       <div className="pointer-events-none absolute inset-0 flex items-end justify-end gap-1.5 bg-gradient-to-t from-black/60 via-black/0 to-black/0 p-3 opacity-0 transition-opacity group-hover:opacity-100">
-        {!item.isCover && item.mediaType === "image" ? (
+        {!isImageCover && item.mediaType === "image" ? (
           <Button
             type="button"
             size="sm"
@@ -363,7 +365,7 @@ function ReorderGrid({
               {item.mediaType}
             </div>
           )}
-          {item.isCover ? (
+          {item.isCover && item.mediaType === "image" ? (
             <div className="pointer-events-none absolute left-1 top-1 rounded-full bg-black/70 p-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
             </div>

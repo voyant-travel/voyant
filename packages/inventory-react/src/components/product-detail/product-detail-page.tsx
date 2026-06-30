@@ -191,6 +191,11 @@ export function ProductDetailPage({ id }: { id: string }) {
           <ProductBrochureSection
             brochure={brochure}
             isGenerating={mutations.generateBrochure.isPending}
+            generateError={
+              mutations.generateBrochure.error
+                ? mutations.generateBrochure.error.message || productMessages.brochureGenerateFailed
+                : null
+            }
             onGenerate={() => mutations.generateBrochure.mutate()}
           />
 

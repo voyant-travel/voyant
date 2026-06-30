@@ -58,7 +58,7 @@ function initialState(mode: Mode): FormState {
       fileSize: mode.media.fileSize == null ? "" : String(mode.media.fileSize),
       altText: mode.media.altText ?? "",
       sortOrder: String(mode.media.sortOrder),
-      isCover: mode.media.isCover,
+      isCover: mode.media.mediaType === "image" ? mode.media.isCover : false,
     }
   }
 
@@ -91,7 +91,13 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
   const field =
     <K extends keyof FormState>(key: K) =>
     (value: FormState[K]) => {
-      setState((previous) => ({ ...previous, [key]: value }))
+      setState((previous) => {
+        const next = { ...previous, [key]: value }
+        if (key === "mediaType" && value !== "image") {
+          next.isCover = false
+        }
+        return next
+      })
     }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -104,6 +110,10 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
     }
     if (!state.url.trim()) {
       setError(messages.productMediaForm.validation.urlRequired)
+      return
+    }
+    if (state.isCover && state.mediaType !== "image") {
+      setError(messages.productMediaForm.validation.coverRequiresImage)
       return
     }
 
@@ -239,6 +249,7 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
         <div className="flex items-end gap-2 pb-2">
           <Switch
             checked={state.isCover}
+            disabled={state.mediaType !== "image"}
             onCheckedChange={(checked) => field("isCover")(checked)}
           />
           <Label>{messages.productMediaForm.fields.coverMedia}</Label>

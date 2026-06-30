@@ -155,6 +155,7 @@ export type ProductsUiCatalogMessages = {
     validation: {
       nameRequired: string
       urlRequired: string
+      coverRequiresImage: string
       saveFailed: string
     }
     actions: {

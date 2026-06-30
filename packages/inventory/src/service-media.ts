@@ -245,6 +245,16 @@ export const mediaProductsService = {
     mediaId: string,
     dayId?: string | null,
   ) {
+    const target = await mediaProductsService.getMediaById(db, mediaId)
+    if (
+      !target ||
+      target.productId !== productId ||
+      target.mediaType !== "image" ||
+      (dayId ? target.dayId !== dayId : target.dayId !== null)
+    ) {
+      return null
+    }
+
     // Unset existing cover in the same scope (product-level or day-level)
     const scopeConditions = [eq(productMedia.productId, productId)]
     if (dayId) {

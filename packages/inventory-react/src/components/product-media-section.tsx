@@ -117,7 +117,10 @@ export function ProductMediaSection({
         fileSize: uploaded.fileSize ?? (file.size || null),
         altText: uploaded.altText ?? null,
         sortOrder: uploaded.sortOrder ?? media.length,
-        isCover: uploaded.isCover ?? media.length === 0,
+        isCover:
+          inferredMediaType === "image"
+            ? (uploaded.isCover ?? !media.some((item) => item.isCover))
+            : false,
       })
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : sectionMessages.uploadFailed)
