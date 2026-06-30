@@ -54,7 +54,7 @@ export async function fetchContent<T>(
     },
   })
   if (!res.ok) {
-    if (res.status === 404) return null
+    if (res.status === 400 || res.status === 404) return null
     throw new Error(`Content request failed: ${res.status}`)
   }
   const json = (await res.json()) as ContentResponse<T>

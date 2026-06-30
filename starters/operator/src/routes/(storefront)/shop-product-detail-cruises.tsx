@@ -89,40 +89,42 @@ export function CruiseDetailPage({ entityId }: { entityId: string }): React.Reac
         )
       }
       sidebar={
-        <BookingSidebar
-          totalPax={occupancy}
-          totalCents={totalCents}
-          currency={currency ?? undefined}
-          isQuoting={quote.isQuoting}
-          quoteData={quote.data}
-          disabled={
-            !selectedSailingId || !selectedCabinCategoryId || quote.data?.available === false
-          }
-          onBook={() => {
-            if (!selectedSailingId || !selectedCabinCategoryId) return
-            navigate({
-              to: "/shop/book/$entityModule/$entityId",
-              params: { entityModule: "cruises", entityId },
-              search: {
-                departureSlotId: selectedSailingId,
-                cabinCategoryId: selectedCabinCategoryId,
-                adult: occupancy,
-              } as never,
-            })
-          }}
-        >
-          <div className="space-y-3">
-            <Label>{t.occupancy}</Label>
-            <PaxStepper
-              label={t.guestsInCabin}
-              hint={t.perPaxPricing}
-              value={occupancy}
-              setValue={setOccupancy}
-              min={1}
-              max={4}
-            />
-          </div>
-        </BookingSidebar>
+        content.data ? (
+          <BookingSidebar
+            totalPax={occupancy}
+            totalCents={totalCents}
+            currency={currency ?? undefined}
+            isQuoting={quote.isQuoting}
+            quoteData={quote.data}
+            disabled={
+              !selectedSailingId || !selectedCabinCategoryId || quote.data?.available === false
+            }
+            onBook={() => {
+              if (!selectedSailingId || !selectedCabinCategoryId) return
+              navigate({
+                to: "/shop/book/$entityModule/$entityId",
+                params: { entityModule: "cruises", entityId },
+                search: {
+                  departureSlotId: selectedSailingId,
+                  cabinCategoryId: selectedCabinCategoryId,
+                  adult: occupancy,
+                } as never,
+              })
+            }}
+          >
+            <div className="space-y-3">
+              <Label>{t.occupancy}</Label>
+              <PaxStepper
+                label={t.guestsInCabin}
+                hint={t.perPaxPricing}
+                value={occupancy}
+                setValue={setOccupancy}
+                min={1}
+                max={4}
+              />
+            </div>
+          </BookingSidebar>
+        ) : null
       }
     />
   )
