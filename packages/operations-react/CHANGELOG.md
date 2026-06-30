@@ -1,5 +1,11 @@
 # @voyant-travel/operations-react
 
+## 0.18.1
+
+### Patch Changes
+
+- fe6d8cf: Use the mounted availability product route prefix for resource-template mutations and open-slot materialization.
+
 ## 0.18.0
 
 ### Patch Changes
