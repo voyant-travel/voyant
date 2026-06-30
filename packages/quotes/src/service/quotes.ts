@@ -1,7 +1,9 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
+import type { QuotesRouteRuntime } from "../route-runtime.js"
 import { quoteMedia, quoteParticipants, quoteProducts, quotes } from "../schema.js"
 import type {
   insertQuoteMediaSchema,
@@ -113,7 +115,10 @@ export const quotesService = {
     db: PostgresJsDatabase,
     quoteId: string,
     data: CreateQuoteParticipantInput,
+    runtime: QuotesRouteRuntime = {},
   ) {
+    await validateQuoteParticipantPerson(db, data.personId, runtime)
+
     const [row] = await db
       .insert(quoteParticipants)
       .values({ ...data, quoteId })
@@ -198,6 +203,29 @@ export const quotesService = {
       .returning({ id: quoteMedia.id })
     return row ?? null
   },
+}
+
+async function validateQuoteParticipantPerson(
+  db: PostgresJsDatabase,
+  personId: string,
+  runtime: QuotesRouteRuntime,
+): Promise<void> {
+  if (!runtime.resolveParticipantPersonById) {
+    return
+  }
+
+  const exists = await runtime.resolveParticipantPersonById(db, personId)
+  if (!exists) {
+    throw new RequestValidationError(
+      "Quote participant personId does not reference an existing person",
+      {
+        fields: {
+          fieldErrors: { personId: ["Person not found"] },
+          formErrors: [],
+        },
+      },
+    )
+  }
 }
 
 /**

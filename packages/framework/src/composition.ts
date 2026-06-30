@@ -422,7 +422,11 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     "@voyant-travel/action-ledger": () => actionLedgerHonoModule,
     "@voyant-travel/relationships": ({ capabilities }) =>
       createRelationshipsHonoModule({ customFields: capabilities.customFields }),
-    "@voyant-travel/quotes": () => createQuotesHonoModule(),
+    "@voyant-travel/quotes": ({ capabilities }) =>
+      createQuotesHonoModule({
+        resolveParticipantPersonById: async (db, personId) =>
+          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+      }),
     "@voyant-travel/accommodations": () => accommodationsHonoModule,
     "@voyant-travel/operations": () => operationsHonoModule,
     "@voyant-travel/identity": () => identityHonoModule,

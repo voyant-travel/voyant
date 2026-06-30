@@ -2,7 +2,8 @@ import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { quotesLinkable } from "./linkables.js"
-import { quotesRoutes } from "./routes/index.js"
+import type { QuotesRouteRuntimeOptions } from "./route-runtime.js"
+import { createQuotesRoutes } from "./routes/index.js"
 
 export { quoteLinkable, quotesLinkable, quoteVersionLinkable } from "./linkables.js"
 export type { QuotesRoutes } from "./routes/index.js"
@@ -13,10 +14,12 @@ export const quotesModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export function createQuotesHonoModule(): HonoModule {
+export interface QuotesHonoModuleOptions extends QuotesRouteRuntimeOptions {}
+
+export function createQuotesHonoModule(options: QuotesHonoModuleOptions = {}): HonoModule {
   return {
     module: quotesModule,
-    adminRoutes: quotesRoutes,
+    adminRoutes: createQuotesRoutes(options),
   }
 }
 
@@ -47,6 +50,11 @@ export {
   createQuoteVersionSnapshotRoutes,
   tripSnapshotToQuoteVersionApply,
 } from "./proposal-routes.js"
+export type {
+  QuotesRouteRuntime,
+  QuotesRouteRuntimeOptions,
+  ResolveQuoteParticipantPersonById,
+} from "./route-runtime.js"
 export type {
   NewPipeline,
   NewQuote,
