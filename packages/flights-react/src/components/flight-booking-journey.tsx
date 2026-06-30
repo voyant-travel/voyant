@@ -273,7 +273,7 @@ function ConfirmSummary({
       <Row label={messages.rows.passengers}>{passengers.length}</Row>
       <Row label={messages.rows.contact}>{contact.email ?? i18n.messages.common.noValue}</Row>
       <Row label={messages.rows.payment}>
-        <span className="capitalize">{payment.type.replace("_", " ")}</span>
+        <span>{i18n.messages.flightPaymentSelector.intents[payment.type].title}</span>
       </Row>
       {offer.expiresAt && (
         <Row label={messages.rows.offerExpires}>
