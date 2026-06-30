@@ -103,6 +103,52 @@ describe.skipIf(!DB_AVAILABLE)("Pipeline routes", () => {
       expect(body.success).toBe(true)
     })
 
+    it("deletes a pipeline with stages and no quotes", async () => {
+      const pipelineRes = await app.request("/pipelines", {
+        method: "POST",
+        ...json({ name: "StageOnly" }),
+      })
+      const { data: pipeline } = await pipelineRes.json()
+      const stageRes = await app.request("/stages", {
+        method: "POST",
+        ...json({ pipelineId: pipeline.id, name: "Unused Stage" }),
+      })
+      const { data: stage } = await stageRes.json()
+
+      const res = await app.request(`/pipelines/${pipeline.id}`, { method: "DELETE" })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.success).toBe(true)
+
+      const deletedStageRes = await app.request(`/stages/${stage.id}`, { method: "GET" })
+      expect(deletedStageRes.status).toBe(404)
+    })
+
+    it("returns 409 when deleting a pipeline with dependent quotes", async () => {
+      const pipelineRes = await app.request("/pipelines", {
+        method: "POST",
+        ...json({ name: "InUse" }),
+      })
+      const { data: pipeline } = await pipelineRes.json()
+      const stageRes = await app.request("/stages", {
+        method: "POST",
+        ...json({ pipelineId: pipeline.id, name: "Qualified" }),
+      })
+      const { data: stage } = await stageRes.json()
+      await app.request("/quotes", {
+        method: "POST",
+        ...json({ title: "Active Quote", pipelineId: pipeline.id, stageId: stage.id }),
+      })
+
+      const res = await app.request(`/pipelines/${pipeline.id}`, { method: "DELETE" })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("dependent")
+      expect(body.error).toContain("quote")
+    })
+
     it("returns 404 for non-existent pipeline", async () => {
       const res = await app.request("/pipelines/crm_pip_00000000000000000000000000", {
         method: "GET",
