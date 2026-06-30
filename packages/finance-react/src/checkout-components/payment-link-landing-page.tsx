@@ -27,6 +27,12 @@ interface StartCardResponse {
   error?: string
 }
 
+const ACTIVE_CARD_REDIRECT_STATUSES = new Set(["pending", "requires_redirect", "processing"])
+
+function shouldStartCardPayment(session: PublicPaymentSession) {
+  return ACTIVE_CARD_REDIRECT_STATUSES.has(session.status)
+}
+
 /**
  * Universal landing page rendered at `/pay/:sessionId`. The customer lands
  * here from a payment-link email (or after returning from the processor's
@@ -262,7 +268,7 @@ function CardPanel({
       onPayByCard()
       return
     }
-    if (session.redirectUrl) {
+    if (session.redirectUrl && !shouldStartCardPayment(session)) {
       window.location.href = session.redirectUrl
       return
     }

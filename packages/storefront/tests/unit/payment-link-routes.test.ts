@@ -115,7 +115,16 @@ describe("createPaymentLinkRoutes", () => {
   it("start-card 503s when the card processor is not configured", async () => {
     // First queued row: the session lookup (no redirectUrl → falls through to start).
     const db = makeDb([
-      [{ id: "ps_1", redirectUrl: null, payerName: null, payerEmail: null, notes: null }],
+      [
+        {
+          id: "ps_1",
+          status: "pending",
+          redirectUrl: null,
+          payerName: null,
+          payerEmail: null,
+          notes: null,
+        },
+      ],
     ])
     const startCardPayment = vi.fn(async () => ({ configured: false }) as const)
     const app = mountApp(stubOptions({ startCardPayment }), db)
@@ -127,8 +136,56 @@ describe("createPaymentLinkRoutes", () => {
     expect(startCardPayment).toHaveBeenCalledOnce()
   })
 
-  it("start-card returns the existing redirect url without invoking the provider", async () => {
-    const db = makeDb([[{ id: "ps_1", redirectUrl: "https://pay.example.com/redirect" }]])
+  it("start-card refreshes a pre-completion redirect instead of reusing the stored url", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_1",
+          status: "requires_redirect",
+          redirectUrl: "https://pay.example.com/stale",
+          payerName: "Ada Lovelace",
+          payerEmail: "ada@example.com",
+          notes: "Deposit",
+        },
+      ],
+    ])
+    const startCardPayment = vi.fn(
+      async () =>
+        ({
+          configured: true,
+          redirectUrl: "https://pay.example.com/fresh",
+        }) as const,
+    )
+    const app = mountApp(stubOptions({ startCardPayment }), db)
+
+    const res = await app.request("/v1/public/payment-link/ps_1/start-card", { method: "POST" })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      data: { redirectUrl: "https://pay.example.com/fresh" },
+    })
+    expect(startCardPayment).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        id: "ps_1",
+        payerName: "Ada Lovelace",
+        payerEmail: "ada@example.com",
+        notes: "Deposit",
+        redirectUrl: "https://pay.example.com/stale",
+      }),
+    )
+  })
+
+  it("start-card preserves successful sessions without invoking the provider", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_1",
+          status: "paid",
+          redirectUrl: "https://pay.example.com/success",
+        },
+      ],
+    ])
     const startCardPayment = vi.fn(async () => ({ configured: false }) as const)
     const app = mountApp(stubOptions({ startCardPayment }), db)
 
@@ -136,8 +193,34 @@ describe("createPaymentLinkRoutes", () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      data: { redirectUrl: "https://pay.example.com/redirect" },
+      data: { redirectUrl: "https://pay.example.com/success" },
     })
+    expect(startCardPayment).not.toHaveBeenCalled()
+  })
+
+  it("start-card does not restart terminal failed sessions", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_1",
+          status: "failed",
+          redirectUrl: "https://pay.example.com/failed",
+        },
+      ],
+    ])
+    const startCardPayment = vi.fn(
+      async () =>
+        ({
+          configured: true,
+          redirectUrl: "https://pay.example.com/fresh",
+        }) as const,
+    )
+    const app = mountApp(stubOptions({ startCardPayment }), db)
+
+    const res = await app.request("/v1/public/payment-link/ps_1/start-card", { method: "POST" })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ data: { redirectUrl: null } })
     expect(startCardPayment).not.toHaveBeenCalled()
   })
 
