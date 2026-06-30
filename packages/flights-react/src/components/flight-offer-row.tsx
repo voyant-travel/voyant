@@ -55,6 +55,9 @@ export function FlightOfferRow({
       onKeyDown={
         interactive
           ? (e) => {
+              // Only act when the row itself is focused — Enter/Space on the
+              // inner "Select" button bubbles here and must not also open the row.
+              if (e.target !== e.currentTarget) return
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault()
                 open?.()
