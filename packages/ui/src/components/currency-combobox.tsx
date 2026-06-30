@@ -38,12 +38,29 @@ export interface CurrencyComboboxProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  /** Forwarded to the input so a `<Label htmlFor>` can associate with it. */
+  id?: string
+  /** Message shown when no currencies match the search. */
+  emptyLabel?: string
+}
+
+/** Resolve typed text to a canonical currency code, or `null` if it is not one. */
+function resolveTypedCurrencyCode(text: string): CurrencyCode | null {
+  const code = text.trim().toUpperCase()
+  if (code.length === 3 && Object.hasOwn(currencies, code)) {
+    return code as CurrencyCode
+  }
+  return null
 }
 
 /**
  * Currency picker backed by the canonical `currencies` list from
  * `@voyant-travel/utils`. Trigger displays `CODE (symbol)`; items display
  * `CODE — Name (symbol)`. Searchable across code, name, and symbol.
+ *
+ * Typing a full ISO code (e.g. `EUR`, case-insensitive) commits it even if the
+ * user never picks the matching row from the list, so a typed value is never
+ * silently dropped on submit.
  */
 export function CurrencyCombobox({
   value,
@@ -51,6 +68,8 @@ export function CurrencyCombobox({
   placeholder = "Select currency…",
   disabled,
   className,
+  id,
+  emptyLabel = "No currencies found.",
 }: CurrencyComboboxProps) {
   const [search, setSearch] = React.useState("")
 
@@ -80,7 +99,14 @@ export function CurrencyCombobox({
       onInputValueChange={(next) => {
         setInputValue(next)
         setSearch(next)
-        if (!next) onChange(null)
+        if (!next.trim()) {
+          onChange(null)
+          return
+        }
+        // Commit a fully-typed ISO code even when the user never selects the
+        // matching row from the list, so typed input is not silently dropped.
+        const typedCode = resolveTypedCurrencyCode(next)
+        if (typedCode && typedCode !== value) onChange(typedCode)
       }}
       onValueChange={(next) => {
         const code = (next as string | null) ?? null
@@ -89,13 +115,14 @@ export function CurrencyCombobox({
       }}
     >
       <ComboboxInput
+        id={id}
         className={className ?? "w-full"}
         placeholder={placeholder}
         disabled={disabled}
         showClear={Boolean(value) && !disabled}
       />
       <ComboboxContent>
-        <ComboboxEmpty>No currencies found.</ComboboxEmpty>
+        <ComboboxEmpty>{emptyLabel}</ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
             {(code) => {
