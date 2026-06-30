@@ -1,5 +1,14 @@
 # @voyant-travel/trips-react
 
+## 0.128.3
+
+### Patch Changes
+
+- c6acfa5: Exclude cancelled and removed trip components from active trip aggregate totals, refresh those totals after component cancellation, and label active versus cancelled component value in the admin trip detail.
+- Updated dependencies [c6acfa5]
+  - @voyant-travel/trips@0.128.3
+  - @voyant-travel/i18n@0.109.1
+
 ## 0.128.2
 
 ### Patch Changes
