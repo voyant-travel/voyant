@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.9.24
+
+### Patch Changes
+
+- Updated dependencies [c6acfa5]
+  - @voyant-travel/trips@0.128.3
+
 ## 0.9.23
 
 ### Patch Changes
