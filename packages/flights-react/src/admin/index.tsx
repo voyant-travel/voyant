@@ -1,20 +1,18 @@
 import { type AdminExtension, defineAdminExtension } from "@voyant-travel/admin"
-// Type-only on purpose: binds the bookings-ui `AdminDestinations`
-// augmentation (`booking.detail`, ...) into this program — the booking
-// wizard's post-booking navigation resolves through that shared key — without
-// pulling any bookings runtime code into the chunk that evaluates this
-// factory.
-import type {} from "@voyant-travel/bookings-react/admin"
 import type { CabinClass } from "@voyant-travel/flights/contract/types"
 import { z } from "zod"
 
 /**
  * Semantic destinations the flights admin surfaces navigate to
- * (packaged-admin RFC §4.7). `booking.detail` (where the wizard lands after
- * booking) comes from the bookings-ui augmentation bound above; declared here
- * are the flights-owned keys plus `person.list`, re-declared shape-locked —
- * also declared by `@voyant-travel/relationships-react/admin`, and interface merging requires
+ * (packaged-admin RFC §4.7). Declared here are the flights-owned keys plus
+ * `person.list`, re-declared shape-locked — also declared by
+ * `@voyant-travel/relationships-react/admin`, and interface merging requires
  * the member shape to stay identical across packages.
+ *
+ * The booking wizard no longer navigates to the catalog `booking.detail`
+ * route after a hold (issue #2653): a flight hold persists a flight ORDER, a
+ * separate entity that is not resolvable at `/bookings/:id`, so the wizard
+ * renders an inline order confirmation instead — see `pages/flight-book-page`.
  */
 declare module "@voyant-travel/admin" {
   interface AdminDestinations {

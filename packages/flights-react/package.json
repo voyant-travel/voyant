@@ -35,7 +35,6 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
     "@voyant-travel/admin": "workspace:^",
-    "@voyant-travel/bookings-react": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/flights": "workspace:^",
@@ -50,9 +49,6 @@
       "optional": true
     },
     "@voyant-travel/admin": {
-      "optional": true
-    },
-    "@voyant-travel/bookings-react": {
       "optional": true
     },
     "@voyant-travel/finance-react": {
@@ -75,7 +71,6 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
-    "@voyant-travel/bookings-react": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/flights": "workspace:^",
