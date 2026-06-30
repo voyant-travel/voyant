@@ -46,6 +46,26 @@ describe("flights hono module", () => {
     expect(adapter.searchFlights).toHaveBeenCalledTimes(1)
   })
 
+  it("POST /search returns 503 when the demo adapter is unavailable", async () => {
+    const message =
+      "Flights demo service is unavailable at http://localhost:3320. Start it with `pnpm --dir apps/flights-demo-api dev` or update FLIGHTS_DEMO_API_URL."
+    const adapter = stubAdapter({
+      searchFlights: vi.fn(async () => {
+        throw new Error(message)
+      }),
+    })
+    const app = mount(adapter)
+
+    const res = await app.request("/v1/admin/flights/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slices: [{}], passengers: { adults: 1 } }),
+    })
+
+    expect(res.status).toBe(503)
+    await expect(res.json()).resolves.toEqual({ error: message })
+  })
+
   it("POST /search validates required fields", async () => {
     const app = mount(stubAdapter())
     const res = await app.request("/v1/admin/flights/search", {
