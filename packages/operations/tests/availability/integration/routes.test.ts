@@ -61,6 +61,38 @@ describe.skipIf(!DB_AVAILABLE)("Availability routes", () => {
       expect(body.data.id).toBeTruthy()
     })
 
+    it("creates a weekly rule with explicit weekdays", async () => {
+      const res = await app.request("/rules", {
+        method: "POST",
+        ...json({
+          ...validRule(),
+          recurrenceRule: "FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data.recurrenceRule).toBe("FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR")
+    })
+
+    it("rejects malformed recurrence rules", async () => {
+      const res = await app.request("/rules", {
+        method: "POST",
+        ...json({ ...validRule(), recurrenceRule: "NOT_A_RULE" }),
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects weekly recurrence rules without weekdays", async () => {
+      const res = await app.request("/rules", {
+        method: "POST",
+        ...json({ ...validRule(), recurrenceRule: "FREQ=WEEKLY;INTERVAL=1" }),
+      })
+
+      expect(res.status).toBe(400)
+    })
+
     it("lists rules", async () => {
       await app.request("/rules", { method: "POST", ...json(validRule()) })
       const res = await app.request("/rules", { method: "GET" })
@@ -193,6 +225,63 @@ describe.skipIf(!DB_AVAILABLE)("Availability routes", () => {
       const body = await res.json()
       expect(body.data.status).toBe("open")
       expect(body.data.dateLocal).toBe("2025-06-15")
+    })
+
+    it("creates a limited slot with coherent timing and capacity", async () => {
+      const res = await app.request("/slots", {
+        method: "POST",
+        ...json({
+          ...validSlot(),
+          endsAt: "2025-06-15T17:00:00Z",
+          initialPax: 12,
+          remainingPax: 8,
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data.initialPax).toBe(12)
+      expect(body.data.remainingPax).toBe(8)
+    })
+
+    it("rejects slots whose endsAt is before startsAt", async () => {
+      const res = await app.request("/slots", {
+        method: "POST",
+        ...json({
+          ...validSlot(),
+          startsAt: "2025-06-15T18:00:00Z",
+          endsAt: "2025-06-15T09:00:00Z",
+        }),
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects limited slots whose remainingPax exceeds initialPax", async () => {
+      const res = await app.request("/slots", {
+        method: "POST",
+        ...json({
+          ...validSlot(),
+          initialPax: 5,
+          remainingPax: 9,
+        }),
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects slots whose dateLocal does not match startsAt in the slot timezone", async () => {
+      const res = await app.request("/slots", {
+        method: "POST",
+        ...json({
+          ...validSlot(),
+          dateLocal: "2025-06-16",
+          startsAt: "2025-06-15T09:00:00Z",
+          timezone: "UTC",
+        }),
+      })
+
+      expect(res.status).toBe(400)
     })
 
     it("updates slot status", async () => {

@@ -26,6 +26,10 @@ import type {
   UpdateAvailabilityStartTimeInput,
 } from "./service-shared.js"
 import { paginate, toDateOrNull } from "./service-shared.js"
+import {
+  assertAvailabilityRecurrenceRule,
+  assertSlotTimingAndCapacity,
+} from "./service-validation.js"
 import { slotEndDateLocal } from "./slot-timezone.js"
 
 type AvailabilitySlotWithEndDateLocal = AvailabilitySlot & {
@@ -129,6 +133,8 @@ export async function getRuleById(db: PostgresJsDatabase, id: string) {
 }
 
 export async function createRule(db: PostgresJsDatabase, data: CreateAvailabilityRuleInput) {
+  assertAvailabilityRecurrenceRule(data.recurrenceRule)
+
   if (data.active !== false) {
     await assertProductAllowsStaticAvailability(db, data.productId, "rule")
   }
@@ -142,6 +148,10 @@ export async function updateRule(
   id: string,
   data: UpdateAvailabilityRuleInput,
 ) {
+  if (data.recurrenceRule !== undefined) {
+    assertAvailabilityRecurrenceRule(data.recurrenceRule)
+  }
+
   if (data.productId !== undefined || data.active === true) {
     const [current] = await db
       .select({ productId: availabilityRules.productId, active: availabilityRules.active })
@@ -313,6 +323,8 @@ export async function createSlot(
 ) {
   await assertProductAllowsStaticAvailability(db, data.productId, "slot")
 
+  assertSlotTimingAndCapacity(data)
+
   if (data.optionId) {
     await assertSlotOptionBelongsToProduct(db, {
       productId: data.productId,
@@ -361,7 +373,17 @@ export async function updateSlot(
   runtime: SlotMutationRuntime = {},
 ) {
   const [current] = await db
-    .select({ productId: availabilitySlots.productId, optionId: availabilitySlots.optionId })
+    .select({
+      productId: availabilitySlots.productId,
+      optionId: availabilitySlots.optionId,
+      dateLocal: availabilitySlots.dateLocal,
+      startsAt: availabilitySlots.startsAt,
+      endsAt: availabilitySlots.endsAt,
+      timezone: availabilitySlots.timezone,
+      unlimited: availabilitySlots.unlimited,
+      initialPax: availabilitySlots.initialPax,
+      remainingPax: availabilitySlots.remainingPax,
+    })
     .from(availabilitySlots)
     .where(eq(availabilitySlots.id, id))
     .limit(1)
@@ -379,6 +401,16 @@ export async function updateSlot(
       })
     }
   }
+
+  assertSlotTimingAndCapacity({
+    dateLocal: data.dateLocal ?? current.dateLocal,
+    startsAt: data.startsAt ?? current.startsAt,
+    endsAt: data.endsAt === undefined ? current.endsAt : data.endsAt,
+    timezone: data.timezone ?? current.timezone,
+    unlimited: data.unlimited ?? current.unlimited,
+    initialPax: data.initialPax === undefined ? current.initialPax : data.initialPax,
+    remainingPax: undefined,
+  })
 
   const { remainingPax: _ignoredRemainingPax, ...rest } = data
   const patch: Record<string, unknown> = {

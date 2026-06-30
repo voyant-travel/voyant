@@ -1,5 +1,7 @@
 import { booleanQueryParam } from "@voyant-travel/db/helpers"
 import { z } from "zod"
+import { validateRRule } from "./rrule.js"
+import { instantToSlotLocal } from "./slot-timezone.js"
 
 const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
@@ -46,6 +48,85 @@ export type SeatLayoutSpec = z.infer<typeof seatLayoutSpecSchema>
 const isoDateSchema = z.string().date()
 const isoDateTimeSchema = z.string().datetime()
 
+function validateRecurrenceRule(value: { recurrenceRule?: string }, ctx: z.RefinementCtx) {
+  if (value.recurrenceRule === undefined) return
+  const result = validateRRule(value.recurrenceRule)
+  if (!result.ok) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["recurrenceRule"],
+      message: result.message,
+    })
+  }
+}
+
+function validateSlotTimingAndCapacity(
+  value: {
+    dateLocal?: string
+    startsAt?: string
+    endsAt?: string | null
+    timezone?: string
+    unlimited?: boolean
+    initialPax?: number | null
+    remainingPax?: number | null
+  },
+  ctx: z.RefinementCtx,
+  options: { validateRemainingPax?: boolean } = {},
+) {
+  const validateRemainingPax = options.validateRemainingPax ?? true
+
+  if (value.startsAt !== undefined && value.endsAt) {
+    const startsAt = Date.parse(value.startsAt)
+    const endsAt = Date.parse(value.endsAt)
+    if (Number.isFinite(startsAt) && Number.isFinite(endsAt) && endsAt < startsAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endsAt"],
+        message: "endsAt must be greater than or equal to startsAt",
+      })
+    }
+  }
+
+  if (
+    validateRemainingPax &&
+    value.unlimited !== true &&
+    value.initialPax !== undefined &&
+    value.initialPax !== null &&
+    value.remainingPax !== undefined &&
+    value.remainingPax !== null &&
+    value.remainingPax > value.initialPax
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["remainingPax"],
+      message: "remainingPax must be less than or equal to initialPax",
+    })
+  }
+
+  if (
+    value.dateLocal !== undefined &&
+    value.startsAt !== undefined &&
+    value.timezone !== undefined
+  ) {
+    try {
+      const startsAtDateLocal = instantToSlotLocal(value.startsAt, value.timezone).date
+      if (value.dateLocal !== startsAtDateLocal) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["dateLocal"],
+          message: "dateLocal must match startsAt in the slot timezone",
+        })
+      }
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["timezone"],
+        message: "timezone must be a valid IANA timezone for startsAt",
+      })
+    }
+  }
+}
+
 export const availabilityRuleCoreSchema = z.object({
   productId: z.string(),
   optionId: z.string().nullable().optional(),
@@ -60,8 +141,11 @@ export const availabilityRuleCoreSchema = z.object({
   active: z.boolean().default(true),
 })
 
-export const insertAvailabilityRuleSchema = availabilityRuleCoreSchema
-export const updateAvailabilityRuleSchema = availabilityRuleCoreSchema.partial()
+export const insertAvailabilityRuleSchema =
+  availabilityRuleCoreSchema.superRefine(validateRecurrenceRule)
+export const updateAvailabilityRuleSchema = availabilityRuleCoreSchema
+  .partial()
+  .superRefine(validateRecurrenceRule)
 export const availabilityRuleListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
   optionId: z.string().optional(),
@@ -114,8 +198,14 @@ export const availabilitySlotCoreSchema = z.object({
   notes: z.string().nullable().optional(),
 })
 
-export const insertAvailabilitySlotSchema = availabilitySlotCoreSchema
-export const updateAvailabilitySlotSchema = availabilitySlotCoreSchema.partial()
+export const insertAvailabilitySlotSchema = availabilitySlotCoreSchema.superRefine(
+  validateSlotTimingAndCapacity,
+)
+export const updateAvailabilitySlotSchema = availabilitySlotCoreSchema
+  .partial()
+  .superRefine((value, ctx) =>
+    validateSlotTimingAndCapacity(value, ctx, { validateRemainingPax: false }),
+  )
 export const availabilitySlotListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
   itineraryId: z.string().optional(),
