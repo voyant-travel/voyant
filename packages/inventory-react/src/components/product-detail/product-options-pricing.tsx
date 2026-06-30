@@ -2,6 +2,7 @@ export { ExtraPriceRulesPanel } from "./product-options-extra-price-rules.js"
 export {
   categoryAppliesToUnit,
   formatProductMoney,
+  formatUnitPriceCellActionLabel,
   getCategoryCondition,
   getUnitTypeLabel,
   isTravelerCategory,

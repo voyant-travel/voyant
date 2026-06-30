@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: inventory-react; existing product-detail REST client stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -113,6 +114,40 @@ export type OptionUnitPriceRuleRecord = {
   sortOrder: number
   active: boolean
   notes: string | null
+}
+
+type OptionUnitPriceRuleApiRow = Partial<OptionUnitPriceRuleRecord> & {
+  option_price_rule_id?: string
+  option_id?: string
+  unit_id?: string
+  pricing_category_id?: string | null
+  pricing_mode?: OptionUnitPriceRuleRecord["pricingMode"]
+  sell_amount_cents?: number | null
+  cost_amount_cents?: number | null
+  min_quantity?: number | null
+  max_quantity?: number | null
+  sort_order?: number
+}
+
+export function normalizeOptionUnitPriceRuleRecord(
+  row: OptionUnitPriceRuleRecord | OptionUnitPriceRuleApiRow,
+): OptionUnitPriceRuleRecord {
+  const apiRow = row as OptionUnitPriceRuleApiRow
+  return {
+    id: apiRow.id ?? "",
+    optionPriceRuleId: apiRow.optionPriceRuleId ?? apiRow.option_price_rule_id ?? "",
+    optionId: apiRow.optionId ?? apiRow.option_id ?? "",
+    unitId: apiRow.unitId ?? apiRow.unit_id ?? "",
+    pricingCategoryId: apiRow.pricingCategoryId ?? apiRow.pricing_category_id ?? null,
+    pricingMode: apiRow.pricingMode ?? apiRow.pricing_mode ?? "per_person",
+    sellAmountCents: apiRow.sellAmountCents ?? apiRow.sell_amount_cents ?? null,
+    costAmountCents: apiRow.costAmountCents ?? apiRow.cost_amount_cents ?? null,
+    minQuantity: apiRow.minQuantity ?? apiRow.min_quantity ?? null,
+    maxQuantity: apiRow.maxQuantity ?? apiRow.max_quantity ?? null,
+    sortOrder: apiRow.sortOrder ?? apiRow.sort_order ?? 0,
+    active: apiRow.active ?? true,
+    notes: apiRow.notes ?? null,
+  }
 }
 
 export type ExtraPriceRuleRecord = {
@@ -233,8 +268,17 @@ export function getOptionUnitPriceRulesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "option-unit-price-rules", filters] as const,
-    queryFn: () =>
-      list<OptionUnitPriceRuleRecord>(api, "/v1/admin/pricing/option-unit-price-rules", filters),
+    queryFn: async () => {
+      const response = await list<OptionUnitPriceRuleApiRow>(
+        api,
+        "/v1/admin/pricing/option-unit-price-rules",
+        filters,
+      )
+      return {
+        ...response,
+        data: response.data.map((row) => normalizeOptionUnitPriceRuleRecord(row)),
+      }
+    },
   })
 }
 

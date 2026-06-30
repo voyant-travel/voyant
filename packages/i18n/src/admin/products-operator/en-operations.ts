@@ -318,6 +318,7 @@ export const operatorAdminProductsMessagesEnOperations = {
     travelerCategoryDeleteConfirm: 'Remove the "{name}" traveler type?',
     travelerCategoryEdit: "Edit traveler type",
     travelerCategoryDelete: "Remove traveler type",
+    setUnitCategoryPrice: "Set price",
     travelerCategoryDialogDescription:
       "Create a product-specific traveler category such as Child under 6, then price the allowed room rows.",
     travelerCategoryNamePlaceholder: "Child under 6",
