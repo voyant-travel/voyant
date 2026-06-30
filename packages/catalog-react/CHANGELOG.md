@@ -1,5 +1,16 @@
 # @voyant-travel/catalog-react
 
+## 0.135.7
+
+### Patch Changes
+
+- c1d45bc: Normalize booking journey quote shapes before rendering so missing or malformed descriptor slices fall back safely instead of crashing storefront booking flows.
+- Updated dependencies [66ac9f3]
+- Updated dependencies [16ec0cb]
+  - @voyant-travel/ui@0.108.8
+  - @voyant-travel/inventory-react@0.19.3
+  - @voyant-travel/i18n@0.109.4
+
 ## 0.135.6
 
 ## 0.135.5

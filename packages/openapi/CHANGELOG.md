@@ -1,5 +1,11 @@
 # @voyant-travel/openapi
 
+## 0.2.3
+
+### Patch Changes
+
+- c1d45bc: Normalize booking journey quote shapes before rendering so missing or malformed descriptor slices fall back safely instead of crashing storefront booking flows.
+
 ## 0.2.2
 
 ### Patch Changes

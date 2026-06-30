@@ -1,5 +1,11 @@
 # @voyant-travel/ui
 
+## 0.108.8
+
+### Patch Changes
+
+- 66ac9f3: Render unbounded numeric inputs as numeric text inputs to avoid invalid accessibility max values.
+
 ## 0.108.7
 
 ### Patch Changes

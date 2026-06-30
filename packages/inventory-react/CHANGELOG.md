@@ -1,5 +1,20 @@
 # @voyant-travel/inventory-react
 
+## 0.19.3
+
+### Patch Changes
+
+- 16ec0cb: Render saved additional rate-plan room/category prices in the admin product detail grid and label the price controls for assistive technology.
+- Updated dependencies [66ac9f3]
+- Updated dependencies [16ec0cb]
+- Updated dependencies [c1d45bc]
+- Updated dependencies [7bdd9cc]
+  - @voyant-travel/ui@0.108.8
+  - @voyant-travel/i18n@0.109.4
+  - @voyant-travel/catalog-react@0.135.7
+  - @voyant-travel/finance@0.137.8
+  - @voyant-travel/finance-react@0.137.8
+
 ## 0.19.2
 
 ### Patch Changes
