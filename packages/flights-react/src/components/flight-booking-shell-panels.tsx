@@ -106,7 +106,7 @@ export function ConfirmStep({
           : `${billing.firstName} ${billing.lastName}`.trim() || messages.common.noValue}
       </Row>
       <Row label={messages.flightBookingShell.rows.payment}>
-        <span className="capitalize">{payment.type.replace("_", " ")}</span>
+        <span>{messages.flightPaymentSelector.intents[payment.type].title}</span>
       </Row>
       <p className="text-muted-foreground text-xs">
         {messages.flightBookingShell.confirmDescription}
