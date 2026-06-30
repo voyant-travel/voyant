@@ -419,6 +419,9 @@ export const flightsUiRo = {
     aisle: "culoar",
     noCharge: "Fara cost",
     pickedBy: "Ales de {passenger}",
+    seatAvailable: "Locul {seat}, disponibil",
+    seatUnavailable: "Locul {seat}, indisponibil",
+    seatSelectedFor: "Locul {seat} ales pentru {passenger}",
     categories: {
       exit_row: "Rand iesire - spatiu suplimentar",
       extra_legroom: "Spatiu suplimentar",
@@ -461,6 +464,8 @@ export const flightsUiRo = {
     specialAssistance: "Asistenta speciala",
     noAssistanceNeeded: "Nu este necesara asistenta",
     extras: "Extraoptiuni {leg}",
+    decreaseExtra: "Scade {service} {leg} pentru {passenger}",
+    increaseExtra: "Creste {service} {leg} pentru {passenger}",
   },
   paxCabinPopover: {
     adults: "Adulti",

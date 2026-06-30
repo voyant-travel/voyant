@@ -417,6 +417,9 @@ export const flightsUiEn = {
     aisle: "aisle",
     noCharge: "No charge",
     pickedBy: "Picked by {passenger}",
+    seatAvailable: "Seat {seat}, available",
+    seatUnavailable: "Seat {seat}, unavailable",
+    seatSelectedFor: "Seat {seat} selected for {passenger}",
     categories: {
       exit_row: "Exit row - extra legroom",
       extra_legroom: "Extra legroom",
@@ -459,6 +462,8 @@ export const flightsUiEn = {
     specialAssistance: "Special assistance",
     noAssistanceNeeded: "No assistance needed",
     extras: "{leg} extras",
+    decreaseExtra: "Decrease {leg} {service} for {passenger}",
+    increaseExtra: "Increase {leg} {service} for {passenger}",
   },
   paxCabinPopover: {
     adults: "Adults",

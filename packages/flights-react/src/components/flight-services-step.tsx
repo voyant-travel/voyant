@@ -279,6 +279,9 @@ function ExtrasSection({
                     key={opt.id}
                     option={opt}
                     quantity={qty}
+                    legLabel={legLabel}
+                    passengerLabel={pax.label}
+                    messages={messages}
                     onChange={(next) => onSetQty(pax.passengerId, sliceIndex, opt.id, next)}
                   />
                 )
@@ -294,12 +297,19 @@ function ExtrasSection({
 function ExtraRow({
   option,
   quantity,
+  legLabel,
+  passengerLabel,
+  messages,
   onChange,
 }: {
   option: AncillaryExtraOption
   quantity: number
+  legLabel: string
+  passengerLabel: string
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
   onChange: (next: number) => void
 }) {
+  const labelArgs = { leg: legLabel, service: option.label, passenger: passengerLabel }
   return (
     <li className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
@@ -315,6 +325,7 @@ function ExtraRow({
           variant="outline"
           size="icon"
           className="h-7 w-7"
+          aria-label={formatMessage(messages.flightServicesStep.decreaseExtra, labelArgs)}
           onClick={() => onChange(Math.max(0, quantity - 1))}
           disabled={quantity === 0}
         >
@@ -326,6 +337,7 @@ function ExtraRow({
           variant="outline"
           size="icon"
           className="h-7 w-7"
+          aria-label={formatMessage(messages.flightServicesStep.increaseExtra, labelArgs)}
           onClick={() => onChange(Math.min(9, quantity + 1))}
         >
           <Plus className="h-3 w-3" />
