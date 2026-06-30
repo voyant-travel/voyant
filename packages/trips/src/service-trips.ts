@@ -4,6 +4,11 @@ import { asc, eq, inArray } from "drizzle-orm"
 import type { NewTripComponent, NewTripEnvelope, TripComponent, TripEnvelope } from "./schema.js"
 import { tripComponents, tripEnvelopes } from "./schema.js"
 import {
+  assertTripSupplierCommitmentCanReceiveComponentPatch,
+  assertTripSupplierCommitmentsCanReceiveEnvelopePatch,
+  updatesSupplierCommitmentEnvelopeFields,
+} from "./service-edit-safeguards.js"
+import {
   assertTripComponentCanBeUpdated,
   assertTripComponentCanReceiveRefs,
 } from "./service-helpers.js"
@@ -227,6 +232,12 @@ export async function updateTrip(
     assertTripTravelerPartyComplete(input.travelerParty, "Trip update")
   }
 
+  if (updatesSupplierCommitmentEnvelopeFields(input)) {
+    const trip = await getTrip(db, envelopeId)
+    if (!trip) return null
+    assertTripSupplierCommitmentsCanReceiveEnvelopePatch(trip)
+  }
+
   const updates: Partial<NewTripEnvelope> = {
     updatedAt: new Date(),
   }
@@ -292,6 +303,7 @@ export async function updateComponent(
 ): Promise<TripComponent | null> {
   const existing = await getTripComponentOrThrow(db, componentId)
   assertTripComponentCanBeUpdated(existing, input)
+  assertTripSupplierCommitmentCanReceiveComponentPatch(existing, input)
 
   const updates: Partial<NewTripComponent> = {
     updatedAt: new Date(),
