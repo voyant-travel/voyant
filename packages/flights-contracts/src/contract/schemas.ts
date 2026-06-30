@@ -14,7 +14,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export const cabinClassSchema = z.enum(["economy", "premium_economy", "business", "first"])
 export const passengerTypeSchema = z.enum(["adult", "child", "infant", "senior", "youth"])
-export const paymentIntentTypeSchema = z.enum(["hold", "card", "ticket_on_credit"])
+export const paymentIntentTypeSchema = z.enum(["hold", "bank_transfer", "card", "ticket_on_credit"])
 export const flightOrderStatusSchema = z.enum([
   "pending",
   "confirmed",
@@ -238,6 +238,7 @@ export const billingAddressSchema = z.object({
 
 export const paymentIntentSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("hold") }),
+  z.object({ type: z.literal("bank_transfer") }),
   z.object({
     type: z.literal("card"),
     token: z.string(),

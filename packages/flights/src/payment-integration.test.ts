@@ -106,6 +106,27 @@ describe("createFlightOrderPaymentIntegration", () => {
     )
   })
 
+  it("stamps bank-transfer sessions without starting the card provider", async () => {
+    const startCardPayment = vi.fn(async () => undefined)
+    const orderPaymentSessions = stubSessions()
+    const integration = createFlightOrderPaymentIntegration({
+      orderPaymentSessions,
+      startCardPayment,
+    })
+
+    await integration.ensureOrderSession(stubContext(), stubOrder(), undefined, {
+      paymentMethod: "bank_transfer",
+      startCardPayment: false,
+    })
+
+    expect(orderPaymentSessions.ensureSession).toHaveBeenCalledWith(
+      DB,
+      expect.objectContaining({ paymentMethod: "bank_transfer" }),
+      undefined,
+    )
+    expect(startCardPayment).not.toHaveBeenCalled()
+  })
+
   it("returns null when the order has no passengers", async () => {
     const orderPaymentSessions = stubSessions()
     const integration = createFlightOrderPaymentIntegration({ orderPaymentSessions })

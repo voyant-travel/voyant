@@ -393,6 +393,11 @@ export const flightsUiEn = {
         description:
           "Tickets issue immediately. Card details handled outside this form by the connector's tokenization flow.",
       },
+      bank_transfer: {
+        title: "Bank transfer",
+        description:
+          "Creates a payment session for bank-transfer instructions and reference details on the order.",
+      },
       ticket_on_credit: {
         title: "Ticket on agency credit",
         description:

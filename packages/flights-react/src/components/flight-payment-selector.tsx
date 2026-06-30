@@ -2,7 +2,7 @@
 
 import type { PaymentIntent } from "@voyant-travel/flights/contract/types"
 import { cn } from "@voyant-travel/ui/lib/utils"
-import { Banknote, Clock, CreditCard } from "lucide-react"
+import { Banknote, Clock, CreditCard, Landmark } from "lucide-react"
 import type { ReactNode } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
@@ -35,8 +35,13 @@ const INTENTS: IntentMeta[] = [
     build: () => ({ type: "card", token: "demo_card_token" }),
   },
   {
-    id: "ticket_on_credit",
+    id: "bank_transfer",
     icon: <Banknote className="h-5 w-5" />,
+    build: () => ({ type: "bank_transfer" }),
+  },
+  {
+    id: "ticket_on_credit",
+    icon: <Landmark className="h-5 w-5" />,
     build: () => ({ type: "ticket_on_credit" }),
   },
 ]

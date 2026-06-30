@@ -129,6 +129,30 @@ describe("createOrderPaymentSessions", () => {
       create.mockRestore()
     })
 
+    it("lets a session request override the instance paymentMethod", async () => {
+      const stamped = createOrderPaymentSessions({
+        targetType: "flight_order",
+        paymentMethod: "credit_card",
+      })
+      const db = stubDb([])
+      const create = vi
+        .spyOn(financeService, "createPaymentSession")
+        .mockResolvedValue({ id: "ps_bt", status: "pending" } as never)
+
+      await stamped.ensureSession(db, {
+        targetId: "ord_bt",
+        currency: "EUR",
+        amountCents: 1000,
+        paymentMethod: "bank_transfer",
+      })
+
+      expect(create).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({ paymentMethod: "bank_transfer" }),
+      )
+      create.mockRestore()
+    })
+
     it("swallows provider start failures (best-effort)", async () => {
       const db = stubDb([])
       const create = vi

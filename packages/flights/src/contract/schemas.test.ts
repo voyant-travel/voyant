@@ -52,7 +52,7 @@ import {
   flightVoidResponseSchema,
   moneySchema,
   type passengerCountsSchema,
-  type paymentIntentSchema,
+  paymentIntentSchema,
   type seatAssignmentSchema,
   seatMapRequestSchema,
   seatMapResponseSchema,
@@ -333,6 +333,7 @@ const roundTripCases = [
   ["flightSearchResponseSchema", flightSearchResponseSchema, { offers: [offer] }],
   ["flightPriceRequestSchema", flightPriceRequestSchema, { offerId: "offer_1", offer }],
   ["flightPriceResponseSchema", flightPriceResponseSchema, { offer, valid: true }],
+  ["paymentIntentSchema", paymentIntentSchema, { type: "bank_transfer" }],
   [
     "flightBookRequestSchema",
     flightBookRequestSchema,
