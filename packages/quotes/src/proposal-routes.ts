@@ -13,6 +13,7 @@
  *     GET    /:quoteVersionId
  *     POST   /:quoteVersionId/accept
  *     POST   /:quoteVersionId/decline
+ *     POST   /:quoteVersionId/request-edits
  *   Admin snapshot (mount at /v1/admin/trips):
  *     POST   /:envelopeId/quote-versions/:quoteVersionId/snapshot
  *
@@ -77,6 +78,15 @@ export interface QuoteProposalRoutesOptions {
    * proposal payload. Returns `null` when no profile is configured.
    */
   resolveOperatorProfile(db: PostgresJsDatabase): Promise<unknown | null>
+  /**
+   * Optional deployment hook for public customer feedback. Deployments can use
+   * this to write CRM activity rows, trigger notifications/workflows, or both.
+   */
+  recordPublicProposalFeedback?(
+    db: PostgresJsDatabase,
+    input: PublicProposalFeedbackInput,
+    c: Context,
+  ): Promise<PublicProposalFeedbackRecord | null>
 }
 
 type OperatorProposalRouteEnv = {
@@ -140,6 +150,22 @@ export interface DeclinePublicProposalResult {
   status: QuoteVersion["status"]
 }
 
+export interface PublicProposalFeedbackInput {
+  quoteId: string
+  quoteVersionId: string
+  message: string
+  proposalUrl: string
+}
+
+export interface PublicProposalFeedbackRecord {
+  id: string
+}
+
+export interface RequestPublicProposalEditsResult {
+  status: Extract<QuoteVersion["status"], "sent">
+  feedbackId: string | null
+}
+
 export interface AcceptPublicProposalResult {
   status: Extract<QuoteVersion["status"], "accepted">
   checkoutUrl: string | null
@@ -187,6 +213,10 @@ type FinalizedAcceptResult =
 const acceptPublicProposalSchema = z.object({
   intent: z.enum(["card", "bank_transfer"]).default("card"),
   idempotencyKey: z.string().min(1).max(120).optional(),
+})
+
+const requestPublicProposalEditsSchema = z.object({
+  message: z.string().trim().min(1).max(4000),
 })
 
 const freezeQuoteVersionSnapshotBodySchema = z.object({
@@ -266,6 +296,7 @@ export function createQuoteProposalPublicRoutes(
   app.get("/:quoteVersionId", (c) => handleGetPublicProposal(c, options))
   app.post("/:quoteVersionId/accept", (c) => handleAcceptPublicProposal(c, options))
   app.post("/:quoteVersionId/decline", (c) => handleDeclinePublicProposal(c, options))
+  app.post("/:quoteVersionId/request-edits", (c) => handleRequestPublicProposalEdits(c, options))
   return app
 }
 
@@ -394,6 +425,49 @@ async function handleDeclinePublicProposal(
     }
     throw error
   }
+}
+
+async function handleRequestPublicProposalEdits(
+  c: Context<OperatorProposalRouteEnv>,
+  options: QuoteProposalRoutesOptions,
+) {
+  const quoteVersionId = c.req.param("quoteVersionId")
+  if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
+
+  const body = await parseJsonBody(c, requestPublicProposalEditsSchema)
+  const db = options.resolveDb(c)
+  await quotesService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
+
+  if (!proposal) return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "draft") return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "superseded") {
+    return c.json({ error: "Proposal has been superseded" }, 410)
+  }
+  if (proposal.quoteVersion.status !== "sent") {
+    return c.json({ error: "Proposal can no longer receive edit requests" }, 409)
+  }
+
+  const feedback =
+    (await options.recordPublicProposalFeedback?.(
+      db,
+      {
+        quoteId: proposal.quote.id,
+        quoteVersionId,
+        message: body.message,
+        proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
+          baseUrl: options.resolvePublicProposalBaseUrl(c),
+        }),
+      },
+      c,
+    )) ?? null
+
+  return c.json({
+    data: {
+      status: "sent",
+      feedbackId: feedback?.id ?? null,
+    } satisfies RequestPublicProposalEditsResult,
+  })
 }
 
 async function handleAcceptPublicProposal(

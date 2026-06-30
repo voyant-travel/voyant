@@ -32,9 +32,12 @@ export type {
   AcceptPublicProposalResult,
   ApplyTripSnapshotToQuoteVersionResult,
   DeclinePublicProposalResult,
+  PublicProposalFeedbackInput,
+  PublicProposalFeedbackRecord,
   PublicQuoteVersionProposal,
   PublicQuoteVersionProposalLine,
   QuoteProposalRoutesOptions,
+  RequestPublicProposalEditsResult,
   SendQuoteVersionResult,
 } from "./proposal-routes.js"
 export {

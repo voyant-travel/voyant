@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { Loader2 } from "lucide-react"
+import { Loader2, MessageSquare } from "lucide-react"
+import { useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
 import {
@@ -69,6 +70,13 @@ interface DeclineProposalResponse {
   }
 }
 
+interface RequestEditsProposalResponse {
+  data: {
+    status: string
+    feedbackId: string | null
+  }
+}
+
 interface AcceptProposalResponse {
   data: {
     status: string
@@ -84,6 +92,8 @@ function ProposalInner() {
   const { quoteVersionId } = Route.useParams()
   const queryClient = useQueryClient()
   const t = useStorefrontMessages().proposal
+  const [feedbackMessage, setFeedbackMessage] = useState("")
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const proposalQuery = useQuery({
     queryKey: ["public-proposal", quoteVersionId],
     queryFn: async () => {
@@ -141,6 +151,27 @@ function ProposalInner() {
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl)
     },
   })
+  const requestEdits = useMutation({
+    mutationFn: async (message: string) => {
+      const res = await fetch(
+        `${getApiUrl()}/v1/public/proposals/${encodeURIComponent(quoteVersionId)}/request-edits`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        },
+      )
+      const body = (await res.json()) as Partial<RequestEditsProposalResponse> & {
+        error?: string
+      }
+      if (!res.ok || !body.data) throw new Error(body.error ?? t.requestEditsFailed)
+      return body.data
+    },
+    onSuccess: () => {
+      setFeedbackMessage("")
+      setFeedbackSubmitted(true)
+    },
+  })
 
   if (proposalQuery.isLoading) {
     return (
@@ -169,7 +200,8 @@ function ProposalInner() {
   const operatorName =
     proposal.operator?.name || proposal.operator?.legalName || t.operatorFallbackName
   const canAct = proposal.status === "sent"
-  const isMutating = accept.isPending || decline.isPending
+  const isMutating = accept.isPending || decline.isPending || requestEdits.isPending
+  const trimmedFeedback = feedbackMessage.trim()
 
   return (
     <div className="min-h-screen bg-[#f7f5ef] text-[#232826]">
@@ -268,38 +300,80 @@ function ProposalInner() {
         <footer className="flex flex-col gap-4 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <OperatorContact operator={proposal.operator} />
           <div className="flex flex-col items-stretch gap-2 sm:items-end">
-            {accept.error || decline.error ? (
+            {accept.error || decline.error || requestEdits.error ? (
               <p className="text-[#9f3a2f] text-sm">
                 {accept.error instanceof Error
                   ? accept.error.message
                   : decline.error instanceof Error
                     ? decline.error.message
-                    : t.requestFailed}
+                    : requestEdits.error instanceof Error
+                      ? requestEdits.error.message
+                      : t.requestFailed}
               </p>
             ) : null}
             {canAct ? (
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {proposal.acceptable ? (
+              <form
+                className="grid w-full gap-2 sm:min-w-96"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  if (trimmedFeedback) void requestEdits.mutateAsync(trimmedFeedback)
+                }}
+              >
+                <label htmlFor="proposal-edit-message" className="sr-only">
+                  {t.requestEditsMessageLabel}
+                </label>
+                <textarea
+                  id="proposal-edit-message"
+                  value={feedbackMessage}
+                  onChange={(event) => {
+                    setFeedbackMessage(event.target.value)
+                    setFeedbackSubmitted(false)
+                  }}
+                  placeholder={t.requestEditsPlaceholder}
+                  rows={3}
+                  className="min-h-24 w-full resize-y border border-[#d8d2c3] bg-white px-3 py-2 text-sm outline-none transition placeholder:text-[#8a8171] focus:border-[#52645d]"
+                  disabled={isMutating}
+                />
+                {feedbackSubmitted ? (
+                  <p className="text-[#3f4b26] text-sm">{t.requestEditsSent}</p>
+                ) : null}
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  {proposal.acceptable ? (
+                    <button
+                      type="button"
+                      className="h-10 bg-[#232826] px-5 font-medium text-sm text-white transition hover:bg-[#3a403d] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isMutating}
+                      onClick={() => void accept.mutateAsync()}
+                    >
+                      {accept.isPending ? t.accepting : t.accept}
+                    </button>
+                  ) : null}
+                  <button
+                    type="submit"
+                    className="inline-flex h-10 items-center justify-center border border-[#52645d] px-4 font-medium text-[#3a443f] text-sm transition hover:bg-[#eef4df] disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isMutating || !trimmedFeedback}
+                  >
+                    {requestEdits.isPending ? (
+                      t.requestingEdits
+                    ) : (
+                      <>
+                        <MessageSquare className="mr-1.5 size-4" aria-hidden="true" />
+                        {t.requestEdits}
+                      </>
+                    )}
+                  </button>
                   <button
                     type="button"
-                    className="h-10 bg-[#232826] px-5 font-medium text-sm text-white transition hover:bg-[#3a403d] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-10 border border-[#9f3a2f] px-4 font-medium text-[#9f3a2f] text-sm transition hover:bg-[#fff1ef] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isMutating}
-                    onClick={() => void accept.mutateAsync()}
+                    onClick={() => {
+                      if (window.confirm(t.declineConfirm)) void decline.mutateAsync()
+                    }}
                   >
-                    {accept.isPending ? t.accepting : t.accept}
+                    {decline.isPending ? t.declining : t.decline}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="h-10 border border-[#9f3a2f] px-4 font-medium text-[#9f3a2f] text-sm transition hover:bg-[#fff1ef] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isMutating}
-                  onClick={() => {
-                    if (window.confirm(t.declineConfirm)) void decline.mutateAsync()
-                  }}
-                >
-                  {decline.isPending ? t.declining : t.decline}
-                </button>
-              </div>
+                </div>
+              </form>
             ) : null}
           </div>
         </footer>
