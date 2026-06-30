@@ -170,6 +170,7 @@ export const operatorAdminProductsMessagesEnCore = {
   regenerateBrochure: "Regenerate",
   downloadBrochure: "Download",
   brochureSizeHint: "Generated PDFs are capped at 5 MB.",
+  brochureGenerateFailed: "Brochure generation failed. Check storage settings and try again.",
   mediaTitle: "Media",
   itineraryTitle: "Itinerary",
   itinerariesTitle: "Itineraries",

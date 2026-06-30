@@ -72,7 +72,8 @@ export function ProductDayMediaTray({
         fileSize: uploaded.fileSize ?? (file.size || null),
         altText: uploaded.altText ?? null,
         sortOrder: uploaded.sortOrder ?? media.length,
-        isCover: uploaded.isCover ?? media.length === 0,
+        isCover:
+          mediaType === "image" ? (uploaded.isCover ?? !media.some((item) => item.isCover)) : false,
       })
     } catch (error) {
       setUploadError(
@@ -163,9 +164,9 @@ export function ProductDayMediaTray({
               <div className="space-y-2 p-2">
                 <div className="truncate text-xs font-medium">{item.name}</div>
                 <div className="flex items-center justify-between gap-1">
-                  {item.isCover ? (
+                  {item.isCover && item.mediaType === "image" ? (
                     <Badge className="text-[10px]">{messages.productMediaSection.coverBadge}</Badge>
-                  ) : (
+                  ) : item.mediaType === "image" ? (
                     <Button
                       type="button"
                       variant="ghost"
@@ -175,7 +176,7 @@ export function ProductDayMediaTray({
                     >
                       <Star className="size-4" aria-hidden="true" />
                     </Button>
-                  )}
+                  ) : null}
                   <div className="flex items-center gap-1">
                     <Button
                       type="button"

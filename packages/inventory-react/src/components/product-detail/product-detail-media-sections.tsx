@@ -9,10 +9,12 @@ import { ProductMediaGallery } from "./product-media-gallery.js"
 export function ProductBrochureSection({
   brochure,
   isGenerating,
+  generateError,
   onGenerate,
 }: {
   brochure: ProductMediaItem | null
   isGenerating: boolean
+  generateError?: string | null
   onGenerate: () => void
 }) {
   const messages = useProductDetailMessages()
@@ -62,6 +64,7 @@ export function ProductBrochureSection({
         </div>
 
         <p className="text-xs text-muted-foreground">{productMessages.brochureSizeHint}</p>
+        {generateError ? <p className="text-sm text-destructive">{generateError}</p> : null}
       </div>
     </Section>
   )

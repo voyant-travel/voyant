@@ -172,6 +172,8 @@ export const operatorAdminProductsMessagesRoCore = {
   regenerateBrochure: "Regenereaza",
   downloadBrochure: "Descarca",
   brochureSizeHint: "PDF-urile generate sunt limitate la 5 MB.",
+  brochureGenerateFailed:
+    "Generarea brosurii a esuat. Verifica setarile de stocare si incearca din nou.",
   mediaTitle: "Media",
   itineraryTitle: "Itinerariu",
   itinerariesTitle: "Itinerarii",

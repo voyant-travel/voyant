@@ -159,6 +159,7 @@ export const productsUiCatalogEn = {
     validation: {
       nameRequired: "Media name is required.",
       urlRequired: "Media URL is required.",
+      coverRequiresImage: "Only image media can be marked as cover.",
       saveFailed: "Failed to save media.",
     },
     actions: {

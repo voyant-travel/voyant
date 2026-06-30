@@ -160,6 +160,7 @@ export const productsUiCatalogRo = {
     validation: {
       nameRequired: "Numele media este obligatoriu.",
       urlRequired: "URL-ul media este obligatoriu.",
+      coverRequiresImage: "Doar imaginile pot fi marcate ca media cover.",
       saveFailed: "Salvarea media a esuat.",
     },
     actions: {
