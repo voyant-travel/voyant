@@ -400,6 +400,17 @@ function toIsoString(value: Date | string | null): string | null {
   return value instanceof Date ? value.toISOString() : value
 }
 
+const CARD_PAYMENT_STARTABLE_STATUSES = new Set(["pending", "requires_redirect", "processing"])
+const CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES = new Set(["authorized", "paid"])
+
+function canStartCardPayment(status: string): boolean {
+  return CARD_PAYMENT_STARTABLE_STATUSES.has(status)
+}
+
+function canReuseCardRedirect(status: string): boolean {
+  return CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES.has(status)
+}
+
 async function buildPublicBankTransferInstructions(
   c: Context,
   options: PaymentLinkRoutesOptions,
@@ -517,8 +528,11 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         .where(eq(paymentSessions.id, sessionId))
         .limit(1)
       if (!session) return c.json({ error: "Session not found" }, 404)
-      if (session.redirectUrl) {
+      if (session.redirectUrl && canReuseCardRedirect(session.status)) {
         return c.json({ data: { redirectUrl: session.redirectUrl } }, 200)
+      }
+      if (!canStartCardPayment(session.status)) {
+        return c.json({ data: { redirectUrl: null } }, 200)
       }
       try {
         const started = await options.startCardPayment(c, {
