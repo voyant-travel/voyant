@@ -1,5 +1,12 @@
 # @voyant-travel/crm-react
 
+## 0.135.2
+
+### Patch Changes
+
+- 3bc91f1: Preserve sent proposal versions when saving a manual won quote without proposal content changes.
+- 0f21c78: Label product-only quote proposal links as review-only in the admin quote detail page.
+
 ## 0.135.1
 
 ### Patch Changes
