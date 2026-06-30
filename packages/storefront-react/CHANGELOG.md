@@ -1,5 +1,12 @@
 # @voyant-travel/storefront-react
 
+## 0.139.3
+
+### Patch Changes
+
+- b58a2ec: Expose customer storefront product-detail routing helpers that exclude charters until a dedicated charter booking path exists.
+  - @voyant-travel/storefront@0.139.3
+
 ## 0.139.2
 
 ### Patch Changes
