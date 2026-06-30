@@ -31,7 +31,7 @@ function resolveAdapter(c: Context) {
   const baseUrl = (c.env as { FLIGHTS_DEMO_API_URL?: string }).FLIGHTS_DEMO_API_URL
   if (!baseUrl) {
     throw new Error(
-      "FLIGHTS_DEMO_API_URL is not set. Start `apps/flights-demo-api` and point this env at it (e.g. http://localhost:3320).",
+      "FLIGHTS_DEMO_API_URL is not set. Start the demo service with `pnpm --dir apps/flights-demo-api dev` and point this env at it (e.g. http://localhost:3320).",
     )
   }
   return createDemoFlightAdapter({ baseUrl })
