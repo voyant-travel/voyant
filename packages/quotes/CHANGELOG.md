@@ -1,5 +1,12 @@
 # @voyant-travel/crm
 
+## 0.123.7
+
+### Patch Changes
+
+- 6d8f054: Normalize quote proposal snapshot currencies so quote-product line items cannot carry a blank or mismatched currency into sent public proposals.
+- 23d9ee3: Add public proposal request-edits route support so customers can send non-final feedback on sent proposals.
+
 ## 0.123.6
 
 ### Patch Changes
