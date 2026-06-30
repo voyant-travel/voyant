@@ -23,6 +23,7 @@ import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
 } from "../lib/booking-engine-runtime"
+import { enrichProductQuoteShape } from "./catalog-booking-shape-enricher"
 
 const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
 
@@ -42,14 +43,28 @@ function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOption
     // surfaces a code_* invalidReason and tax recompute below sees no
     // discount on base_amount.
     resolveEvaluatePromotions: ({ db }) => createCatalogPromotionEvaluator(db),
-    transformQuoteResult: ({ db, result, request, provenance }) =>
-      applyOperatorTaxToQuoteResult(
+    transformQuoteResult: async ({ c, db, result, request, provenance }) => {
+      const taxed = await applyOperatorTaxToQuoteResult(
         db,
         result,
         request.entityModule,
         request.entityId,
         provenance.sourceKind,
-      ),
+      )
+      return enrichProductQuoteShape({
+        db,
+        result: taxed,
+        entityModule: request.entityModule,
+        entityId: request.entityId,
+        locale: request.scope?.locale ?? "en-GB",
+        market: request.scope?.market ?? "default",
+        currency: request.scope?.currency,
+        registry: getBookingEngineRegistryFromContext(c),
+        adapterContext: {
+          connection_id: provenance.sourceConnectionId ?? provenance.sourceKind,
+        },
+      })
+    },
     onDraftConsumedError: ({ error }) => {
       console.warn("[catalog-booking] markDraftConsumed failed:", error)
     },
