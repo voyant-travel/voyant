@@ -7,6 +7,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const brochures = vi.hoisted(() => ({
   generateAndStoreProductBrochure: vi.fn(),
   createDefaultProductBrochureTemplate: vi.fn(() => ({ id: "default" })),
+  PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE:
+    "Product brochure storage is unavailable. Configure a usable media storage provider for brochure uploads and retry.",
+  ProductBrochureStorageError: class ProductBrochureStorageError extends Error {
+    constructor(message: string) {
+      super(message)
+      this.name = "ProductBrochureStorageError"
+    }
+  },
 }))
 
 vi.mock("./tasks/index.js", () => brochures)
@@ -92,6 +100,24 @@ describe("product brochure routes", () => {
     })
 
     expect(response.status).toBe(413)
+  })
+
+  it("maps brochure storage failures to 503", async () => {
+    brochures.generateAndStoreProductBrochure.mockRejectedValue(
+      new brochures.ProductBrochureStorageError(
+        "S3 upstream response text: AccessDenied secret bucket policy details",
+      ),
+    )
+    const app = mountApp(() => storageStub())
+
+    const response = await app.request("/v1/admin/products/prod_1/brochure/generate", {
+      method: "POST",
+    })
+
+    expect(response.status).toBe(503)
+    await expect(response.json()).resolves.toEqual({
+      error: brochures.PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE,
+    })
   })
 
   it("passes an injected printer through to the task", async () => {

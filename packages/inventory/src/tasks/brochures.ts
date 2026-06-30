@@ -24,6 +24,18 @@ export interface GenerateAndStoreProductBrochureOptions {
   maxSizeBytes?: number
 }
 
+export const PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE =
+  "Product brochure storage is unavailable. Configure a usable media storage provider for brochure uploads and retry."
+
+export class ProductBrochureStorageError extends Error {
+  readonly publicMessage = PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE
+
+  constructor(options?: { cause?: unknown }) {
+    super(PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE, options)
+    this.name = "ProductBrochureStorageError"
+  }
+}
+
 export async function generateAndStoreProductBrochure(
   db: PostgresJsDatabase,
   productId: string,
@@ -72,18 +84,29 @@ export async function generateAndStoreProductBrochure(
   }
 
   const keyPrefix = options.keyPrefix?.trim() || `brochures/products/${productId}`
-  const uploaded = await options.storage.upload(pdfBytes, {
-    key: `${keyPrefix.replace(/\/$/, "")}/${filename}`,
-    contentType: mimeType,
-  })
-  const url =
-    uploaded.url ||
-    (options.signedUrlExpiresIn
-      ? await options.storage.signedUrl(uploaded.key, options.signedUrlExpiresIn)
-      : null)
+  let uploaded: Awaited<ReturnType<StorageProvider["upload"]>>
+  try {
+    uploaded = await options.storage.upload(pdfBytes, {
+      key: `${keyPrefix.replace(/\/$/, "")}/${filename}`,
+      contentType: mimeType,
+    })
+  } catch (err) {
+    throw new ProductBrochureStorageError({ cause: err })
+  }
+
+  let url: string | null
+  try {
+    url =
+      uploaded.url ||
+      (options.signedUrlExpiresIn
+        ? await options.storage.signedUrl(uploaded.key, options.signedUrlExpiresIn)
+        : null)
+  } catch (err) {
+    throw new ProductBrochureStorageError({ cause: err })
+  }
 
   if (!url) {
-    throw new Error("Brochure upload did not return a public or signed URL.")
+    throw new ProductBrochureStorageError()
   }
 
   const brochure = await productsService.upsertBrochure(db, productId, {
