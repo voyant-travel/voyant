@@ -1868,9 +1868,6 @@ importers:
       '@voyant-travel/admin':
         specifier: workspace:^
         version: link:../admin
-      '@voyant-travel/bookings-react':
-        specifier: workspace:^
-        version: link:../bookings-react
       '@voyant-travel/finance':
         specifier: workspace:^
         version: link:../finance
