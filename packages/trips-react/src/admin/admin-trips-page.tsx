@@ -1,5 +1,6 @@
 "use client"
 
+// agent-quality: file-size exception -- owner: trips-react; admin composer state stays co-located until the page is split along component setup and checkout flows.
 import { useMutation } from "@tanstack/react-query"
 import {
   useOperatorAdminMessages as useAdminMessages,
@@ -16,7 +17,7 @@ import { usePerson } from "@voyant-travel/relationships-react"
 import type { Trip, TripComponent } from "@voyant-travel/trips"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
 import { Textarea } from "@voyant-travel/ui/components/textarea"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   addTripComponent,
   createTrip,
@@ -46,6 +47,7 @@ import {
   hydrateTravelers,
   hydrateVoucher,
   metadataWithComponentBookingSetup,
+  paymentScheduleReserveValidationReason,
   pendingToAddInput,
   serializeBilling,
   stringFromRecord,
@@ -100,6 +102,8 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
   const [selectedCancellationIds, setSelectedCancellationIds] = useState<string[]>([])
   const [cancellationReason, setCancellationReason] = useState(t.cancellation.defaultReason)
   const [cancellationPreview, setCancellationPreview] = useState<CancellationPreview | null>(null)
+  const componentSetupSaveVersions = useRef(new Map<string, number>())
+  const componentSetupSaveQueues = useRef(new Map<string, Promise<void>>())
 
   const { baseUrl, fetcher } = useVoyantTripsContext()
   const client = useMemo(() => ({ baseUrl, fetcher }), [baseUrl, fetcher])
@@ -114,6 +118,10 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
   )
   const selectedCount = selectedCancellationIds.length
   const envelopeStatus = trip?.envelope.status
+  const reserveValidationReason = useMemo(
+    () => paymentScheduleReserveValidationReason(components),
+    [components],
+  )
   // Once the trip is reserved or further along, removal touches real holds /
   // bookings — operators must go through cancellation preview. Before that
   // (`draft` / priced) a component is a no-op blueprint and can be deleted.
@@ -305,13 +313,30 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
   })
 
   const updateComponentSetupMutation = useMutation({
-    mutationFn: async ({
-      componentId,
-      metadata,
-    }: {
+    mutationFn: async (input: {
       componentId: string
       metadata: Record<string, unknown>
-    }) => updateTripComponent(client, componentId, { metadata }),
+      setupVersion: number
+    }) => {
+      const previousSave =
+        componentSetupSaveQueues.current.get(input.componentId) ?? Promise.resolve()
+      const save = previousSave
+        .catch(() => undefined)
+        .then(() => updateTripComponent(client, input.componentId, { metadata: input.metadata }))
+      const queue = save.then(
+        () => undefined,
+        () => undefined,
+      )
+      componentSetupSaveQueues.current.set(input.componentId, queue)
+
+      try {
+        return await save
+      } finally {
+        if (componentSetupSaveQueues.current.get(input.componentId) === queue) {
+          componentSetupSaveQueues.current.delete(input.componentId)
+        }
+      }
+    },
     onMutate: ({ componentId, metadata }) => {
       const previousTrip = state.trip
       if (previousTrip) {
@@ -327,7 +352,8 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
       }
       return { previousTrip }
     },
-    onSuccess: (updatedComponent) => {
+    onSuccess: (updatedComponent, input) => {
+      if (componentSetupSaveVersions.current.get(input.componentId) !== input.setupVersion) return
       setState((current) =>
         current.trip
           ? {
@@ -343,6 +369,9 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
       )
     },
     onError: (error, _input, context) => {
+      if (componentSetupSaveVersions.current.get(_input.componentId) !== _input.setupVersion) {
+        return
+      }
       if (context?.previousTrip) {
         setState((current) => ({ ...current, trip: context.previousTrip }))
       }
@@ -405,7 +434,9 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
 
   function updateComponentBookingSetup(component: TripComponent, setup: ComponentBookingSetup) {
     const metadata = metadataWithComponentBookingSetup(component, setup)
-    updateComponentSetupMutation.mutate({ componentId: component.id, metadata })
+    const setupVersion = (componentSetupSaveVersions.current.get(component.id) ?? 0) + 1
+    componentSetupSaveVersions.current.set(component.id, setupVersion)
+    updateComponentSetupMutation.mutate({ componentId: component.id, metadata, setupVersion })
   }
 
   function commitPending(component: PendingComponent) {
@@ -551,6 +582,7 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
             isBusy={isBusy}
             pricePending={commitMutation.isPending}
             reservePending={reserveMutation.isPending}
+            reserveValidationReason={reserveValidationReason}
             onReserve={() => reserveMutation.mutate()}
           />
         </div>

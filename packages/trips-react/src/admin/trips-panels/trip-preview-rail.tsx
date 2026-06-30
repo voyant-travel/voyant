@@ -11,7 +11,7 @@ import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import { AlertTriangle, Check, Loader2 } from "lucide-react"
 import * as React from "react"
-
+import type { ReservePaymentScheduleValidationReason } from "../admin-trips-page-model.js"
 import {
   componentIcon,
   componentOptionSummaryFor,
@@ -301,6 +301,7 @@ export function PrimaryAction({
   isBusy,
   pricePending,
   reservePending,
+  reserveValidationReason,
   onReserve,
 }: {
   status: string | undefined
@@ -308,6 +309,7 @@ export function PrimaryAction({
   isBusy: boolean
   pricePending: boolean
   reservePending: boolean
+  reserveValidationReason?: ReservePaymentScheduleValidationReason | null
   onReserve(): void
 }) {
   const t = useAdminMessages().trips.adminComposer.panels
@@ -353,11 +355,23 @@ export function PrimaryAction({
   // is the happy-path entry into reserve. Any other status (e.g. `draft`)
   // means pricing hasn't run yet — gate the button until that catches up.
   const canReserve = status === "priced" || status === "failed"
+  const validationMessage = reserveValidationReason
+    ? t.primaryAction[reserveValidationReason]
+    : null
   return (
-    <Button onClick={onReserve} disabled={isBusy || !canReserve} className="w-full">
-      <Check className="size-4" />
-      {status === "failed" ? t.primaryAction.retryReserve : t.primaryAction.reserveAndCreateLink}
-    </Button>
+    <div className="flex flex-col gap-2">
+      <Button
+        onClick={onReserve}
+        disabled={isBusy || !canReserve || Boolean(validationMessage)}
+        className="w-full"
+      >
+        <Check className="size-4" />
+        {status === "failed" ? t.primaryAction.retryReserve : t.primaryAction.reserveAndCreateLink}
+      </Button>
+      {validationMessage ? (
+        <p className="text-muted-foreground text-xs">{validationMessage}</p>
+      ) : null}
+    </div>
   )
 }
 
