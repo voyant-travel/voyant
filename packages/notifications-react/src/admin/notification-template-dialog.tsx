@@ -49,6 +49,7 @@ import {
   type InsertionTarget,
   nativeSelectClassName,
   readTemplateAttachments,
+  resolveTemplateMutationStatus,
   STATUS_VALUES,
   statusItemLabel,
   type TemplateAttachment,
@@ -63,6 +64,8 @@ type NotificationTemplateDialogProps = {
   template?: NotificationTemplateRecord
   onSuccess: () => void
 }
+
+const dirtyFieldOptions = { shouldDirty: true, shouldTouch: true, shouldValidate: true } as const
 
 export function NotificationTemplateDialog(props: NotificationTemplateDialogProps) {
   if (!props.open) {
@@ -113,7 +116,7 @@ function NotificationTemplateDialogInner({
       name: "",
       slug: "",
       channel: "email",
-      status: "draft",
+      status: "active",
       subjectTemplate: "",
       htmlTemplate: "",
       textTemplate: "",
@@ -181,7 +184,7 @@ function NotificationTemplateDialogInner({
       slug: values.slug,
       channel: values.channel,
       provider: null,
-      status: values.active ? (values.status === "archived" ? "active" : values.status) : "draft",
+      status: resolveTemplateMutationStatus(values),
       subjectTemplate: values.channel === "email" ? values.subjectTemplate || null : null,
       htmlTemplate: values.channel === "email" ? values.htmlTemplate || null : null,
       textTemplate: values.channel === "sms" ? values.textTemplate || null : null,
@@ -355,11 +358,8 @@ function NotificationTemplateDialogInner({
                     onChange={(event) => {
                       const nextStatus = event.target.value as FormValues["status"]
                       if (form.getValues("status") === nextStatus) return
-                      form.setValue("status", nextStatus, {
-                        shouldDirty: true,
-                        shouldTouch: true,
-                        shouldValidate: true,
-                      })
+                      form.setValue("status", nextStatus, dirtyFieldOptions)
+                      form.setValue("active", nextStatus === "active", dirtyFieldOptions)
                     }}
                   >
                     {STATUS_VALUES.map((value) => (
@@ -562,7 +562,10 @@ function NotificationTemplateDialogInner({
               <div className="flex items-center gap-3">
                 <Switch
                   checked={form.watch("active")}
-                  onCheckedChange={(checked) => form.setValue("active", checked)}
+                  onCheckedChange={(checked) => {
+                    form.setValue("active", checked, dirtyFieldOptions)
+                    form.setValue("status", checked ? "active" : "draft", dirtyFieldOptions)
+                  }}
                 />
                 <Label className="cursor-pointer">{t.markActiveLabel}</Label>
               </div>

@@ -51,6 +51,17 @@ export type FormOutput = z.output<typeof templateFormSchema>
 export type TemplateAttachment = z.infer<typeof templateAttachmentSchema>
 export type InsertionTarget = "subject" | "body" | "text"
 
+export function resolveTemplateMutationStatus({
+  active,
+  status,
+}: Pick<FormOutput, "active" | "status">): FormOutput["status"] {
+  if (status === "draft" && active) {
+    return "active"
+  }
+
+  return status
+}
+
 type SamplePayloadVariable = {
   key: string
   example: string
