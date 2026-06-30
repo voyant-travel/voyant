@@ -99,6 +99,7 @@ const snapshotQuoteVersionRoute = createRoute({
       ...jsonContent(z.object({ data: quoteVersionSchema })),
     },
     404: { description: "Quote not found", ...jsonContent(errorResponseSchema) },
+    409: { description: "Quote version conflict", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -186,11 +187,18 @@ const versionsCoreChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationH
     return row ? c.json({ data: row }, 200) : c.json({ error: "Quote version not found" }, 404)
   })
   .openapi(snapshotQuoteVersionRoute, async (c) => {
-    const version = await quotesService.createVersionSnapshotFromQuote(
-      c.get("db"),
-      c.req.valid("param").id,
-    )
-    return version ? c.json({ data: version }, 201) : c.json({ error: "Quote not found" }, 404)
+    try {
+      const version = await quotesService.createVersionSnapshotFromQuote(
+        c.get("db"),
+        c.req.valid("param").id,
+      )
+      return version ? c.json({ data: version }, 201) : c.json({ error: "Quote not found" }, 404)
+    } catch (error) {
+      if (error instanceof QuoteVersionConflictError) {
+        return c.json({ error: error.message }, 409)
+      }
+      throw error
+    }
   })
   .openapi(expireQuoteVersionsRoute, async (c) =>
     c.json(
