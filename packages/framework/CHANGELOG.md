@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.9.17
+
+### Patch Changes
+
+- Updated dependencies [6d8f054]
+  - @voyant-travel/quotes@0.123.7
+
 ## 0.9.16
 
 ### Patch Changes
