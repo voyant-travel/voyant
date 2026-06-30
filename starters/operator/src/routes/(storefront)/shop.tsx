@@ -2,6 +2,7 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCatalogSearch } from "@voyant-travel/catalog-react"
+import { getStorefrontCustomerProductDetailRoute } from "@voyant-travel/storefront-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { Input } from "@voyant-travel/ui/components/input"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
@@ -212,13 +213,18 @@ function SearchResults({
                   ) : null}
                 </div>
               ) : null}
-              <Link
-                to="/shop/products/$entityModule/$entityId"
-                params={{ entityModule: vertical, entityId: hit.id }}
-                className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-sm hover:bg-primary/90"
-              >
-                {t.viewAndBook}
-              </Link>
+              {(() => {
+                const route = getStorefrontCustomerProductDetailRoute(vertical, hit.id)
+                return route ? (
+                  <Link
+                    to={route.to}
+                    params={route.params}
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-sm hover:bg-primary/90"
+                  >
+                    {t.viewAndBook}
+                  </Link>
+                ) : null
+              })()}
             </CardContent>
           </Card>
         )

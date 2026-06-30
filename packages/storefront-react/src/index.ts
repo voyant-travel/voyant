@@ -37,4 +37,10 @@ export {
   getStorefrontProductOffersQueryOptions,
   getStorefrontSettingsQueryOptions,
 } from "./query-options.js"
+export {
+  getStorefrontCustomerProductDetailRoute,
+  isStorefrontCustomerBookableProductVertical,
+  type StorefrontCustomerBookableProductVertical,
+  storefrontCustomerBookableProductVerticals,
+} from "./routing.js"
 export * from "./schemas.js"

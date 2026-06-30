@@ -92,6 +92,9 @@ const storefrontMessagesEn = {
     unavailableBody:
       "The search indexer is offline (typically because TYPESENSE_HOST isn't set). You can still demo the booking journey directly — pick a product id from the operator dashboard and visit:",
     viewAndBook: "View & book",
+    nonBookableTitle: "Not available for online booking",
+    nonBookableBody:
+      "{vertical} are not available for online booking yet. Contact the operator to plan this request.",
     percentOff: "{percent}% off",
     amountOff: "{amount} off",
     emptyPrefix: "No",
@@ -292,6 +295,9 @@ const storefrontMessagesRo: StorefrontMessages = {
     unavailableBody:
       "Indexul de cautare este offline (de obicei pentru ca TYPESENSE_HOST nu este setat). Poti totusi testa parcursul de rezervare direct — alege un id de produs din panoul operatorului si viziteaza:",
     viewAndBook: "Vezi si rezerva",
+    nonBookableTitle: "Indisponibil pentru rezervare online",
+    nonBookableBody:
+      "{vertical} nu este disponibil pentru rezervare online inca. Contacteaza operatorul pentru a planifica aceasta cerere.",
     percentOff: "{percent}% reducere",
     amountOff: "{amount} reducere",
     emptyPrefix: "Niciun",
