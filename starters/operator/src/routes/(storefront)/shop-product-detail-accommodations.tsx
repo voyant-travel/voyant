@@ -47,30 +47,43 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<string | undefined>(undefined)
   const [adultCount, setAdultCount] = useState(2)
   const [childCount, setChildCount] = useState(0)
+  const [appliedSelectionKey, setAppliedSelectionKey] = useState<string | null>(null)
 
-  const firstRoomId = content.data?.content.room_types[0]?.id
+  const initialSelection = useMemo(
+    () =>
+      content.data ? resolveInitialAccommodationSelection(content.data.content, entityId) : null,
+    [content.data, entityId],
+  )
+  const initialSelectionKey = content.data ? `${entityId}:${content.data.content.hotel.id}` : null
+
   useEffect(() => {
-    if (firstRoomId && !selectedRoomId) setSelectedRoomId(firstRoomId)
-  }, [firstRoomId, selectedRoomId])
+    if (!initialSelectionKey || appliedSelectionKey === initialSelectionKey) return
+    setSelectedRoomId(initialSelection?.roomId)
+    setSelectedRatePlanId(initialSelection?.ratePlanId)
+    setAppliedSelectionKey(initialSelectionKey)
+  }, [appliedSelectionKey, initialSelection, initialSelectionKey])
 
   const ratePlansForRoom = useMemo(() => {
     if (!content.data || !selectedRoomId) return []
-    return content.data.content.rate_plans.filter(
-      (rp) =>
-        !rp.applies_to_room_type_ids ||
-        rp.applies_to_room_type_ids.length === 0 ||
-        rp.applies_to_room_type_ids.includes(selectedRoomId),
-    )
+    return getAccommodationRatePlansForRoom(content.data.content, selectedRoomId)
   }, [content.data, selectedRoomId])
 
   useEffect(() => {
-    if (ratePlansForRoom.length > 0 && !selectedRatePlanId) {
-      setSelectedRatePlanId(ratePlansForRoom[0]?.id)
+    const firstRatePlanId = ratePlansForRoom[0]?.id
+    const selectedRatePlanIsCompatible = ratePlansForRoom.some(
+      (plan) => plan.id === selectedRatePlanId,
+    )
+    if (!selectedRoomId || !firstRatePlanId) {
+      if (selectedRatePlanId) setSelectedRatePlanId(undefined)
+      return
     }
-  }, [ratePlansForRoom, selectedRatePlanId])
+    if (!selectedRatePlanId || !selectedRatePlanIsCompatible) {
+      setSelectedRatePlanId(firstRatePlanId)
+    }
+  }, [ratePlansForRoom, selectedRatePlanId, selectedRoomId])
 
   const probeDraft = useMemo<BookingDraftV1 | null>(() => {
-    if (!selectedRoomId || !checkIn || !checkOut) return null
+    if (!selectedRoomId || !selectedRatePlanId || !checkIn || !checkOut) return null
     return bookingDraftV1.parse({
       entity: { module: "accommodations", id: entityId, sourceKind: "" },
       configure: {
@@ -108,6 +121,75 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
     next.setDate(next.getDate() + 1)
     return next
   })()
+  const bookingSidebar =
+    content.isLoading || !content.data ? null : !selectedRoomId ? (
+      <AccommodationUnavailableSidebar reason="noRooms" />
+    ) : !selectedRatePlanId ? (
+      <AccommodationUnavailableSidebar reason="noRatePlan" />
+    ) : quote.error ? (
+      <AccommodationUnavailableSidebar reason="quoteFailed" />
+    ) : (
+      <BookingSidebar
+        totalPax={totalPax}
+        totalCents={totalCents}
+        currency={currency}
+        isQuoting={quote.isQuoting}
+        quoteData={quote.data}
+        disabled={
+          !datesValid ||
+          totalPax < 1 ||
+          quote.isQuoting ||
+          !quote.data ||
+          quote.data.available === false
+        }
+        onBook={() => {
+          if (!selectedRoomId || !selectedRatePlanId || !datesValid || !quote.data) return
+          navigate({
+            to: "/shop/book/$entityModule/$entityId",
+            params: { entityModule: "accommodations", entityId },
+            search: {
+              checkIn,
+              checkOut,
+              roomTypeId: selectedRoomId,
+              ratePlanId: selectedRatePlanId,
+              adult: adultCount,
+              ...(childCount > 0 ? { child: childCount } : {}),
+            } as never,
+          })
+        }}
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="hp-checkin">{t.checkIn}</Label>
+            <DatePicker
+              value={checkIn || null}
+              onChange={(value) => setCheckIn(value ?? "")}
+              dateDisabled={{ before: minCheckInDate }}
+              className="w-full"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="hp-checkout">{t.checkOut}</Label>
+            <DatePicker
+              value={checkOut || null}
+              onChange={(value) => setCheckOut(value ?? "")}
+              dateDisabled={{ before: minCheckOutDate }}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <PaxBlock
+          adult={adultCount}
+          child={childCount}
+          infant={0}
+          setAdult={setAdultCount}
+          setChild={setChildCount}
+          setInfant={() => {}}
+          showInfants={false}
+        />
+      </BookingSidebar>
+    )
 
   return (
     <DetailLayout
@@ -131,69 +213,77 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
           />
         )
       }
-      sidebar={
-        <BookingSidebar
-          totalPax={totalPax}
-          totalCents={totalCents}
-          currency={currency}
-          isQuoting={quote.isQuoting}
-          quoteData={quote.data}
-          disabled={
-            !selectedRoomId ||
-            !selectedRatePlanId ||
-            !datesValid ||
-            totalPax < 1 ||
-            quote.data?.available === false
-          }
-          onBook={() => {
-            if (!selectedRoomId || !selectedRatePlanId || !datesValid) return
-            navigate({
-              to: "/shop/book/$entityModule/$entityId",
-              params: { entityModule: "accommodations", entityId },
-              search: {
-                checkIn,
-                checkOut,
-                roomTypeId: selectedRoomId,
-                ratePlanId: selectedRatePlanId,
-                adult: adultCount,
-                ...(childCount > 0 ? { child: childCount } : {}),
-              } as never,
-            })
-          }}
-        >
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="hp-checkin">{t.checkIn}</Label>
-              <DatePicker
-                value={checkIn || null}
-                onChange={(value) => setCheckIn(value ?? "")}
-                dateDisabled={{ before: minCheckInDate }}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="hp-checkout">{t.checkOut}</Label>
-              <DatePicker
-                value={checkOut || null}
-                onChange={(value) => setCheckOut(value ?? "")}
-                dateDisabled={{ before: minCheckOutDate }}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <PaxBlock
-            adult={adultCount}
-            child={childCount}
-            infant={0}
-            setAdult={setAdultCount}
-            setChild={setChildCount}
-            setInfant={() => {}}
-            showInfants={false}
-          />
-        </BookingSidebar>
-      }
+      sidebar={bookingSidebar}
     />
+  )
+}
+
+type AccommodationSelection = {
+  roomId: string
+  ratePlanId: string | undefined
+}
+
+export function getAccommodationRatePlansForRoom(
+  content: AccommodationContent,
+  roomId: string,
+): ReadonlyArray<AccommodationContent["rate_plans"][number]> {
+  return content.rate_plans.filter((plan) => ratePlanAppliesToRoom(plan, roomId))
+}
+
+export function resolveInitialAccommodationSelection(
+  content: AccommodationContent,
+  entityId: string,
+): AccommodationSelection | null {
+  const roomIds = new Set(content.room_types.map((room) => room.id))
+  if (roomIds.has(entityId)) {
+    return {
+      roomId: entityId,
+      ratePlanId: getAccommodationRatePlansForRoom(content, entityId)[0]?.id,
+    }
+  }
+
+  for (const room of content.room_types) {
+    const ratePlanId = getAccommodationRatePlansForRoom(content, room.id)[0]?.id
+    if (ratePlanId) return { roomId: room.id, ratePlanId }
+  }
+
+  const firstRoomId = content.room_types[0]?.id
+  return firstRoomId ? { roomId: firstRoomId, ratePlanId: undefined } : null
+}
+
+function ratePlanAppliesToRoom(
+  plan: AccommodationContent["rate_plans"][number],
+  roomId: string,
+): boolean {
+  return (
+    !plan.applies_to_room_type_ids ||
+    plan.applies_to_room_type_ids.length === 0 ||
+    plan.applies_to_room_type_ids.includes(roomId)
+  )
+}
+
+function AccommodationUnavailableSidebar({
+  reason,
+}: {
+  reason: "noRooms" | "noRatePlan" | "quoteFailed"
+}): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailAccommodations
+  const body =
+    reason === "noRooms"
+      ? t.unavailableNoRooms
+      : reason === "quoteFailed"
+        ? t.unavailableQuoteFailed
+        : t.unavailableNoRatePlan
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t.unavailableTitle}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-muted-foreground text-sm">
+        <p>{body}</p>
+        <BackLink />
+      </CardContent>
+    </Card>
   )
 }
 
