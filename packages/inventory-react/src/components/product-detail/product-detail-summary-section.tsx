@@ -3,12 +3,12 @@ import { DropdownMenuItem, ToggleGroup, ToggleGroupItem } from "@voyant-travel/u
 import { Pencil } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useProductTranslations } from "../../index.js"
+import { type ProductDetailApi, useProductDetailApi, useProductDetailMessages } from "./host.js"
 import {
-  type ProductDetailApi,
-  useProductDetailApi,
-  useProductDetailMessages,
-  useProductLocale,
-} from "./host.js"
+  resolveProductDetailBaseLanguageToggleTag,
+  resolveProductDetailDescription,
+  resolveProductDetailSelectedLanguageTag,
+} from "./product-detail-language.js"
 import { ActionMenu, DetailRow, Section } from "./product-detail-section-shell.js"
 import { formatAmount, type ProductRecord } from "./product-detail-shared.js"
 
@@ -64,7 +64,6 @@ export function ProductDetailsSection({
   const api = useProductDetailApi()
   const messages = useProductDetailMessages()
   const productMessages = messages.products.core
-  const resolvedLocale = useProductLocale()
   const startingFromQuery = useQuery({
     queryKey: ["product-starting-from", product.id],
     queryFn: () => getProductStartingFromCents(api, product.id),
@@ -75,34 +74,35 @@ export function ProductDetailsSection({
   const translationsQuery = useProductTranslations(product.id, { limit: 100 })
   const translations = translationsQuery.data?.data ?? []
   const [selectedLanguageTag, setSelectedLanguageTag] = useState("")
+  const baseLanguageTag = resolveProductDetailBaseLanguageToggleTag({
+    defaultLanguageTag: product.defaultLanguageTag,
+    translations,
+  })
 
-  // Default the toggle to the operator's current locale (or its base language),
-  // falling back to the first available translation.
+  // Read mode starts on the product's default/base language. Non-default
+  // translations render only after an explicit language toggle selection.
   useEffect(() => {
-    if (translations.length === 0) return
-    if (translations.some((translation) => translation.languageTag === selectedLanguageTag)) return
-    const baseLocale = resolvedLocale.toLowerCase().split("-")[0]
-    const preferred =
-      translations.find(
-        (translation) => translation.languageTag.toLowerCase() === resolvedLocale.toLowerCase(),
-      ) ??
-      translations.find(
-        (translation) => translation.languageTag.toLowerCase().split("-")[0] === baseLocale,
-      ) ??
-      translations[0]
-    setSelectedLanguageTag(preferred?.languageTag ?? "")
-  }, [translations, selectedLanguageTag, resolvedLocale])
+    const nextLanguageTag = resolveProductDetailSelectedLanguageTag({
+      defaultLanguageTag: product.defaultLanguageTag,
+      selectedLanguageTag,
+      translations,
+    })
+    if (nextLanguageTag !== selectedLanguageTag) setSelectedLanguageTag(nextLanguageTag)
+  }, [translations, selectedLanguageTag, product.defaultLanguageTag])
 
-  const selectedTranslation =
-    translations.find((translation) => translation.languageTag === selectedLanguageTag) ?? null
-  const description = selectedTranslation?.description ?? product.description ?? null
+  const description = resolveProductDetailDescription({
+    defaultLanguageTag: product.defaultLanguageTag,
+    productDescription: product.description,
+    selectedLanguageTag,
+    translations,
+  })
 
   return (
     <Section
       title={productMessages.detailsTitle}
       actions={
         <div className="flex items-center gap-2">
-          {translations.length > 0 ? (
+          {translations.length > 0 || baseLanguageTag ? (
             <ToggleGroup
               value={selectedLanguageTag ? [selectedLanguageTag] : []}
               onValueChange={(values) => {
@@ -113,6 +113,11 @@ export function ProductDetailsSection({
               size="sm"
               aria-label={productMessages.descriptionLanguageLabel}
             >
+              {baseLanguageTag ? (
+                <ToggleGroupItem value={baseLanguageTag} className="px-2 text-xs uppercase">
+                  {baseLanguageTag}
+                </ToggleGroupItem>
+              ) : null}
               {translations.map((translation) => (
                 <ToggleGroupItem
                   key={translation.id}
