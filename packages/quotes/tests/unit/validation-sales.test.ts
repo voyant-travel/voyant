@@ -6,6 +6,7 @@ import {
   insertQuoteSchema,
   insertQuoteVersionSchema,
   insertStageSchema,
+  updateQuoteVersionSchema,
 } from "../../src/validation.js"
 
 describe("Pipeline schemas", () => {
@@ -113,6 +114,13 @@ describe("Quote Version schemas", () => {
 
   it("rejects missing currency", () => {
     expect(() => insertQuoteVersionSchema.parse({ quoteId: "crm_quot_abc" })).toThrow()
+  })
+
+  it("does not apply insert defaults to quote version updates", () => {
+    expect(updateQuoteVersionSchema.parse({})).toEqual({})
+    expect(updateQuoteVersionSchema.parse({ notes: "Notes patch only" })).toEqual({
+      notes: "Notes patch only",
+    })
   })
 
   it("accepts a trip snapshot proposal payload for a quote version", () => {

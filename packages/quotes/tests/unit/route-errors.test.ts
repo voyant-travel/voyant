@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => {
     QuoteVersionParentNotFoundError,
     createQuoteVersion: vi.fn(),
     deletePipeline: vi.fn(),
+    updateQuoteVersion: vi.fn(),
   }
 })
 
@@ -42,6 +43,7 @@ vi.mock("../../src/service/index.js", () => ({
   quotesService: {
     createQuoteVersion: mocks.createQuoteVersion,
     deletePipeline: mocks.deletePipeline,
+    updateQuoteVersion: mocks.updateQuoteVersion,
   },
 }))
 
@@ -73,6 +75,26 @@ function makeApp() {
 describe("Quotes route errors", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.updateQuoteVersion.mockImplementation(
+      async (
+        _db: unknown,
+        id: string,
+        data: { status?: string; label?: string; notes?: string },
+      ) => {
+        if (data.status !== undefined) {
+          throw new mocks.QuoteVersionConflictError(
+            "Quote Version status changes must use lifecycle routes",
+          )
+        }
+        return {
+          id,
+          quoteId: "crm_quot_123",
+          label: data.label ?? null,
+          status: "draft",
+          notes: data.notes ?? null,
+        }
+      },
+    )
   })
 
   it("returns 404 when creating a quote version for a missing quote", async () => {
@@ -98,5 +120,34 @@ describe("Quotes route errors", () => {
     const body = await res.json()
     expect(body.error).toContain("dependent")
     expect(body.error).toContain("quote")
+  })
+
+  it.each([
+    ["notes", { notes: "Notes patch only" }],
+    ["label", { label: "Updated label" }],
+    ["empty", {}],
+  ])("allows draft quote version %s PATCH without treating status as changed", async (_name, body) => {
+    const res = await makeApp().request("/quote-versions/crm_qver_123", {
+      method: "PATCH",
+      ...json(body),
+    })
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      data: { id: "crm_qver_123", status: "draft" },
+    })
+    expect(mocks.updateQuoteVersion).toHaveBeenCalledWith({}, "crm_qver_123", body)
+  })
+
+  it("returns 409 when a generic quote version PATCH explicitly mutates status", async () => {
+    const res = await makeApp().request("/quote-versions/crm_qver_123", {
+      method: "PATCH",
+      ...json({ status: "sent" }),
+    })
+
+    expect(res.status).toBe(409)
+    await expect(res.json()).resolves.toEqual({
+      error: "Quote Version status changes must use lifecycle routes",
+    })
   })
 })

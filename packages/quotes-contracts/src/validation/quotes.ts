@@ -88,7 +88,14 @@ export const quoteVersionCoreSchema = z.object({
 })
 
 export const insertQuoteVersionSchema = quoteVersionCoreSchema
-export const updateQuoteVersionSchema = quoteVersionCoreSchema.partial()
+export const updateQuoteVersionSchema = quoteVersionCoreSchema
+  .extend({
+    status: quoteVersionStatusSchema,
+    subtotalAmountCents: z.number().int(),
+    taxAmountCents: z.number().int(),
+    totalAmountCents: z.number().int(),
+  })
+  .partial()
 export const quoteVersionListQuerySchema = paginationSchema.extend({
   quoteId: z.string().optional(),
   status: quoteVersionStatusSchema.optional(),
