@@ -395,6 +395,11 @@ export const flightsUiRo = {
         description:
           "Biletele se emit imediat. Datele cardului sunt gestionate in afara formularului de fluxul de tokenizare al conectorului.",
       },
+      bank_transfer: {
+        title: "Transfer bancar",
+        description:
+          "Creeaza o sesiune de plata pentru instructiuni de transfer bancar si detalii de referinta pe comanda.",
+      },
       ticket_on_credit: {
         title: "Emitere pe creditul agentiei",
         description:

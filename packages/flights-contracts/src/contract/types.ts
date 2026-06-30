@@ -233,6 +233,7 @@ export interface FlightSearchRequest {
  */
 export type PaymentIntent =
   | { type: "hold" }
+  | { type: "bank_transfer" }
   | { type: "card"; token: string; cardholderName?: string; billingAddress?: BillingAddress }
   | { type: "ticket_on_credit"; iataCode?: string }
 

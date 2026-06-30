@@ -18,7 +18,7 @@
  *   GET    /reference/aircraft
  *
  * The deployment supplies the connector (`resolveAdapter`) and, optionally, a
- * payment integration for hold orders (`payment`). The routes mount at
+ * payment integration for order payment sessions (`payment`). The routes mount at
  * `/v1/admin/flights` via `createFlightsHonoModule(...)`.
  */
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -37,6 +37,7 @@ import type {
   FlightOrder,
   FlightOrderStatus,
   FlightSearchRequest,
+  PaymentIntent,
   SeatMapRequest,
 } from "./contract/types.js"
 import {
@@ -45,23 +46,24 @@ import {
   referenceAirports,
 } from "./reference/local-postgres.js"
 
-/** A resolved payment session for a flight hold order. */
+/** A resolved payment session for a flight order. */
 export interface FlightOrderPaymentSummary {
   sessionId: string
   status: string
 }
 
 /**
- * Deployment-supplied payment integration for flight hold orders. The flights
+ * Deployment-supplied payment integration for flight orders. The flights
  * module stays payment-provider agnostic; the deployment wires its finance /
  * payment provider here.
  */
 export interface FlightPaymentIntegration {
-  /** Ensure (idempotently) a payment session exists for a hold order. */
+  /** Ensure (idempotently) a payment session exists for an order. */
   ensureOrderSession(
     c: Context,
     order: FlightOrder,
     contact?: { email?: string; phone?: string },
+    options?: { paymentMethod?: "bank_transfer" | "credit_card"; startCardPayment?: boolean },
   ): Promise<FlightOrderPaymentSummary | null>
   /** Bulk-resolve the most relevant payment session per order id (no N+1). */
   fetchOrderSessions(
@@ -107,6 +109,24 @@ function attachPaymentSession<T extends FlightOrder>(
       paymentSessionId: summary.sessionId,
       paymentStatus: summary.status,
     },
+  }
+}
+
+function paymentSessionOptionsForIntent(
+  intent: PaymentIntent | undefined,
+): { paymentMethod?: "bank_transfer" | "credit_card"; startCardPayment?: boolean } | null {
+  if (!intent || intent.type === "hold") return { startCardPayment: true }
+  if (intent.type === "bank_transfer") {
+    return { paymentMethod: "bank_transfer", startCardPayment: false }
+  }
+  return null
+}
+
+function adapterBookingRequestForIntent(body: FlightBookRequest): FlightBookRequest {
+  if (body.paymentIntent?.type !== "bank_transfer") return body
+  return {
+    ...body,
+    paymentIntent: { type: "hold" },
   }
 }
 
@@ -207,12 +227,20 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
     if (!body.offerId) return c.json({ error: "offerId is required" }, 400)
     if (!body.passengers?.length) return c.json({ error: "passengers is required" }, 400)
     try {
-      const response = await resolveAdapter(c).bookFlight(buildContext(c), body)
-      // Hold is the default intent; eagerly create the payment session so the
-      // order page can show the shareable link immediately.
-      const isHold = !body.paymentIntent || body.paymentIntent.type === "hold"
-      if (isHold && response.order && payment) {
-        const summary = await payment.ensureOrderSession(c, response.order, body.contact)
+      const response = await resolveAdapter(c).bookFlight(
+        buildContext(c),
+        adapterBookingRequestForIntent(body),
+      )
+      // Hold is the default intent. Bank transfer also needs a finance session
+      // so the order can expose the reference/instructions through checkout.
+      const paymentSessionOptions = paymentSessionOptionsForIntent(body.paymentIntent)
+      if (paymentSessionOptions && response.order && payment) {
+        const summary = await payment.ensureOrderSession(
+          c,
+          response.order,
+          body.contact,
+          paymentSessionOptions,
+        )
         response.order = attachPaymentSession(response.order, summary)
       }
       return c.json(response)

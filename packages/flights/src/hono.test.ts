@@ -2,7 +2,11 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import type { FlightConnectorAdapter } from "./contract/adapter.js"
-import { createFlightAdminRoutes, createFlightsHonoModule } from "./hono.js"
+import {
+  createFlightAdminRoutes,
+  createFlightsHonoModule,
+  type FlightPaymentIntegration,
+} from "./hono.js"
 
 function stubAdapter(over: Partial<FlightConnectorAdapter> = {}): FlightConnectorAdapter {
   return {
@@ -16,10 +20,10 @@ function stubAdapter(over: Partial<FlightConnectorAdapter> = {}): FlightConnecto
   }
 }
 
-function mount(adapter: FlightConnectorAdapter) {
+function mount(adapter: FlightConnectorAdapter, payment?: FlightPaymentIntegration) {
   return new Hono().route(
     "/v1/admin/flights",
-    createFlightAdminRoutes({ resolveAdapter: () => adapter }),
+    createFlightAdminRoutes({ resolveAdapter: () => adapter, payment }),
   )
 }
 
@@ -60,5 +64,98 @@ describe("flights hono module", () => {
       body: JSON.stringify({ offerId: "off_1" }),
     })
     expect(res.status).toBe(501)
+  })
+
+  it("creates and attaches a bank-transfer payment session during booking", async () => {
+    const adapter = stubAdapter()
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => ({ sessionId: "ps_bank", status: "pending" })),
+      fetchOrderSessions: vi.fn(async () => new Map()),
+    }
+    const app = mount(adapter, payment)
+
+    const res = await app.request("/v1/admin/flights/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        offerId: "off_1",
+        passengers: [{ passengerId: "p1" }],
+        contact: { email: "payer@example.com" },
+        paymentIntent: { type: "bank_transfer" },
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      order: {
+        providerData: {
+          paymentSessionId: "ps_bank",
+          paymentStatus: "pending",
+        },
+      },
+    })
+    expect(payment.ensureOrderSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ orderId: "ord_1" }),
+      { email: "payer@example.com" },
+      { paymentMethod: "bank_transfer", startCardPayment: false },
+    )
+    expect(adapter.bookFlight).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ paymentIntent: { type: "hold" } }),
+    )
+  })
+
+  it("preserves hold payment-session creation during booking", async () => {
+    const adapter = stubAdapter()
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => ({ sessionId: "ps_hold", status: "pending" })),
+      fetchOrderSessions: vi.fn(async () => new Map()),
+    }
+    const app = mount(adapter, payment)
+
+    const res = await app.request("/v1/admin/flights/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        offerId: "off_1",
+        passengers: [{ passengerId: "p1" }],
+        paymentIntent: { type: "hold" },
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(payment.ensureOrderSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ orderId: "ord_1" }),
+      undefined,
+      { startCardPayment: true },
+    )
+  })
+
+  it("does not create a payment session for card booking intent", async () => {
+    const adapter = stubAdapter()
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => ({ sessionId: "ps_card", status: "pending" })),
+      fetchOrderSessions: vi.fn(async () => new Map()),
+    }
+    const app = mount(adapter, payment)
+
+    const res = await app.request("/v1/admin/flights/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        offerId: "off_1",
+        passengers: [{ passengerId: "p1" }],
+        paymentIntent: { type: "card", token: "tok_1" },
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(payment.ensureOrderSession).not.toHaveBeenCalled()
+    expect(adapter.bookFlight).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ paymentIntent: { type: "card", token: "tok_1" } }),
+    )
   })
 })

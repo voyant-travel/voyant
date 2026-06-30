@@ -41,6 +41,8 @@ export interface EnsureOrderSessionParams {
   payerName?: string | null
   /** Human summary surfaced as `payment_sessions.notes`. */
   notes?: string | null
+  /** Payment method to stamp on a newly-created session, when known. */
+  paymentMethod?: CreatePaymentSessionInput["paymentMethod"] | null
 }
 
 /**
@@ -137,7 +139,7 @@ export function createOrderPaymentSessions(
         amountCents: params.amountCents,
         status: "pending",
         provider,
-        paymentMethod,
+        paymentMethod: params.paymentMethod ?? paymentMethod,
         payerEmail: params.payerEmail ?? null,
         payerName: params.payerName ?? null,
         notes: params.notes ?? null,

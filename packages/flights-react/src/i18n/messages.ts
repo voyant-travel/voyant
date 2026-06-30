@@ -338,7 +338,7 @@ export type FlightsUiMessages = {
     title: string
     description: string
     intents: Record<
-      "hold" | "card" | "ticket_on_credit",
+      "hold" | "card" | "bank_transfer" | "ticket_on_credit",
       {
         title: string
         description: string

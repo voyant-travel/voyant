@@ -52,6 +52,7 @@ export {
   createFlightOrderPaymentIntegration,
   type FlightCardBilling,
   type FlightOrderPaymentIntegrationDeps,
+  type FlightOrderPaymentSessionOptions,
   formatDay,
   type OrderPaymentSessionsLike,
   parseAmountToCents,

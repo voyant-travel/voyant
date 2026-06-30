@@ -1,6 +1,7 @@
 /**
  * Flight-specific payment integration: maps a `FlightOrder` onto finance's
- * generic order-payment-session service and (optionally) a card provider.
+ * generic order-payment-session service and, for card-capable flows,
+ * optionally starts a card provider.
  *
  * The flights module stays payment-provider agnostic AND finance-agnostic — the
  * deps below are typed STRUCTURALLY so this file imports neither
@@ -104,6 +105,7 @@ export interface OrderPaymentSessionsLike {
       payerEmail?: string | null
       payerName?: string | null
       notes?: string | null
+      paymentMethod?: "bank_transfer" | "credit_card" | null
     },
     startProvider?: (db: AnyDrizzleDb, sessionId: string) => Promise<void>,
   ): Promise<{ sessionId: string; status: string } | null>
@@ -111,6 +113,11 @@ export interface OrderPaymentSessionsLike {
     db: AnyDrizzleDb,
     targetIds: string[],
   ): Promise<Map<string, { sessionId: string; status: string }>>
+}
+
+export interface FlightOrderPaymentSessionOptions {
+  paymentMethod?: "bank_transfer" | "credit_card"
+  startCardPayment?: boolean
 }
 
 export interface FlightOrderPaymentIntegrationDeps {
@@ -139,17 +146,19 @@ export function createFlightOrderPaymentIntegration(
   const { orderPaymentSessions, startCardPayment } = deps
 
   return {
-    async ensureOrderSession(c, order, contact) {
+    async ensureOrderSession(c, order, contact, options?: FlightOrderPaymentSessionOptions) {
       const db = getDb(c)
       const passengerForBilling = order.passengers[0]
       if (!passengerForBilling) return null
 
       const amountCents = parseAmountToCents(order.totalPrice.amount)
 
-      const startProvider = startCardPayment
-        ? (_writer: AnyDrizzleDb, sessionId: string) =>
-            startCardPayment(c, sessionId, synthesizeBilling(passengerForBilling, contact))
-        : undefined
+      const shouldStartCardPayment = options?.startCardPayment ?? true
+      const startProvider =
+        startCardPayment && shouldStartCardPayment
+          ? (_writer: AnyDrizzleDb, sessionId: string) =>
+              startCardPayment(c, sessionId, synthesizeBilling(passengerForBilling, contact))
+          : undefined
 
       return orderPaymentSessions.ensureSession(
         db,
@@ -160,6 +169,7 @@ export function createFlightOrderPaymentIntegration(
           payerEmail: contact?.email ?? passengerForBilling.email ?? null,
           payerName: `${passengerForBilling.firstName} ${passengerForBilling.lastName}`.trim(),
           notes: buildFlightSummary(order),
+          paymentMethod: options?.paymentMethod,
         },
         startProvider,
       )
