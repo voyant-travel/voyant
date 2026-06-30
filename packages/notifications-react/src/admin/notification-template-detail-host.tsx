@@ -16,7 +16,7 @@ import {
   Textarea,
 } from "@voyant-travel/ui/components"
 import { ArrowLeft, Loader2, Pencil } from "lucide-react"
-import { lazy, Suspense, useMemo, useState } from "react"
+import { lazy, Suspense, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 import {
@@ -26,6 +26,10 @@ import {
   useNotificationTemplateTools,
 } from "../index.js"
 import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
+import {
+  buildSamplePayload,
+  resolvePreviewDataInput,
+} from "./notification-template-dialog-utils.js"
 import { DestinationLink } from "./notifications-admin-shared.js"
 
 // Lazy-load: the template dialog pulls the rich-text editor (tiptap +
@@ -36,63 +40,6 @@ const NotificationTemplateDialog = lazy(() =>
     default: m.NotificationTemplateDialog,
   })),
 )
-
-function parsePath(path: string) {
-  return path
-    .replace(/\[(\d+)\]/g, ".$1")
-    .split(".")
-    .filter(Boolean)
-}
-
-function setDeepValue(target: Record<string, unknown>, path: string, value: unknown) {
-  const segments = parsePath(path)
-  let current: unknown = target
-  for (let index = 0; index < segments.length; index += 1) {
-    const segment = segments[index]!
-    const isLast = index === segments.length - 1
-    const nextSegment = segments[index + 1]
-    const nextIsIndex = nextSegment ? /^\d+$/.test(nextSegment) : false
-
-    if (Array.isArray(current)) {
-      const arrayIndex = Number(segment)
-      if (Number.isNaN(arrayIndex)) return
-      if (isLast) {
-        current[arrayIndex] = value
-        return
-      }
-      if (current[arrayIndex] == null) {
-        current[arrayIndex] = nextIsIndex ? [] : {}
-      }
-      current = current[arrayIndex] as Record<string, unknown> | unknown[]
-      continue
-    }
-
-    if (typeof current !== "object" || current == null) return
-    const record = current as Record<string, unknown>
-    if (isLast) {
-      record[segment] = value
-      return
-    }
-    if (record[segment] == null) {
-      record[segment] = nextIsIndex ? [] : {}
-    }
-    current = record[segment] as Record<string, unknown> | unknown[]
-  }
-}
-
-function buildSamplePayload(
-  variableGroups: Array<{
-    variables: Array<{ key: string; example: string }>
-  }>,
-) {
-  const sample: Record<string, unknown> = {}
-  for (const group of variableGroups) {
-    for (const variable of group.variables) {
-      setDeepValue(sample, variable.key, variable.example)
-    }
-  }
-  return sample
-}
 
 export interface NotificationTemplateDetailHostProps {
   id: string
@@ -138,9 +85,14 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
     enabled: Boolean(template?.slug),
   })
 
+  useEffect(() => {
+    setPreviewDataInput(defaultPreviewData)
+  }, [defaultPreviewData])
+
   const parsePreviewData = () => {
     try {
-      const parsed = previewDataInput.trim() ? JSON.parse(previewDataInput) : {}
+      const input = resolvePreviewDataInput(previewDataInput, defaultPreviewData)
+      const parsed = input.trim() ? JSON.parse(input) : {}
       if (typeof parsed !== "object" || parsed == null || Array.isArray(parsed)) {
         throw new Error(common.previewDataNotObject)
       }
@@ -286,7 +238,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
               <CardContent className="space-y-3">
                 <Label>{t.customJsonLabel}</Label>
                 <Textarea
-                  value={previewDataInput || defaultPreviewData}
+                  value={previewDataInput}
                   onChange={(event) => setPreviewDataInput(event.target.value)}
                   rows={16}
                   className="font-mono text-xs"
