@@ -11,8 +11,10 @@ import {
 } from "./schema.js"
 import { sendInvoiceNotification, sendNotification } from "./service-deliveries.js"
 import {
-  getPaymentReminderBookingStatusSkipReason,
+  bookingStatusSkipReason,
+  buildBookingPaymentReminderTemplateData,
   OPEN_PAYMENT_SCHEDULE_STATUSES,
+  PAYABLE_BOOKING_STATUSES,
   paymentScheduleStatusSkipReason,
 } from "./service-reminder-booking-context.js"
 import {
@@ -220,16 +222,32 @@ async function emitStageChannelRun(
             )?.id ?? null,
         }
       }
-      const bookingSkipReason = await getPaymentReminderBookingStatusSkipReason(
+      const context = await buildBookingPaymentReminderTemplateData(
         db,
-        schedule.bookingId,
+        schedule,
+        recipient.email,
+        data,
       )
-      if (bookingSkipReason) {
+      if (!context) {
         return {
           status: "skipped",
           runId:
-            (await markReminderRunSkipped(db, processingRun.id, new Date(), bookingSkipReason))
+            (await markReminderRunSkipped(db, processingRun.id, new Date(), "booking_not_found"))
               ?.id ?? null,
+        }
+      }
+      if (!PAYABLE_BOOKING_STATUSES.has(context.booking.status)) {
+        return {
+          status: "skipped",
+          runId:
+            (
+              await markReminderRunSkipped(
+                db,
+                processingRun.id,
+                new Date(),
+                bookingStatusSkipReason(context.booking.status),
+              )
+            )?.id ?? null,
         }
       }
       delivery = await sendNotification(db, dispatcher, {
@@ -238,16 +256,12 @@ async function emitStageChannelRun(
         channel: channelRow.channel,
         provider: channelRow.provider ?? null,
         to: recipient.email,
-        data: {
-          ...data,
-          bookingId: schedule.bookingId,
-          dueDate: schedule.dueDate,
-          amountCents: schedule.amountCents,
-          currency: schedule.currency,
-        },
+        data: context.data,
         targetType: "booking_payment_schedule",
         targetId: schedule.id,
-        bookingId: schedule.bookingId,
+        bookingId: context.booking.id,
+        personId: context.booking.personId ?? null,
+        organizationId: context.booking.organizationId ?? null,
         metadata: { reminderRuleId: rule.id, reminderRunId: processingRun.id, stageId: stage.id },
         scheduledFor: scheduledAt.toISOString(),
       })
