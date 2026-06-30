@@ -1,5 +1,11 @@
 # @voyant-travel/finance-contracts
 
+## 0.105.6
+
+### Patch Changes
+
+- 7bdd9cc: Honor `active=false` tax-class list filters and reject tax classes that reference unknown tax regimes.
+
 ## 0.105.5
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voyant-travel/i18n
 
+## 0.109.4
+
+### Patch Changes
+
+- 16ec0cb: Render saved additional rate-plan room/category prices in the admin product detail grid and label the price controls for assistive technology.
+
 ## 0.109.3
 
 ### Patch Changes
