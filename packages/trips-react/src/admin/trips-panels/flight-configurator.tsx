@@ -95,6 +95,7 @@ export function FlightConfigurator({
     selectedOffer,
     ancillaryCatalog,
   })
+  const searchErrorMessage = search.error instanceof Error ? search.error.message : null
 
   const patch = (next: Partial<Extract<PendingComponent, { kind: "flight" }>>) => {
     onChange({ ...pending, ...next })
@@ -221,7 +222,7 @@ export function FlightConfigurator({
           </div>
           {search.isError ? (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm">
-              {t.flightSearchFailed}
+              {searchErrorMessage ?? t.flightSearchFailed}
             </p>
           ) : null}
           {!search.isFetching && offers.length === 0 && !search.isError ? (

@@ -112,8 +112,21 @@ function attachPaymentSession<T extends FlightOrder>(
   }
 }
 
-function statusForAdapterErrorMessage(message: string): 404 | 500 {
-  return /(?:not found|_not_found\b)/i.test(message) ? 404 : 500
+function adapterErrorDetails(err: unknown): { message: string; status: 404 | 500 | 503 } {
+  const message = err instanceof Error ? err.message : String(err)
+  return { message, status: statusForAdapterErrorMessage(message) }
+}
+
+function statusForAdapterErrorMessage(message: string): 404 | 500 | 503 {
+  if (/(?:not found|_not_found\b)/i.test(message)) return 404
+  if (
+    /(?:demo service is unavailable|FLIGHTS_DEMO_API_URL is not set|network connection lost|fetch failed|ECONNREFUSED|ENOTFOUND)/i.test(
+      message,
+    )
+  ) {
+    return 503
+  }
+  return 500
 }
 
 function paymentSessionOptionsForIntent(
@@ -155,7 +168,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       const response = await resolveAdapter(c).searchFlights(buildContext(c), body)
       return c.json(response)
     } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 
@@ -176,7 +190,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       const response = await adapter.getAncillaries(buildContext(c), body)
       return c.json(response)
     } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 
@@ -198,8 +213,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       const response = await adapter.getSeatMap(buildContext(c), body)
       return c.json(response)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      return c.json({ error: message }, statusForAdapterErrorMessage(message))
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 
@@ -216,7 +231,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       const response = await resolveAdapter(c).priceOffer(buildContext(c), body)
       return c.json(response)
     } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 
@@ -249,7 +265,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       }
       return c.json(response)
     } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 
@@ -295,7 +312,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       }
       return c.json(response)
     } catch (err) {
-      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 
@@ -312,8 +330,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       }
       return c.json(response)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      return c.json({ error: message }, statusForAdapterErrorMessage(message))
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 
@@ -331,8 +349,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       const response = await resolveAdapter(c).cancelOrder(buildContext(c), orderId, body.reason)
       return c.json(response)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      return c.json({ error: message }, statusForAdapterErrorMessage(message))
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
     }
   })
 

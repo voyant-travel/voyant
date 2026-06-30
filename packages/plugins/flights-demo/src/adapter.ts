@@ -65,6 +65,15 @@ export interface DemoFlightAdapterOptions {
   fetch?: typeof fetch
 }
 
+class DemoFlightAdapterUnavailableError extends Error {
+  constructor(baseUrl: string) {
+    super(
+      `Flights demo service is unavailable at ${baseUrl}. Start it with \`pnpm --dir apps/flights-demo-api dev\` or update FLIGHTS_DEMO_API_URL.`,
+    )
+    this.name = "DemoFlightAdapterUnavailableError"
+  }
+}
+
 export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): FlightConnectorAdapter {
   const baseUrl = options.baseUrl.replace(/\/$/, "")
   const fetchImpl = options.fetch ?? globalThis.fetch
@@ -89,20 +98,25 @@ export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): Flig
         }
       }
     }
-    const response = await fetchImpl(url.toString(), {
-      method: init?.method ?? "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(ctx.correlationId ? { "x-correlation-id": ctx.correlationId } : {}),
-        ...(ctx.requestId ? { "x-request-id": ctx.requestId } : {}),
-        ...(ctx.idempotencyKey ? { "idempotency-key": ctx.idempotencyKey } : {}),
-      },
-      body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
-      signal: ctx.signal,
-    })
+    let response: Response
+    try {
+      response = await fetchImpl(url.toString(), {
+        method: init?.method ?? "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(ctx.correlationId ? { "x-correlation-id": ctx.correlationId } : {}),
+          ...(ctx.requestId ? { "x-request-id": ctx.requestId } : {}),
+          ...(ctx.idempotencyKey ? { "idempotency-key": ctx.idempotencyKey } : {}),
+        },
+        body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+        signal: ctx.signal,
+      })
+    } catch {
+      throw new DemoFlightAdapterUnavailableError(baseUrl)
+    }
     const text = await response.text()
-    const json: unknown = text ? JSON.parse(text) : null
+    const json: unknown = response.ok ? parseSuccessfulJson(text, path) : parseJson(text)
     if (!response.ok) {
       const message =
         (typeof json === "object" && json !== null && "error" in json
@@ -189,5 +203,25 @@ export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): Flig
       requireCapability(CAPABILITIES, "flight/ssr", "addSpecialServiceRequest")
       throw new Error("unreachable")
     },
+  }
+}
+
+function parseJson(text: string): unknown {
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+function parseSuccessfulJson(text: string, path: string): unknown {
+  if (!text) {
+    throw new Error(`flights-demo-api ${path} returned an empty response`)
+  }
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(`flights-demo-api ${path} returned invalid JSON`)
   }
 }
