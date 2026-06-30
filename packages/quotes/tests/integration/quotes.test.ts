@@ -1,7 +1,8 @@
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import { quotesRoutes } from "../../src/routes/index.js"
+import { createQuotesRoutes } from "../../src/routes/index.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 const json = (body: Record<string, unknown>) => ({
@@ -11,6 +12,7 @@ const json = (body: Record<string, unknown>) => ({
 
 describe.skipIf(!DB_AVAILABLE)("Quote routes", () => {
   let app: Hono
+  const existingPersonIds = new Set<string>()
 
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
@@ -18,17 +20,24 @@ describe.skipIf(!DB_AVAILABLE)("Quote routes", () => {
     await cleanupTestDb(db)
 
     app = new Hono()
+    app.onError(handleApiError)
     app.use("*", async (c, next) => {
       c.set("db" as never, db)
       c.set("userId" as never, "test-user-id")
       await next()
     })
-    app.route("/", quotesRoutes)
+    app.route(
+      "/",
+      createQuotesRoutes({
+        resolveParticipantPersonById: async (_db, personId) => existingPersonIds.has(personId),
+      }),
+    )
   })
 
   beforeEach(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(createTestDb())
+    existingPersonIds.clear()
   })
 
   async function seedPipelineAndStage() {
@@ -184,6 +193,7 @@ describe.skipIf(!DB_AVAILABLE)("Quote routes", () => {
     it("creates and lists participants", async () => {
       const { quote } = await seedQuote()
       const personId = "pers_quote_participant_1"
+      existingPersonIds.add(personId)
 
       const createRes = await app.request(`/quotes/${quote.id}/participants`, {
         method: "POST",
@@ -204,12 +214,37 @@ describe.skipIf(!DB_AVAILABLE)("Quote routes", () => {
       expect(listBody.data.length).toBe(1)
     })
 
-    it("deletes a participant", async () => {
+    it("rejects participants for missing people without inserting a row", async () => {
       const { quote } = await seedQuote()
+      const missingPersonId = "missing_mr073yt6"
 
       const createRes = await app.request(`/quotes/${quote.id}/participants`, {
         method: "POST",
-        ...json({ personId: "pers_quote_participant_2" }),
+        ...json({ personId: missingPersonId, role: "traveler" }),
+      })
+
+      expect(createRes.status).toBe(400)
+      const createBody = await createRes.json()
+      expect(createBody.code).toBe("invalid_request")
+      expect(createBody.error).toContain("personId")
+
+      const listRes = await app.request(`/quotes/${quote.id}/participants`, {
+        method: "GET",
+      })
+
+      expect(listRes.status).toBe(200)
+      const listBody = await listRes.json()
+      expect(listBody.data).toEqual([])
+    })
+
+    it("deletes a participant", async () => {
+      const { quote } = await seedQuote()
+      const personId = "pers_quote_participant_2"
+      existingPersonIds.add(personId)
+
+      const createRes = await app.request(`/quotes/${quote.id}/participants`, {
+        method: "POST",
+        ...json({ personId }),
       })
       const { data: participant } = await createRes.json()
 

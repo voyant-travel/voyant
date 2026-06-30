@@ -4,6 +4,7 @@ import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import type { QuotesRouteRuntime } from "../route-runtime.js"
 import { quotesService } from "../service/index.js"
 import {
   insertQuoteMediaSchema,
@@ -167,27 +168,30 @@ const deleteQuoteParticipantRoute = createRoute({
   },
 })
 
-const participantsChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-  .openapi(listQuoteParticipantsRoute, async (c) =>
-    c.json(
-      { data: await quotesService.listQuoteParticipants(c.get("db"), c.req.valid("param").id) },
-      200,
-    ),
-  )
-  .openapi(createQuoteParticipantRoute, async (c) => {
-    const row = await quotesService.createQuoteParticipant(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
+function createParticipantsChild(runtime: QuotesRouteRuntime = {}) {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listQuoteParticipantsRoute, async (c) =>
+      c.json(
+        { data: await quotesService.listQuoteParticipants(c.get("db"), c.req.valid("param").id) },
+        200,
+      ),
     )
-    return c.json({ data: row! }, 201)
-  })
-  .openapi(deleteQuoteParticipantRoute, async (c) => {
-    const row = await quotesService.deleteQuoteParticipant(c.get("db"), c.req.valid("param").id)
-    return row
-      ? c.json({ success: true } as const, 200)
-      : c.json({ error: "Quote participant not found" }, 404)
-  })
+    .openapi(createQuoteParticipantRoute, async (c) => {
+      const row = await quotesService.createQuoteParticipant(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        runtime,
+      )
+      return c.json({ data: row! }, 201)
+    })
+    .openapi(deleteQuoteParticipantRoute, async (c) => {
+      const row = await quotesService.deleteQuoteParticipant(c.get("db"), c.req.valid("param").id)
+      return row
+        ? c.json({ success: true } as const, 200)
+        : c.json({ error: "Quote participant not found" }, 404)
+    })
+}
 
 // --- quote products ---------------------------------------------------------
 
@@ -332,8 +336,12 @@ const mediaChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
       : c.json({ error: "Quote media not found" }, 404)
   })
 
-export const quoteRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-  .route("/", quotesChild)
-  .route("/", participantsChild)
-  .route("/", productsChild)
-  .route("/", mediaChild)
+export function createQuoteRoutes(runtime: QuotesRouteRuntime = {}) {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .route("/", quotesChild)
+    .route("/", createParticipantsChild(runtime))
+    .route("/", productsChild)
+    .route("/", mediaChild)
+}
+
+export const quoteRoutes = createQuoteRoutes()
