@@ -44,6 +44,9 @@ const pairSharingGroupResponse = singleEnvelope(
   }),
 )
 
+const productAvailabilityPath = (productId: string) =>
+  `/v1/admin/operations/availability/products/${productId}`
+
 export interface UseSlotAllocationOptions {
   slotId: string | null | undefined
   enabled?: boolean
@@ -155,7 +158,7 @@ export function useResourceTemplateMutation(productId: string) {
       input: UpsertResourceTemplateInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/admin/operations/${productId}/options/${optionId}/allocation/resource-templates/${kind}`,
+        `${productAvailabilityPath(productId)}/options/${optionId}/allocation/resource-templates/${kind}`,
         singleEnvelope(resourceTemplateSchema),
         { baseUrl, fetcher },
         { method: "PUT", body: JSON.stringify(input) },
@@ -178,7 +181,7 @@ export function useResourceTemplateMutation(productId: string) {
       refId?: string | null
     }) =>
       fetchWithValidation(
-        `/v1/admin/operations/${productId}/options/${optionId}/allocation/resource-templates/${kind}${
+        `${productAvailabilityPath(productId)}/options/${optionId}/allocation/resource-templates/${kind}${
           refId ? `?refId=${encodeURIComponent(refId)}` : ""
         }`,
         singleEnvelope(z.object({ productOptionId: z.string(), kind: z.string() })),
@@ -204,7 +207,7 @@ export function useMaterializeOpenSlotsMutation(productId: string) {
   return useMutation({
     mutationFn: async (input: { optionId?: string }) => {
       const result = await fetchWithValidation(
-        `/v1/admin/operations/${productId}/allocation/materialize-open-slots`,
+        `${productAvailabilityPath(productId)}/allocation/materialize-open-slots`,
         singleEnvelope(z.object({ slots: z.number(), created: z.number() })),
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
