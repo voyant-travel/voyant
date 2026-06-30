@@ -112,4 +112,52 @@ describe("trips pricing helpers", () => {
     expect(aggregate.totalAmountCents).toBe(10900)
     expect(aggregate.warnings).toEqual(["currency_mismatch:USD"])
   })
+
+  it("excludes cancelled and removed component values from aggregate totals", () => {
+    const aggregate = aggregateComponentPricing(
+      [
+        {
+          status: "booked",
+          pricingSnapshot: {
+            currency: "EUR",
+            subtotalAmountCents: 10000,
+            taxAmountCents: 900,
+            totalAmountCents: 10900,
+          },
+          warningCodes: [],
+        },
+        {
+          status: "cancelled",
+          pricingSnapshot: {
+            currency: "EUR",
+            subtotalAmountCents: 20000,
+            taxAmountCents: 1800,
+            totalAmountCents: 21800,
+          },
+          warningCodes: [],
+        },
+        {
+          status: "removed",
+          pricingSnapshot: {
+            currency: "EUR",
+            subtotalAmountCents: 30000,
+            taxAmountCents: 2700,
+            totalAmountCents: 32700,
+          },
+          warningCodes: [],
+        },
+      ],
+      "EUR",
+    )
+
+    expect(aggregate).toEqual({
+      currency: "EUR",
+      subtotalAmountCents: 10000,
+      taxAmountCents: 900,
+      totalAmountCents: 10900,
+      componentCount: 1,
+      pricedComponentCount: 1,
+      warnings: [],
+    })
+  })
 })

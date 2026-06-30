@@ -206,10 +206,13 @@ export function taxLinesFromBreakdown(pricing: PricingBreakdownV1): TripComponen
 }
 
 export function aggregateComponentPricing(
-  components: Array<Pick<TripComponent, "pricingSnapshot" | "warningCodes">>,
+  components: Array<Pick<TripComponent, "pricingSnapshot" | "warningCodes"> & { status?: string }>,
   preferredCurrency?: string,
 ): TripEnvelopePricingSnapshot {
-  const priced = components.filter((component) => component.pricingSnapshot)
+  const activeComponents = components.filter(
+    (component) => component.status !== "removed" && component.status !== "cancelled",
+  )
+  const priced = activeComponents.filter((component) => component.pricingSnapshot)
   const currency = preferredCurrency ?? priced[0]?.pricingSnapshot?.currency ?? "EUR"
   const warnings = new Set<string>()
 
@@ -237,7 +240,7 @@ export function aggregateComponentPricing(
     subtotalAmountCents,
     taxAmountCents,
     totalAmountCents,
-    componentCount: components.length,
+    componentCount: activeComponents.length,
     pricedComponentCount: priced.length,
     warnings: [...warnings],
   }
