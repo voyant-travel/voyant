@@ -158,7 +158,12 @@ export function pendingComponentIsValid(pending: PendingComponent): boolean {
           pending.bookingDraft?.configure.departureSlotId,
       )
     case "stay":
-      return Boolean(pending.catalogEntityId && pending.catalogSourceKind && pending.bookingDraft)
+      return Boolean(
+        pending.catalogEntityId &&
+          pending.catalogSourceKind &&
+          pending.bookingDraft &&
+          pendingStayDateRangeIsValid(pending),
+      )
     case "flight":
       return Boolean(
         pending.origin && pending.destination && pending.departDate && pending.selectedOffer,
@@ -168,6 +173,23 @@ export function pendingComponentIsValid(pending: PendingComponent): boolean {
     case "manual":
       return Boolean(pending.name && pending.subtotalCents && pending.subtotalCents > 0)
   }
+}
+
+export function pendingStayDateRangeIsValid(
+  pending: Pick<Extract<PendingComponent, { kind: "stay" }>, "startsAt" | "endsAt">,
+): boolean {
+  const checkIn = pending.startsAt ? pending.startsAt.slice(0, 10) : undefined
+  const checkOut = pending.endsAt ? pending.endsAt.slice(0, 10) : undefined
+  const start = isoDateMs(checkIn)
+  const end = isoDateMs(checkOut)
+  return start !== null && end !== null && end > start
+}
+
+function isoDateMs(value: string | undefined): number | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`)
+  if (!Number.isFinite(timestamp)) return null
+  return new Date(timestamp).toISOString().slice(0, 10) === value ? timestamp : null
 }
 
 export function ComponentsEmpty() {

@@ -2,7 +2,11 @@ import type { QuoteResponseV1 } from "@voyant-travel/catalog/booking-engine"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 
-import { isCatalogBackedTripComponent, toBookingDraftV1 } from "./catalog-component-adapter.js"
+import {
+  assertCatalogComponentBookingDraftReady,
+  bookingDraftFromComponent,
+  isCatalogBackedTripComponent,
+} from "./catalog-component-adapter.js"
 import type { TripComponent, TripEnvelope } from "./schema.js"
 import { tripComponents, tripEnvelopes } from "./schema.js"
 import {
@@ -38,12 +42,14 @@ export async function priceTrip(
     }
 
     if (isCatalogBackedTripComponent(component)) {
+      const bookingDraft = bookingDraftFromComponent(
+        component,
+        deps.componentBookingDraftOverrides?.[component.id],
+      )
+      assertCatalogComponentBookingDraftReady(component, bookingDraft)
       const quote = await deps.quoteCatalogComponent({
         component,
-        bookingDraft: toBookingDraftV1(
-          component,
-          deps.componentBookingDraftOverrides?.[component.id],
-        ),
+        bookingDraft,
         scope: input.scope,
         ttlMs: input.ttlMs,
       })

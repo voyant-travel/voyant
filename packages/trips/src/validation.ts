@@ -237,13 +237,74 @@ function requireManualServiceName(
   }
 }
 
-export const createTripComponentSchema =
-  createTripComponentBaseSchema.superRefine(requireManualServiceName)
+function requireAccommodationDateRange(
+  component:
+    | z.infer<typeof createTripComponentBaseSchema>
+    | z.infer<typeof createTripComponentBodyBaseSchema>,
+  ctx: z.RefinementCtx,
+) {
+  if (
+    component.kind !== "catalog_booking" ||
+    component.catalogRef?.entityModule !== "accommodations"
+  ) {
+    return
+  }
+
+  const metadata = component.metadata as Record<string, unknown>
+  const bookingDraft = readRecord(metadata.bookingDraftV1) ?? readRecord(metadata.bookingDraft)
+  const configure = readRecord(bookingDraft?.configure)
+  const dateRange = readRecord(configure?.dateRange)
+  const checkIn = typeof dateRange?.checkIn === "string" ? dateRange.checkIn : undefined
+  const checkOut = typeof dateRange?.checkOut === "string" ? dateRange.checkOut : undefined
+
+  if (!validIsoDateRange(checkIn, checkOut)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["metadata", "bookingDraftV1", "configure", "dateRange"],
+      message:
+        "Accommodation trip components require metadata.bookingDraftV1.configure.dateRange.checkIn/checkOut with checkOut after checkIn",
+    })
+  }
+}
+
+function requireTripComponentDetails(
+  component:
+    | z.infer<typeof createTripComponentBaseSchema>
+    | z.infer<typeof createTripComponentBodyBaseSchema>,
+  ctx: z.RefinementCtx,
+) {
+  requireManualServiceName(component, ctx)
+  requireAccommodationDateRange(component, ctx)
+}
+
+function readRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function validIsoDateRange(checkIn: string | undefined, checkOut: string | undefined): boolean {
+  const start = isoDateMs(checkIn)
+  const end = isoDateMs(checkOut)
+  return start !== null && end !== null && end > start
+}
+
+function isoDateMs(value: string | undefined): number | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`)
+  if (!Number.isFinite(timestamp)) return null
+  return new Date(timestamp).toISOString().slice(0, 10) === value ? timestamp : null
+}
+
+export const createTripComponentSchema = createTripComponentBaseSchema.superRefine(
+  requireTripComponentDetails,
+)
 
 export type CreateTripComponentInput = z.infer<typeof createTripComponentSchema>
 
-export const createTripComponentBodySchema =
-  createTripComponentBodyBaseSchema.superRefine(requireManualServiceName)
+export const createTripComponentBodySchema = createTripComponentBodyBaseSchema.superRefine(
+  requireTripComponentDetails,
+)
 
 export type CreateTripComponentBodyInput = z.infer<typeof createTripComponentBodySchema>
 

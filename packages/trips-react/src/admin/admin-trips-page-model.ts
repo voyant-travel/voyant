@@ -17,6 +17,7 @@ import {
   computePlaceholderTotals,
   flightPricingFromPending,
   type PendingComponent,
+  pendingComponentIsValid,
   type TripTraveler,
 } from "./admin-trips-panels.js"
 
@@ -216,6 +217,7 @@ export function pendingToAddInput(
 
   if (pending.kind === "product" || pending.kind === "stay") {
     if (!pending.catalogEntityId || !pending.catalogSourceKind) return null
+    if (pending.kind === "stay" && !pendingComponentIsValid(pending)) return null
     const vertical = pending.kind === "stay" ? "accommodations" : "products"
     const draft = pending.bookingDraft
     const configure = {

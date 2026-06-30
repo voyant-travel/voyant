@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest"
-
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { describe, expect, it, vi } from "vitest"
+import type { NewTripComponentEvent, TripComponent, TripEnvelope } from "../src/schema.js"
+import { tripComponentEvents, tripComponents, tripEnvelopes } from "../src/schema.js"
 import {
   aggregateComponentPricing,
   pricingSnapshotFromBreakdown,
   taxLinesFromBreakdown,
+  tripsService,
 } from "../src/service.js"
 
 describe("trips pricing helpers", () => {
@@ -46,6 +49,93 @@ describe("trips pricing helpers", () => {
         source: "excluded",
       },
     ])
+  })
+
+  it("prices accommodation components with the persisted stay date range", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [
+        component({
+          entityModule: "accommodations",
+          entityId: "acc_123",
+          metadata: {
+            bookingDraftV1: {
+              entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+              configure: {
+                pax: { adult: 2 },
+                dateRange: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+              },
+            },
+          },
+        }),
+      ],
+      events: [] as NewTripComponentEvent[],
+    }
+    const quoteCatalogComponent = vi.fn(async () => ({
+      quoteId: "cq_123",
+      quotedAt: "2026-06-01T10:00:00.000Z",
+      expiresAt: "2099-06-01T10:00:00.000Z",
+      available: true,
+      pricing: {
+        currency: "EUR",
+        lines: [{ kind: "base" as const, label: "Stay", unitAmount: 30000, totalAmount: 30000 }],
+        taxes: [],
+        subtotal: 30000,
+        taxTotal: 0,
+        total: 30000,
+      },
+    }))
+
+    await tripsService.priceTrip(
+      makeFakeDb(state),
+      {
+        envelopeId: state.envelope.id,
+        scope: { locale: "en-GB", audience: "staff", market: "default", currency: "EUR" },
+      },
+      { quoteCatalogComponent },
+    )
+
+    expect(quoteCatalogComponent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingDraft: expect.objectContaining({
+          configure: expect.objectContaining({
+            dateRange: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+          }),
+        }),
+      }),
+    )
+  })
+
+  it("rejects accommodation pricing when the component has no stay date range", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [
+        component({
+          entityModule: "accommodations",
+          entityId: "acc_123",
+          metadata: {
+            bookingDraftV1: {
+              entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+              configure: { pax: { adult: 2 } },
+            },
+          },
+        }),
+      ],
+      events: [] as NewTripComponentEvent[],
+    }
+    const quoteCatalogComponent = vi.fn()
+
+    await expect(
+      tripsService.priceTrip(
+        makeFakeDb(state),
+        {
+          envelopeId: state.envelope.id,
+          scope: { locale: "en-GB", audience: "staff", market: "default", currency: "EUR" },
+        },
+        { quoteCatalogComponent },
+      ),
+    ).rejects.toThrow(/valid check-in\/check-out date range/)
+    expect(quoteCatalogComponent).not.toHaveBeenCalled()
   })
 
   it("aggregates component totals without blending tax treatment", () => {
@@ -161,3 +251,116 @@ describe("trips pricing helpers", () => {
     })
   })
 })
+
+function envelope(overrides: Partial<TripEnvelope> = {}): TripEnvelope {
+  return {
+    id: "trip_123",
+    status: "draft",
+    title: null,
+    description: null,
+    travelerParty: {},
+    constraints: {},
+    aggregateCurrency: null,
+    aggregateSubtotalAmountCents: null,
+    aggregateTaxAmountCents: null,
+    aggregateTotalAmountCents: null,
+    aggregatePricingSnapshot: null,
+    currentPriceExpiresAt: null,
+    bookingGroupId: null,
+    orderId: null,
+    paymentSessionId: null,
+    reserveIdempotencyKey: null,
+    reserveStartedAt: null,
+    reservedAt: null,
+    checkoutIdempotencyKey: null,
+    checkoutStartedAt: null,
+    createdBy: null,
+    updatedBy: null,
+    createdAt: new Date("2026-05-18T00:00:00.000Z"),
+    updatedAt: new Date("2026-05-18T00:00:00.000Z"),
+    ...overrides,
+  }
+}
+
+function component(overrides: Partial<TripComponent> = {}): TripComponent {
+  return {
+    id: "trcp_123",
+    envelopeId: "trip_123",
+    sequence: 0,
+    kind: "catalog_booking",
+    status: "draft",
+    title: null,
+    description: null,
+    entityModule: "products",
+    entityId: "prod_123",
+    sourceKind: "owned",
+    sourceConnectionId: null,
+    sourceRef: null,
+    bookingDraftId: null,
+    catalogQuoteId: null,
+    bookingId: null,
+    bookingGroupId: null,
+    orderId: null,
+    paymentSessionId: null,
+    providerRef: null,
+    supplierRef: null,
+    componentCurrency: null,
+    componentSubtotalAmountCents: null,
+    componentTaxAmountCents: null,
+    componentTotalAmountCents: null,
+    pricingSnapshot: null,
+    taxLines: [],
+    cancellationSnapshot: null,
+    holdToken: null,
+    holdExpiresAt: null,
+    priceExpiresAt: null,
+    warningCodes: [],
+    metadata: {},
+    createdAt: new Date("2026-05-18T00:00:00.000Z"),
+    updatedAt: new Date("2026-05-18T00:00:00.000Z"),
+    ...overrides,
+  }
+}
+
+function makeFakeDb(state: {
+  envelope: TripEnvelope
+  components: TripComponent[]
+  events: NewTripComponentEvent[]
+}): AnyDrizzleDb {
+  return {
+    select: () => ({
+      from: (table: unknown) => ({
+        where: () => ({
+          limit: async () => (table === tripEnvelopes ? [state.envelope] : []),
+          orderBy: async () =>
+            table === tripComponents
+              ? [...state.components].sort((a, b) => a.sequence - b.sequence)
+              : [],
+        }),
+      }),
+    }),
+    update: (table: unknown) => ({
+      set: (patch: Partial<TripEnvelope & TripComponent>) => ({
+        where: () => ({
+          returning: async () => {
+            if (table === tripEnvelopes) {
+              Object.assign(state.envelope, patch)
+              return [state.envelope]
+            }
+            if (table === tripComponents) {
+              Object.assign(state.components[0], patch)
+              return [state.components[0]]
+            }
+            return []
+          },
+        }),
+      }),
+    }),
+    insert: (table: unknown) => ({
+      values: (value: NewTripComponentEvent) => {
+        if (table === tripComponentEvents) state.events.push(value)
+        return { returning: async () => [] }
+      },
+    }),
+  } as AnyDrizzleDb
+}
