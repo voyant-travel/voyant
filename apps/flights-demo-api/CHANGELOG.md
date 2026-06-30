@@ -1,5 +1,12 @@
 # flights-demo-api
 
+## 0.19.34
+
+### Patch Changes
+
+- aebd52b: Bundle the flights demo API with packaged operator starters and document the
+  local startup commands for the demo service.
+
 ## 0.19.33
 
 ### Patch Changes

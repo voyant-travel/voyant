@@ -1,5 +1,11 @@
 # @voyant-travel/openapi
 
+## 0.2.2
+
+### Patch Changes
+
+- ce0f92d: Regenerate framework OpenAPI specs to match current quote route response schemas.
+
 ## 0.2.1
 
 ### Patch Changes

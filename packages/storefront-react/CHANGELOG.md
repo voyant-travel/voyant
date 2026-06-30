@@ -1,5 +1,12 @@
 # @voyant-travel/storefront-react
 
+## 0.139.2
+
+### Patch Changes
+
+- Updated dependencies [ce0f92d]
+  - @voyant-travel/storefront@0.139.2
+
 ## 0.139.1
 
 ### Patch Changes
