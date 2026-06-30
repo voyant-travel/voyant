@@ -50,6 +50,7 @@ describe("standard anonymous surface (ADR-0008)", () => {
       "/v1/public/finance/bookings",
       "/v1/public/finance/collections",
       "/v1/public/finance/payment-sessions",
+      "/v1/public/finance/vouchers",
       "/v1/public/leads",
       "/v1/public/legal",
       "/v1/public/newsletter",

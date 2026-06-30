@@ -537,7 +537,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
             }
           },
         }),
-        ["/bookings", "/collections", "/payment-sessions", "/accountant"],
+        ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
       ),
     "@voyant-travel/bookings": ({ capabilities }) =>
       // Storefront post-payment status poll: the booking id is a TypeID in the

@@ -47,10 +47,36 @@ function build() {
   })
 }
 
+function buildWithSessionActor(actor: Actor) {
+  const { modules, extensions } = composeFromManifest(
+    OPERATOR_RUNTIME_MANIFEST,
+    operatorComposition,
+    buildOperatorProviders(),
+  )
+  return mountApp({
+    // biome-ignore lint/suspicious/noExplicitAny: stub db for auth-surface regression.
+    db: () => ({}) as any,
+    modules,
+    extensions,
+    auth: {
+      resolve: () => ({ userId: "u1", actor }),
+    },
+  })
+}
+
 async function status(path: string, method = "GET"): Promise<number> {
   const app = build()
   const res = await app.request(path, { method }, TEST_ENV, TEST_CTX)
   return res.status
+}
+
+async function responseWithSessionActor(
+  actor: Actor,
+  path: string,
+  init: RequestInit,
+): Promise<Response> {
+  const app = buildWithSessionActor(actor)
+  return app.request(path, init, TEST_ENV, TEST_CTX)
 }
 
 describe("operator composed route mounting (smoke)", () => {
@@ -94,5 +120,17 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/admin/distribution/throttling")).not.toBe(404)
     expect(await status("/v1/admin/distribution/retry/booking_123", "POST")).not.toBe(404)
     expect(await status("/v1/admin/distribution/reconcile/bookings", "POST")).not.toBe(404)
+  })
+
+  it("lets storefront voucher validation pass the public actor gate even with an admin session", async () => {
+    const res = await responseWithSessionActor("staff", "/v1/public/finance/vouchers/validate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code: "TEST-VOUCHER" }),
+    })
+
+    expect(res.status).not.toBe(401)
+    expect(res.status).not.toBe(403)
+    expect(res.status).not.toBe(404)
   })
 })
