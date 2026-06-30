@@ -39,6 +39,7 @@ export {
   type FlightComponentAdapter,
   type FlightComponentAdapterApi,
   type FlightComponentAdapterOptions,
+  previewFlightCancellation,
 } from "./flight-component.js"
 export type { TripsRoutes, TripsRoutesOptions } from "./routes.js"
 export { createTripsRoutes } from "./routes.js"

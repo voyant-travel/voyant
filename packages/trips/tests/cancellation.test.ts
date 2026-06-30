@@ -279,4 +279,41 @@ describe("trips cancellation", () => {
       "cancel_preview_not_configured",
     ])
   })
+
+  it("does not locally cancel a connected flight component without adapter cancellation wiring", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [
+        component({
+          id: "flight",
+          title: "Flight to London",
+          kind: "flight_placeholder",
+          entityModule: null,
+          entityId: null,
+          sourceKind: null,
+          bookingId: null,
+          orderId: "ord_1",
+          providerRef: "VD0001",
+          supplierRef: "ord_1",
+        }),
+      ],
+      events: [],
+    }
+
+    const result = await tripsService.cancelComponents(makeFakeDb(state), {
+      envelopeId: "trip_123",
+      componentIds: ["flight"],
+      reason: "Traveler changed plans",
+    })
+
+    expect(result.cancelled).toEqual([])
+    expect(result.remediation).toEqual([
+      { componentId: "flight", reason: "cancel_preview_not_configured" },
+    ])
+    expect(state.components[0]?.status).toBe("booked")
+    expect(state.components[0]?.warningCodes).toEqual([
+      "staff_remediation_required",
+      "cancel_preview_not_configured",
+    ])
+  })
 })
