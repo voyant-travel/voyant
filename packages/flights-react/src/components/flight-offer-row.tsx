@@ -44,6 +44,7 @@ export function FlightOfferRow({
   const messages = i18n.messages
   const interactive = !!onClick
   const open = onClick ? () => onClick(offer) : undefined
+  const rowId = `flight-offer-${offer.offerId}`
   const itineraries = offer.itineraries.map((itin, i) => (
     // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return) -- owner: flights-react; existing suppression is intentional pending typed cleanup.
     <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} messages={messages} />
@@ -62,14 +63,23 @@ export function FlightOfferRow({
           events, so the two controls are siblings — never nested interactive
           elements, and no invalid <button>-in-<button>. */}
       {interactive && (
-        <button
-          type="button"
-          onClick={open}
-          aria-label={messages.flightOfferRow.viewDetails}
-          className="absolute inset-0 rounded-md transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
+        <>
+          {/* Visually hidden action hint; combined with the itinerary + price
+              ids below so the overlay button's accessible name is unique per
+              row (e.g. "View flight details, <route…>, <price>"). */}
+          <span id={`${rowId}-action`} className="sr-only">
+            {messages.flightOfferRow.viewDetails}
+          </span>
+          <button
+            type="button"
+            onClick={open}
+            aria-labelledby={`${rowId}-action ${rowId}-itineraries ${rowId}-price`}
+            className="absolute inset-0 rounded-md transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </>
       )}
       <div
+        id={`${rowId}-itineraries`}
         className={cn(
           "flex min-w-0 flex-1 flex-col gap-3",
           interactive && "pointer-events-none relative",
@@ -83,7 +93,7 @@ export function FlightOfferRow({
           interactive && "pointer-events-none relative",
         )}
       >
-        <div className="font-semibold text-2xl tabular-nums">
+        <div id={`${rowId}-price`} className="font-semibold text-2xl tabular-nums">
           {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency, i18n)}
         </div>
         <PriceFootnote offer={offer} i18n={i18n} />
