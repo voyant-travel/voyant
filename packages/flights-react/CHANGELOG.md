@@ -1,5 +1,18 @@
 # @voyant-travel/flights-react
 
+## 0.137.2
+
+### Patch Changes
+
+- 2427218: Create flight order payment sessions for bank-transfer booking intents.
+- Updated dependencies [5c53561]
+- Updated dependencies [2427218]
+- Updated dependencies [7850b66]
+- Updated dependencies [bddb539]
+  - @voyant-travel/flights@0.137.2
+  - @voyant-travel/finance@0.137.6
+  - @voyant-travel/finance-react@0.137.6
+
 ## 0.137.1
 
 ### Patch Changes
