@@ -3,9 +3,13 @@
 import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 
-const files = execFileSync("git", ["ls-files", "packages/*-ui/src/**/*.tsx"], {
-  encoding: "utf8",
-})
+const files = execFileSync(
+  "git",
+  ["ls-files", "packages/*-ui/src/**/*.tsx", "packages/*-react/src/**/*.tsx"],
+  {
+    encoding: "utf8",
+  },
+)
   .split("\n")
   .filter(Boolean)
   .filter((file) => existsSync(file))

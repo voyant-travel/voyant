@@ -34,6 +34,7 @@ export function CruiseConfigurator({
           <DatePicker
             value={pending.embarkationDate || null}
             onChange={(value) => onChange({ ...pending, embarkationDate: value ?? "" })}
+            placeholder={t.pickDate}
             className="w-full"
           />
         </Field>
