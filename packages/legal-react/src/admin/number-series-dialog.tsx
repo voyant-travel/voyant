@@ -56,6 +56,24 @@ type ResetStrategyKey = (typeof RESET_STRATEGY_VALUES)[number]
 const SCOPE_VALUES = ["customer", "supplier", "partner", "channel", "other"] as const
 type ScopeKey = (typeof SCOPE_VALUES)[number]
 
+const MIN_PAD_LENGTH = 0
+const MAX_PAD_LENGTH = 12
+const DEFAULT_PAD_LENGTH = 4
+
+function previewPadLength(value: unknown) {
+  const clampPadLength = (padLength: number) =>
+    Math.min(MAX_PAD_LENGTH, Math.max(MIN_PAD_LENGTH, Math.trunc(padLength)))
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? clampPadLength(value) : DEFAULT_PAD_LENGTH
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? clampPadLength(parsed) : DEFAULT_PAD_LENGTH
+  }
+  return DEFAULT_PAD_LENGTH
+}
+
 export function NumberSeriesDialog({
   open,
   onOpenChange,
@@ -108,7 +126,7 @@ export function NumberSeriesDialog({
       name: values.name,
       prefix: values.prefix,
       separator: values.separator || "",
-      padLength: values.padLength ?? 4,
+      padLength: values.padLength ?? DEFAULT_PAD_LENGTH,
       resetStrategy: values.resetStrategy,
       scope: values.scope,
       active: values.active,
@@ -144,8 +162,7 @@ export function NumberSeriesDialog({
       ) ?? null
     )
   }, [existingList, watchedActive, prefix, watchedScope, series?.id])
-  const padLength =
-    typeof padLengthValue === "number" && Number.isFinite(padLengthValue) ? padLengthValue : 4
+  const padLength = previewPadLength(padLengthValue)
   const sampleSequence = series ? (series.currentSequence ?? 0) + 1 : 42
   const sampleNumber = `${prefix}${prefix && separator ? separator : ""}${String(
     sampleSequence,
