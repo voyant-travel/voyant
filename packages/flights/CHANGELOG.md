@@ -1,5 +1,11 @@
 # @voyant-travel/flights
 
+## 0.137.3
+
+### Patch Changes
+
+- 49ffcd9: Return setup-specific 503 responses when the configured flight demo service is unavailable, and show that message in Trips flight search.
+
 ## 0.137.2
 
 ### Patch Changes

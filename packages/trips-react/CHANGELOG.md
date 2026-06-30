@@ -1,5 +1,24 @@
 # @voyant-travel/trips-react
 
+## 0.128.5
+
+### Patch Changes
+
+- b1f90b0: Block trip component mutations after checkout has started and surface the locked state in the admin composer.
+- 49ffcd9: Return setup-specific 503 responses when the configured flight demo service is unavailable, and show that message in Trips flight search.
+- 37e9543: Require accommodation trip components to carry a valid check-in/check-out date range before add, price, or reserve.
+- c1d8f71: Return failed trip reservations as conflict responses, hide internal SQL details from reservation failures, and persist the admin draft-booking toggle before reserve.
+- Updated dependencies [f37a3f1]
+- Updated dependencies [b1f90b0]
+- Updated dependencies [49ffcd9]
+- Updated dependencies [37e9543]
+- Updated dependencies [c1d8f71]
+  - @voyant-travel/ui@0.108.7
+  - @voyant-travel/trips@0.128.5
+  - @voyant-travel/i18n@0.109.3
+  - @voyant-travel/flights@0.137.3
+  - @voyant-travel/flights-react@0.137.3
+
 ## 0.128.4
 
 ### Patch Changes
