@@ -58,7 +58,64 @@ const productPricingFields = {
   marginPercent: z.number().int().optional().nullable(),
 }
 
-export const insertProductSchema = productCoreSchema.extend(productPricingFields)
+type OrderedStringRangeIssue = { path: string[]; message: string }
+
+function parseDateOnlyValue(value: string): number | null {
+  const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value.trim())
+  if (!match) return null
+
+  const [, yearValue, monthValue, dayValue] = match
+  const year = Number(yearValue)
+  const month = Number(monthValue)
+  const day = Number(dayValue)
+  const timestamp = Date.UTC(year, month - 1, day)
+  const date = new Date(timestamp)
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null
+  }
+
+  return timestamp
+}
+
+function collectOrderedStringRangeIssues(
+  data: Record<string, unknown>,
+  minPath: string,
+  maxPath: string,
+): OrderedStringRangeIssue[] {
+  const min = data[minPath]
+  const max = data[maxPath]
+
+  const minTime = typeof min === "string" ? parseDateOnlyValue(min) : null
+  const maxTime = typeof max === "string" ? parseDateOnlyValue(max) : null
+
+  if (minTime !== null && maxTime !== null && minTime > maxTime) {
+    return [{ path: [maxPath], message: `${maxPath} must be on or after ${minPath}` }]
+  }
+
+  return []
+}
+
+function addOrderedStringRangeIssues(
+  ctx: z.RefinementCtx,
+  data: Record<string, unknown>,
+  minPath: string,
+  maxPath: string,
+) {
+  for (const issue of collectOrderedStringRangeIssues(data, minPath, maxPath)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+}
+
+export const insertProductSchema = productCoreSchema
+  .extend(productPricingFields)
+  .superRefine((data, ctx) => {
+    addOrderedStringRangeIssues(ctx, data, "startDate", "endDate")
+  })
 // `productCoreSchema` carries `.default(...)` on enum-ish fields so
 // insert can omit them. zod's `.partial()` does NOT strip those
 // defaults — every PATCH would synthesize `status: "draft"`,
@@ -77,6 +134,9 @@ export const updateProductSchema = productCoreSchema
   })
   .partial()
   .extend(productPricingFields)
+  .superRefine((data, ctx) => {
+    addOrderedStringRangeIssues(ctx, data, "startDate", "endDate")
+  })
 export const selectProductSchema = productCoreSchema.extend({
   id: typeIdSchema("products"),
   sellAmountCents: z.number().int().nullable(),
@@ -140,7 +200,9 @@ const productOptionCoreSchema = z.object({
   availableFrom: z.string().optional().nullable(),
   availableTo: z.string().optional().nullable(),
 })
-export const insertProductOptionSchema = productOptionCoreSchema
+export const insertProductOptionSchema = productOptionCoreSchema.superRefine((data, ctx) => {
+  addOrderedStringRangeIssues(ctx, data, "availableFrom", "availableTo")
+})
 export const updateProductOptionSchema = productOptionCoreSchema
   .extend({
     status: productOptionStatusSchema,
@@ -148,6 +210,9 @@ export const updateProductOptionSchema = productOptionCoreSchema
     sortOrder: z.number().int(),
   })
   .partial()
+  .superRefine((data, ctx) => {
+    addOrderedStringRangeIssues(ctx, data, "availableFrom", "availableTo")
+  })
 export const productOptionListQuerySchema = z.object({
   productId: z.string().optional(),
   status: productOptionStatusSchema.optional(),
@@ -181,16 +246,33 @@ const OCCUPANCY_REQUIRED_TYPES = new Set(["room", "vehicle"])
 
 type OptionUnitValidationShape = {
   unitType?: string | null | undefined
+  minQuantity?: number | null | undefined
+  maxQuantity?: number | null | undefined
   minAge?: number | null | undefined
   maxAge?: number | null | undefined
   occupancyMin?: number | null | undefined
   occupancyMax?: number | null | undefined
 }
 
-type OccupancyIssue = { path: string[]; message: string }
+type OptionUnitValidationIssue = { path: string[]; message: string }
 
-function collectOptionUnitAgeRangeIssues(data: OptionUnitValidationShape): OccupancyIssue[] {
-  const issues: OccupancyIssue[] = []
+function collectOptionUnitQuantityRangeIssues(
+  data: OptionUnitValidationShape,
+): OptionUnitValidationIssue[] {
+  const issues: OptionUnitValidationIssue[] = []
+  if (data.minQuantity != null && data.maxQuantity != null && data.maxQuantity < data.minQuantity) {
+    issues.push({
+      path: ["maxQuantity"],
+      message: "maxQuantity must be ≥ minQuantity",
+    })
+  }
+  return issues
+}
+
+function collectOptionUnitAgeRangeIssues(
+  data: OptionUnitValidationShape,
+): OptionUnitValidationIssue[] {
+  const issues: OptionUnitValidationIssue[] = []
   if (data.minAge != null && data.maxAge != null && data.maxAge < data.minAge) {
     issues.push({
       path: ["maxAge"],
@@ -200,8 +282,10 @@ function collectOptionUnitAgeRangeIssues(data: OptionUnitValidationShape): Occup
   return issues
 }
 
-function collectOptionUnitOccupancyIssues(data: OptionUnitValidationShape): OccupancyIssue[] {
-  const issues: OccupancyIssue[] = []
+function collectOptionUnitOccupancyIssues(
+  data: OptionUnitValidationShape,
+): OptionUnitValidationIssue[] {
+  const issues: OptionUnitValidationIssue[] = []
   if (
     data.unitType &&
     OCCUPANCY_REQUIRED_TYPES.has(data.unitType) &&
@@ -225,8 +309,12 @@ function collectOptionUnitOccupancyIssues(data: OptionUnitValidationShape): Occu
   return issues
 }
 
-function collectOptionUnitIssues(data: OptionUnitValidationShape): OccupancyIssue[] {
-  return [...collectOptionUnitAgeRangeIssues(data), ...collectOptionUnitOccupancyIssues(data)]
+function collectOptionUnitIssues(data: OptionUnitValidationShape): OptionUnitValidationIssue[] {
+  return [
+    ...collectOptionUnitQuantityRangeIssues(data),
+    ...collectOptionUnitAgeRangeIssues(data),
+    ...collectOptionUnitOccupancyIssues(data),
+  ]
 }
 
 export const insertOptionUnitSchema = optionUnitCoreSchema.superRefine((data, ctx) => {
@@ -248,6 +336,9 @@ export const updateOptionUnitSchema = optionUnitCoreSchema
   })
   .partial()
   .superRefine((data, ctx) => {
+    for (const issue of collectOptionUnitQuantityRangeIssues(data)) {
+      ctx.addIssue({ code: "custom", ...issue })
+    }
     for (const issue of collectOptionUnitAgeRangeIssues(data)) {
       ctx.addIssue({ code: "custom", ...issue })
     }
@@ -271,7 +362,7 @@ export const updateOptionUnitSchema = optionUnitCoreSchema
  */
 export function validateMergedOptionUnit(
   merged: OptionUnitValidationShape,
-): { ok: true } | { ok: false; issues: OccupancyIssue[] } {
+): { ok: true } | { ok: false; issues: OptionUnitValidationIssue[] } {
   const issues = collectOptionUnitIssues(merged)
   return issues.length === 0 ? { ok: true } : { ok: false, issues }
 }

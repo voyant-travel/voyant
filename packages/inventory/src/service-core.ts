@@ -1,3 +1,4 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import { availabilitySlots } from "@voyant-travel/operations"
 import { and, asc, desc, eq, getTableColumns, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -18,6 +19,11 @@ import type {
 type ProductListQuery = z.infer<typeof productListQuerySchema>
 type CreateProductInput = z.infer<typeof insertProductSchema>
 type UpdateProductInput = z.infer<typeof updateProductSchema>
+
+type ProductDateRangeShape = {
+  startDate?: string | null
+  endDate?: string | null
+}
 
 export interface ProductReadinessIssue {
   code: string
@@ -54,6 +60,14 @@ function isScheduledBookingMode(bookingMode: string) {
 
 function isPublicPublishedState(product: PublishableProductState) {
   return product.status === "active" && product.visibility === "public" && product.activated
+}
+
+function assertProductDateRange(product: ProductDateRangeShape) {
+  if (product.startDate && product.endDate && product.startDate > product.endDate) {
+    throw new RequestValidationError("endDate must be on or after startDate", {
+      issues: [{ path: ["endDate"], message: "endDate must be on or after startDate" }],
+    })
+  }
 }
 
 async function hasFutureOpenDeparture(db: PostgresJsDatabase, productId: string) {
@@ -327,6 +341,7 @@ export const coreProductsService = {
   },
 
   async createProduct(db: PostgresJsDatabase, data: CreateProductInput) {
+    assertProductDateRange(data)
     await assertReadyToPublish(db, data)
 
     const [row] = await db.insert(products).values(data).returning()
@@ -342,7 +357,9 @@ export const coreProductsService = {
     const [current] = await db.select().from(products).where(eq(products.id, id)).limit(1)
     if (!current) return null
 
-    await assertReadyToPublish(db, { ...current, ...data })
+    const merged = { ...current, ...data }
+    assertProductDateRange(merged)
+    await assertReadyToPublish(db, merged)
 
     const [row] = await db
       .update(products)

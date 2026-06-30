@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   insertOptionUnitSchema,
   insertProductOptionSchema,
+  insertProductSchema,
   updateOptionUnitSchema,
   updateProductOptionSchema,
   updateProductSchema,
@@ -63,6 +64,136 @@ describe("core update validation", () => {
     expect(validateMergedOptionUnit({ minAge: 70, maxAge: 12 })).toEqual({
       ok: false,
       issues: [{ path: ["maxAge"], message: "maxAge must be ≥ minAge" }],
+    })
+  })
+})
+
+describe("core range validation", () => {
+  it("rejects product inserts where startDate is after endDate", () => {
+    const result = insertProductSchema.safeParse({
+      name: "Backward dates",
+      sellCurrency: "EUR",
+      startDate: "2026-09-10",
+      endDate: "2026-09-01",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["endDate"],
+            message: "endDate must be on or after startDate",
+          }),
+        ]),
+      )
+    }
+  })
+
+  it("rejects product updates where both date bounds are inverted", () => {
+    const result = updateProductSchema.safeParse({
+      startDate: "2026-09-10",
+      endDate: "2026-09-01",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]).toMatchObject({
+        path: ["endDate"],
+        message: "endDate must be on or after startDate",
+      })
+    }
+  })
+
+  it("accepts product date ranges with non-zero-padded date parts", () => {
+    const result = insertProductSchema.safeParse({
+      name: "Autumn departures",
+      sellCurrency: "EUR",
+      startDate: "2026-9-10",
+      endDate: "2026-10-01",
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects inverted product date ranges with non-zero-padded date parts", () => {
+    const result = insertProductSchema.safeParse({
+      name: "Backward dates",
+      sellCurrency: "EUR",
+      startDate: "2026-1-31",
+      endDate: "2026-01-03",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]).toMatchObject({
+        path: ["endDate"],
+        message: "endDate must be on or after startDate",
+      })
+    }
+  })
+
+  it("rejects product option inserts where availableFrom is after availableTo", () => {
+    const result = insertProductOptionSchema.safeParse({
+      name: "Shoulder season",
+      availableFrom: "2026-10-01",
+      availableTo: "2026-05-01",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]).toMatchObject({
+        path: ["availableTo"],
+        message: "availableTo must be on or after availableFrom",
+      })
+    }
+  })
+
+  it("accepts product option availability with non-zero-padded date parts", () => {
+    const result = insertProductOptionSchema.safeParse({
+      name: "Shoulder season",
+      availableFrom: "2026-9-10",
+      availableTo: "2026-10-01",
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects product option updates where both availability bounds are inverted", () => {
+    const result = updateProductOptionSchema.safeParse({
+      availableFrom: "2026-10-01",
+      availableTo: "2026-05-01",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]).toMatchObject({
+        path: ["availableTo"],
+        message: "availableTo must be on or after availableFrom",
+      })
+    }
+  })
+
+  it("rejects option unit quantity ranges where minQuantity is greater than maxQuantity", () => {
+    const result = insertOptionUnitSchema.safeParse({
+      name: "Family",
+      minQuantity: 5,
+      maxQuantity: 2,
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]).toMatchObject({
+        path: ["maxQuantity"],
+        message: "maxQuantity must be ≥ minQuantity",
+      })
+    }
+  })
+
+  it("validates merged option unit quantity ranges for partial updates", () => {
+    expect(validateMergedOptionUnit({ minQuantity: 5, maxQuantity: 2 })).toEqual({
+      ok: false,
+      issues: [{ path: ["maxQuantity"], message: "maxQuantity must be ≥ minQuantity" }],
     })
   })
 })

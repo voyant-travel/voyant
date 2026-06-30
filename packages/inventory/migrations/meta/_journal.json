@@ -15,6 +15,13 @@
       "when": 1782045482478,
       "tag": "0001_inventory_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782855327922,
+      "tag": "0002_inventory_baseline",
+      "breakpoints": true
     }
   ]
 }

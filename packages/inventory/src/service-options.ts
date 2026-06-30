@@ -20,6 +20,24 @@ type OptionUnitListQuery = z.infer<typeof optionUnitListQuerySchema>
 type CreateOptionUnitInput = z.infer<typeof insertOptionUnitSchema>
 type UpdateOptionUnitInput = z.infer<typeof updateOptionUnitSchema>
 
+type ProductOptionAvailabilityShape = {
+  availableFrom?: string | null
+  availableTo?: string | null
+}
+
+function assertProductOptionAvailabilityRange(option: ProductOptionAvailabilityShape) {
+  if (option.availableFrom && option.availableTo && option.availableFrom > option.availableTo) {
+    throw new RequestValidationError("availableTo must be on or after availableFrom", {
+      issues: [
+        {
+          path: ["availableTo"],
+          message: "availableTo must be on or after availableFrom",
+        },
+      ],
+    })
+  }
+}
+
 export const optionProductsService = {
   async listOptions(db: PostgresJsDatabase, query: ProductOptionListQuery) {
     const conditions = []
@@ -59,6 +77,8 @@ export const optionProductsService = {
   },
 
   async createOption(db: PostgresJsDatabase, productId: string, data: CreateProductOptionInput) {
+    assertProductOptionAvailabilityRange(data)
+
     const [product] = await db
       .select({ id: products.id })
       .from(products)
@@ -86,7 +106,12 @@ export const optionProductsService = {
 
   async updateOption(db: PostgresJsDatabase, id: string, data: UpdateProductOptionInput) {
     const [current] = await db
-      .select({ id: productOptions.id, productId: productOptions.productId })
+      .select({
+        id: productOptions.id,
+        productId: productOptions.productId,
+        availableFrom: productOptions.availableFrom,
+        availableTo: productOptions.availableTo,
+      })
       .from(productOptions)
       .where(eq(productOptions.id, id))
       .limit(1)
@@ -94,6 +119,8 @@ export const optionProductsService = {
     if (!current) {
       return null
     }
+
+    assertProductOptionAvailabilityRange({ ...current, ...data })
 
     if (data.isDefault) {
       await db
@@ -199,6 +226,8 @@ export const optionProductsService = {
     const [existing] = await db
       .select({
         unitType: optionUnits.unitType,
+        minQuantity: optionUnits.minQuantity,
+        maxQuantity: optionUnits.maxQuantity,
         minAge: optionUnits.minAge,
         maxAge: optionUnits.maxAge,
         occupancyMin: optionUnits.occupancyMin,
@@ -214,6 +243,8 @@ export const optionProductsService = {
 
     const merged = {
       unitType: "unitType" in data ? data.unitType : existing.unitType,
+      minQuantity: "minQuantity" in data ? data.minQuantity : existing.minQuantity,
+      maxQuantity: "maxQuantity" in data ? data.maxQuantity : existing.maxQuantity,
       minAge: "minAge" in data ? data.minAge : existing.minAge,
       maxAge: "maxAge" in data ? data.maxAge : existing.maxAge,
       occupancyMin: "occupancyMin" in data ? data.occupancyMin : existing.occupancyMin,
