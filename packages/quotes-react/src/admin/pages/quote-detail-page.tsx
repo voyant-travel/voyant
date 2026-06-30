@@ -64,6 +64,10 @@ import {
   QuoteOwnershipCard,
   QuoteTravelersCard,
 } from "../quote-content-sections.js"
+import {
+  hasProposalSnapshotChanges,
+  shouldAcceptCurrentSentVersion,
+} from "../quote-detail-save-model.js"
 import { QuoteActivitiesCard, QuoteDetailsCard, QuoteTagsCard } from "../quote-detail-sections.js"
 
 interface DraftLineItem {
@@ -297,6 +301,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   }
 
   const currentDraft = draft
+  const loadedQuote = quote
   const patchDraft = (patch: Partial<QuoteDraft>) =>
     setDraft((previous) => (previous ? { ...previous, ...patch } : previous))
 
@@ -385,7 +390,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
         id,
         input: {
           title: currentDraft.title,
-          pipelineId: quote?.pipelineId,
+          pipelineId: loadedQuote.pipelineId,
           stageId: currentDraft.stageId,
           status: currentDraft.status,
           personId: currentDraft.personId,
@@ -459,8 +464,24 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
         }
       }
 
-      // 4. Snapshot the saved state into a new proposal version.
-      await versionMutation.snapshot.mutateAsync({ quoteId: id })
+      const proposalSnapshotChanged = serverDraft
+        ? hasProposalSnapshotChanges(serverDraft, currentDraft)
+        : true
+      const acceptCurrentSentVersion = shouldAcceptCurrentSentVersion({
+        previousStatus: loadedQuote.status,
+        nextStatus: currentDraft.status,
+        acceptedVersionId: loadedQuote.acceptedVersionId,
+        currentVersionStatus: currentVersion?.status ?? null,
+        proposalSnapshotChanged,
+      })
+
+      // 4. Snapshot only when proposal content changed. Deal-only saves (for
+      // example Mark won) must not expire a sent proposal and create a draft.
+      if (proposalSnapshotChanged) {
+        await versionMutation.snapshot.mutateAsync({ quoteId: id })
+      } else if (acceptCurrentSentVersion && currentVersionId) {
+        await versionMutation.accept.mutateAsync(currentVersionId)
+      }
       toast.success(t.saveSuccess)
     } catch {
       toast.error(t.saveError)
