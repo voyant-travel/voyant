@@ -1,6 +1,7 @@
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
+import { duplicateInventoryValueError } from "./duplicate-errors.js"
 import {
   optionUnits,
   optionUnitTranslations,
@@ -119,7 +120,19 @@ export const optionTranslationProductsService = {
     const [row] = await db
       .insert(productTranslations)
       .values({ ...data, productId })
+      .onConflictDoNothing({
+        target: [productTranslations.productId, productTranslations.languageTag],
+      })
       .returning()
+
+    if (!row) {
+      throw duplicateInventoryValueError({
+        code: "duplicate_product_translation_language",
+        message: "Product translation already exists for this product and language",
+        resource: "product_translation",
+        fields: [["productId"], ["languageTag"]],
+      })
+    }
 
     return row ?? null
   },

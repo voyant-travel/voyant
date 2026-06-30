@@ -1,6 +1,7 @@
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
+import { duplicateInventoryValueError } from "./duplicate-errors.js"
 import {
   productCategories,
   productCategoryProducts,
@@ -74,7 +75,21 @@ export const taxonomyProductsService = {
   },
 
   async createProductType(db: PostgresJsDatabase, data: CreateProductTypeInput) {
-    const [row] = await db.insert(productTypes).values(data).returning()
+    const [row] = await db
+      .insert(productTypes)
+      .values(data)
+      .onConflictDoNothing({ target: productTypes.code })
+      .returning()
+
+    if (!row) {
+      throw duplicateInventoryValueError({
+        code: "duplicate_product_type_code",
+        message: "Product type code already exists",
+        resource: "product_type",
+        fields: [["code"]],
+      })
+    }
+
     return row
   },
 
@@ -148,7 +163,21 @@ export const taxonomyProductsService = {
   },
 
   async createProductCategory(db: PostgresJsDatabase, data: CreateProductCategoryInput) {
-    const [row] = await db.insert(productCategories).values(data).returning()
+    const [row] = await db
+      .insert(productCategories)
+      .values(data)
+      .onConflictDoNothing({ target: productCategories.slug })
+      .returning()
+
+    if (!row) {
+      throw duplicateInventoryValueError({
+        code: "duplicate_product_category_slug",
+        message: "Product category slug already exists",
+        resource: "product_category",
+        fields: [["slug"]],
+      })
+    }
+
     return row
   },
 
@@ -214,7 +243,21 @@ export const taxonomyProductsService = {
   },
 
   async createProductTag(db: PostgresJsDatabase, data: CreateProductTagInput) {
-    const [row] = await db.insert(productTags).values(data).returning()
+    const [row] = await db
+      .insert(productTags)
+      .values(data)
+      .onConflictDoNothing({ target: productTags.name })
+      .returning()
+
+    if (!row) {
+      throw duplicateInventoryValueError({
+        code: "duplicate_product_tag_name",
+        message: "Product tag name already exists",
+        resource: "product_tag",
+        fields: [["name"]],
+      })
+    }
+
     return row
   },
 
