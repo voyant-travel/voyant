@@ -1,5 +1,12 @@
 # @voyant-travel/storefront
 
+## 0.139.2
+
+### Patch Changes
+
+- ce0f92d: Refresh card-provider redirects when restarting active payment-link sessions instead of reusing stale stored URLs.
+  - @voyant-travel/finance@0.137.7
+
 ## 0.139.1
 
 ### Patch Changes
