@@ -105,6 +105,17 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(body.data.totalAmountCents).toBe(0)
     })
 
+    it("returns 404 when creating a quote version for a missing quote", async () => {
+      const res = await app.request("/quotes/not_a_quote_mr073yt6/versions", {
+        method: "POST",
+        ...json({ currency: "USD" }),
+      })
+
+      expect(res.status).toBe(404)
+      const body = await res.json()
+      expect(body.error).toBe("Quote not found")
+    })
+
     it("lists quote versions filtered by quoteId", async () => {
       const { quote } = await seedQuote()
       await app.request(`/quotes/${quote.id}/versions`, {

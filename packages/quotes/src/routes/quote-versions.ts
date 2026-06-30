@@ -4,7 +4,10 @@ import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { quotesService } from "../service/index.js"
-import { QuoteVersionConflictError } from "../service/quote-versions.js"
+import {
+  QuoteVersionConflictError,
+  QuoteVersionParentNotFoundError,
+} from "../service/quote-versions.js"
 import {
   acceptQuoteVersionSchema,
   applyTripSnapshotToQuoteVersionSchema,
@@ -71,6 +74,7 @@ const createQuoteVersionRoute = createRoute({
       ...jsonContent(z.object({ data: quoteVersionSchema })),
     },
     400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Quote not found", ...jsonContent(errorResponseSchema) },
     409: { description: "Quote version conflict", ...jsonContent(errorResponseSchema) },
   },
 })
@@ -174,6 +178,9 @@ const versionsCoreChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationH
     } catch (error) {
       if (error instanceof QuoteVersionConflictError) {
         return c.json({ error: error.message }, 409)
+      }
+      if (error instanceof QuoteVersionParentNotFoundError) {
+        return c.json({ error: "Quote not found" }, 404)
       }
       throw error
     }

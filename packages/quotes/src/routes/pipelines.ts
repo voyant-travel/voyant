@@ -3,7 +3,7 @@ import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { quotesService } from "../service/index.js"
+import { PipelineDeleteConflictError, quotesService } from "../service/index.js"
 import {
   insertPipelineSchema,
   insertStageSchema,
@@ -93,6 +93,7 @@ const deletePipelineRoute = createRoute({
   responses: {
     200: { description: "Pipeline deleted", ...jsonContent(successResponseSchema) },
     404: { description: "Pipeline not found", ...jsonContent(errorResponseSchema) },
+    409: { description: "Pipeline has dependent records", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -117,10 +118,17 @@ const pipelinesChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook
     return row ? c.json({ data: row }, 200) : c.json({ error: "Pipeline not found" }, 404)
   })
   .openapi(deletePipelineRoute, async (c) => {
-    const row = await quotesService.deletePipeline(c.get("db"), c.req.valid("param").id)
-    return row
-      ? c.json({ success: true } as const, 200)
-      : c.json({ error: "Pipeline not found" }, 404)
+    try {
+      const row = await quotesService.deletePipeline(c.get("db"), c.req.valid("param").id)
+      return row
+        ? c.json({ success: true } as const, 200)
+        : c.json({ error: "Pipeline not found" }, 404)
+    } catch (error) {
+      if (error instanceof PipelineDeleteConflictError) {
+        return c.json({ error: error.message }, 409)
+      }
+      throw error
+    }
   })
 
 // --- stages -----------------------------------------------------------------

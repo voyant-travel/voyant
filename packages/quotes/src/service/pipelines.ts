@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { pipelines, stages } from "../schema.js"
+import { pipelines, quotes, stages } from "../schema.js"
 import type {
   insertPipelineSchema,
   insertStageSchema,
@@ -19,6 +19,18 @@ type UpdatePipelineInput = z.infer<typeof updatePipelineSchema>
 type StageListQuery = z.infer<typeof stageListQuerySchema>
 type CreateStageInput = z.infer<typeof insertStageSchema>
 type UpdateStageInput = z.infer<typeof updateStageSchema>
+
+export class PipelineDeleteConflictError extends Error {
+  constructor(
+    readonly pipelineId: string,
+    readonly dependentQuoteCount: number,
+  ) {
+    super(
+      `Pipeline ${pipelineId} cannot be deleted because it has dependent ${dependentQuoteCount} quote(s)`,
+    )
+    this.name = "PipelineDeleteConflictError"
+  }
+}
 
 export const pipelinesService = {
   async listPipelines(db: PostgresJsDatabase, query: PipelineListQuery) {
@@ -57,6 +69,23 @@ export const pipelinesService = {
   },
 
   async deletePipeline(db: PostgresJsDatabase, id: string) {
+    const [pipeline] = await db
+      .select({ id: pipelines.id })
+      .from(pipelines)
+      .where(eq(pipelines.id, id))
+      .limit(1)
+    if (!pipeline) return null
+
+    const [quoteDependencies] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(quotes)
+      .where(eq(quotes.pipelineId, id))
+
+    const dependentQuoteCount = quoteDependencies?.count ?? 0
+    if (dependentQuoteCount) {
+      throw new PipelineDeleteConflictError(id, dependentQuoteCount)
+    }
+
     const [row] = await db
       .delete(pipelines)
       .where(eq(pipelines.id, id))

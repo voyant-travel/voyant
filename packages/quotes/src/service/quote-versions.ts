@@ -57,6 +57,13 @@ export class QuoteVersionConflictError extends Error {
   }
 }
 
+export class QuoteVersionParentNotFoundError extends Error {
+  constructor(quoteId: string) {
+    super(`Quote not found: ${quoteId}`)
+    this.name = "QuoteVersionParentNotFoundError"
+  }
+}
+
 function normalizeTimestamp(value: string | null | undefined) {
   return value == null ? value : new Date(value)
 }
@@ -155,6 +162,13 @@ export const quoteVersionsService = {
         "Quote Versions must be created as draft; use lifecycle routes for status changes",
       )
     }
+
+    const [quote] = await db
+      .select({ id: quotes.id })
+      .from(quotes)
+      .where(eq(quotes.id, data.quoteId))
+      .limit(1)
+    if (!quote) throw new QuoteVersionParentNotFoundError(data.quoteId)
 
     const values = {
       ...data,

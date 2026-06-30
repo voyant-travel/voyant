@@ -8,7 +8,11 @@ export const quotesService = {
   ...quoteVersionsService,
 }
 
-export { pipelinesService } from "./pipelines.js"
+export { PipelineDeleteConflictError, pipelinesService } from "./pipelines.js"
 export type { AcceptQuoteVersionResult } from "./quote-versions.js"
-export { QuoteVersionConflictError, quoteVersionsService } from "./quote-versions.js"
+export {
+  QuoteVersionConflictError,
+  QuoteVersionParentNotFoundError,
+  quoteVersionsService,
+} from "./quote-versions.js"
 export { quotesService as quoteRecordsService } from "./quotes.js"
