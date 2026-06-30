@@ -134,6 +134,9 @@ export const adminTripsMessagesEnPart1 = {
     startInDraftLabel: "Start bookings in draft status",
     startInDraftHint:
       "Otherwise the booking lands in Awaiting payment based on whether any payment is already marked paid.",
+    checkoutLockedTitle: "Checkout started",
+    checkoutLockedMessage:
+      "Component changes are locked. Cancel or amend existing components from the trip record.",
     cancellation: {
       defaultReason: "Customer requested change",
       sectionTitleSingular: "Cancel {count} component",
@@ -157,6 +160,8 @@ export const adminTripsMessagesEnPart1 = {
     },
     errors: {
       componentNotReady: "This component isn't ready to add yet",
+      componentMutationsLocked:
+        "Component changes are locked after checkout has started. Cancel or amend existing components instead.",
       priceTripFirst: "Price the trip first",
       noTrip: "No trip",
       noTripToCancel: "No trip to cancel",

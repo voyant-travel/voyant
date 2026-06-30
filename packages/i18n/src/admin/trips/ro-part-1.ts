@@ -134,6 +134,9 @@ export const adminTripsMessagesRoPart1 = {
     startInDraftLabel: "Porneste rezervarile in status ciorna",
     startInDraftHint:
       "Altfel rezervarea ajunge in Asteapta plata in functie de cat este deja marcat platit.",
+    checkoutLockedTitle: "Checkout inceput",
+    checkoutLockedMessage:
+      "Modificarile componentelor sunt blocate. Anuleaza sau amendeaza componentele existente din fisa calatoriei.",
     cancellation: {
       defaultReason: "Clientul a cerut o modificare",
       sectionTitleSingular: "Anuleaza {count} componenta",
@@ -157,6 +160,8 @@ export const adminTripsMessagesRoPart1 = {
     },
     errors: {
       componentNotReady: "Aceasta componenta nu este inca pregatita de adaugat",
+      componentMutationsLocked:
+        "Modificarile componentelor sunt blocate dupa inceperea checkout-ului. Anuleaza sau amendeaza componentele existente.",
       priceTripFirst: "Calculeaza mai intai pretul",
       noTrip: "Fara calatorie",
       noTripToCancel: "Nicio calatorie de anulat",

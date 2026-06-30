@@ -206,7 +206,7 @@ describe("trips cancellation", () => {
 
   it("refreshes envelope totals after removing a component", async () => {
     const state = {
-      envelope: envelope(),
+      envelope: envelope({ status: "priced" }),
       components: [
         component({ id: "stay", sequence: 0, status: "draft", title: "Bucharest stay" }),
         component({

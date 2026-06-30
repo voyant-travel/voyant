@@ -4,6 +4,7 @@ import { asc, eq, inArray } from "drizzle-orm"
 import type { NewTripComponent, NewTripEnvelope, TripComponent, TripEnvelope } from "./schema.js"
 import { tripComponents, tripEnvelopes } from "./schema.js"
 import {
+  assertTripEnvelopeCanMutateComponents,
   assertTripSupplierCommitmentCanReceiveComponentPatch,
   assertTripSupplierCommitmentsCanReceiveEnvelopePatch,
   updatesSupplierCommitmentEnvelopeFields,
@@ -266,6 +267,9 @@ export async function addComponent(
   db: AnyDrizzleDb,
   input: CreateTripComponentInput,
 ): Promise<TripComponent> {
+  const envelope = await getTripEnvelopeOrThrow(db, input.envelopeId)
+  assertTripEnvelopeCanMutateComponents(envelope)
+
   const values: NewTripComponent = {
     envelopeId: input.envelopeId,
     sequence: input.sequence,
@@ -307,6 +311,8 @@ export async function updateComponent(
   input: UpdateTripComponentInput,
 ): Promise<TripComponent | null> {
   const existing = await getTripComponentOrThrow(db, componentId)
+  const envelope = await getTripEnvelopeOrThrow(db, existing.envelopeId)
+  assertTripEnvelopeCanMutateComponents(envelope)
   assertTripComponentCanBeUpdated(existing, input)
   assertTripSupplierCommitmentCanReceiveComponentPatch(existing, input)
 
@@ -345,6 +351,8 @@ export async function updateComponentRefs(
   input: UpdateTripComponentRefsInput,
 ): Promise<TripComponent | null> {
   const existing = await getTripComponentOrThrow(db, componentId)
+  const envelope = await getTripEnvelopeOrThrow(db, existing.envelopeId)
+  assertTripEnvelopeCanMutateComponents(envelope)
   assertTripComponentCanReceiveRefs(existing, input)
 
   const updates: Partial<NewTripComponent> = {
@@ -422,6 +430,9 @@ export async function reorderComponents(
   db: AnyDrizzleDb,
   input: ReorderTripComponentsInput,
 ): Promise<TripComponent[]> {
+  const envelope = await getTripEnvelopeOrThrow(db, input.envelopeId)
+  assertTripEnvelopeCanMutateComponents(envelope)
+
   const rows = (await db
     .select()
     .from(tripComponents)
@@ -503,4 +514,14 @@ async function getTripComponentOrThrow(db: AnyDrizzleDb, id: string): Promise<Tr
     .limit(1)) as TripComponent[]
   if (!component) throw new TripsInvariantError(`Trip component ${id} was not found`)
   return component
+}
+
+async function getTripEnvelopeOrThrow(db: AnyDrizzleDb, id: string): Promise<TripEnvelope> {
+  const [envelope] = (await db
+    .select()
+    .from(tripEnvelopes)
+    .where(eq(tripEnvelopes.id, id))
+    .limit(1)) as TripEnvelope[]
+  if (!envelope) throw new TripsInvariantError(`Trip envelope ${id} was not found`)
+  return envelope
 }

@@ -2,6 +2,7 @@ import type { TripComponent } from "@voyant-travel/trips"
 import { describe, expect, it } from "vitest"
 import {
   apiError,
+  componentMutationsLockedForEnvelopeStatus,
   failuresToString,
   hydrateBilling,
   hydrateTravelers,
@@ -242,6 +243,13 @@ describe("admin trips page model", () => {
 
     expect(reserveResultFromApiError({ body: { data } })).toBe(data)
     expect(reserveResultFromApiError({ body: { error: "Trip reservation failed" } })).toBeNull()
+  })
+
+  it("locks component edits once checkout has started", () => {
+    expect(componentMutationsLockedForEnvelopeStatus("draft")).toBe(false)
+    expect(componentMutationsLockedForEnvelopeStatus("reserved")).toBe(false)
+    expect(componentMutationsLockedForEnvelopeStatus("checkout_started")).toBe(true)
+    expect(componentMutationsLockedForEnvelopeStatus("booked")).toBe(true)
   })
 
   it("falls back to lead role for the first stored traveler", () => {

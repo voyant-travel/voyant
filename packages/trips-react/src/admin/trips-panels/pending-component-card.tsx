@@ -20,6 +20,7 @@ export function PendingComponentCard({
   onRemove,
   onCommit,
   committing,
+  commitDisabled,
   travelers,
 }: {
   pending: PendingComponent
@@ -27,6 +28,7 @@ export function PendingComponentCard({
   onRemove(): void
   onCommit(): void
   committing: boolean
+  commitDisabled?: boolean
   travelers: TripTraveler[]
 }) {
   const t = useAdminMessages().trips.adminComposer.panels
@@ -60,7 +62,7 @@ export function PendingComponentCard({
       ) : null}
 
       <div className="flex justify-end">
-        <Button onClick={onCommit} disabled={!valid || committing}>
+        <Button onClick={onCommit} disabled={!valid || committing || commitDisabled}>
           {committing ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
           Add to trip
         </Button>
