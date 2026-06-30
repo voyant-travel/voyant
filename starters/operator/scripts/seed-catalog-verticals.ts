@@ -19,12 +19,25 @@
  * the per-vertical catalog policies project as facetable index fields.
  */
 
-import { roomTypes } from "@voyant-travel/accommodations/schema"
+import {
+  ratePlanDailyRates,
+  ratePlanRoomTypes,
+  ratePlans,
+  roomTypeDailyInventory,
+  roomTypes,
+} from "@voyant-travel/accommodations/schema"
 import { charterProducts } from "@voyant-travel/charters/schema"
-import { cruises } from "@voyant-travel/cruises/schema"
+import {
+  cruiseCabinCategories,
+  cruisePrices,
+  cruiseSailings,
+  cruiseShips,
+  cruises,
+} from "@voyant-travel/cruises/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { productExtras } from "@voyant-travel/inventory/extras"
 import { facilities, properties } from "@voyant-travel/operations"
+import { eq } from "drizzle-orm"
 import type { drizzle } from "drizzle-orm/postgres-js"
 
 type Db = ReturnType<typeof drizzle>
@@ -378,7 +391,94 @@ export async function seedCruises(db: Db, ctx: CatalogSeedContext): Promise<stri
   ]
 
   const inserted = await db.insert(cruises).values(rows).returning({ id: cruises.id })
+  await seedCruiseBookingInventory(db, inserted, ctx)
   return inserted.map((r) => r.id)
+}
+
+async function seedCruiseBookingInventory(
+  db: Db,
+  insertedCruises: Array<{ id: string }>,
+  ctx: CatalogSeedContext,
+): Promise<void> {
+  const cruise = insertedCruises[0]
+  if (!cruise) return
+
+  const shipId = newId("cruise_ships")
+  await db.insert(cruiseShips).values({
+    id: shipId,
+    lineSupplierId: pickSupplier(ctx.supplierIds, 0),
+    name: "MV Voyant Explorer",
+    slug: "mv-voyant-explorer",
+    shipType: "ocean" as const,
+    capacityGuests: 1840,
+    capacityCrew: 720,
+    cabinCount: 920,
+    deckCount: 12,
+    yearBuilt: 2019,
+    description: "Mid-size demo cruise ship with balcony, ocean-view and suite cabins.",
+    deckPlanUrl: "https://example.com/demo/mv-voyant-explorer-deck-plan.pdf",
+    gallery: [HERO_IMAGES.cruiseShip],
+  })
+
+  await db.update(cruises).set({ defaultShipId: shipId }).where(eq(cruises.id, cruise.id))
+
+  const sailingId = newId("cruise_sailings")
+  await db.insert(cruiseSailings).values({
+    id: sailingId,
+    cruiseId: cruise.id,
+    shipId,
+    departureDate: "2026-07-12",
+    returnDate: "2026-07-19",
+    embarkPortFacilityId: pickFacility(ctx.facilityIds, 0),
+    disembarkPortFacilityId: pickFacility(ctx.facilityIds, 0),
+    salesStatus: "open" as const,
+    availabilityNote: "Demo sailing seeded for owned catalog booking.",
+  })
+
+  const cabinCategoryId = newId("cruise_cabin_categories")
+  await db.insert(cruiseCabinCategories).values({
+    id: cabinCategoryId,
+    shipId,
+    code: "BAL",
+    name: "Balcony Stateroom",
+    roomType: "balcony" as const,
+    description: "Private balcony stateroom with queen bed, sofa and compact desk.",
+    minOccupancy: 1,
+    maxOccupancy: 2,
+    squareFeet: "210.00",
+    amenities: ["private balcony", "ensuite shower", "mini fridge"],
+    viewType: "balcony",
+    images: [HERO_IMAGES.cruiseShip],
+  })
+
+  await db.insert(cruisePrices).values([
+    {
+      id: newId("cruise_prices"),
+      sailingId,
+      cabinCategoryId,
+      occupancy: 1,
+      fareCode: "OWNED-DEMO",
+      fareCodeName: "Owned demo fare",
+      fareVariant: "cruise_only" as const,
+      currency: "EUR",
+      pricePerPerson: "1299.00",
+      availability: "available" as const,
+      availabilityCount: 8,
+    },
+    {
+      id: newId("cruise_prices"),
+      sailingId,
+      cabinCategoryId,
+      occupancy: 2,
+      fareCode: "OWNED-DEMO",
+      fareCodeName: "Owned demo fare",
+      fareVariant: "cruise_only" as const,
+      currency: "EUR",
+      pricePerPerson: "1099.00",
+      availability: "available" as const,
+      availabilityCount: 8,
+    },
+  ])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -779,5 +879,90 @@ export async function seedAccommodationRooms(db: Db, ctx: CatalogSeedContext): P
   ]
 
   const inserted = await db.insert(roomTypes).values(rows).returning({ id: roomTypes.id })
+  await seedAccommodationBookingInventory(db, inserted)
   return inserted.map((r) => r.id)
+}
+
+async function seedAccommodationBookingInventory(
+  db: Db,
+  insertedRooms: Array<{ id: string }>,
+): Promise<void> {
+  const roomRows = await db.select().from(roomTypes)
+  const seededRoomIds = new Set(insertedRooms.map((row) => row.id))
+  const rooms = roomRows.filter((room) => seededRoomIds.has(room.id))
+  const propertyIds = [...new Set(rooms.map((room) => room.propertyId))]
+  const planByProperty = new Map<string, string>()
+
+  for (const [index, propertyId] of propertyIds.entries()) {
+    const ratePlanId = newId("rate_plans")
+    planByProperty.set(propertyId, ratePlanId)
+    await db.insert(ratePlans).values({
+      id: ratePlanId,
+      propertyId,
+      code: "FLEX-BB",
+      name: "Flexible Bed & Breakfast",
+      description: "Refundable demo rate including breakfast.",
+      currencyCode: index === 0 ? "GBP" : "EUR",
+      chargeFrequency: "per_night" as const,
+      guaranteeMode: "none" as const,
+      refundable: true,
+      active: true,
+      sortOrder: 10,
+    })
+  }
+
+  const stayDates = Array.from({ length: 180 }, (_, index) => isoDateOffset("2026-01-01", index))
+  const mappings = []
+  const rates = []
+  const inventory = []
+
+  for (const [roomIndex, room] of rooms.entries()) {
+    const ratePlanId = planByProperty.get(room.propertyId)
+    if (!ratePlanId) continue
+    mappings.push({
+      id: newId("rate_plan_room_types"),
+      ratePlanId,
+      roomTypeId: room.id,
+      active: true,
+      sortOrder: room.sortOrder ?? roomIndex,
+    })
+    for (const [dateIndex, date] of stayDates.entries()) {
+      const weekend = new Date(`${date}T00:00:00.000Z`).getUTCDay() % 6 === 0
+      const base = room.propertyId === propertyIds[0] ? 22000 : 26000
+      const roomPremium = roomIndex * 1750
+      const weekendPremium = weekend ? 3500 : 0
+      rates.push({
+        id: newId("rate_plan_daily_rates"),
+        ratePlanId,
+        roomTypeId: room.id,
+        date,
+        sellCurrency: room.propertyId === propertyIds[0] ? "GBP" : "EUR",
+        sellAmountCents: base + roomPremium + weekendPremium,
+        costCurrency: room.propertyId === propertyIds[0] ? "GBP" : "EUR",
+        costAmountCents: Math.round((base + roomPremium + weekendPremium) * 0.7),
+        occupancyBasis: "room",
+        includedAdults: room.standardOccupancy ?? 2,
+        includedChildren: 0,
+        includedInfants: 0,
+      })
+      inventory.push({
+        id: newId("room_type_daily_inventory"),
+        roomTypeId: room.id,
+        date,
+        capacity: room.inventoryMode === "serialized" ? 2 : 8,
+        closed: false,
+        metadata: { seedIndex: dateIndex },
+      })
+    }
+  }
+
+  if (mappings.length > 0) await db.insert(ratePlanRoomTypes).values(mappings)
+  if (rates.length > 0) await db.insert(ratePlanDailyRates).values(rates)
+  if (inventory.length > 0) await db.insert(roomTypeDailyInventory).values(inventory)
+}
+
+function isoDateOffset(start: string, offset: number): string {
+  const date = new Date(`${start}T00:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + offset)
+  return date.toISOString().slice(0, 10)
 }
