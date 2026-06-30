@@ -35,7 +35,9 @@ export {
   reserveTrip,
   type StartTripCheckoutBody,
   startTripCheckout,
+  type UpdateTripBody,
   type UpdateTripComponentBody,
+  updateTrip,
   updateTripComponent,
 } from "./operations.js"
 export {

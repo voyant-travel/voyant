@@ -175,6 +175,8 @@ export const adminTripsMessagesRoPart1 = {
         "Una sau mai multe oferte au expirat. Reincarca componenta si alege o optiune curenta.",
       unavailable:
         "Una sau mai multe componente nu mai sunt disponibile. Verifica itinerariul inainte de rezervare.",
+      reservationFailed:
+        "Rezervarea nu a putut fi finalizata. Verifica aceasta calatorie si incearca din nou.",
     },
     travelerFallbackName: "Calator",
     travelerFallbackLastName: "Invitat",

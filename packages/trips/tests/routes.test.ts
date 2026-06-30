@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest"
+import { Hono } from "hono"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { createTripsRoutes } from "../src/routes.js"
+import { tripsService } from "../src/service.js"
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe("trips routes", () => {
   it("exposes package health", async () => {
@@ -105,4 +111,91 @@ describe("trips routes", () => {
     })
     expect(reshop.status).toBe(501)
   })
+
+  it("returns a conflict response when reserve produces component failures", async () => {
+    vi.spyOn(tripsService, "reserveTrip").mockResolvedValueOnce({
+      envelope: { id: "trip_123", status: "failed" },
+      components: [],
+      reservationPlanId: "trpl_1",
+      reserved: [],
+      failures: [
+        {
+          componentId: "trcp_1",
+          reason: "component_reservation_failed",
+          code: "component_reservation_failed",
+        },
+      ],
+      compensations: [],
+      warnings: ["component_reservation_failed"],
+    } as never)
+    const app = appWithDb(
+      createTripsRoutes({
+        reserveTripDeps: { submitReservationPlan: vi.fn() },
+      }),
+    )
+
+    const res = await app.request("/trip_123/reserve", {
+      method: "POST",
+      body: JSON.stringify({ idempotencyKey: "reserve-1" }),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(res.status).toBe(409)
+    await expect(res.json()).resolves.toEqual({
+      error: "Trip reservation failed",
+      data: {
+        envelope: { id: "trip_123", status: "failed" },
+        components: [],
+        reservationPlanId: "trpl_1",
+        reserved: [],
+        failures: [
+          {
+            componentId: "trcp_1",
+            reason: "component_reservation_failed",
+            code: "component_reservation_failed",
+          },
+        ],
+        compensations: [],
+        warnings: ["component_reservation_failed"],
+      },
+      failures: [
+        {
+          componentId: "trcp_1",
+          reason: "component_reservation_failed",
+          code: "component_reservation_failed",
+        },
+      ],
+      reservationPlanId: "trpl_1",
+    })
+  })
+
+  it("sanitizes raw SQL errors thrown by reserve dependencies", async () => {
+    vi.spyOn(tripsService, "reserveTrip").mockRejectedValueOnce(
+      new Error('Failed query: insert into "booking_payment_schedules" values ($1)\nparams: x'),
+    )
+    const app = appWithDb(
+      createTripsRoutes({
+        reserveTripDeps: { submitReservationPlan: vi.fn() },
+      }),
+    )
+
+    const res = await app.request("/trip_123/reserve", {
+      method: "POST",
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({ error: "Trips route failed" })
+  })
 })
+
+function appWithDb(routes: ReturnType<typeof createTripsRoutes>) {
+  const app = new Hono()
+  app.use("*", async (c, next) => {
+    c.set("db" as never, {} as never)
+    await next()
+  })
+  app.route("/", routes)
+  return app
+}

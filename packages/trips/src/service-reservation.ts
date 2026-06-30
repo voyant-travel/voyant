@@ -143,8 +143,10 @@ export async function reserveTrip(
     components: planComponents.components,
     idempotencyKey: input.idempotencyKey ?? null,
   })
+  const submittedFailures = sanitizeReservationFailures(submitted.failures)
+  const submittedCompensations = sanitizeReservationCompensations(submitted.compensations)
 
-  for (const warning of submitted.warnings) warnings.add(warning)
+  for (const warning of submitted.warnings) warnings.add(sanitizeReservationText(warning))
 
   for (const item of submitted.reserved) {
     const component = componentsById.get(item.componentId)
@@ -153,20 +155,20 @@ export async function reserveTrip(
     componentsById.set(updated.id, updated)
   }
 
-  for (const failure of submitted.failures) {
+  for (const failure of submittedFailures) {
     const component = componentsById.get(failure.componentId)
     if (!component) continue
     const failed = await applyReservationFailureToComponent(db, component, failure.reason)
     componentsById.set(failed.id, failed)
   }
 
-  await applyReservationPlanCompensations(db, componentsById, submitted.compensations)
+  await applyReservationPlanCompensations(db, componentsById, submittedCompensations)
 
-  if (submitted.status === "failed" || submitted.failures.length > 0) {
+  if (submitted.status === "failed" || submittedFailures.length > 0) {
     await updateReservationPlanResult(db, reservationPlan.id, {
       status: "failed",
-      failures: submitted.failures,
-      compensations: submitted.compensations,
+      failures: submittedFailures,
+      compensations: submittedCompensations,
       warnings: [...warnings],
     })
 
@@ -193,8 +195,8 @@ export async function reserveTrip(
         componentId: item.componentId,
         status: item.status,
       })),
-      failures: submitted.failures,
-      compensations: submitted.compensations,
+      failures: submittedFailures,
+      compensations: submittedCompensations,
       warnings: [...warnings],
     }
   }
@@ -335,6 +337,53 @@ function prepareReservationPlanComponents(components: TripComponent[]): {
   }
 
   return { components: prepared, failures }
+}
+
+const reservationFailureMessage = "component_reservation_failed"
+
+type ReservationFailure = ReserveTripResult["failures"][number]
+type ReservationCompensation = ReserveTripResult["compensations"][number]
+
+function sanitizeReservationFailures(failures: ReservationFailure[]): ReservationFailure[] {
+  return failures.map((failure) => {
+    const reason = sanitizeReservationText(failure.reason)
+    const code = failure.code ? sanitizeReservationText(failure.code) : failure.code
+    if (reason === failure.reason && code === failure.code) return failure
+    return {
+      componentId: failure.componentId,
+      reason,
+      code: code ?? reservationFailureMessage,
+    }
+  })
+}
+
+function sanitizeReservationCompensations(
+  compensations: ReservationCompensation[],
+): ReservationCompensation[] {
+  return compensations.map((compensation) => {
+    if (!compensation.reason) return compensation
+    const reason = sanitizeReservationText(compensation.reason)
+    return reason === compensation.reason ? compensation : { ...compensation, reason }
+  })
+}
+
+function sanitizeReservationText(value: string): string {
+  return isInternalSqlErrorText(value) ? reservationFailureMessage : value
+}
+
+function isInternalSqlErrorText(value: string): boolean {
+  const normalized = value.toLowerCase()
+  return (
+    normalized.includes("failed query:") ||
+    normalized.includes("params:") ||
+    normalized.includes("drizzlequeryerror") ||
+    normalized.includes("postgre") ||
+    /insert\s+into\s+["\w.]+/.test(normalized) ||
+    /update\s+["\w.]+\s+set/.test(normalized) ||
+    normalized.includes("violates not-null constraint") ||
+    normalized.includes("violates foreign key constraint") ||
+    normalized.includes("duplicate key value violates")
+  )
 }
 
 async function createReservationPlan(

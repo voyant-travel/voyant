@@ -23,6 +23,7 @@ import {
   reserveTripResponseSchema,
   startTripCheckoutResponseSchema,
   tripComponentResponseSchema,
+  tripEnvelopeResponseSchema,
   tripListResponseSchema,
   tripResponseSchema,
   tripSnapshotResponseSchema,
@@ -56,6 +57,14 @@ export type UpdateTripComponentBody = {
   catalogRef?: unknown
   metadata?: Record<string, unknown>
   warningCodes?: string[]
+}
+export type UpdateTripBody = {
+  title?: string | null
+  description?: string | null
+  travelerParty?: Record<string, unknown>
+  constraints?: Record<string, unknown>
+  status?: TripEnvelopeStatus
+  updatedBy?: string | null
 }
 export type PriceTripBody = Omit<PriceTripInput, "envelopeId">
 export type ReserveTripBody = Omit<ReserveTripInput, "envelopeId">
@@ -121,6 +130,19 @@ export function getTrip(client: FetchWithValidationOptions, envelopeId: string) 
     composerPath(client, `/${encodeURIComponent(envelopeId)}`),
     tripResponseSchema,
     client,
+  ).then((response) => response.data)
+}
+
+export function updateTrip(
+  client: FetchWithValidationOptions,
+  envelopeId: string,
+  input: UpdateTripBody,
+) {
+  return fetchWithValidation(
+    composerPath(client, `/${encodeURIComponent(envelopeId)}`),
+    tripEnvelopeResponseSchema,
+    client,
+    { method: "PATCH", body: JSON.stringify(input) },
   ).then((response) => response.data)
 }
 

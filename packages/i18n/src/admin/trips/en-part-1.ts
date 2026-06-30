@@ -174,6 +174,7 @@ export const adminTripsMessagesEnPart1 = {
       expired: "One or more offers expired. Refresh the component and choose a current option.",
       unavailable:
         "One or more components are no longer available. Review the itinerary before reserving.",
+      reservationFailed: "The reservation could not be completed. Review the trip and try again.",
     },
     travelerFallbackName: "Traveler",
     travelerFallbackLastName: "Guest",

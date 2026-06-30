@@ -8,7 +8,7 @@ import type {
   VoucherPickerValue,
 } from "@voyant-travel/bookings-react/ui"
 import { formatMessage } from "@voyant-travel/i18n"
-import type { TripComponent } from "@voyant-travel/trips"
+import type { ReserveTripResult, TripComponent } from "@voyant-travel/trips"
 
 import type { VoyantApiError } from "../client.js"
 import type { AddTripComponentBody } from "../operations.js"
@@ -582,13 +582,45 @@ export function failuresToString(
   if (failures.some((failure) => failure.code === "unavailable")) {
     return messages.failureMessages.unavailable
   }
+  if (
+    failures.some(
+      (failure) =>
+        failure.code === "component_reservation_failed" ||
+        failure.reason === "component_reservation_failed",
+    )
+  ) {
+    return messages.failureMessages.reservationFailed
+  }
   return failures.map((failure) => failure.reason).join(", ")
 }
 
 export function apiError(error: unknown, messages: AdminComposerMessages): string {
   const candidate = error as Partial<VoyantApiError>
+  const body = candidate.body
+  if (body && typeof body === "object" && "failures" in body) {
+    const message = failuresToString(
+      (
+        body as {
+          failures?: { reason: string; code?: string; details?: Record<string, unknown> }[]
+        }
+      ).failures,
+      messages,
+    )
+    if (message) return message
+  }
   if (typeof candidate.message === "string") return candidate.message
   return error instanceof Error ? error.message : messages.errors.requestFailed
+}
+
+export function reserveResultFromApiError(error: unknown): ReserveTripResult | null {
+  const body = (error as Partial<VoyantApiError>).body
+  if (!body || typeof body !== "object" || !("data" in body)) return null
+  const data = (body as { data?: Partial<ReserveTripResult> }).data
+  if (!data || typeof data !== "object") return null
+  if (!data.envelope || !Array.isArray(data.components) || !Array.isArray(data.failures)) {
+    return null
+  }
+  return data as ReserveTripResult
 }
 
 export function derivePayerName(

@@ -408,6 +408,48 @@ describe("trips reservation helpers", () => {
     })
   })
 
+  it("sanitizes internal SQL details from submitted reservation failures", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [component({ id: "trcp_1" })],
+      events: [],
+      reservationPlans: [] as TripReservationPlan[],
+    }
+    const rawReason =
+      'Failed query: insert into "booking_payment_schedules" ("booking_id", "amount_cents") values ($1, $2)\nparams: book_1, 10000'
+
+    const result = await tripsService.reserveTrip(
+      makeFakeDb(state),
+      { envelopeId: state.envelope.id },
+      {
+        submitReservationPlan: async (
+          input: Parameters<ReserveTripDeps["submitReservationPlan"]>[0],
+        ) => ({
+          reservationPlanId: input.reservationPlan.id,
+          status: "failed",
+          reserved: [],
+          failures: [{ componentId: "trcp_1", reason: rawReason }],
+          compensations: [],
+          warnings: [rawReason],
+        }),
+      },
+    )
+
+    expect(result.envelope.status).toBe("failed")
+    expect(result.failures).toEqual([
+      {
+        componentId: "trcp_1",
+        reason: "component_reservation_failed",
+        code: "component_reservation_failed",
+      },
+    ])
+    expect(result.warnings).toEqual(["component_reservation_failed"])
+    expect(state.components[0]?.warningCodes).toEqual(["component_reservation_failed"])
+    expect(state.reservationPlans[0]?.failures).toEqual(result.failures)
+    expect(JSON.stringify(result)).not.toContain("insert into")
+    expect(JSON.stringify(state.reservationPlans[0])).not.toContain("params:")
+  })
+
   it("does not dispatch provider reservations when the envelope reserve claim loses a race", async () => {
     const state = {
       envelope: envelope(),
