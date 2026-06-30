@@ -1,5 +1,11 @@
 # @voyant-travel/crm
 
+## 0.123.8
+
+### Patch Changes
+
+- 23d9ee3: Add public proposal request-edits route support so customers can send non-final feedback on sent proposals.
+
 ## 0.123.7
 
 ### Patch Changes
