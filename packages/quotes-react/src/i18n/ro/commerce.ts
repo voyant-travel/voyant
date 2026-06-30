@@ -202,7 +202,11 @@ export const crmUiRoCommerceMessages = {
     versionActive: "Activa",
     versionLabel: "v{number}",
     sendToClient: "Trimite clientului",
+    sendForReview: "Trimite pentru review",
     copyReviewLink: "Copiaza link-ul de review",
+    copyReviewOnlyLink: "Copiaza link-ul doar pentru review",
+    reviewOnlyNotice:
+      "Doar pentru review: clientii pot cere editari sau refuza, dar nu pot accepta pana cand nu exista un snapshot Trip inghetat.",
     proposalLinkCopied: "Link-ul de review a fost copiat",
     proposalSendFailed: "Partajarea propunerii a esuat",
     detailsTitle: "Detalii oferta",

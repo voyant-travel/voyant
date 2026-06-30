@@ -56,6 +56,7 @@ import {
   useQuoteVersions,
   useStages,
 } from "../../index.js"
+import { getProposalShareState } from "../proposal-share-state.js"
 import {
   QuoteClientCard,
   QuoteLineItemsCard,
@@ -258,6 +259,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
     orderedVersions.find((version) => version.status === "draft" || version.status === "sent") ??
     null
   const currentVersionId = currentVersion?.id ?? null
+  const proposalShareState = currentVersion ? getProposalShareState(currentVersion, t) : null
 
   const stages = useMemo(
     () => [...(stagesQuery.data?.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
@@ -673,17 +675,23 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
             }
           />
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2">
-              <CardTitle>{t.versionsTitle}</CardTitle>
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0 space-y-1">
+                <CardTitle>{t.versionsTitle}</CardTitle>
+                {proposalShareState?.notice ? (
+                  <p className="text-muted-foreground text-sm">{proposalShareState.notice}</p>
+                ) : null}
+              </div>
               {currentVersion ? (
                 <Button
                   size="sm"
                   variant="outline"
+                  className="shrink-0"
                   onClick={() => void shareProposal()}
                   disabled={versionMutation.sendProposal.isPending}
                 >
                   <Share2 className="mr-1.5 h-4 w-4" />
-                  {currentVersion.status === "draft" ? t.sendToClient : t.copyReviewLink}
+                  {proposalShareState?.actionLabel}
                 </Button>
               ) : null}
             </CardHeader>

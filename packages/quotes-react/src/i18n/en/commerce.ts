@@ -201,7 +201,11 @@ export const crmUiEnCommerceMessages = {
     versionActive: "Active",
     versionLabel: "v{number}",
     sendToClient: "Send to client",
+    sendForReview: "Send for review",
     copyReviewLink: "Copy review link",
+    copyReviewOnlyLink: "Copy review-only link",
+    reviewOnlyNotice:
+      "Review-only: clients can request edits or decline, but cannot accept until a Trip snapshot is frozen.",
     proposalLinkCopied: "Review link copied to clipboard",
     proposalSendFailed: "Couldn't share the proposal",
     detailsTitle: "Deal details",

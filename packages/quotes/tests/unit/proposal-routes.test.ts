@@ -284,6 +284,7 @@ describe("quote proposal routes", () => {
         status: "sent",
         currency: "EUR",
         totalAmountCents: 10900,
+        acceptable: true,
         operator: { name: "Voyant Travel" },
         proposalUrl: "/proposal/qver_123",
         lines: [{ description: "Airport transfer", currency: "EUR" }],
@@ -294,6 +295,25 @@ describe("quote proposal routes", () => {
     expect(body.data.quoteVersion).toBeUndefined()
     expect(body.data.lines[0].id).toBeUndefined()
     expect(body.data.lines[0].productId).toBeUndefined()
+  })
+
+  it("marks sent line-item proposals as review-only on public reads", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue({
+      ...proposal,
+      quoteVersion: { ...quoteVersion, tripSnapshotId: null },
+    })
+    mocks.markQuoteVersionViewed.mockResolvedValue({ ...quoteVersion, tripSnapshotId: null })
+
+    const response = await app.request("/v1/public/proposals/qver_123", { method: "GET" })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        acceptable: false,
+        status: "sent",
+      },
+    })
   })
 
   it("hides draft proposals from public reads", async () => {

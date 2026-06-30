@@ -655,7 +655,10 @@ export type CrmUiMessages = {
     versionActive: string
     versionLabel: string
     sendToClient: string
+    sendForReview: string
     copyReviewLink: string
+    copyReviewOnlyLink: string
+    reviewOnlyNotice: string
     proposalLinkCopied: string
     proposalSendFailed: string
     detailsTitle: string
