@@ -158,4 +158,101 @@ describe("flights hono module", () => {
       expect.objectContaining({ paymentIntent: { type: "card", token: "tok_1" } }),
     )
   })
+
+  it("does not create a delayed payment session when reading a card-ticketed order", async () => {
+    const adapter = stubAdapter({
+      bookFlight: vi.fn(async () => ({
+        order: {
+          orderId: "ord_card",
+          status: "ticketed",
+          passengers: [{ passengerId: "p1" }],
+        } as never,
+      })),
+      getOrder: vi.fn(async () => ({
+        order: {
+          orderId: "ord_card",
+          status: "ticketed",
+          passengers: [{ passengerId: "p1" }],
+        } as never,
+      })),
+    })
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => ({ sessionId: "ps_card", status: "pending" })),
+      fetchOrderSessions: vi.fn(async () => new Map()),
+    }
+    const app = mount(adapter, payment)
+
+    const bookRes = await app.request("/v1/admin/flights/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        offerId: "off_1",
+        passengers: [{ passengerId: "p1" }],
+        paymentIntent: { type: "card", token: "tok_1" },
+      }),
+    })
+    const readRes = await app.request("/v1/admin/flights/orders/ord_card")
+
+    expect(bookRes.status).toBe(200)
+    expect(readRes.status).toBe(200)
+    await expect(readRes.json()).resolves.toMatchObject({
+      order: {
+        orderId: "ord_card",
+        status: "ticketed",
+      },
+    })
+    expect(payment.ensureOrderSession).not.toHaveBeenCalled()
+    expect(payment.fetchOrderSessions).toHaveBeenCalledWith(expect.anything(), ["ord_card"])
+  })
+
+  it("does not create payment sessions when listing orders", async () => {
+    const adapter = stubAdapter({
+      listOrders: vi.fn(async () => ({
+        orders: [{ orderId: "ord_card", status: "ticketed", passengers: [] } as never],
+        pagination: { total: 1, hasMore: false },
+      })),
+    })
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => ({ sessionId: "ps_unexpected", status: "pending" })),
+      fetchOrderSessions: vi.fn(async () => new Map()),
+    }
+    const app = mount(adapter, payment)
+
+    const res = await app.request("/v1/admin/flights/orders")
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      orders: [{ orderId: "ord_card", status: "ticketed" }],
+    })
+    expect(payment.fetchOrderSessions).toHaveBeenCalledWith(expect.anything(), ["ord_card"])
+    expect(payment.ensureOrderSession).not.toHaveBeenCalled()
+  })
+
+  it("attaches an existing payment session when reading an order", async () => {
+    const adapter = stubAdapter({
+      getOrder: vi.fn(async () => ({
+        order: { orderId: "ord_hold", status: "confirmed", passengers: [] } as never,
+      })),
+    })
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => ({ sessionId: "ps_unexpected", status: "pending" })),
+      fetchOrderSessions: vi.fn(
+        async () => new Map([["ord_hold", { sessionId: "ps_existing", status: "paid" }]]),
+      ),
+    }
+    const app = mount(adapter, payment)
+
+    const res = await app.request("/v1/admin/flights/orders/ord_hold")
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      order: {
+        providerData: {
+          paymentSessionId: "ps_existing",
+          paymentStatus: "paid",
+        },
+      },
+    })
+    expect(payment.ensureOrderSession).not.toHaveBeenCalled()
+  })
 })
