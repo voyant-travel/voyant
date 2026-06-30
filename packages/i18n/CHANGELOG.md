@@ -1,5 +1,11 @@
 # @voyant-travel/i18n
 
+## 0.109.5
+
+### Patch Changes
+
+- ad02eae: Reject non-image product media as cover media and surface brochure generation failures in the product detail UI.
+
 ## 0.109.4
 
 ### Patch Changes

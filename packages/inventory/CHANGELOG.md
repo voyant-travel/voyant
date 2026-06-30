@@ -1,5 +1,18 @@
 # @voyant-travel/inventory
 
+## 0.5.10
+
+### Patch Changes
+
+- a10b9ba: Return deterministic 503 responses when product brochure generation cannot upload to configured storage or resolve a brochure URL.
+- e005c4d: Reject inverted product option-unit age ranges and commerce pricing ranges across schemas and service mutations.
+- ad02eae: Reject non-image product media as cover media and surface brochure generation failures in the product detail UI.
+- Updated dependencies [ed5463f]
+- Updated dependencies [e005c4d]
+  - @voyant-travel/operations@0.5.5
+  - @voyant-travel/products-contracts@0.105.16
+  - @voyant-travel/commerce@0.19.4
+
 ## 0.5.9
 
 ### Patch Changes

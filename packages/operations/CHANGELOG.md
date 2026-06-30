@@ -1,5 +1,12 @@
 # @voyant-travel/operations
 
+## 0.5.5
+
+### Patch Changes
+
+- ed5463f: Reject invalid availability API payloads for impossible slot timing, capacity
+  overages, mismatched local dates, and malformed recurrence rules.
+
 ## 0.5.4
 
 ### Patch Changes

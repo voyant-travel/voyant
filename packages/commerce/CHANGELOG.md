@@ -1,5 +1,13 @@
 # @voyant-travel/commerce
 
+## 0.19.4
+
+### Patch Changes
+
+- e005c4d: Reject inverted product option-unit age ranges and commerce pricing ranges across schemas and service mutations.
+- Updated dependencies [e005c4d]
+  - @voyant-travel/products-contracts@0.105.16
+
 ## 0.19.3
 
 ### Patch Changes
