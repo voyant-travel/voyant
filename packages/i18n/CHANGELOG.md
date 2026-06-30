@@ -1,5 +1,11 @@
 # @voyant-travel/i18n
 
+## 0.109.2
+
+### Patch Changes
+
+- a96ce05: Recompute Trips reserve validation when component payment schedule mode changes and show payment schedule validation reasons before reserve.
+
 ## 0.109.1
 
 ### Patch Changes

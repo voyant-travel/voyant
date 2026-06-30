@@ -1,5 +1,11 @@
 # @voyant-travel/trips
 
+## 0.128.4
+
+### Patch Changes
+
+- 776bafd: Cancel connected flight supplier orders when trip flight components are cancelled, and keep components in staff remediation when supplier cancellation cannot be completed.
+
 ## 0.128.3
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @voyant-travel/trips-react
 
+## 0.128.4
+
+### Patch Changes
+
+- f3fd455: Keep the Trips Cruise embarkation field on the same shared accessible date picker path as Flight, and ensure shared calendar days expose named button controls for assistive tooling.
+- a96ce05: Recompute Trips reserve validation when component payment schedule mode changes and show payment schedule validation reasons before reserve.
+- 9f1feaa: Render Trips total amount filters as unbounded decimal text inputs so assistive technology no longer reports a false maximum value.
+- Updated dependencies [776bafd]
+- Updated dependencies [f3fd455]
+- Updated dependencies [a96ce05]
+  - @voyant-travel/trips@0.128.4
+  - @voyant-travel/ui@0.108.6
+  - @voyant-travel/i18n@0.109.2
+
 ## 0.128.3
 
 ### Patch Changes
