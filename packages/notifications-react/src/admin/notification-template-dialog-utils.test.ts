@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildSamplePayload,
   resolvePreviewDataInput,
+  resolveTemplateMutationStatus,
 } from "./notification-template-dialog-utils.js"
 
 describe("buildSamplePayload", () => {
@@ -77,5 +78,20 @@ describe("resolvePreviewDataInput", () => {
     const input = '{"booking":{"reference":"CUSTOM"}}'
 
     expect(resolvePreviewDataInput(input, "{}")).toBe(input)
+  })
+})
+
+describe("resolveTemplateMutationStatus", () => {
+  it("promotes the create dialog default active toggle to an active template", () => {
+    expect(resolveTemplateMutationStatus({ status: "draft", active: true })).toBe("active")
+  })
+
+  it("keeps an explicit active status selected while editing a draft template", () => {
+    expect(resolveTemplateMutationStatus({ status: "active", active: false })).toBe("active")
+  })
+
+  it("keeps draft and archived explicit statuses when the active toggle is off", () => {
+    expect(resolveTemplateMutationStatus({ status: "draft", active: false })).toBe("draft")
+    expect(resolveTemplateMutationStatus({ status: "archived", active: false })).toBe("archived")
   })
 })
