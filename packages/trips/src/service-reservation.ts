@@ -2,7 +2,11 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq } from "drizzle-orm"
 
-import { isCatalogBackedTripComponent, toBookingDraftV1 } from "./catalog-component-adapter.js"
+import {
+  assertCatalogComponentBookingDraftReady,
+  bookingDraftFromComponent,
+  isCatalogBackedTripComponent,
+} from "./catalog-component-adapter.js"
 import type {
   NewTripEnvelope,
   TripComponent,
@@ -313,6 +317,7 @@ function prepareReservationPlanComponents(components: TripComponent[]): {
     if (isCatalogBackedTripComponent(component)) {
       try {
         assertTripComponentCanBeReserved(component)
+        assertCatalogComponentBookingDraftReady(component)
       } catch (error) {
         failures.push({
           componentId: component.id,
@@ -505,10 +510,12 @@ async function refreshComponentsBeforeReserve(
     if (component.status === "removed" || component.status === "cancelled") continue
 
     if (isCatalogBackedTripComponent(component)) {
+      const bookingDraft = bookingDraftFromComponent(component)
+      assertCatalogComponentBookingDraftReady(component, bookingDraft)
       if (!deps.quoteCatalogComponentBeforeReserve) continue
       const quote = await deps.quoteCatalogComponentBeforeReserve({
         component,
-        bookingDraft: toBookingDraftV1(component),
+        bookingDraft,
         scope: input.refreshScope ?? defaultReserveRefreshScope(trip.envelope),
       })
       const updated = await applyQuoteToComponent(db, component, quote)

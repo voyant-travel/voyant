@@ -8,6 +8,10 @@ import {
   paymentScheduleToRows,
   tripTravelerRoleFromStored,
 } from "../src/admin/admin-trips-page-model.js"
+import {
+  pendingComponentIsValid,
+  pendingStayDateRangeIsValid,
+} from "../src/admin/trips-panels/manual-configurators.js"
 
 describe("admin trips page model", () => {
   it("hydrates persisted traveler party fields for composer state", () => {
@@ -191,6 +195,38 @@ describe("admin trips page model", () => {
   it("falls back to lead role for the first stored traveler", () => {
     expect(tripTravelerRoleFromStored(undefined, 0)).toBe("lead")
     expect(tripTravelerRoleFromStored("unknown", 1)).toBe("adult")
+  })
+
+  it("requires stays to have an ordered date range before add", () => {
+    const pending = {
+      kind: "stay",
+      localId: "pc_stay",
+      catalogEntityId: "acc_123",
+      catalogEntityName: "Hotel",
+      catalogSourceKind: "owned",
+      catalogSourceConnectionId: null,
+      catalogSourceRef: null,
+      catalogThumbnailUrl: null,
+      bookingDraft: {
+        entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+        configure: { pax: { adult: 1 } },
+      },
+      startsAt: "",
+      endsAt: "",
+      commitError: null,
+    } as const
+
+    expect(pendingComponentIsValid(pending)).toBe(false)
+    expect(pendingStayDateRangeIsValid({ startsAt: "2026-07-04", endsAt: "2026-07-04" })).toBe(
+      false,
+    )
+    expect(
+      pendingComponentIsValid({
+        ...pending,
+        startsAt: "2026-07-01T14:00:00.000Z",
+        endsAt: "2026-07-04T11:00:00.000Z",
+      }),
+    ).toBe(true)
   })
 })
 

@@ -38,9 +38,7 @@ import {
 } from "@voyant-travel/bookings"
 import {
   type BookEntityResult,
-  type BookingDraftV1,
   bookEntity,
-  bookingDraftV1,
   type CancelEntityResult,
   cancelEntity,
   type OwnedBookingHandlerRegistry,
@@ -55,7 +53,7 @@ import {
 import type { PricingBasis } from "@voyant-travel/catalog/snapshot/schema"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 
-import { toBookingDraftV1 } from "./catalog-component-adapter.js"
+import { bookingDraftFromComponent } from "./catalog-component-adapter.js"
 import type {
   CancelComponentInput,
   CancelComponentResult,
@@ -360,17 +358,6 @@ export function previewCancellation(
 }
 
 // ── Pure helpers (vertical-agnostic) ────────────────────────────────────────
-
-function bookingDraftFromComponent(
-  component: Parameters<typeof toBookingDraftV1>[0] & { metadata: Record<string, unknown> },
-): BookingDraftV1 {
-  const metadata = component.metadata
-  const candidate = metadata.bookingDraftV1 ?? metadata.bookingDraft
-  if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
-    return bookingDraftV1.parse(candidate)
-  }
-  return toBookingDraftV1(component)
-}
 
 function serializeQuoteResult(result: QuoteEntityResult): QuoteResponseV1 {
   return quoteResponseV1.parse({

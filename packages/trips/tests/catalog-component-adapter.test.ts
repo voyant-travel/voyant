@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { isCatalogBackedTripComponent, toBookingDraftV1 } from "../src/catalog-component-adapter.js"
+import {
+  assertCatalogComponentBookingDraftReady,
+  bookingDraftFromComponent,
+  isCatalogBackedTripComponent,
+  toBookingDraftV1,
+} from "../src/catalog-component-adapter.js"
 import type { TripComponent } from "../src/schema.js"
 import { TripsInvariantError } from "../src/service.js"
+import { createTripComponentBodySchema } from "../src/validation.js"
 
 function component(overrides: Partial<TripComponent> = {}): TripComponent {
   return {
@@ -72,6 +78,65 @@ describe("catalog component adapter", () => {
     expect(draft.entity.sourceRef).toBe("upstream/product/42")
   })
 
+  it("reads persisted booking drafts before applying quote overrides", () => {
+    const draft = bookingDraftFromComponent(
+      component({
+        entityModule: "accommodations",
+        entityId: "acc_123",
+        metadata: {
+          bookingDraftV1: {
+            entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+            configure: {
+              pax: { adult: 1 },
+              dateRange: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+            },
+          },
+        },
+      }),
+      { configure: { pax: { adult: 2 } } },
+    )
+
+    expect(draft.configure.dateRange).toEqual({
+      checkIn: "2026-07-01",
+      checkOut: "2026-07-04",
+    })
+    expect(draft.configure.pax).toEqual({ adult: 2 })
+  })
+
+  it("requires accommodation catalog components to carry a valid stay date range", () => {
+    expect(() =>
+      assertCatalogComponentBookingDraftReady(
+        component({
+          entityModule: "accommodations",
+          metadata: {
+            bookingDraftV1: {
+              entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+              configure: { pax: { adult: 1 } },
+            },
+          },
+        }),
+      ),
+    ).toThrowError(/valid check-in\/check-out date range/)
+
+    expect(() =>
+      assertCatalogComponentBookingDraftReady(
+        component({
+          entityModule: "accommodations",
+          entityId: "acc_123",
+          metadata: {
+            bookingDraftV1: {
+              entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+              configure: {
+                pax: { adult: 1 },
+                dateRange: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+              },
+            },
+          },
+        }),
+      ),
+    ).not.toThrow()
+  })
+
   it("detects catalog-backed components", () => {
     expect(isCatalogBackedTripComponent(component())).toBe(true)
     expect(isCatalogBackedTripComponent(component({ kind: "manual_placeholder" }))).toBe(false)
@@ -85,5 +150,52 @@ describe("catalog component adapter", () => {
     expect(() => toBookingDraftV1(component({ sourceKind: null }))).toThrowError(
       /catalog entity refs/,
     )
+  })
+
+  it("rejects accommodation add payloads without check-in and check-out dates", () => {
+    const result = createTripComponentBodySchema.safeParse({
+      kind: "catalog_booking",
+      catalogRef: {
+        entityModule: "accommodations",
+        entityId: "acc_123",
+        sourceKind: "owned",
+      },
+      metadata: {
+        bookingDraftV1: {
+          entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+          configure: { pax: { adult: 1 } },
+        },
+      },
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.path).toEqual([
+      "metadata",
+      "bookingDraftV1",
+      "configure",
+      "dateRange",
+    ])
+  })
+
+  it("accepts accommodation add payloads with an ordered date range", () => {
+    expect(
+      createTripComponentBodySchema.safeParse({
+        kind: "catalog_booking",
+        catalogRef: {
+          entityModule: "accommodations",
+          entityId: "acc_123",
+          sourceKind: "owned",
+        },
+        metadata: {
+          bookingDraftV1: {
+            entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+            configure: {
+              pax: { adult: 1 },
+              dateRange: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+            },
+          },
+        },
+      }).success,
+    ).toBe(true)
   })
 })

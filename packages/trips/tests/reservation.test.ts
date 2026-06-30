@@ -504,4 +504,44 @@ describe("trips reservation helpers", () => {
     expect(state.envelope.reserveIdempotencyKey).toBeNull()
     expect(state.reservationPlans).toEqual([])
   })
+
+  it("releases the envelope reserve claim when an accommodation component has no date range", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [
+        component({
+          id: "trcp_stay",
+          entityModule: "accommodations",
+          entityId: "acc_123",
+          metadata: {
+            bookingDraftV1: {
+              entity: { module: "accommodations", id: "acc_123", sourceKind: "owned" },
+              configure: { pax: { adult: 2 } },
+            },
+          },
+        }),
+      ],
+      events: [],
+      reservationPlans: [] as TripReservationPlan[],
+    }
+    const quoteCatalogComponentBeforeReserve = vi.fn()
+    const submitReservationPlan = vi.fn()
+
+    await expect(
+      tripsService.reserveTrip(
+        makeFakeDb(state),
+        { envelopeId: state.envelope.id, idempotencyKey: "attempt-5" },
+        {
+          quoteCatalogComponentBeforeReserve,
+          submitReservationPlan,
+        },
+      ),
+    ).rejects.toThrow(/valid check-in\/check-out date range/)
+
+    expect(quoteCatalogComponentBeforeReserve).not.toHaveBeenCalled()
+    expect(submitReservationPlan).not.toHaveBeenCalled()
+    expect(state.envelope.status).toBe("priced")
+    expect(state.envelope.reserveIdempotencyKey).toBeNull()
+    expect(state.reservationPlans).toEqual([])
+  })
 })
