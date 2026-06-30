@@ -159,8 +159,19 @@ function CalendarDayButton({
 
   return (
     <Button
+      {...props}
       variant="ghost"
       size="icon"
+      type="button"
+      aria-label={
+        props["aria-label"] ??
+        day.date.toLocaleDateString(locale?.code, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      }
       data-day={day.date.toLocaleDateString(locale?.code)}
       data-selected-single={
         modifiers.selected &&
@@ -176,7 +187,6 @@ function CalendarDayButton({
         defaultClassNames.day,
         className,
       )}
-      {...props}
     />
   )
 }
