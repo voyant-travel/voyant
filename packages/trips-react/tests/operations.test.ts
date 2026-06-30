@@ -13,6 +13,7 @@ import {
   priceTrip,
   reserveTrip,
   startTripCheckout,
+  updateTrip,
 } from "../src/operations.js"
 
 function jsonResponse(data: unknown) {
@@ -138,6 +139,30 @@ describe("trips react operations", () => {
         request: { payerEmail: "traveler@example.com" },
       },
     ])
+  })
+
+  it("patches trip envelope constraints through the composer route", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = []
+    const client = {
+      baseUrl: "https://app.example",
+      fetcher: async (url: string, init?: RequestInit) => {
+        calls.push({ url, init })
+        return jsonResponse({
+          id: "trip_123",
+          constraints: { createAsDraft: true, paymentCurrency: "EUR" },
+        })
+      },
+    }
+
+    await updateTrip(client, "trip_123", {
+      constraints: { createAsDraft: true, paymentCurrency: "EUR" },
+    })
+
+    expect(calls[0]?.url).toBe("https://app.example/v1/admin/trips/trip_123")
+    expect(calls[0]?.init?.method).toBe("PATCH")
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
+      constraints: { createAsDraft: true, paymentCurrency: "EUR" },
+    })
   })
 
   it("reads and creates trip snapshots from the admin composer route", async () => {

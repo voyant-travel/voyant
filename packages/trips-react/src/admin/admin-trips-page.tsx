@@ -27,6 +27,7 @@ import {
   removeTripComponent,
   reserveTrip,
   startTripCheckout,
+  updateTrip,
   updateTripComponent,
 } from "../operations.js"
 import { useVoyantTripsContext } from "../provider.js"
@@ -49,6 +50,7 @@ import {
   metadataWithComponentBookingSetup,
   paymentScheduleReserveValidationReason,
   pendingToAddInput,
+  reserveResultFromApiError,
   serializeBilling,
   stringFromRecord,
 } from "./admin-trips-page-model.js"
@@ -237,6 +239,7 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
     mutationFn: async () => {
       if (!envelopeId) throw new Error(t.errors.priceTripFirst)
       assertTripCreationRequirements({ billing, travelers, payerName, payerEmail }, t)
+      await persistReserveConstraints()
       const reserved = await reserveTrip(client, envelopeId, {
         idempotencyKey: `admin-reserve-${envelopeId}`,
         refreshScope: {
@@ -271,8 +274,46 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
         navigateTo("trip.detail", { tripId: reserved.envelope.id })
       }
     },
-    onError: (error) => showError(error),
+    onError: (error) => {
+      const reserved = reserveResultFromApiError(error)
+      if (!reserved) {
+        showError(error)
+        return
+      }
+      setState({
+        trip: { envelope: reserved.envelope, components: reserved.components },
+        message: null,
+        error: apiError(error, t),
+      })
+    },
   })
+
+  async function persistReserveConstraints() {
+    if (!trip || !envelopeId) return
+    const nextConstraints = {
+      ...trip.envelope.constraints,
+      createAsDraft,
+      paymentCurrency,
+    }
+    if (
+      booleanFromRecord(trip.envelope.constraints, "createAsDraft") === createAsDraft &&
+      stringFromRecord(trip.envelope.constraints, "paymentCurrency") === paymentCurrency
+    ) {
+      return
+    }
+    const envelope = await updateTrip(client, envelopeId, { constraints: nextConstraints })
+    setState((current) =>
+      current.trip
+        ? {
+            ...current,
+            trip: {
+              ...current.trip,
+              envelope,
+            },
+          }
+        : current,
+    )
+  }
 
   const removeComponentMutation = useMutation({
     mutationFn: async (componentId: string) => {

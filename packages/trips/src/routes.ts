@@ -104,7 +104,7 @@ const reshopTripBodySchema = reshopTripSchema.omit({ envelopeId: true })
 
 // ── Shared response fragments ────────────────────────────────────────────
 
-const errorResponseSchema = z.object({ error: z.string() })
+const errorResponseSchema = z.object({ error: z.string() }).catchall(z.unknown())
 
 /** §17: timestamp columns serialize to ISO strings over the wire. */
 const isoTimestamp = z.string()
@@ -283,10 +283,39 @@ function routeError(error: unknown): { message: string; status: 400 | 404 | 409 
     }
   }
 
+  const message = error instanceof Error ? error.message : "Trips route failed"
   return {
-    message: error instanceof Error ? error.message : "Trips route failed",
+    message: isInternalErrorMessage(message) ? "Trips route failed" : message,
     status: 400,
   }
+}
+
+function reserveFailureResponse(result: Awaited<ReturnType<typeof tripsService.reserveTrip>>) {
+  return {
+    error: "Trip reservation failed",
+    data: result,
+    failures: result.failures.map(({ componentId, reason, code }) => ({
+      componentId,
+      reason,
+      ...(code ? { code } : {}),
+    })),
+    reservationPlanId: result.reservationPlanId ?? null,
+  }
+}
+
+function isInternalErrorMessage(message: string): boolean {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes("failed query:") ||
+    normalized.includes("params:") ||
+    normalized.includes("drizzlequeryerror") ||
+    normalized.includes("postgre") ||
+    /insert\s+into\s+["\w.]+/.test(normalized) ||
+    /update\s+["\w.]+\s+set/.test(normalized) ||
+    normalized.includes("violates not-null constraint") ||
+    normalized.includes("violates foreign key constraint") ||
+    normalized.includes("duplicate key value violates")
+  )
 }
 
 function resolveRouteDeps<T>(c: Context<Env>, deps: TripsRouteDeps<T> | undefined) {
@@ -1355,6 +1384,9 @@ function createLifecycleRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
           { ...c.req.valid("json"), envelopeId: c.req.valid("param").envelopeId },
           deps,
         )
+        if (result.failures.length > 0) {
+          return c.json(reserveFailureResponse(result), 409)
+        }
         return c.json({ data: result }, 200)
       } catch (error) {
         const { message, status } = routeError(error)

@@ -1,11 +1,14 @@
 import type { TripComponent } from "@voyant-travel/trips"
 import { describe, expect, it } from "vitest"
 import {
+  apiError,
+  failuresToString,
   hydrateBilling,
   hydrateTravelers,
   hydrateVoucher,
   paymentScheduleReserveValidationReason,
   paymentScheduleToRows,
+  reserveResultFromApiError,
   tripTravelerRoleFromStored,
 } from "../src/admin/admin-trips-page-model.js"
 import {
@@ -190,6 +193,55 @@ describe("admin trips page model", () => {
       "paymentScheduleSplitRowsRequired",
     )
     expect(paymentScheduleReserveValidationReason([fullComponent])).toBeNull()
+  })
+
+  it("maps sanitized reservation failures to an operator-facing message", () => {
+    expect(
+      failuresToString(
+        [{ reason: "component_reservation_failed", code: "component_reservation_failed" }],
+        {
+          failureMessages: {
+            priceChanged: "price changed",
+            expired: "expired",
+            unavailable: "unavailable",
+            reservationFailed: "Reservation failed",
+          },
+        } as never,
+      ),
+    ).toBe("Reservation failed")
+  })
+
+  it("maps structured reserve error responses to friendly failure messages", () => {
+    expect(
+      apiError(
+        {
+          message: "Trip reservation failed",
+          body: { failures: [{ reason: "price_changed", code: "price_changed" }] },
+        },
+        {
+          failureMessages: {
+            priceChanged: "Prices changed",
+            expired: "expired",
+            unavailable: "unavailable",
+            reservationFailed: "reservation failed",
+          },
+        } as never,
+      ),
+    ).toBe("Prices changed")
+  })
+
+  it("extracts refreshed reserve results from structured conflict errors", () => {
+    const data = {
+      envelope: { id: "trip_123", status: "failed" },
+      components: [{ id: "trcp_1", status: "failed" }],
+      failures: [{ reason: "component_reservation_failed" }],
+      reserved: [],
+      compensations: [],
+      warnings: [],
+    }
+
+    expect(reserveResultFromApiError({ body: { data } })).toBe(data)
+    expect(reserveResultFromApiError({ body: { error: "Trip reservation failed" } })).toBeNull()
   })
 
   it("falls back to lead role for the first stored traveler", () => {
