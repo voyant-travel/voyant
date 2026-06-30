@@ -10,7 +10,8 @@ import type {
   UpdatePriceCatalogInput,
   UpdatePriceScheduleInput,
 } from "./service-shared.js"
-import { paginate } from "./service-shared.js"
+import { assertPricingValidation, paginate } from "./service-shared.js"
+import { validateMergedPriceSchedule } from "./validation.js"
 
 export async function listPriceCatalogs(db: PostgresJsDatabase, query: PriceCatalogListQuery) {
   const conditions = []
@@ -98,6 +99,7 @@ export async function getPriceScheduleById(db: PostgresJsDatabase, id: string) {
 }
 
 export async function createPriceSchedule(db: PostgresJsDatabase, data: CreatePriceScheduleInput) {
+  assertPricingValidation(validateMergedPriceSchedule(data), "Invalid price schedule")
   const [row] = await db.insert(priceSchedules).values(data).returning()
   return row ?? null
 }
@@ -107,6 +109,27 @@ export async function updatePriceSchedule(
   id: string,
   data: UpdatePriceScheduleInput,
 ) {
+  const [existing] = await db
+    .select({
+      recurrenceRule: priceSchedules.recurrenceRule,
+      validFrom: priceSchedules.validFrom,
+      validTo: priceSchedules.validTo,
+    })
+    .from(priceSchedules)
+    .where(eq(priceSchedules.id, id))
+    .limit(1)
+
+  if (!existing) return null
+
+  assertPricingValidation(
+    validateMergedPriceSchedule({
+      recurrenceRule: "recurrenceRule" in data ? data.recurrenceRule : existing.recurrenceRule,
+      validFrom: "validFrom" in data ? data.validFrom : existing.validFrom,
+      validTo: "validTo" in data ? data.validTo : existing.validTo,
+    }),
+    "Invalid price schedule",
+  )
+
   const [row] = await db
     .update(priceSchedules)
     .set({ ...data, updatedAt: new Date() })

@@ -61,7 +61,8 @@ import type {
   UpdateOptionUnitPriceRuleInput,
   UpdateOptionUnitTierInput,
 } from "./service-shared.js"
-import { paginate } from "./service-shared.js"
+import { assertPricingValidation, paginate } from "./service-shared.js"
+import { validateMergedOptionPriceRule, validateMergedOptionUnitPriceRule } from "./validation.js"
 
 export async function listOptionPriceRules(
   db: PostgresJsDatabase,
@@ -144,6 +145,8 @@ export async function createOptionPriceRule(
   data: CreateOptionPriceRuleInput,
   runtime: RuleMutationRuntime = {},
 ) {
+  assertPricingValidation(validateMergedOptionPriceRule(data), "Invalid option price rule")
+
   const row = await db.transaction(async (tx) => {
     const [inserted] = await tx.insert(optionPriceRules).values(data).returning()
     if (!inserted) return null
@@ -193,10 +196,24 @@ export async function updateOptionPriceRule(
     // this, the projection on the old product keeps a stale MIN that
     // includes a rule it no longer owns.
     const [pre] = await tx
-      .select({ productId: optionPriceRules.productId })
+      .select({
+        productId: optionPriceRules.productId,
+        minPerBooking: optionPriceRules.minPerBooking,
+        maxPerBooking: optionPriceRules.maxPerBooking,
+      })
       .from(optionPriceRules)
       .where(eq(optionPriceRules.id, id))
       .limit(1)
+
+    if (!pre) return null
+
+    assertPricingValidation(
+      validateMergedOptionPriceRule({
+        minPerBooking: "minPerBooking" in data ? data.minPerBooking : pre.minPerBooking,
+        maxPerBooking: "maxPerBooking" in data ? data.maxPerBooking : pre.maxPerBooking,
+      }),
+      "Invalid option price rule",
+    )
 
     const [updated] = await tx
       .update(optionPriceRules)
@@ -331,6 +348,8 @@ export async function createOptionUnitPriceRule(
   data: CreateOptionUnitPriceRuleInput,
   runtime: RuleMutationRuntime = {},
 ) {
+  assertPricingValidation(validateMergedOptionUnitPriceRule(data), "Invalid option unit price rule")
+
   const [parent] = await db
     .select({ pricingMode: optionPriceRules.pricingMode, productId: optionPriceRules.productId })
     .from(optionPriceRules)
@@ -361,6 +380,25 @@ export async function updateOptionUnitPriceRule(
   data: UpdateOptionUnitPriceRuleInput,
   runtime: RuleMutationRuntime = {},
 ) {
+  const [existing] = await db
+    .select({
+      minQuantity: optionUnitPriceRules.minQuantity,
+      maxQuantity: optionUnitPriceRules.maxQuantity,
+    })
+    .from(optionUnitPriceRules)
+    .where(eq(optionUnitPriceRules.id, id))
+    .limit(1)
+
+  if (!existing) return null
+
+  assertPricingValidation(
+    validateMergedOptionUnitPriceRule({
+      minQuantity: "minQuantity" in data ? data.minQuantity : existing.minQuantity,
+      maxQuantity: "maxQuantity" in data ? data.maxQuantity : existing.maxQuantity,
+    }),
+    "Invalid option unit price rule",
+  )
+
   // Snapshot the pre-update parent's productId. If the update reassigns
   // `optionPriceRuleId` to a parent rule under a different product, the
   // *previous* product also loses this unit-rule from its MIN

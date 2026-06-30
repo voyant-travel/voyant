@@ -179,15 +179,28 @@ const optionUnitCoreSchema = z.object({
 // silently falls back to 1 and the booking under-charges — see #481.
 const OCCUPANCY_REQUIRED_TYPES = new Set(["room", "vehicle"])
 
-type OccupancyShape = {
+type OptionUnitValidationShape = {
   unitType?: string | null | undefined
+  minAge?: number | null | undefined
+  maxAge?: number | null | undefined
   occupancyMin?: number | null | undefined
   occupancyMax?: number | null | undefined
 }
 
 type OccupancyIssue = { path: string[]; message: string }
 
-function collectOccupancyIssues(data: OccupancyShape): OccupancyIssue[] {
+function collectOptionUnitAgeRangeIssues(data: OptionUnitValidationShape): OccupancyIssue[] {
+  const issues: OccupancyIssue[] = []
+  if (data.minAge != null && data.maxAge != null && data.maxAge < data.minAge) {
+    issues.push({
+      path: ["maxAge"],
+      message: "maxAge must be ≥ minAge",
+    })
+  }
+  return issues
+}
+
+function collectOptionUnitOccupancyIssues(data: OptionUnitValidationShape): OccupancyIssue[] {
   const issues: OccupancyIssue[] = []
   if (
     data.unitType &&
@@ -212,8 +225,12 @@ function collectOccupancyIssues(data: OccupancyShape): OccupancyIssue[] {
   return issues
 }
 
+function collectOptionUnitIssues(data: OptionUnitValidationShape): OccupancyIssue[] {
+  return [...collectOptionUnitAgeRangeIssues(data), ...collectOptionUnitOccupancyIssues(data)]
+}
+
 export const insertOptionUnitSchema = optionUnitCoreSchema.superRefine((data, ctx) => {
-  for (const issue of collectOccupancyIssues(data)) {
+  for (const issue of collectOptionUnitIssues(data)) {
     ctx.addIssue({ code: "custom", ...issue })
   }
 })
@@ -231,16 +248,16 @@ export const updateOptionUnitSchema = optionUnitCoreSchema
   })
   .partial()
   .superRefine((data, ctx) => {
+    for (const issue of collectOptionUnitAgeRangeIssues(data)) {
+      ctx.addIssue({ code: "custom", ...issue })
+    }
     if (
       data.occupancyMin != null &&
       data.occupancyMax != null &&
       data.occupancyMax < data.occupancyMin
     ) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["occupancyMax"],
-        message: "occupancyMax must be ≥ occupancyMin",
-      })
+      const issue = { path: ["occupancyMax"], message: "occupancyMax must be ≥ occupancyMin" }
+      ctx.addIssue({ code: "custom", ...issue })
     }
   })
 
@@ -253,9 +270,9 @@ export const updateOptionUnitSchema = optionUnitCoreSchema
  * shape before writing.
  */
 export function validateMergedOptionUnit(
-  merged: OccupancyShape,
+  merged: OptionUnitValidationShape,
 ): { ok: true } | { ok: false; issues: OccupancyIssue[] } {
-  const issues = collectOccupancyIssues(merged)
+  const issues = collectOptionUnitIssues(merged)
   return issues.length === 0 ? { ok: true } : { ok: false, issues }
 }
 export const optionUnitListQuerySchema = z.object({

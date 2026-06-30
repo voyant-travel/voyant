@@ -179,6 +179,14 @@ export const optionProductsService = {
       return null
     }
 
+    const validation = validateMergedOptionUnit(data)
+    if (!validation.ok) {
+      const first = validation.issues[0]
+      throw new RequestValidationError(first?.message ?? "Invalid option unit", {
+        issues: validation.issues,
+      })
+    }
+
     const [row] = await db
       .insert(optionUnits)
       .values({ ...data, optionId })
@@ -191,6 +199,8 @@ export const optionProductsService = {
     const [existing] = await db
       .select({
         unitType: optionUnits.unitType,
+        minAge: optionUnits.minAge,
+        maxAge: optionUnits.maxAge,
         occupancyMin: optionUnits.occupancyMin,
         occupancyMax: optionUnits.occupancyMax,
       })
@@ -204,6 +214,8 @@ export const optionProductsService = {
 
     const merged = {
       unitType: "unitType" in data ? data.unitType : existing.unitType,
+      minAge: "minAge" in data ? data.minAge : existing.minAge,
+      maxAge: "maxAge" in data ? data.maxAge : existing.maxAge,
       occupancyMin: "occupancyMin" in data ? data.occupancyMin : existing.occupancyMin,
       occupancyMax: "occupancyMax" in data ? data.occupancyMax : existing.occupancyMax,
     }

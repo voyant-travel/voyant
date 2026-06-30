@@ -10,7 +10,8 @@ import type {
   UpdatePricingCategoryDependencyInput,
   UpdatePricingCategoryInput,
 } from "./service-shared.js"
-import { paginate } from "./service-shared.js"
+import { assertPricingValidation, paginate } from "./service-shared.js"
+import { validateMergedPricingCategory } from "./validation.js"
 
 export async function listPricingCategories(
   db: PostgresJsDatabase,
@@ -55,6 +56,7 @@ export async function createPricingCategory(
   db: PostgresJsDatabase,
   data: CreatePricingCategoryInput,
 ) {
+  assertPricingValidation(validateMergedPricingCategory(data), "Invalid pricing category")
   const [row] = await db.insert(pricingCategories).values(data).returning()
   return row ?? null
 }
@@ -64,6 +66,22 @@ export async function updatePricingCategory(
   id: string,
   data: UpdatePricingCategoryInput,
 ) {
+  const [existing] = await db
+    .select({ minAge: pricingCategories.minAge, maxAge: pricingCategories.maxAge })
+    .from(pricingCategories)
+    .where(eq(pricingCategories.id, id))
+    .limit(1)
+
+  if (!existing) return null
+
+  assertPricingValidation(
+    validateMergedPricingCategory({
+      minAge: "minAge" in data ? data.minAge : existing.minAge,
+      maxAge: "maxAge" in data ? data.maxAge : existing.maxAge,
+    }),
+    "Invalid pricing category",
+  )
+
   const [row] = await db
     .update(pricingCategories)
     .set({ ...data, updatedAt: new Date() })

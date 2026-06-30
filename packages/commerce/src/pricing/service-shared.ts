@@ -1,3 +1,4 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import { listResponse } from "@voyant-travel/types"
 import type { z } from "zod"
 import type {
@@ -24,6 +25,7 @@ import type {
   optionStartTimeRuleListQuerySchema,
   optionUnitPriceRuleListQuerySchema,
   optionUnitTierListQuerySchema,
+  PricingValidationResult,
   pickupPriceRuleListQuerySchema,
   priceCatalogListQuerySchema,
   priceScheduleListQuerySchema,
@@ -103,4 +105,15 @@ export async function paginate<T extends object>(
 ) {
   const [data, countResult] = await Promise.all([rowsQuery, countQuery])
   return listResponse(data, { total: countResult[0]?.count ?? 0, limit, offset })
+}
+
+export function assertPricingValidation(
+  result: PricingValidationResult,
+  fallbackMessage: string,
+): void {
+  if (result.ok) return
+  const first = result.issues[0]
+  throw new RequestValidationError(first?.message ?? fallbackMessage, {
+    issues: result.issues,
+  })
 }
