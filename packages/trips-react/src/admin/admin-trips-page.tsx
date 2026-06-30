@@ -40,6 +40,7 @@ import {
   apiError,
   assertTripCreationRequirements,
   booleanFromRecord,
+  componentMutationsLockedForEnvelopeStatus,
   defaultPaymentCurrency,
   derivePayerEmail,
   derivePayerName,
@@ -120,6 +121,7 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
   )
   const selectedCount = selectedCancellationIds.length
   const envelopeStatus = trip?.envelope.status
+  const componentMutationsLocked = componentMutationsLockedForEnvelopeStatus(envelopeStatus)
   const reserveValidationReason = useMemo(
     () => paymentScheduleReserveValidationReason(components),
     [components],
@@ -453,6 +455,14 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
     updateComponentSetupMutation.isPending
 
   function handleAddVertical(kind: PendingVerticalKind) {
+    if (componentMutationsLocked) {
+      setState((current) => ({
+        ...current,
+        error: t.errors.componentMutationsLocked,
+        message: null,
+      }))
+      return
+    }
     setPending((current) => [...current, newPendingComponent(kind)])
   }
 
@@ -481,6 +491,17 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
   }
 
   function commitPending(component: PendingComponent) {
+    if (componentMutationsLocked) {
+      setPending((current) =>
+        current.map((p) =>
+          p.localId === component.localId
+            ? { ...p, commitError: t.errors.componentMutationsLocked }
+            : p,
+        ),
+      )
+      return
+    }
+
     const overlap = findOverlappingComponent(component, components)
     if (overlap) {
       setPending((current) =>
@@ -515,6 +536,10 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
 
       <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
+          {componentMutationsLocked ? (
+            <StatusAlert title={t.checkoutLockedTitle} message={t.checkoutLockedMessage} />
+          ) : null}
+
           <Section title={t.billingSectionTitle}>
             <PersonPickerSection value={billing} onChange={setBilling} />
           </Section>
@@ -559,10 +584,14 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
                 onRemove={() => removePending(entry.localId)}
                 onCommit={() => commitPending(entry)}
                 committing={committingLocalId === entry.localId && commitMutation.isPending}
+                commitDisabled={componentMutationsLocked}
                 travelers={travelers}
               />
             ))}
-            <AddComponentMenu onAdd={handleAddVertical} disabled={isBusy} />
+            <AddComponentMenu
+              onAdd={handleAddVertical}
+              disabled={isBusy || componentMutationsLocked}
+            />
           </div>
 
           {trapReserved && selectedCount > 0 ? (

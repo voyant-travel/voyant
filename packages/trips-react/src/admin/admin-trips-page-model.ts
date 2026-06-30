@@ -8,7 +8,7 @@ import type {
   VoucherPickerValue,
 } from "@voyant-travel/bookings-react/ui"
 import { formatMessage } from "@voyant-travel/i18n"
-import type { ReserveTripResult, TripComponent } from "@voyant-travel/trips"
+import type { ReserveTripResult, TripComponent, TripEnvelopeStatus } from "@voyant-travel/trips"
 
 import type { VoyantApiError } from "../client.js"
 import type { AddTripComponentBody } from "../operations.js"
@@ -24,6 +24,12 @@ import {
 export type AdminComposerMessages = ReturnType<typeof useAdminMessages>["trips"]["adminComposer"]
 
 export const defaultPaymentCurrency = "EUR"
+
+export function componentMutationsLockedForEnvelopeStatus(
+  status: TripEnvelopeStatus | null | undefined,
+): boolean {
+  return status === "checkout_started" || status === "booked"
+}
 
 export type ReservePaymentScheduleValidationReason =
   | "paymentScheduleDueDateRequired"

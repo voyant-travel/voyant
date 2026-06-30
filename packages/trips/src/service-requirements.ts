@@ -23,9 +23,11 @@ import type {
   NewTripRequirement,
   TripCandidate,
   TripComponent,
+  TripEnvelope,
   TripRequirement,
 } from "./schema.js"
-import { tripCandidates, tripComponents, tripRequirements } from "./schema.js"
+import { tripCandidates, tripComponents, tripEnvelopes, tripRequirements } from "./schema.js"
+import { assertTripEnvelopeCanMutateComponents } from "./service-edit-safeguards.js"
 import { createComponentEvent } from "./service-internals.js"
 import { TripsInvariantError } from "./service-types.js"
 
@@ -323,6 +325,8 @@ export async function selectCandidate(
   }
   assertCandidateSelectable(candidate, asOf)
   const requirement = await loadRequirement(db, input.requirementId)
+  const envelope = await loadEnvelope(db, candidate.envelopeId)
+  assertTripEnvelopeCanMutateComponents(envelope)
 
   // Retire a previously-pinned component if this requirement was already
   // resolved to a different candidate.
@@ -382,6 +386,16 @@ export async function selectCandidate(
   }
 }
 
+async function loadEnvelope(db: AnyDrizzleDb, envelopeId: string): Promise<TripEnvelope> {
+  const [envelope] = (await db
+    .select()
+    .from(tripEnvelopes)
+    .where(eq(tripEnvelopes.id, envelopeId))
+    .limit(1)) as TripEnvelope[]
+  if (!envelope) throw new TripsInvariantError(`Trip envelope ${envelopeId} was not found`)
+  return envelope
+}
+
 /**
  * Re-shop one requirement: clear any prior selection (retiring its pinned
  * component) and re-source candidates.
@@ -395,6 +409,9 @@ export async function reshopRequirement(
   const now = new Date()
 
   if (requirement.resolvedComponentId) {
+    const envelope = await loadEnvelope(db, requirement.envelopeId)
+    assertTripEnvelopeCanMutateComponents(envelope)
+
     await db
       .update(tripComponents)
       .set({ status: "removed", updatedAt: now })

@@ -3,6 +3,20 @@ import { hasCommittedComponentReference } from "./service-helpers.js"
 import { type Trip, TripsInvariantError } from "./service-types.js"
 import type { UpdateTripComponentInput, UpdateTripEnvelopeInput } from "./validation.js"
 
+export function assertTripEnvelopeCanMutateComponents(
+  envelope: Pick<TripEnvelope, "id" | "status" | "checkoutStartedAt">,
+): void {
+  if (!tripEnvelopeBlocksComponentMutations(envelope)) return
+
+  const state = tripEnvelopeStatusBlocksComponentMutations(envelope.status)
+    ? `is ${envelope.status}`
+    : "has checkout started"
+
+  throw new TripsInvariantError(
+    `Trip ${envelope.id} ${state} and cannot mutate components after checkout has started`,
+  )
+}
+
 export function updatesSupplierCommitmentEnvelopeFields(input: UpdateTripEnvelopeInput): boolean {
   return input.travelerParty !== undefined || input.constraints !== undefined
 }
@@ -42,6 +56,19 @@ function tripEnvelopeHasCommittedSupplierBackedComponents(trip: Trip): boolean {
 
 function isCommittedEnvelopeStatus(status: TripEnvelope["status"]): boolean {
   return status === "reserved" || status === "checkout_started" || status === "booked"
+}
+
+function tripEnvelopeBlocksComponentMutations(
+  envelope: Pick<TripEnvelope, "status" | "checkoutStartedAt">,
+): boolean {
+  return (
+    envelope.checkoutStartedAt !== null ||
+    tripEnvelopeStatusBlocksComponentMutations(envelope.status)
+  )
+}
+
+function tripEnvelopeStatusBlocksComponentMutations(status: TripEnvelope["status"]): boolean {
+  return status === "checkout_started" || status === "booked"
 }
 
 function isCommittedSupplierBackedComponent(component: TripComponent): boolean {

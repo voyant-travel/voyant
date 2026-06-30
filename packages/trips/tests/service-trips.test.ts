@@ -177,10 +177,23 @@ function makeFakeDb(state: {
       }),
     }),
     insert: (table: unknown) => ({
-      values: (value: NewTripComponentEvent) => {
+      values: (value: NewTripComponentEvent | Partial<TripComponent>) => {
         if (table === tripComponentEvents) events.push(value)
+        if (table === tripComponents) {
+          state.components.push({
+            ...component({
+              id: `trcp_${state.components.length + 1}`,
+              envelopeId: state.envelope.id,
+              status: "draft",
+            }),
+            ...value,
+          } as TripComponent)
+        }
         return {
-          returning: async () => [],
+          returning: async () =>
+            table === tripComponents && state.components.length > 0
+              ? [state.components[state.components.length - 1]]
+              : [],
         }
       },
     }),
@@ -231,7 +244,7 @@ describe("trips service edit safeguards", () => {
 
   it("blocks component description and metadata edits after supplier commitment", async () => {
     const state = {
-      envelope: envelope(),
+      envelope: envelope({ status: "reserved", checkoutStartedAt: null }),
       components: [component()],
     }
     const db = makeFakeDb(state)
@@ -252,9 +265,9 @@ describe("trips service edit safeguards", () => {
     expect(state.components[0]?.metadata).toEqual({ flightDraft: { offerId: "offer_1" } })
   })
 
-  it("keeps booked manual components editable because no supplier commitment exists", async () => {
+  it("keeps pre-checkout manual components editable because no supplier commitment exists", async () => {
     const state = {
-      envelope: envelope(),
+      envelope: envelope({ status: "reserved", checkoutStartedAt: null }),
       components: [
         component({
           id: "trcp_manual",
@@ -281,24 +294,106 @@ describe("trips service edit safeguards", () => {
     expect(state.events).toHaveLength(1)
   })
 
-  it("returns 409 from the PATCH route for booked supplier-backed component edits", async () => {
+  it("blocks component mutations once checkout has started", async () => {
+    await expect(
+      tripsService.addComponent(
+        makeFakeDb({
+          envelope: envelope({ status: "checkout_started" }),
+          components: [],
+        }),
+        {
+          envelopeId: "trip_123",
+          sequence: 0,
+          kind: "manual_placeholder",
+          metadata: { manualService: { name: "Late add-on" } },
+        },
+      ),
+    ).rejects.toThrow(/cannot mutate components after checkout has started/)
+
+    await expect(
+      tripsService.updateComponent(
+        makeFakeDb({
+          envelope: envelope({ status: "checkout_started" }),
+          components: [component({ status: "held" })],
+        }),
+        "trcp_supplier",
+        { description: "Late rename" },
+      ),
+    ).rejects.toThrow(/cannot mutate components after checkout has started/)
+
+    await expect(
+      tripsService.updateComponentRefs(
+        makeFakeDb({
+          envelope: envelope({ status: "checkout_started" }),
+          components: [component({ status: "held" })],
+        }),
+        "trcp_supplier",
+        { bookingDraftId: "bkdr_late" },
+      ),
+    ).rejects.toThrow(/cannot mutate components after checkout has started/)
+
+    await expect(
+      tripsService.removeComponent(
+        makeFakeDb({
+          envelope: envelope({ status: "checkout_started" }),
+          components: [component({ status: "held" })],
+        }),
+        "trcp_supplier",
+      ),
+    ).rejects.toThrow(/cannot mutate components after checkout has started/)
+
+    await expect(
+      tripsService.reorderComponents(
+        makeFakeDb({
+          envelope: envelope({ status: "checkout_started" }),
+          components: [component({ status: "held" })],
+        }),
+        { envelopeId: "trip_123", componentIds: ["trcp_supplier"] },
+      ),
+    ).rejects.toThrow(/cannot mutate components after checkout has started/)
+  })
+
+  it("blocks component mutations after checkout even if status later changes", async () => {
+    await expect(
+      tripsService.addComponent(
+        makeFakeDb({
+          envelope: envelope({
+            status: "cancelled",
+            checkoutStartedAt: new Date("2026-06-30T10:05:00.000Z"),
+          }),
+          components: [],
+        }),
+        {
+          envelopeId: "trip_123",
+          sequence: 0,
+          kind: "manual_placeholder",
+          metadata: { manualService: { name: "Late add-on" } },
+        },
+      ),
+    ).rejects.toThrow("Trip trip_123 has checkout started")
+  })
+
+  it("returns 409 from the POST route for component adds after checkout starts", async () => {
     const app = createTestTripsApp(
       makeFakeDb({
-        envelope: envelope(),
+        envelope: envelope({ status: "checkout_started" }),
         components: [component()],
       }),
     )
 
-    const res = await app.request("/components/trcp_supplier", {
-      method: "PATCH",
-      body: JSON.stringify({ description: "Rename after ticketing" }),
+    const res = await app.request("/trip_123/components", {
+      method: "POST",
+      body: JSON.stringify({
+        kind: "manual_placeholder",
+        metadata: { manualService: { name: "Late add-on" } },
+      }),
       headers: { "content-type": "application/json" },
     })
 
     expect(res.status).toBe(409)
     await expect(res.json()).resolves.toEqual({
       error:
-        "Trip component trcp_supplier is committed to a supplier and requires a structured amendment before commitment data can change",
+        "Trip trip_123 is checkout_started and cannot mutate components after checkout has started",
     })
   })
 })
