@@ -28,6 +28,7 @@ const mocks = vi.hoisted(() => {
     getQuoteVersionProposal: vi.fn(),
     listQuoteMedia: vi.fn(),
     markQuoteVersionViewed: vi.fn(),
+    recordPublicProposalFeedback: vi.fn(),
     sendQuoteVersion: vi.fn(),
     // trips service
     getTrip: vi.fn(),
@@ -82,6 +83,7 @@ const options = {
   startCheckoutDeps: () => ({ checkout: "deps" }) as never,
   cancelTripComponentsDeps: () => ({ cancel: "deps" }) as never,
   resolveOperatorProfile: vi.fn(async () => operatorProfile as unknown),
+  recordPublicProposalFeedback: mocks.recordPublicProposalFeedback,
 }
 
 const quoteVersion = {
@@ -320,6 +322,55 @@ describe("quote proposal routes", () => {
     expect(response.status).toBe(200)
     expect(mocks.declineQuoteVersion).toHaveBeenCalledWith(fakeDb, "qver_123")
     await expect(response.json()).resolves.toEqual({ data: { status: "declined" } })
+  })
+
+  it("records requested edits without finalizing the sent proposal", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.recordPublicProposalFeedback.mockResolvedValue({ id: "act_123" })
+
+    const response = await app.request("/v1/public/proposals/qver_123/request-edits", {
+      method: "POST",
+      ...json({ message: "Please add a private transfer option." }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mocks.expireQuoteVersionIfPastValidUntil).toHaveBeenCalledWith(fakeDb, "qver_123")
+    expect(mocks.recordPublicProposalFeedback).toHaveBeenCalledWith(
+      fakeDb,
+      {
+        quoteId: "quot_123",
+        quoteVersionId: "qver_123",
+        message: "Please add a private transfer option.",
+        proposalUrl: "/proposal/qver_123",
+      },
+      expect.any(Object),
+    )
+    expect(mocks.declineQuoteVersion).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+    await expect(response.json()).resolves.toEqual({
+      data: { status: "sent", feedbackId: "act_123" },
+    })
+  })
+
+  it("allows edit requests for sent line-item proposals that cannot be accepted", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue({
+      ...proposal,
+      quoteVersion: { ...quoteVersion, tripSnapshotId: null },
+    })
+    mocks.recordPublicProposalFeedback.mockResolvedValue({ id: "act_456" })
+
+    const response = await app.request("/v1/public/proposals/qver_123/request-edits", {
+      method: "POST",
+      ...json({ message: "Can you quote a slower-paced itinerary?" }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mocks.recordPublicProposalFeedback).toHaveBeenCalled()
+    await expect(response.json()).resolves.toEqual({
+      data: { status: "sent", feedbackId: "act_456" },
+    })
   })
 
   it("accepts a sent proposal: prepare under lock, reserve outside txn, finalize under lock", async () => {
