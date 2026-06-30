@@ -23,6 +23,7 @@ import {
   pickupGroupKindSchema,
   pickupTimingModeSchema,
   updateAllocationResourceSchema,
+  updateAvailabilitySlotSchema,
   updateTravelerSharingGroupSchema,
   upsertResourceTemplateSchema,
 } from "../../../src/availability/validation.js"
@@ -168,6 +169,29 @@ describe("Availability rule schema", () => {
     expect(() => insertAvailabilityRuleSchema.parse({ ...valid, recurrenceRule: "" })).toThrow()
   })
 
+  it("rejects malformed recurrenceRule", () => {
+    expect(() =>
+      insertAvailabilityRuleSchema.parse({ ...valid, recurrenceRule: "NOT_A_RULE" }),
+    ).toThrow()
+  })
+
+  it("rejects weekly recurrenceRule without weekdays", () => {
+    expect(() =>
+      insertAvailabilityRuleSchema.parse({
+        ...valid,
+        recurrenceRule: "FREQ=WEEKLY;INTERVAL=1",
+      }),
+    ).toThrow()
+  })
+
+  it("accepts weekly recurrenceRule with weekdays", () => {
+    const result = insertAvailabilityRuleSchema.parse({
+      ...valid,
+      recurrenceRule: "FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR",
+    })
+    expect(result.recurrenceRule).toBe("FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR")
+  })
+
   it("rejects negative maxCapacity", () => {
     expect(() => insertAvailabilityRuleSchema.parse({ ...valid, maxCapacity: -1 })).toThrow()
   })
@@ -236,6 +260,60 @@ describe("Availability slot schema", () => {
 
   it("rejects negative remainingPax", () => {
     expect(() => insertAvailabilitySlotSchema.parse({ ...valid, remainingPax: -1 })).toThrow()
+  })
+
+  it("rejects endsAt before startsAt", () => {
+    expect(() =>
+      insertAvailabilitySlotSchema.parse({
+        ...valid,
+        startsAt: "2025-06-15T17:00:00Z",
+        endsAt: "2025-06-15T09:00:00Z",
+      }),
+    ).toThrow()
+  })
+
+  it("rejects remainingPax greater than initialPax for limited slots", () => {
+    expect(() =>
+      insertAvailabilitySlotSchema.parse({
+        ...valid,
+        initialPax: 5,
+        remainingPax: 9,
+      }),
+    ).toThrow()
+  })
+
+  it("allows patch capacity reductions with stale remainingPax snapshots", () => {
+    const result = updateAvailabilitySlotSchema.parse({
+      initialPax: 10,
+      remainingPax: 12,
+    })
+    expect(result.initialPax).toBe(10)
+    expect(result.remainingPax).toBe(12)
+  })
+
+  it("rejects dateLocal that does not match startsAt in the slot timezone", () => {
+    expect(() =>
+      insertAvailabilitySlotSchema.parse({
+        ...valid,
+        dateLocal: "2025-06-16",
+        startsAt: "2025-06-15T23:00:00Z",
+        timezone: "UTC",
+      }),
+    ).toThrow()
+  })
+
+  it("accepts dateLocal derived from startsAt in the slot timezone", () => {
+    const result = insertAvailabilitySlotSchema.parse({
+      ...valid,
+      dateLocal: "2025-06-16",
+      startsAt: "2025-06-15T23:00:00Z",
+      timezone: "Europe/London",
+      endsAt: "2025-06-16T01:00:00Z",
+      initialPax: 9,
+      remainingPax: 5,
+    })
+
+    expect(result.dateLocal).toBe("2025-06-16")
   })
 })
 

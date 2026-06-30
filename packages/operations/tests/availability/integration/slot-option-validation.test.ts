@@ -119,6 +119,53 @@ describe.skipIf(!DB_AVAILABLE)("availability slot option validation", () => {
     )
   })
 
+  it("rejects slots whose end is before the start", async () => {
+    const productId = await seedProduct("Badly timed trip")
+
+    await expect(
+      createSlot(
+        db,
+        slotInput(productId, {
+          startsAt: "2026-09-10T18:00:00.000Z",
+          endsAt: "2026-09-10T09:00:00.000Z",
+        }),
+      ),
+    ).rejects.toBeInstanceOf(RequestValidationError)
+  })
+
+  it("rejects limited slots whose remaining pax exceeds initial pax", async () => {
+    const productId = await seedProduct("Overfilled trip")
+
+    await expect(
+      createSlot(db, slotInput(productId, { initialPax: 5, remainingPax: 9 })),
+    ).rejects.toBeInstanceOf(RequestValidationError)
+  })
+
+  it("rejects slots whose local date disagrees with startsAt and timezone", async () => {
+    const productId = await seedProduct("Mismatched date trip")
+
+    await expect(
+      createSlot(
+        db,
+        slotInput(productId, {
+          dateLocal: "2026-09-11",
+          startsAt: "2026-09-10T09:00:00.000Z",
+          timezone: "UTC",
+        }),
+      ),
+    ).rejects.toBeInstanceOf(RequestValidationError)
+  })
+
+  it("rejects partial slot updates that would make the local date inconsistent", async () => {
+    const productId = await seedProduct("Patch-validated trip")
+    const slot = await createSlot(db, slotInput(productId))
+    if (!slot) throw new Error("failed to create slot")
+
+    await expect(updateSlot(db, slot.id, { dateLocal: "2026-09-11" })).rejects.toBeInstanceOf(
+      RequestValidationError,
+    )
+  })
+
   it("rejects active recurrence rules for dynamic products", async () => {
     const productId = await seedProduct("Hotel stay", "stay")
 
@@ -146,5 +193,27 @@ describe.skipIf(!DB_AVAILABLE)("availability slot option validation", () => {
     await expect(updateRule(db, inactiveRule.id, { active: true })).rejects.toBeInstanceOf(
       RequestValidationError,
     )
+  })
+
+  it("rejects malformed recurrence rules in service calls", async () => {
+    const productId = await seedProduct("Rule-validated trip")
+
+    await expect(
+      createRule(db, {
+        productId,
+        timezone: "UTC",
+        recurrenceRule: "NOT_A_RULE",
+        maxCapacity: 10,
+      }),
+    ).rejects.toBeInstanceOf(RequestValidationError)
+
+    await expect(
+      createRule(db, {
+        productId,
+        timezone: "UTC",
+        recurrenceRule: "FREQ=WEEKLY;INTERVAL=1",
+        maxCapacity: 10,
+      }),
+    ).rejects.toBeInstanceOf(RequestValidationError)
   })
 })

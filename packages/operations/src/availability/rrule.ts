@@ -20,6 +20,94 @@ export type ParsedRRule = {
   byMonthDays: number[]
 }
 
+const SUPPORTED_FREQUENCIES: readonly Frequency[] = ["DAILY", "WEEKLY", "MONTHLY"]
+
+export type RRuleValidationResult =
+  | { ok: true; parsed: ParsedRRule }
+  | { ok: false; message: string }
+
+function parseRRuleParts(rrule: string): { map: Map<string, string> } | { error: string } {
+  const parts = rrule
+    .split(";")
+    .map((p) => p.trim())
+    .filter(Boolean)
+  const map = new Map<string, string>()
+  for (const part of parts) {
+    const separatorIndex = part.indexOf("=")
+    if (separatorIndex < 1) {
+      return { error: `Invalid RRULE part: ${part}` }
+    }
+    const key = part.slice(0, separatorIndex).trim().toUpperCase()
+    const value = part.slice(separatorIndex + 1).trim()
+    if (!value) {
+      return { error: `Invalid RRULE part: ${part}` }
+    }
+    map.set(key, value)
+  }
+  return { map }
+}
+
+export function validateRRule(rrule: string): RRuleValidationResult {
+  const parsedParts = parseRRuleParts(rrule)
+  if ("error" in parsedParts) return { ok: false, message: parsedParts.error }
+
+  const { map } = parsedParts
+  const rawFreq = map.get("FREQ")?.toUpperCase()
+  if (!rawFreq) return { ok: false, message: "RRULE must include FREQ" }
+  if (!(SUPPORTED_FREQUENCIES as readonly string[]).includes(rawFreq)) {
+    return { ok: false, message: `Unsupported RRULE frequency: ${rawFreq}` }
+  }
+
+  const rawInterval = map.get("INTERVAL")
+  const interval = rawInterval === undefined ? 1 : Number.parseInt(rawInterval, 10)
+  if (
+    !Number.isFinite(interval) ||
+    interval < 1 ||
+    (rawInterval !== undefined && String(interval) !== rawInterval)
+  ) {
+    return { ok: false, message: "RRULE INTERVAL must be a positive integer" }
+  }
+
+  const byday = map.get("BYDAY") ?? ""
+  const rawWeekdays = byday
+    .split(",")
+    .map((d) => d.trim().toUpperCase())
+    .filter(Boolean)
+  const byWeekdays = rawWeekdays.filter((d): d is Weekday =>
+    (WEEKDAYS as readonly string[]).includes(d),
+  )
+  if (rawWeekdays.length !== byWeekdays.length) {
+    return { ok: false, message: "RRULE BYDAY contains unsupported weekdays" }
+  }
+
+  const bymonthday = map.get("BYMONTHDAY") ?? ""
+  const rawMonthDays = bymonthday
+    .split(",")
+    .map((d) => d.trim())
+    .filter(Boolean)
+  const byMonthDays = rawMonthDays.map((d) => Number.parseInt(d, 10))
+  if (
+    byMonthDays.some(
+      (n, index) => !Number.isFinite(n) || n < 1 || n > 31 || String(n) !== rawMonthDays[index],
+    )
+  ) {
+    return { ok: false, message: "RRULE BYMONTHDAY must contain days 1 through 31" }
+  }
+
+  const frequency = rawFreq as Frequency
+  if (frequency === "WEEKLY" && byWeekdays.length === 0) {
+    return { ok: false, message: "Weekly RRULE must include BYDAY" }
+  }
+  if (frequency === "MONTHLY" && byMonthDays.length === 0) {
+    return { ok: false, message: "Monthly RRULE must include BYMONTHDAY" }
+  }
+
+  return {
+    ok: true,
+    parsed: { frequency, interval, byWeekdays, byMonthDays },
+  }
+}
+
 /**
  * Parse a minimal RRULE string (subset of RFC 5545).
  * Supports FREQ, INTERVAL, BYDAY, BYMONTHDAY.
