@@ -29,8 +29,12 @@ export function DetailLayout({
   sidebar,
 }: {
   body: React.ReactNode
-  sidebar: React.ReactNode
+  sidebar?: React.ReactNode
 }): React.ReactElement {
+  if (sidebar == null) {
+    return <div className="pb-24 lg:pb-0">{body}</div>
+  }
+
   return (
     <div className="grid grid-cols-1 gap-6 pb-24 lg:grid-cols-3 lg:pb-0">
       <div className="space-y-4 lg:col-span-2">{body}</div>
