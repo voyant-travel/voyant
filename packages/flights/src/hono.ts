@@ -11,7 +11,7 @@
  *   POST   /price                    — adapter.priceOffer
  *   POST   /book                     — adapter.bookFlight (+ optional payment session on hold)
  *   GET    /orders                   — adapter.listOrders (+ optional payment status)
- *   GET    /orders/:orderId          — adapter.getOrder (+ optional payment session)
+ *   GET    /orders/:orderId          — adapter.getOrder (+ optional payment status)
  *   POST   /orders/:orderId/cancel   — adapter.cancelOrder
  *   GET    /reference/airports?q=&limit=
  *   GET    /reference/airlines
@@ -302,7 +302,8 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
     try {
       const response = await resolveAdapter(c).getOrder(buildContext(c), orderId)
       if (response.order && payment) {
-        const summary = await payment.ensureOrderSession(c, response.order, response.order.contact)
+        const sessionByOrderId = await payment.fetchOrderSessions(c, [response.order.orderId])
+        const summary = sessionByOrderId.get(response.order.orderId) ?? null
         response.order = attachPaymentSession(response.order, summary)
       }
       return c.json(response)
