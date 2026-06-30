@@ -1,17 +1,15 @@
-import { bookings, bookingTravelers } from "@voyant-travel/bookings/schema"
 import { bookingPaymentSchedules } from "@voyant-travel/finance"
-import { and, desc, eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { notificationReminderRuns } from "./schema.js"
 import { sendInvoiceNotification, sendNotification } from "./service-deliveries.js"
 import {
   bookingStatusSkipReason,
-  getBookingPaymentNotificationContext,
+  buildBookingPaymentReminderTemplateData,
   OPEN_PAYMENT_SCHEDULE_STATUSES,
   PAYABLE_BOOKING_STATUSES,
   paymentScheduleStatusSkipReason,
-  serializeBookingPaymentContext,
 } from "./service-reminder-booking-context.js"
 import {
   type ChannelOverride,
@@ -33,7 +31,6 @@ import type {
   NotificationService,
   RunDueRemindersInput,
 } from "./service-shared.js"
-import { listBookingNotificationItems, resolveReminderRecipient } from "./service-shared.js"
 
 export {
   bookingIsPaidInFullForNotification,
@@ -66,55 +63,16 @@ async function sendQueuedBookingPaymentScheduleReminder(
     return markReminderRunSkipped(db, run.id, now, paymentScheduleStatusSkipReason(schedule.status))
   }
 
-  const [booking] = await db
-    .select({
-      id: bookings.id,
-      bookingNumber: bookings.bookingNumber,
-      status: bookings.status,
-      personId: bookings.personId,
-      organizationId: bookings.organizationId,
-      contactFirstName: bookings.contactFirstName,
-      contactLastName: bookings.contactLastName,
-      contactEmail: bookings.contactEmail,
-      contactPhone: bookings.contactPhone,
-      contactPreferredLanguage: bookings.contactPreferredLanguage,
-      sellCurrency: bookings.sellCurrency,
-      sellAmountCents: bookings.sellAmountCents,
-      startDate: bookings.startDate,
-      endDate: bookings.endDate,
-    })
-    .from(bookings)
-    .where(eq(bookings.id, schedule.bookingId))
-    .limit(1)
+  const context = await buildBookingPaymentReminderTemplateData(db, schedule, run.recipient)
 
-  if (!booking) {
+  if (!context) {
     return markReminderRunSkipped(db, run.id, now, "Booking not found for payment schedule")
   }
-  if (!PAYABLE_BOOKING_STATUSES.has(booking.status)) {
-    return markReminderRunSkipped(db, run.id, now, bookingStatusSkipReason(booking.status))
+  if (!PAYABLE_BOOKING_STATUSES.has(context.booking.status)) {
+    return markReminderRunSkipped(db, run.id, now, bookingStatusSkipReason(context.booking.status))
   }
 
-  const [participants, items, paymentContext] = await Promise.all([
-    db
-      .select({
-        id: bookingTravelers.id,
-        firstName: bookingTravelers.firstName,
-        lastName: bookingTravelers.lastName,
-        email: bookingTravelers.email,
-        participantType: bookingTravelers.participantType,
-        isPrimary: bookingTravelers.isPrimary,
-      })
-      .from(bookingTravelers)
-      .where(eq(bookingTravelers.bookingId, booking.id))
-      .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
-    listBookingNotificationItems(db, booking.id),
-    getBookingPaymentNotificationContext(db, booking.id),
-  ])
-
-  const fallbackRecipient = resolveReminderRecipient(booking, participants)
-  const traveler =
-    participants.find((entry) => entry.email === run.recipient) ?? fallbackRecipient ?? null
-  const recipientEmail = run.recipient ?? traveler?.email ?? null
+  const recipientEmail = context.recipientEmail
 
   if (!recipientEmail) {
     return markReminderRunSkipped(
@@ -132,39 +90,12 @@ async function sendQueuedBookingPaymentScheduleReminder(
       channel: channelOverride.channel,
       provider: channelOverride.provider,
       to: recipientEmail,
-      data: {
-        bookingId: booking.id,
-        bookingNumber: booking.bookingNumber,
-        dueDate: schedule.dueDate,
-        amountCents: schedule.amountCents,
-        currency: schedule.currency,
-        scheduleType: schedule.scheduleType,
-        traveler: traveler
-          ? {
-              firstName: traveler.firstName,
-              lastName: traveler.lastName,
-              email: recipientEmail,
-              participantType: traveler.participantType,
-              isPrimary: traveler.isPrimary,
-            }
-          : null,
-        travelers: participants,
-        booking: {
-          id: booking.id,
-          bookingNumber: booking.bookingNumber,
-          startDate: booking.startDate,
-          endDate: booking.endDate,
-          sellCurrency: booking.sellCurrency,
-          sellAmountCents: booking.sellAmountCents,
-        },
-        ...serializeBookingPaymentContext(paymentContext, schedule),
-        items,
-      },
+      data: context.data,
       targetType: "booking_payment_schedule",
       targetId: schedule.id,
-      bookingId: booking.id,
-      personId: booking.personId ?? null,
-      organizationId: booking.organizationId ?? null,
+      bookingId: context.booking.id,
+      personId: context.booking.personId ?? null,
+      organizationId: context.booking.organizationId ?? null,
       metadata: {
         reminderRuleId: rule.id,
         reminderRunId: run.id,
