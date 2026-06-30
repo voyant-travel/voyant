@@ -1,5 +1,11 @@
 # @voyant-travel/crm-react
 
+## 0.135.2
+
+### Patch Changes
+
+- 0f21c78: Label product-only quote proposal links as review-only in the admin quote detail page.
+
 ## 0.135.1
 
 ### Patch Changes
