@@ -20,6 +20,8 @@ export interface SeatPickMarker {
   seatNumber: string
   /** Single character / short label shown on the seat tile. */
   label: string
+  /** Full passenger name for accessible labels; falls back to `label`. */
+  name?: string
   /** Tailwind colour utility group, e.g. "bg-primary text-primary-foreground". */
   swatch?: string
 }
@@ -318,7 +320,7 @@ function seatAriaLabel(
   if (pick) {
     return formatMessage(m.seatSelectedFor, {
       seat: seat.seatNumber,
-      passenger: pick.label,
+      passenger: pick.name ?? pick.label,
     })
   }
   if (seat.status === "available" || seat.status === "selected") {
