@@ -6,6 +6,7 @@ import {
   updateOptionUnitSchema,
   updateProductOptionSchema,
   updateProductSchema,
+  validateMergedOptionUnit,
 } from "./validation-core.js"
 
 describe("core update validation", () => {
@@ -35,6 +36,33 @@ describe("core update validation", () => {
       isRequired: false,
       isHidden: false,
       sortOrder: 0,
+    })
+  })
+
+  it("rejects option unit age ranges where minAge is greater than maxAge", () => {
+    const result = insertOptionUnitSchema.safeParse({ name: "Senior", minAge: 70, maxAge: 12 })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: ["maxAge"], message: "maxAge must be ≥ minAge" }),
+        ]),
+      )
+    }
+  })
+
+  it("accepts option unit age ranges where minAge equals maxAge", () => {
+    expect(insertOptionUnitSchema.parse({ name: "Infant", minAge: 2, maxAge: 2 })).toMatchObject({
+      minAge: 2,
+      maxAge: 2,
+    })
+  })
+
+  it("validates merged option unit age ranges for partial updates", () => {
+    expect(validateMergedOptionUnit({ minAge: 70, maxAge: 12 })).toEqual({
+      ok: false,
+      issues: [{ path: ["maxAge"], message: "maxAge must be ≥ minAge" }],
     })
   })
 })

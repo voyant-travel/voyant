@@ -1,4 +1,5 @@
 import { booleanQueryParam } from "@voyant-travel/db/helpers"
+import * as rrulePackage from "rrule"
 import { z } from "zod"
 
 import {
@@ -14,6 +15,18 @@ import {
   pricingDependencyTypeSchema,
 } from "./validation-shared.js"
 
+type RRulePackage = typeof import("rrule")
+type RRulePackageCompat = RRulePackage & {
+  default?: RRulePackage
+  rrule?: RRulePackage
+}
+
+const rrulePackageCompat = rrulePackage as RRulePackageCompat
+const { rrulestr } =
+  rrulePackageCompat.rrulestr != null
+    ? rrulePackageCompat
+    : (rrulePackageCompat.default ?? rrulePackageCompat.rrule ?? rrulePackageCompat)
+
 const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
@@ -25,6 +38,115 @@ const currencyCodeSchema = z
   .regex(/^[A-Z]{3}$/)
 const nullableDateSchema = z.string().date().nullable().optional()
 const moneySchema = z.number().int().min(0).nullable().optional()
+
+export type PricingValidationIssue = { path: string[]; message: string }
+export type PricingValidationResult = { ok: true } | { ok: false; issues: PricingValidationIssue[] }
+
+type PricingCategoryValidationShape = {
+  minAge?: number | null | undefined
+  maxAge?: number | null | undefined
+}
+
+type PriceScheduleValidationShape = {
+  recurrenceRule?: string | null | undefined
+  validFrom?: string | null | undefined
+  validTo?: string | null | undefined
+}
+
+type OptionPriceRuleValidationShape = {
+  minPerBooking?: number | null | undefined
+  maxPerBooking?: number | null | undefined
+}
+
+type OptionUnitPriceRuleValidationShape = {
+  minQuantity?: number | null | undefined
+  maxQuantity?: number | null | undefined
+}
+
+function collectIntegerRangeIssues(
+  data: Record<string, number | null | undefined>,
+  minKey: string,
+  maxKey: string,
+): PricingValidationIssue[] {
+  const min = data[minKey]
+  const max = data[maxKey]
+  if (min == null || max == null || max >= min) return []
+  return [{ path: [maxKey], message: `${maxKey} must be ≥ ${minKey}` }]
+}
+
+function isValidRecurrenceRule(value: string): boolean {
+  const trimmed = value.trim()
+  if (trimmed === "") return false
+
+  const hasDtstart = /(?:^|\n)DTSTART[:;]/.test(trimmed)
+  const hasRrule = /(?:^|\n)RRULE[:;]/.test(trimmed)
+  const body = hasRrule ? trimmed : `RRULE:${trimmed}`
+  const fullRule = hasDtstart ? body : `DTSTART:20000101T000000Z\n${body}`
+
+  try {
+    rrulestr(fullRule)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function toResult(issues: PricingValidationIssue[]): PricingValidationResult {
+  return issues.length === 0 ? { ok: true } : { ok: false, issues }
+}
+
+function collectPricingCategoryIssues(
+  data: PricingCategoryValidationShape,
+): PricingValidationIssue[] {
+  return collectIntegerRangeIssues(data, "minAge", "maxAge")
+}
+
+function collectPriceScheduleIssues(data: PriceScheduleValidationShape): PricingValidationIssue[] {
+  const issues: PricingValidationIssue[] = []
+  if (data.validFrom != null && data.validTo != null && data.validTo < data.validFrom) {
+    issues.push({ path: ["validTo"], message: "validTo must be ≥ validFrom" })
+  }
+  if (data.recurrenceRule != null && !isValidRecurrenceRule(data.recurrenceRule)) {
+    issues.push({ path: ["recurrenceRule"], message: "recurrenceRule must be a valid RRULE" })
+  }
+  return issues
+}
+
+function collectOptionPriceRuleIssues(
+  data: OptionPriceRuleValidationShape,
+): PricingValidationIssue[] {
+  return collectIntegerRangeIssues(data, "minPerBooking", "maxPerBooking")
+}
+
+function collectOptionUnitPriceRuleIssues(
+  data: OptionUnitPriceRuleValidationShape,
+): PricingValidationIssue[] {
+  return collectIntegerRangeIssues(data, "minQuantity", "maxQuantity")
+}
+
+export function validateMergedPricingCategory(
+  data: PricingCategoryValidationShape,
+): PricingValidationResult {
+  return toResult(collectPricingCategoryIssues(data))
+}
+
+export function validateMergedPriceSchedule(
+  data: PriceScheduleValidationShape,
+): PricingValidationResult {
+  return toResult(collectPriceScheduleIssues(data))
+}
+
+export function validateMergedOptionPriceRule(
+  data: OptionPriceRuleValidationShape,
+): PricingValidationResult {
+  return toResult(collectOptionPriceRuleIssues(data))
+}
+
+export function validateMergedOptionUnitPriceRule(
+  data: OptionUnitPriceRuleValidationShape,
+): PricingValidationResult {
+  return toResult(collectOptionUnitPriceRuleIssues(data))
+}
 
 type StripDefault<T extends z.core.SomeType> = T extends z.ZodDefault<infer U> ? U : T
 type StripDefaultShape<T extends z.ZodRawShape> = {
@@ -60,8 +182,18 @@ const pricingCategoryCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 
-export const insertPricingCategorySchema = pricingCategoryCoreSchema
-export const updatePricingCategorySchema = partialWithoutDefaults(pricingCategoryCoreSchema)
+export const insertPricingCategorySchema = pricingCategoryCoreSchema.superRefine((data, ctx) => {
+  for (const issue of collectPricingCategoryIssues(data)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
+export const updatePricingCategorySchema = partialWithoutDefaults(
+  pricingCategoryCoreSchema,
+).superRefine((data, ctx) => {
+  for (const issue of collectPricingCategoryIssues(data)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
 export const pricingCategoryListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
   optionId: z.string().optional(),
@@ -170,8 +302,18 @@ const priceScheduleCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 
-export const insertPriceScheduleSchema = priceScheduleCoreSchema
-export const updatePriceScheduleSchema = partialWithoutDefaults(priceScheduleCoreSchema)
+export const insertPriceScheduleSchema = priceScheduleCoreSchema.superRefine((data, ctx) => {
+  for (const issue of collectPriceScheduleIssues(data)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
+export const updatePriceScheduleSchema = partialWithoutDefaults(
+  priceScheduleCoreSchema,
+).superRefine((data, ctx) => {
+  for (const issue of collectPriceScheduleIssues(data)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
 export const priceScheduleListQuerySchema = paginationSchema.extend({
   priceCatalogId: z.string().optional(),
   active: booleanQueryParam.optional(),
@@ -199,8 +341,18 @@ const optionPriceRuleCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 
-export const insertOptionPriceRuleSchema = optionPriceRuleCoreSchema
-export const updateOptionPriceRuleSchema = partialWithoutDefaults(optionPriceRuleCoreSchema)
+export const insertOptionPriceRuleSchema = optionPriceRuleCoreSchema.superRefine((data, ctx) => {
+  for (const issue of collectOptionPriceRuleIssues(data)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
+export const updateOptionPriceRuleSchema = partialWithoutDefaults(
+  optionPriceRuleCoreSchema,
+).superRefine((data, ctx) => {
+  for (const issue of collectOptionPriceRuleIssues(data)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
 export const optionPriceRuleListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
   optionId: z.string().optional(),
@@ -227,8 +379,20 @@ const optionUnitPriceRuleCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 
-export const insertOptionUnitPriceRuleSchema = optionUnitPriceRuleCoreSchema
-export const updateOptionUnitPriceRuleSchema = partialWithoutDefaults(optionUnitPriceRuleCoreSchema)
+export const insertOptionUnitPriceRuleSchema = optionUnitPriceRuleCoreSchema.superRefine(
+  (data, ctx) => {
+    for (const issue of collectOptionUnitPriceRuleIssues(data)) {
+      ctx.addIssue({ code: "custom", ...issue })
+    }
+  },
+)
+export const updateOptionUnitPriceRuleSchema = partialWithoutDefaults(
+  optionUnitPriceRuleCoreSchema,
+).superRefine((data, ctx) => {
+  for (const issue of collectOptionUnitPriceRuleIssues(data)) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
 export const optionUnitPriceRuleListQuerySchema = paginationSchema.extend({
   optionPriceRuleId: z.string().optional(),
   optionId: z.string().optional(),
