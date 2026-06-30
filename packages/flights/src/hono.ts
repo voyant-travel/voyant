@@ -112,6 +112,10 @@ function attachPaymentSession<T extends FlightOrder>(
   }
 }
 
+function statusForAdapterErrorMessage(message: string): 404 | 500 {
+  return /(?:not found|_not_found\b)/i.test(message) ? 404 : 500
+}
+
 function paymentSessionOptionsForIntent(
   intent: PaymentIntent | undefined,
 ): { paymentMethod?: "bank_transfer" | "credit_card"; startCardPayment?: boolean } | null {
@@ -195,7 +199,7 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       return c.json(response)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      return c.json({ error: message }, /not found/i.test(message) ? 404 : 500)
+      return c.json({ error: message }, statusForAdapterErrorMessage(message))
     }
   })
 
@@ -309,7 +313,7 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       return c.json(response)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      return c.json({ error: message }, /not found/i.test(message) ? 404 : 500)
+      return c.json({ error: message }, statusForAdapterErrorMessage(message))
     }
   })
 
@@ -328,7 +332,7 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
       return c.json(response)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      return c.json({ error: message }, /not found/i.test(message) ? 404 : 500)
+      return c.json({ error: message }, statusForAdapterErrorMessage(message))
     }
   })
 

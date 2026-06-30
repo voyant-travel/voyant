@@ -328,4 +328,34 @@ describe("flights hono module", () => {
     })
     expect(payment.ensureOrderSession).not.toHaveBeenCalled()
   })
+
+  it("returns 404 when reading a missing order", async () => {
+    const adapter = stubAdapter({
+      getOrder: vi.fn(async () => {
+        throw new Error("order_not_found")
+      }),
+    })
+    const app = mount(adapter)
+
+    const res = await app.request("/v1/admin/flights/orders/no_such_order")
+
+    expect(res.status).toBe(404)
+    await expect(res.json()).resolves.toEqual({ error: "order_not_found" })
+  })
+
+  it("returns 404 when cancelling a missing order", async () => {
+    const adapter = stubAdapter({
+      cancelOrder: vi.fn(async () => {
+        throw new Error("order_not_found")
+      }),
+    })
+    const app = mount(adapter)
+
+    const res = await app.request("/v1/admin/flights/orders/no_such_order/cancel", {
+      method: "POST",
+    })
+
+    expect(res.status).toBe(404)
+    await expect(res.json()).resolves.toEqual({ error: "order_not_found" })
+  })
 })
