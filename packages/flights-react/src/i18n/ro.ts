@@ -332,6 +332,7 @@ export const flightsUiRo = {
   },
   flightOfferRow: {
     select: "Selecteaza",
+    viewDetails: "Vezi detaliile zborului",
     codeshare: "Codeshare",
     interline: "Interline",
   },

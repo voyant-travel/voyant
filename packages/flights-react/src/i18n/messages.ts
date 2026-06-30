@@ -288,6 +288,7 @@ export type FlightsUiMessages = {
   }
   flightOfferRow: {
     select: string
+    viewDetails: string
     codeshare: string
     interline: string
   }
