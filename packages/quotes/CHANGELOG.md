@@ -1,5 +1,11 @@
 # @voyant-travel/crm
 
+## 0.123.9
+
+### Patch Changes
+
+- 5cc83f5: Return actionable 404/409 responses for invalid quote-version parents and blocked pipeline deletes.
+
 ## 0.123.8
 
 ### Patch Changes
