@@ -43,14 +43,29 @@ export function FlightOfferRow({
   const i18n = useFlightsUiI18nOrDefault()
   const messages = i18n.messages
   const interactive = !!onClick
-  const Container: "button" | "div" = interactive ? "button" : "div"
+  const open = onClick ? () => onClick(offer) : undefined
   return (
-    <Container
-      type={interactive ? "button" : undefined}
-      onClick={onClick ? () => onClick(offer) : undefined}
+    // A non-button container keeps the row clickable while leaving the inner
+    // "Select" button valid — nesting <button> inside <button> is invalid HTML.
+    // biome-ignore lint/a11y/noStaticElementInteractions: row gets role="button" + key handling when interactive; the conditional role can't be statically narrowed. -- owner: flights-react; intentional pending typed cleanup.
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={open}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                open?.()
+              }
+            }
+          : undefined
+      }
       className={cn(
         "flex w-full items-stretch gap-4 rounded-md border bg-card p-4 text-left shadow-sm transition-colors",
-        interactive && "hover:border-primary/40 hover:bg-accent/30",
+        interactive &&
+          "cursor-pointer hover:border-primary/40 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected && "border-primary ring-1 ring-primary/40",
         className,
       )}
@@ -79,7 +94,7 @@ export function FlightOfferRow({
           </button>
         )}
       </div>
-    </Container>
+    </div>
   )
 }
 
