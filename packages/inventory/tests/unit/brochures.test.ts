@@ -1,3 +1,4 @@
+import type { StorageProvider } from "@voyant-travel/storage"
 import { createLocalStorageProvider } from "@voyant-travel/storage/providers/local"
 import { describe, expect, it, vi } from "vitest"
 
@@ -112,5 +113,46 @@ describe("generateAndStoreProductBrochure", () => {
     })
     expect(result.brochure.mimeType).toBe("application/pdf")
     expect(result.brochure.fileSize).toBe(4)
+  })
+
+  it("wraps storage upload failures with an actionable brochure storage error", async () => {
+    const { generateAndStoreProductBrochure, ProductBrochureStorageError } = await import(
+      "../../src/tasks/brochures.js"
+    )
+    const upstreamError = new Error("local R2 bucket is unavailable")
+    const storage: StorageProvider = {
+      name: "failing",
+      upload: vi.fn(async () => {
+        throw upstreamError
+      }),
+      delete: vi.fn(async () => {}),
+      signedUrl: vi.fn(async () => "https://files.example/signed.pdf"),
+      get: vi.fn(async () => null),
+    }
+
+    const promise = generateAndStoreProductBrochure({} as never, "prod_123", { storage })
+
+    await expect(promise).rejects.toThrow(ProductBrochureStorageError)
+    await expect(promise).rejects.toThrow(/Configure a usable media storage provider/)
+    await expect(promise).rejects.not.toThrow(/local R2 bucket/)
+    await expect(promise).rejects.toMatchObject({ cause: upstreamError })
+  })
+
+  it("reports storage URL configuration failures before persisting brochure metadata", async () => {
+    const { generateAndStoreProductBrochure, ProductBrochureStorageError } = await import(
+      "../../src/tasks/brochures.js"
+    )
+    const storage: StorageProvider = {
+      name: "no-url",
+      upload: vi.fn(async () => ({ key: "brochures/products/prod_123/brochure.pdf", url: "" })),
+      delete: vi.fn(async () => {}),
+      signedUrl: vi.fn(async () => "https://files.example/signed.pdf"),
+      get: vi.fn(async () => null),
+    }
+
+    const promise = generateAndStoreProductBrochure({} as never, "prod_123", { storage })
+
+    await expect(promise).rejects.toThrow(ProductBrochureStorageError)
+    await expect(promise).rejects.toThrow(/Configure a usable media storage provider/)
   })
 })

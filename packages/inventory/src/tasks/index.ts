@@ -33,5 +33,7 @@ export {
 export {
   type GenerateAndStoreProductBrochureOptions,
   generateAndStoreProductBrochure,
+  PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE,
+  ProductBrochureStorageError,
 } from "./brochures.js"
 export { type GenerateProductPdfResult, generateProductPdf } from "./generate-pdf.js"

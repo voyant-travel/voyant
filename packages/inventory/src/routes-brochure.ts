@@ -28,7 +28,9 @@ import type { Env } from "./route-env.js"
 import {
   createDefaultProductBrochureTemplate,
   generateAndStoreProductBrochure,
+  PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE,
   type ProductBrochurePrinter,
+  ProductBrochureStorageError,
   type ProductBrochureTemplateDefinition,
 } from "./tasks/index.js"
 
@@ -164,6 +166,9 @@ export function createProductBrochureRoutes(
         const message = err instanceof Error ? err.message : String(err)
         if (message.includes("Generated brochure is too large")) {
           return c.json({ error: message }, 413)
+        }
+        if (err instanceof ProductBrochureStorageError) {
+          return c.json({ error: PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE }, 503)
         }
         throw err
       }
