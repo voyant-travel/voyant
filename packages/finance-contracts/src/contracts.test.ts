@@ -4,6 +4,7 @@ import {
   insertPaymentSchema,
   invoiceStatusSchema,
   paymentMethodSchema,
+  taxClassListQuerySchema,
   updatePaymentSchema,
 } from "./index.js"
 
@@ -30,5 +31,11 @@ describe("finance-contracts", () => {
     ).toBe("pay-create-1")
 
     expect(updatePaymentSchema.parse({ idempotencyKey: "ignored" })).toEqual({})
+  })
+
+  it("parses false tax-class active query filters as false", () => {
+    const result = taxClassListQuerySchema.parse({ active: "false" })
+
+    expect(result.active).toBe(false)
   })
 })

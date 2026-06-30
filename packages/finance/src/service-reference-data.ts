@@ -19,6 +19,7 @@ import {
   asc,
   desc,
   eq,
+  inArray,
   invoiceExternalRefs,
   invoices,
   paginate,
@@ -29,6 +30,48 @@ import {
   taxRegimes,
   toTimestamp,
 } from "./service-shared.js"
+
+export class ReferenceDataValidationError extends Error {
+  readonly status = 400
+  readonly code: string
+  readonly details?: Record<string, unknown>
+
+  constructor(message: string, details?: Record<string, unknown>, code = "invalid_request") {
+    super(message)
+    this.name = "ReferenceDataValidationError"
+    this.code = code
+    this.details = details
+  }
+}
+
+type TaxClassRegimeReferenceInput = Pick<CreateTaxClassInput, "defaultRegimeId" | "lines">
+
+async function assertTaxClassRegimesExist(
+  db: PostgresJsDatabase,
+  data: Partial<TaxClassRegimeReferenceInput>,
+) {
+  const referencedIds = new Set<string>()
+  if (data.defaultRegimeId) referencedIds.add(data.defaultRegimeId)
+  for (const line of data.lines ?? []) referencedIds.add(line.regime_id)
+
+  if (referencedIds.size === 0) return
+
+  const requestedIds = [...referencedIds]
+  const rows = await db
+    .select({ id: taxRegimes.id })
+    .from(taxRegimes)
+    .where(inArray(taxRegimes.id, requestedIds))
+  const existingIds = new Set(rows.map((row) => row.id))
+  const missingRegimeIds = requestedIds.filter((id) => !existingIds.has(id))
+
+  if (missingRegimeIds.length > 0) {
+    throw new ReferenceDataValidationError(
+      "Tax class references unknown tax regimes",
+      { missingRegimeIds },
+      "invalid_reference",
+    )
+  }
+}
 
 export const financeReferenceDataService = {
   async listTaxRegimes(db: PostgresJsDatabase, query: TaxRegimeListQuery) {
@@ -119,6 +162,8 @@ export const financeReferenceDataService = {
   },
 
   async createTaxClass(db: PostgresJsDatabase, data: CreateTaxClassInput) {
+    await assertTaxClassRegimesExist(db, data)
+
     const [row] = await db
       .insert(taxClasses)
       .values({
@@ -134,6 +179,8 @@ export const financeReferenceDataService = {
   },
 
   async updateTaxClass(db: PostgresJsDatabase, id: string, data: UpdateTaxClassInput) {
+    await assertTaxClassRegimesExist(db, data)
+
     const [row] = await db
       .update(taxClasses)
       .set({ ...data, updatedAt: new Date() })

@@ -5,6 +5,7 @@ import {
   invoiceFromBookingSchema,
   invoiceNumberSeriesListQuerySchema,
   renderInvoiceInputSchema,
+  taxClassListQuerySchema,
 } from "../../src/validation-billing.js"
 
 describe("invoiceFromBookingSchema", () => {
@@ -147,6 +148,14 @@ describe("insertInvoiceNumberSeriesSchema", () => {
 describe("invoiceNumberSeriesListQuerySchema", () => {
   it("parses false query-string active filters as false", () => {
     const result = invoiceNumberSeriesListQuerySchema.parse({ active: "false" })
+
+    expect(result.active).toBe(false)
+  })
+})
+
+describe("taxClassListQuerySchema", () => {
+  it("parses false query-string active filters as false", () => {
+    const result = taxClassListQuerySchema.parse({ active: "false" })
 
     expect(result.active).toBe(false)
   })
