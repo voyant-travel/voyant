@@ -1,5 +1,13 @@
 # @voyant-travel/crm
 
+## 0.123.11
+
+### Patch Changes
+
+- 790a18d: Keep quote version PATCH payloads sparse so omitted status does not trigger lifecycle-only status guards.
+- Updated dependencies [790a18d]
+  - @voyant-travel/quotes-contracts@0.108.1
+
 ## 0.123.10
 
 ### Patch Changes

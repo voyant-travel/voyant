@@ -1,5 +1,16 @@
 # @voyant-travel/flights
 
+## 0.137.2
+
+### Patch Changes
+
+- 5c53561: Return 404 instead of 500 when flight order read or cancel adapters report `order_not_found`.
+- 2427218: Create flight order payment sessions for bank-transfer booking intents.
+- 7850b66: Keep flight order reads side-effect free for payment sessions so card-ticketed orders do not create hosted-checkout sessions after booking.
+- bddb539: Keep flight order read endpoints side-effect-free by attaching existing payment session summaries without creating sessions or starting card payment.
+- Updated dependencies [2427218]
+  - @voyant-travel/flights-contracts@0.104.6
+
 ## 0.137.1
 
 ### Patch Changes

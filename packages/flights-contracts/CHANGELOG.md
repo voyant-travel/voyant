@@ -1,5 +1,11 @@
 # @voyant-travel/flights-contracts
 
+## 0.104.6
+
+### Patch Changes
+
+- 2427218: Create flight order payment sessions for bank-transfer booking intents.
+
 ## 0.104.5
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @voyant-travel/framework
 
+## 0.9.21
+
+### Patch Changes
+
+- 8848457: Allow the standard public finance voucher validation route to be reached without an authenticated storefront session.
+- Updated dependencies [5c53561]
+- Updated dependencies [790a18d]
+- Updated dependencies [2427218]
+- Updated dependencies [7850b66]
+- Updated dependencies [bddb539]
+  - @voyant-travel/flights@0.137.2
+  - @voyant-travel/quotes@0.123.11
+  - @voyant-travel/finance@0.137.6
+
 ## 0.9.20
 
 ### Patch Changes
