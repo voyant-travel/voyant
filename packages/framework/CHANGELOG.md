@@ -1,5 +1,18 @@
 # @voyant-travel/framework
 
+## 0.9.29
+
+### Patch Changes
+
+- Updated dependencies [ed5463f]
+- Updated dependencies [a10b9ba]
+- Updated dependencies [e005c4d]
+- Updated dependencies [ad02eae]
+  - @voyant-travel/operations@0.5.5
+  - @voyant-travel/inventory@0.5.10
+  - @voyant-travel/commerce@0.19.4
+  - @voyant-travel/flights@0.137.4
+
 ## 0.9.28
 
 ### Patch Changes

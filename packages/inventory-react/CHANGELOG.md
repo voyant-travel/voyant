@@ -1,5 +1,16 @@
 # @voyant-travel/inventory-react
 
+## 0.19.4
+
+### Patch Changes
+
+- ad02eae: Reject non-image product media as cover media and surface brochure generation failures in the product detail UI.
+- Updated dependencies [a10b9ba]
+- Updated dependencies [e005c4d]
+- Updated dependencies [ad02eae]
+  - @voyant-travel/inventory@0.5.10
+  - @voyant-travel/i18n@0.109.5
+
 ## 0.19.3
 
 ### Patch Changes

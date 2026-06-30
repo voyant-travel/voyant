@@ -1,5 +1,14 @@
 # @voyant-travel/flights-react
 
+## 0.137.4
+
+### Patch Changes
+
+- 0622c7f: Show human-readable payment method label on the flight booking confirmation step instead of the raw enum value (e.g. "Ticket on agency credit" rather than "Ticket On_credit").
+- Updated dependencies [ad02eae]
+  - @voyant-travel/i18n@0.109.5
+  - @voyant-travel/flights@0.137.4
+
 ## 0.137.3
 
 ### Patch Changes
