@@ -51,11 +51,37 @@ export type FormOutput = z.output<typeof templateFormSchema>
 export type TemplateAttachment = z.infer<typeof templateAttachmentSchema>
 export type InsertionTarget = "subject" | "body" | "text"
 
+type SamplePayloadVariable = {
+  key: string
+  example: string
+  type?: string
+}
+
 function parsePath(path: string) {
   return path
     .replace(/\[(\d+)\]/g, ".$1")
     .split(".")
     .filter(Boolean)
+}
+
+function isContainer(value: unknown): value is Record<string, unknown> | unknown[] {
+  return typeof value === "object" && value != null
+}
+
+function coerceSampleValue(variable: SamplePayloadVariable) {
+  switch (variable.type) {
+    case "array":
+      return []
+    case "boolean":
+      return variable.example === "true"
+    case "currency":
+    case "number": {
+      const value = Number(variable.example)
+      return Number.isFinite(value) ? value : variable.example
+    }
+    default:
+      return variable.example
+  }
 }
 
 function setDeepValue(target: Record<string, unknown>, path: string, value: unknown) {
@@ -75,7 +101,11 @@ function setDeepValue(target: Record<string, unknown>, path: string, value: unkn
         current[arrayIndex] = value
         return
       }
-      if (current[arrayIndex] == null) {
+      const currentValue = current[arrayIndex]
+      if (
+        !isContainer(currentValue) ||
+        (nextIsIndex ? !Array.isArray(currentValue) : Array.isArray(currentValue))
+      ) {
         current[arrayIndex] = nextIsIndex ? [] : {}
       }
       current = current[arrayIndex] as Record<string, unknown> | unknown[]
@@ -88,7 +118,11 @@ function setDeepValue(target: Record<string, unknown>, path: string, value: unkn
       record[segment] = value
       return
     }
-    if (record[segment] == null) {
+    const currentValue = record[segment]
+    if (
+      !isContainer(currentValue) ||
+      (nextIsIndex ? !Array.isArray(currentValue) : Array.isArray(currentValue))
+    ) {
       record[segment] = nextIsIndex ? [] : {}
     }
     current = record[segment] as Record<string, unknown> | unknown[]
@@ -97,16 +131,20 @@ function setDeepValue(target: Record<string, unknown>, path: string, value: unkn
 
 export function buildSamplePayload(
   variableGroups: Array<{
-    variables: Array<{ key: string; example: string }>
+    variables: SamplePayloadVariable[]
   }>,
 ) {
   const sample: Record<string, unknown> = {}
   for (const group of variableGroups) {
     for (const variable of group.variables) {
-      setDeepValue(sample, variable.key, variable.example)
+      setDeepValue(sample, variable.key, coerceSampleValue(variable))
     }
   }
   return sample
+}
+
+export function resolvePreviewDataInput(input: string, fallback: string) {
+  return input.trim() ? input : fallback
 }
 
 export function appendTemplateValue(current: string | undefined, addition: string) {
