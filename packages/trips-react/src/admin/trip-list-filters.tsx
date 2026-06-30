@@ -273,9 +273,8 @@ export function TripListFiltersPopover({
             <Label>{filterMessages.total}</Label>
             <div className="flex items-center gap-2">
               <Input
-                type="number"
-                min={0}
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 placeholder={filterMessages.min}
                 value={totalMin}
                 onChange={(event) => {
@@ -287,9 +286,8 @@ export function TripListFiltersPopover({
               />
               <span className="text-muted-foreground">-</span>
               <Input
-                type="number"
-                min={0}
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 placeholder={filterMessages.max}
                 value={totalMax}
                 onChange={(event) => {
