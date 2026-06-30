@@ -1,5 +1,11 @@
 # @voyant-travel/ui
 
+## 0.108.7
+
+### Patch Changes
+
+- f37a3f1: Expose async combobox search results through the Base UI collection so options are visible to assistive technology.
+
 ## 0.108.6
 
 ### Patch Changes

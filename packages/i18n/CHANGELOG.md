@@ -1,5 +1,12 @@
 # @voyant-travel/i18n
 
+## 0.109.3
+
+### Patch Changes
+
+- b1f90b0: Block trip component mutations after checkout has started and surface the locked state in the admin composer.
+- c1d8f71: Return failed trip reservations as conflict responses, hide internal SQL details from reservation failures, and persist the admin draft-booking toggle before reserve.
+
 ## 0.109.2
 
 ### Patch Changes
