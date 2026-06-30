@@ -61,3 +61,17 @@ export function formatProductMoney(amountCents: number | null | undefined, curre
   if (amountCents == null) return "-"
   return `${(amountCents / 100).toFixed(2)} ${currency}`
 }
+
+export function formatUnitPriceCellActionLabel({
+  action,
+  amount,
+  unitName,
+  categoryName,
+}: {
+  action: string
+  amount?: string | null
+  unitName: string
+  categoryName?: string | null
+}) {
+  return [action, amount, unitName, categoryName].filter(Boolean).join(" - ")
+}

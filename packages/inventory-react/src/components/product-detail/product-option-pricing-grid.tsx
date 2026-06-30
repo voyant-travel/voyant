@@ -20,6 +20,7 @@ import {
   categoryAppliesToUnit,
   ExtraPriceRulesPanel,
   formatProductMoney,
+  formatUnitPriceCellActionLabel,
   getCategoryCondition,
   isTravelerCategory,
   TravelerCategoryDialog,
@@ -378,12 +379,21 @@ export function OptionPricingGrid({
                     {columns.map((column) => {
                       const cell = findCell(unit.id, column.id)
                       const canPrice = categoryAppliesToUnit(column, unit)
+                      const cellAmount = cell
+                        ? formatProductMoney(cell.sellAmountCents, productCurrency)
+                        : null
                       return (
                         <td key={column.id ?? "__base__"} className="p-2.5">
                           {cell ? (
                             <div className="flex items-center gap-1.5">
                               <button
                                 type="button"
+                                aria-label={formatUnitPriceCellActionLabel({
+                                  action: priceRuleMessages.editAction,
+                                  amount: cellAmount,
+                                  unitName: unit.name,
+                                  categoryName: column.name,
+                                })}
                                 onClick={() => {
                                   setCellRuleId(defaultRule?.id)
                                   setEditingCell(cell)
@@ -393,7 +403,7 @@ export function OptionPricingGrid({
                                 }}
                                 className="font-mono text-foreground hover:underline"
                               >
-                                {formatProductMoney(cell.sellAmountCents, productCurrency)}
+                                {cellAmount}
                               </button>
                               <button
                                 type="button"
@@ -407,6 +417,11 @@ export function OptionPricingGrid({
                           ) : canPrice ? (
                             <button
                               type="button"
+                              aria-label={formatUnitPriceCellActionLabel({
+                                action: t.setPrice,
+                                unitName: unit.name,
+                                categoryName: column.name,
+                              })}
                               onClick={() => void openCellDialog(unit, column.id)}
                               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                             >

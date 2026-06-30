@@ -9,6 +9,7 @@ import type { OptionPriceRuleData } from "./product-option-price-rule-dialog.js"
 import {
   categoryAppliesToUnit,
   formatProductMoney,
+  formatUnitPriceCellActionLabel,
   getCategoryCondition,
   getUnitTypeLabel,
   isTravelerCategory,
@@ -169,12 +170,21 @@ export function UnitPriceMatrix({
                 {columns.map((category) => {
                   const cell = findCell(unit.id, category.id)
                   const canPriceCategory = categoryAppliesToUnit(category, unit)
+                  const cellAmount = cell
+                    ? formatProductMoney(cell.sellAmountCents, productCurrency)
+                    : null
                   return (
                     <td key={category.id ?? "__default__"} className="p-2">
                       {cell ? (
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
+                            aria-label={formatUnitPriceCellActionLabel({
+                              action: priceRuleMessages.editAction,
+                              amount: cellAmount,
+                              unitName: unit.name,
+                              categoryName: category.name,
+                            })}
                             onClick={() => {
                               setEditingCell(cell)
                               setPreselectedUnitId(undefined)
@@ -183,10 +193,16 @@ export function UnitPriceMatrix({
                             }}
                             className="font-mono text-foreground hover:underline"
                           >
-                            {formatProductMoney(cell.sellAmountCents, productCurrency)}
+                            {cellAmount}
                           </button>
                           <button
                             type="button"
+                            aria-label={formatUnitPriceCellActionLabel({
+                              action: priceRuleMessages.deleteAction,
+                              amount: cellAmount,
+                              unitName: unit.name,
+                              categoryName: category.name,
+                            })}
                             onClick={() => {
                               if (confirm(priceRuleMessages.deleteCellConfirm)) {
                                 deleteMutation.mutate(cell.id)
@@ -200,6 +216,11 @@ export function UnitPriceMatrix({
                       ) : canPriceCategory ? (
                         <button
                           type="button"
+                          aria-label={formatUnitPriceCellActionLabel({
+                            action: priceRuleMessages.setUnitCategoryPrice,
+                            unitName: unit.name,
+                            categoryName: category.name,
+                          })}
                           onClick={() => {
                             setEditingCell(undefined)
                             setPreselectedUnitId(unit.id)

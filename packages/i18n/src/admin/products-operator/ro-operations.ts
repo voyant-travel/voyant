@@ -318,6 +318,7 @@ export const operatorAdminProductsMessagesRoOperations = {
     travelerCategoryDeleteConfirm: 'Elimini tipul de călător "{name}"?',
     travelerCategoryEdit: "Editează tipul de călător",
     travelerCategoryDelete: "Elimină tipul de călător",
+    setUnitCategoryPrice: "Setează prețul",
     travelerCategoryDialogDescription:
       "Creeaza o categorie specifica produsului, precum Child under 6, apoi seteaza pretul doar pe randurile de camera permise.",
     travelerCategoryNamePlaceholder: "Child under 6",
