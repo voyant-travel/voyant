@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.9.27
+
+### Patch Changes
+
+- @voyant-travel/storefront@0.139.3
+
 ## 0.9.26
 
 ### Patch Changes
