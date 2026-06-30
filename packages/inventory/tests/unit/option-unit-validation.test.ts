@@ -70,6 +70,23 @@ describe("insertOptionUnitSchema — occupancy", () => {
   })
 })
 
+describe("insertOptionUnitSchema — quantity", () => {
+  it("rejects maxQuantity < minQuantity", () => {
+    const result = insertOptionUnitSchema.safeParse({
+      name: "Family",
+      minQuantity: 5,
+      maxQuantity: 2,
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.join(".") === "maxQuantity")
+      expect(issue).toBeDefined()
+      expect(issue?.message).toMatch(/maxQuantity/)
+    }
+  })
+})
+
 describe("updateOptionUnitSchema — occupancy", () => {
   it("accepts a partial patch that doesn't touch occupancy or unitType", () => {
     const result = updateOptionUnitSchema.safeParse({ name: "Renamed" })
@@ -110,6 +127,18 @@ describe("validateMergedOptionUnit", () => {
       occupancyMax: 2,
     })
     expect(result.ok).toBe(false)
+  })
+
+  it("fails when maxQuantity < minQuantity in merged state", () => {
+    const result = validateMergedOptionUnit({
+      minQuantity: 5,
+      maxQuantity: 2,
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      issues: [{ path: ["maxQuantity"], message: "maxQuantity must be ≥ minQuantity" }],
+    })
   })
 
   it("ignores occupancy on non-room/vehicle types", () => {

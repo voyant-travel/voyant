@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "uidx_product_days_itinerary_day_number" ON "product_days" USING btree ("itinerary_id","day_number");

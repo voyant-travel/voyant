@@ -87,6 +87,7 @@ export const productDays = pgTable(
   (table) => [
     index("idx_product_days_itinerary").on(table.itineraryId),
     index("idx_product_days_itinerary_day_number").on(table.itineraryId, table.dayNumber),
+    uniqueIndex("uidx_product_days_itinerary_day_number").on(table.itineraryId, table.dayNumber),
   ],
 )
 

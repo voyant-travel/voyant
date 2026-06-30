@@ -8,6 +8,10 @@ import {
   productMedia,
   products,
 } from "./schema.js"
+import {
+  assertItineraryDayNumberAvailable,
+  mapItineraryDayNumberWriteError,
+} from "./service-itinerary-validation.js"
 import type {
   insertDaySchema,
   insertDayServiceSchema,
@@ -452,20 +456,41 @@ export const itineraryProductsService = {
       return null
     }
 
-    const [row] = await db
-      .insert(productDays)
-      .values({ ...data, itineraryId })
-      .returning()
+    await assertItineraryDayNumberAvailable(db, itineraryId, data.dayNumber)
+
+    let row: typeof productDays.$inferSelect | undefined
+    try {
+      ;[row] = await db
+        .insert(productDays)
+        .values({ ...data, itineraryId })
+        .returning()
+    } catch (err) {
+      mapItineraryDayNumberWriteError(err)
+    }
 
     return row
   },
 
   async updateDay(db: PostgresJsDatabase, dayId: string, data: UpdateDayInput) {
-    const [row] = await db
-      .update(productDays)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(productDays.id, dayId))
-      .returning()
+    const existing = await getDayById(db, dayId)
+    if (!existing) {
+      return null
+    }
+
+    if (data.dayNumber !== undefined) {
+      await assertItineraryDayNumberAvailable(db, existing.itineraryId, data.dayNumber, dayId)
+    }
+
+    let row: typeof productDays.$inferSelect | undefined
+    try {
+      ;[row] = await db
+        .update(productDays)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(productDays.id, dayId))
+        .returning()
+    } catch (err) {
+      mapItineraryDayNumberWriteError(err)
+    }
 
     return row ?? null
   },
