@@ -322,10 +322,13 @@ function seatAriaLabel(
     })
   }
   if (seat.status === "available" || seat.status === "selected") {
-    const parts = [
-      formatMessage(m.seatAvailable, { seat: seat.seatNumber }),
-      humanCategory(seat.category, messages),
-    ]
+    // A "selected" status with no local pick marker is a preselected/held seat;
+    // announce it as selected rather than collapsing it into "available".
+    const prefix =
+      seat.status === "selected"
+        ? formatMessage(m.seatSelected, { seat: seat.seatNumber })
+        : formatMessage(m.seatAvailable, { seat: seat.seatNumber })
+    const parts = [prefix, humanCategory(seat.category, messages)]
     if (seat.price) {
       parts.push(formatMoney(seat.price.amount, seat.price.currency))
     }

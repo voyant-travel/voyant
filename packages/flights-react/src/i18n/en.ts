@@ -418,6 +418,7 @@ export const flightsUiEn = {
     noCharge: "No charge",
     pickedBy: "Picked by {passenger}",
     seatAvailable: "Seat {seat}, available",
+    seatSelected: "Seat {seat}, selected",
     seatUnavailable: "Seat {seat}, unavailable",
     seatSelectedFor: "Seat {seat} selected for {passenger}",
     categories: {

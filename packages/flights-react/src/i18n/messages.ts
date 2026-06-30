@@ -358,6 +358,7 @@ export type FlightsUiMessages = {
     noCharge: string
     pickedBy: string
     seatAvailable: string
+    seatSelected: string
     seatUnavailable: string
     seatSelectedFor: string
     categories: Record<

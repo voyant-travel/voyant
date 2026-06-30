@@ -420,6 +420,7 @@ export const flightsUiRo = {
     noCharge: "Fara cost",
     pickedBy: "Ales de {passenger}",
     seatAvailable: "Locul {seat}, disponibil",
+    seatSelected: "Locul {seat}, selectat",
     seatUnavailable: "Locul {seat}, indisponibil",
     seatSelectedFor: "Locul {seat} ales pentru {passenger}",
     categories: {
