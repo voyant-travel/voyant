@@ -357,6 +357,10 @@ export type FlightsUiMessages = {
     aisle: string
     noCharge: string
     pickedBy: string
+    seatAvailable: string
+    seatSelected: string
+    seatUnavailable: string
+    seatSelectedFor: string
     categories: Record<
       "exit_row" | "extra_legroom" | "preferred" | "premium" | "bulkhead" | "standard",
       string
@@ -388,6 +392,8 @@ export type FlightsUiMessages = {
     specialAssistance: string
     noAssistanceNeeded: string
     extras: string
+    decreaseExtra: string
+    increaseExtra: string
   }
   paxCabinPopover: {
     adults: string

@@ -420,7 +420,7 @@ function SeatMapPanel({
       const paxIdx = paxRows.findIndex((r) => r.passengerId === p.passengerId)
       const pax = paxRows[paxIdx]
       if (!pax) return null
-      return { seatNumber: p.seatNumber, label: pax.short, swatch: pax.swatch }
+      return { seatNumber: p.seatNumber, label: pax.short, name: pax.label, swatch: pax.swatch }
     })
     .filter((p): p is SeatPickMarker => p !== null)
 

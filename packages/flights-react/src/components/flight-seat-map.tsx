@@ -20,6 +20,8 @@ export interface SeatPickMarker {
   seatNumber: string
   /** Single character / short label shown on the seat tile. */
   label: string
+  /** Full passenger name for accessible labels; falls back to `label`. */
+  name?: string
   /** Tailwind colour utility group, e.g. "bg-primary text-primary-foreground". */
   swatch?: string
 }
@@ -204,6 +206,7 @@ function SeatTile({
   const tile = (
     <button
       type="button"
+      aria-label={seatAriaLabel(seat, pick, messages)}
       disabled={!isClickable}
       onClick={onClick ? () => onClick(seat) : undefined}
       className={cn(
@@ -302,6 +305,39 @@ function LegendChip({ className, label }: { className: string; label: string }) 
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Accessible name for a seat tile. Composes the seat number with its status,
+ * and (for available seats) the cabin category + price so screen readers
+ * announce the same information the visual tile + tooltip convey.
+ */
+function seatAriaLabel(
+  seat: Seat,
+  pick: SeatPickMarker | null,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
+  const m = messages.flightSeatMap
+  if (pick) {
+    return formatMessage(m.seatSelectedFor, {
+      seat: seat.seatNumber,
+      passenger: pick.name ?? pick.label,
+    })
+  }
+  if (seat.status === "available" || seat.status === "selected") {
+    // A "selected" status with no local pick marker is a preselected/held seat;
+    // announce it as selected rather than collapsing it into "available".
+    const prefix =
+      seat.status === "selected"
+        ? formatMessage(m.seatSelected, { seat: seat.seatNumber })
+        : formatMessage(m.seatAvailable, { seat: seat.seatNumber })
+    const parts = [prefix, humanCategory(seat.category, messages)]
+    if (seat.price) {
+      parts.push(formatMoney(seat.price.amount, seat.price.currency))
+    }
+    return parts.join(", ")
+  }
+  return formatMessage(m.seatUnavailable, { seat: seat.seatNumber })
+}
 
 function categoryClasses(category: Seat["category"]): string {
   switch (category) {
