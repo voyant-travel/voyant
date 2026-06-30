@@ -1,5 +1,12 @@
 # @voyant-travel/flights-react
 
+## 0.137.5
+
+### Patch Changes
+
+- 398c5cc: Render the flight offer row as a non-button container so the inner "Select" button no longer nests inside a button, fixing invalid-HTML hydration warnings while preserving click and keyboard selection.
+  - @voyant-travel/flights@0.137.5
+
 ## 0.137.4
 
 ### Patch Changes
