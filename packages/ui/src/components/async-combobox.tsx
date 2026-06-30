@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   Combobox,
+  ComboboxCollection,
   ComboboxContent,
   ComboboxEmpty,
   ComboboxInput,
@@ -98,6 +99,10 @@ export function AsyncCombobox<T>({
   }, [selectedLabel])
 
   const itemKeys = React.useMemo(() => items.map(getKey), [items, getKey])
+  const itemByKey = React.useMemo(
+    () => new Map(items.map((item) => [getKey(item), item])),
+    [items, getKey],
+  )
 
   // base-ui uses this to:
   //   1. filter the list as the user types
@@ -112,6 +117,7 @@ export function AsyncCombobox<T>({
   return (
     <Combobox
       items={itemKeys}
+      filteredItems={itemKeys}
       value={value}
       inputValue={inputValue}
       autoHighlight
@@ -138,20 +144,24 @@ export function AsyncCombobox<T>({
       <ComboboxContent className={className}>
         <ComboboxEmpty>{emptyText}</ComboboxEmpty>
         <ComboboxList>
-          {items.map((item) => {
-            const key = getKey(item)
-            const secondary = getSecondary?.(item)
-            return (
-              <ComboboxItem key={key} value={key}>
-                <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                  <span className="truncate">{getLabel(item)}</span>
-                  {secondary && (
-                    <span className="shrink-0 text-xs text-muted-foreground">{secondary}</span>
-                  )}
-                </div>
-              </ComboboxItem>
-            )
-          })}
+          <ComboboxCollection>
+            {(key) => {
+              const item = itemByKey.get(key as string)
+              if (!item) return null
+              const itemKey = getKey(item)
+              const secondary = getSecondary?.(item)
+              return (
+                <ComboboxItem key={itemKey} value={itemKey}>
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                    <span className="truncate">{getLabel(item)}</span>
+                    {secondary && (
+                      <span className="shrink-0 text-xs text-muted-foreground">{secondary}</span>
+                    )}
+                  </div>
+                </ComboboxItem>
+              )
+            }}
+          </ComboboxCollection>
         </ComboboxList>
       </ComboboxContent>
     </Combobox>
