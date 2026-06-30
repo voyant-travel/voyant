@@ -21,6 +21,28 @@ pnpm -F operator dev:worker   # Voyant Workflows dev loop
 Dev server runs on port `3300`.
 The local workflows runtime listens on port `3310`.
 
+## Flights Demo API
+
+The operator starter is wired to the standalone flights demo API when
+`FLIGHTS_DEMO_API_URL` is set in `.dev.vars`. The service runs on port `3320`
+and owns a separate Postgres database for demo flight orders.
+
+From the monorepo root or from an extracted packaged starter:
+
+```bash
+cp apps/flights-demo-api/.env.example apps/flights-demo-api/.env
+docker compose -f apps/flights-demo-api/docker-compose.yml up -d
+pnpm --dir apps/flights-demo-api install
+pnpm --dir apps/flights-demo-api db:migrate
+pnpm --dir apps/flights-demo-api dev
+```
+
+Then keep this in `.dev.vars`:
+
+```bash
+FLIGHTS_DEMO_API_URL="http://localhost:3320"
+```
+
 ## Database
 
 The starter owns its `drizzle.config.ts` and `migrations/`:

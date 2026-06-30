@@ -20,7 +20,19 @@ pnpm db:migrate             # creates demo_flight_orders
 pnpm dev                    # listens on :3320 by default
 ```
 
-Then in your starter (e.g. `starters/operator/.dev.vars`):
+From the repository root or the packaged operator starter root, the equivalent
+commands are:
+
+```bash
+cp apps/flights-demo-api/.env.example apps/flights-demo-api/.env
+docker compose -f apps/flights-demo-api/docker-compose.yml up -d
+pnpm --dir apps/flights-demo-api install
+pnpm --dir apps/flights-demo-api db:migrate
+pnpm --dir apps/flights-demo-api dev
+```
+
+Then in your starter (e.g. `starters/operator/.dev.vars` in the repository, or
+`.dev.vars` in a packaged starter):
 
 ```
 FLIGHTS_DEMO_API_URL=http://localhost:3320
