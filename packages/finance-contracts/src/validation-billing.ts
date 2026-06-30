@@ -370,7 +370,7 @@ export const insertTaxClassSchema = taxClassCoreSchema
 export const updateTaxClassSchema = taxClassCoreSchema.partial()
 export const taxClassListQuerySchema = paginationSchema.extend({
   code: z.string().optional(),
-  active: z.coerce.boolean().optional(),
+  active: booleanQueryParam.optional(),
 })
 
 const taxPolicySideSchema = z.enum(["sell", "buy"])

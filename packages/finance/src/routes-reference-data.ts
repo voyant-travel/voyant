@@ -29,6 +29,7 @@ import { listResponseSchema } from "@voyant-travel/types"
 
 import { type Env, notFound } from "./routes-shared.js"
 import { financeService } from "./service.js"
+import { ReferenceDataValidationError } from "./service-reference-data.js"
 import {
   insertInvoiceNumberSeriesSchema,
   insertInvoiceTemplateSchema,
@@ -50,7 +51,11 @@ import {
   updateTaxRegimeSchema,
 } from "./validation.js"
 
-const errorResponseSchema = z.object({ error: z.string() })
+const errorResponseSchema = z.object({
+  error: z.string(),
+  code: z.string().optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
+})
 const deleteResponseSchema = z.object({ success: z.boolean() })
 const idParamSchema = z.object({ id: z.string() })
 
@@ -679,23 +684,43 @@ const taxClassRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook
   .openapi(listTaxClassesRoute, async (c) =>
     c.json(await financeService.listTaxClasses(c.get("db"), c.req.valid("query")), 200),
   )
-  .openapi(createTaxClassRoute, async (c) =>
-    c.json(
-      { data: created(await financeService.createTaxClass(c.get("db"), c.req.valid("json"))) },
-      201,
-    ),
-  )
+  .openapi(createTaxClassRoute, async (c) => {
+    try {
+      return c.json(
+        { data: created(await financeService.createTaxClass(c.get("db"), c.req.valid("json"))) },
+        201,
+      )
+    } catch (error) {
+      if (error instanceof ReferenceDataValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+      throw error
+    }
+  })
   .openapi(getTaxClassRoute, async (c) => {
     const row = await financeService.getTaxClassById(c.get("db"), c.req.valid("param").id)
     return row ? c.json({ data: row }, 200) : notFound(c, "Tax class not found")
   })
   .openapi(updateTaxClassRoute, async (c) => {
-    const row = await financeService.updateTaxClass(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    return row ? c.json({ data: row }, 200) : notFound(c, "Tax class not found")
+    try {
+      const row = await financeService.updateTaxClass(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row ? c.json({ data: row }, 200) : notFound(c, "Tax class not found")
+    } catch (error) {
+      if (error instanceof ReferenceDataValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+      throw error
+    }
   })
   .openapi(deleteTaxClassRoute, async (c) => {
     const row = await financeService.deleteTaxClass(c.get("db"), c.req.valid("param").id)
