@@ -331,6 +331,7 @@ export const flightsUiEn = {
   },
   flightOfferRow: {
     select: "Select",
+    viewDetails: "View flight details",
     codeshare: "Codeshare",
     interline: "Interline",
   },

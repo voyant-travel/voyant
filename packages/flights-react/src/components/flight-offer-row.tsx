@@ -49,28 +49,40 @@ export function FlightOfferRow({
     <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} messages={messages} />
   ))
   return (
-    // The row container is a plain, non-interactive element. When the row is
-    // clickable, the flight-info area below is a <button> and the "Select" CTA
-    // is a sibling <button> — two siblings, never nested interactive controls.
     <div
       className={cn(
-        "flex w-full items-stretch gap-4 rounded-md border bg-card p-4 text-left shadow-sm transition-colors",
+        "relative flex w-full items-stretch gap-4 rounded-md border bg-card p-4 text-left shadow-sm transition-colors",
         selected && "border-primary ring-1 ring-primary/40",
         className,
       )}
     >
-      {interactive ? (
+      {/* Full-card overlay button keeps the whole row clickable to open the
+          detail sheet. It sits behind the content (which is pointer-events-none
+          so clicks fall through to it); the Select CTA below re-enables pointer
+          events, so the two controls are siblings — never nested interactive
+          elements, and no invalid <button>-in-<button>. */}
+      {interactive && (
         <button
           type="button"
           onClick={open}
-          className="-m-2 flex min-w-0 flex-1 flex-col gap-3 rounded-md p-2 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {itineraries}
-        </button>
-      ) : (
-        <div className="flex min-w-0 flex-1 flex-col gap-3">{itineraries}</div>
+          aria-label={messages.flightOfferRow.viewDetails}
+          className="absolute inset-0 rounded-md transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
       )}
-      <div className="flex shrink-0 flex-col items-end justify-center gap-2 border-l pl-4">
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 flex-col gap-3",
+          interactive && "pointer-events-none relative",
+        )}
+      >
+        {itineraries}
+      </div>
+      <div
+        className={cn(
+          "flex shrink-0 flex-col items-end justify-center gap-2 border-l pl-4",
+          interactive && "pointer-events-none relative",
+        )}
+      >
         <div className="font-semibold text-2xl tabular-nums">
           {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency, i18n)}
         </div>
@@ -82,7 +94,7 @@ export function FlightOfferRow({
               e.stopPropagation()
               onSelect(offer)
             }}
-            className="mt-1 inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 font-medium text-primary-foreground text-xs hover:bg-primary/90"
+            className="pointer-events-auto relative mt-1 inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 font-medium text-primary-foreground text-xs hover:bg-primary/90"
           >
             {selectLabel ?? messages.flightOfferRow.select}
           </button>
