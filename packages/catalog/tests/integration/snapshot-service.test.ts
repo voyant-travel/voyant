@@ -13,6 +13,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest"
 import {
   captureSnapshot,
   captureSnapshotGraph,
+  captureSnapshotGraphIdempotent,
   fetchEntitySnapshot,
   fetchSnapshotsForBooking,
 } from "../../src/services/snapshot-service.js"
@@ -127,6 +128,36 @@ describe.skipIf(!DB_AVAILABLE)("SnapshotService integration", () => {
 
     const allForBooking = await fetchSnapshotsForBooking(db, bookingId)
     expect(allForBooking).toHaveLength(3)
+  })
+
+  it("captureSnapshotGraphIdempotent returns existing rows on duplicate delivery", async () => {
+    const bookingId = newId("bookings" as never)
+    createdBookingIds.push(bookingId)
+
+    const inputs = [
+      {
+        entityModule: "products",
+        entityId: "prod_retry",
+        sourceKind: "owned",
+        frozenPayload: { title: "Retry-safe product" },
+      },
+      {
+        entityModule: "extras",
+        entityId: "extra_retry",
+        sourceKind: "owned",
+        frozenPayload: { title: "Retry-safe extra" },
+      },
+    ]
+
+    const first = await captureSnapshotGraphIdempotent(db, bookingId, inputs)
+    const second = await captureSnapshotGraphIdempotent(db, bookingId, inputs)
+
+    expect(first).toHaveLength(2)
+    expect(second).toHaveLength(2)
+    expect(second.map((row) => row.id).sort()).toEqual(first.map((row) => row.id).sort())
+
+    const allForBooking = await fetchSnapshotsForBooking(db, bookingId)
+    expect(allForBooking).toHaveLength(2)
   })
 
   it("fetchEntitySnapshot returns null when no snapshot exists", async () => {

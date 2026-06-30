@@ -312,6 +312,7 @@ export {
   type CaptureSnapshotInput,
   captureSnapshot,
   captureSnapshotGraph,
+  captureSnapshotGraphIdempotent,
   fetchEntitySnapshot,
   fetchSnapshotsForBooking,
   viewToFrozenPayload,
