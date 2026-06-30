@@ -1,5 +1,14 @@
 # @voyant-travel/inventory-react
 
+## 0.19.5
+
+### Patch Changes
+
+- ea21ebc: Start product detail summaries on the product default/base language instead of
+  auto-selecting the first or operator-locale translation.
+- Updated dependencies [5c1294f]
+  - @voyant-travel/inventory@0.5.11
+
 ## 0.19.4
 
 ### Patch Changes

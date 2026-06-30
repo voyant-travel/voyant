@@ -1,5 +1,13 @@
 # @voyant-travel/inventory
 
+## 0.5.11
+
+### Patch Changes
+
+- 5c1294f: Reject inverted inventory product dates, option availability dates, option-unit quantity bounds, and duplicate itinerary day numbers.
+- Updated dependencies [5c1294f]
+  - @voyant-travel/products-contracts@0.105.17
+
 ## 0.5.10
 
 ### Patch Changes
