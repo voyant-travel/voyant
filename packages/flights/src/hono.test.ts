@@ -205,6 +205,42 @@ describe("flights hono module", () => {
     expect(payment.fetchOrderSessions).toHaveBeenCalledWith(expect.anything(), ["ord_card"])
   })
 
+  it("GET /orders/:orderId attaches an existing payment session without ensuring one", async () => {
+    const adapter = stubAdapter({
+      getOrder: vi.fn(async () => ({
+        order: {
+          orderId: "ord_1",
+          passengers: [],
+          providerData: { source: "stub" },
+        } as never,
+      })),
+    })
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => {
+        throw new Error("GET must not create or start payment sessions")
+      }),
+      fetchOrderSessions: vi.fn(
+        async () => new Map([["ord_1", { sessionId: "ps_existing", status: "pending" }]]),
+      ),
+    }
+    const app = mount(adapter, payment)
+
+    const res = await app.request("/v1/admin/flights/orders/ord_1")
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      order: {
+        providerData: {
+          source: "stub",
+          paymentSessionId: "ps_existing",
+          paymentStatus: "pending",
+        },
+      },
+    })
+    expect(payment.fetchOrderSessions).toHaveBeenCalledWith(expect.anything(), ["ord_1"])
+    expect(payment.ensureOrderSession).not.toHaveBeenCalled()
+  })
+
   it("does not create payment sessions when listing orders", async () => {
     const adapter = stubAdapter({
       listOrders: vi.fn(async () => ({
@@ -225,6 +261,43 @@ describe("flights hono module", () => {
       orders: [{ orderId: "ord_card", status: "ticketed" }],
     })
     expect(payment.fetchOrderSessions).toHaveBeenCalledWith(expect.anything(), ["ord_card"])
+    expect(payment.ensureOrderSession).not.toHaveBeenCalled()
+  })
+
+  it("GET /orders attaches existing payment sessions without ensuring any", async () => {
+    const adapter = stubAdapter({
+      listOrders: vi.fn(async () => ({
+        orders: [
+          { orderId: "ord_1", passengers: [] },
+          { orderId: "ord_2", passengers: [] },
+        ] as never,
+        pagination: { total: 2, hasMore: false },
+      })),
+    })
+    const payment: FlightPaymentIntegration = {
+      ensureOrderSession: vi.fn(async () => {
+        throw new Error("GET must not create or start payment sessions")
+      }),
+      fetchOrderSessions: vi.fn(
+        async () =>
+          new Map([
+            ["ord_1", { sessionId: "ps_1", status: "pending" }],
+            ["ord_2", { sessionId: "ps_2", status: "paid" }],
+          ]),
+      ),
+    }
+    const app = mount(adapter, payment)
+
+    const res = await app.request("/v1/admin/flights/orders")
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      orders: [
+        { providerData: { paymentSessionId: "ps_1", paymentStatus: "pending" } },
+        { providerData: { paymentSessionId: "ps_2", paymentStatus: "paid" } },
+      ],
+    })
+    expect(payment.fetchOrderSessions).toHaveBeenCalledWith(expect.anything(), ["ord_1", "ord_2"])
     expect(payment.ensureOrderSession).not.toHaveBeenCalled()
   })
 
