@@ -31,6 +31,7 @@ type FormState = {
   channel: Channel
   provider: ProviderOption
   templateId: string | null
+  templateSlug: string | null
   recipientKind: RecipientKind
 }
 
@@ -41,6 +42,7 @@ function fromRecord(channel: ReminderStageChannelRecord | null, orderIndex: numb
       channel: "email",
       provider: "automatic",
       templateId: null,
+      templateSlug: null,
       recipientKind: "primary",
     }
   }
@@ -51,6 +53,7 @@ function fromRecord(channel: ReminderStageChannelRecord | null, orderIndex: numb
     channel: channel.channel,
     provider,
     templateId: channel.templateId ?? null,
+    templateSlug: channel.templateSlug ?? null,
     recipientKind: channel.recipientKind,
   }
 }
@@ -77,6 +80,7 @@ export function StageChannelEditorDialog({
   const [form, setForm] = useState<FormState>(() => fromRecord(channel, defaultOrderIndex))
   const isEdit = Boolean(channel)
   const isPending = create.isPending || update.isPending
+  const templatePickerValueKey = form.templateSlug || !form.templateId ? "slug" : "id"
 
   useEffect(() => {
     if (open) setForm(fromRecord(channel, defaultOrderIndex))
@@ -91,7 +95,7 @@ export function StageChannelEditorDialog({
       channel: form.channel,
       provider: form.provider === "automatic" ? null : form.provider,
       templateId: form.templateId,
-      templateSlug: null,
+      templateSlug: form.templateSlug,
       recipientKind: form.recipientKind,
       recipientRole: null,
     }
@@ -126,6 +130,7 @@ export function StageChannelEditorDialog({
                       channel: next,
                       // Picked template no longer matches the new channel — clear it.
                       templateId: null,
+                      templateSlug: null,
                     }))
                   }}
                 >
@@ -154,8 +159,15 @@ export function StageChannelEditorDialog({
             <Field>
               <FieldLabel>{messages.channel.fields.template}</FieldLabel>
               <TemplatePicker
-                value={form.templateId}
-                onChange={(value) => setField("templateId", value)}
+                value={form.templateSlug ?? form.templateId}
+                onChange={(value) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    templateId: templatePickerValueKey === "id" ? value : null,
+                    templateSlug: templatePickerValueKey === "slug" ? value : null,
+                  }))
+                }
+                valueKey={templatePickerValueKey}
                 channel={form.channel}
                 placeholder={messages.channel.placeholders.template}
               />
