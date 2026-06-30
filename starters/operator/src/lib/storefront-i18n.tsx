@@ -147,6 +147,13 @@ const storefrontMessagesEn = {
     ratePlan: "Rate plan",
     cancellation: "Cancellation: {policy}",
     includes: "Includes: {inclusions}",
+    unavailableTitle: "Stay unavailable",
+    unavailableNoRooms:
+      "This stay can't be booked online right now because no rooms are available.",
+    unavailableNoRatePlan:
+      "This room can't be booked online right now because no compatible rate plan is available.",
+    unavailableQuoteFailed:
+      "This stay can't be booked online right now because pricing couldn't be confirmed.",
   },
   shopDetailCruises: {
     occupancy: "Occupancy",
@@ -350,6 +357,13 @@ const storefrontMessagesRo: StorefrontMessages = {
     ratePlan: "Plan tarifar",
     cancellation: "Anulare: {policy}",
     includes: "Include: {inclusions}",
+    unavailableTitle: "Sejur indisponibil",
+    unavailableNoRooms:
+      "Acest sejur nu poate fi rezervat online acum deoarece nu exista camere disponibile.",
+    unavailableNoRatePlan:
+      "Aceasta camera nu poate fi rezervata online acum deoarece nu exista un plan tarifar compatibil.",
+    unavailableQuoteFailed:
+      "Acest sejur nu poate fi rezervat online acum deoarece pretul nu a putut fi confirmat.",
   },
   shopDetailCruises: {
     occupancy: "Ocupare",
