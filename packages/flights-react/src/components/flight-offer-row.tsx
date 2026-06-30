@@ -44,41 +44,32 @@ export function FlightOfferRow({
   const messages = i18n.messages
   const interactive = !!onClick
   const open = onClick ? () => onClick(offer) : undefined
+  const itineraries = offer.itineraries.map((itin, i) => (
+    // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return) -- owner: flights-react; existing suppression is intentional pending typed cleanup.
+    <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} messages={messages} />
+  ))
   return (
-    // A non-button container keeps the row clickable while leaving the inner
-    // "Select" button valid — nesting <button> inside <button> is invalid HTML.
-    // biome-ignore lint/a11y/noStaticElementInteractions: row gets role="button" + key handling when interactive; the conditional role can't be statically narrowed. -- owner: flights-react; intentional pending typed cleanup.
+    // The row container is a plain, non-interactive element. When the row is
+    // clickable, the flight-info area below is a <button> and the "Select" CTA
+    // is a sibling <button> — two siblings, never nested interactive controls.
     <div
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={open}
-      onKeyDown={
-        interactive
-          ? (e) => {
-              // Only act when the row itself is focused — Enter/Space on the
-              // inner "Select" button bubbles here and must not also open the row.
-              if (e.target !== e.currentTarget) return
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                open?.()
-              }
-            }
-          : undefined
-      }
       className={cn(
         "flex w-full items-stretch gap-4 rounded-md border bg-card p-4 text-left shadow-sm transition-colors",
-        interactive &&
-          "cursor-pointer hover:border-primary/40 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected && "border-primary ring-1 ring-primary/40",
         className,
       )}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
-        {offer.itineraries.map((itin, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return) -- owner: flights-react; existing suppression is intentional pending typed cleanup.
-          <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} messages={messages} />
-        ))}
-      </div>
+      {interactive ? (
+        <button
+          type="button"
+          onClick={open}
+          className="-m-2 flex min-w-0 flex-1 flex-col gap-3 rounded-md p-2 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {itineraries}
+        </button>
+      ) : (
+        <div className="flex min-w-0 flex-1 flex-col gap-3">{itineraries}</div>
+      )}
       <div className="flex shrink-0 flex-col items-end justify-center gap-2 border-l pl-4">
         <div className="font-semibold text-2xl tabular-nums">
           {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency, i18n)}
