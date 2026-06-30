@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.9.20
+
+### Patch Changes
+
+- 7d70797: Validate quote participant person IDs before creating participant records.
+- Updated dependencies [7d70797]
+  - @voyant-travel/quotes@0.123.10
+
 ## 0.9.19
 
 ### Patch Changes

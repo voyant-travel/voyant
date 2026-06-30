@@ -1,5 +1,11 @@
 # @voyant-travel/crm
 
+## 0.123.10
+
+### Patch Changes
+
+- 7d70797: Validate quote participant person IDs before creating participant records.
+
 ## 0.123.9
 
 ### Patch Changes
