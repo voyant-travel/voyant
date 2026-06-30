@@ -107,7 +107,12 @@ function makeFakeDb(state: {
     select: () => ({
       from: (table: unknown) => ({
         where: () => ({
-          limit: async () => (table === tripEnvelopes ? [state.envelope] : []),
+          limit: async () => {
+            if (table === tripEnvelopes) return [state.envelope]
+            if (table === tripComponents)
+              return state.components[0] ? [{ ...state.components[0] }] : []
+            return []
+          },
           orderBy: async () =>
             table === tripComponents
               ? [...state.components].sort((a, b) => a.sequence - b.sequence)
@@ -185,6 +190,71 @@ describe("trips cancellation", () => {
       ["product", "booked"],
     ])
     expect(result.envelope.status).toBe("booked")
+    expect(result.envelope.aggregateSubtotalAmountCents).toBe(10000)
+    expect(result.envelope.aggregateTaxAmountCents).toBe(900)
+    expect(result.envelope.aggregateTotalAmountCents).toBe(10900)
+    expect(result.envelope.aggregatePricingSnapshot).toEqual({
+      currency: "EUR",
+      subtotalAmountCents: 10000,
+      taxAmountCents: 900,
+      totalAmountCents: 10900,
+      componentCount: 1,
+      pricedComponentCount: 1,
+      warnings: [],
+    })
+  })
+
+  it("refreshes envelope totals after removing a component", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [
+        component({ id: "stay", sequence: 0, status: "draft", title: "Bucharest stay" }),
+        component({
+          id: "flight",
+          sequence: 1,
+          title: "Flight to London",
+          kind: "flight_placeholder",
+          entityModule: null,
+          entityId: null,
+          sourceKind: null,
+          bookingId: null,
+          componentSubtotalAmountCents: 20000,
+          componentTaxAmountCents: 1800,
+          componentTotalAmountCents: 21800,
+          pricingSnapshot: {
+            currency: "EUR",
+            subtotalAmountCents: 20000,
+            taxAmountCents: 1800,
+            totalAmountCents: 21800,
+          },
+        }),
+      ],
+      events: [],
+    }
+
+    const removed = await tripsService.removeComponent(makeFakeDb(state), "stay")
+
+    expect(removed?.status).toBe("removed")
+    expect(state.events).toMatchObject([
+      {
+        componentId: "stay",
+        eventType: "removed",
+        fromStatus: "draft",
+        toStatus: "removed",
+      },
+    ])
+    expect(state.envelope.aggregateSubtotalAmountCents).toBe(20000)
+    expect(state.envelope.aggregateTaxAmountCents).toBe(1800)
+    expect(state.envelope.aggregateTotalAmountCents).toBe(21800)
+    expect(state.envelope.aggregatePricingSnapshot).toEqual({
+      currency: "EUR",
+      subtotalAmountCents: 20000,
+      taxAmountCents: 1800,
+      totalAmountCents: 21800,
+      componentCount: 1,
+      pricedComponentCount: 1,
+      warnings: [],
+    })
   })
 
   it("marks committed components for staff remediation when cancellation is not wired", async () => {

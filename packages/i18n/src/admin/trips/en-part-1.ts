@@ -53,6 +53,8 @@ export const adminTripsMessagesEnPart1 = {
       copied: "Copied",
       subtotal: "Subtotal",
       tax: "Tax",
+      activeTotal: "Active total",
+      cancelledTotal: "Cancelled value",
     },
     billing: {
       title: "Billing",

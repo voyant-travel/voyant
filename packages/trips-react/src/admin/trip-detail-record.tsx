@@ -49,6 +49,7 @@ import {
   formatPersonName,
   readBilling,
   readTravelers,
+  summarizeTripComponentValues,
   type TripTravelerRecord,
 } from "./trip-detail-record-model.js"
 
@@ -62,6 +63,21 @@ export function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void })
   const activeComponents = sortComponentsBySchedule(
     trip.components.filter((component) => component.status !== "removed"),
   )
+  const valueBreakdown = summarizeTripComponentValues(trip.components, envelope.aggregateCurrency)
+  const hasCancelledValue =
+    valueBreakdown.cancelled.componentCount > 0 || valueBreakdown.cancelled.totalAmountCents !== 0
+  const activeSubtotalAmountCents =
+    valueBreakdown.active.valuedComponentCount > 0 || hasCancelledValue
+      ? valueBreakdown.active.subtotalAmountCents
+      : envelope.aggregateSubtotalAmountCents
+  const activeTaxAmountCents =
+    valueBreakdown.active.valuedComponentCount > 0 || hasCancelledValue
+      ? valueBreakdown.active.taxAmountCents
+      : envelope.aggregateTaxAmountCents
+  const activeTotalAmountCents =
+    valueBreakdown.active.valuedComponentCount > 0 || hasCancelledValue
+      ? valueBreakdown.active.totalAmountCents
+      : envelope.aggregateTotalAmountCents
   const bookedComponents = activeComponents.filter((component) => component.bookingId).length
   const externalRefs = activeComponents.filter(
     (component) => component.orderId || component.paymentSessionId,
@@ -109,8 +125,8 @@ export function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void })
 
       <section className="grid gap-4 md:grid-cols-4">
         <SummaryCard
-          label={detailMessages.summary.total}
-          value={formatMoney(envelope.aggregateTotalAmountCents, envelope.aggregateCurrency)}
+          label={detailMessages.summary.activeTotal}
+          value={formatMoney(activeTotalAmountCents, valueBreakdown.active.currency)}
           icon={CreditCard}
         />
         <SummaryCard
@@ -220,17 +236,26 @@ export function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void })
             <Separator />
             <SummaryLine
               label={detailMessages.summary.subtotal}
-              value={formatMoney(envelope.aggregateSubtotalAmountCents, envelope.aggregateCurrency)}
+              value={formatMoney(activeSubtotalAmountCents, valueBreakdown.active.currency)}
             />
             <SummaryLine
               label={detailMessages.summary.tax}
-              value={formatMoney(envelope.aggregateTaxAmountCents, envelope.aggregateCurrency)}
+              value={formatMoney(activeTaxAmountCents, valueBreakdown.active.currency)}
             />
             <SummaryLine
-              label={detailMessages.summary.total}
-              value={formatMoney(envelope.aggregateTotalAmountCents, envelope.aggregateCurrency)}
+              label={detailMessages.summary.activeTotal}
+              value={formatMoney(activeTotalAmountCents, valueBreakdown.active.currency)}
               strong
             />
+            {hasCancelledValue ? (
+              <SummaryLine
+                label={detailMessages.summary.cancelledTotal}
+                value={formatMoney(
+                  valueBreakdown.cancelled.totalAmountCents,
+                  valueBreakdown.cancelled.currency ?? envelope.aggregateCurrency,
+                )}
+              />
+            ) : null}
           </CardContent>
         </Card>
       </section>

@@ -4,10 +4,15 @@ import { eq } from "drizzle-orm"
 import type { TripComponent, TripEnvelope } from "./schema.js"
 import { tripComponents, tripEnvelopes } from "./schema.js"
 import {
+  aggregateComponentPricing,
   assertTripComponentCanBeUpdated,
   hasCommittedComponentReference,
 } from "./service-helpers.js"
-import { createComponentEvent, markComponentForStaffRemediation } from "./service-internals.js"
+import {
+  createComponentEvent,
+  markComponentForStaffRemediation,
+  minComponentPriceExpiry,
+} from "./service-internals.js"
 import { getTrip } from "./service-trips.js"
 import type {
   CancelComponentResult,
@@ -101,7 +106,7 @@ export async function cancelComponents(
             request: input.request,
           })
 
-      if (!result || result.status !== "cancelled") {
+      if (result?.status !== "cancelled") {
         const reason = result?.reason ?? `cancel_${result?.status ?? "not_configured"}`
         const updated = await markComponentForStaffRemediation(db, component, reason)
         componentsById.set(updated.id, updated)
@@ -127,9 +132,16 @@ export async function cancelComponents(
 
   const refreshed = await getTrip(db, input.envelopeId)
   const components = refreshed?.components ?? [...componentsById.values()]
-  const envelope = await maybeCancelEnvelope(db, preview.envelope, components)
+  const refreshedEnvelope = await refreshEnvelopePricingAfterCancellation(
+    db,
+    refreshed?.envelope ?? preview.envelope,
+    components,
+  )
+  const envelope = await maybeCancelEnvelope(db, refreshedEnvelope, components)
   const finalTrip =
-    envelope.status === preview.envelope.status ? refreshed : await getTrip(db, input.envelopeId)
+    envelope === refreshedEnvelope && refreshed
+      ? { envelope, components: refreshed.components }
+      : await getTrip(db, input.envelopeId)
 
   return {
     envelope,
@@ -333,6 +345,33 @@ async function maybeCancelEnvelope(
   const [updated] = (await db
     .update(tripEnvelopes)
     .set({ status: "cancelled", updatedAt: new Date() })
+    .where(eq(tripEnvelopes.id, envelope.id))
+    .returning()) as TripEnvelope[]
+
+  return updated ?? envelope
+}
+
+async function refreshEnvelopePricingAfterCancellation(
+  db: AnyDrizzleDb,
+  envelope: TripEnvelope,
+  components: TripComponent[],
+): Promise<TripEnvelope> {
+  const pricing = aggregateComponentPricing(components, envelope.aggregateCurrency ?? undefined)
+  const activeComponents = components.filter(
+    (component) => component.status !== "cancelled" && component.status !== "removed",
+  )
+
+  const [updated] = (await db
+    .update(tripEnvelopes)
+    .set({
+      aggregateCurrency: pricing.currency,
+      aggregateSubtotalAmountCents: pricing.subtotalAmountCents,
+      aggregateTaxAmountCents: pricing.taxAmountCents,
+      aggregateTotalAmountCents: pricing.totalAmountCents,
+      aggregatePricingSnapshot: pricing,
+      currentPriceExpiresAt: minComponentPriceExpiry(activeComponents),
+      updatedAt: new Date(),
+    })
     .where(eq(tripEnvelopes.id, envelope.id))
     .returning()) as TripEnvelope[]
 

@@ -1,3 +1,5 @@
+import type { Trip } from "@voyant-travel/trips"
+
 export interface BillingRecordValue {
   buyerType?: string
   personId?: string
@@ -17,6 +19,57 @@ export interface TripTravelerRecord {
   lastName?: string
   email?: string
   role?: string
+}
+
+export interface TripComponentValueTotals {
+  currency: string | null
+  subtotalAmountCents: number
+  taxAmountCents: number
+  totalAmountCents: number
+  componentCount: number
+  valuedComponentCount: number
+}
+
+export interface TripComponentValueBreakdown {
+  active: TripComponentValueTotals
+  cancelled: TripComponentValueTotals
+}
+
+type ComponentValue = Pick<
+  Trip["components"][number],
+  | "status"
+  | "componentCurrency"
+  | "componentSubtotalAmountCents"
+  | "componentTaxAmountCents"
+  | "componentTotalAmountCents"
+>
+
+export function summarizeTripComponentValues(
+  components: ComponentValue[],
+  preferredCurrency?: string | null,
+): TripComponentValueBreakdown {
+  const currency =
+    preferredCurrency ??
+    components.find((component) => component.componentCurrency)?.componentCurrency ??
+    null
+  const active = emptyTotals(currency)
+  const cancelled = emptyTotals(currency)
+
+  for (const component of components) {
+    if (component.status === "removed") continue
+    const bucket = component.status === "cancelled" ? cancelled : active
+    bucket.componentCount += 1
+    if (component.componentTotalAmountCents == null) continue
+    if (currency && component.componentCurrency && component.componentCurrency !== currency)
+      continue
+
+    bucket.valuedComponentCount += 1
+    bucket.subtotalAmountCents += component.componentSubtotalAmountCents ?? 0
+    bucket.taxAmountCents += component.componentTaxAmountCents ?? 0
+    bucket.totalAmountCents += component.componentTotalAmountCents
+  }
+
+  return { active, cancelled }
 }
 
 export function readBilling(travelerParty: Record<string, unknown>): BillingRecordValue | null {
@@ -84,4 +137,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined
+}
+
+function emptyTotals(currency: string | null): TripComponentValueTotals {
+  return {
+    currency,
+    subtotalAmountCents: 0,
+    taxAmountCents: 0,
+    totalAmountCents: 0,
+    componentCount: 0,
+    valuedComponentCount: 0,
+  }
 }

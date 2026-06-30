@@ -53,6 +53,8 @@ export const adminTripsMessagesRoPart1 = {
       copied: "Copiat",
       subtotal: "Subtotal",
       tax: "Taxa",
+      activeTotal: "Total activ",
+      cancelledTotal: "Valoare anulata",
     },
     billing: {
       title: "Facturare",

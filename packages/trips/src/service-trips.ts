@@ -9,10 +9,15 @@ import {
   updatesSupplierCommitmentEnvelopeFields,
 } from "./service-edit-safeguards.js"
 import {
+  aggregateComponentPricing,
   assertTripComponentCanBeUpdated,
   assertTripComponentCanReceiveRefs,
 } from "./service-helpers.js"
-import { createComponentEvent, statusToEventType } from "./service-internals.js"
+import {
+  createComponentEvent,
+  minComponentPriceExpiry,
+  statusToEventType,
+} from "./service-internals.js"
 import { type Trip, type TripListResult, TripsInvariantError } from "./service-types.js"
 import { assertTripTravelerPartyComplete } from "./traveler-party-validation.js"
 import type {
@@ -374,7 +379,43 @@ export async function removeComponent(
   db: AnyDrizzleDb,
   componentId: string,
 ): Promise<TripComponent | null> {
-  return updateComponent(db, componentId, { status: "removed" })
+  const component = await updateComponent(db, componentId, { status: "removed" })
+  if (!component) return null
+
+  await refreshEnvelopePricingAfterRemoval(db, component.envelopeId)
+  return component
+}
+
+async function refreshEnvelopePricingAfterRemoval(
+  db: AnyDrizzleDb,
+  envelopeId: string,
+): Promise<TripEnvelope | null> {
+  const trip = await getTrip(db, envelopeId)
+  if (!trip) return null
+
+  const activeComponents = trip.components.filter(
+    (component) => component.status !== "cancelled" && component.status !== "removed",
+  )
+  const pricing = aggregateComponentPricing(
+    trip.components,
+    trip.envelope.aggregateCurrency ?? undefined,
+  )
+
+  const [updated] = (await db
+    .update(tripEnvelopes)
+    .set({
+      aggregateCurrency: pricing.currency,
+      aggregateSubtotalAmountCents: pricing.subtotalAmountCents,
+      aggregateTaxAmountCents: pricing.taxAmountCents,
+      aggregateTotalAmountCents: pricing.totalAmountCents,
+      aggregatePricingSnapshot: pricing,
+      currentPriceExpiresAt: minComponentPriceExpiry(activeComponents),
+      updatedAt: new Date(),
+    })
+    .where(eq(tripEnvelopes.id, envelopeId))
+    .returning()) as TripEnvelope[]
+
+  return updated ?? trip.envelope
 }
 
 export async function reorderComponents(
