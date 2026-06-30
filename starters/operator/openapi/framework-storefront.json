@@ -40080,6 +40080,26 @@
                             "product"
                           ]
                         },
+                        "provenance": {
+                          "type": "object",
+                          "properties": {
+                            "source_kind": {
+                              "type": "string"
+                            },
+                            "source_provider": {
+                              "type": "string"
+                            },
+                            "source_connection_id": {
+                              "type": "string"
+                            },
+                            "source_ref": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_kind"
+                          ]
+                        },
                         "served_locale": {
                           "type": "string"
                         },
@@ -40113,6 +40133,7 @@
                       },
                       "required": [
                         "content",
+                        "provenance",
                         "served_locale",
                         "match_kind",
                         "source",
@@ -43780,6 +43801,24 @@
           },
           "409": {
             "description": "Hold expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Checkout setup is incomplete",
             "content": {
               "application/json": {
                 "schema": {
