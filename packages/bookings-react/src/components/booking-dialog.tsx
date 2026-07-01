@@ -44,8 +44,6 @@ function createBookingFormSchema(messages: ReturnType<typeof useBookingsUiMessag
       "cancelled",
     ]),
     sellCurrency: z.string().min(3).max(3, messages.bookingDialog.validation.sellCurrencyInvalid),
-    sellAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-    costAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
     startDate: z.string().optional().nullable(),
     endDate: z.string().optional().nullable(),
     pax: z.coerce.number().int().positive().optional().or(z.literal("")).nullable(),
@@ -81,6 +79,7 @@ const BOOKING_STATUS_VALUES = [
   "cancelled",
 ] as const
 const DEFAULT_CURRENCY = "EUR" // i18n-literal-ok ISO default currency
+const noopCurrencyChange = (_value: number | null) => {}
 
 /**
  * Single booking dialog that handles both create and edit:
@@ -139,8 +138,6 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
       bookingNumber: "",
       status: "draft",
       sellCurrency: DEFAULT_CURRENCY,
-      sellAmountCents: "",
-      costAmountCents: "",
       startDate: "",
       endDate: "",
       pax: "",
@@ -155,8 +152,6 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
       status:
         booking.status === "on_hold" || booking.status === "expired" ? "draft" : booking.status,
       sellCurrency: booking.sellCurrency,
-      sellAmountCents: booking.sellAmountCents ?? "",
-      costAmountCents: booking.costAmountCents ?? "",
       startDate: booking.startDate ?? "",
       endDate: booking.endDate ?? "",
       pax: booking.pax ?? "",
@@ -169,8 +164,6 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
       bookingNumber: values.bookingNumber,
       status: values.status,
       sellCurrency: values.sellCurrency,
-      sellAmountCents: typeof values.sellAmountCents === "number" ? values.sellAmountCents : null,
-      costAmountCents: typeof values.costAmountCents === "number" ? values.costAmountCents : null,
       startDate: values.startDate || null,
       endDate: values.endDate || null,
       pax: values.pax && typeof values.pax === "number" ? values.pax : null,
@@ -266,35 +259,19 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.sellAmountCents}</Label>
                 <CurrencyInput
-                  value={
-                    typeof form.watch("sellAmountCents") === "number"
-                      ? (form.watch("sellAmountCents") as number)
-                      : null
-                  }
-                  onChange={(next) =>
-                    form.setValue("sellAmountCents", next, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
+                  value={booking.sellAmountCents}
+                  onChange={noopCurrencyChange}
                   currency={form.watch("sellCurrency")}
+                  disabled
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.costAmountCents}</Label>
                 <CurrencyInput
-                  value={
-                    typeof form.watch("costAmountCents") === "number"
-                      ? (form.watch("costAmountCents") as number)
-                      : null
-                  }
-                  onChange={(next) =>
-                    form.setValue("costAmountCents", next, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
+                  value={booking.costAmountCents}
+                  onChange={noopCurrencyChange}
                   currency={form.watch("sellCurrency")}
+                  disabled
                 />
               </div>
               <div className="flex flex-col gap-2">
