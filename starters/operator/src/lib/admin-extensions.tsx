@@ -469,7 +469,7 @@ function createFlightsExtension(messages: AdminExtensionNavMessages) {
 }
 
 // Distribution is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
-// extension contributes NO navigation — the Channel sync item is part of the
+// extension contributes NO navigation — the Distribution item is part of the
 // BASE operator navigation (createOperatorAdminNavigation in
 // @voyant-travel/admin), so an entry here would duplicate it. It's registered for
 // the routes seam: the contribution carries the package-owned channel-sync
@@ -655,7 +655,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogExcursions: "Excursions",
   catalogProducts: "Packages",
   catalogTours: "Tours",
-  channelSync: "Channel sync",
+  channelSync: "Distribution",
   categories: "Categories",
   contractNumberSeries: "Number Series",
   contractTemplates: "Contract Templates",

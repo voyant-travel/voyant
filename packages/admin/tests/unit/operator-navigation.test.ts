@@ -20,7 +20,7 @@ const navMessages: OperatorAdminMessages["nav"] = {
   categories: "Categories",
   actionLedger: "Logs",
   allTrips: "All trips",
-  channelSync: "Channel sync",
+  channelSync: "Distribution",
   contractNumberSeries: "Number Series",
   contractTemplates: "Contract Templates",
   contracts: "Contracts",

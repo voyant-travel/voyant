@@ -127,6 +127,29 @@ export type DistributionUiMessages = {
   channelSync: {
     title: string
     description: string
+    setup: {
+      title: string
+      description: string
+      connector: {
+        title: string
+        ready: string
+        missing: string
+      }
+      mapping: {
+        title: string
+        ready: string
+        missing: string
+      }
+      delivery: {
+        title: string
+        ready: string
+        missing: string
+      }
+    }
+    monitoring: {
+      title: string
+      description: string
+    }
     throttledTitle: string
     throttledBody: string
     statusLabels: Record<"pending" | "ok" | "failed" | "compensated", string>
