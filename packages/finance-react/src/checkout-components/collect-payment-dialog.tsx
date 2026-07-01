@@ -93,6 +93,9 @@ export function CollectPaymentDialog({
   const [scheduleId, setScheduleId] = useState<string>(FULL_AMOUNT_VALUE)
   const [currency, setCurrency] = useState<string>(defaultCurrency)
   const [result, setResult] = useState<InitiatedCheckoutCollectionRecord | null>(null)
+  const fullAmountLabel = formatMessage(messages.scheduleFullAmount, {
+    amount: formatAmount(defaultAmountCents ?? 0, defaultCurrency),
+  })
 
   const schedulesQuery = useBookingPaymentSchedules(bookingId, { enabled: open })
   // Only the open schedules are useful pre-fills. Paid / waived /
@@ -131,6 +134,21 @@ export function CollectPaymentDialog({
     setCurrency(defaultCurrency)
     setResult(null)
     collect.reset()
+  }
+
+  function selectSchedule(next: string) {
+    setScheduleId(next)
+    if (next === FULL_AMOUNT_VALUE) {
+      setAmountCents(defaultAmountCents ?? 0)
+      setCurrency(defaultCurrency)
+      return
+    }
+
+    const schedule = schedules.find((s) => s.id === next)
+    if (schedule) {
+      setAmountCents(schedule.amountCents)
+      setCurrency(schedule.currency)
+    }
   }
 
   async function submit() {
@@ -173,22 +191,13 @@ export function CollectPaymentDialog({
                 <div className="flex items-center gap-2">
                   <Select
                     value={scheduleId}
-                    onValueChange={(v) => {
-                      const next = v ?? FULL_AMOUNT_VALUE
-                      setScheduleId(next)
-                      if (next !== FULL_AMOUNT_VALUE) {
-                        const schedule = schedules.find((s) => s.id === next)
-                        if (schedule) {
-                          setAmountCents(schedule.amountCents)
-                          setCurrency(schedule.currency)
-                        }
-                      }
-                    }}
+                    onValueChange={(v) => selectSchedule(v ?? FULL_AMOUNT_VALUE)}
                   >
                     <SelectTrigger id="collect-schedule" className="w-full">
                       <SelectValue placeholder={messages.scheduleCustomPlaceholder} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value={FULL_AMOUNT_VALUE}>{fullAmountLabel}</SelectItem>
                       {schedules.map((schedule) => (
                         <SelectItem key={schedule.id} value={schedule.id}>
                           {formatScheduleOption(schedule, messages.scheduleTypeLabels)}

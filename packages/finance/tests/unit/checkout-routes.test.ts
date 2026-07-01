@@ -2,6 +2,7 @@ import {
   issueCheckoutCapability,
   issueGuestBookingAccess,
 } from "@voyant-travel/bookings/checkout-capability"
+import { createContainer } from "@voyant-travel/core"
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -19,6 +20,8 @@ vi.mock("../../src/checkout-service.js", () => ({
 }))
 
 import {
+  CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+  CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE,
   createFinanceCheckoutAdminRoutes,
   createFinanceCheckoutRoutes,
 } from "../../src/checkout-routes.js"
@@ -131,6 +134,139 @@ describe("createFinanceCheckoutRoutes", () => {
       publicCheckoutBaseUrl: "https://brand.example.com",
     })
     expect(runtime.paymentStarters.netopia).toBe(paymentStarter)
+  })
+
+  it("returns setup guidance when the checkout runtime provider is not registered", async () => {
+    const routes = createFinanceCheckoutAdminRoutes()
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      c.set("container", createContainer())
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/initiate-collection",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "card",
+          stage: "manual",
+          amountCents: 12345,
+          ensureDefaultPaymentPlan: true,
+          paymentSession: { provider: "netopia" },
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(501)
+    expect(await res.json()).toEqual({ error: CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE })
+    expect(serviceMocks.initiateCheckoutCollection).not.toHaveBeenCalled()
+  })
+
+  it("returns setup guidance when the registered checkout runtime has no card starters", async () => {
+    const routes = createFinanceCheckoutAdminRoutes()
+    const container = createContainer()
+    container.register(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY, {
+      bindings: {},
+      notificationDispatcher: null,
+      paymentStarters: {},
+      bankTransferDetails: null,
+    })
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      c.set("container", container)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/initiate-collection",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "card",
+          stage: "manual",
+          amountCents: 12345,
+          ensureDefaultPaymentPlan: true,
+          paymentSession: { provider: "netopia" },
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(501)
+    expect(await res.json()).toEqual({ error: CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE })
+    expect(serviceMocks.initiateCheckoutCollection).not.toHaveBeenCalled()
+  })
+
+  it("allows bank-transfer collection when no card starter is configured", async () => {
+    serviceMocks.initiateCheckoutCollection.mockResolvedValue({
+      plan: {
+        bookingId: "book_123",
+        method: "bank_transfer",
+        stage: "manual",
+        paymentSessionTarget: "invoice",
+        documentType: "invoice",
+        willCreateDefaultPaymentPlan: false,
+        selectedSchedule: null,
+        selectedInvoice: null,
+        amountCents: 12345,
+        currency: "EUR",
+        recommendedAction: "create_bank_transfer_document",
+      },
+      invoice: null,
+      paymentSession: null,
+      invoiceNotification: null,
+      paymentSessionNotification: null,
+      bankTransferInstructions: {
+        provider: "manual",
+        beneficiary: "Program Travel",
+        iban: "RO49RNCB0857180852250001",
+        amountCents: 12345,
+        currency: "EUR",
+        reference: "BK-123",
+        notes: null,
+      },
+      providerStart: null,
+    })
+    const routes = createFinanceCheckoutAdminRoutes()
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      c.set("container", createContainer())
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/initiate-collection",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "bank_transfer",
+          stage: "manual",
+          amountCents: 12345,
+          ensureDefaultPaymentPlan: true,
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(201)
+    expect(serviceMocks.initiateCheckoutCollection).toHaveBeenCalledTimes(1)
+    expect(serviceMocks.initiateCheckoutCollection.mock.calls[0]?.[4]).toMatchObject({
+      paymentStarters: {},
+    })
   })
 
   it("rejects booking collection routes without a checkout capability", async () => {

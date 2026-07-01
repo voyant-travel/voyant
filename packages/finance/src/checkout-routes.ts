@@ -82,6 +82,14 @@ export type CheckoutRouteRuntime = {
 }
 
 export const CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY = "providers.finance.checkout.runtime"
+export const CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE =
+  "Checkout payment links require a configured checkout provider. Configure a Finance checkout runtime with a card payment starter before generating payment links."
+
+class CheckoutRouteRuntimeNotConfiguredError extends Error {
+  constructor() {
+    super(CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE)
+  }
+}
 
 function runtimeEnv(c: { env: Record<string, unknown> }): Record<string, string | undefined> {
   return c.env as Record<string, string | undefined>
@@ -108,14 +116,8 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
   // Pin the middleware to this module's Env so Hono doesn't intersect the
   // middleware's default VoyantBindings into the handlers' `c.env` type.
   const collectionIdempotency = () => idempotencyKey<Env["Bindings"], Env["Variables"]>()
-  function getRuntime(
-    bindings: Record<string, unknown>,
-    resolveFromContainer?: (key: string) => CheckoutRouteRuntime | undefined,
-  ) {
-    return (
-      resolveFromContainer?.(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY) ??
-      buildCheckoutRouteRuntime(bindings, options)
-    )
+  function getRuntime(bindings: Record<string, unknown>, container?: ModuleContainer) {
+    return resolveCheckoutRouteRuntime(bindings, options, container)
   }
 
   return (
@@ -145,11 +147,13 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
       })
       .post("/bookings/:bookingId/initiate-collection", collectionIdempotency(), async (c) => {
         try {
-          const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
+          const input = await parseJsonBody(c, initiateCheckoutCollectionSchema)
+          const runtime = getRuntime(c.env, c.var.container)
+          assertCheckoutRuntimeSupportsCollection(runtime, input)
           const result = await initiateCheckoutCollection(
             c.get("db"),
             c.req.param("bookingId")!,
-            await parseJsonBody(c, initiateCheckoutCollectionSchema),
+            input,
             options.policy,
             runtime,
           )
@@ -165,15 +169,20 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
           if (message.includes("Booking not found")) {
             return c.json({ error: message }, 404)
           }
+          if (error instanceof CheckoutRouteRuntimeNotConfiguredError) {
+            return c.json({ error: message }, 501)
+          }
           return c.json({ error: message }, 409)
         }
       })
       .post("/collections/bootstrap", collectionIdempotency(), async (c) => {
         try {
-          const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
+          const input = await parseJsonBody(c, bootstrapCheckoutCollectionSchema)
+          const runtime = getRuntime(c.env, c.var.container)
+          assertCheckoutRuntimeSupportsCollection(runtime, input)
           const result = await bootstrapCheckoutCollection(
             c.get("db"),
-            await parseJsonBody(c, bootstrapCheckoutCollectionSchema),
+            input,
             options.policy,
             runtime,
           )
@@ -188,6 +197,9 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
             error instanceof Error ? error.message : "Failed to bootstrap checkout collection"
           if (message.includes("Booking not found")) {
             return c.json({ error: message }, 404)
+          }
+          if (error instanceof CheckoutRouteRuntimeNotConfiguredError) {
+            return c.json({ error: message }, 501)
           }
           return c.json({ error: message }, 409)
         }
@@ -205,9 +217,7 @@ export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {
 export function createCheckoutAdminRoutes(options: CheckoutRoutesOptions = {}) {
   const app = new Hono<Env>().get("/bookings/:bookingId/reminder-runs", async (c) => {
     const query = parseQuery(c, checkoutReminderRunListQuerySchema)
-    const runtime =
-      c.var.container?.resolve<CheckoutRouteRuntime>(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY) ??
-      buildCheckoutRouteRuntime(c.env, options)
+    const runtime = resolveCheckoutRouteRuntime(c.env, options, c.var.container)
 
     if (!runtime.listBookingReminderRuns) {
       return c.json({ data: [], total: 0, limit: query.limit, offset: query.offset })
@@ -218,6 +228,27 @@ export function createCheckoutAdminRoutes(options: CheckoutRoutesOptions = {}) {
     )
   })
   return attachCollectionRoutes(app, options)
+}
+
+function resolveCheckoutRouteRuntime(
+  bindings: Record<string, unknown>,
+  options: CheckoutRoutesOptions,
+  container?: ModuleContainer,
+): CheckoutRouteRuntime {
+  if (container?.has(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY)) {
+    return container.resolve<CheckoutRouteRuntime>(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY)
+  }
+
+  return buildCheckoutRouteRuntime(bindings, options)
+}
+
+function assertCheckoutRuntimeSupportsCollection(
+  runtime: CheckoutRouteRuntime,
+  input: { method: "card" | "bank_transfer" },
+) {
+  if (input.method === "card" && Object.keys(runtime.paymentStarters).length === 0) {
+    throw new CheckoutRouteRuntimeNotConfiguredError()
+  }
 }
 
 export function buildCheckoutRouteRuntime(
