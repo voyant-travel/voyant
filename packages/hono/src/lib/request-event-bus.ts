@@ -11,9 +11,10 @@ import type { EmitOptions, EventBus, EventMetadata, OutboxEventStore } from "@vo
  * With a `store` (transactional outbox), emits are also DURABLE: the
  * envelope is persisted before any handler runs, and failed deliveries
  * are retried by the drain. If the durable capture itself fails (DB
- * unreachable), the emit falls back to direct (non-durable) delivery —
- * losing durability for that one event is strictly better than losing
- * the event, and an order of magnitude better than failing the request.
+ * unreachable), the emit falls back to direct (non-durable) delivery.
+ * Once capture has succeeded, the wrapper must not redeliver directly:
+ * the stored row owns completion/retry, and direct fallback would make
+ * subscriber side effects ambiguous.
  *
  * Buses that predate the {@link EmitOptions} parameter simply ignore it
  * and keep awaiting all handlers — a safe degradation.
@@ -37,11 +38,29 @@ export function requestScopedEventBus(
       if (!store) {
         return bus.emit(event, data, metadata, { ...base, ...options })
       }
+      let captureFailed = false
+      const guardedStore: OutboxEventStore = {
+        async insert(envelope) {
+          try {
+            return await store.insert(envelope)
+          } catch (err) {
+            captureFailed = true
+            throw err
+          }
+        },
+        complete: (id) => store.complete(id),
+        fail: (id, error) => store.fail(id, error),
+      }
       try {
-        return await bus.emit(event, data, metadata, { ...base, store, ...options })
+        return await bus.emit(event, data, metadata, { ...base, store: guardedStore, ...options })
       } catch (err) {
-        // Only the outbox insert can reject (handler errors are
-        // collected, bookkeeping failures are swallowed inside the bus).
+        if (!captureFailed) {
+          console.error(
+            `[events] durable delivery failed for "${event}" after outbox capture:`,
+            err,
+          )
+          return
+        }
         console.error(
           `[events] outbox capture failed for "${event}" — falling back to direct delivery:`,
           err,

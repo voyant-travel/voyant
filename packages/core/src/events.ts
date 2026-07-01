@@ -307,6 +307,18 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     return { ...(metadata ?? {}), eventId: generateEventId() }
   }
 
+  async function scheduleOrAwait(
+    schedule: (pending: Promise<unknown>) => void,
+    pending: Promise<unknown>,
+  ) {
+    try {
+      schedule(pending)
+    } catch (err) {
+      console.error("[events] scheduler rejected deferred delivery; awaiting inline:", err)
+      await pending
+    }
+  }
+
   return {
     async emit<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
       event: string,
@@ -334,7 +346,7 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
 
       if (!store) {
         if (emitOptions?.schedule && deferrable.length > 0) {
-          emitOptions.schedule(run(deferrable))
+          await scheduleOrAwait(emitOptions.schedule, run(deferrable))
           if (inline.length > 0) await run(inline)
           return
         }
@@ -365,7 +377,8 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
 
       if (emitOptions.schedule && deferrable.length > 0) {
         const inlineErrors = inline.length > 0 ? await run(inline) : []
-        emitOptions.schedule(
+        await scheduleOrAwait(
+          emitOptions.schedule,
           run(deferrable).then((deferredErrors) => settle([...inlineErrors, ...deferredErrors])),
         )
         return
