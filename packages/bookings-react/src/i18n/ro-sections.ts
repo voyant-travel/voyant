@@ -331,6 +331,7 @@ export const bookingsUiRoSections = {
       notes: "Note suplimentare...",
     },
     validation: {
+      fileRequired: "Alege un fisier inainte de a adauga documentul.",
       fileNameRequired: "Numele fisierului este obligatoriu",
       fileUrlInvalid: "Trebuie sa fie un URL valid",
     },

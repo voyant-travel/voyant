@@ -20,6 +20,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { FileText, Loader2, Paperclip, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { VoyantApiError } from "../client.js"
 import { useBookingContractGenerationMutation } from "../index.js"
 
 type ContractDialogMode = "generate" | "upload"
@@ -61,6 +62,7 @@ export function BookingContractDialog({
   const [mode, setMode] = useState<ContractDialogMode>("generate")
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [previewRequested, setPreviewRequested] = useState(false)
 
   // Upload form state
   const [title, setTitle] = useState("")
@@ -76,6 +78,7 @@ export function BookingContractDialog({
     setFile(null)
     setError(null)
     setUploading(false)
+    setPreviewRequested(false)
     resetPreview()
   }, [open, resetPreview])
 
@@ -85,6 +88,7 @@ export function BookingContractDialog({
   const fetchPreview = preview.mutate
   useEffect(() => {
     if (!open || mode !== "generate") return
+    setPreviewRequested(true)
     fetchPreview()
   }, [open, mode, fetchPreview])
 
@@ -136,6 +140,14 @@ export function BookingContractDialog({
   const submitting = generate.isPending || uploading
   const previewReady = preview.data != null
   const canSubmit = mode === "generate" ? previewReady && !submitting : file != null && !submitting
+  const previewSetupMissing =
+    preview.error instanceof VoyantApiError && preview.error.status === 404
+  const showPreviewSetupHint =
+    mode === "generate" &&
+    previewRequested &&
+    !preview.isPending &&
+    !preview.data &&
+    (!preview.isError || previewSetupMissing)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -171,7 +183,7 @@ export function BookingContractDialog({
                       <Skeleton className="h-4 w-4/5" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                  ) : preview.isError ? (
+                  ) : preview.isError && !previewSetupMissing ? (
                     <p className="p-6 text-destructive text-sm">
                       {t.previewErrorPrefix}{" "}
                       {preview.error instanceof Error ? preview.error.message : t.previewFailed}
@@ -183,12 +195,17 @@ export function BookingContractDialog({
                       sandbox=""
                       className="h-[60vh] w-full border-0 bg-white"
                     />
-                  ) : null}
+                  ) : (
+                    <div className="p-6 text-muted-foreground text-sm">{t.previewUnavailable}</div>
+                  )}
                 </div>
                 {preview.data?.templateName ? (
                   <p className="text-muted-foreground text-xs">
                     {t.previewTemplateLabel} {preview.data.templateName}
                   </p>
+                ) : null}
+                {showPreviewSetupHint ? (
+                  <p className="text-muted-foreground text-xs">{t.previewSetupHint}</p>
                 ) : null}
               </div>
             ) : (

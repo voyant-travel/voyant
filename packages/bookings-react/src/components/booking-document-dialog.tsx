@@ -38,7 +38,10 @@ function createDocumentFormSchema(messages: ReturnType<typeof useBookingsUiMessa
       .string()
       .min(1, messages.bookingDocumentDialog.validation.fileNameRequired)
       .max(500),
-    fileUrl: z.string().url(messages.bookingDocumentDialog.validation.fileUrlInvalid),
+    fileUrl: z
+      .string()
+      .min(1, messages.bookingDocumentDialog.validation.fileRequired)
+      .url(messages.bookingDocumentDialog.validation.fileUrlInvalid),
     travelerId: z.string().optional().nullable(),
     expiresAt: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
@@ -119,6 +122,8 @@ export function BookingDocumentDialog({
     onOpenChange(false)
     onSuccess?.()
   }
+  const uploadedFileUrl = form.watch("fileUrl")
+  const canSubmit = Boolean(uploadedFileUrl) && !create.isPending
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,6 +191,10 @@ export function BookingDocumentDialog({
                   form.setValue("fileUrl", upload.url, { shouldValidate: true })
                   form.setValue("fileName", upload.name, { shouldValidate: true })
                 }}
+                onCleared={() => {
+                  form.setValue("fileUrl", "", { shouldDirty: true, shouldValidate: true })
+                  form.setValue("fileName", "", { shouldDirty: true, shouldValidate: true })
+                }}
                 helperText={messages.bookingDocumentDialog.placeholders.helperText}
               />
               {form.formState.errors.fileUrl && (
@@ -220,7 +229,7 @@ export function BookingDocumentDialog({
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
-            <Button type="submit" size="sm" disabled={create.isPending}>
+            <Button type="submit" size="sm" disabled={!canSubmit}>
               {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {messages.bookingDocumentDialog.actions.addDocument}
             </Button>

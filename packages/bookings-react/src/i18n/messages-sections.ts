@@ -311,6 +311,7 @@ export type BookingsUiSectionsMessages = {
       notes: string
     }
     validation: {
+      fileRequired: string
       fileNameRequired: string
       fileUrlInvalid: string
     }

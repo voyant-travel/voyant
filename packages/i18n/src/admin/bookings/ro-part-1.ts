@@ -267,7 +267,7 @@ export const adminBookingsMessagesRoPart1 = {
       uploadDocument: "Incarca document",
       loading: "Se incarca documentele…",
       empty:
-        'Nu exista inca documente pentru aceasta rezervare. Foloseste "Genereaza contractul" mai sus sau incarca documentele calatorilor (pasaport, viza, asigurare). Facturile se genereaza per plata din tab-ul Plati.',
+        'Nu exista inca documente pentru aceasta rezervare. Foloseste "Adauga contract" mai sus sau incarca documentele calatorilor (pasaport, viza, asigurare). Facturile se genereaza per plata din tab-ul Plati.',
       headerCategory: "Categorie",
       headerDocument: "Document",
       headerFor: "Pentru",
@@ -310,6 +310,9 @@ export const adminBookingsMessagesRoPart1 = {
       previewTemplateLabel: "Sablon:",
       previewFailed: "Nu am putut genera previzualizarea contractului.",
       previewErrorPrefix: "Eroare previzualizare:",
+      previewUnavailable: "Generarea contractului nu este pregatita pentru aceasta rezervare.",
+      previewSetupHint:
+        "Configureaza un sablon activ de contract pentru clienti, cu versiune publicata, in Legal > Sabloane si verifica daca deployment-ul are generarea documentelor de contract configurata.",
       uploadTitleLabel: "Titlu",
       uploadTitlePlaceholder: "Titlu contract",
       uploadTitleHint: "Implicit foloseste numarul rezervarii cand este gol.",
