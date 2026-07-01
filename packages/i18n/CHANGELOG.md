@@ -1,5 +1,11 @@
 # @voyant-travel/i18n
 
+## 0.109.7
+
+### Patch Changes
+
+- bd00f36: Improve booking Documents tab guidance by disabling traveler document submission until a file upload exists, clearing upload form state when the selected file is removed, aligning empty-state copy with the Add contract action, and explaining unavailable generated-contract preview setup.
+
 ## 0.109.6
 
 ### Patch Changes

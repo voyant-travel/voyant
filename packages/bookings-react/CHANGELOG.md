@@ -1,5 +1,18 @@
 # @voyant-travel/bookings-react
 
+## 0.138.3
+
+### Patch Changes
+
+- c081c71: Keep booking activity and metadata current for note, document, supplier, invoice, and payment child mutations.
+- bd00f36: Improve booking Documents tab guidance by disabling traveler document submission until a file upload exists, clearing upload form state when the selected file is removed, aligning empty-state copy with the Add contract action, and explaining unavailable generated-contract preview setup.
+- 51003c6: Expose booking voucher redemptions in booking-scoped payment reads as voucher payment rows.
+- Updated dependencies [c081c71]
+- Updated dependencies [bd00f36]
+  - @voyant-travel/bookings@0.138.3
+  - @voyant-travel/finance-react@0.138.3
+  - @voyant-travel/i18n@0.109.7
+
 ## 0.138.2
 
 ### Patch Changes

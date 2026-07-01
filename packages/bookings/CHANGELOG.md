@@ -1,5 +1,11 @@
 # @voyant-travel/bookings
 
+## 0.138.3
+
+### Patch Changes
+
+- c081c71: Keep booking activity and metadata current for note, document, supplier, invoice, and payment child mutations.
+
 ## 0.138.2
 
 ### Patch Changes

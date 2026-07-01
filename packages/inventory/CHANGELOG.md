@@ -1,5 +1,18 @@
 # @voyant-travel/inventory
 
+## 0.5.14
+
+### Patch Changes
+
+- 9ebd8e8: Owned product booking commit now resolves (or creates) a CRM person from the
+  billing contact when the commit carries no `personId`/`organizationId` — the
+  anonymous storefront checkout case. `createProductsBookingHandler` accepts a new
+  optional `resolveBillingPerson` bridge (wired by the template to
+  `relationshipsService.upsertPersonFromContact`), mirroring the sourced/session
+  arm's `resolveBillingPerson` hook. This fixes anonymous storefront checkout for
+  owned public products, which previously failed with a 400 "Select a billing
+  person or organization".
+
 ## 0.5.13
 
 ### Patch Changes
