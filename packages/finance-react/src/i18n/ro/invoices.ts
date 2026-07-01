@@ -71,6 +71,8 @@ export const invoiceDialog = {
   },
   schedulePlaceholder: "Alege o linie din scadentar",
   scheduleEmpty: "Nu exista linii neplatite in scadentar.",
+  scheduleLoadError:
+    "Nu s-a putut incarca scadentarul. Incearca din nou inainte de a crea din scadentar.",
   scheduleLockedHint: "Sumele, moneda si data scadenta sunt preluate din scadentar.",
   attachmentsHint:
     "Ataseaza documente suport. Ignorate cand sincronizarea cu SmartBill este activa.",

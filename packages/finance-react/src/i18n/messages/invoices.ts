@@ -59,6 +59,7 @@ export type InvoiceDialogMessages = {
   }
   schedulePlaceholder: string
   scheduleEmpty: string
+  scheduleLoadError: string
   /** Description shown when source is "from schedule" — amounts are locked. */
   scheduleLockedHint: string
   attachmentsHint: string
