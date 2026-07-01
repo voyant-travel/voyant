@@ -44,7 +44,7 @@ function ComposerSignInGate(): React.ReactElement {
         <CardContent className="space-y-4">
           <p className="text-muted-foreground text-sm">{t.gateBody}</p>
           <div className="flex flex-wrap gap-2">
-            <Link to="/sign-in" className={buttonVariants()}>
+            <Link to="/sign-in" search={{ next: "/shop/composer" }} className={buttonVariants()}>
               <LogIn className="size-4" aria-hidden="true" />
               {t.gateSignIn}
             </Link>
