@@ -1674,6 +1674,22 @@ const bookingDocumentSchema = z.object({
   createdAt: isoTimestamp,
 })
 
+// The booking detail read (`GET /{id}`) hydrates the bookings-owned child
+// collections inline so a single fetch exposes the records that exist for the
+// booking. Previously the detail response carried only the flat booking row and
+// these collections were reachable exclusively through the per-collection
+// sibling endpoints (`/{id}/items`, `/{id}/travelers`, `/{id}/documents`),
+// which made them read as `null`/absent to clients that consumed the detail
+// response alone. Finance-owned records (payments, invoices) are intentionally
+// NOT inlined here: bookings must not depend on finance (the module dependency
+// runs finance→bookings), so those stay behind the finance booking-scoped admin
+// routes and are composed at the deployment boundary.
+const bookingDetailSchema = bookingSchema.extend({
+  items: z.array(bookingItemSchema),
+  travelers: z.array(bookingTravelerSchema),
+  documents: z.array(bookingDocumentSchema),
+})
+
 // --- bespoke composite response schemas ------------------------------------
 
 const sharingGroupSummarySchema = z.object({
@@ -1866,7 +1882,10 @@ const getBookingRoute = createRoute({
   path: "/{id}",
   request: { params: idParamSchema },
   responses: {
-    200: dataResponse(bookingSchema, "A booking by id (PII redacted unless reveal-authorized)"),
+    200: dataResponse(
+      bookingDetailSchema,
+      "A booking by id with its bookings-owned child collections (items, travelers, documents); PII redacted unless reveal-authorized",
+    ),
     404: notFoundResponse("Booking not found"),
   },
 })
@@ -1958,7 +1977,9 @@ coreCrudRoutes
     )
   })
   .openapi(getBookingRoute, async (c) => {
-    const row = await bookingsService.getBookingById(c.get("db"), c.req.valid("param").id)
+    const db = c.get("db")
+    const bookingId = c.req.valid("param").id
+    const row = await bookingsService.getBookingById(db, bookingId)
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
     }
@@ -1969,14 +1990,24 @@ coreCrudRoutes
       isInternalRequest: c.get("isInternalRequest"),
       enforceRbac: isStaffRbacEnforced(c.env),
     })
+    // Hydrate the bookings-owned child collections so the detail read exposes
+    // the records that exist for the booking in a single fetch. Traveler PII
+    // follows the same reveal/redaction gate as the standalone travelers read.
+    const [items, travelers, documents] = await Promise.all([
+      bookingsService.listItems(db, bookingId),
+      bookingsService.listTravelers(db, bookingId),
+      bookingsService.listDocuments(db, bookingId),
+    ])
     await logBookingPiiAccess(c, {
       bookingId: row.id,
       action: "read",
       outcome: "allowed",
       reason: reveal ? "detail_reveal" : "detail_redacted",
-      metadata: { reveal },
+      metadata: { reveal, items: items.length, travelers: travelers.length },
     })
-    return c.json({ data: reveal ? row : redactBookingContact(row) }, 200)
+    const booking = reveal ? row : redactBookingContact(row)
+    const travelerRows = reveal ? travelers : travelers.map((row) => redactTravelerIdentity(row))
+    return c.json({ data: { ...booking, items, travelers: travelerRows, documents } }, 200)
   })
   .openapi(createFromProductRoute, async (c) => {
     const data = c.req.valid("json")
@@ -4049,6 +4080,7 @@ export const __test__ = {
   bookingActivitySchema,
   bookingNoteSchema,
   bookingDocumentSchema,
+  bookingDetailSchema,
   bookingAggregatesSchema,
   sharingGroupSummarySchema,
 }

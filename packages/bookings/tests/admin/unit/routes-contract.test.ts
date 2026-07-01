@@ -38,6 +38,7 @@ const {
   bookingActivitySchema,
   bookingNoteSchema,
   bookingDocumentSchema,
+  bookingDetailSchema,
   bookingAggregatesSchema,
   sharingGroupSummarySchema,
 } = __test__
@@ -336,6 +337,34 @@ describe("bookings core admin contract", () => {
     const parsed = bookingDocumentSchema.parse(toWire(document))
     expect(parsed.type).toBe("visa")
     expect(parsed.expiresAt).toBeNull()
+  })
+
+  it("detail schema hydrates the bookings-owned child collections (items/travelers/documents)", () => {
+    // The `GET /{id}` detail read now composes the flat booking row with its
+    // owned child collections so a single fetch exposes the records that exist
+    // for the booking (regression cover for the null nested collections bug).
+    const parsed = bookingDetailSchema.parse(
+      toWire({ ...booking, items: [item], travelers: [traveler], documents: [document] }),
+    )
+    expect(parsed.id).toBe("bkg_1")
+    expect(parsed.items).toHaveLength(1)
+    expect(parsed.items[0]?.id).toBe("bki_1")
+    expect(parsed.travelers).toHaveLength(1)
+    expect(parsed.travelers[0]?.firstName).toBe("Ada")
+    expect(parsed.documents).toHaveLength(1)
+    expect(parsed.documents[0]?.type).toBe("visa")
+  })
+
+  it("detail schema requires the child collections (they can never be null/absent)", () => {
+    // A flat booking row with no nested collections must fail — the detail
+    // contract guarantees the arrays are always present (empty when no rows).
+    expect(() => bookingDetailSchema.parse(toWire(booking))).toThrow(z.ZodError)
+    const empty = bookingDetailSchema.parse(
+      toWire({ ...booking, items: [], travelers: [], documents: [] }),
+    )
+    expect(empty.items).toEqual([])
+    expect(empty.travelers).toEqual([])
+    expect(empty.documents).toEqual([])
   })
 
   it("wraps booking rows in the canonical listResponseSchema envelope", () => {
