@@ -49,9 +49,9 @@ migration, authoring field, or consistency validation at this time.
 field policy continues to project it as a `source-only`, `structural`,
 `indexed-column` field (`packages/inventory/src/catalog-policy.ts`).
 
-Note that the `bookingMode → dynamic/scheduled` mapping is encoded in **three**
-places today, not one — the projection derivation plus two enforcement copies
-that each re-derive it inline:
+Note that the `bookingMode → dynamic/scheduled` mapping is encoded in **four**
+places today, not one — the projection derivation plus three sites that each
+re-derive the scheduled-vs-dynamic split inline:
 
 - `packages/inventory/src/service-catalog-plane.ts` — `deriveProductSupplyModel`
   (`open`/`stay` → `dynamic`, else `scheduled`), the projection derivation.
@@ -59,13 +59,29 @@ that each re-derive it inline:
   `isScheduledBookingMode`, gating the `no_future_open_departure` publish check.
 - `packages/operations/src/availability/service-core.ts` — `DYNAMIC_BOOKING_MODES`,
   gating the `dynamic_product_static_availability` authoring check.
+- `packages/operations/src/availability/service-catalog-plane-departures.ts` —
+  `SCHEDULED_BOOKING_MODES`, gating whether a product emits departure facets in
+  the products document builder (wired via the operator catalog runtime).
 
-While the classifier stays derived this triplication is harmless — all three key
-off `bookingMode`, so they cannot disagree. But it means a promotion is not a
-single-function edit: all three sites must switch to the stored column together,
-or publish-readiness and static-availability enforcement would keep keying on
-`bookingMode` while the projection reflects the authored value. The "Revisit
-trigger" touch-point list below enumerates all three.
+(This counts only sites that derive the scheduled-vs-dynamic supply classifier.
+Other code branches on specific `bookingMode` values for unrelated reasons —
+e.g. OCTO availability-type or transport-requirement flags — and is out of
+scope.)
+
+These sites do **not** even agree today: the departures gate's
+`SCHEDULED_BOOKING_MODES` includes `stay`, so it treats `stay` products as
+scheduled, whereas `deriveProductSupplyModel` and the two enforcement gates
+treat `open`/`stay` as `dynamic`. So `stay` is already classified `dynamic` by
+the projection but scheduled by the departures facet — a concrete example of the
+drift a scattered derivation invites.
+
+While the classifier stays derived this scattering is *mostly* harmless (the
+publish and static-availability gates match the projection), but it is not a
+single-function contract: a promotion must switch all four sites to the stored
+column together, or publish-readiness, static-availability enforcement, and the
+departures projection would keep keying on `bookingMode` while `supplyModel`
+says otherwise. The "Revisit trigger" touch-point list below enumerates all
+four.
 
 ## Options considered
 
@@ -108,9 +124,10 @@ migration, backfill, and drift-consistency check that would exist only to be
 kept equal to the derivation.
 
 Deferring the promotion is low-cost and reversible: the classifier is derived at
-a small, enumerable set of sites (the projection derivation plus the two #2329
-enforcement copies), so promoting it later is a contained, well-scoped change —
-all three listed in the Revisit trigger below — not an open-ended refactor.
+a small, enumerable set of sites (the projection derivation, the two #2329
+enforcement gates, and the departures-facet gate), so promoting it later is a
+contained, well-scoped change — all four listed in the Revisit trigger below —
+not an open-ended refactor.
 
 ## Revisit trigger
 
@@ -139,6 +156,11 @@ When that trigger fires, the touch points to change are:
   static-availability check (`DYNAMIC_BOOKING_MODES` →
   `dynamic_product_static_availability`) to read the resolved `supplyModel` for
   the same reason.
+- `packages/operations/src/availability/service-catalog-plane-departures.ts` —
+  switch the departures-facet gate (`SCHEDULED_BOOKING_MODES`) to read the
+  resolved `supplyModel`, so a product promoted to `scheduled` emits departure
+  facets (and this is also the place to reconcile the current `stay`
+  disagreement noted in the Decision section).
 
 ## Consequences
 
