@@ -1,4 +1,4 @@
-import { bookingDraftV1 } from "@voyant-travel/catalog/booking-engine"
+import { bookingDraftV1 } from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 import { describe, expect, it } from "vitest"
 
 import { type ContractSourceContext, resolveContractVariables } from "./resolve-contract-variables"
