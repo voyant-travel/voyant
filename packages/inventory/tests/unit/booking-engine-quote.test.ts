@@ -646,4 +646,46 @@ describe("createProductsBookingHandler.commit", () => {
       expect.objectContaining({ personId: null, contactEmail: null, contactPhone: null }),
     )
   })
+
+  it("clears a placeholder billing email but still resolves on a real phone", async () => {
+    // createBooking rejects a placeholder email even alongside a phone, so the
+    // handler must treat it as absent — otherwise it resolves a CRM person that
+    // createBooking then rejects, orphaning the row.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_from_phone")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "traveler@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).toHaveBeenCalledWith(
+      expect.objectContaining({ email: null, phone: "+40700333444" }),
+      expect.objectContaining({ source: "storefront-booking" }),
+    )
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ personId: "pers_from_phone", contactEmail: null }),
+    )
+  })
 })

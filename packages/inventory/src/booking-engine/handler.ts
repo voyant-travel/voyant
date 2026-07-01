@@ -55,6 +55,7 @@ import {
   extractInternalNotes,
   extractPartyTravelers,
   extractTaxLines,
+  isRealBillingEmail,
   loadProduct,
   normalizeOptionSelections,
   priceOptionSelections,
@@ -847,20 +848,23 @@ export function createProductsBookingHandler(
       // explicit party, fall back to the draft, so BOTH paths stamp the booking
       // contact and can resolve a customer.
       const draftBillingContact = draft.billing?.contact
-      // Trim contact points to null: the draft schema defaults `email` to "" and
-      // a saved draft can carry whitespace-only values. The downstream
-      // `resolveBillingPerson` (and `createBooking`) treat a blank contact point
-      // as absent, so normalizing here keeps the resolver gate honest — a
-      // whitespace-only email must not trigger a name-only CRM person that
-      // `createBooking` then rejects, orphaning a row on every retry.
+      // Normalize contact points the way `createBooking`'s
+      // `requireCompleteBookingParty` does, so the resolver only fires for a
+      // contact it will actually accept. The draft schema defaults `email` to ""
+      // and a saved draft can carry whitespace-only or placeholder values
+      // (`traveler@example.com`, `foo`). `createBooking` rejects a blank OR
+      // placeholder/invalid email even when a phone is present, so any of those
+      // must be treated as absent here — otherwise the resolver creates a CRM
+      // person that `createBooking` then rejects, orphaning a row on every retry.
       const trimToNull = (value: string | null | undefined): string | null => {
         const trimmed = value?.trim()
         return trimmed ? trimmed : null
       }
+      const candidateEmail = partyBilling.contactEmail ?? draftBillingContact?.email
       const billingContact = {
         firstName: partyBilling.contactFirstName ?? draftBillingContact?.firstName ?? null,
         lastName: partyBilling.contactLastName ?? draftBillingContact?.lastName ?? null,
-        email: trimToNull(partyBilling.contactEmail ?? draftBillingContact?.email),
+        email: isRealBillingEmail(candidateEmail) ? candidateEmail.trim() : null,
         phone: trimToNull(partyBilling.contactPhone ?? draftBillingContact?.phone),
       }
 
