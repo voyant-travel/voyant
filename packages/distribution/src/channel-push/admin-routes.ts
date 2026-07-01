@@ -95,7 +95,9 @@ export function createChannelPushAdminRoutes() {
     const bookingId = c.req.param("bookingId")
     try {
       const result = await triggerBookingPushForBookingWithResult(bookingId)
-      return c.json({ data: { ok: true, ...result } })
+      const processedLinks = result.attempted > 0
+      const ok = processedLinks && result.reason !== "booking_missing"
+      return c.json({ data: { ok, ...result } })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       return c.json({ error: message }, 500)

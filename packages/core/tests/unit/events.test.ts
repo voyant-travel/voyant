@@ -223,6 +223,29 @@ describe("createEventBus", () => {
       expect(errorSpy).toHaveBeenCalled()
       errorSpy.mockRestore()
     })
+
+    it("awaits deferred handlers inline when the scheduler throws", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+      const bus = createEventBus()
+      let deferredRan = false
+      bus.subscribe("x", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        deferredRan = true
+      })
+
+      await bus.emit("x", {}, undefined, {
+        schedule: () => {
+          throw new Error("waitUntil unavailable")
+        },
+      })
+
+      expect(deferredRan).toBe(true)
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("scheduler rejected deferred delivery"),
+        expect.any(Error),
+      )
+      errorSpy.mockRestore()
+    })
   })
 })
 
@@ -313,6 +336,32 @@ describe("durable emit via EmitOptions.store (transactional outbox)", () => {
     await Promise.all(scheduled)
     expect(deferredDone).toBe(true)
     expect(store.complete).toHaveBeenCalledWith("evob_1")
+  })
+
+  it("settles the row when the scheduler throws after capture", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const bus = createEventBus()
+    const store = fakeStore()
+    const handler = vi.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    })
+    bus.subscribe("x", handler)
+
+    await bus.emit("x", {}, undefined, {
+      store,
+      schedule: () => {
+        throw new Error("waitUntil unavailable")
+      },
+    })
+
+    expect(handler).toHaveBeenCalledOnce()
+    expect(store.complete).toHaveBeenCalledWith("evob_1")
+    expect(store.fail).not.toHaveBeenCalled()
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("scheduler rejected deferred delivery"),
+      expect.any(Error),
+    )
+    errorSpy.mockRestore()
   })
 })
 

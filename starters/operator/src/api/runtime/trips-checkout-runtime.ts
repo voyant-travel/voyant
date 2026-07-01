@@ -22,7 +22,7 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
-import { resolveVoyantApiKey } from "../../lib/voyant-cloud"
+import { resolveVoyantDataApiKey } from "../../lib/voyant-cloud"
 import { cardPaymentStarter } from "./card-payment"
 
 /** Build the deployment-specific trip-checkout dependencies for a request. */
@@ -71,11 +71,13 @@ async function quoteFx(
   const env = c.env as {
     VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
+    VOYANT_DATA_API_KEY?: string
     VOYANT_CLOUD_API_URL?: string
+    VOYANT_ADMIN_AUTH_MODE?: string
   }
-  const apiKey = resolveVoyantApiKey(env)
+  const apiKey = resolveVoyantDataApiKey(env)
   if (!apiKey) {
-    throw new Error("trip_checkout_fx_requires_voyant_api_key")
+    throw new Error("trip_checkout_fx_requires_voyant_data_api_key")
   }
 
   const baseUrl = (env.VOYANT_CLOUD_API_URL ?? "https://api.voyant.travel").replace(/\/$/, "")

@@ -1,13 +1,17 @@
+import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
-import { and, desc, eq, sql } from "drizzle-orm"
+import { ApiHttpError, RequestValidationError } from "@voyant-travel/hono"
+import { and, desc, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { classifyMappingUpdate, emitProductPublicationChanged } from "../events.js"
 import {
+  type ChannelBookingLink,
   channelBookingLinks,
   channelCommissionRules,
   channelContracts,
   channelProductMappings,
+  channels,
   channelWebhookEvents,
 } from "../schema.js"
 import { paginate, toDateOrNull } from "./helpers.js"
@@ -28,6 +32,88 @@ import type {
   UpdateChannelProductMappingInput,
   UpdateChannelWebhookEventInput,
 } from "./types.js"
+
+const UNIQUE_VIOLATION_SQLSTATE = "23505"
+const DUPLICATE_BOOKING_LINK_CONSTRAINT = "uniq_channel_booking_links_per_item"
+
+async function requireChannel(db: PostgresJsDatabase, channelId: string) {
+  const [row] = await db
+    .select({ id: channels.id })
+    .from(channels)
+    .where(eq(channels.id, channelId))
+    .limit(1)
+  if (!row) {
+    throw new RequestValidationError("Channel not found", {
+      fields: { channelId: ["Channel not found"] },
+    })
+  }
+}
+
+async function requireBooking(db: PostgresJsDatabase, bookingId: string) {
+  const [row] = await db
+    .select({ id: bookings.id })
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+  if (!row) {
+    throw new RequestValidationError("Booking not found", {
+      fields: { bookingId: ["Booking not found"] },
+    })
+  }
+}
+
+function duplicateBookingLinkError(): ApiHttpError {
+  return new ApiHttpError("Channel booking link already exists", {
+    status: 409,
+    code: "duplicate_channel_booking_link",
+    details: {
+      fields: {
+        channelId: ["Channel booking link already exists"],
+        bookingId: ["Channel booking link already exists"],
+      },
+    },
+  })
+}
+
+function isDuplicateBookingLinkError(error: unknown): boolean {
+  const signals = collectErrorStrings(error, new Set(), 0)
+  return (
+    signals.some((value) => value.includes(UNIQUE_VIOLATION_SQLSTATE)) &&
+    signals.some((value) => value.includes(DUPLICATE_BOOKING_LINK_CONSTRAINT))
+  )
+}
+
+function collectErrorStrings(error: unknown, seen: Set<object>, depth: number): string[] {
+  if (!error || typeof error !== "object" || seen.has(error) || depth > 6) return []
+  seen.add(error)
+
+  const record = error as Record<string, unknown>
+  const values = [
+    record.code,
+    record.sqlState,
+    record.sqlstate,
+    record.sql_state,
+    record.constraint,
+    record.constraintName,
+    record.constraint_name,
+    record.detail,
+    record.message,
+  ].filter((value): value is string => typeof value === "string")
+
+  const nested = [
+    record.cause,
+    record.originalError,
+    record.original,
+    record.error,
+    record.queryError,
+  ]
+  if (Array.isArray(record.errors)) nested.push(...record.errors)
+  for (const child of nested) {
+    values.push(...collectErrorStrings(child, seen, depth + 1))
+  }
+
+  return values
+}
 
 export const commercialServiceOperations = {
   async listContracts(db: PostgresJsDatabase, query: ChannelContractListQuery) {
@@ -170,6 +256,7 @@ export const commercialServiceOperations = {
     data: CreateChannelProductMappingInput,
     eventBus?: EventBus,
   ) {
+    await requireChannel(db, data.channelId)
     const [row] = await db.insert(channelProductMappings).values(data).returning()
     if (row) {
       // Adding a mapping can make the product pass storefront listability —
@@ -308,14 +395,36 @@ export const commercialServiceOperations = {
   },
 
   async createBookingLink(db: PostgresJsDatabase, data: CreateChannelBookingLinkInput) {
-    const [row] = await db
-      .insert(channelBookingLinks)
-      .values({
-        ...data,
-        bookedAtExternal: toDateOrNull(data.bookedAtExternal),
-        lastSyncedAt: toDateOrNull(data.lastSyncedAt),
-      })
-      .returning()
+    await requireChannel(db, data.channelId)
+    await requireBooking(db, data.bookingId)
+
+    const [existing] = await db
+      .select({ id: channelBookingLinks.id })
+      .from(channelBookingLinks)
+      .where(
+        and(
+          eq(channelBookingLinks.channelId, data.channelId),
+          eq(channelBookingLinks.bookingId, data.bookingId),
+          isNull(channelBookingLinks.bookingItemId),
+        ),
+      )
+      .limit(1)
+    if (existing) throw duplicateBookingLinkError()
+
+    let row: ChannelBookingLink | undefined
+    try {
+      ;[row] = await db
+        .insert(channelBookingLinks)
+        .values({
+          ...data,
+          bookedAtExternal: toDateOrNull(data.bookedAtExternal),
+          lastSyncedAt: toDateOrNull(data.lastSyncedAt),
+        })
+        .returning()
+    } catch (error) {
+      if (isDuplicateBookingLinkError(error)) throw duplicateBookingLinkError()
+      throw error
+    }
     return row
   },
 
@@ -372,6 +481,7 @@ export const commercialServiceOperations = {
   },
 
   async createWebhookEvent(db: PostgresJsDatabase, data: CreateChannelWebhookEventInput) {
+    await requireChannel(db, data.channelId)
     const [row] = await db
       .insert(channelWebhookEvents)
       .values({

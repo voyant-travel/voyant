@@ -7,7 +7,7 @@ import {
 } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { resolveVoyantApiKey } from "../../lib/voyant-cloud"
+import { resolveVoyantDataApiKey } from "../../lib/voyant-cloud"
 import { getDbFromEnv } from "../lib/db"
 import {
   createDocumentStorage,
@@ -66,7 +66,7 @@ export async function createOperatorBookingPiiService(bindings: unknown) {
 
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
   const env = operatorBindings(bindings)
-  const apiKey = resolveVoyantApiKey(env)
+  const apiKey = resolveVoyantDataApiKey(env)
   if (!apiKey) return undefined
   return createVoyantDataFxExchangeRateResolver({
     apiKey,
