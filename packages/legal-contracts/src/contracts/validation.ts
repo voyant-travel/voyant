@@ -114,21 +114,29 @@ export const insertContractTemplateVersionSchema = z.object({
 
 // ---------- contract number series ----------
 
-const contractNumberSeriesCoreSchema = z.object({
+const contractNumberSeriesFields = {
   name: z.string().min(1).max(255),
   prefix: z.string().min(1).max(20),
-  separator: z.string().max(5).default(""),
-  padLength: z.number().int().min(0).max(12).default(4),
-  resetStrategy: contractNumberResetStrategySchema.default("never"),
-  scope: contractScopeSchema.default("customer"),
-  isDefault: z.boolean().default(false),
+  separator: z.string().max(5),
+  padLength: z.number().int().min(0).max(12),
+  resetStrategy: contractNumberResetStrategySchema,
+  scope: contractScopeSchema,
+  isDefault: z.boolean(),
   externalProvider: z.string().min(1).max(100).optional().nullable(),
   externalConfigKey: z.string().min(1).max(100).optional().nullable(),
-  active: z.boolean().default(true),
-})
+  active: z.boolean(),
+}
 
-export const insertContractNumberSeriesSchema = contractNumberSeriesCoreSchema
-export const updateContractNumberSeriesSchema = contractNumberSeriesCoreSchema.partial()
+export const insertContractNumberSeriesSchema = z.object({
+  ...contractNumberSeriesFields,
+  separator: contractNumberSeriesFields.separator.default(""),
+  padLength: contractNumberSeriesFields.padLength.default(4),
+  resetStrategy: contractNumberSeriesFields.resetStrategy.default("never"),
+  scope: contractNumberSeriesFields.scope.default("customer"),
+  isDefault: contractNumberSeriesFields.isDefault.default(false),
+  active: contractNumberSeriesFields.active.default(true),
+})
+export const updateContractNumberSeriesSchema = z.object(contractNumberSeriesFields).partial()
 export const contractNumberSeriesListQuerySchema = z.object({
   scope: contractScopeSchema.optional(),
   active: booleanQueryParam.optional(),

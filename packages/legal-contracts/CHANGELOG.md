@@ -1,5 +1,12 @@
 # @voyant-travel/legal-contracts
 
+## 0.106.8
+
+### Patch Changes
+
+- 1d65f48: Preserve omitted contract number series fields during PATCH validation so partial
+  updates no longer apply create-time defaults such as `scope: "customer"`.
+
 ## 0.106.7
 
 ### Patch Changes

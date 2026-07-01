@@ -533,7 +533,7 @@ export const contractRecordsService = {
     const [row] = await db
       .delete(contractAttachments)
       .where(eq(contractAttachments.id, attachmentId))
-      .returning({ id: contractAttachments.id })
+      .returning()
     return row ?? null
   },
 }

@@ -406,6 +406,31 @@ async function replaceContractAttachmentUpload(
   return c.json({ data: row }, 200)
 }
 
+async function deleteContractAttachment(
+  c: Context<Env>,
+  options: ContractsRouteOptions,
+): Promise<Response> {
+  const attachmentId = c.req.param("attachmentId")!
+  const row = await contractsService.deleteAttachment(c.get("db"), attachmentId)
+  if (!row) return c.json({ error: "Attachment not found" }, 404)
+
+  const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+  const storage = runtime.documentStorage
+  if (storage && row.storageKey) {
+    try {
+      await storage.delete(row.storageKey)
+    } catch (error) {
+      console.warn(
+        `[legal] failed to delete contract attachment object ${row.storageKey}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
+  }
+
+  return c.json({ success: true } as const, 200)
+}
+
 async function regenerateContractDocument(
   c: Context<Env>,
   options: ContractsRouteOptions,
@@ -1833,15 +1858,7 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
 
       return c.redirect(download.download.url, 302)
     })
-    .openapi(deleteAttachmentRoute, async (c) => {
-      const row = await contractsService.deleteAttachment(
-        c.get("db"),
-        c.req.valid("param").attachmentId,
-      )
-      return row
-        ? c.json({ success: true } as const, 200)
-        : c.json({ error: "Attachment not found" }, 404)
-    })
+    .openapi(deleteAttachmentRoute, (c) => asRouteResponse(deleteContractAttachment(c, options)))
 
   const parent = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   // Preserve the original per-route idempotency guard on `POST /`. The
