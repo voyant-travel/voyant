@@ -1018,6 +1018,14 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.amountCents).toBe(50000)
     })
 
+    it("rejects zero-value payment authorizations", async () => {
+      const res = await app.request("/payment-authorizations", {
+        method: "POST",
+        ...json({ currency: "USD", amountCents: 0 }),
+      })
+      expect(res.status).toBe(400)
+    })
+
     it("gets a payment authorization by id", async () => {
       const createRes = await app.request("/payment-authorizations", {
         method: "POST",
@@ -1093,6 +1101,14 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.id).toMatch(/^pmcp_/)
       expect(data.status).toBe("pending")
       expect(data.amountCents).toBe(25000)
+    })
+
+    it("rejects zero-value payment captures", async () => {
+      const res = await app.request("/payment-captures", {
+        method: "POST",
+        ...json({ currency: "USD", amountCents: 0 }),
+      })
+      expect(res.status).toBe(400)
     })
 
     it("gets a capture by id", async () => {

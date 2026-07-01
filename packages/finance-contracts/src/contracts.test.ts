@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   insertBookingItemCommissionSchema,
   insertBookingItemTaxLineSchema,
+  insertPaymentAuthorizationSchema,
+  insertPaymentCaptureSchema,
   insertPaymentSchema,
   invoiceStatusSchema,
   paymentMethodSchema,
@@ -35,6 +37,34 @@ describe("finance-contracts", () => {
     ).toBe("pay-create-1")
 
     expect(updatePaymentSchema.parse({ idempotencyKey: "ignored" })).toEqual({})
+  })
+
+  it("requires positive payment authorization and capture amounts", () => {
+    expect(
+      insertPaymentAuthorizationSchema.safeParse({
+        currency: "USD",
+        amountCents: 1,
+      }).success,
+    ).toBe(true)
+    expect(
+      insertPaymentAuthorizationSchema.safeParse({
+        currency: "USD",
+        amountCents: 0,
+      }).success,
+    ).toBe(false)
+
+    expect(
+      insertPaymentCaptureSchema.safeParse({
+        currency: "USD",
+        amountCents: 1,
+      }).success,
+    ).toBe(true)
+    expect(
+      insertPaymentCaptureSchema.safeParse({
+        currency: "USD",
+        amountCents: 0,
+      }).success,
+    ).toBe(false)
   })
 
   it("parses false tax-class active query filters as false", () => {
