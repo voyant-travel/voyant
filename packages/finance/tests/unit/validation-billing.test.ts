@@ -33,6 +33,17 @@ describe("invoiceFromBookingSchema", () => {
     expect(result.invoiceType).toBe("invoice")
   })
 
+  it("accepts proforma conversion linkage", () => {
+    const result = invoiceFromBookingSchema.parse({
+      bookingId: "book_123",
+      convertedFromInvoiceId: "inv_proforma_123",
+      issueDate: "2026-05-23",
+      dueDate: "2026-06-23",
+    })
+
+    expect(result.convertedFromInvoiceId).toBe("inv_proforma_123")
+  })
+
   it("accepts bounded document wait options", () => {
     const result = invoiceFromBookingSchema.parse({
       bookingId: "book_123",

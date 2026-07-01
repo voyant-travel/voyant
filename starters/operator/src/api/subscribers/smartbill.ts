@@ -2,7 +2,6 @@
 import { bookings } from "@voyant-travel/bookings/schema"
 import {
   financeService,
-  type InvoicePaymentRecordedEvent,
   type InvoiceSettlementPoller,
   invoiceLineItems,
   invoices,
@@ -41,8 +40,55 @@ type InvoiceIssuedPayload = {
   invoiceId?: string
   invoiceNumber?: string
   invoiceType?: "invoice" | "proforma" | "credit_note"
+  convertedFromInvoiceId?: string | null
   externalAllocationRequired?: boolean
 }
+
+type InvoicePaymentRecordedEvent = {
+  invoiceId: string
+  invoiceNumber: string
+  invoiceType: "invoice" | "proforma" | "credit_note"
+  bookingId: string | null
+  invoiceCurrency: string
+  invoiceTotalCents: number
+  invoicePaidCents: number
+  invoiceBalanceDueCents: number
+  paymentId: string
+  amountCents: number
+  currency: string
+  baseCurrency: string | null
+  baseAmountCents: number | null
+  paymentMethod:
+    | "bank_transfer"
+    | "direct_bill"
+    | "credit_card"
+    | "debit_card"
+    | "wallet"
+    | "cheque"
+    | "cash"
+    | "other"
+  status: string
+  referenceNumber: string | null
+  paymentDate: string
+}
+
+type SmartbillExternalRefLike = {
+  provider: string
+  externalId?: string | null
+  externalNumber?: string | null
+  metadata?: unknown
+  syncError?: string | null
+}
+
+type SmartbillEstimateReference = {
+  seriesName: string
+  number: string
+}
+
+type SmartbillDocumentClient = Pick<
+  ReturnType<typeof createSmartbillClient>,
+  "createInvoice" | "createProforma" | "convertEstimateToInvoice"
+>
 
 type SmartbillRuntime = {
   client: ReturnType<typeof createSmartbillClient>
@@ -209,7 +255,14 @@ async function syncIssuedInvoice(
   if (!invoiceId) return
   await withDbFromEnv(env, async (rawDb) => {
     const db = asFinanceDb(rawDb)
-    await syncIssuedInvoiceWithDb(env, db, runtime, invoiceId, documentType)
+    await syncIssuedInvoiceWithDb(
+      env,
+      db,
+      runtime,
+      invoiceId,
+      documentType,
+      payload.convertedFromInvoiceId,
+    )
   })
 }
 
@@ -219,6 +272,7 @@ async function syncIssuedInvoiceWithDb(
   runtime: SmartbillRuntime,
   invoiceId: string,
   documentType: "invoice" | "proforma",
+  convertedFromInvoiceId?: string | null,
 ) {
   try {
     const externalRefs = await financeService.listInvoiceExternalRefs(db, invoiceId)
@@ -234,10 +288,11 @@ async function syncIssuedInvoiceWithDb(
     const body = await buildSmartbillInvoiceBody(db, runtime, invoiceId, documentType)
     if (!body) return
 
-    const result =
-      documentType === "proforma"
-        ? await runtime.client.createProforma(body)
-        : await runtime.client.createInvoice(body)
+    const sourceEstimateRef =
+      documentType === "invoice"
+        ? await resolveConvertedSmartbillEstimateRef(db, runtime, invoiceId, convertedFromInvoiceId)
+        : null
+    const result = await issueSmartbillDocument(runtime, body, documentType, sourceEstimateRef)
 
     await financeService.registerInvoiceExternalRef(db, invoiceId, {
       provider: "smartbill",
@@ -253,6 +308,7 @@ async function syncIssuedInvoiceWithDb(
         series: result.series ?? body.seriesName,
         number: result.number ?? null,
         documentType,
+        ...(sourceEstimateRef ? { convertedFromEstimate: sourceEstimateRef } : {}),
       },
     })
 
@@ -263,7 +319,7 @@ async function syncIssuedInvoiceWithDb(
     }
 
     console.info(
-      `[smartbill] ${documentType} created: ${result.series ?? body.seriesName}-${result.number ?? "unknown"} for ${invoiceId}`,
+      `[smartbill] ${documentType} ${sourceEstimateRef ? "converted" : "created"}: ${result.series ?? body.seriesName}-${result.number ?? "unknown"} for ${invoiceId}`,
     )
 
     // Fetch the PDF and store it as an invoice attachment so operators
@@ -294,6 +350,91 @@ async function syncIssuedInvoiceWithDb(
       syncError: error instanceof Error ? error.message : String(error),
     })
   }
+}
+
+export async function issueSmartbillDocument(
+  runtime: { client: SmartbillDocumentClient; companyVatCode: string },
+  body: SmartbillInvoiceBody,
+  documentType: "invoice" | "proforma",
+  sourceEstimateRef: SmartbillEstimateReference | null,
+) {
+  if (documentType === "proforma") {
+    return runtime.client.createProforma(body)
+  }
+
+  if (sourceEstimateRef) {
+    return runtime.client.convertEstimateToInvoice(
+      runtime.companyVatCode,
+      sourceEstimateRef.seriesName,
+      sourceEstimateRef.number,
+      body,
+    )
+  }
+
+  return runtime.client.createInvoice(body)
+}
+
+export async function resolveConvertedSmartbillEstimateRef(
+  db: PostgresJsDatabase,
+  runtime: Pick<SmartbillRuntime, "proformaSeriesName">,
+  invoiceId: string,
+  convertedFromInvoiceId?: string | null,
+): Promise<SmartbillEstimateReference | null> {
+  const sourceInvoiceId =
+    convertedFromInvoiceId ??
+    (await db
+      .select({ convertedFromInvoiceId: invoices.convertedFromInvoiceId })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1)
+      .then(([invoice]) => invoice?.convertedFromInvoiceId ?? null))
+  if (!sourceInvoiceId) return null
+
+  const sourceRefs = await financeService.listInvoiceExternalRefs(db, sourceInvoiceId)
+  const sourceSmartbillRef = sourceRefs.find(
+    (ref) =>
+      ref.provider === "smartbill" &&
+      !ref.syncError &&
+      (nonEmpty(ref.externalNumber) || nonEmpty(ref.externalId)),
+  )
+  if (!sourceSmartbillRef) return null
+
+  const reference = resolveSmartbillEstimateReference(
+    sourceSmartbillRef,
+    runtime.proformaSeriesName,
+  )
+  if (!reference) {
+    throw new Error(
+      `SmartBill proforma reference for ${sourceInvoiceId} is missing series or number`,
+    )
+  }
+  return reference
+}
+
+export function resolveSmartbillEstimateReference(
+  ref: SmartbillExternalRefLike,
+  fallbackSeriesName: string,
+): SmartbillEstimateReference | null {
+  const metadata = toRecord(ref.metadata)
+  const metadataSeriesName = nonEmpty(metadata?.series) ?? nonEmpty(metadata?.seriesName)
+  const seriesName = metadataSeriesName ?? fallbackSeriesName
+  const metadataNumber = nonEmpty(metadata?.number)
+  const externalNumber = nonEmpty(ref.externalNumber) ?? nonEmpty(ref.externalId)
+  const number = metadataNumber ?? parseSmartbillExternalNumber(externalNumber, seriesName)
+
+  if (!seriesName || !number) return null
+  return { seriesName, number }
+}
+
+function parseSmartbillExternalNumber(
+  externalNumber: string | undefined,
+  seriesName: string,
+): string | null {
+  if (!externalNumber) return null
+  const prefixedNumber = `${seriesName}-`
+  return externalNumber.startsWith(prefixedNumber)
+    ? (nonEmpty(externalNumber.slice(prefixedNumber.length)) ?? null)
+    : externalNumber
 }
 
 async function syncRecordedInvoicePayment(

@@ -87,6 +87,7 @@ function buildCheckoutFinalizeDeps(
           issueDate: today,
           dueDate,
           invoiceType: "invoice",
+          convertedFromInvoiceId,
           notes: convertedFromInvoiceId
             ? `Converted from proforma ${convertedFromInvoiceId}`
             : null,
@@ -113,11 +114,6 @@ function buildCheckoutFinalizeDeps(
         },
         { eventBus },
       )
-
-      if (invoice && convertedFromInvoiceId) {
-        const { invoices } = await import("@voyant-travel/finance")
-        await db.update(invoices).set({ convertedFromInvoiceId }).where(eq(invoices.id, invoice.id))
-      }
 
       return invoice ? { invoiceId: invoice.id } : null
     },
