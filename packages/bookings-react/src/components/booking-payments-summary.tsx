@@ -24,14 +24,47 @@ import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i
 import { IconActionButton } from "./icon-action-button.js"
 import { StatusBadge } from "./status-badge.js"
 
-export interface BookingPaymentsSummaryRow {
+export interface BookingPaymentSummaryPaymentRow {
   id: string
+  source: "payment"
   invoiceId: string
   invoiceNumber: string
   invoiceType?: "invoice" | "proforma" | "credit_note"
   amountCents: number
   currency: string
   /** When the customer paid in a different currency than the invoice. */
+  baseCurrency?: string | null
+  baseAmountCents?: number | null
+  status: PaymentStatus
+  paymentMethod: PaymentMethod
+  paymentDate: string
+  referenceNumber: string | null
+  notes: string | null
+}
+
+export interface BookingPaymentSummaryVoucherRedemptionRow
+  extends Omit<
+    BookingPaymentSummaryPaymentRow,
+    "source" | "invoiceId" | "invoiceNumber" | "invoiceType"
+  > {
+  source: "voucher_redemption"
+  invoiceId: null
+  invoiceNumber: null
+  invoiceType: null
+}
+
+export type BookingPaymentsSummaryRow =
+  | BookingPaymentSummaryPaymentRow
+  | BookingPaymentSummaryVoucherRedemptionRow
+
+type BookingPaymentsSummaryInputRow = {
+  id: string
+  source?: BookingPaymentsSummaryRow["source"]
+  invoiceId: string | null
+  invoiceNumber: string | null
+  invoiceType?: BookingPaymentSummaryPaymentRow["invoiceType"] | null
+  amountCents: number
+  currency: string
   baseCurrency?: string | null
   baseAmountCents?: number | null
   status: PaymentStatus
@@ -143,21 +176,40 @@ export function BookingPaymentsSummary({
 
   const paymentRows = React.useMemo<BookingPaymentsSummaryRow[]>(
     () =>
-      payments.map((payment) => ({
-        id: payment.id,
-        invoiceId: payment.invoiceId,
-        invoiceNumber: payment.invoiceNumber,
-        invoiceType: payment.invoiceType,
-        amountCents: payment.amountCents,
-        currency: payment.currency,
-        baseCurrency: payment.baseCurrency ?? null,
-        baseAmountCents: payment.baseAmountCents ?? null,
-        status: payment.status,
-        paymentMethod: payment.paymentMethod,
-        paymentDate: payment.paymentDate,
-        referenceNumber: payment.referenceNumber,
-        notes: payment.notes,
-      })),
+      payments.map((payment: BookingPaymentsSummaryInputRow) => {
+        const base = {
+          id: payment.id,
+          amountCents: payment.amountCents,
+          currency: payment.currency,
+          baseCurrency: payment.baseCurrency ?? null,
+          baseAmountCents: payment.baseAmountCents ?? null,
+          status: payment.status,
+          paymentMethod: payment.paymentMethod,
+          paymentDate: payment.paymentDate,
+          referenceNumber: payment.referenceNumber,
+          notes: payment.notes,
+        }
+
+        const source = payment.source ?? "payment"
+
+        if (source === "voucher_redemption") {
+          return {
+            ...base,
+            source: "voucher_redemption" as const,
+            invoiceId: null,
+            invoiceNumber: null,
+            invoiceType: null,
+          }
+        }
+
+        return {
+          ...base,
+          source: "payment" as const,
+          invoiceId: payment.invoiceId ?? "",
+          invoiceNumber: payment.invoiceNumber ?? "",
+          invoiceType: payment.invoiceType ?? undefined,
+        }
+      }),
     [payments],
   )
 
@@ -231,17 +283,21 @@ export function BookingPaymentsSummary({
         accessorKey: "invoiceNumber",
         header: card.columns.invoice,
         cell: ({ row }) => {
+          const payment = row.original
+          if (payment.source !== "payment") {
+            return <span className="text-muted-foreground">—</span>
+          }
           if (onInvoiceOpen) {
             return (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation()
-                  onInvoiceOpen(row.original.invoiceId, row.original)
+                  onInvoiceOpen(payment.invoiceId, payment)
                 }}
                 className="inline-flex items-center gap-1 font-mono text-primary text-xs hover:underline"
               >
-                {row.original.invoiceNumber}
+                {payment.invoiceNumber}
                 <ArrowUpRight className="h-3 w-3" />
               </button>
             )
@@ -249,16 +305,16 @@ export function BookingPaymentsSummary({
           if (getInvoiceHref) {
             return (
               <a
-                href={getInvoiceHref(row.original)}
+                href={getInvoiceHref(payment)}
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 font-mono text-primary text-xs hover:underline"
               >
-                {row.original.invoiceNumber}
+                {payment.invoiceNumber}
                 <ArrowUpRight className="h-3 w-3" />
               </a>
             )
           }
-          return <span className="font-mono text-xs">{row.original.invoiceNumber}</span>
+          return <span className="font-mono text-xs">{payment.invoiceNumber}</span>
         },
       },
     ]
@@ -267,51 +323,57 @@ export function BookingPaymentsSummary({
       cols.push({
         id: "actions",
         header: () => <span className="sr-only">{card.columns.actions}</span>,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-1">
-            {onViewPayment ? (
-              <IconActionButton
-                label={card.actions.view}
-                icon={<Eye className="h-3.5 w-3.5" />}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onViewPayment(row.original)
-                }}
-              />
-            ) : null}
-            {onConvertProforma && row.original.invoiceType === "proforma" ? (
-              <IconActionButton
-                label={card.actions.convertToInvoice}
-                icon={<ArrowUpRight className="h-3.5 w-3.5" />}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  void onConvertProforma(row.original)
-                }}
-              />
-            ) : null}
-            {onEditPayment ? (
-              <IconActionButton
-                label={card.actions.edit}
-                icon={<Pencil className="h-3.5 w-3.5" />}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEditPayment(row.original)
-                }}
-              />
-            ) : null}
-            {onDeletePayment ? (
-              <IconActionButton
-                label={card.actions.delete}
-                icon={<Trash2 className="h-3.5 w-3.5" />}
-                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setDeleteTarget(row.original)
-                }}
-              />
-            ) : null}
-          </div>
-        ),
+        cell: ({ row }) => {
+          if (row.original.source !== "payment") {
+            return null
+          }
+
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {onViewPayment ? (
+                <IconActionButton
+                  label={card.actions.view}
+                  icon={<Eye className="h-3.5 w-3.5" />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onViewPayment(row.original)
+                  }}
+                />
+              ) : null}
+              {onConvertProforma && row.original.invoiceType === "proforma" ? (
+                <IconActionButton
+                  label={card.actions.convertToInvoice}
+                  icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void onConvertProforma(row.original)
+                  }}
+                />
+              ) : null}
+              {onEditPayment ? (
+                <IconActionButton
+                  label={card.actions.edit}
+                  icon={<Pencil className="h-3.5 w-3.5" />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEditPayment(row.original)
+                  }}
+                />
+              ) : null}
+              {onDeletePayment ? (
+                <IconActionButton
+                  label={card.actions.delete}
+                  icon={<Trash2 className="h-3.5 w-3.5" />}
+                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDeleteTarget(row.original)
+                  }}
+                />
+              ) : null}
+            </div>
+          )
+        },
       })
     }
 

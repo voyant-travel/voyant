@@ -10959,18 +10959,36 @@
                               "id": {
                                 "type": "string"
                               },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "payment",
+                                  "voucher_redemption"
+                                ],
+                                "default": "payment"
+                              },
                               "invoiceId": {
-                                "type": "string"
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               },
                               "invoiceNumber": {
-                                "type": "string"
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               },
                               "invoiceType": {
-                                "type": "string",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
                                 "enum": [
                                   "invoice",
                                   "proforma",
-                                  "credit_note"
+                                  "credit_note",
+                                  null
                                 ]
                               },
                               "status": {

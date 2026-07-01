@@ -70,6 +70,7 @@ function payment(
 ): PublicFinanceBookingPaymentRecord {
   return {
     id: "pay_123",
+    source: "payment",
     invoiceId: "inv_123",
     invoiceNumber: "INV-1",
     invoiceType: "invoice",

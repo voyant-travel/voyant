@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookings } from "@voyant-travel/bookings/schema"
-import { and, asc, desc, eq, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -10,6 +10,7 @@ import {
   invoices,
   paymentInstruments,
   payments,
+  voucherRedemptions,
   vouchers,
 } from "./schema.js"
 import { financeService } from "./service.js"
@@ -508,43 +509,83 @@ export const publicFinanceService = {
       .where(eq(invoices.bookingId, bookingId))
       .orderBy(desc(invoices.createdAt))
 
-    if (invoiceRows.length === 0) {
-      return { bookingId, payments: [] }
-    }
-
     const invoiceById = new Map(invoiceRows.map((invoice) => [invoice.id, invoice]))
-    const paymentRows = await db
-      .select()
-      .from(payments)
-      .where(or(...invoiceRows.map((invoice) => eq(payments.invoiceId, invoice.id))))
-      .orderBy(desc(payments.paymentDate), desc(payments.createdAt))
+    const paymentRows =
+      invoiceRows.length > 0
+        ? await db
+            .select()
+            .from(payments)
+            .where(or(...invoiceRows.map((invoice) => eq(payments.invoiceId, invoice.id))))
+            .orderBy(desc(payments.paymentDate), desc(payments.createdAt))
+        : []
+
+    const redemptionRows = await db
+      .select({
+        id: voucherRedemptions.id,
+        voucherId: voucherRedemptions.voucherId,
+        amountCents: voucherRedemptions.amountCents,
+        createdAt: voucherRedemptions.createdAt,
+        paymentId: voucherRedemptions.paymentId,
+        voucherCode: vouchers.code,
+        currency: vouchers.currency,
+        notes: vouchers.notes,
+      })
+      .from(voucherRedemptions)
+      .innerJoin(vouchers, eq(vouchers.id, voucherRedemptions.voucherId))
+      .where(and(eq(voucherRedemptions.bookingId, bookingId), isNull(voucherRedemptions.paymentId)))
+      .orderBy(desc(voucherRedemptions.createdAt))
+
+    const paymentProjections = paymentRows.flatMap((payment) => {
+      const invoice = invoiceById.get(payment.invoiceId)
+      if (!invoice) {
+        return []
+      }
+
+      return [
+        {
+          id: payment.id,
+          source: "payment" as const,
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceType: invoice.invoiceType,
+          status: payment.status,
+          paymentMethod: payment.paymentMethod,
+          amountCents: payment.amountCents,
+          currency: payment.currency,
+          baseCurrency: payment.baseCurrency ?? null,
+          baseAmountCents: payment.baseAmountCents ?? null,
+          paymentDate: payment.paymentDate,
+          referenceNumber: payment.referenceNumber ?? null,
+          notes: payment.notes ?? null,
+        },
+      ]
+    })
+
+    const voucherProjections = redemptionRows.map((redemption) => ({
+      id: redemption.id,
+      source: "voucher_redemption" as const,
+      invoiceId: null,
+      invoiceNumber: null,
+      invoiceType: null,
+      status: "completed" as const,
+      paymentMethod: "voucher" as const,
+      amountCents: redemption.amountCents,
+      currency: redemption.currency,
+      baseCurrency: null,
+      baseAmountCents: null,
+      paymentDate:
+        redemption.createdAt instanceof Date
+          ? redemption.createdAt.toISOString()
+          : redemption.createdAt,
+      referenceNumber: redemption.voucherCode,
+      notes: null,
+    }))
 
     return {
       bookingId,
-      payments: paymentRows.flatMap((payment) => {
-        const invoice = invoiceById.get(payment.invoiceId)
-        if (!invoice) {
-          return []
-        }
-
-        return [
-          {
-            id: payment.id,
-            invoiceId: invoice.id,
-            invoiceNumber: invoice.invoiceNumber,
-            invoiceType: invoice.invoiceType,
-            status: payment.status,
-            paymentMethod: payment.paymentMethod,
-            amountCents: payment.amountCents,
-            currency: payment.currency,
-            baseCurrency: payment.baseCurrency ?? null,
-            baseAmountCents: payment.baseAmountCents ?? null,
-            paymentDate: payment.paymentDate,
-            referenceNumber: payment.referenceNumber ?? null,
-            notes: payment.notes ?? null,
-          },
-        ]
-      }),
+      payments: [...paymentProjections, ...voucherProjections].sort(
+        (a, b) => Date.parse(b.paymentDate) - Date.parse(a.paymentDate),
+      ),
     }
   },
 
