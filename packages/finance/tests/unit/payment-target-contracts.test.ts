@@ -62,7 +62,7 @@ describe("payment target contracts", () => {
         target: { type: "booking_guarantee", bookingGuaranteeId: "bkg_123" },
         provenance: { source: "operator" },
         currency: "EUR",
-        amountCents: 0,
+        amountCents: 1,
       }),
     ).toMatchObject({
       target: { type: "booking_guarantee", bookingGuaranteeId: "bkg_123" },
