@@ -330,7 +330,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront-verification",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/storefront-verification/sms/start": {
@@ -516,7 +518,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront-verification",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/storefront-verification/email/confirm": {
@@ -708,7 +712,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront-verification",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/storefront-verification/sms/confirm": {
@@ -901,7 +907,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront-verification",
+        "x-voyant-surface": "storefront"
       }
     }
   },

@@ -252,7 +252,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "contract-document",
+        "x-voyant-surface": "admin"
       }
     }
   },

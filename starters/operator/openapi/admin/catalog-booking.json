@@ -1558,7 +1558,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/book": {
@@ -1933,7 +1935,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/drafts/{id}": {
@@ -2231,7 +2235,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       },
       "get": {
         "parameters": [
@@ -2373,7 +2379,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2390,7 +2398,9 @@
           "204": {
             "description": "Draft deleted (idempotent)"
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/holds/place": {
@@ -2580,7 +2590,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/holds/release": {
@@ -2713,7 +2725,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/orders": {
@@ -2783,7 +2797,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/orders/{id}": {
@@ -2860,7 +2876,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/orders/{id}/cancel": {
@@ -3045,7 +3063,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/slots": {
@@ -3178,7 +3198,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/bookings/{id}/catalog-snapshot": {
@@ -3263,7 +3285,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "admin"
       }
     }
   },

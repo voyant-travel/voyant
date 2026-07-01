@@ -359,7 +359,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "storefront"
       }
     }
   },

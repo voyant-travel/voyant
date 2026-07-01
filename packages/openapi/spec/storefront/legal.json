@@ -304,7 +304,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/contracts/templates/{id}/preview": {
@@ -394,7 +396,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/contracts/templates/{id}/render-preview": {
@@ -484,7 +488,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/contracts/templates/by-slug/{slug}/preview": {
@@ -574,7 +580,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/contracts/templates/by-slug/{slug}/render-preview": {
@@ -664,7 +672,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/contracts/{id}": {
@@ -836,7 +846,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/contracts/{id}/sign": {
@@ -1044,7 +1056,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/policies/{slug}": {
@@ -1231,7 +1245,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/policies/{id}/accept": {
@@ -1567,7 +1583,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/terms": {
@@ -1879,7 +1897,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/legal/terms/{id}": {
@@ -2074,7 +2094,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "storefront"
       }
     }
   },

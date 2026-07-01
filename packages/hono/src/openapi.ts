@@ -280,50 +280,72 @@ export async function generateModuleOpenApiDocuments(
   return result
 }
 
-/** Second path segment after the surface prefix — `/v1/admin/<seg>/...`. */
-function moduleSegment(path: string): string {
-  return path.split("/")[3] ?? "misc"
+/**
+ * The module a path belongs to, given the authoritative owner map: the manifest
+ * owner if known (which is what keeps `publicPath` overrides correct), else the
+ * path's own module segment — `<seg>` in `/v1/admin/<seg>/...`,
+ * `/v1/public/<seg>/...`, or `/v1/<seg>/...` (webhooks/legacy).
+ */
+function moduleNameForPath(path: string, owner: ReadonlyMap<string, string>): string {
+  const known = owner.get(path)
+  if (known) return known
+  const parts = path.split("/").filter(Boolean) // ["v1","admin","bookings",...]
+  const seg = parts[1] === "admin" || parts[1] === "public" ? parts[2] : parts[1]
+  return seg ?? "misc"
+}
+
+/** The API surface a path is served on, or `null` for non-surface routes. */
+function surfaceForPath(path: string): ApiSurface | null {
+  if (path.startsWith("/v1/admin/")) return "admin"
+  if (path.startsWith("/v1/public/")) return "storefront"
+  return null
+}
+
+/**
+ * Build the authoritative path → module ownership map from the mount manifest.
+ *
+ * Generates each module's isolated doc (see `generateModuleOpenApiDocuments`)
+ * only to learn which real absolute paths it owns — so `publicPath` overrides
+ * (whose prefix isn't the module name, e.g. `/v1/public/booking-engine`) map to
+ * the right module. Routes the manifest doesn't record (`additionalRoutes`,
+ * directly-mounted routes) are absent here and fall back to their path segment.
+ *
+ * Build-time only.
+ */
+export async function buildModulePathOwnership(
+  mounts: readonly ModuleMount[],
+  options: GenerateOpenApiOptions,
+): Promise<Map<string, string>> {
+  const moduleDocs = await generateModuleOpenApiDocuments(mounts, options)
+  const owner = new Map<string, string>()
+  for (const [moduleName, doc] of moduleDocs) {
+    for (const path of Object.keys(doc.paths ?? {})) owner.set(path, moduleName)
+  }
+  return owner
 }
 
 /**
  * Partition a composed document into one document per module, covering EVERY
  * admin/storefront path (voyant#2733).
  *
- * `generateModuleOpenApiDocuments` alone only sees routes recorded in the module
- * mount manifest — it misses `additionalRoutes` and any route mounted directly
- * on the composed app (e.g. the operator's workflow-runs admin surface, the
- * `_meta/capabilities` route). Those were present in the old committed aggregate
- * and must not silently vanish from the committed per-module specs.
- *
- * This uses the manifest as the *authoritative* owner for the routes it knows
- * about — which is what makes `publicPath` overrides (whose prefix isn't the
- * module name, e.g. `/v1/public/booking-engine`) land under the right module —
- * and falls back to the path's own second segment for anything the manifest
- * doesn't claim. The result therefore partitions the full surface exactly: every
- * `/v1/admin/*` and `/v1/public/*` path lands in exactly one module document.
- * Non-surface routes (`/v1/<name>` webhooks, legacy `/v1/*`) live only in the
- * aggregate, as before.
+ * Uses the ownership map as the authoritative module owner, falling back to the
+ * path's own segment for anything the manifest doesn't claim (e.g.
+ * `additionalRoutes` mounts like the operator's workflow-runs admin surface).
+ * The full surface is therefore partitioned exactly: every `/v1/admin/*` and
+ * `/v1/public/*` path lands in exactly one module document. Non-surface routes
+ * (`/v1/<name>` webhooks, legacy `/v1/*`) live only in the aggregate, as before.
  *
  * Each per-module document carries the aggregate's shared `components` verbatim
  * (there is ~one), so it stays a valid, self-contained OpenAPI document.
- *
- * Build-time only.
  */
-export async function splitDocumentByModule(
+export function partitionByModule(
   full: OpenApiDocument,
-  mounts: readonly ModuleMount[],
-  options: GenerateOpenApiOptions,
-): Promise<Map<string, OpenApiDocument>> {
-  const moduleDocs = await generateModuleOpenApiDocuments(mounts, options)
-  const owner = new Map<string, string>()
-  for (const [moduleName, doc] of moduleDocs) {
-    for (const path of Object.keys(doc.paths ?? {})) owner.set(path, moduleName)
-  }
-
+  owner: ReadonlyMap<string, string>,
+): Map<string, OpenApiDocument> {
   const buckets = new Map<string, Record<string, unknown>>()
   for (const [path, item] of Object.entries(full.paths ?? {})) {
     if (!path.startsWith("/v1/admin/") && !path.startsWith("/v1/public/")) continue
-    const moduleName = owner.get(path) ?? moduleSegment(path)
+    const moduleName = moduleNameForPath(path, owner)
     let bucket = buckets.get(moduleName)
     if (!bucket) {
       bucket = {}
@@ -341,4 +363,62 @@ export async function splitDocumentByModule(
     } as OpenApiDocument)
   }
   return result
+}
+
+/**
+ * Convenience: build the ownership map and partition in one call. Prefer the
+ * two-step `buildModulePathOwnership` + `partitionByModule` when you also want
+ * to `stampModuleMetadata` the aggregate from the same map (so it's built once).
+ *
+ * Build-time only.
+ */
+export async function splitDocumentByModule(
+  full: OpenApiDocument,
+  mounts: readonly ModuleMount[],
+  options: GenerateOpenApiOptions,
+): Promise<Map<string, OpenApiDocument>> {
+  return partitionByModule(full, await buildModulePathOwnership(mounts, options))
+}
+
+const HTTP_METHODS = ["get", "put", "post", "delete", "options", "head", "patch", "trace"] as const
+
+/**
+ * Stamp every operation with `x-voyant-module` and `x-voyant-surface`
+ * extensions (voyant#2733 / voyant#2729), so the specs are self-describing:
+ * tooling (a module-grouped docs UI, client generators) can read the owning
+ * module and surface off each operation instead of re-deriving them from path
+ * prefixes. The module is the authoritative owner from the manifest, so
+ * `publicPath` overrides are labelled with their real owning module rather than
+ * their mount prefix.
+ *
+ * Applied to the aggregate before it's split, so the per-module and surface
+ * documents (all derived from it) inherit the stamps. Extensions are appended
+ * to each operation, keeping key order deterministic for the drift gate.
+ */
+export function stampModuleMetadata(
+  doc: OpenApiDocument,
+  owner: ReadonlyMap<string, string>,
+): OpenApiDocument {
+  const paths: Record<string, unknown> = {}
+  for (const [path, item] of Object.entries(doc.paths ?? {})) {
+    if (!item || typeof item !== "object") {
+      paths[path] = item
+      continue
+    }
+    const moduleName = moduleNameForPath(path, owner)
+    const surface = surfaceForPath(path)
+    const nextItem: Record<string, unknown> = { ...(item as Record<string, unknown>) }
+    for (const method of HTTP_METHODS) {
+      const op = nextItem[method]
+      if (op && typeof op === "object") {
+        nextItem[method] = {
+          ...(op as Record<string, unknown>),
+          "x-voyant-module": moduleName,
+          ...(surface ? { "x-voyant-surface": surface } : {}),
+        }
+      }
+    }
+    paths[path] = nextItem
+  }
+  return { ...doc, paths } as OpenApiDocument
 }

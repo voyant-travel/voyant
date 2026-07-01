@@ -682,7 +682,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/catalog/checkout/start": {
@@ -1035,7 +1037,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "storefront"
       }
     }
   },

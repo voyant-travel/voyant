@@ -367,7 +367,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "accommodations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}": {
@@ -599,7 +601,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "accommodations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/nights": {
@@ -762,7 +766,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "accommodations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/pickups": {
@@ -1055,7 +1061,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "accommodations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/pickups/reverse": {
@@ -1203,7 +1211,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "accommodations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/release": {
@@ -1387,7 +1397,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "accommodations",
+        "x-voyant-surface": "admin"
       }
     }
   },

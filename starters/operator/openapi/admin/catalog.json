@@ -682,7 +682,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/package-offers": {
@@ -741,7 +743,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/package-detail": {
@@ -818,7 +822,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/package-search": {
@@ -900,7 +906,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/departure-airports": {
@@ -947,7 +955,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/cruise-price": {
@@ -1008,7 +1018,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/catalog/cruise-sailing-pricing": {
@@ -1088,7 +1100,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "admin"
       }
     }
   },

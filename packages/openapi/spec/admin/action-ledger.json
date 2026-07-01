@@ -905,7 +905,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/entries": {
@@ -1665,7 +1667,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/entries/{id}/reversals": {
@@ -2533,7 +2537,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/entries/{id}": {
@@ -3134,7 +3140,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/approvals": {
@@ -3502,7 +3510,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/approvals/request": {
@@ -4148,7 +4158,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/approvals/{id}": {
@@ -4858,7 +4870,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/approvals/{id}/decide": {
@@ -5491,7 +5505,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/delegations": {
@@ -5810,7 +5826,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/delegations/{id}": {
@@ -5944,7 +5962,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/action-ledger/relay-outbox": {
@@ -6194,7 +6214,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "action-ledger",
+        "x-voyant-surface": "admin"
       }
     }
   },

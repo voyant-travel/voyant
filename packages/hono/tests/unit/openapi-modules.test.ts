@@ -6,6 +6,7 @@ import {
   type ModuleMount,
   type OpenApiDocument,
   splitDocumentByModule,
+  stampModuleMetadata,
 } from "../../src/openapi.js"
 
 const INFO = { title: "Test", version: "0.0.0" } as const
@@ -142,5 +143,40 @@ describe("splitDocumentByModule", () => {
       "/v1/admin/workflow-runs/{id}",
       "/v1/public/booking-engine/hold",
     ])
+  })
+})
+
+describe("stampModuleMetadata", () => {
+  const owner = new Map<string, string>([["/v1/public/booking-engine/hold", "commerce"]])
+  const doc = {
+    openapi: "3.1.0",
+    info: INFO,
+    paths: {
+      "/v1/admin/bookings/list": { get: { responses: {} } },
+      "/v1/public/booking-engine/hold": { post: { responses: {} } },
+      "/v1/webhooks/netopia": { post: { responses: {} } },
+    },
+  } as unknown as OpenApiDocument
+
+  it("stamps x-voyant-module (authoritative owner) and x-voyant-surface per operation", () => {
+    const stamped = stampModuleMetadata(doc, owner)
+    const op = (path: string, method: string) =>
+      (stamped.paths as Record<string, Record<string, Record<string, unknown>>>)[path][method]
+
+    // Segment-derived module + admin surface.
+    expect(op("/v1/admin/bookings/list", "get")["x-voyant-module"]).toBe("bookings")
+    expect(op("/v1/admin/bookings/list", "get")["x-voyant-surface"]).toBe("admin")
+    // publicPath override → authoritative owner, not the `booking-engine` prefix.
+    expect(op("/v1/public/booking-engine/hold", "post")["x-voyant-module"]).toBe("commerce")
+    expect(op("/v1/public/booking-engine/hold", "post")["x-voyant-surface"]).toBe("storefront")
+    // Non-surface route: module stamped, surface omitted.
+    expect(op("/v1/webhooks/netopia", "post")["x-voyant-module"]).toBe("webhooks")
+    expect(op("/v1/webhooks/netopia", "post")["x-voyant-surface"]).toBeUndefined()
+  })
+
+  it("does not mutate the input document", () => {
+    const before = JSON.stringify(doc)
+    stampModuleMetadata(doc, owner)
+    expect(JSON.stringify(doc)).toBe(before)
   })
 })

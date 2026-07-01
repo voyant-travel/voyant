@@ -281,7 +281,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/resolve-and-persist": {
@@ -549,7 +551,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/snapshots": {
@@ -780,7 +784,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/snapshots/{id}": {
@@ -937,7 +943,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/snapshot-items": {
@@ -1181,7 +1189,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policies": {
@@ -1431,7 +1441,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1677,7 +1689,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policies/{id}": {
@@ -1835,7 +1849,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2106,7 +2122,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2156,7 +2174,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policy-results": {
@@ -2318,7 +2338,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2475,7 +2497,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policy-results/{id}": {
@@ -2586,7 +2610,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2768,7 +2794,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2818,7 +2846,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-refresh-runs": {
@@ -2978,7 +3008,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3144,7 +3176,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-refresh-runs/{id}": {
@@ -3260,7 +3294,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3451,7 +3487,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3501,7 +3539,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-expiration-events": {
@@ -3659,7 +3699,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3821,7 +3863,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-expiration-events/{id}": {
@@ -3936,7 +3980,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4122,7 +4168,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4172,7 +4220,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/explanations": {
@@ -4329,7 +4379,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4488,7 +4540,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/explanations/{id}": {
@@ -4599,7 +4653,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4782,7 +4838,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4832,7 +4890,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "sellability",
+        "x-voyant-surface": "admin"
       }
     }
   },

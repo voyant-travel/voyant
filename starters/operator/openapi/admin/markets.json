@@ -316,7 +316,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -517,7 +519,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/markets/{id}": {
@@ -646,7 +650,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -869,7 +875,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -922,7 +930,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-locales": {
@@ -1056,7 +1066,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/markets/{id}/locales": {
@@ -1196,7 +1208,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-locales/{id}": {
@@ -1333,7 +1347,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1386,7 +1402,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-currencies": {
@@ -1528,7 +1546,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/markets/{id}/currencies": {
@@ -1684,7 +1704,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-currencies/{id}": {
@@ -1837,7 +1859,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1890,7 +1914,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/fx-rate-sets": {
@@ -2043,7 +2069,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2209,7 +2237,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/fx-rate-sets/{id}": {
@@ -2322,7 +2352,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2512,7 +2544,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2565,7 +2599,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/exchange-rates": {
@@ -2702,7 +2738,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/fx-rate-sets/{id}/exchange-rates": {
@@ -2861,7 +2899,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/exchange-rates/{id}": {
@@ -3015,7 +3055,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3068,7 +3110,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/price-catalogs": {
@@ -3214,7 +3258,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3370,7 +3416,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/price-catalogs/{id}": {
@@ -3473,7 +3521,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3635,7 +3685,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3688,7 +3740,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/product-rules": {
@@ -3895,7 +3949,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4130,7 +4186,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/product-rules/{id}": {
@@ -4273,7 +4331,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4514,7 +4574,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4567,7 +4629,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/channel-rules": {
@@ -4739,7 +4803,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4921,7 +4987,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/channel-rules/{id}": {
@@ -5037,7 +5105,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -5225,7 +5295,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5278,7 +5350,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "admin"
       }
     }
   },

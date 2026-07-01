@@ -262,7 +262,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -377,7 +379,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/pipelines/{id}": {
@@ -467,7 +471,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -607,7 +613,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -678,7 +686,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/stages": {
@@ -798,7 +808,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -932,7 +944,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/stages/{id}": {
@@ -1031,7 +1045,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1189,7 +1205,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1242,7 +1260,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quotes": {
@@ -1528,7 +1548,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1845,7 +1867,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quotes/{id}": {
@@ -2056,7 +2080,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2396,7 +2422,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2449,7 +2477,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quotes/{id}/participants": {
@@ -2521,7 +2551,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -2639,7 +2671,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-participants/{id}": {
@@ -2694,7 +2728,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quotes/{id}/products": {
@@ -2808,7 +2844,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -3001,7 +3039,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-products/{id}": {
@@ -3211,7 +3251,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3264,7 +3306,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quotes/{id}/media": {
@@ -3365,7 +3409,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -3539,7 +3585,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-media/{id}": {
@@ -3594,7 +3642,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions": {
@@ -3794,7 +3844,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quotes/{id}/versions": {
@@ -4088,7 +4140,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}/validity": {
@@ -4291,7 +4345,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quotes/{id}/versions/snapshot": {
@@ -4472,7 +4528,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/expire": {
@@ -4611,7 +4669,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}": {
@@ -4774,7 +4834,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -5062,7 +5124,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5133,7 +5197,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}/trip-snapshot": {
@@ -5489,7 +5555,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}/send": {
@@ -5671,7 +5739,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}/view": {
@@ -5834,7 +5904,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}/accept": {
@@ -6305,7 +6377,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}/decline": {
@@ -6487,7 +6561,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-versions/{id}/lines": {
@@ -6578,7 +6654,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -6767,7 +6845,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/quotes/quote-version-lines/{id}": {
@@ -6954,7 +7034,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7025,7 +7107,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "quotes",
+        "x-voyant-surface": "admin"
       }
     }
   },

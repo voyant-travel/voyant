@@ -646,7 +646,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1527,7 +1529,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}": {
@@ -1889,7 +1893,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2794,7 +2800,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/requires-redirect": {
@@ -3269,7 +3277,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/complete": {
@@ -3684,7 +3694,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/fail": {
@@ -4047,7 +4059,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/cancel": {
@@ -4410,7 +4424,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/expire": {
@@ -4773,7 +4789,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-instruments": {
@@ -5097,7 +5115,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -5480,7 +5500,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-instruments/{id}": {
@@ -5702,7 +5724,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -6109,7 +6133,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6159,7 +6185,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-authorizations": {
@@ -6413,7 +6441,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -6944,7 +6974,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-authorizations/{id}": {
@@ -7125,7 +7157,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -7680,7 +7714,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7730,7 +7766,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-captures": {
@@ -7910,7 +7948,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -8114,7 +8154,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-captures/{id}": {
@@ -8250,7 +8292,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -8478,7 +8522,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8528,7 +8574,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/revenue": {
@@ -8591,7 +8639,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/aging": {
@@ -8644,7 +8694,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability": {
@@ -8722,7 +8774,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/departures": {
@@ -9035,7 +9089,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/products": {
@@ -9298,7 +9354,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/travelers": {
@@ -9412,7 +9470,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/departures/export": {
@@ -9478,7 +9538,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/products/export": {
@@ -9528,7 +9590,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/cost-categories": {
@@ -9599,7 +9663,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -9691,7 +9757,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/cost-categories/{id}": {
@@ -9813,7 +9881,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/accountant-shares": {
@@ -9888,7 +9958,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -9994,7 +10066,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/accountant-shares/{id}/revoke": {
@@ -10054,7 +10128,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules": {
@@ -10160,7 +10236,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -10398,7 +10476,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules/default-plan": {
@@ -10606,7 +10686,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules/{scheduleId}": {
@@ -10849,7 +10931,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -10907,7 +10991,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session": {
@@ -11685,7 +11771,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/guarantees": {
@@ -11852,7 +11940,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -12167,7 +12257,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session": {
@@ -12945,7 +13037,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/guarantees/{guaranteeId}": {
@@ -13267,7 +13361,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13351,7 +13447,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/tax-lines": {
@@ -13465,7 +13563,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -13687,7 +13787,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/tax-lines/{taxLineId}": {
@@ -13914,7 +14016,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13972,7 +14076,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/commissions": {
@@ -14112,7 +14218,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -14385,7 +14493,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/commissions/{commissionId}": {
@@ -14663,7 +14773,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -14721,7 +14833,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payments": {
@@ -15057,7 +15171,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payments/{id}": {
@@ -15252,7 +15368,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "description": "Update a customer payment. Recomputes the invoice's paid/balance/status from the remaining completed payments. Supplier payments (`spay_*` id) must be updated via `/supplier-payments/{id}` and return 400 here.",
@@ -15552,7 +15670,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "description": "Remove a customer payment, recomputing invoice totals the same way PATCH does. Supplier payments (`spay_*` id) must be deleted via `/supplier-payments/{id}` and return 400 here.",
@@ -15734,7 +15854,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-payments": {
@@ -16031,7 +16153,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -16336,7 +16460,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-payments/{id}": {
@@ -16665,7 +16791,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices": {
@@ -17060,7 +17188,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -17518,7 +17648,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/from-booking": {
@@ -18038,7 +18170,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/convert-to-invoice": {
@@ -18327,7 +18461,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}": {
@@ -18611,7 +18747,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -19069,7 +19207,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -19137,7 +19277,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/void": {
@@ -19444,7 +19586,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/payment-session": {
@@ -20213,7 +20357,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/line-items": {
@@ -20307,7 +20453,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -20491,7 +20639,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/line-items/{lineId}": {
@@ -20680,7 +20830,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -20738,7 +20890,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/payments": {
@@ -20888,7 +21042,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -21201,7 +21357,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/credit-notes": {
@@ -21311,7 +21469,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -21543,7 +21703,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/credit-notes/{creditNoteId}": {
@@ -21779,7 +21941,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/credit-notes/{creditNoteId}/line-items": {
@@ -21860,7 +22024,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -22012,7 +22178,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/notes": {
@@ -22073,7 +22241,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -22185,7 +22355,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-number-series": {
@@ -22364,7 +22536,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -22593,7 +22767,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-number-series/{id}": {
@@ -22739,7 +22915,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -22999,7 +23177,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -23056,7 +23236,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-number-series/{id}/allocate": {
@@ -23152,7 +23334,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-templates": {
@@ -23316,7 +23500,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -23503,7 +23689,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-templates/{id}": {
@@ -23626,7 +23814,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -23843,7 +24033,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -23900,7 +24092,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-regimes": {
@@ -24069,7 +24263,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -24257,7 +24453,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-regimes/{id}": {
@@ -24383,7 +24581,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -24602,7 +24802,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -24659,7 +24861,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-classes": {
@@ -24816,7 +25020,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25004,7 +25210,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-classes/{id}": {
@@ -25133,7 +25341,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -25352,7 +25562,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -25409,7 +25621,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-profiles": {
@@ -25543,7 +25757,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25676,7 +25892,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-profiles/{id}": {
@@ -25777,7 +25995,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -25941,7 +26161,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -25998,7 +26220,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-rules": {
@@ -26156,7 +26380,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -26329,7 +26555,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-rules/{id}": {
@@ -26450,7 +26678,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -26653,7 +26883,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -26710,7 +26942,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/renditions": {
@@ -26837,7 +27071,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/render": {
@@ -27323,7 +27559,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/attachments": {
@@ -27413,7 +27651,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -27595,7 +27835,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/attachments/{attachmentId}": {
@@ -27784,7 +28026,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -27842,7 +28086,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-attachments/{id}/download": {
@@ -27897,7 +28143,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/external-refs": {
@@ -28001,7 +28249,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -28203,7 +28453,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/external-refs/{refId}": {
@@ -28263,7 +28515,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/vouchers": {
@@ -28501,7 +28755,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -28770,7 +29026,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/vouchers/{id}": {
@@ -28938,7 +29196,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -29182,7 +29442,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/vouchers/{id}/redeem": {
@@ -29487,7 +29749,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payments": {
@@ -29662,7 +29926,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/action-ledger": {
@@ -30035,7 +30301,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/action-ledger": {
@@ -30408,7 +30676,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices": {
@@ -30768,7 +31038,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -31488,7 +31760,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}": {
@@ -31939,7 +32213,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -32512,7 +32788,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -32570,7 +32848,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/lines": {
@@ -33128,7 +33408,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/allocations": {
@@ -33692,7 +33974,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/document/download": {
@@ -33747,7 +34031,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/payments": {
@@ -34052,7 +34338,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -34363,7 +34651,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/attachments": {
@@ -34453,7 +34743,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -34624,7 +34916,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/attachments/{attachmentId}": {
@@ -34684,7 +34978,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoice-attachments/{id}/download": {
@@ -34739,7 +35035,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/generate-document": {
@@ -35004,7 +35302,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/regenerate-document": {
@@ -35269,7 +35569,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-renditions/{id}/download": {
@@ -35324,7 +35626,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/poll-settlement": {
@@ -35498,7 +35802,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
       }
     }
   },

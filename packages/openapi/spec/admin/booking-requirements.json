@@ -337,7 +337,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -532,7 +534,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/contact-requirements/{id}": {
@@ -663,7 +667,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -882,7 +888,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -932,7 +940,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/questions": {
@@ -1179,7 +1189,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1422,7 +1434,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/questions/{id}": {
@@ -1577,7 +1591,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1844,7 +1860,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1894,7 +1912,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-questions": {
@@ -2053,7 +2073,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2182,7 +2204,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-questions/{id}": {
@@ -2280,7 +2304,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2433,7 +2459,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2483,7 +2511,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/question-options": {
@@ -2628,7 +2658,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2751,7 +2783,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/question-options/{id}": {
@@ -2843,7 +2877,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2989,7 +3025,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3039,7 +3077,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/unit-triggers": {
@@ -3196,7 +3236,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3323,7 +3365,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/unit-triggers/{id}": {
@@ -3419,7 +3463,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3570,7 +3616,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3620,7 +3668,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-triggers": {
@@ -3770,7 +3820,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3883,7 +3935,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-triggers/{id}": {
@@ -3972,7 +4026,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4109,7 +4165,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4159,7 +4217,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/extra-triggers": {
@@ -4334,7 +4394,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4479,7 +4541,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/extra-triggers/{id}": {
@@ -4585,7 +4649,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4755,7 +4821,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4805,7 +4873,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/answers": {
@@ -5026,7 +5096,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -5244,7 +5316,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/answers/{id}": {
@@ -5389,7 +5463,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -5631,7 +5707,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5681,7 +5759,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "booking-requirements",
+        "x-voyant-surface": "admin"
       }
     }
   },

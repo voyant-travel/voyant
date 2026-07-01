@@ -639,7 +639,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-content",
+        "x-voyant-surface": "admin"
       }
     }
   },

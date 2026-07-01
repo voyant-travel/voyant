@@ -1138,7 +1138,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}": {
@@ -1785,7 +1787,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       },
       "patch": {
         "parameters": [
@@ -2583,7 +2587,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/state": {
@@ -2682,7 +2688,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       },
       "put": {
         "parameters": [
@@ -2815,7 +2823,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/reprice": {
@@ -3696,7 +3706,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/confirm": {
@@ -4379,7 +4391,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/expire": {
@@ -5062,7 +5076,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/bookings/overview": {
@@ -5594,7 +5610,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/bookings/guest-lookup": {
@@ -6129,7 +6147,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
       }
     }
   },

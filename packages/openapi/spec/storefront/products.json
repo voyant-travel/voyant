@@ -228,7 +228,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/categories": {
@@ -341,7 +343,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/destinations": {
@@ -548,7 +552,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products": {
@@ -1420,7 +1426,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/slug/{slug}": {
@@ -2101,7 +2109,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}": {
@@ -2782,7 +2792,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}/brochure": {
@@ -2902,7 +2914,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     }
   },

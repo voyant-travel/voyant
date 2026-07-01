@@ -577,7 +577,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "storefront"
       }
     }
   },

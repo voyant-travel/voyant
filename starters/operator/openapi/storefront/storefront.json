@@ -305,7 +305,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/offers/{slug}": {
@@ -480,7 +482,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/offers/{slug}/apply": {
@@ -927,7 +931,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/offers/redeem": {
@@ -1370,7 +1376,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/leads": {
@@ -1661,7 +1669,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/newsletter/subscribe": {
@@ -1917,7 +1927,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/settings": {
@@ -2540,7 +2552,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/departures/{departureId}": {
@@ -2925,7 +2939,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{productId}/departures": {
@@ -3365,7 +3381,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{productId}/availability": {
@@ -3643,7 +3661,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{productId}/departures/{departureId}/itinerary": {
@@ -3783,7 +3803,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{productId}/extensions": {
@@ -4059,7 +4081,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "storefront"
       }
     }
   },

@@ -389,7 +389,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -673,7 +675,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/product-extras/{id}": {
@@ -848,7 +852,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1156,7 +1162,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1206,7 +1214,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/option-extra-configs": {
@@ -1428,7 +1438,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1680,7 +1692,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/option-extra-configs/{id}": {
@@ -1841,7 +1855,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2117,7 +2133,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2167,7 +2185,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/booking-extras": {
@@ -2419,7 +2439,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2719,7 +2741,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/booking-extras/{id}": {
@@ -2901,7 +2925,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3224,7 +3250,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3274,7 +3302,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}": {
@@ -3821,7 +3851,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}/selections": {
@@ -4095,7 +4127,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}/selections/bulk": {
@@ -4385,7 +4419,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}/collections/bulk": {
@@ -4640,7 +4676,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "extras",
+        "x-voyant-surface": "admin"
       }
     }
   },

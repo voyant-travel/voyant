@@ -250,7 +250,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/overview": {
@@ -505,7 +507,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules": {
@@ -692,7 +696,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -887,7 +893,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules/batch-update": {
@@ -1125,7 +1133,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules/batch-delete": {
@@ -1220,7 +1230,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules/{id}": {
@@ -1350,7 +1362,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1567,7 +1581,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1620,7 +1636,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times": {
@@ -1789,7 +1807,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1945,7 +1965,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times/batch-update": {
@@ -2146,7 +2168,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times/batch-delete": {
@@ -2241,7 +2265,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times/{id}": {
@@ -2353,7 +2379,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2533,7 +2561,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2586,7 +2616,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots": {
@@ -2896,7 +2928,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3242,7 +3276,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/batch-update": {
@@ -3631,7 +3667,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/batch-delete": {
@@ -3726,7 +3764,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}": {
@@ -3937,7 +3977,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4305,7 +4347,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4358,7 +4402,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/unit-availability": {
@@ -4450,7 +4496,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts": {
@@ -4588,7 +4636,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4710,7 +4760,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts/batch-update": {
@@ -4877,7 +4929,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts/batch-delete": {
@@ -4972,7 +5026,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts/{id}": {
@@ -5065,7 +5121,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -5211,7 +5269,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5264,7 +5324,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation": {
@@ -5683,7 +5745,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/resources": {
@@ -5876,7 +5940,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/resources/{resourceId}": {
@@ -6109,7 +6175,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6190,7 +6258,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/travelers/{travelerId}": {
@@ -6354,7 +6424,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/travelers/{travelerId}/sharing-group": {
@@ -6509,7 +6581,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/sharing-groups/pair": {
@@ -6662,7 +6736,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/sharing-groups/{groupId}/label": {
@@ -6820,7 +6896,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6956,7 +7034,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/audit-log": {
@@ -7061,7 +7141,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/export-passengers": {
@@ -7105,7 +7187,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/export-rooming-list": {
@@ -7149,7 +7233,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/auto-materialize": {
@@ -7365,7 +7451,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/materialize-templates": {
@@ -7483,7 +7571,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/auto-allocate": {
@@ -7699,7 +7789,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/products/{productId}/allocation/resource-templates": {
@@ -7846,7 +7938,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/products/{productId}/options/{optionId}/allocation/resource-templates/{kind}": {
@@ -8095,7 +8189,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8239,7 +8335,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/products/{id}/allocation/materialize-open-slots": {
@@ -8376,7 +8474,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points": {
@@ -8526,7 +8626,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -8660,7 +8762,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points/batch-update": {
@@ -8839,7 +8943,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points/batch-delete": {
@@ -8934,7 +9040,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points/{id}": {
@@ -9035,7 +9143,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9193,7 +9303,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -9246,7 +9358,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups": {
@@ -9365,7 +9479,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -9479,7 +9595,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups/batch-update": {
@@ -9638,7 +9756,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups/batch-delete": {
@@ -9733,7 +9853,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups/{id}": {
@@ -9823,7 +9945,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9961,7 +10085,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -10014,7 +10140,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs": {
@@ -10224,7 +10352,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -10433,7 +10563,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs/batch-update": {
@@ -10688,7 +10820,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs/batch-delete": {
@@ -10783,7 +10917,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs/{id}": {
@@ -10923,7 +11059,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -11157,7 +11295,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -11210,7 +11350,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups": {
@@ -11358,7 +11500,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -11492,7 +11636,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups/batch-update": {
@@ -11670,7 +11816,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups/batch-delete": {
@@ -11765,7 +11913,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups/{id}": {
@@ -11865,7 +12015,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -12022,7 +12174,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -12075,7 +12229,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations": {
@@ -12230,7 +12386,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -12386,7 +12544,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations/batch-update": {
@@ -12587,7 +12747,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations/batch-delete": {
@@ -12682,7 +12844,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations/{id}": {
@@ -12794,7 +12958,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -12974,7 +13140,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13027,7 +13195,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times": {
@@ -13211,7 +13381,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -13406,7 +13578,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times/batch-update": {
@@ -13647,7 +13821,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times/batch-delete": {
@@ -13742,7 +13918,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times/{id}": {
@@ -13875,7 +14053,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -14095,7 +14275,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -14148,7 +14330,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas": {
@@ -14277,7 +14461,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -14398,7 +14584,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas/batch-update": {
@@ -14564,7 +14752,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas/batch-delete": {
@@ -14659,7 +14849,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas/{id}": {
@@ -14753,7 +14945,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -14898,7 +15092,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -14951,7 +15147,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources": {
@@ -15133,7 +15331,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -15310,7 +15510,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources/batch-update": {
@@ -15532,7 +15734,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources/batch-delete": {
@@ -15627,7 +15831,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources/{id}": {
@@ -15750,7 +15956,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -15951,7 +16159,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -16004,7 +16214,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools": {
@@ -16164,7 +16376,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -16315,7 +16529,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools/batch-update": {
@@ -16511,7 +16727,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools/batch-delete": {
@@ -16606,7 +16824,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools/{id}": {
@@ -16715,7 +16935,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -16890,7 +17112,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -16943,7 +17167,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pool-members": {
@@ -17044,7 +17270,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -17162,7 +17390,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pool-members/{id}": {
@@ -17217,7 +17447,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements": {
@@ -17368,7 +17600,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -17531,7 +17765,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements/batch-update": {
@@ -17721,7 +17957,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements/batch-delete": {
@@ -17816,7 +18054,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements/{id}": {
@@ -17922,7 +18162,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -18091,7 +18333,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -18144,7 +18388,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations": {
@@ -18295,7 +18541,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -18458,7 +18706,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations/batch-update": {
@@ -18648,7 +18898,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations/batch-delete": {
@@ -18743,7 +18995,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations/{id}": {
@@ -18849,7 +19103,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -19018,7 +19274,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -19071,7 +19329,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments": {
@@ -19252,7 +19512,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -19445,7 +19707,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments/batch-update": {
@@ -19666,7 +19930,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments/batch-delete": {
@@ -19761,7 +20027,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments/{id}": {
@@ -19882,7 +20150,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -20082,7 +20352,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -20135,7 +20407,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts": {
@@ -20265,7 +20539,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -20420,7 +20696,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts/batch-update": {
@@ -20602,7 +20880,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts/batch-delete": {
@@ -20697,7 +20977,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts/{id}": {
@@ -20797,7 +21079,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -20958,7 +21242,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -21011,7 +21297,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/operators": {
@@ -21158,7 +21446,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -21299,7 +21589,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/operators/{id}": {
@@ -21403,7 +21695,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -21569,7 +21863,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -21622,7 +21918,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/vehicles": {
@@ -21840,7 +22138,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -22084,7 +22384,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/vehicles/{id}": {
@@ -22240,7 +22542,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -22509,7 +22813,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -22562,7 +22868,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/drivers": {
@@ -22717,7 +23025,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -22875,7 +23185,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/drivers/{id}": {
@@ -22987,7 +23299,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -23170,7 +23484,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -23223,7 +23539,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/transfer-preferences": {
@@ -23494,7 +23812,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -23871,7 +24191,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/transfer-preferences/{id}": {
@@ -24098,7 +24420,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -24500,7 +24824,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -24553,7 +24879,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatches": {
@@ -24824,7 +25152,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25117,7 +25447,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatches/{id}": {
@@ -25299,7 +25631,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -25616,7 +25950,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -25669,7 +26005,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/execution-events": {
@@ -25825,7 +26163,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25994,7 +26334,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/execution-events/{id}": {
@@ -26110,7 +26452,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -26304,7 +26648,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -26357,7 +26703,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-assignments": {
@@ -26543,7 +26891,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -26731,7 +27081,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-assignments/{id}": {
@@ -26859,7 +27211,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -27072,7 +27426,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -27125,7 +27481,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-legs": {
@@ -27289,7 +27647,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -27478,7 +27838,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-legs/{id}": {
@@ -27607,7 +27969,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -27821,7 +28185,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -27874,7 +28240,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-passengers": {
@@ -28003,7 +28371,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -28133,7 +28503,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-passengers/{id}": {
@@ -28233,7 +28605,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -28388,7 +28762,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -28441,7 +28817,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/driver-shifts": {
@@ -28613,7 +28991,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -28785,7 +29165,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/driver-shifts/{id}": {
@@ -28905,7 +29287,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -29100,7 +29484,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -29153,7 +29539,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/service-incidents": {
@@ -29322,7 +29710,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -29500,7 +29890,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/service-incidents/{id}": {
@@ -29621,7 +30013,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -29823,7 +30217,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -29876,7 +30272,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-checkpoints": {
@@ -30044,7 +30442,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -30242,7 +30642,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-checkpoints/{id}": {
@@ -30375,7 +30777,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -30597,7 +31001,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -30650,7 +31056,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities": {
@@ -30968,7 +31376,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -31327,7 +31737,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}": {
@@ -31548,7 +31960,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -31931,7 +32345,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -31984,7 +32400,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/contact-points": {
@@ -32097,7 +32515,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -32307,7 +32727,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/contact-points/{id}": {
@@ -32525,7 +32947,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -32578,7 +33002,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/addresses": {
@@ -32742,7 +33168,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -33041,7 +33469,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/addresses/{id}": {
@@ -33352,7 +33782,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -33405,7 +33837,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-contacts": {
@@ -33579,7 +34013,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/contacts": {
@@ -33790,7 +34226,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-contacts/{id}": {
@@ -33998,7 +34436,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -34051,7 +34491,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-features": {
@@ -34205,7 +34647,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/features": {
@@ -34399,7 +34843,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-features/{id}": {
@@ -34590,7 +35036,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -34643,7 +35091,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-operation-schedules": {
@@ -34809,7 +35259,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/operation-schedules": {
@@ -35019,7 +35471,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-operation-schedules/{id}": {
@@ -35229,7 +35683,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -35282,7 +35738,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/properties": {
@@ -35479,7 +35937,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -35711,7 +36171,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/properties/{id}": {
@@ -35853,7 +36315,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -36092,7 +36556,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -36145,7 +36611,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-groups": {
@@ -36348,7 +36816,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -36567,7 +37037,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-groups/{id}": {
@@ -36711,7 +37183,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -36955,7 +37429,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -37008,7 +37484,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-group-members": {
@@ -37164,7 +37642,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -37339,7 +37819,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-group-members/{id}": {
@@ -37451,7 +37933,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -37632,7 +38116,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -37685,7 +38171,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/function-spaces": {
@@ -37854,7 +38342,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -38060,7 +38550,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/function-spaces/{id}": {
@@ -38239,7 +38731,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -38454,7 +38948,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/function-spaces/{id}/capacities": {
@@ -38601,7 +39097,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks": {
@@ -38837,7 +39335,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}": {
@@ -39055,7 +39555,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/slots": {
@@ -39209,7 +39711,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/pickups": {
@@ -39477,7 +39981,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/pickups/reverse": {
@@ -39620,7 +40126,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/release": {
@@ -39798,7 +40306,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operations",
+        "x-voyant-surface": "admin"
       }
     }
   },

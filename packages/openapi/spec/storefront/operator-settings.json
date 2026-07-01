@@ -223,7 +223,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operator-settings",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/settings/operator": {
@@ -301,7 +303,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "operator-settings",
+        "x-voyant-surface": "storefront"
       }
     }
   },

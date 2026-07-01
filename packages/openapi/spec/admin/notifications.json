@@ -339,7 +339,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -554,7 +556,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/templates/{id}": {
@@ -694,7 +698,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -932,7 +938,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -967,7 +975,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/preview": {
@@ -1117,7 +1127,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/deliveries": {
@@ -1481,7 +1493,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/deliveries/{id}": {
@@ -1724,7 +1738,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/deliveries/{id}/resend": {
@@ -1985,7 +2001,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules": {
@@ -2194,7 +2212,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2431,7 +2451,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules/compose": {
@@ -2943,7 +2965,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}": {
@@ -3091,7 +3115,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3350,7 +3376,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3385,7 +3413,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages": {
@@ -3539,7 +3569,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -3834,7 +3866,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/reorder": {
@@ -4030,7 +4064,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/{stageId}": {
@@ -4346,7 +4382,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4389,7 +4427,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/{stageId}/channels": {
@@ -4511,7 +4551,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -4720,7 +4762,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/{stageId}/channels/{channelId}": {
@@ -4954,7 +4998,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5005,7 +5051,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/notification-settings": {
@@ -5105,7 +5153,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "requestBody": {
@@ -5304,7 +5354,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminders/preview": {
@@ -5424,7 +5476,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-runs": {
@@ -5874,7 +5928,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminder-runs/{id}": {
@@ -6201,7 +6257,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/reminders/run-due": {
@@ -6263,7 +6321,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/payment-sessions/{id}/send": {
@@ -6680,7 +6740,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/invoices/{id}/send": {
@@ -7097,7 +7159,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/bookings/{id}/document-bundle": {
@@ -7282,7 +7346,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/bookings/{id}/confirm-and-dispatch": {
@@ -7740,7 +7806,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/bookings/{id}/send-documents": {
@@ -7969,7 +8037,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/notifications/send": {
@@ -8401,7 +8471,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "notifications",
+        "x-voyant-surface": "admin"
       }
     }
   },
