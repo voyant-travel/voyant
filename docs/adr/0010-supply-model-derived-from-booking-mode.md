@@ -45,10 +45,27 @@ in a code comment.
 **Keep `supplyModel` derived from `bookingMode`.** Do not add a schema column,
 migration, authoring field, or consistency validation at this time.
 
-The single derivation function `deriveProductSupplyModel` remains the one place
-the classifier is computed, and the catalog field policy continues to project it
-as a `source-only`, `structural`, `indexed-column` field
-(`packages/inventory/src/catalog-policy.ts`).
+`deriveProductSupplyModel` remains the projection derivation, and the catalog
+field policy continues to project it as a `source-only`, `structural`,
+`indexed-column` field (`packages/inventory/src/catalog-policy.ts`).
+
+Note that the `bookingMode → dynamic/scheduled` mapping is encoded in **three**
+places today, not one — the projection derivation plus two enforcement copies
+that each re-derive it inline:
+
+- `packages/inventory/src/service-catalog-plane.ts` — `deriveProductSupplyModel`
+  (`open`/`stay` → `dynamic`, else `scheduled`), the projection derivation.
+- `packages/inventory/src/service-core.ts` — `DYNAMIC_BOOKING_MODES` +
+  `isScheduledBookingMode`, gating the `no_future_open_departure` publish check.
+- `packages/operations/src/availability/service-core.ts` — `DYNAMIC_BOOKING_MODES`,
+  gating the `dynamic_product_static_availability` authoring check.
+
+While the classifier stays derived this triplication is harmless — all three key
+off `bookingMode`, so they cannot disagree. But it means a promotion is not a
+single-function edit: all three sites must switch to the stored column together,
+or publish-readiness and static-availability enforcement would keep keying on
+`bookingMode` while the projection reflects the authored value. The "Revisit
+trigger" touch-point list below enumerates all three.
 
 ## Options considered
 
@@ -56,10 +73,12 @@ as a `source-only`, `structural`, `indexed-column` field
 
 `supplyModel` is computed from `bookingMode` wherever it is needed.
 
-- **Pros:** Zero schema surface. One source of truth — the classifier can never
-  drift out of sync with the booking mechanic, so there is nothing to backfill,
-  validate, or reconcile. The enforcement paths added by #2329 stay trivially
-  consistent.
+- **Pros:** Zero schema surface. No stored value to drift — the classifier is
+  always recomputed from `bookingMode`, so there is nothing to backfill,
+  validate, or reconcile. The enforcement paths added by #2329 stay consistent
+  because they too derive from `bookingMode` (each re-encodes the same mapping
+  inline — see the Decision section), so they cannot disagree with the
+  projection.
 - **Cons:** The supply model is permanently coupled to `bookingMode`. A product
   cannot express a supply model the derivation can't produce — for example an
   `itinerary` product sold dynamically, or an `open`/`stay` product sold on a
@@ -88,9 +107,10 @@ that satisfies the #2329 enforcement paths — and avoids introducing a column,
 migration, backfill, and drift-consistency check that would exist only to be
 kept equal to the derivation.
 
-Deferring the promotion is low-cost and reversible: because the classifier is
-computed in one function, promoting it later is a contained change, not a
-scattered refactor.
+Deferring the promotion is low-cost and reversible: the classifier is derived at
+a small, enumerable set of sites (the projection derivation plus the two #2329
+enforcement copies), so promoting it later is a contained, well-scoped change —
+all three listed in the Revisit trigger below — not an open-ended refactor.
 
 ## Revisit trigger
 
@@ -110,6 +130,15 @@ When that trigger fires, the touch points to change are:
 - `packages/inventory/src/service-catalog-plane.ts` — change
   `deriveProductSupplyModel` from the source of truth to a default/suggestion
   (read the stored column when present, fall back to the derivation otherwise).
+- `packages/inventory/src/service-core.ts` — switch the publish check
+  (`DYNAMIC_BOOKING_MODES`/`isScheduledBookingMode` →
+  `no_future_open_departure`) to read the resolved `supplyModel` instead of
+  re-deriving from `bookingMode`, so scheduled products promoted off their
+  booking mechanic are still gated correctly.
+- `packages/operations/src/availability/service-core.ts` — switch the
+  static-availability check (`DYNAMIC_BOOKING_MODES` →
+  `dynamic_product_static_availability`) to read the resolved `supplyModel` for
+  the same reason.
 
 ## Consequences
 
