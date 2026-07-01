@@ -43,6 +43,22 @@ const paginationSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 })
 
+type StripDefault<T extends z.core.SomeType> = T extends z.ZodDefault<infer U> ? U : T
+type StripDefaultShape<T extends z.ZodRawShape> = {
+  [K in keyof T]: StripDefault<T[K]>
+}
+
+const stripDefaultsFromShape = <T extends z.ZodRawShape>(shape: T): StripDefaultShape<T> =>
+  Object.fromEntries(
+    Object.entries(shape).map(([key, schema]) => [
+      key,
+      schema instanceof z.ZodDefault ? schema.unwrap() : schema,
+    ]),
+  ) as StripDefaultShape<T>
+
+const partialWithoutDefaults = <T extends z.ZodRawShape>(schema: z.ZodObject<T>) =>
+  z.object(stripDefaultsFromShape(schema.shape)).partial()
+
 // ---------- policies ----------
 
 const policyCoreSchema = z.object({
@@ -59,7 +75,7 @@ const policyCoreSchema = z.object({
 })
 
 export const insertPolicySchema = policyCoreSchema
-export const updatePolicySchema = policyCoreSchema.partial()
+export const updatePolicySchema = partialWithoutDefaults(policyCoreSchema)
 
 export const policyListQuerySchema = paginationSchema.extend({
   kind: policyKindSchema.optional(),
@@ -96,7 +112,7 @@ const policyRuleCoreSchema = z.object({
 })
 
 export const insertPolicyRuleSchema = policyRuleCoreSchema
-export const updatePolicyRuleSchema = policyRuleCoreSchema.partial()
+export const updatePolicyRuleSchema = partialWithoutDefaults(policyRuleCoreSchema)
 
 // ---------- policy_assignments ----------
 

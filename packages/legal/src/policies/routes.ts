@@ -754,6 +754,10 @@ const deletePolicyRoute = createRoute({
       description: "Policy not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    409: {
+      description: "Policy has recorded acceptances and cannot be deleted",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -809,8 +813,12 @@ const policyRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook }
     return row ? c.json({ data: row }, 200) : c.json({ error: "Policy not found" }, 404)
   })
   .openapi(deletePolicyRoute, async (c) => {
-    const row = await policiesService.deletePolicy(c.get("db"), c.req.valid("param").id)
-    return row ? c.json({ success: true }, 200) : c.json({ error: "Policy not found" }, 404)
+    const result = await policiesService.deletePolicy(c.get("db"), c.req.valid("param").id)
+    if (result.status === "deleted") return c.json({ success: true }, 200)
+    if (result.status === "has_acceptances") {
+      return c.json({ error: "Policy has recorded acceptances and cannot be deleted" }, 409)
+    }
+    return c.json({ error: "Policy not found" }, 404)
   })
   .openapi(evaluatePolicyRoute, async (c) => {
     const result = await policiesService.evaluateCancellation(
@@ -894,7 +902,7 @@ export const policiesPublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
       return c.json({ error: "Policy has no published version" }, 404)
     }
     const version = await policiesService.getPolicyVersionById(c.get("db"), policy.currentVersionId)
-    if (!version || version.status !== "published") {
+    if (version?.status !== "published") {
       return c.json({ error: "Policy has no published version" }, 404)
     }
     cachePublicLegalRead(c)

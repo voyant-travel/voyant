@@ -82,11 +82,37 @@ export const policiesCoreService = {
     return row ?? null
   },
   async deletePolicy(db: PostgresJsDatabase, id: string) {
+    const [policy] = await db
+      .select({ id: policies.id })
+      .from(policies)
+      .where(eq(policies.id, id))
+      .limit(1)
+    if (!policy) return { status: "not_found" as const }
+
+    const [acceptance] = await db
+      .select({ id: policyAcceptances.id })
+      .from(policyAcceptances)
+      .where(
+        exists(
+          db
+            .select({ id: policyVersions.id })
+            .from(policyVersions)
+            .where(
+              and(
+                eq(policyVersions.policyId, id),
+                eq(policyVersions.id, policyAcceptances.policyVersionId),
+              ),
+            ),
+        ),
+      )
+      .limit(1)
+    if (acceptance) return { status: "has_acceptances" as const }
+
     const [row] = await db
       .delete(policies)
       .where(eq(policies.id, id))
       .returning({ id: policies.id })
-    return row ?? null
+    return row ? { status: "deleted" as const, id: row.id } : { status: "not_found" as const }
   },
   listPolicyVersions(db: PostgresJsDatabase, policyId: string) {
     return db
