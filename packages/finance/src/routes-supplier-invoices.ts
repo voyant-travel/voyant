@@ -325,6 +325,10 @@ const getSupplierInvoiceRoute = createRoute({
       description: "Supplier invoice not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    422: {
+      description: "Supplier invoice payable invariant failed",
+      content: { "application/json": { schema: supplierInvoiceErrorSchema } },
+    },
   },
 })
 
@@ -350,6 +354,10 @@ const updateSupplierInvoiceRoute = createRoute({
     404: {
       description: "Supplier invoice not found",
       content: { "application/json": { schema: errorResponseSchema } },
+    },
+    422: {
+      description: "Supplier invoice payable invariant failed",
+      content: { "application/json": { schema: supplierInvoiceErrorSchema } },
     },
   },
 })
@@ -396,7 +404,7 @@ const setSupplierInvoiceLinesRoute = createRoute({
       content: { "application/json": { schema: supplierInvoiceErrorSchema } },
     },
     422: {
-      description: "Edit would over-allocate a surviving whole-invoice allocation (§6.1)",
+      description: "Supplier invoice payable or allocation invariant failed",
       content: { "application/json": { schema: supplierInvoiceErrorSchema } },
     },
   },
@@ -463,7 +471,10 @@ const supplierInvoiceCrudRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVal
       if (!row) return c.json({ error: "Supplier invoice not found" }, 404)
       return c.json({ data: row }, 201)
     } catch (error) {
-      return handleSupplierInvoiceError(c, error)
+      if (error instanceof SupplierInvoiceServiceError) {
+        return c.json({ error: error.message, code: error.code }, 422)
+      }
+      throw error
     }
   })
   .openapi(getSupplierInvoiceRoute, async (c) => {
@@ -472,14 +483,21 @@ const supplierInvoiceCrudRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVal
     return c.json({ data: row }, 200)
   })
   .openapi(updateSupplierInvoiceRoute, async (c) => {
-    const row = await supplierInvoicesService.update(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-      apRuntime(c),
-    )
-    if (!row) return c.json({ error: "Supplier invoice not found" }, 404)
-    return c.json({ data: row }, 200)
+    try {
+      const row = await supplierInvoicesService.update(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        apRuntime(c),
+      )
+      if (!row) return c.json({ error: "Supplier invoice not found" }, 404)
+      return c.json({ data: row }, 200)
+    } catch (error) {
+      if (error instanceof SupplierInvoiceServiceError) {
+        return c.json({ error: error.message, code: error.code }, 422)
+      }
+      throw error
+    }
   })
   .openapi(deleteSupplierInvoiceRoute, async (c) => {
     const result = await supplierInvoicesService.softDelete(
@@ -517,7 +535,10 @@ const supplierInvoiceCrudRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVal
       if (!row) return c.json({ error: "Supplier invoice not found" }, 404)
       return c.json({ data: row }, 200)
     } catch (error) {
-      return handleSupplierInvoiceError(c, error)
+      if (error instanceof SupplierInvoiceServiceError) {
+        return c.json({ error: error.message, code: error.code }, 422)
+      }
+      throw error
     }
   })
   .openapi(downloadSupplierInvoiceDocumentRoute, async (c) => {
@@ -576,6 +597,10 @@ const createSupplierInvoicePaymentRoute = createRoute({
       description: "invalid_request: request body failed validation",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    422: {
+      description: "supplier invoice payable invariant failed",
+      content: { "application/json": { schema: supplierInvoiceErrorSchema } },
+    },
   },
 })
 
@@ -590,16 +615,23 @@ const supplierPaymentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidat
     ),
   )
   .openapi(createSupplierInvoicePaymentRoute, async (c) => {
-    const row = await financeService.createSupplierPayment(
-      c.get("db"),
-      { ...c.req.valid("json"), supplierInvoiceId: c.req.valid("param").id },
-      {
-        ...getFinanceRouteRuntime(c),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.supplier_payment.route",
-      },
-    )
-    return c.json({ data: row }, 201)
+    try {
+      const row = await financeService.createSupplierPayment(
+        c.get("db"),
+        { ...c.req.valid("json"), supplierInvoiceId: c.req.valid("param").id },
+        {
+          ...getFinanceRouteRuntime(c),
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.supplier_payment.route",
+        },
+      )
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      if (error instanceof SupplierInvoiceServiceError) {
+        return c.json({ error: error.message, code: error.code }, 422)
+      }
+      throw error
+    }
   })
 
 // ===========================================================================

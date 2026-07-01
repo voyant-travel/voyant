@@ -22,6 +22,7 @@ import { supplierPaymentSchema, unifiedPaymentSchema } from "./routes-payment-sc
 import { getActionLedgerRequestContext, getFinanceRouteRuntime } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"
 import { financeService, PaymentValidationError } from "./service.js"
+import { SupplierInvoiceServiceError } from "./service-supplier-invoices.js"
 import {
   insertSupplierPaymentSchema,
   paymentListQuerySchema,
@@ -31,6 +32,14 @@ import {
 } from "./validation.js"
 
 const idParamSchema = z.object({ id: z.string() })
+const supplierPaymentInvariantErrorSchema = z.object({ error: z.string(), code: z.string() })
+
+function handleSupplierPaymentError(error: unknown) {
+  if (error instanceof SupplierInvoiceServiceError) {
+    return { error: error.message, code: error.code, status: 422 as const }
+  }
+  throw error
+}
 
 // --- unified payments (customer + supplier) -------------------------------
 
@@ -200,6 +209,10 @@ const createSupplierPaymentRoute = createRoute({
       description: "invalid_request: request body failed validation",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    422: {
+      description: "supplier payment payable invariant failed",
+      content: { "application/json": { schema: supplierPaymentInvariantErrorSchema } },
+    },
   },
 })
 
@@ -226,6 +239,10 @@ const updateSupplierPaymentRoute = createRoute({
       description: "Supplier payment not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    422: {
+      description: "supplier payment payable invariant failed",
+      content: { "application/json": { schema: supplierPaymentInvariantErrorSchema } },
+    },
   },
 })
 
@@ -234,30 +251,40 @@ const supplierPaymentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidat
     c.json(await financeService.listSupplierPayments(c.get("db"), c.req.valid("query")), 200),
   )
   .openapi(createSupplierPaymentRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.createSupplierPayment(c.get("db"), c.req.valid("json"), {
-      ...(runtime ?? {}),
-      actionLedgerContext: getActionLedgerRequestContext(c),
-      actionLedgerAuthorizationSource: "finance.supplier_payment.route",
-    })
-    if (!row) {
-      throw new Error("Failed to create supplier payment")
-    }
-    return c.json({ data: row }, 201)
-  })
-  .openapi(updateSupplierPaymentRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.updateSupplierPayment(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-      {
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.createSupplierPayment(c.get("db"), c.req.valid("json"), {
         ...(runtime ?? {}),
         actionLedgerContext: getActionLedgerRequestContext(c),
         actionLedgerAuthorizationSource: "finance.supplier_payment.route",
-      },
-    )
-    return row ? c.json({ data: row }, 200) : c.json({ error: "Supplier payment not found" }, 404)
+      })
+      if (!row) {
+        throw new Error("Failed to create supplier payment")
+      }
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      const body = handleSupplierPaymentError(error)
+      return c.json({ error: body.error, code: body.code }, body.status)
+    }
+  })
+  .openapi(updateSupplierPaymentRoute, async (c) => {
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.updateSupplierPayment(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          ...(runtime ?? {}),
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.supplier_payment.route",
+        },
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Supplier payment not found" }, 404)
+    } catch (error) {
+      const body = handleSupplierPaymentError(error)
+      return c.json({ error: body.error, code: body.code }, body.status)
+    }
   })
 
 export const financePaymentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })

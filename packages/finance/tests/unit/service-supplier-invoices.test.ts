@@ -3,8 +3,124 @@ import { describe, expect, it } from "vitest"
 import {
   nextStatusForBalance,
   recomputeTotalsFromLines,
+  SupplierInvoiceServiceError,
+  supplierInvoicesService,
   validateAllocations,
+  validateSupplierInvoiceLines,
 } from "../../src/service-supplier-invoices.js"
+
+describe("supplier invoice payable invariants", () => {
+  it("rejects missing supplier ids before writing", async () => {
+    await expect(
+      supplierInvoicesService.create({} as never, {
+        supplierId: " ",
+        supplierInvoiceNo: "SUP-1",
+        currency: "EUR",
+        issueDate: "2026-06-01",
+        totalCents: 100,
+      }),
+    ).rejects.toMatchObject({
+      code: "invalid_payable_state",
+      message: "supplierId is required for supplier invoices",
+    })
+  })
+
+  it("rejects supplier ids that are not present when the suppliers table exists", async () => {
+    let executeCount = 0
+    const db = {
+      execute: async () => {
+        executeCount += 1
+        return executeCount === 1 ? [{ table_exists: true }] : []
+      },
+    }
+
+    await expect(
+      supplierInvoicesService.create(db as never, {
+        supplierId: "supp_missing",
+        supplierInvoiceNo: "SUP-1",
+        currency: "EUR",
+        issueDate: "2026-06-01",
+        totalCents: 100,
+      }),
+    ).rejects.toMatchObject({
+      code: "invalid_payable_state",
+      message: "supplierId does not reference an existing supplier",
+    })
+  })
+
+  it("rejects negative header totals before writing", async () => {
+    await expect(
+      supplierInvoicesService.create({} as never, {
+        supplierId: "sup_123",
+        supplierInvoiceNo: "SUP-1",
+        currency: "EUR",
+        issueDate: "2026-06-01",
+        totalCents: -1,
+      }),
+    ).rejects.toMatchObject({
+      code: "invalid_payable_state",
+      message: "totalCents must be greater than or equal to 0",
+    })
+  })
+
+  it("rejects negative line amounts", () => {
+    expect(() =>
+      validateSupplierInvoiceLines([
+        {
+          description: "Coach",
+          serviceType: "transport",
+          quantity: 1,
+          unitAmountCents: -1,
+          taxAmountCents: 0,
+          totalAmountCents: 0,
+          sortOrder: 0,
+        },
+      ]),
+    ).toThrow(SupplierInvoiceServiceError)
+  })
+
+  it("rejects line totals that do not equal quantity × unit amount plus tax", () => {
+    expect(() =>
+      validateSupplierInvoiceLines([
+        {
+          description: "Guide",
+          serviceType: "guide",
+          quantity: 2,
+          unitAmountCents: 45000,
+          taxAmountCents: 19000,
+          totalAmountCents: 100000,
+          sortOrder: 0,
+        },
+      ]),
+    ).toThrow("line 1 total amount must equal quantity × unit amount plus tax (109000)")
+  })
+
+  it("rejects supplied header totals that conflict with line-derived totals", async () => {
+    await expect(
+      supplierInvoicesService.create({} as never, {
+        supplierId: "sup_123",
+        supplierInvoiceNo: "SUP-1",
+        currency: "EUR",
+        issueDate: "2026-06-01",
+        totalCents: 1000,
+        lines: [
+          {
+            description: "Guide",
+            serviceType: "guide",
+            quantity: 2,
+            unitAmountCents: 45000,
+            taxAmountCents: 19000,
+            totalAmountCents: 109000,
+            sortOrder: 0,
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: "invalid_payable_state",
+      message: "totalCents must match the totals derived from supplier invoice lines (109000)",
+    })
+  })
+})
 
 describe("recomputeTotalsFromLines", () => {
   it("derives subtotal/tax/total from line totals (total includes tax)", () => {
@@ -73,6 +189,16 @@ describe("validateAllocations (§6.1 invariants)", () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.code).toBe("over_allocated")
+  })
+
+  it("rejects negative allocations", () => {
+    const result = validateAllocations({
+      invoiceTotalCents: 1000,
+      lines: [],
+      allocations: [{ supplierInvoiceLineId: null, amountCents: -1 }],
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe("invalid_payable_state")
   })
 
   it("allows whole-invoice allocation up to the total (split across departures)", () => {

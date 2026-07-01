@@ -80,17 +80,19 @@ export function LineDialog({
 
   const unitCents = parseOptionalNonNegativeCents(unit)
   const taxCents = parseOptionalNonNegativeCents(tax)
-  const totalCents = parseNonNegativeCents(total)
+  const quantityInt = Math.max(1, Number.parseInt(quantity, 10) || 1)
+  const totalCents =
+    unitCents != null && taxCents != null ? quantityInt * unitCents + taxCents : null
   const moneyValid = unitCents != null && taxCents != null && totalCents != null
 
   const submit = () => {
-    if (!moneyValid) return
+    if (unitCents == null || taxCents == null || totalCents == null) return
     if (!description.trim()) return
     onSubmit({
       description: description.trim(),
       serviceType,
       costCategoryId: costCategoryId || null,
-      quantity: Math.max(1, Number.parseInt(quantity, 10) || 1),
+      quantity: quantityInt,
       unitAmountCents: unitCents,
       taxAmountCents: taxCents,
       totalAmountCents: totalCents,
@@ -131,6 +133,7 @@ export function LineDialog({
             <Label>{t.quantity}</Label>
             <Input
               inputMode="numeric"
+              min="1"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
             />
@@ -158,8 +161,8 @@ export function LineDialog({
             <Input
               inputMode="decimal"
               min="0"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
+              value={totalCents == null ? total : (totalCents / 100).toFixed(2)}
+              readOnly
             />
           </div>
         </DialogBody>
@@ -343,12 +346,14 @@ export function AllocationDialog({
 export function PaymentDialog({
   open,
   currency,
+  maxAmountCents,
   pending,
   onOpenChange,
   onSubmit,
 }: {
   open: boolean
   currency: string
+  maxAmountCents: number
   pending: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (input: {
@@ -375,9 +380,10 @@ export function PaymentDialog({
   }
 
   const amountCents = parseNonNegativeCents(amount)
+  const amountValid = amountCents != null && amountCents > 0 && amountCents <= maxAmountCents
 
   const submit = () => {
-    if (amountCents == null) return
+    if (amountCents == null || amountCents <= 0 || amountCents > maxAmountCents) return
     onSubmit({
       amountCents,
       paymentMethod: method,
@@ -427,7 +433,7 @@ export function PaymentDialog({
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button type="button" disabled={amountCents == null || pending} onClick={submit}>
+          <Button type="button" disabled={!amountValid || pending} onClick={submit}>
             {pending ? t.recording : t.record}
           </Button>
         </DialogFooter>
