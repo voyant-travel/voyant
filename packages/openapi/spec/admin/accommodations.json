@@ -1,0 +1,1395 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Framework API",
+    "version": "0.0.0",
+    "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {
+      "CatalogSearchFilter": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "eq"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "value"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "in"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "values"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "range"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "gte": {
+                "type": "number"
+              },
+              "lte": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "field"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "and"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "or"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          }
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/admin/accommodations/room-blocks": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roomTypeId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "programId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "supplierId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "propertyId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "netRateCents": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "sellRateCents": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "optionDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "cutoffDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "roomTypeId",
+                  "name",
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created room block (starts in `inquiry`; nights are set separately)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "programId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "supplierId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "propertyId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "roomTypeId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "inquiry",
+                            "held",
+                            "confirmed",
+                            "released",
+                            "cancelled",
+                            "expired"
+                          ]
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "netRateCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "sellRateCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "optionDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "cutoffDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "attritionTerms": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "depositTerms": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "programId",
+                        "supplierId",
+                        "propertyId",
+                        "roomTypeId",
+                        "name",
+                        "status",
+                        "currency",
+                        "netRateCents",
+                        "sellRateCents",
+                        "optionDate",
+                        "cutoffDate",
+                        "attritionTerms",
+                        "depositTerms",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accommodations/room-blocks/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The room block header plus its derived pickup summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "block": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "programId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "supplierId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "propertyId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "roomTypeId": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "inquiry",
+                                "held",
+                                "confirmed",
+                                "released",
+                                "cancelled",
+                                "expired"
+                              ]
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "netRateCents": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "sellRateCents": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "optionDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "cutoffDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "attritionTerms": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "depositTerms": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "notes": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "metadata": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            },
+                            "updatedAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "programId",
+                            "supplierId",
+                            "propertyId",
+                            "roomTypeId",
+                            "name",
+                            "status",
+                            "currency",
+                            "netRateCents",
+                            "sellRateCents",
+                            "optionDate",
+                            "cutoffDate",
+                            "attritionTerms",
+                            "depositTerms",
+                            "notes",
+                            "metadata",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "summary": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "blockId": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "inquiry",
+                                "held",
+                                "confirmed",
+                                "released",
+                                "cancelled",
+                                "expired"
+                              ]
+                            },
+                            "totalHeld": {
+                              "type": "integer"
+                            },
+                            "totalPickedUp": {
+                              "type": "integer"
+                            },
+                            "totalReleased": {
+                              "type": "integer"
+                            },
+                            "totalRemaining": {
+                              "type": "integer"
+                            },
+                            "pickupProgress": {
+                              "type": "string",
+                              "enum": [
+                                "none",
+                                "partial",
+                                "full"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "blockId",
+                            "status",
+                            "totalHeld",
+                            "totalPickedUp",
+                            "totalReleased",
+                            "totalRemaining",
+                            "pickupProgress"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "block",
+                        "summary"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room block not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accommodations/room-blocks/{id}/nights": {
+      "put": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Upsert the held inventory (and optional rate overrides) per night. Only `roomsHeld` and the rate overrides are caller-controlled; the pickup / release counters are owned by the lifecycle actions and never set here.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nights": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "date": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "roomsHeld": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "netRateCentsOverride": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "sellRateCentsOverride": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "date",
+                        "roomsHeld"
+                      ]
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "nights"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The recomputed block summary after the nights upsert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "blockId": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "inquiry",
+                            "held",
+                            "confirmed",
+                            "released",
+                            "cancelled",
+                            "expired"
+                          ]
+                        },
+                        "totalHeld": {
+                          "type": "integer"
+                        },
+                        "totalPickedUp": {
+                          "type": "integer"
+                        },
+                        "totalReleased": {
+                          "type": "integer"
+                        },
+                        "totalRemaining": {
+                          "type": "integer"
+                        },
+                        "pickupProgress": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "partial",
+                            "full"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "blockId",
+                        "status",
+                        "totalHeld",
+                        "totalPickedUp",
+                        "totalReleased",
+                        "totalRemaining",
+                        "pickupProgress"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room block not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accommodations/room-blocks/{id}/pickups": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Record a pickup against the block. Idempotent on `stayBookingItemId`: re-processing the same stay item returns the existing active pickup with a 200 instead of a 201.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "stayBookingItemId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "checkIn": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "checkOut": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "rooms": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                  }
+                },
+                "required": [
+                  "checkIn",
+                  "checkOut"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An existing active pickup (idempotent replay on `stayBookingItemId`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "blockId": {
+                          "type": "string"
+                        },
+                        "bookingId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "stayBookingItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "checkIn": {
+                          "type": "string"
+                        },
+                        "checkOut": {
+                          "type": "string"
+                        },
+                        "rooms": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "reversed"
+                          ]
+                        },
+                        "pickedUpAt": {
+                          "type": "string"
+                        },
+                        "reversedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "blockId",
+                        "bookingId",
+                        "stayBookingItemId",
+                        "checkIn",
+                        "checkOut",
+                        "rooms",
+                        "status",
+                        "pickedUpAt",
+                        "reversedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The newly recorded pickup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "blockId": {
+                          "type": "string"
+                        },
+                        "bookingId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "stayBookingItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "checkIn": {
+                          "type": "string"
+                        },
+                        "checkOut": {
+                          "type": "string"
+                        },
+                        "rooms": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "reversed"
+                          ]
+                        },
+                        "pickedUpAt": {
+                          "type": "string"
+                        },
+                        "reversedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "blockId",
+                        "bookingId",
+                        "stayBookingItemId",
+                        "checkIn",
+                        "checkOut",
+                        "rooms",
+                        "status",
+                        "pickedUpAt",
+                        "reversedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid check-in/check-out range",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room block not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The block is no longer accepting pickups, or a night has insufficient inventory (the latter carries a `detail` with the short night)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "error"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        },
+                        "detail": {
+                          "type": "object",
+                          "properties": {
+                            "date": {
+                              "type": "string"
+                            },
+                            "remaining": {
+                              "type": "integer"
+                            },
+                            "needed": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "date",
+                            "remaining",
+                            "needed"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "error",
+                        "detail"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accommodations/room-blocks/{id}/pickups/reverse": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Reverse a pickup (booking cancelled / rooms reduced). Exactly one of `pickupId` or `stayBookingItemId` is required; the body schema enforces this, so a request with neither (or both) fails request validation with a 400 `invalid_request`. A well-formed request whose pickup isn't found (or belongs to a different block) returns 404.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pickupId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "stayBookingItemId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The reversed pickup ledger row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "blockId": {
+                          "type": "string"
+                        },
+                        "bookingId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "stayBookingItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "checkIn": {
+                          "type": "string"
+                        },
+                        "checkOut": {
+                          "type": "string"
+                        },
+                        "rooms": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "reversed"
+                          ]
+                        },
+                        "pickedUpAt": {
+                          "type": "string"
+                        },
+                        "reversedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "blockId",
+                        "bookingId",
+                        "stayBookingItemId",
+                        "checkIn",
+                        "checkOut",
+                        "rooms",
+                        "status",
+                        "pickedUpAt",
+                        "reversedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body — neither (or both) of `pickupId`/`stayBookingItemId` supplied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Active pickup not found (or it belongs to a different block)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accommodations/room-blocks/{id}/release": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unpicked rooms released back to the property; the block moves to `released`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "releasedRooms": {
+                          "type": "integer"
+                        },
+                        "block": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "programId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "supplierId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "propertyId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "roomTypeId": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "inquiry",
+                                "held",
+                                "confirmed",
+                                "released",
+                                "cancelled",
+                                "expired"
+                              ]
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "netRateCents": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "sellRateCents": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "optionDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "cutoffDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "attritionTerms": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "depositTerms": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "notes": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "metadata": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            },
+                            "updatedAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "programId",
+                            "supplierId",
+                            "propertyId",
+                            "roomTypeId",
+                            "name",
+                            "status",
+                            "currency",
+                            "netRateCents",
+                            "sellRateCents",
+                            "optionDate",
+                            "cutoffDate",
+                            "attritionTerms",
+                            "depositTerms",
+                            "notes",
+                            "metadata",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "releasedRooms",
+                        "block"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room block not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

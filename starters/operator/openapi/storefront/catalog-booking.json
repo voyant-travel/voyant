@@ -1,0 +1,2854 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {
+      "CatalogSearchFilter": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "eq"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "value"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "in"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "values"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "range"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "gte": {
+                "type": "number"
+              },
+              "lte": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "field"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "and"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "or"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          }
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/public/catalog/quote": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityModule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceProvider": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceConnectionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceRef": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "locale": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "audience": {
+                        "type": "string",
+                        "enum": [
+                          "staff",
+                          "customer",
+                          "partner",
+                          "supplier"
+                        ]
+                      },
+                      "market": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "currency": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "draft": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "ttlMs": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "entityModule",
+                  "entityId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quote for the entity at the requested scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "quoteId": {
+                      "type": "string"
+                    },
+                    "quotedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "invalidReason": {
+                      "type": "string"
+                    },
+                    "shape": {
+                      "type": "object",
+                      "properties": {
+                        "showsConfigure": {
+                          "type": "boolean"
+                        },
+                        "showsBilling": {
+                          "type": "boolean"
+                        },
+                        "showsTravelers": {
+                          "type": "boolean"
+                        },
+                        "showsAccommodation": {
+                          "type": "boolean"
+                        },
+                        "showsAddons": {
+                          "type": "boolean"
+                        },
+                        "showsPayment": {
+                          "type": "boolean"
+                        },
+                        "showsReview": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "configureSubSteps": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "departure"
+                                    ]
+                                  },
+                                  "required": {
+                                    "type": "boolean",
+                                    "enum": [
+                                      true
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "required"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "product-option"
+                                    ]
+                                  },
+                                  "options": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "code": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "description": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "isDefault": {
+                                          "type": "boolean"
+                                        },
+                                        "units": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "id": {
+                                                "type": "string"
+                                              },
+                                              "name": {
+                                                "type": "string"
+                                              },
+                                              "description": {
+                                                "type": [
+                                                  "string",
+                                                  "null"
+                                                ]
+                                              },
+                                              "unitType": {
+                                                "type": [
+                                                  "string",
+                                                  "null"
+                                                ]
+                                              },
+                                              "minQuantity": {
+                                                "type": [
+                                                  "integer",
+                                                  "null"
+                                                ],
+                                                "minimum": 0
+                                              },
+                                              "maxQuantity": {
+                                                "type": [
+                                                  "integer",
+                                                  "null"
+                                                ],
+                                                "minimum": 0
+                                              }
+                                            },
+                                            "required": [
+                                              "id",
+                                              "name"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "options"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "option-units"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "cabin-category"
+                                    ]
+                                  },
+                                  "categories": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "code": {
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "capacityMin": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "capacityMax": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "description": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "categories"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "cabin-number"
+                                    ]
+                                  },
+                                  "perCategory": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "string"
+                                          },
+                                          "code": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "capacity": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "hasAccessibilityFeatures": {
+                                            "type": "boolean"
+                                          }
+                                        },
+                                        "required": [
+                                          "id",
+                                          "label"
+                                        ]
+                                      }
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "perCategory"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "date-range"
+                                    ]
+                                  },
+                                  "minNights": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0
+                                  },
+                                  "maxNights": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "minNights",
+                                  "maxNights"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "occupancy"
+                                    ]
+                                  },
+                                  "bands": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "code": {
+                                          "type": "string"
+                                        },
+                                        "label": {
+                                          "type": "string"
+                                        },
+                                        "minAge": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "maxAge": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "minCount": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "maxCount": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "code",
+                                        "label",
+                                        "minCount",
+                                        "maxCount"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "bands"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "air-arrangement"
+                                    ]
+                                  },
+                                  "required": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "paxBands": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "minAge": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "maxAge": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "minCount": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "maxCount": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "label",
+                              "minCount",
+                              "maxCount"
+                            ]
+                          }
+                        },
+                        "paxBandsAllowedTotal": {
+                          "type": "object",
+                          "properties": {
+                            "min": {
+                              "type": "integer"
+                            },
+                            "max": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "min",
+                            "max"
+                          ]
+                        },
+                        "paxBandDependencies": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "dependentCode": {
+                                "type": "string"
+                              },
+                              "masterCode": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "requires",
+                                  "limits_per_master",
+                                  "limits_sum",
+                                  "excludes"
+                                ]
+                              },
+                              "maxPerMaster": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "maxDependentSum": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "dependentCode",
+                              "masterCode",
+                              "type"
+                            ]
+                          }
+                        },
+                        "travelerFields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "options": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "value",
+                                    "label"
+                                  ]
+                                }
+                              },
+                              "appliesToBands": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label",
+                              "type",
+                              "required"
+                            ]
+                          }
+                        },
+                        "bookingFields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "group": {
+                                "type": "string",
+                                "enum": [
+                                  "billing",
+                                  "company",
+                                  "preferences"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label",
+                              "type",
+                              "required",
+                              "group"
+                            ]
+                          }
+                        },
+                        "accommodation": {
+                          "type": "object",
+                          "properties": {
+                            "roomOptions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "capacity": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0
+                                  },
+                                  "baseRateHint": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "ratePlans": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "description": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "chargeFrequency": {
+                                          "type": "string",
+                                          "enum": [
+                                            "per_night",
+                                            "per_stay"
+                                          ]
+                                        },
+                                        "cancellationPolicy": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "inclusions": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "currency": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ]
+                              }
+                            },
+                            "sharedRoomAllowed": {
+                              "type": "boolean"
+                            },
+                            "subSteps": {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "rooms"
+                                        ]
+                                      },
+                                      "options": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "name": {
+                                              "type": "string"
+                                            },
+                                            "description": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ]
+                                            },
+                                            "capacity": {
+                                              "type": [
+                                                "integer",
+                                                "null"
+                                              ],
+                                              "minimum": 0
+                                            },
+                                            "baseRateHint": {
+                                              "type": [
+                                                "number",
+                                                "null"
+                                              ]
+                                            },
+                                            "ratePlans": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "id": {
+                                                    "type": "string"
+                                                  },
+                                                  "name": {
+                                                    "type": "string"
+                                                  },
+                                                  "description": {
+                                                    "type": [
+                                                      "string",
+                                                      "null"
+                                                    ]
+                                                  },
+                                                  "chargeFrequency": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "per_night",
+                                                      "per_stay"
+                                                    ]
+                                                  },
+                                                  "cancellationPolicy": {
+                                                    "type": [
+                                                      "string",
+                                                      "null"
+                                                    ]
+                                                  },
+                                                  "inclusions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "string"
+                                                    }
+                                                  },
+                                                  "currency": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "id",
+                                                  "name"
+                                                ]
+                                              }
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "name"
+                                          ]
+                                        }
+                                      },
+                                      "sharedRoomAllowed": {
+                                        "type": "boolean"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "options",
+                                      "sharedRoomAllowed"
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "extensions"
+                                        ]
+                                      },
+                                      "options": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "name": {
+                                              "type": "string"
+                                            },
+                                            "city": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ]
+                                            },
+                                            "side": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pre",
+                                                "post"
+                                              ]
+                                            },
+                                            "nights": {
+                                              "type": [
+                                                "integer",
+                                                "null"
+                                              ],
+                                              "minimum": 0
+                                            },
+                                            "pricePerPersonHint": {
+                                              "type": [
+                                                "number",
+                                                "null"
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "name",
+                                            "side"
+                                          ]
+                                        }
+                                      },
+                                      "allowsPre": {
+                                        "type": "boolean"
+                                      },
+                                      "allowsPost": {
+                                        "type": "boolean"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "options",
+                                      "allowsPre",
+                                      "allowsPost"
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "sharedRoomAllowed"
+                          ]
+                        },
+                        "addons": {
+                          "type": "object",
+                          "properties": {
+                            "catalog": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "extras",
+                                      "excursions",
+                                      "insurance"
+                                    ]
+                                  },
+                                  "groupKey": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "pricingMode": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "unitAmountCents": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ]
+                                  },
+                                  "currency": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "pricedPerPerson": {
+                                    "type": [
+                                      "boolean",
+                                      "null"
+                                    ]
+                                  },
+                                  "selectionType": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "enum": [
+                                      "optional",
+                                      "required",
+                                      "default_selected",
+                                      "unavailable",
+                                      null
+                                    ]
+                                  },
+                                  "minQuantity": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0
+                                  },
+                                  "maxQuantity": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0
+                                  },
+                                  "defaultQuantity": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name",
+                                  "kind"
+                                ]
+                              }
+                            },
+                            "groups": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "extras",
+                                      "excursions",
+                                      "insurance"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "groupBy": {
+                                    "type": "string",
+                                    "enum": [
+                                      "port",
+                                      "day"
+                                    ]
+                                  },
+                                  "perGuestSelection": {
+                                    "type": "boolean"
+                                  },
+                                  "items": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "description": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "extras",
+                                            "excursions",
+                                            "insurance"
+                                          ]
+                                        },
+                                        "groupKey": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "pricingMode": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "unitAmountCents": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "currency": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "pricedPerPerson": {
+                                          "type": [
+                                            "boolean",
+                                            "null"
+                                          ]
+                                        },
+                                        "selectionType": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "enum": [
+                                            "optional",
+                                            "required",
+                                            "default_selected",
+                                            "unavailable",
+                                            null
+                                          ]
+                                        },
+                                        "minQuantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0
+                                        },
+                                        "maxQuantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0
+                                        },
+                                        "defaultQuantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name",
+                                        "kind"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "label",
+                                  "perGuestSelection",
+                                  "items"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "paymentIntents": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "hold",
+                              "card",
+                              "bank_transfer",
+                              "ticket_on_credit",
+                              "inquiry"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "showsConfigure",
+                        "showsBilling",
+                        "showsTravelers",
+                        "showsAccommodation",
+                        "showsAddons",
+                        "showsPayment",
+                        "showsReview",
+                        "paxBands",
+                        "paxBandsAllowedTotal",
+                        "travelerFields",
+                        "bookingFields",
+                        "paymentIntents"
+                      ]
+                    },
+                    "pricing": {
+                      "type": "object",
+                      "properties": {
+                        "currency": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 3
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "base",
+                                  "addon",
+                                  "accommodation",
+                                  "supplement",
+                                  "discount",
+                                  "fee"
+                                ]
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "unitAmount": {
+                                "type": "integer"
+                              },
+                              "totalAmount": {
+                                "type": "integer"
+                              },
+                              "taxIncluded": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "label",
+                              "unitAmount",
+                              "totalAmount"
+                            ]
+                          }
+                        },
+                        "taxes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "rate": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "amount": {
+                                "type": "integer"
+                              },
+                              "base": {
+                                "type": "integer"
+                              },
+                              "includedInPrice": {
+                                "type": "boolean"
+                              },
+                              "scope": {
+                                "type": "string",
+                                "enum": [
+                                  "included",
+                                  "excluded",
+                                  "withheld"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "label",
+                              "rate",
+                              "amount",
+                              "base"
+                            ]
+                          }
+                        },
+                        "subtotal": {
+                          "type": "integer"
+                        },
+                        "taxTotal": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "currency",
+                        "lines",
+                        "taxes",
+                        "subtotal",
+                        "taxTotal",
+                        "total"
+                      ]
+                    },
+                    "upstreamPayload": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "quoteId",
+                    "quotedAt",
+                    "expiresAt",
+                    "available"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quote/order referenced by the engine was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Quote expired or conflicts with current availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream reservation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No adapter/handler registered for this vertical",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/catalog/book": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "description": "Either `quoteId` or `draftId` is required (cross-field rule enforced server-side; the schema is a permissive superset).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quoteId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "bookingId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "party": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "paymentIntent": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "hold"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "card"
+                            ]
+                          },
+                          "tokenizedCard": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "tokenizedCard"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "ticket_on_credit"
+                            ]
+                          },
+                          "agencyAccount": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "agencyAccount"
+                        ]
+                      }
+                    ]
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "draftId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking committed for the resolved quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bookingId": {
+                      "type": "string"
+                    },
+                    "orderRef": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "held",
+                        "confirmed",
+                        "ticketed",
+                        "failed"
+                      ]
+                    },
+                    "snapshotId": {
+                      "type": "string"
+                    },
+                    "pricing": {
+                      "type": "object",
+                      "properties": {
+                        "currency": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 3
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "base",
+                                  "addon",
+                                  "accommodation",
+                                  "supplement",
+                                  "discount",
+                                  "fee"
+                                ]
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "unitAmount": {
+                                "type": "integer"
+                              },
+                              "totalAmount": {
+                                "type": "integer"
+                              },
+                              "taxIncluded": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "label",
+                              "unitAmount",
+                              "totalAmount"
+                            ]
+                          }
+                        },
+                        "taxes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "rate": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "amount": {
+                                "type": "integer"
+                              },
+                              "base": {
+                                "type": "integer"
+                              },
+                              "includedInPrice": {
+                                "type": "boolean"
+                              },
+                              "scope": {
+                                "type": "string",
+                                "enum": [
+                                  "included",
+                                  "excluded",
+                                  "withheld"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "label",
+                              "rate",
+                              "amount",
+                              "base"
+                            ]
+                          }
+                        },
+                        "subtotal": {
+                          "type": "integer"
+                        },
+                        "taxTotal": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "currency",
+                        "lines",
+                        "taxes",
+                        "subtotal",
+                        "taxTotal",
+                        "total"
+                      ]
+                    },
+                    "upstreamPayload": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "bookingId",
+                    "orderRef",
+                    "status",
+                    "snapshotId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — body failed validation, or quoteId could not be resolved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Draft not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Draft has no current quote, quote expired/mismatched, or order conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream reservation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No adapter/handler registered for this vertical",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/catalog/drafts/{id}": {
+      "put": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityModule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceKind": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceConnectionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceRef": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "draftPayload": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "currentStep": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "currentQuoteId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "ttlMs": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "draftPayload"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing draft updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "entity_module": {
+                      "type": "string"
+                    },
+                    "entity_id": {
+                      "type": "string"
+                    },
+                    "source_kind": {
+                      "type": "string"
+                    },
+                    "source_connection_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_ref": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "draft_payload": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    },
+                    "current_step": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "current_quote_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hold_expires_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "consumed_booking_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "consumed_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_by": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "entity_module",
+                    "entity_id",
+                    "source_kind",
+                    "source_connection_id",
+                    "source_ref",
+                    "draft_payload",
+                    "current_step",
+                    "current_quote_id",
+                    "hold_expires_at",
+                    "consumed_booking_id",
+                    "consumed_at",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                    "expires_at"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Draft created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "entity_module": {
+                      "type": "string"
+                    },
+                    "entity_id": {
+                      "type": "string"
+                    },
+                    "source_kind": {
+                      "type": "string"
+                    },
+                    "source_connection_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_ref": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "draft_payload": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    },
+                    "current_step": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "current_quote_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hold_expires_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "consumed_booking_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "consumed_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_by": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "entity_module",
+                    "entity_id",
+                    "source_kind",
+                    "source_connection_id",
+                    "source_ref",
+                    "draft_payload",
+                    "current_step",
+                    "current_quote_id",
+                    "hold_expires_at",
+                    "consumed_booking_id",
+                    "consumed_at",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                    "expires_at"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — body failed validation, or entityModule/entityId missing on create",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The draft by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "entity_module": {
+                      "type": "string"
+                    },
+                    "entity_id": {
+                      "type": "string"
+                    },
+                    "source_kind": {
+                      "type": "string"
+                    },
+                    "source_connection_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_ref": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "draft_payload": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    },
+                    "current_step": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "current_quote_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hold_expires_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "consumed_booking_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "consumed_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_by": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "entity_module",
+                    "entity_id",
+                    "source_kind",
+                    "source_connection_id",
+                    "source_ref",
+                    "draft_payload",
+                    "current_step",
+                    "current_quote_id",
+                    "hold_expires_at",
+                    "consumed_booking_id",
+                    "consumed_at",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                    "expires_at"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Draft not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Draft deleted (idempotent)"
+          }
+        }
+      }
+    },
+    "/v1/public/catalog/holds/place": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityModule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "draftId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "ttlMs": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "entityModule",
+                  "entityId",
+                  "draftId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Soft hold placed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "holdToken": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "holdToken",
+                    "expiresAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quote/order referenced by the hold was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Hold conflicts with current availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream hold failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No hold primitive registered for this vertical",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/catalog/holds/release": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityModule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "holdToken": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "entityModule",
+                  "holdToken"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Hold released (idempotent; no-op when none registered)"
+          },
+          "400": {
+            "description": "invalid_request — body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quote/order referenced by the hold was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Hold conflicts with current availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream release failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/catalog/slots": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "entityModule",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "entityId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available departures / slots for a product",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "dateLocal": {
+                            "type": "string"
+                          },
+                          "startsAt": {
+                            "type": "string"
+                          },
+                          "endsAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "timezone": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "unlimited": {
+                            "type": "boolean"
+                          },
+                          "remainingPax": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "initialPax": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "nights": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "days": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dateLocal",
+                          "startsAt",
+                          "endsAt",
+                          "timezone",
+                          "status",
+                          "unlimited",
+                          "remainingPax",
+                          "initialPax",
+                          "nights",
+                          "days"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "rows"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "entityModule and entityId are required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

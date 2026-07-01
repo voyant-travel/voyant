@@ -17,3 +17,11 @@ todos.json
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# Generated aggregate OpenAPI specs (voyant#2733) — multi-megabyte, unviewable
+# on GitHub, rewritten wholesale on any route change. Regenerated on demand via
+# `pnpm --filter operator generate:openapi`. The committed, browsable surface is
+# the compact per-module files under openapi/{admin,storefront}/.
+openapi/framework-openapi.json
+openapi/framework-admin.json
+openapi/framework-storefront.json

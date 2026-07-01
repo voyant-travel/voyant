@@ -1,8 +1,11 @@
 import { createVoyantApp } from "@voyant-travel/framework"
 import {
+  type GenerateOpenApiOptions,
   generateOpenApiDocument,
+  mergeLazyOpenApiPaths,
   type OpenApiDocument,
   selectSurface,
+  splitDocumentByModule,
 } from "@voyant-travel/hono/openapi"
 
 /**
@@ -36,21 +39,39 @@ export interface FrameworkOpenApiDocuments {
   admin: OpenApiDocument
   /** Storefront/public surface only (`/v1/public/*`). */
   storefront: OpenApiDocument
+  /**
+   * One self-contained document per module, keyed by module name. Generated
+   * directly from each module's registered routes (voyant#2733) — the
+   * authoritative boundary — so a consumer can browse/diff a single domain
+   * instead of the multi-megabyte aggregate. A module doc may span both
+   * surfaces; split with `selectSurface` when writing `admin/`/`storefront/`.
+   */
+  modules: Map<string, OpenApiDocument>
 }
 
-export function buildFrameworkOpenApiDocuments(): FrameworkOpenApiDocuments {
+const OPENAPI_OPTIONS: GenerateOpenApiOptions = {
+  info: {
+    title: "Voyant Framework API",
+    version: "0.0.0",
+    description:
+      "Generated from the Voyant framework's standard module composition. Do not edit by hand.",
+  },
+}
+
+export async function buildFrameworkOpenApiDocuments(): Promise<FrameworkOpenApiDocuments> {
   const app = createVoyantApp({ providers: deepStub, db: deepStub })
-  const full = generateOpenApiDocument(app, {
-    info: {
-      title: "Voyant Framework API",
-      version: "0.0.0",
-      description:
-        "Generated from the Voyant framework's standard module composition. Do not edit by hand.",
-    },
-  })
+  const eager = generateOpenApiDocument(app, OPENAPI_OPTIONS)
+  // Lazy families mount as runtime wildcard stubs, so their `.openapi()` routes
+  // never reach the composed registry — replay their loaders and merge, matching
+  // the operator generator and the per-module docs (which load lazily too).
+  const full = await mergeLazyOpenApiPaths(eager, app.lazyMounts ?? [], OPENAPI_OPTIONS)
+  // Partition the FULL surface so nothing is dropped — `additionalRoutes` and
+  // directly-mounted routes (`_meta/capabilities`) aren't in the manifest.
+  const modules = await splitDocumentByModule(full, app.moduleMounts ?? [], OPENAPI_OPTIONS)
   return {
     full,
     admin: selectSurface(full, "admin"),
     storefront: selectSurface(full, "storefront"),
+    modules,
   }
 }

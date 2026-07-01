@@ -1,0 +1,2910 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Framework API",
+    "version": "0.0.0",
+    "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {
+      "CatalogSearchFilter": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "eq"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "value"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "in"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "values"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "range"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "gte": {
+                "type": "number"
+              },
+              "lte": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "field"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "and"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "or"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          }
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/public/products/tags": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "example": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of public catalog tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/products/categories": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "parentId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "example": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of public catalog categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "parentId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "parentId",
+                          "name",
+                          "slug",
+                          "description",
+                          "sortOrder"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/products/destinations": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "parentId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 35,
+              "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+            },
+            "required": false,
+            "name": "languageTag",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "destination",
+                "region",
+                "country",
+                "city",
+                "port",
+                "river",
+                "sea",
+                "ocean",
+                "canal",
+                "lake"
+              ]
+            },
+            "required": false,
+            "name": "destinationType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "canonicalPlaceId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "example": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of public catalog destinations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "parentId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "canonicalPlaceId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "seoTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "seoDescription": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "destinationType": {
+                            "type": "string"
+                          },
+                          "latitude": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "longitude": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "parentId",
+                          "slug",
+                          "canonicalPlaceId",
+                          "name",
+                          "description",
+                          "seoTitle",
+                          "seoDescription",
+                          "destinationType",
+                          "latitude",
+                          "longitude",
+                          "sortOrder"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/products": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 35,
+              "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+            },
+            "required": false,
+            "name": "languageTag",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "date",
+                "date_time",
+                "open",
+                "stay",
+                "transfer",
+                "itinerary",
+                "other"
+              ]
+            },
+            "required": false,
+            "name": "bookingMode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "free_sale",
+                "limited",
+                "on_request"
+              ]
+            },
+            "required": false,
+            "name": "capacityMode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productTypeId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "categoryId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "tagId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "destinationId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "destinationSlug",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "locationTitle",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "locationCity",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 3
+            },
+            "required": false,
+            "name": "locationCountryCode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "start",
+                "end",
+                "meeting_point",
+                "pickup",
+                "dropoff",
+                "point_of_interest",
+                "other"
+              ]
+            },
+            "required": false,
+            "name": "locationType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "featured",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "createdAt",
+                "startDate",
+                "price"
+              ],
+              "default": "name"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "direction",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "example": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "includeContent",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of public catalog products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "inclusionsHtml": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "exclusionsHtml": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "termsHtml": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "contentLanguageTag": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "slug": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "shortDescription": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "seoTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "seoDescription": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "bookingMode": {
+                            "type": "string"
+                          },
+                          "capacityMode": {
+                            "type": "string"
+                          },
+                          "visibility": {
+                            "type": "string"
+                          },
+                          "sellCurrency": {
+                            "type": "string"
+                          },
+                          "sellAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "startDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "endDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "contractTemplateId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "productType": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "code": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "code",
+                              "name",
+                              "description"
+                            ]
+                          },
+                          "categories": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "parentId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "slug": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "sortOrder": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "parentId",
+                                "name",
+                                "slug",
+                                "description",
+                                "sortOrder"
+                              ]
+                            }
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name"
+                              ]
+                            }
+                          },
+                          "destinations": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "parentId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "slug": {
+                                  "type": "string"
+                                },
+                                "canonicalPlaceId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "seoTitle": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "seoDescription": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "destinationType": {
+                                  "type": "string"
+                                },
+                                "latitude": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "longitude": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "sortOrder": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "parentId",
+                                "slug",
+                                "canonicalPlaceId",
+                                "name",
+                                "description",
+                                "seoTitle",
+                                "seoDescription",
+                                "destinationType",
+                                "latitude",
+                                "longitude",
+                                "sortOrder"
+                              ]
+                            }
+                          },
+                          "locations": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "locationType": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "address": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "city": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "countryCode": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "latitude": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "longitude": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "sortOrder": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "locationType",
+                                "title",
+                                "address",
+                                "city",
+                                "countryCode",
+                                "latitude",
+                                "longitude",
+                                "sortOrder"
+                              ]
+                            }
+                          },
+                          "capabilities": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "coverMedia": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "mediaType": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string"
+                              },
+                              "mimeType": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "altText": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              },
+                              "isCover": {
+                                "type": "boolean"
+                              },
+                              "isBrochure": {
+                                "type": "boolean"
+                              },
+                              "isBrochureCurrent": {
+                                "type": "boolean"
+                              },
+                              "brochureVersion": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "mediaType",
+                              "name",
+                              "url",
+                              "mimeType",
+                              "altText",
+                              "sortOrder",
+                              "isCover",
+                              "isBrochure",
+                              "isBrochureCurrent",
+                              "brochureVersion"
+                            ]
+                          },
+                          "isFeatured": {
+                            "type": "boolean"
+                          },
+                          "media": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "mediaType": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                },
+                                "mimeType": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "altText": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "sortOrder": {
+                                  "type": "integer"
+                                },
+                                "isCover": {
+                                  "type": "boolean"
+                                },
+                                "isBrochure": {
+                                  "type": "boolean"
+                                },
+                                "isBrochureCurrent": {
+                                  "type": "boolean"
+                                },
+                                "brochureVersion": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "mediaType",
+                                "name",
+                                "url",
+                                "mimeType",
+                                "altText",
+                                "sortOrder",
+                                "isCover",
+                                "isBrochure",
+                                "isBrochureCurrent",
+                                "brochureVersion"
+                              ]
+                            }
+                          },
+                          "brochure": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "mediaType": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string"
+                              },
+                              "mimeType": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "altText": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              },
+                              "isCover": {
+                                "type": "boolean"
+                              },
+                              "isBrochure": {
+                                "type": "boolean"
+                              },
+                              "isBrochureCurrent": {
+                                "type": "boolean"
+                              },
+                              "brochureVersion": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "mediaType",
+                              "name",
+                              "url",
+                              "mimeType",
+                              "altText",
+                              "sortOrder",
+                              "isCover",
+                              "isBrochure",
+                              "isBrochureCurrent",
+                              "brochureVersion"
+                            ]
+                          },
+                          "features": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "featureType": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "sortOrder": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "featureType",
+                                "title",
+                                "description",
+                                "sortOrder"
+                              ]
+                            }
+                          },
+                          "faqs": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "question": {
+                                  "type": "string"
+                                },
+                                "answer": {
+                                  "type": "string"
+                                },
+                                "sortOrder": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "question",
+                                "answer",
+                                "sortOrder"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "description",
+                          "inclusionsHtml",
+                          "exclusionsHtml",
+                          "termsHtml",
+                          "contentLanguageTag",
+                          "slug",
+                          "shortDescription",
+                          "seoTitle",
+                          "seoDescription",
+                          "bookingMode",
+                          "capacityMode",
+                          "visibility",
+                          "sellCurrency",
+                          "sellAmountCents",
+                          "startDate",
+                          "endDate",
+                          "pax",
+                          "contractTemplateId",
+                          "productType",
+                          "categories",
+                          "tags",
+                          "destinations",
+                          "locations",
+                          "capabilities",
+                          "coverMedia",
+                          "isFeatured"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/products/slug/{slug}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 35,
+              "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+            },
+            "required": false,
+            "name": "languageTag",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A public catalog product by slug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "inclusionsHtml": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "exclusionsHtml": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "termsHtml": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "contentLanguageTag": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "slug": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "shortDescription": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "seoTitle": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "seoDescription": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "bookingMode": {
+                          "type": "string"
+                        },
+                        "capacityMode": {
+                          "type": "string"
+                        },
+                        "visibility": {
+                          "type": "string"
+                        },
+                        "sellCurrency": {
+                          "type": "string"
+                        },
+                        "sellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "startDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "endDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "pax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "contractTemplateId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "productType": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "code",
+                            "name",
+                            "description"
+                          ]
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "parentId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "parentId",
+                              "name",
+                              "slug",
+                              "description",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          }
+                        },
+                        "destinations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "parentId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "canonicalPlaceId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "seoTitle": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "seoDescription": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "destinationType": {
+                                "type": "string"
+                              },
+                              "latitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "longitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "parentId",
+                              "slug",
+                              "canonicalPlaceId",
+                              "name",
+                              "description",
+                              "seoTitle",
+                              "seoDescription",
+                              "destinationType",
+                              "latitude",
+                              "longitude",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "locations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "locationType": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "address": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "city": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "countryCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "latitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "longitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "locationType",
+                              "title",
+                              "address",
+                              "city",
+                              "countryCode",
+                              "latitude",
+                              "longitude",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "capabilities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "coverMedia": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "mediaType": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            },
+                            "mimeType": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "altText": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "sortOrder": {
+                              "type": "integer"
+                            },
+                            "isCover": {
+                              "type": "boolean"
+                            },
+                            "isBrochure": {
+                              "type": "boolean"
+                            },
+                            "isBrochureCurrent": {
+                              "type": "boolean"
+                            },
+                            "brochureVersion": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "mediaType",
+                            "name",
+                            "url",
+                            "mimeType",
+                            "altText",
+                            "sortOrder",
+                            "isCover",
+                            "isBrochure",
+                            "isBrochureCurrent",
+                            "brochureVersion"
+                          ]
+                        },
+                        "isFeatured": {
+                          "type": "boolean"
+                        },
+                        "media": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "mediaType": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string"
+                              },
+                              "mimeType": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "altText": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              },
+                              "isCover": {
+                                "type": "boolean"
+                              },
+                              "isBrochure": {
+                                "type": "boolean"
+                              },
+                              "isBrochureCurrent": {
+                                "type": "boolean"
+                              },
+                              "brochureVersion": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "mediaType",
+                              "name",
+                              "url",
+                              "mimeType",
+                              "altText",
+                              "sortOrder",
+                              "isCover",
+                              "isBrochure",
+                              "isBrochureCurrent",
+                              "brochureVersion"
+                            ]
+                          }
+                        },
+                        "brochure": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "mediaType": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            },
+                            "mimeType": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "altText": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "sortOrder": {
+                              "type": "integer"
+                            },
+                            "isCover": {
+                              "type": "boolean"
+                            },
+                            "isBrochure": {
+                              "type": "boolean"
+                            },
+                            "isBrochureCurrent": {
+                              "type": "boolean"
+                            },
+                            "brochureVersion": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "mediaType",
+                            "name",
+                            "url",
+                            "mimeType",
+                            "altText",
+                            "sortOrder",
+                            "isCover",
+                            "isBrochure",
+                            "isBrochureCurrent",
+                            "brochureVersion"
+                          ]
+                        },
+                        "features": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "featureType": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "featureType",
+                              "title",
+                              "description",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "faqs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "question": {
+                                "type": "string"
+                              },
+                              "answer": {
+                                "type": "string"
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "question",
+                              "answer",
+                              "sortOrder"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "inclusionsHtml",
+                        "exclusionsHtml",
+                        "termsHtml",
+                        "contentLanguageTag",
+                        "slug",
+                        "shortDescription",
+                        "seoTitle",
+                        "seoDescription",
+                        "bookingMode",
+                        "capacityMode",
+                        "visibility",
+                        "sellCurrency",
+                        "sellAmountCents",
+                        "startDate",
+                        "endDate",
+                        "pax",
+                        "contractTemplateId",
+                        "productType",
+                        "categories",
+                        "tags",
+                        "destinations",
+                        "locations",
+                        "capabilities",
+                        "coverMedia",
+                        "isFeatured"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Catalog product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/products/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 35,
+              "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+            },
+            "required": false,
+            "name": "languageTag",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A public catalog product by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "inclusionsHtml": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "exclusionsHtml": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "termsHtml": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "contentLanguageTag": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "slug": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "shortDescription": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "seoTitle": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "seoDescription": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "bookingMode": {
+                          "type": "string"
+                        },
+                        "capacityMode": {
+                          "type": "string"
+                        },
+                        "visibility": {
+                          "type": "string"
+                        },
+                        "sellCurrency": {
+                          "type": "string"
+                        },
+                        "sellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "startDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "endDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "pax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "contractTemplateId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "productType": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "code",
+                            "name",
+                            "description"
+                          ]
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "parentId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "parentId",
+                              "name",
+                              "slug",
+                              "description",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          }
+                        },
+                        "destinations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "parentId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "canonicalPlaceId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "seoTitle": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "seoDescription": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "destinationType": {
+                                "type": "string"
+                              },
+                              "latitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "longitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "parentId",
+                              "slug",
+                              "canonicalPlaceId",
+                              "name",
+                              "description",
+                              "seoTitle",
+                              "seoDescription",
+                              "destinationType",
+                              "latitude",
+                              "longitude",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "locations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "locationType": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "address": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "city": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "countryCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "latitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "longitude": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "locationType",
+                              "title",
+                              "address",
+                              "city",
+                              "countryCode",
+                              "latitude",
+                              "longitude",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "capabilities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "coverMedia": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "mediaType": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            },
+                            "mimeType": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "altText": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "sortOrder": {
+                              "type": "integer"
+                            },
+                            "isCover": {
+                              "type": "boolean"
+                            },
+                            "isBrochure": {
+                              "type": "boolean"
+                            },
+                            "isBrochureCurrent": {
+                              "type": "boolean"
+                            },
+                            "brochureVersion": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "mediaType",
+                            "name",
+                            "url",
+                            "mimeType",
+                            "altText",
+                            "sortOrder",
+                            "isCover",
+                            "isBrochure",
+                            "isBrochureCurrent",
+                            "brochureVersion"
+                          ]
+                        },
+                        "isFeatured": {
+                          "type": "boolean"
+                        },
+                        "media": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "mediaType": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string"
+                              },
+                              "mimeType": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "altText": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              },
+                              "isCover": {
+                                "type": "boolean"
+                              },
+                              "isBrochure": {
+                                "type": "boolean"
+                              },
+                              "isBrochureCurrent": {
+                                "type": "boolean"
+                              },
+                              "brochureVersion": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "mediaType",
+                              "name",
+                              "url",
+                              "mimeType",
+                              "altText",
+                              "sortOrder",
+                              "isCover",
+                              "isBrochure",
+                              "isBrochureCurrent",
+                              "brochureVersion"
+                            ]
+                          }
+                        },
+                        "brochure": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "mediaType": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            },
+                            "mimeType": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "altText": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "sortOrder": {
+                              "type": "integer"
+                            },
+                            "isCover": {
+                              "type": "boolean"
+                            },
+                            "isBrochure": {
+                              "type": "boolean"
+                            },
+                            "isBrochureCurrent": {
+                              "type": "boolean"
+                            },
+                            "brochureVersion": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "mediaType",
+                            "name",
+                            "url",
+                            "mimeType",
+                            "altText",
+                            "sortOrder",
+                            "isCover",
+                            "isBrochure",
+                            "isBrochureCurrent",
+                            "brochureVersion"
+                          ]
+                        },
+                        "features": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "featureType": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "featureType",
+                              "title",
+                              "description",
+                              "sortOrder"
+                            ]
+                          }
+                        },
+                        "faqs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "question": {
+                                "type": "string"
+                              },
+                              "answer": {
+                                "type": "string"
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "question",
+                              "answer",
+                              "sortOrder"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "inclusionsHtml",
+                        "exclusionsHtml",
+                        "termsHtml",
+                        "contentLanguageTag",
+                        "slug",
+                        "shortDescription",
+                        "seoTitle",
+                        "seoDescription",
+                        "bookingMode",
+                        "capacityMode",
+                        "visibility",
+                        "sellCurrency",
+                        "sellAmountCents",
+                        "startDate",
+                        "endDate",
+                        "pax",
+                        "contractTemplateId",
+                        "productType",
+                        "categories",
+                        "tags",
+                        "destinations",
+                        "locations",
+                        "capabilities",
+                        "coverMedia",
+                        "isFeatured"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Catalog product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/products/{id}/brochure": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 35,
+              "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+            },
+            "required": false,
+            "name": "languageTag",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A product's current brochure media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "mediaType": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "mimeType": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "altText": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "isCover": {
+                          "type": "boolean"
+                        },
+                        "isBrochure": {
+                          "type": "boolean"
+                        },
+                        "isBrochureCurrent": {
+                          "type": "boolean"
+                        },
+                        "brochureVersion": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "mediaType",
+                        "name",
+                        "url",
+                        "mimeType",
+                        "altText",
+                        "sortOrder",
+                        "isCover",
+                        "isBrochure",
+                        "isBrochureCurrent",
+                        "brochureVersion"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Catalog product brochure not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

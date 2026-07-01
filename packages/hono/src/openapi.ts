@@ -102,6 +102,24 @@ export interface LazyMount {
   load: LazyRoutesLoader
 }
 
+/**
+ * A single module route mount recorded by `mountApp` for build-time per-module
+ * spec generation (voyant#2733). One module contributes several mounts (admin +
+ * public, eager + lazy), all tagged with the same `moduleName` — so the module
+ * boundary is the authoritative one from the registration, not a path-prefix
+ * guess. `prefix` is the real absolute mount (base path included), so the
+ * generated per-module doc carries correct absolute paths — including
+ * `publicPath` overrides whose prefix isn't the module name (e.g. a module that
+ * mounts its storefront routes under `/v1/public/booking-engine`). `load`
+ * returns the sub-app without serving it (eager mounts wrap the already-built
+ * app as `() => routes`; lazy mounts pass their loader).
+ */
+export interface ModuleMount {
+  moduleName: string
+  prefix: string
+  load: () => AnyApp | Promise<AnyApp>
+}
+
 /** Detect an `OpenAPIHono` sub-app (carries the `.openapi()` route registry). */
 function isOpenApiHono(value: unknown): value is OpenAPIHono {
   return (
@@ -197,4 +215,130 @@ export async function mergeLazyOpenApiPaths(
   }
 
   return merged
+}
+
+/**
+ * Generate one self-contained OpenAPI document per module from its recorded
+ * mounts (voyant#2733).
+ *
+ * Instead of building one giant composed document and splitting it by path
+ * prefix, this generates each module's spec directly from the routes the module
+ * registered — the authoritative module boundary. Each module's admin + public
+ * (+ lazy) sub-apps are re-mounted into a throwaway `OpenAPIHono` at their real
+ * absolute prefix (reusing the exact prefix-merge `OpenAPIHono.route(...)`
+ * applies), then its `getOpenAPI31Document()` is read. The returned docs are
+ * self-contained (each carries its own referenced components), so they render
+ * and diff cleanly on their own — unlike a 7 MB aggregate.
+ *
+ * A mount whose loader throws, or that returns a plain `Hono` with no
+ * `.openapi()` registry, is skipped without failing the module. Modules that
+ * contribute no documented operation are omitted from the result entirely.
+ *
+ * Build-time only — same constraint as the rest of this module
+ * (`@asteasolutions/zod-to-openapi` must stay out of the Worker bundle).
+ */
+export async function generateModuleOpenApiDocuments(
+  mounts: readonly ModuleMount[],
+  options: GenerateOpenApiOptions,
+): Promise<Map<string, OpenApiDocument>> {
+  const byModule = new Map<string, ModuleMount[]>()
+  for (const mount of mounts) {
+    const list = byModule.get(mount.moduleName)
+    if (list) list.push(mount)
+    else byModule.set(mount.moduleName, [mount])
+  }
+
+  const result = new Map<string, OpenApiDocument>()
+  for (const [moduleName, moduleMounts] of byModule) {
+    const throwaway = new OpenAPIHono()
+    let mountedAny = false
+    for (const { prefix, load } of moduleMounts) {
+      let subApp: unknown
+      try {
+        subApp = await load()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.warn(
+          `[voyant] openapi: module "${moduleName}" mount at "${prefix}" failed to load, skipping: ${message}`,
+        )
+        continue
+      }
+      if (!isOpenApiHono(subApp)) continue
+      throwaway.route(prefix === "/" ? "/" : prefix, subApp)
+      mountedAny = true
+    }
+    if (!mountedAny) continue
+
+    const doc = throwaway.getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: options.info,
+      ...(options.servers ? { servers: options.servers } : {}),
+    })
+    if (!doc.paths || Object.keys(doc.paths).length === 0) continue
+    result.set(moduleName, doc)
+  }
+  return result
+}
+
+/** Second path segment after the surface prefix — `/v1/admin/<seg>/...`. */
+function moduleSegment(path: string): string {
+  return path.split("/")[3] ?? "misc"
+}
+
+/**
+ * Partition a composed document into one document per module, covering EVERY
+ * admin/storefront path (voyant#2733).
+ *
+ * `generateModuleOpenApiDocuments` alone only sees routes recorded in the module
+ * mount manifest — it misses `additionalRoutes` and any route mounted directly
+ * on the composed app (e.g. the operator's workflow-runs admin surface, the
+ * `_meta/capabilities` route). Those were present in the old committed aggregate
+ * and must not silently vanish from the committed per-module specs.
+ *
+ * This uses the manifest as the *authoritative* owner for the routes it knows
+ * about — which is what makes `publicPath` overrides (whose prefix isn't the
+ * module name, e.g. `/v1/public/booking-engine`) land under the right module —
+ * and falls back to the path's own second segment for anything the manifest
+ * doesn't claim. The result therefore partitions the full surface exactly: every
+ * `/v1/admin/*` and `/v1/public/*` path lands in exactly one module document.
+ * Non-surface routes (`/v1/<name>` webhooks, legacy `/v1/*`) live only in the
+ * aggregate, as before.
+ *
+ * Each per-module document carries the aggregate's shared `components` verbatim
+ * (there is ~one), so it stays a valid, self-contained OpenAPI document.
+ *
+ * Build-time only.
+ */
+export async function splitDocumentByModule(
+  full: OpenApiDocument,
+  mounts: readonly ModuleMount[],
+  options: GenerateOpenApiOptions,
+): Promise<Map<string, OpenApiDocument>> {
+  const moduleDocs = await generateModuleOpenApiDocuments(mounts, options)
+  const owner = new Map<string, string>()
+  for (const [moduleName, doc] of moduleDocs) {
+    for (const path of Object.keys(doc.paths ?? {})) owner.set(path, moduleName)
+  }
+
+  const buckets = new Map<string, Record<string, unknown>>()
+  for (const [path, item] of Object.entries(full.paths ?? {})) {
+    if (!path.startsWith("/v1/admin/") && !path.startsWith("/v1/public/")) continue
+    const moduleName = owner.get(path) ?? moduleSegment(path)
+    let bucket = buckets.get(moduleName)
+    if (!bucket) {
+      bucket = {}
+      buckets.set(moduleName, bucket)
+    }
+    bucket[path] = item
+  }
+
+  const result = new Map<string, OpenApiDocument>()
+  for (const [moduleName, paths] of buckets) {
+    result.set(moduleName, {
+      ...full,
+      paths,
+      ...(full.components ? { components: full.components } : {}),
+    } as OpenApiDocument)
+  }
+  return result
 }
