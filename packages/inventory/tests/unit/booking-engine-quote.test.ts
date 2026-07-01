@@ -647,6 +647,38 @@ describe("createProductsBookingHandler.commit", () => {
     )
   })
 
+  it("skips the resolver when the billing contact has a contact point but no full name", async () => {
+    // createBooking requires first AND last name once a personId is set, so
+    // resolving on a nameless contact would create a person it then rejects.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        billing: {
+          // Email present, but only a first name — no last name.
+          contact: { firstName: "Guest", email: "guest@example.com" },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(expect.objectContaining({ personId: null }))
+  })
+
   it("clears a placeholder billing email but still resolves on a real phone", async () => {
     // createBooking rejects a placeholder email even alongside a phone, so the
     // handler must treat it as absent — otherwise it resolves a CRM person that
