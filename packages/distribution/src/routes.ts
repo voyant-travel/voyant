@@ -865,6 +865,7 @@ const createBookingLinkRoute = createRoute({
       ...jsonContent(z.object({ data: channelBookingLinkSchema })),
     },
     400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    409: { description: "duplicate_channel_booking_link", ...jsonContent(errorResponseSchema) },
   },
 })
 
