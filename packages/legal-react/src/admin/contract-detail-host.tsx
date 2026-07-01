@@ -44,6 +44,7 @@ export interface ContractDetailHostProps {
 export function ContractDetailHost({ id }: ContractDetailHostProps) {
   const messages = useOperatorAdminMessages()
   const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
   const { baseUrl } = useVoyantLegalContext()
 
   // Hook into the admin breadcrumb chain so the contract detail page
@@ -70,6 +71,7 @@ export function ContractDetailHost({ id }: ContractDetailHostProps) {
   return (
     <ContractDetailPage
       id={id}
+      onBackToContracts={() => navigateTo("contract.list", {})}
       renderContractDialog={(props) => <ContractDialog {...props} />}
       getAttachmentDownloadHref={(attachment) =>
         `${baseUrl}/v1/admin/legal/contracts/attachments/${attachment.id}/download`
