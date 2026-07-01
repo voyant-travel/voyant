@@ -1,9 +1,11 @@
 import { legalTargetKindSchema } from "@voyant-travel/legal-contracts/targets/validation"
 import { listResponse, listResponseSchema } from "@voyant-travel/types"
 import type { InferSelectModel } from "drizzle-orm"
+import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
+import { contractsPublicRoutes } from "../../../src/contracts/routes.js"
 import type {
   contractAttachments,
   contractNumberSeries,
@@ -365,4 +367,29 @@ describe("legal contracts array { data } envelope response contracts", () => {
       expect(parsed.success ? null : parsed.error.toString()).toBeNull()
     })
   }
+})
+
+describe("legal contracts public token guard", () => {
+  const app = new Hono().route("/", contractsPublicRoutes)
+
+  it("rejects public contract read by id alone before database lookup", async () => {
+    const res = await app.request("/contracts_000000000000000000000000000")
+
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: "Contract not found" })
+  })
+
+  it("rejects public contract signing by id alone before database lookup", async () => {
+    const res = await app.request("/contracts_000000000000000000000000000/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        signerName: "Ada Lovelace",
+        method: "manual",
+      }),
+    })
+
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: "Contract not found" })
+  })
 })
