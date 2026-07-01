@@ -57,6 +57,10 @@ import {
 
 export type { ChannelSyncPageProps } from "./channel-sync-page-utils.js"
 
+interface ProductMappingsReadinessResponse {
+  data: unknown[]
+}
+
 // Page
 
 export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPageProps = {}) {
@@ -95,7 +99,17 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const setupLinksQuery = useQuery<LinksResponse>({
     queryKey: ["channel-push-links", "setup-readiness"],
-    queryFn: () => fetchJson<LinksResponse>(`${channelPushAdminPaths.links}?limit=25`, client),
+    queryFn: () => fetchJson<LinksResponse>(`${channelPushAdminPaths.links}?limit=1`, client),
+    staleTime: 60_000,
+  })
+
+  const productMappingsReadinessQuery = useQuery<ProductMappingsReadinessResponse>({
+    queryKey: ["channel-sync-product-mapping-readiness"],
+    queryFn: () =>
+      fetchJson<ProductMappingsReadinessResponse>(
+        "/v1/admin/distribution/product-mappings?limit=1",
+        client,
+      ),
     staleTime: 60_000,
   })
 
@@ -144,21 +158,16 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const counts = linksQuery.data?.counts ?? {}
   const rows = linksQuery.data?.data ?? []
-  const setupRows = setupLinksQuery.data?.data ?? []
+  const setupCounts = setupLinksQuery.data?.counts ?? {}
   const throttledChannels = throttlingQuery.data?.data ?? []
   const bookingOptions = bookingsQuery.data?.data ?? []
   const channelOptions = channelsQuery.data?.data ?? []
   const isThrottled = throttledChannels.length > 0
   const filtersActive = statusFilter !== "all" || bookingId !== null || channelId !== null
   const hasChannels = channelOptions.length > 0
-  const hasLinks = setupRows.length > 0
-  const hasDeliveryEvidence = setupRows.some(
-    (row) =>
-      row.link.pushStatus === "ok" ||
-      row.link.lastPushAt ||
-      row.link.externalBookingId ||
-      row.link.externalReference,
-  )
+  const hasMappings = (productMappingsReadinessQuery.data?.data.length ?? 0) > 0
+  const hasDeliveryEvidence =
+    (setupCounts.ok ?? 0) > 0 || (setupCounts.failed ?? 0) > 0 || (setupCounts.compensated ?? 0) > 0
   const setupSteps = [
     {
       key: "connector",
@@ -167,7 +176,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
     },
     {
       key: "mapping",
-      complete: hasLinks,
+      complete: hasMappings,
       ...messages.setup.mapping,
     },
     {
