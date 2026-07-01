@@ -563,12 +563,12 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
                             size="sm"
                             disabled={
                               retryMutation.isPending &&
-                              retryMutation.variables?.link.id === row.link.id
+                              retryMutation.variables?.link.bookingId === row.link.bookingId
                             }
                             onClick={() => retryMutation.mutate(row)}
                           >
                             {retryMutation.isPending &&
-                            retryMutation.variables?.link.id === row.link.id ? (
+                            retryMutation.variables?.link.bookingId === row.link.bookingId ? (
                               <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                             ) : null}
                             {messages.table.retry}

@@ -10,7 +10,9 @@
  * Per docs/architecture/channel-push-architecture.md §4.1.
  */
 
+import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventEnvelope, Subscriber } from "@voyant-travel/core"
+import { eq } from "drizzle-orm"
 
 import {
   processAvailabilityPushIntents,
@@ -276,6 +278,27 @@ export async function triggerBookingPushForBookingWithResult(
 ): Promise<TriggerBookingPushResult> {
   const deps = getChannelPushDepsOrThrow()
   const targets = await resolveBookingPushTargets(deps.db, bookingId)
+  if (targets.length === 0) {
+    const [booking] = await deps.db
+      .select({ id: bookings.id })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1)
+    if (booking) {
+      return {
+        bookingId,
+        attempted: 0,
+        succeeded: 0,
+        failed: 0,
+        compensated: 0,
+        outcomes: [],
+        targetCount: 0,
+        insertedLinks: 0,
+        reason: "no_targets",
+      }
+    }
+  }
+
   const insertedLinks =
     targets.length > 0 ? await upsertPendingBookingLinks(deps.db, bookingId, targets) : 0
   const result = await processBookingPush({ bookingId }, deps)
