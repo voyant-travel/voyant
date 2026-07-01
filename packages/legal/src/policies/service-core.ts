@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: legal; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
+import { and, desc, eq, exists, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { normalizeLegalTargetFields } from "../targets/service.js"
 import {
@@ -477,6 +477,21 @@ export const policiesCoreService = {
   },
   async listPolicyAcceptances(db: PostgresJsDatabase, query: PolicyAcceptanceListQuery) {
     const conditions = []
+    if (query.policyId) {
+      conditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(policyVersions)
+            .where(
+              and(
+                eq(policyVersions.id, policyAcceptances.policyVersionId),
+                eq(policyVersions.policyId, query.policyId),
+              ),
+            ),
+        ),
+      )
+    }
     if (query.policyVersionId)
       conditions.push(eq(policyAcceptances.policyVersionId, query.policyVersionId))
     if (query.personId) conditions.push(eq(policyAcceptances.personId, query.personId))
