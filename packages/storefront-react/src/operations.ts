@@ -14,6 +14,7 @@ import {
   storefrontDeparturePricePreviewInputSchema,
   storefrontDeparturePricePreviewResponseSchema,
   storefrontDepartureResponseSchema,
+  storefrontMarketsResponseSchema,
   storefrontOfferApplyInputSchema,
   storefrontOfferMutationResponseSchema,
   storefrontOfferRedeemInputSchema,
@@ -26,6 +27,16 @@ import {
 
 export function getStorefrontSettings(client: FetchWithValidationOptions) {
   return fetchWithValidation("/v1/public/settings", storefrontSettingsResponseSchema, client)
+}
+
+/**
+ * Anonymous market discovery (voyant#2643). Lists the active markets — with
+ * their supported locales and currencies — so a storefront can present a
+ * market/currency/locale scope selector. The returned market `id` is the
+ * catalog-search scope key (thread it into catalog search as `market`).
+ */
+export function listStorefrontMarkets(client: FetchWithValidationOptions) {
+  return fetchWithValidation("/v1/public/markets", storefrontMarketsResponseSchema, client)
 }
 
 export function getAdminStorefrontSettings(client: FetchWithValidationOptions) {

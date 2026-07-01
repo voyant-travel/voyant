@@ -1,6 +1,6 @@
 "use client"
 
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   type BookingDraftV1,
   type QuoteResponseV1,
@@ -47,6 +47,17 @@ export function useBookingQuote(options: UseBookingQuoteOptions) {
   const draftRef = useRef(options.draft)
   draftRef.current = options.draft
 
+  // Scope (market / currency / locale / audience) is part of what the quote
+  // prices, so it must be in the query key — otherwise changing the selected
+  // market/currency on an already-open journey keeps the previous quote until
+  // the draft signature changes.
+  const scopeKey = JSON.stringify({
+    locale: options.scope?.locale,
+    audience: options.scope?.audience,
+    market: options.scope?.market,
+    currency: options.scope?.currency,
+  })
+
   useEffect(() => {
     if (!signature) {
       setDebouncedSignature(null)
@@ -57,7 +68,7 @@ export function useBookingQuote(options: UseBookingQuoteOptions) {
   }, [signature, debounceMs])
 
   const query = useQuery<QuoteResponseV1 | null>({
-    queryKey: ["booking-quote", options.surface ?? "admin", debouncedSignature],
+    queryKey: ["booking-quote", options.surface ?? "admin", debouncedSignature, scopeKey],
     queryFn: async () => {
       const draft = draftRef.current
       if (!draft) return null
@@ -69,7 +80,16 @@ export function useBookingQuote(options: UseBookingQuoteOptions) {
     // in place (price swaps when ready) instead of blanking → falling back
     // to the minimal shape → flashing the whole Configure step on every
     // traveler/room change.
-    placeholderData: keepPreviousData,
+    //
+    // BUT do not carry a quote across a SCOPE change: its price is for the old
+    // market/currency, and keeping it visible would let the shopper confirm the
+    // stale-scope quote in the sub-second window before the re-scoped quote
+    // lands. On a scope change we drop to `null` (loading) so the confirm guard
+    // (`!quote.data?.quoteId`) blocks booking until the new quote resolves.
+    placeholderData: (previous, previousQuery) => {
+      const previousScopeKey = previousQuery?.queryKey?.[3]
+      return previousScopeKey === scopeKey ? previous : undefined
+    },
   })
 
   const requote = useMutation<QuoteResponseV1, Error, void>({

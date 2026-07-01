@@ -64,6 +64,43 @@ export {
   storefrontSettingsSchema,
 }
 
+/**
+ * Public market discovery contract (voyant#2643). Mirrors the narrow projection
+ * served by `GET /v1/public/markets` (see `packages/commerce` `PublicMarket`).
+ * Defined locally so the storefront client stays decoupled from the commerce
+ * package while validating the anonymous discovery response.
+ *
+ * The market `id` is the catalog-search scope key — thread it into catalog
+ * search as the `market` parameter. `code`/`name` are display-only.
+ */
+export const storefrontMarketLocaleSchema = z.object({
+  languageTag: z.string(),
+  isDefault: z.boolean(),
+})
+
+export const storefrontMarketCurrencySchema = z.object({
+  currencyCode: z.string(),
+  isDefault: z.boolean(),
+})
+
+export const storefrontMarketSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  regionCode: z.string().nullable(),
+  countryCode: z.string().nullable(),
+  defaultLocale: z.string(),
+  defaultCurrency: z.string(),
+  locales: z.array(storefrontMarketLocaleSchema),
+  currencies: z.array(storefrontMarketCurrencySchema),
+})
+
+export const storefrontMarketsResponseSchema = arrayEnvelope(storefrontMarketSchema)
+
+export type StorefrontMarketLocale = z.infer<typeof storefrontMarketLocaleSchema>
+export type StorefrontMarketCurrency = z.infer<typeof storefrontMarketCurrencySchema>
+export type StorefrontMarketRecord = z.infer<typeof storefrontMarketSchema>
+
 export const storefrontSettingsResponseSchema = singleEnvelope(storefrontSettingsSchema)
 export const storefrontDepartureResponseSchema = singleEnvelope(storefrontDepartureSchema)
 export const storefrontDeparturePricePreviewResponseSchema = singleEnvelope(

@@ -123,6 +123,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const quote = useBookingQuote({
     surface,
     draft,
+    scope: props.scope,
   })
 
   const shape = useBookingDraftShape({

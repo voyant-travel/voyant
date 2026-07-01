@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
+import { useStorefrontScope } from "@/lib/storefront-scope"
 import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   BackLink,
@@ -29,12 +30,14 @@ import {
 export function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElement {
   const navigate = useNavigate()
   const t = useStorefrontMessagesOrDefault().shopDetailCruises
+  const scope = useStorefrontScope()
 
   const content = useQuery({
-    queryKey: ["public-cruise-content", entityId],
+    queryKey: ["public-cruise-content", entityId, scope.marketId, scope.locale, scope.currency],
     queryFn: () =>
       fetchContent<CruiseContent>(
         `${getApiUrl()}/v1/public/cruises/${encodeURIComponent(entityId)}/content`,
+        { locale: scope.locale, market: scope.marketId, currency: scope.currency },
       ),
     staleTime: 30_000,
   })
@@ -62,7 +65,12 @@ export function CruiseDetailPage({ entityId }: { entityId: string }): React.Reac
     })
   }, [entityId, selectedSailingId, selectedCabinCategoryId, occupancy])
 
-  const quote = useBookingQuote({ surface: "public", draft: probeDraft })
+  const quote = useBookingQuote({
+    surface: "public",
+    draft: probeDraft,
+    // Honor the selected storefront scope (voyant#2643).
+    scope: { market: scope.marketId, locale: scope.locale, currency: scope.currency },
+  })
   const totalCents = quote.data?.pricing?.total ?? 0
   const currency = quote.data?.pricing?.currency
 

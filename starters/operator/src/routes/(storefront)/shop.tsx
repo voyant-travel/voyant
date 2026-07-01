@@ -10,6 +10,7 @@ import { useState } from "react"
 import { z } from "zod"
 
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
+import { useStorefrontScope } from "@/lib/storefront-scope"
 
 /**
  * Storefront landing — real catalog browser backed by
@@ -34,6 +35,7 @@ function StorefrontIndex(): React.ReactElement {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const t = useStorefrontMessagesOrDefault().shop
+  const scope = useStorefrontScope()
   const vertical = search.vertical ?? "products"
   const [query, setQuery] = useState(search.q ?? "")
 
@@ -43,6 +45,11 @@ function StorefrontIndex(): React.ReactElement {
     query,
     mode: "keyword",
     pagination: { limit: 24 },
+    // Thread the selected storefront scope (voyant#2643). `market` is the
+    // catalog-search scope key; `locale` selects the served content language.
+    // Both fall back to the runtime default scope when nothing is selected.
+    market: scope.marketId,
+    locale: scope.locale,
     enabled: true,
   })
 

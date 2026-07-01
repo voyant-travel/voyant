@@ -9,6 +9,7 @@ import {
   getStorefrontDepartureItinerary,
   getStorefrontOfferBySlug,
   getStorefrontSettings,
+  listStorefrontMarkets,
   listStorefrontProductDepartures,
   listStorefrontProductExtensions,
   listStorefrontProductOffers,
@@ -24,6 +25,16 @@ export function getStorefrontSettingsQueryOptions(client: FetchWithValidationOpt
   return queryOptions({
     queryKey: storefrontQueryKeys.settings(),
     queryFn: () => getStorefrontSettings(client),
+  })
+}
+
+export function getStorefrontMarketsQueryOptions(client: FetchWithValidationOptions) {
+  return queryOptions({
+    queryKey: storefrontQueryKeys.markets(),
+    queryFn: () => listStorefrontMarkets(client),
+    // Markets change rarely and the endpoint is edge-cached (s-maxage=300);
+    // hold results for five minutes to avoid re-fetching on every mount.
+    staleTime: 5 * 60_000,
   })
 }
 

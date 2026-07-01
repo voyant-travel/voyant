@@ -461,16 +461,25 @@ async function handleBook(
 
   let quoteId = body.quoteId
   let draftPayload: Record<string, unknown> | undefined
-  if (!quoteId && body.draftId) {
+  // Load the draft whenever a draftId is present — even when the caller pins an
+  // explicit `quoteId` — so its payload (selected departure/room/pax/travelers)
+  // still feeds `engineParametersFromDraft`. An explicit `quoteId` only overrides
+  // WHICH quote is booked (e.g. a live re-scoped quote); it must not drop the
+  // draft parameters the reserve/commit derives from.
+  if (body.draftId) {
     const draft = await getBookingDraft(db, body.draftId)
-    if (!draft) {
+    if (draft) {
+      draftPayload = draft.draft_payload
+      if (!quoteId) {
+        if (!draft.current_quote_id) {
+          return c.json({ error: "draft has no current quote - call /quote first" }, 409)
+        }
+        quoteId = draft.current_quote_id
+      }
+    } else if (!quoteId) {
+      // No draft and no explicit quote to fall back to.
       return c.json({ error: "draft not found" }, 404)
     }
-    if (!draft.current_quote_id) {
-      return c.json({ error: "draft has no current quote - call /quote first" }, 409)
-    }
-    quoteId = draft.current_quote_id
-    draftPayload = draft.draft_payload
   }
   if (!quoteId) {
     return c.json({ error: "quoteId could not be resolved" }, 400)
