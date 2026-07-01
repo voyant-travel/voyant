@@ -2280,7 +2280,7 @@ async function seedLegal() {
 <p><em>No lead traveler on file.</em></p>
 {% endif %}
 
-<h2>Travelers ({{ travelers.size }})</h2>
+<h2>Travelers ({% if booking.pax != nil and booking.pax != "" and booking.pax > 0 %}{{ booking.pax }}{% elsif travelers.size > 0 %}{{ travelers.size }}{% else %}TBD{% endif %})</h2>
 <ol>
 {% for t in travelers %}
   <li>{{ t.firstName }} {{ t.lastName }}{% if t.participantType != "traveler" %} — {{ t.participantType }}{% endif %}</li>
