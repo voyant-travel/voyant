@@ -69,7 +69,7 @@
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "date-fns": "^4.4.0",
-    "motion": "^12.42.0",
+    "motion": "^12.42.2",
     "react-day-picker": "^9.8.0",
     "sonner": "^2.0.7"
   },
