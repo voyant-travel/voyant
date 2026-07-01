@@ -1,5 +1,12 @@
 # @voyant-travel/legal
 
+## 0.137.9
+
+### Patch Changes
+
+- 04aa601: Keep booking contract document generation from issuing contract numbers or leaving issued contract rows when the document renderer fails.
+  - @voyant-travel/distribution@0.127.3
+
 ## 0.137.8
 
 ### Patch Changes

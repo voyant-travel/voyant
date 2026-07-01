@@ -1,5 +1,14 @@
 # @voyant-travel/distribution-react
 
+## 0.127.3
+
+### Patch Changes
+
+- 14845ee: Rename the operator Channel sync surface to Distribution and clarify setup, monitoring, retry, reconcile, and delivery messaging.
+- Updated dependencies [14845ee]
+  - @voyant-travel/i18n@0.109.6
+  - @voyant-travel/distribution@0.127.3
+
 ## 0.127.2
 
 ### Patch Changes
