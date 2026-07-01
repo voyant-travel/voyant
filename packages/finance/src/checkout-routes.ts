@@ -116,14 +116,8 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
   // Pin the middleware to this module's Env so Hono doesn't intersect the
   // middleware's default VoyantBindings into the handlers' `c.env` type.
   const collectionIdempotency = () => idempotencyKey<Env["Bindings"], Env["Variables"]>()
-  function getRuntime(
-    bindings: Record<string, unknown>,
-    container: ModuleContainer | undefined,
-    opts: { requirePaymentStarter: boolean },
-  ) {
-    return resolveCheckoutRouteRuntime(bindings, options, container, {
-      requirePaymentStarter: opts.requirePaymentStarter,
-    })
+  function getRuntime(bindings: Record<string, unknown>, container?: ModuleContainer) {
+    return resolveCheckoutRouteRuntime(bindings, options, container)
   }
 
   return (
@@ -154,9 +148,8 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
       .post("/bookings/:bookingId/initiate-collection", collectionIdempotency(), async (c) => {
         try {
           const input = await parseJsonBody(c, initiateCheckoutCollectionSchema)
-          const runtime = getRuntime(c.env, c.var.container, {
-            requirePaymentStarter: input.method === "card",
-          })
+          const runtime = getRuntime(c.env, c.var.container)
+          assertCheckoutRuntimeSupportsCollection(runtime, input)
           const result = await initiateCheckoutCollection(
             c.get("db"),
             c.req.param("bookingId")!,
@@ -185,9 +178,8 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
       .post("/collections/bootstrap", collectionIdempotency(), async (c) => {
         try {
           const input = await parseJsonBody(c, bootstrapCheckoutCollectionSchema)
-          const runtime = getRuntime(c.env, c.var.container, {
-            requirePaymentStarter: input.method === "card",
-          })
+          const runtime = getRuntime(c.env, c.var.container)
+          assertCheckoutRuntimeSupportsCollection(runtime, input)
           const result = await bootstrapCheckoutCollection(
             c.get("db"),
             input,
@@ -242,19 +234,21 @@ function resolveCheckoutRouteRuntime(
   bindings: Record<string, unknown>,
   options: CheckoutRoutesOptions,
   container?: ModuleContainer,
-  opts: { requirePaymentStarter?: boolean } = {},
 ): CheckoutRouteRuntime {
-  let runtime: CheckoutRouteRuntime
   if (container?.has(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY)) {
-    runtime = container.resolve<CheckoutRouteRuntime>(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY)
-  } else {
-    runtime = buildCheckoutRouteRuntime(bindings, options)
+    return container.resolve<CheckoutRouteRuntime>(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY)
   }
 
-  if (opts.requirePaymentStarter && Object.keys(runtime.paymentStarters).length === 0) {
+  return buildCheckoutRouteRuntime(bindings, options)
+}
+
+function assertCheckoutRuntimeSupportsCollection(
+  runtime: CheckoutRouteRuntime,
+  input: { method: "card" | "bank_transfer" },
+) {
+  if (input.method === "card" && Object.keys(runtime.paymentStarters).length === 0) {
     throw new CheckoutRouteRuntimeNotConfiguredError()
   }
-  return runtime
 }
 
 export function buildCheckoutRouteRuntime(
