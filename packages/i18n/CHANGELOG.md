@@ -1,5 +1,12 @@
 # @voyant-travel/i18n
 
+## 0.109.8
+
+### Patch Changes
+
+- f1090b7: Align resource assignment detail schemas around `assignedAt`, reject orphan or incoherent slot assignment lifecycle payloads, and surface assignment target validation in the admin UI.
+- 42f662c: Reject inverted, duplicate, and overlapping resource closeout windows and surface matching admin form validation.
+
 ## 0.109.7
 
 ### Patch Changes

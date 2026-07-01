@@ -1,5 +1,18 @@
 # @voyant-travel/operations
 
+## 0.5.9
+
+### Patch Changes
+
+- f1090b7: Align resource assignment detail schemas around `assignedAt`, reject orphan or incoherent slot assignment lifecycle payloads, and surface assignment target validation in the admin UI.
+- 42f662c: Reject inverted, duplicate, and overlapping resource closeout windows and surface matching admin form validation.
+- fead555: Prevent operations resource PATCH payloads from applying create defaults to omitted fields.
+- Updated dependencies [1cb9cba]
+- Updated dependencies [131ff9b]
+  - @voyant-travel/hono@0.120.0
+  - @voyant-travel/catalog@0.136.3
+  - @voyant-travel/identity@0.138.2
+
 ## 0.5.8
 
 ### Patch Changes

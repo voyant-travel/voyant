@@ -1,5 +1,41 @@
 # @voyant-travel/openapi
 
+## 0.4.0
+
+### Minor Changes
+
+- 1cb9cba: Stamp `x-voyant-module` and `x-voyant-surface` on every OpenAPI operation.
+
+  Follow-up to the per-module spec split (voyant#2733) and a step toward
+  voyant#2729. Each operation in the generated specs (aggregate + per-module) now
+  carries `x-voyant-module` and `x-voyant-surface` extensions, so the specs are
+  self-describing — a module-grouped docs UI or a client generator can read the
+  owning module and surface off each operation instead of re-deriving them from
+  path prefixes. The module is the authoritative owner from the mount manifest, so
+  `publicPath` routes are labelled with their real owning module (e.g.
+  `/v1/public/payment-policy/resolve` → `x-voyant-module: bookings`) rather than
+  their mount prefix.
+
+  `@voyant-travel/hono/openapi` exposes the underlying pieces:
+  `buildModulePathOwnership` (path → module map), `partitionByModule`
+  (synchronous split from a precomputed map), and `stampModuleMetadata`.
+  `splitDocumentByModule` is retained as a convenience wrapper.
+
+### Patch Changes
+
+- 131ff9b: Tag every OpenAPI operation with its module for Swagger/Scalar grouping.
+
+  `stampModuleMetadata` now also sets `tags: [module]` on each operation (unless
+  the route already declares tags). Swagger UI, Scalar, and Redoc key their
+  sidebar grouping off `tags` and ignore `x-*` extensions, so without this a
+  whole-surface document (`framework-admin.json`) collapses under a single
+  "default" group — the browsability pain in voyant#2733. With it, any deployment
+  can point a viewer straight at a generated spec and get a module-grouped
+  explorer with no extra work.
+
+- f1090b7: Align resource assignment detail schemas around `assignedAt`, reject orphan or incoherent slot assignment lifecycle payloads, and surface assignment target validation in the admin UI.
+- 42f662c: Reject inverted, duplicate, and overlapping resource closeout windows and surface matching admin form validation.
+
 ## 0.3.0
 
 ### Minor Changes
