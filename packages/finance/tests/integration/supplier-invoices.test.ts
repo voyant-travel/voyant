@@ -199,6 +199,45 @@ describe.skipIf(!DB_AVAILABLE)("supplier invoices (accounts payable)", () => {
     expect(after?.status).toBe("paid")
   })
 
+  it("rejects completed supplier payments above the payable balance", async () => {
+    const created = await supplierInvoicesService.create(db, {
+      supplierId: "supp_test",
+      supplierInvoiceNo: nextSupplierInvoiceNo(),
+      currency: "EUR",
+      issueDate: "2026-06-01",
+      status: "approved",
+      totalCents: 100000,
+    })
+    const id = created?.id as string
+
+    await financeService.createSupplierPayment(db, {
+      supplierInvoiceId: id,
+      amountCents: 70000,
+      currency: "EUR",
+      paymentMethod: "bank_transfer",
+      status: "completed",
+      paymentDate: "2026-06-10",
+    })
+
+    await expect(
+      financeService.createSupplierPayment(db, {
+        supplierInvoiceId: id,
+        amountCents: 30001,
+        currency: "EUR",
+        paymentMethod: "bank_transfer",
+        status: "completed",
+        paymentDate: "2026-06-12",
+      }),
+    ).rejects.toMatchObject({
+      code: "invalid_payable_state",
+      message: "supplier invoice payment exceeds payable balance (30000)",
+    })
+
+    const after = await supplierInvoicesService.getById(db, id)
+    expect(after?.paidCents).toBe(70000)
+    expect(after?.balanceDueCents).toBe(30000)
+  })
+
   it("hides soft-deleted invoices from list()", async () => {
     const created = await supplierInvoicesService.create(db, {
       supplierId: "supp_del",

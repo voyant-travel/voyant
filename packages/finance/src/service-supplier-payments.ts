@@ -22,7 +22,75 @@ import {
   sql,
   supplierInvoices,
   supplierPayments,
+  toRows,
 } from "./service-shared.js"
+import { SupplierInvoiceServiceError } from "./service-supplier-invoices.js"
+
+type SupplierInvoiceSettlementInput = {
+  amountCents: number
+  currency: string
+  baseCurrency?: string | null
+  baseAmountCents?: number | null
+  status?: string | null
+}
+
+function settlementAmountInInvoiceCurrency(
+  payment: SupplierInvoiceSettlementInput,
+  invoice: { currency: string },
+): number {
+  if (payment.status !== "completed") return 0
+  if (payment.currency === invoice.currency) return payment.amountCents
+  if (payment.baseCurrency === invoice.currency) return payment.baseAmountCents ?? 0
+  return 0
+}
+
+async function assertSupplierPaymentDoesNotOverpay(
+  db: PostgresJsDatabase,
+  data: SupplierInvoiceSettlementInput & { supplierInvoiceId?: string | null },
+  options: { excludePaymentId?: string | null } = {},
+) {
+  if (!data.supplierInvoiceId || data.status !== "completed") return
+
+  const invoiceResult = await db.execute(sql`
+    SELECT id, currency, total_cents AS "totalCents"
+    FROM supplier_invoices
+    WHERE id = ${data.supplierInvoiceId}
+    FOR UPDATE
+  `)
+  const invoice =
+    toRows<{ id: string; currency: string; totalCents: number }>(invoiceResult)[0] ?? null
+  if (!invoice) return
+
+  const conditions = [
+    eq(supplierPayments.supplierInvoiceId, data.supplierInvoiceId),
+    eq(supplierPayments.status, "completed"),
+  ]
+  if (options.excludePaymentId) {
+    conditions.push(sql`${supplierPayments.id} <> ${options.excludePaymentId}`)
+  }
+
+  const [agg] = await db
+    .select({
+      paid: sql<number>`coalesce(sum(
+        case
+          when ${supplierPayments.currency} = ${invoice.currency} then ${supplierPayments.amountCents}
+          when ${supplierPayments.baseCurrency} = ${invoice.currency} then coalesce(${supplierPayments.baseAmountCents}, 0)
+          else 0
+        end
+      ), 0)::int`,
+    })
+    .from(supplierPayments)
+    .where(and(...conditions))
+
+  const existingPaid = agg?.paid ?? 0
+  const paymentAmount = settlementAmountInInvoiceCurrency(data, invoice)
+  if (existingPaid + paymentAmount > invoice.totalCents) {
+    throw new SupplierInvoiceServiceError(
+      "invalid_payable_state",
+      `supplier invoice payment exceeds payable balance (${invoice.totalCents - existingPaid})`,
+    )
+  }
+}
 
 export const financeSupplierPaymentService = {
   async listSupplierPayments(db: PostgresJsDatabase, query: SupplierPaymentListQuery) {
@@ -129,8 +197,9 @@ export const financeSupplierPaymentService = {
       fallbackFxRateSetId,
       date: data.paymentDate,
     })
-
     const row = await db.transaction(async (tx) => {
+      await assertSupplierPaymentDoesNotOverpay(tx, paymentData)
+
       const [created] = await tx
         .insert(supplierPayments)
         .values({ ...paymentData, paymentInstrumentId: paymentData.paymentInstrumentId ?? null })
@@ -171,8 +240,25 @@ export const financeSupplierPaymentService = {
 
     const updateData = await resolveSupplierPaymentUpdateData(db, id, data, runtime)
     if (!updateData) return null
+    const paymentAfterUpdate = {
+      amountCents: updateData.amountCents ?? existing.amountCents,
+      currency: updateData.currency ?? existing.currency,
+      baseCurrency:
+        updateData.baseCurrency !== undefined ? updateData.baseCurrency : existing.baseCurrency,
+      baseAmountCents:
+        updateData.baseAmountCents !== undefined
+          ? updateData.baseAmountCents
+          : existing.baseAmountCents,
+      status: updateData.status ?? existing.status,
+      supplierInvoiceId:
+        updateData.supplierInvoiceId !== undefined
+          ? updateData.supplierInvoiceId
+          : existing.supplierInvoiceId,
+    }
 
     const row = await db.transaction(async (tx) => {
+      await assertSupplierPaymentDoesNotOverpay(tx, paymentAfterUpdate, { excludePaymentId: id })
+
       const [updated] = await tx
         .update(supplierPayments)
         .set({ ...updateData, updatedAt: new Date() })
