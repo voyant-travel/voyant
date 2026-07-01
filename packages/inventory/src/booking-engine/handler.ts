@@ -877,34 +877,6 @@ export function createProductsBookingHandler(
       // the booking row, and known before the create — a stable, resolvable ref.
       const bookingNumber = generateNumber()
 
-      // Resolve (or create) a customer person from the billing contact when no
-      // CRM person/organization id is supplied — the anonymous storefront case
-      // — same as the sourced/session arm's `resolveBillingPerson`, so
-      // `createBooking`'s billing-party check passes and the owned booking links
-      // a real CRM record instead of 400ing "Select a billing person or
-      // organization". No-op when a person/org is already supplied
-      // (operator/trips) or no resolver is wired.
-      let billingPersonId = partyBilling.personId ?? null
-      const billingOrganizationId = partyBilling.organizationId ?? null
-      if (!billingPersonId && !billingOrganizationId && options.resolveBillingPerson) {
-        // Only resolve when the contact fully satisfies what `createBooking`'s
-        // billing-party check requires of a person: BOTH a first and last name
-        // AND a real email or phone. Resolving on a partial contact (name only,
-        // contact point only, placeholder email) creates a CRM person that
-        // `createBooking` then rejects — orphaning a person on every failed
-        // attempt. When incomplete, skip and let the commit reject as before.
-        const hasBillingContactPoint =
-          Boolean(billingContact.email) || Boolean(billingContact.phone)
-        const hasBillingName =
-          Boolean(billingContact.firstName?.trim()) && Boolean(billingContact.lastName?.trim())
-        if (hasBillingContactPoint && hasBillingName) {
-          billingPersonId = await options.resolveBillingPerson(billingContact, {
-            bookingId: bookingNumber,
-            source: "storefront-booking",
-            sourceRef: bookingNumber,
-          })
-        }
-      }
       const travelers = (draft.travelers ?? []).map((t, index) => ({
         firstName: t.firstName,
         lastName: t.lastName,
@@ -917,6 +889,48 @@ export function createProductsBookingHandler(
             ? (t.band as "child" | "infant")
             : ("adult" as const),
       }))
+
+      // Resolve (or create) a customer person from the billing contact when no
+      // CRM person/organization id is supplied — the anonymous storefront case
+      // — same as the sourced/session arm's `resolveBillingPerson`, so
+      // `createBooking`'s billing-party check passes and the owned booking links
+      // a real CRM record instead of 400ing "Select a billing person or
+      // organization". No-op when a person/org is already supplied
+      // (operator/trips) or no resolver is wired.
+      let billingPersonId = partyBilling.personId ?? null
+      const billingOrganizationId = partyBilling.organizationId ?? null
+      if (!billingPersonId && !billingOrganizationId && options.resolveBillingPerson) {
+        // Resolving persists a CRM person BEFORE `createBooking` runs, so only
+        // resolve when the WHOLE party will pass `createBooking`'s
+        // `requireCompleteBookingParty` — otherwise the commit rejects after a
+        // person already exists, orphaning it (with a booking-number `sourceRef`
+        // that never materializes). Mirror the checks that apply to the
+        // anonymous storefront input: the billing person needs BOTH a first and
+        // last name AND a real email or phone, and there must be at least one
+        // traveler, each with a name (or linked person) and no placeholder
+        // email. (The person/org-supplied operator + trips paths skip this
+        // block entirely; voucher/price-override rejections are operator-only
+        // fields absent from anonymous drafts.)
+        const hasBillingContactPoint =
+          Boolean(billingContact.email) || Boolean(billingContact.phone)
+        const hasBillingName =
+          Boolean(billingContact.firstName?.trim()) && Boolean(billingContact.lastName?.trim())
+        const hasBookableTravelers =
+          travelers.length > 0 &&
+          travelers.every(
+            (t) =>
+              (Boolean(t.personId) ||
+                (Boolean(t.firstName?.trim()) && Boolean(t.lastName?.trim()))) &&
+              (!t.email || isRealBillingEmail(t.email)),
+          )
+        if (hasBillingContactPoint && hasBillingName && hasBookableTravelers) {
+          billingPersonId = await options.resolveBillingPerson(billingContact, {
+            bookingId: bookingNumber,
+            source: "storefront-booking",
+            sourceRef: bookingNumber,
+          })
+        }
+      }
 
       // Promotion-discounted quotes: thread the discounted customer-
       // facing amount into the booking's seed sellAmountCents so

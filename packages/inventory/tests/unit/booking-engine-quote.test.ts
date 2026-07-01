@@ -537,6 +537,7 @@ describe("createProductsBookingHandler.commit", () => {
       // No party — mirrors the storefront /book payload (draftId only).
       draft: {
         configure: { pax: { adult: 1 } },
+        travelers: [{ firstName: "Guest", lastName: "Customer", band: "adult" }],
         billing: {
           contact: {
             firstName: "Guest",
@@ -708,6 +709,7 @@ describe("createProductsBookingHandler.commit", () => {
       bookingId: "catalog_booking_1",
       draft: {
         configure: { pax: { adult: 1 } },
+        travelers: [{ firstName: "Guest", lastName: "Customer", band: "adult" }],
         billing: {
           contact: {
             firstName: "Guest",
@@ -730,5 +732,42 @@ describe("createProductsBookingHandler.commit", () => {
     expect(createBooking).toHaveBeenCalledWith(
       expect.objectContaining({ personId: "pers_from_phone", contactEmail: null }),
     )
+  })
+
+  it("skips the resolver when the draft has a complete billing contact but no travelers", async () => {
+    // createBooking's requireCompleteBookingParty rejects a party with zero
+    // travelers, so resolving a person first would orphan it.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        // Complete billing contact, but no traveler rows.
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "guest@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(expect.objectContaining({ personId: null }))
   })
 })
