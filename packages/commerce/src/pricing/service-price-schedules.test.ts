@@ -13,16 +13,16 @@ function makePriceScheduleDb(opts: { catalogExists: boolean }) {
   const limit = vi.fn().mockResolvedValue(opts.catalogExists ? [{ id: "price_catalogs_1" }] : [])
   const where = vi.fn(() => ({ limit }))
   const from = vi.fn(() => ({ where }))
-  const select = vi.fn(() => ({ from }))
+  const select = vi.fn(() => ({ from }) as never) as PostgresJsDatabase["select"]
 
   const returning = vi.fn().mockResolvedValue([{ id: "price_schedules_1" }])
   const values = vi.fn(() => ({ returning }))
-  const insert = vi.fn(() => ({ values }))
+  const insert = vi.fn(() => ({ values }) as never) as PostgresJsDatabase["insert"]
 
   const updateReturning = vi.fn().mockResolvedValue([{ id: "price_schedules_1" }])
   const updateWhere = vi.fn(() => ({ returning: updateReturning }))
   const set = vi.fn(() => ({ where: updateWhere }))
-  const update = vi.fn(() => ({ set }))
+  const update = vi.fn(() => ({ set }) as never) as PostgresJsDatabase["update"]
 
   const db: Partial<PostgresJsDatabase> = {
     select: select as never,

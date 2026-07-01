@@ -5,8 +5,12 @@ import { cn } from "../lib/utils.js"
 
 type InputProps = React.ComponentProps<"input">
 
-function hasExplicitMax(max: InputProps["max"]) {
-  return max !== undefined && max !== null && max !== ""
+function hasUsableMax(max: InputProps["max"], min: InputProps["min"]) {
+  if (max === undefined || max === null || max === "") return false
+  const parsedMax = Number(max)
+  const parsedMin = parseNumberAttribute(min)
+  if (!Number.isFinite(parsedMax)) return true
+  return parsedMin === undefined || parsedMax >= parsedMin
 }
 
 function parseNumberAttribute(value: InputProps["min"] | InputProps["step"]) {
@@ -69,7 +73,7 @@ function Input({
   onInput,
   ...props
 }: InputProps) {
-  const isUnboundedNumberInput = type === "number" && !hasExplicitMax(max)
+  const isUnboundedNumberInput = type === "number" && !hasUsableMax(max, min)
   const renderedType = isUnboundedNumberInput ? "text" : type
   const renderedInputMode = isUnboundedNumberInput ? (inputMode ?? "decimal") : inputMode
   const validateUnboundedNumber = (event: React.FormEvent<HTMLInputElement>) => {

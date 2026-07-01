@@ -24,6 +24,21 @@ describe("Input", () => {
     expect(input.hasAttribute("aria-valuemax")).toBe(false)
   })
 
+  it("treats an impossible max below min as unbounded metadata", () => {
+    render(<Input aria-label="Quantity" defaultValue="1" max={0} min={1} type="number" />)
+
+    const input = screen.getByLabelText<HTMLInputElement>("Quantity")
+
+    expect(input).toMatchObject({
+      type: "text",
+      inputMode: "decimal",
+      value: "1",
+    })
+    expect(input.hasAttribute("min")).toBe(false)
+    expect(input.hasAttribute("max")).toBe(false)
+    expect(input.hasAttribute("aria-valuemax")).toBe(false)
+  })
+
   it("keeps min validation for unbounded number inputs", () => {
     render(<Input aria-label="Quantity" min={1} type="number" />)
 
