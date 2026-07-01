@@ -2,7 +2,10 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCatalogSearch } from "@voyant-travel/catalog-react"
-import { getStorefrontCustomerProductDetailRoute } from "@voyant-travel/storefront-react"
+import {
+  getStorefrontCustomerProductDetailRoute,
+  storefrontCustomerBookableProductVerticals,
+} from "@voyant-travel/storefront-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { Input } from "@voyant-travel/ui/components/input"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
@@ -20,10 +23,19 @@ import { useStorefrontScope } from "@/lib/storefront-scope"
  * When the deployment hasn't configured Typesense (no
  * `TYPESENSE_HOST`), the search route 503s and we render an
  * instructions block instead — a usable experience either way.
+ *
+ * Search only offers verticals that have a working customer detail + booking
+ * page. Charters (and flights) have no storefront `/content` endpoint or
+ * booking flow yet, so surfacing them produced dead result cards and a broken
+ * detail page (voyant#2640). Deriving the accepted verticals from
+ * `storefrontCustomerBookableProductVerticals` keeps search in sync
+ * automatically as new verticals gain detail pages, and `.catch(undefined)`
+ * gracefully drops any stale/crafted `?vertical=charters` URL back to the
+ * default vertical instead of erroring.
  */
-const shopSearchSchema = z.object({
+export const shopSearchSchema = z.object({
   q: z.string().optional(),
-  vertical: z.enum(["products", "cruises", "accommodations", "charters", "flights"]).optional(),
+  vertical: z.enum(storefrontCustomerBookableProductVerticals).optional().catch(undefined),
 })
 
 export const Route = createFileRoute("/(storefront)/shop")({
@@ -88,7 +100,6 @@ function StorefrontIndex(): React.ReactElement {
           <option value="products">{t.verticalProducts}</option>
           <option value="cruises">{t.verticalCruises}</option>
           <option value="accommodations">{t.verticalAccommodations}</option>
-          <option value="charters">{t.verticalCharters}</option>
         </select>
       </div>
 
