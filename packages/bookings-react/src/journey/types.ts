@@ -247,6 +247,20 @@ export interface BookingJourneyProps {
   surface?: "admin" | "public"
 
   /**
+   * Pricing/content scope forwarded to the live quote — the selected market
+   * (catalog-search scope key), currency, locale, and audience. When omitted
+   * the quote falls back to per-surface defaults. Storefronts thread the
+   * shopper's selected market/currency here so checkout prices in the same
+   * scope as browse/detail.
+   */
+  scope?: {
+    locale?: string
+    audience?: "staff" | "customer" | "partner" | "supplier"
+    market?: string
+    currency?: string
+  }
+
+  /**
    * Layout of the booking flow.
    *  - `"wizard"` — one step at a time with Back/Next (the guided
    *    storefront flow).

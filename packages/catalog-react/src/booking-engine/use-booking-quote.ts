@@ -47,6 +47,17 @@ export function useBookingQuote(options: UseBookingQuoteOptions) {
   const draftRef = useRef(options.draft)
   draftRef.current = options.draft
 
+  // Scope (market / currency / locale / audience) is part of what the quote
+  // prices, so it must be in the query key — otherwise changing the selected
+  // market/currency on an already-open journey keeps the previous quote until
+  // the draft signature changes.
+  const scopeKey = JSON.stringify({
+    locale: options.scope?.locale,
+    audience: options.scope?.audience,
+    market: options.scope?.market,
+    currency: options.scope?.currency,
+  })
+
   useEffect(() => {
     if (!signature) {
       setDebouncedSignature(null)
@@ -57,7 +68,7 @@ export function useBookingQuote(options: UseBookingQuoteOptions) {
   }, [signature, debounceMs])
 
   const query = useQuery<QuoteResponseV1 | null>({
-    queryKey: ["booking-quote", options.surface ?? "admin", debouncedSignature],
+    queryKey: ["booking-quote", options.surface ?? "admin", debouncedSignature, scopeKey],
     queryFn: async () => {
       const draft = draftRef.current
       if (!draft) return null

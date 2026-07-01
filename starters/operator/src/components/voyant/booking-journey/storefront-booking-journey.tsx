@@ -31,6 +31,7 @@ import {
 } from "@voyant-travel/finance/payment-policy"
 
 import { getApiUrl } from "@/lib/env"
+import { useStorefrontScope } from "@/lib/storefront-scope"
 import { type OperatorInfoVariables, resolveContractVariables } from "./resolve-contract-variables"
 
 interface PublicOperatorProfile extends OperatorInfoVariables {
@@ -100,6 +101,11 @@ export function StorefrontBookingJourney({
   className,
 }: StorefrontBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
+  // Carry the shopper's selected market/currency/locale (voyant#2643) into the
+  // journey's live quote so checkout prices in the same scope as browse/detail,
+  // not the default. The `(storefront)` layout provides the scope; unselected
+  // fields stay undefined and the quote falls back to the surface default.
+  const scope = useStorefrontScope()
 
   // Resolve the contract template the journey will preview. The
   // per-product override wins when set; otherwise we fetch
@@ -276,6 +282,7 @@ export function StorefrontBookingJourney({
   return (
     <BookingJourney
       surface="public"
+      scope={{ market: scope.marketId, locale: scope.locale, currency: scope.currency }}
       entityModule={entityModule}
       entityId={entityId}
       sourceKind={sourceKind}
