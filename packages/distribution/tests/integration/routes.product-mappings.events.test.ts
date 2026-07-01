@@ -170,6 +170,35 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
     })
   })
 
+  it("emits for BOTH products when an update reassigns the mapping to another product", async () => {
+    const channel = await seedChannel()
+    const from = await seedProduct()
+    const to = await seedProduct()
+    const created = await app.request("/product-mappings", {
+      method: "POST",
+      ...json({ channelId: channel.id, productId: from.id }),
+    })
+    const mappingId = (await created.json()).data.id as string
+    captured = createCapturingBus()
+
+    await app.request(`/product-mappings/${mappingId}`, {
+      method: "PATCH",
+      ...json({ productId: to.id }),
+    })
+    const events = publicationEvents()
+    expect(events).toHaveLength(2)
+    const byProduct = Object.fromEntries(events.map((e) => [e.data.productId as string, e.data]))
+    // The new product gains the mapping.
+    expect(byProduct[to.id]).toMatchObject({ productId: to.id, channelId: channel.id })
+    // The old product lost it — a removal so its catalog doc can be tombstoned.
+    expect(byProduct[from.id]).toMatchObject({
+      productId: from.id,
+      channelId: channel.id,
+      operation: "deleted",
+      nextActive: null,
+    })
+  })
+
   it("emits `deleted` with next=null carrying the affected product/channel", async () => {
     const channel = await seedChannel()
     const product = await seedProduct()

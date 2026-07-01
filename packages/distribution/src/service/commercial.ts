@@ -192,12 +192,18 @@ export const commercialServiceOperations = {
     data: UpdateChannelProductMappingInput,
     eventBus?: EventBus,
   ) {
-    // Read the prior `active` flag so we can classify activate/deactivate vs
-    // a plain field edit. Only needed when a bus is wired.
+    // Read the prior `active` flag (to classify activate/deactivate vs a plain
+    // edit) plus the prior product/channel — an update can REASSIGN the mapping
+    // to a different product (the update schema is a partial of the mapping
+    // schema, so `productId`/`channelId` are editable). Only needed with a bus.
     const previous = eventBus
       ? (
           await db
-            .select({ active: channelProductMappings.active })
+            .select({
+              active: channelProductMappings.active,
+              productId: channelProductMappings.productId,
+              channelId: channelProductMappings.channelId,
+            })
             .from(channelProductMappings)
             .where(eq(channelProductMappings.id, id))
             .limit(1)
@@ -217,6 +223,21 @@ export const commercialServiceOperations = {
         nextActive: row.active,
         operation: classifyMappingUpdate(previous.active, row.active),
       })
+      // Reassigning the mapping to a different product (or channel) removes it
+      // from the previous (product, channel) — that product may now be
+      // unpublished, so it needs its own event or its catalog doc stays stale
+      // (voyant#2636 review). The subscriber re-derives listability from DB, so
+      // this is a removal trigger from the old product's perspective.
+      if (previous.productId !== row.productId || previous.channelId !== row.channelId) {
+        await emitProductPublicationChanged(eventBus, db, {
+          productId: previous.productId,
+          channelId: previous.channelId,
+          mappingId: row.id,
+          previousActive: previous.active,
+          nextActive: null,
+          operation: "deleted",
+        })
+      }
     }
     return row ?? null
   },
