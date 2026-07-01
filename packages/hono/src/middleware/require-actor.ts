@@ -37,11 +37,14 @@ function baseApiKeyPermissionActionsForMethod(method: string): string[] {
  * even though they're read-family operations. Without this, `POST
  * /v1/<surface>/catalog/search` would only accept `write`/`trigger`/`relay`,
  * and a `catalog:search`/`catalog:read`-scoped token would be rejected
- * (voyant#2649). Matching only `/search` sub-paths keeps every other POST route
+ * (voyant#2649). Matching a `search` / `*-search` path segment (e.g.
+ * `/catalog/search`, `/catalog/package-search`) keeps every other POST route
  * (product writes, bookings, pricing, …) gated on its normal write actions.
  */
 function isSearchPath(pathname: string): boolean {
-  return /\/search(?:\/|$)/.test(pathname)
+  // A segment that is `search` or ends in `-search` (e.g. `package-search`),
+  // bounded so `/searchable` or `/researcher` don't count.
+  return /(?:\/|-)search(?:\/|$)/.test(pathname)
 }
 
 function apiKeyPermissionActionsForMethod(method: string, pathname: string): string[] {

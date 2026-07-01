@@ -242,9 +242,14 @@ describe("requireActor", () => {
     })
     searchOnly.use("*", requireActor("staff"))
     searchOnly.post("/v1/admin/catalog/search", (c) => c.json({ ok: true }))
+    // Hyphenated search endpoints (e.g. POST /catalog/package-search) count too.
+    searchOnly.post("/v1/admin/catalog/package-search", (c) => c.json({ ok: true }))
     expect((await searchOnly.request("/v1/admin/catalog/search", { method: "POST" })).status).toBe(
       200,
     )
+    expect(
+      (await searchOnly.request("/v1/admin/catalog/package-search", { method: "POST" })).status,
+    ).toBe(200)
   })
 
   it("still gates non-search POST routes for a search/read-only token (voyant#2649)", async () => {
@@ -257,11 +262,16 @@ describe("requireActor", () => {
       app.use("*", requireActor("staff"))
       app.post("/v1/admin/products", (c) => c.json({ ok: true }))
       app.post("/v1/admin/bookings", (c) => c.json({ ok: true }))
+      // A write route whose name merely contains "search" must stay gated.
+      app.post("/v1/admin/products/searchable", (c) => c.json({ ok: true }))
       return app
     }
 
     expect((await build().request("/v1/admin/products", { method: "POST" })).status).toBe(403)
     expect((await build().request("/v1/admin/bookings", { method: "POST" })).status).toBe(403)
+    expect(
+      (await build().request("/v1/admin/products/searchable", { method: "POST" })).status,
+    ).toBe(403)
   })
 
   it("passes through OPTIONS preflight requests", async () => {
