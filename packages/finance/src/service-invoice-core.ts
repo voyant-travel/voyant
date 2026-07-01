@@ -11,6 +11,7 @@ import {
   and,
   appendActionLedgerMutation,
   asc,
+  bookings,
   buildInvoiceDeleteActionLedgerInput,
   buildInvoiceUpdateActionLedgerInput,
   creditNotes,
@@ -18,6 +19,7 @@ import {
   eq,
   gte,
   InvoiceNumberConflictError,
+  InvoiceValidationError,
   ilike,
   inArray,
   invoiceExternalRefs,
@@ -32,8 +34,73 @@ import {
   payments,
   readStringMetadata,
   sql,
+  toRows,
   touchLinkedBookingUpdatedAt,
 } from "./service-shared.js"
+
+async function assertOptionalTableReference(
+  db: PostgresJsDatabase,
+  tableName: "people" | "organizations",
+  id: string | null | undefined,
+) {
+  if (!id) return
+  const label = tableName === "people" ? "Person" : "Organization"
+  const code = tableName === "people" ? "person_not_found" : "organization_not_found"
+
+  const result = await db.execute(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+    ) AS table_exists
+  `)
+  const tableExists = Boolean(toRows<{ table_exists: boolean }>(result)[0]?.table_exists)
+  if (!tableExists) {
+    throw new InvoiceValidationError(
+      `${label} not found`,
+      { table: tableName, id },
+      {
+        status: 404,
+        code,
+      },
+    )
+  }
+
+  const rowResult =
+    tableName === "people"
+      ? await db.execute(sql`SELECT id FROM people WHERE id = ${id} LIMIT 1`)
+      : await db.execute(sql`SELECT id FROM organizations WHERE id = ${id} LIMIT 1`)
+  if (toRows<{ id: string }>(rowResult).length === 0) {
+    throw new InvoiceValidationError(
+      `${label} not found`,
+      { table: tableName, id },
+      {
+        status: 404,
+        code,
+      },
+    )
+  }
+}
+
+async function assertInvoiceReferencesExist(db: PostgresJsDatabase, data: CreateInvoiceInput) {
+  const [booking] = await db
+    .select({ id: bookings.id })
+    .from(bookings)
+    .where(eq(bookings.id, data.bookingId))
+    .limit(1)
+
+  if (!booking) {
+    throw new InvoiceValidationError(
+      "Booking not found",
+      { bookingId: data.bookingId },
+      { status: 404, code: "booking_not_found" },
+    )
+  }
+
+  await assertOptionalTableReference(db, "people", data.personId)
+  await assertOptionalTableReference(db, "organizations", data.organizationId)
+}
 
 export const financeInvoiceCoreService = {
   async listInvoices(db: PostgresJsDatabase, query: InvoiceListQuery) {
@@ -152,9 +219,18 @@ export const financeInvoiceCoreService = {
   },
 
   async createInvoice(db: PostgresJsDatabase, data: CreateInvoiceInput) {
-    const [row] = await db.insert(invoices).values(data).returning()
-    await touchLinkedBookingUpdatedAt(db, row?.bookingId)
-    return row
+    await assertInvoiceReferencesExist(db, data)
+
+    try {
+      const [row] = await db.insert(invoices).values(data).returning()
+      await touchLinkedBookingUpdatedAt(db, row?.bookingId)
+      return row
+    } catch (error) {
+      if (isInvoiceNumberUniqueConstraintError(error)) {
+        throw new InvoiceNumberConflictError(data.invoiceNumber)
+      }
+      throw error
+    }
   },
   async getInvoiceById(db: PostgresJsDatabase, id: string) {
     const [row] = await db.select().from(invoices).where(eq(invoices.id, id)).limit(1)

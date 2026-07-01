@@ -11,9 +11,38 @@ import {
   buildInvoiceLineItemDeleteActionLedgerInput,
   buildInvoiceLineItemUpdateActionLedgerInput,
   eq,
+  InvoiceValidationError,
   invoiceLineItems,
   invoices,
 } from "./service-shared.js"
+
+function assertLineItemTotalMatchesUnitAmount(
+  data: Pick<CreateInvoiceLineItemInput, "quantity" | "unitPriceCents" | "totalCents">,
+) {
+  const expectedTotalCents = data.quantity * data.unitPriceCents
+  if (data.totalCents === expectedTotalCents) return
+
+  throw new InvoiceValidationError(
+    "Invoice line item total must equal quantity multiplied by unit price",
+    {
+      quantity: data.quantity,
+      unitPriceCents: data.unitPriceCents,
+      totalCents: data.totalCents,
+      expectedTotalCents,
+    },
+    { status: 400, code: "invoice_line_total_mismatch" },
+  )
+}
+
+function assertLineItemPatchTotalMatchesUnitAmount(
+  existing: typeof invoiceLineItems.$inferSelect,
+  data: UpdateInvoiceLineItemInput,
+) {
+  const quantity = data.quantity ?? existing.quantity
+  const unitPriceCents = data.unitPriceCents ?? existing.unitPriceCents
+  const totalCents = data.totalCents ?? existing.totalCents
+  assertLineItemTotalMatchesUnitAmount({ quantity, unitPriceCents, totalCents })
+}
 
 export const financeInvoiceLineItemService = {
   listInvoiceLineItems(db: PostgresJsDatabase, invoiceId: string) {
@@ -30,6 +59,8 @@ export const financeInvoiceLineItemService = {
     data: CreateInvoiceLineItemInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    assertLineItemTotalMatchesUnitAmount(data)
+
     const createLineItem = async (writer: PostgresJsDatabase) => {
       const [invoice] = await writer
         .select()
@@ -79,6 +110,18 @@ export const financeInvoiceLineItemService = {
     runtime: FinanceServiceRuntime = {},
   ) {
     const updateLineItem = async (writer: PostgresJsDatabase) => {
+      const [existing] = await writer
+        .select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.id, lineId))
+        .limit(1)
+
+      if (!existing) {
+        return null
+      }
+
+      assertLineItemPatchTotalMatchesUnitAmount(existing, data)
+
       const [row] = await writer
         .update(invoiceLineItems)
         .set(data)

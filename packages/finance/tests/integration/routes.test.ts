@@ -1182,6 +1182,84 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(inv.currency).toBe("USD")
     })
 
+    it("returns 409 when creating a duplicate direct invoice number", async () => {
+      const booking = await seedBooking()
+      const invoiceNumber = nextInvoiceNumber()
+      await seedInvoice(booking.id, { invoiceNumber })
+
+      const res = await app.request("/invoices", {
+        method: "POST",
+        ...json({
+          invoiceNumber,
+          bookingId: booking.id,
+          currency: "USD",
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+          subtotalCents: 100000,
+          taxCents: 10000,
+          totalCents: 110000,
+          balanceDueCents: 110000,
+        }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        error: "Invoice number already exists",
+        code: "invoice_number_conflict",
+        invoiceNumber,
+      })
+    })
+
+    it("rejects direct invoice creation for missing references", async () => {
+      const missingBooking = await app.request("/invoices", {
+        method: "POST",
+        ...json({
+          invoiceNumber: nextInvoiceNumber(),
+          bookingId: "bk_missing",
+          currency: "USD",
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+      expect(missingBooking.status).toBe(404)
+      await expect(missingBooking.json()).resolves.toMatchObject({
+        code: "booking_not_found",
+      })
+
+      const booking = await seedBooking()
+      const missingPerson = await app.request("/invoices", {
+        method: "POST",
+        ...json({
+          invoiceNumber: nextInvoiceNumber(),
+          bookingId: booking.id,
+          personId: "person_missing",
+          currency: "USD",
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+      expect(missingPerson.status).toBe(404)
+      await expect(missingPerson.json()).resolves.toMatchObject({
+        code: "person_not_found",
+      })
+
+      const missingOrganization = await app.request("/invoices", {
+        method: "POST",
+        ...json({
+          invoiceNumber: nextInvoiceNumber(),
+          bookingId: booking.id,
+          organizationId: "org_missing",
+          currency: "USD",
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+      expect(missingOrganization.status).toBe(404)
+      await expect(missingOrganization.json()).resolves.toMatchObject({
+        code: "organization_not_found",
+      })
+    })
+
     it("replays invoice creates with the same idempotency key", async () => {
       const booking = await seedBooking()
       const input = {
@@ -2225,6 +2303,26 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(res.status).toBe(404)
     })
 
+    it("rejects invoice line items with impossible totals", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+
+      const res = await app.request(`/invoices/${inv.id}/line-items`, {
+        method: "POST",
+        ...json({
+          description: "Bad math",
+          quantity: 2,
+          unitPriceCents: 5000,
+          totalCents: 9000,
+        }),
+      })
+
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invoice_line_total_mismatch",
+      })
+    })
+
     it("lists line items for an invoice", async () => {
       const booking = await seedBooking()
       const inv = await seedInvoice(booking.id)
@@ -2262,6 +2360,27 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const { data } = await res.json()
       expect(data.description).toBe("Updated")
       expect(data.quantity).toBe(3)
+    })
+
+    it("rejects invoice line item updates with impossible totals", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+
+      const createRes = await app.request(`/invoices/${inv.id}/line-items`, {
+        method: "POST",
+        ...json({ description: "Original", quantity: 1, unitPriceCents: 1000, totalCents: 1000 }),
+      })
+      const { data: lineItem } = await createRes.json()
+
+      const res = await app.request(`/invoices/${inv.id}/line-items/${lineItem.id}`, {
+        method: "PATCH",
+        ...json({ quantity: 3 }),
+      })
+
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invoice_line_total_mismatch",
+      })
     })
 
     it("deletes a line item", async () => {
@@ -2431,6 +2550,63 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(fullInv.paidCents).toBe(10000)
       expect(fullInv.balanceDueCents).toBe(0)
       expect(fullInv.status).toBe("paid")
+    })
+
+    it("rejects completed payments that exceed the invoice total", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })
+
+      const res = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 10001,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2025-06-15",
+          status: "completed",
+        }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invoice_overpaid",
+      })
+
+      const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
+      const { data } = await check.json()
+      expect(data.paidCents).toBe(0)
+      expect(data.balanceDueCents).toBe(10000)
+    })
+
+    it("rejects payment updates that would overpay an invoice", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })
+      const createRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 5000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2025-06-15",
+          status: "completed",
+        }),
+      })
+      const { data: payment } = await createRes.json()
+
+      const res = await app.request(`/payments/${payment.id}`, {
+        method: "PATCH",
+        ...json({ amountCents: 10001 }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invoice_overpaid",
+      })
+
+      const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
+      const { data } = await check.json()
+      expect(data.paidCents).toBe(5000)
+      expect(data.balanceDueCents).toBe(5000)
     })
 
     it("settles cross-currency completed payments using the base invoice amount", async () => {
@@ -2689,6 +2865,52 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(res.status).toBe(404)
     })
 
+    it("rejects credit notes that exceed the invoice balance due", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 8000 })
+
+      const res = await app.request(`/invoices/${inv.id}/credit-notes`, {
+        method: "POST",
+        ...json({
+          creditNoteNumber: nextCreditNoteNumber(),
+          amountCents: 8001,
+          currency: "USD",
+          reason: "Too much credit",
+        }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invoice_overcredited",
+      })
+    })
+
+    it("rejects credit note updates that exceed the invoice balance due", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 8000 })
+
+      const createRes = await app.request(`/invoices/${inv.id}/credit-notes`, {
+        method: "POST",
+        ...json({
+          creditNoteNumber: nextCreditNoteNumber(),
+          amountCents: 5000,
+          currency: "USD",
+          reason: "Partial credit",
+        }),
+      })
+      const { data: cn } = await createRes.json()
+
+      const res = await app.request(`/invoices/${inv.id}/credit-notes/${cn.id}`, {
+        method: "PATCH",
+        ...json({ amountCents: 8001 }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invoice_overcredited",
+      })
+    })
+
     it("updates a credit note", async () => {
       const booking = await seedBooking()
       const inv = await seedInvoice(booking.id)
@@ -2793,6 +3015,37 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         },
       )
       expect(res.status).toBe(404)
+    })
+
+    it("rejects credit note line items with impossible totals", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+
+      const cnRes = await app.request(`/invoices/${inv.id}/credit-notes`, {
+        method: "POST",
+        ...json({
+          creditNoteNumber: nextCreditNoteNumber(),
+          amountCents: 5000,
+          currency: "USD",
+          reason: "Partial refund",
+        }),
+      })
+      const { data: cn } = await cnRes.json()
+
+      const res = await app.request(`/invoices/${inv.id}/credit-notes/${cn.id}/line-items`, {
+        method: "POST",
+        ...json({
+          description: "Bad credit math",
+          quantity: 2,
+          unitPriceCents: 2500,
+          totalCents: 4000,
+        }),
+      })
+
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "credit_note_line_total_mismatch",
+      })
     })
 
     it("lists credit note line items", async () => {

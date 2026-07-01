@@ -7,6 +7,7 @@ import type {
   UpdateCreditNoteInput,
 } from "./service-shared.js"
 import {
+  and,
   appendActionLedgerMutation,
   asc,
   buildCreditNoteCreationActionLedgerInput,
@@ -17,10 +18,85 @@ import {
   desc,
   eq,
   financeNotes,
+  InvoiceValidationError,
   invoices,
+  ne,
   resolveCreditNoteUpdateData,
   resolveFxMoneyBaseAmount,
 } from "./service-shared.js"
+
+function creditAmountInInvoiceCurrency(
+  invoice: typeof invoices.$inferSelect,
+  creditNote: Pick<
+    typeof creditNotes.$inferSelect,
+    "amountCents" | "currency" | "baseCurrency" | "baseAmountCents"
+  >,
+) {
+  if (creditNote.currency === invoice.currency) return creditNote.amountCents
+  if (creditNote.baseCurrency === invoice.currency && creditNote.baseAmountCents != null) {
+    return creditNote.baseAmountCents
+  }
+
+  throw new InvoiceValidationError(
+    "Credit notes in a different currency require a base amount in the invoice currency",
+    {
+      invoiceId: invoice.id,
+      invoiceCurrency: invoice.currency,
+      creditNoteCurrency: creditNote.currency,
+      fields: ["baseCurrency", "baseAmountCents"],
+    },
+    { status: 400, code: "credit_note_currency_mismatch" },
+  )
+}
+
+async function assertCreditNotesDoNotExceedInvoiceBalance(
+  db: PostgresJsDatabase,
+  invoice: typeof invoices.$inferSelect,
+  candidate: typeof creditNotes.$inferSelect,
+) {
+  const rows = await db
+    .select()
+    .from(creditNotes)
+    .where(and(eq(creditNotes.invoiceId, invoice.id), ne(creditNotes.id, candidate.id)))
+  const existingCreditedCents = rows.reduce(
+    (sum, row) => sum + creditAmountInInvoiceCurrency(invoice, row),
+    0,
+  )
+  const attemptedCreditedCents =
+    existingCreditedCents + creditAmountInInvoiceCurrency(invoice, candidate)
+
+  if (attemptedCreditedCents <= invoice.balanceDueCents) return
+
+  throw new InvoiceValidationError(
+    "Credit notes cannot exceed the invoice balance due",
+    {
+      invoiceId: invoice.id,
+      invoiceCurrency: invoice.currency,
+      invoiceBalanceDueCents: invoice.balanceDueCents,
+      attemptedCreditedCents,
+      excessCents: attemptedCreditedCents - invoice.balanceDueCents,
+    },
+    { status: 409, code: "invoice_overcredited" },
+  )
+}
+
+function assertCreditNoteLineItemTotalMatchesUnitAmount(
+  data: Pick<CreateCreditNoteLineItemInput, "quantity" | "unitPriceCents" | "totalCents">,
+) {
+  const expectedTotalCents = data.quantity * data.unitPriceCents
+  if (data.totalCents === expectedTotalCents) return
+
+  throw new InvoiceValidationError(
+    "Credit note line item total must equal quantity multiplied by unit price",
+    {
+      quantity: data.quantity,
+      unitPriceCents: data.unitPriceCents,
+      totalCents: data.totalCents,
+      expectedTotalCents,
+    },
+    { status: 400, code: "credit_note_line_total_mismatch" },
+  )
+}
 
 export const financeInvoiceCreditNoteService = {
   listCreditNotes(db: PostgresJsDatabase, invoiceId: string) {
@@ -55,6 +131,10 @@ export const financeInvoiceCreditNoteService = {
         .insert(creditNotes)
         .values({ ...creditNoteData, invoiceId })
         .returning()
+
+      if (row) {
+        await assertCreditNotesDoNotExceedInvoiceBalance(tx, invoice, row)
+      }
 
       if (row && runtime.actionLedgerContext) {
         await appendActionLedgerMutation(
@@ -102,6 +182,10 @@ export const financeInvoiceCreditNoteService = {
         .where(eq(invoices.id, row.invoiceId))
         .limit(1)
 
+      if (invoice) {
+        await assertCreditNotesDoNotExceedInvoiceBalance(writer, invoice, row)
+      }
+
       return invoice ? { invoice, creditNote: row } : null
     }
 
@@ -144,6 +228,8 @@ export const financeInvoiceCreditNoteService = {
     data: CreateCreditNoteLineItemInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    assertCreditNoteLineItemTotalMatchesUnitAmount(data)
+
     const createLineItem = async (writer: PostgresJsDatabase) => {
       const [creditNote] = await writer
         .select()

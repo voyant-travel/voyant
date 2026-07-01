@@ -22,6 +22,7 @@ import {
   invoices,
   mapRawPayment,
   newId,
+  PaymentValidationError,
   paymentSettlementAmountSql,
   payments,
   recomputeInvoiceTotalsAfterPaymentChange,
@@ -31,6 +32,31 @@ import {
   toRows,
   touchLinkedBookingUpdatedAt,
 } from "./service-shared.js"
+
+async function assertInvoicePaymentTotalDoesNotExceedInvoice(
+  db: PostgresJsDatabase,
+  invoice: typeof invoices.$inferSelect,
+) {
+  const [sumResult] = await db
+    .select({ total: paymentSettlementAmountSql(invoice.currency) })
+    .from(payments)
+    .where(and(eq(payments.invoiceId, invoice.id), eq(payments.status, "completed")))
+
+  const paidCents = sumResult?.total ?? 0
+  if (paidCents <= invoice.totalCents) return paidCents
+
+  throw new PaymentValidationError(
+    "Completed payments cannot exceed the invoice total",
+    {
+      invoiceId: invoice.id,
+      invoiceCurrency: invoice.currency,
+      invoiceTotalCents: invoice.totalCents,
+      attemptedPaidCents: paidCents,
+      excessCents: paidCents - invoice.totalCents,
+    },
+    { status: 409, code: "invoice_overpaid" },
+  )
+}
 
 export const financeInvoicePaymentService = {
   listPayments(db: PostgresJsDatabase, invoiceId: string) {
@@ -357,6 +383,20 @@ export const financeInvoicePaymentService = {
         .where(and(eq(payments.invoiceId, invoiceId), eq(payments.status, "completed")))
 
       const paidCents = sumResult?.total ?? 0
+      if (paidCents > invoice.totalCents) {
+        throw new PaymentValidationError(
+          "Completed payments cannot exceed the invoice total",
+          {
+            invoiceId: invoice.id,
+            invoiceCurrency: invoice.currency,
+            invoiceTotalCents: invoice.totalCents,
+            attemptedPaidCents: paidCents,
+            excessCents: paidCents - invoice.totalCents,
+          },
+          { status: 409, code: "invoice_overpaid" },
+        )
+      }
+
       const balanceDueCents = Math.max(0, invoice.totalCents - paidCents)
 
       let newStatus = invoice.status
@@ -482,6 +522,7 @@ export const financeInvoicePaymentService = {
         return null
       }
 
+      await assertInvoicePaymentTotalDoesNotExceedInvoice(tx, invoice)
       await recomputeInvoiceTotalsAfterPaymentChange(tx, invoice)
       await touchLinkedBookingUpdatedAt(tx, invoice.bookingId)
 

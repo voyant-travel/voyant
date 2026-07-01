@@ -38,7 +38,12 @@ import {
 } from "./routes-invoice-schemas.js"
 import { getActionLedgerRequestContext, getFinanceRouteRuntime } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"
-import { financeService, PaymentValidationError } from "./service.js"
+import {
+  financeService,
+  InvoiceNumberConflictError,
+  InvoiceValidationError,
+  PaymentValidationError,
+} from "./service.js"
 import {
   createPaymentSessionFromInvoiceSchema,
   insertCreditNoteLineItemSchema,
@@ -95,6 +100,10 @@ const updateInvoiceRoute = createRoute({
     },
     404: {
       description: "Invoice not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Invoice number already exists",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -188,18 +197,38 @@ const invoiceActionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidatio
     return row ? c.json({ data: row }, 200) : c.json({ error: "Invoice not found" }, 404)
   })
   .openapi(updateInvoiceRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.updateInvoice(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.invoice.route",
-      },
-    )
-    return row ? c.json({ data: row }, 200) : c.json({ error: "Invoice not found" }, 404)
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.updateInvoice(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.invoice.route",
+        },
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Invoice not found" }, 404)
+    } catch (error) {
+      if (error instanceof InvoiceNumberConflictError) {
+        return c.json(
+          {
+            error: "Invoice number already exists",
+            code: error.code,
+            invoiceNumber: error.invoiceNumber,
+          },
+          409,
+        )
+      }
+      if (error instanceof InvoiceValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+      throw error
+    }
   })
   .openapi(deleteInvoiceRoute, async (c) => {
     const runtime = getFinanceRouteRuntime(c)
@@ -363,32 +392,54 @@ const invoiceLineItemRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidat
     ),
   )
   .openapi(createInvoiceLineItemRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.createInvoiceLineItem(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.invoice_line_item.route",
-      },
-    )
-    return row ? c.json({ data: row }, 201) : c.json({ error: "Invoice not found" }, 404)
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.createInvoiceLineItem(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.invoice_line_item.route",
+        },
+      )
+      return row ? c.json({ data: row }, 201) : c.json({ error: "Invoice not found" }, 404)
+    } catch (error) {
+      if (error instanceof InvoiceValidationError) {
+        if (error.status === 404) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 404)
+        }
+        if (error.status === 409) throw error
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
+    }
   })
   .openapi(updateInvoiceLineItemRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.updateInvoiceLineItem(
-      c.get("db"),
-      c.req.valid("param").lineId,
-      c.req.valid("json"),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.invoice_line_item.route",
-      },
-    )
-    return row ? c.json({ data: row }, 200) : c.json({ error: "Line item not found" }, 404)
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.updateInvoiceLineItem(
+        c.get("db"),
+        c.req.valid("param").lineId,
+        c.req.valid("json"),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.invoice_line_item.route",
+        },
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Line item not found" }, 404)
+    } catch (error) {
+      if (error instanceof InvoiceValidationError) {
+        if (error.status === 404) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 404)
+        }
+        if (error.status === 409) throw error
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
+    }
   })
   .openapi(deleteInvoiceLineItemRoute, async (c) => {
     const runtime = getFinanceRouteRuntime(c)
@@ -517,6 +568,10 @@ const createCreditNoteRoute = createRoute({
       description: "Invoice not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    409: {
+      description: "Credit note would exceed the invoice balance due",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -543,6 +598,10 @@ const updateCreditNoteRoute = createRoute({
       description: "Credit note not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    409: {
+      description: "Credit note would exceed the invoice balance due",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -554,32 +613,58 @@ const creditNoteRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHo
     ),
   )
   .openapi(createCreditNoteRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.createCreditNote(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-      {
-        ...(runtime ?? {}),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.credit_note.route",
-      },
-    )
-    return row ? c.json({ data: row }, 201) : c.json({ error: "Invoice not found" }, 404)
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.createCreditNote(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          ...(runtime ?? {}),
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.credit_note.route",
+        },
+      )
+      return row ? c.json({ data: row }, 201) : c.json({ error: "Invoice not found" }, 404)
+    } catch (error) {
+      if (error instanceof InvoiceValidationError) {
+        if (error.status === 404) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 404)
+        }
+        if (error.status === 409) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 409)
+        }
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
+    }
   })
   .openapi(updateCreditNoteRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.updateCreditNote(
-      c.get("db"),
-      c.req.valid("param").creditNoteId,
-      c.req.valid("json"),
-      {
-        ...(runtime ?? {}),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.credit_note.route",
-      },
-    )
-    return row ? c.json({ data: row }, 200) : c.json({ error: "Credit note not found" }, 404)
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.updateCreditNote(
+        c.get("db"),
+        c.req.valid("param").creditNoteId,
+        c.req.valid("json"),
+        {
+          ...(runtime ?? {}),
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.credit_note.route",
+        },
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Credit note not found" }, 404)
+    } catch (error) {
+      if (error instanceof InvoiceValidationError) {
+        if (error.status === 404) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 404)
+        }
+        if (error.status === 409) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 409)
+        }
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
+    }
   })
 
 // --- credit note line items ------------------------------------------------
@@ -637,18 +722,29 @@ const creditNoteLineItemRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVali
     ),
   )
   .openapi(createCreditNoteLineItemRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.createCreditNoteLineItem(
-      c.get("db"),
-      c.req.valid("param").creditNoteId,
-      c.req.valid("json"),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.credit_note_line_item.route",
-      },
-    )
-    return row ? c.json({ data: row }, 201) : c.json({ error: "Credit note not found" }, 404)
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.createCreditNoteLineItem(
+        c.get("db"),
+        c.req.valid("param").creditNoteId,
+        c.req.valid("json"),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.credit_note_line_item.route",
+        },
+      )
+      return row ? c.json({ data: row }, 201) : c.json({ error: "Credit note not found" }, 404)
+    } catch (error) {
+      if (error instanceof InvoiceValidationError) {
+        if (error.status === 404) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 404)
+        }
+        if (error.status === 409) throw error
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
+    }
   })
 
 // --- finance notes ---------------------------------------------------------
