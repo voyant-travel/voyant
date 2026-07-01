@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/framework",
-  "version": "0.9.45",
+  "version": "0.9.46",
   "description": "Voyant framework BOM — pins the tested runtime-module set so a deployment tracks one framework version and upgrades atomically (no per-package compatibility matrix, no per-package republish/email spam).",
   "license": "Apache-2.0",
   "type": "module",
