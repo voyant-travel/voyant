@@ -840,14 +840,28 @@ export function createProductsBookingHandler(
       const partyBilling = extractBillingParty(request.party)
       const partyTravelers = extractPartyTravelers(request.party)
 
-      // Anonymous storefront checkout carries a billing contact but no
-      // CRM person/organization id. Resolve (or create) a customer person
-      // from that contact — same as the sourced/session arm's
-      // `resolveBillingPerson` — so `createBooking`'s billing-party check
-      // passes and the owned booking links a real CRM record instead of
-      // 400ing "Select a billing person or organization". When a person
-      // or an org is already supplied (operator/trips paths) or no
-      // resolver is wired, this is a no-op.
+      // Billing arrives two ways. The operator/trips paths pass an explicit
+      // `party`. The anonymous storefront path POSTs only a draftId to
+      // `/v1/public/catalog/book`, so `request.party` is empty and the billing
+      // contact lives in the saved draft (`draft.billing.contact`). Prefer the
+      // explicit party, fall back to the draft, so BOTH paths stamp the booking
+      // contact and can resolve a customer.
+      const draftBillingContact = draft.billing?.contact
+      const billingContact = {
+        firstName: partyBilling.contactFirstName ?? draftBillingContact?.firstName ?? null,
+        lastName: partyBilling.contactLastName ?? draftBillingContact?.lastName ?? null,
+        // The draft schema defaults `email` to "" — treat empty as absent.
+        email: partyBilling.contactEmail ?? (draftBillingContact?.email || null),
+        phone: partyBilling.contactPhone ?? draftBillingContact?.phone ?? null,
+      }
+
+      // Resolve (or create) a customer person from the billing contact when no
+      // CRM person/organization id is supplied — the anonymous storefront case
+      // — same as the sourced/session arm's `resolveBillingPerson`, so
+      // `createBooking`'s billing-party check passes and the owned booking links
+      // a real CRM record instead of 400ing "Select a billing person or
+      // organization". No-op when a person/org is already supplied
+      // (operator/trips) or no resolver is wired.
       let billingPersonId = partyBilling.personId ?? null
       const billingOrganizationId = partyBilling.organizationId ?? null
       if (!billingPersonId && !billingOrganizationId && options.resolveBillingPerson) {
@@ -858,21 +872,13 @@ export function createProductsBookingHandler(
         // on every failed attempt. Without a contact point, skip and let the
         // commit reject as before.
         const hasBillingContactPoint =
-          Boolean(partyBilling.contactEmail) || Boolean(partyBilling.contactPhone)
+          Boolean(billingContact.email) || Boolean(billingContact.phone)
         if (hasBillingContactPoint) {
-          billingPersonId = await options.resolveBillingPerson(
-            {
-              firstName: partyBilling.contactFirstName,
-              lastName: partyBilling.contactLastName,
-              email: partyBilling.contactEmail,
-              phone: partyBilling.contactPhone,
-            },
-            {
-              bookingId: request.bookingId,
-              source: "storefront-booking",
-              sourceRef: request.bookingId,
-            },
-          )
+          billingPersonId = await options.resolveBillingPerson(billingContact, {
+            bookingId: request.bookingId,
+            source: "storefront-booking",
+            sourceRef: request.bookingId,
+          })
         }
       }
       const travelers = (draft.travelers ?? []).map((t, index) => ({
@@ -915,10 +921,10 @@ export function createProductsBookingHandler(
         bookingNumber: generateNumber(),
         personId: billingPersonId,
         organizationId: billingOrganizationId,
-        contactFirstName: partyBilling.contactFirstName,
-        contactLastName: partyBilling.contactLastName,
-        contactEmail: partyBilling.contactEmail,
-        contactPhone: partyBilling.contactPhone,
+        contactFirstName: billingContact.firstName,
+        contactLastName: billingContact.lastName,
+        contactEmail: billingContact.email,
+        contactPhone: billingContact.phone,
         internalNotes: extractInternalNotes(request.party),
         travelers: travelers.length > 0 ? travelers : undefined,
         paymentSchedules: draft.paymentSchedules,

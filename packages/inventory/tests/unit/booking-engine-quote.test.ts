@@ -1,3 +1,5 @@
+// agent-quality: file-size exception — cohesive booking-engine quote/commit
+// suite; splitting would scatter shared product/context fixtures. See #2618.
 import type {
   CommitOwnedRequest,
   ComputeQuoteRequest,
@@ -502,6 +504,52 @@ describe("createProductsBookingHandler.commit", () => {
         organizationId: null,
         contactFirstName: "Guest",
         contactEmail: "guest@example.com",
+      }),
+    )
+  })
+
+  it("resolves the billing person from the saved draft when the storefront commit sends no party", async () => {
+    // The anonymous storefront POSTs only a draftId to /book, so `request.party`
+    // is empty and the billing contact lives in `draft.billing.contact`.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_from_draft")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      // No party — mirrors the storefront /book payload (draftId only).
+      draft: {
+        configure: { pax: { adult: 1 } },
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "guest@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "guest@example.com", phone: "+40700333444" }),
+      expect.objectContaining({ source: "storefront-booking" }),
+    )
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        personId: "pers_from_draft",
+        contactEmail: "guest@example.com",
+        contactFirstName: "Guest",
       }),
     )
   })
