@@ -42,6 +42,7 @@ export function StackedJourney({
   canConfirm,
   sidePanel,
   contractDialog,
+  banner,
 }: {
   className?: string
   steps: ReadonlyArray<JourneyStep>
@@ -54,6 +55,8 @@ export function StackedJourney({
   canConfirm?: boolean
   sidePanel: React.ReactNode
   contractDialog: React.ReactNode
+  /** Recoverable, always-visible banner (e.g. quote-refresh failure). */
+  banner?: React.ReactNode
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const nav = messages.bookingJourney.navigation
@@ -71,6 +74,7 @@ export function StackedJourney({
     <div className={className}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
         <div className="space-y-3 md:col-span-5">
+          {banner}
           {steps.map((step, i) => {
             // Locked: a section beyond the active gate — a muted, disabled row
             // until the operator clears the gates above it.

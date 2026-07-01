@@ -33,6 +33,10 @@ export const bookingsUiRoJourney = {
     validation: {
       completeStepBeforeContinuing: "Completeaza acest pas inainte de a continua.",
       unableToContinue: "Nu se poate continua. Incearca din nou.",
+      quoteFailed: "Nu am putut reactualiza pretul live. Verifica conexiunea si incearca din nou.",
+      retryQuote: "Reincearca pretul",
+      quoteUnavailable:
+        "Pretul nu este inca confirmat - reincearca pretul de mai sus inainte de a confirma rezervarea.",
       addAtLeastTravelers: "Adauga cel putin {count} calator{plural} pentru a continua.",
       maxTravelersPerBooking: "Maximum {count} calatori per rezervare.",
       ageOutOfRange: "Varsta {age} este in afara intervalului acceptat pentru acest produs.",
