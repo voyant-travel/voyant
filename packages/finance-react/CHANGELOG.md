@@ -1,5 +1,15 @@
 # @voyant-travel/finance-react
 
+## 0.138.4
+
+### Patch Changes
+
+- 3ef92c6: Tighten finance admin UI actions by disabling invoice deletes the API rejects, replacing blocking browser prompts with app-native dialogs, creating supplier invoice drafts with initial AP lines from totals, and blocking negative AP money inputs client-side.
+- a424cae: Show a clear checkout-provider configuration error when payment-link generation is attempted without a registered checkout runtime, and label the booking payment-link full-amount selector with user-facing copy instead of its internal sentinel.
+- 43ac756: Fix booking finance payment recording so issued unpaid invoices remain selectable when draft or pending-allocation invoices also exist, and clear stale invoice creation validation as operators switch source or choose dates.
+- Updated dependencies [a424cae]
+  - @voyant-travel/finance@0.138.4
+
 ## 0.138.3
 
 ### Patch Changes
