@@ -154,14 +154,18 @@ export function StorefrontBookingJourney({
       const contact = context.draft.billing?.contact
       const payerName = [contact?.firstName, contact?.lastName].filter(Boolean).join(" ").trim()
       const idempotencyKey = `bj-${draftId}-${acceptance?.acceptedAt ?? "noaccept"}`
-      // Step 1 — book the entity. The /book endpoint resolves the
-      // current quote off the draft and creates a booking row.
+      // Step 1 — book the entity. Send the live scoped quote id explicitly
+      // (the server prefers `quoteId` over resolving the draft's stored
+      // `currentQuoteId`), so a market/currency change made mid-journey books
+      // the price the shopper is actually looking at rather than a stale one
+      // (voyant#2643). Falls back to draft resolution when no live quote yet.
       const bookRes = await fetch(`${getApiUrl()}/v1/public/catalog/book`, {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           draftId,
+          quoteId: context.quoteId,
           paymentIntent: { type: "hold" },
           idempotencyKey,
         }),
