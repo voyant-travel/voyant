@@ -266,6 +266,10 @@ function allocationStatusConsumesSlotCapacity(status: BookingAllocationStatus) {
   return status === "held" || status === "confirmed" || status === "fulfilled"
 }
 
+function bookingAllowsItemMutation(status: BookingStatus) {
+  return status !== "cancelled"
+}
+
 /** Product data needed for convertProductToBooking — supplied by the caller (template). */
 export interface ConvertProductData {
   product: {
@@ -3982,6 +3986,16 @@ export const bookingsService = {
                 ),
               ),
             )
+        } else if (data.status === "confirmed") {
+          await tx
+            .update(bookingItems)
+            .set({ status: "confirmed", updatedAt: now })
+            .where(
+              and(
+                eq(bookingItems.bookingId, id),
+                inArray(bookingItems.status, ["draft", "on_hold", "expired"]),
+              ),
+            )
         }
 
         const [row] = await tx.update(bookings).set(updates).where(eq(bookings.id, id)).returning()
@@ -4591,12 +4605,12 @@ export const bookingsService = {
   ) {
     return db.transaction(async (tx) => {
       const [booking] = await tx
-        .select({ id: bookings.id, sellCurrency: bookings.sellCurrency })
+        .select({ id: bookings.id, sellCurrency: bookings.sellCurrency, status: bookings.status })
         .from(bookings)
         .where(eq(bookings.id, bookingId))
         .limit(1)
 
-      if (!booking) {
+      if (!booking || !bookingAllowsItemMutation(booking.status)) {
         return null
       }
 
@@ -4670,6 +4684,17 @@ export const bookingsService = {
 
   async updateItem(db: PostgresJsDatabase, itemId: string, data: UpdateBookingItemInput) {
     return db.transaction(async (tx) => {
+      const [parent] = await tx
+        .select({ status: bookings.status })
+        .from(bookingItems)
+        .innerJoin(bookings, eq(bookings.id, bookingItems.bookingId))
+        .where(eq(bookingItems.id, itemId))
+        .limit(1)
+
+      if (!parent || !bookingAllowsItemMutation(parent.status)) {
+        return null
+      }
+
       // Refresh snapshots only when the foreign IDs change. Existing
       // snapshots are the historical record — overwriting them when
       // the catalog gets renamed would defeat their purpose. Callers
@@ -4782,10 +4807,16 @@ export const bookingsService = {
           bookingId: bookingItems.bookingId,
           title: bookingItems.title,
           itemType: bookingItems.itemType,
+          bookingStatus: bookings.status,
         })
         .from(bookingItems)
+        .innerJoin(bookings, eq(bookings.id, bookingItems.bookingId))
         .where(eq(bookingItems.id, itemId))
         .limit(1)
+
+      if (!item || !bookingAllowsItemMutation(item.bookingStatus)) {
+        return null
+      }
 
       const [row] = await tx
         .delete(bookingItems)

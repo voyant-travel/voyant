@@ -45,21 +45,32 @@ const itemStatuses = ["draft", "on_hold", "confirmed", "cancelled", "expired", "
 const DEFAULT_CURRENCY = "EUR" // i18n-literal-ok ISO default currency
 
 function createBookingItemFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
-  return z.object({
-    title: z.string().min(1, messages.bookingItemDialog.validation.titleRequired),
-    itemType: z.enum(itemTypes).default("unit"),
-    status: z.enum(itemStatuses).default("draft"),
-    quantity: z.coerce.number().int().positive().default(1),
-    sellCurrency: z.string().min(3).max(3).default("EUR"),
-    unitSellAmountCents: z.coerce.number().int().optional().nullable(),
-    totalSellAmountCents: z.coerce.number().int().optional().nullable(),
-    costCurrency: z.string().min(3).max(3).optional().nullable(),
-    unitCostAmountCents: z.coerce.number().int().optional().nullable(),
-    totalCostAmountCents: z.coerce.number().int().optional().nullable(),
-    serviceDate: z.string().optional().nullable(),
-    description: z.string().optional().nullable(),
-    notes: z.string().optional().nullable(),
-  })
+  return z
+    .object({
+      title: z.string().min(1, messages.bookingItemDialog.validation.titleRequired),
+      itemType: z.enum(itemTypes).default("unit"),
+      status: z.enum(itemStatuses).default("draft"),
+      quantity: z.coerce.number().int().positive().default(1),
+      sellCurrency: z.string().min(3).max(3).default("EUR"),
+      unitSellAmountCents: z.coerce.number().int().optional().nullable(),
+      totalSellAmountCents: z.coerce.number().int().optional().nullable(),
+      costCurrency: z.string().min(3).max(3).optional().nullable(),
+      unitCostAmountCents: z.coerce.number().int().optional().nullable(),
+      totalCostAmountCents: z.coerce.number().int().optional().nullable(),
+      serviceDate: z.string().optional().nullable(),
+      description: z.string().optional().nullable(),
+      notes: z.string().optional().nullable(),
+    })
+    .superRefine((value, ctx) => {
+      const hasCostAmount = value.unitCostAmountCents != null || value.totalCostAmountCents != null
+      if (hasCostAmount && !value.costCurrency) {
+        ctx.addIssue({
+          code: "custom",
+          message: messages.bookingItemDialog.validation.costCurrencyRequired,
+          path: ["costCurrency"],
+        })
+      }
+    })
 }
 
 type BookingItemFormValues = z.input<ReturnType<typeof createBookingItemFormSchema>>
@@ -298,12 +309,17 @@ export function BookingItemDialog({
                 <CurrencyCombobox
                   value={form.watch("costCurrency") || null}
                   onChange={(next) =>
-                    form.setValue("costCurrency", next ?? DEFAULT_CURRENCY, {
+                    form.setValue("costCurrency", next ?? null, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })
                   }
                 />
+                {form.formState.errors.costCurrency && (
+                  <p className="text-xs text-destructive">
+                    {form.formState.errors.costCurrency.message}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingItemDialog.fields.unitCostAmountCents}</Label>
@@ -315,7 +331,7 @@ export function BookingItemDialog({
                       shouldValidate: true,
                     })
                   }
-                  currency={form.watch("costCurrency") || form.watch("sellCurrency")}
+                  currency={form.watch("costCurrency")}
                   placeholder={messages.bookingItemDialog.placeholders.unitCostAmountCents}
                 />
               </div>
@@ -329,7 +345,7 @@ export function BookingItemDialog({
                       shouldValidate: true,
                     })
                   }
-                  currency={form.watch("costCurrency") || form.watch("sellCurrency")}
+                  currency={form.watch("costCurrency")}
                   placeholder={messages.bookingItemDialog.placeholders.totalCostAmountCents}
                 />
               </div>

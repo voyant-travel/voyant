@@ -1855,6 +1855,14 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
     it("emits booking.confirmed for confirmed override by default", async () => {
       const draft = await seedBooking()
+      await db.insert(bookingItems).values({
+        bookingId: draft.id,
+        title: "Draft item",
+        itemType: "unit",
+        status: "draft",
+        quantity: 1,
+        sellCurrency: "USD",
+      })
 
       const confirmedEvents: unknown[] = []
       const statusOverrideEvents: unknown[] = []
@@ -1886,6 +1894,12 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         bookingNumber: draft.bookingNumber,
         actorId: "test-user-id",
       })
+
+      const [item] = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, draft.id))
+      expect(item?.status).toBe("confirmed")
     })
 
     it("suppresses booking.confirmed for confirmed override while keeping audit event", async () => {
@@ -2952,6 +2966,18 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(body.data.quantity).toBe(1)
     })
 
+    it("returns validation errors for cost amounts without cost currency", async () => {
+      const booking = await seedBooking()
+      const res = await app.request(`/${booking.id}/items`, {
+        method: "POST",
+        ...json({ title: "Airport Transfer", sellCurrency: "USD", totalCostAmountCents: 12000 }),
+      })
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toMatchObject({
+        error: expect.stringContaining("Cost currency is required"),
+      })
+    })
+
     it("lists booking items", async () => {
       const booking = await seedBooking()
       await app.request(`/${booking.id}/items`, {
@@ -3003,6 +3029,48 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             (entry.metadata as Record<string, unknown> | null)?.bookingItemId === item.id,
         ),
       ).toBe(true)
+    })
+
+    it("rejects item mutations for cancelled bookings", async () => {
+      const booking = await seedBooking({ status: "cancelled" })
+      const [item] = await db
+        .insert(bookingItems)
+        .values({
+          bookingId: booking.id,
+          title: "Cancelled item",
+          itemType: "unit",
+          status: "cancelled",
+          quantity: 1,
+          sellCurrency: "USD",
+        })
+        .returning()
+
+      const create = await app.request(`/${booking.id}/items`, {
+        method: "POST",
+        ...json({ title: "Late add", sellCurrency: "USD" }),
+      })
+      expect(create.status).toBe(409)
+      await expect(create.json()).resolves.toMatchObject({
+        error: "Cancelled bookings cannot be changed",
+      })
+
+      const update = await app.request(`/${booking.id}/items/${item.id}`, {
+        method: "PATCH",
+        ...json({ title: "Changed" }),
+      })
+      expect(update.status).toBe(409)
+      await expect(update.json()).resolves.toMatchObject({
+        error: "Cancelled bookings cannot be changed",
+      })
+
+      const remove = await app.request(`/${booking.id}/items/${item.id}`, { method: "DELETE" })
+      expect(remove.status).toBe(409)
+      await expect(remove.json()).resolves.toMatchObject({
+        error: "Cancelled bookings cannot be changed",
+      })
+
+      const [unchanged] = await db.select().from(bookingItems).where(eq(bookingItems.id, item.id))
+      expect(unchanged?.title).toBe("Cancelled item")
     })
 
     it("returns 404 when adding item to non-existent booking", async () => {
@@ -3071,6 +3139,51 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       })
       expect(res.status).toBe(200)
       expect((await res.json()).success).toBe(true)
+    })
+
+    it("rejects item traveler mutations for cancelled bookings", async () => {
+      const booking = await seedBooking({ status: "cancelled" })
+      const [item] = await db
+        .insert(bookingItems)
+        .values({
+          bookingId: booking.id,
+          title: "Cancelled item",
+          itemType: "unit",
+          status: "cancelled",
+          quantity: 1,
+          sellCurrency: "USD",
+        })
+        .returning()
+      const [participant] = await db
+        .insert(bookingTravelers)
+        .values({
+          bookingId: booking.id,
+          firstName: "John",
+          lastName: "Doe",
+          participantType: "traveler",
+        })
+        .returning()
+      const [link] = await db
+        .insert(bookingItemTravelers)
+        .values({ bookingItemId: item.id, travelerId: participant.id, role: "traveler" })
+        .returning()
+
+      const create = await app.request(`/${booking.id}/items/${item.id}/travelers`, {
+        method: "POST",
+        ...json({ travelerId: participant.id }),
+      })
+      expect(create.status).toBe(409)
+      await expect(create.json()).resolves.toMatchObject({
+        error: "Cancelled bookings cannot be changed",
+      })
+
+      const remove = await app.request(`/${booking.id}/items/${item.id}/travelers/${link.id}`, {
+        method: "DELETE",
+      })
+      expect(remove.status).toBe(409)
+      await expect(remove.json()).resolves.toMatchObject({
+        error: "Cancelled bookings cannot be changed",
+      })
     })
   })
 

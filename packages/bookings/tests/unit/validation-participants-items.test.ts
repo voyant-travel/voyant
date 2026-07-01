@@ -6,6 +6,7 @@ import {
   insertBookingItemTravelerSchema,
   insertBookingTravelerDocumentSchema,
   insertTravelerRecordSchema,
+  updateBookingItemSchema,
   upsertTravelerTravelDetailsSchema,
 } from "../../src/validation.js"
 
@@ -103,6 +104,28 @@ describe("Booking item schema", () => {
   it("rejects non-positive quantity", () => {
     expect(() => insertBookingItemSchema.parse({ ...valid, quantity: 0 })).toThrow()
     expect(() => insertBookingItemSchema.parse({ ...valid, quantity: -1 })).toThrow()
+  })
+
+  it("requires cost currency when cost amounts are provided", () => {
+    expect(() => insertBookingItemSchema.parse({ ...valid, totalCostAmountCents: 12000 })).toThrow(
+      /Cost currency is required/,
+    )
+    expect(() => insertBookingItemSchema.parse({ ...valid, unitCostAmountCents: 6000 })).toThrow(
+      /Cost currency is required/,
+    )
+    expect(
+      insertBookingItemSchema.parse({
+        ...valid,
+        costCurrency: "EUR",
+        totalCostAmountCents: 12000,
+      }).costCurrency,
+    ).toBe("EUR")
+    expect(() => updateBookingItemSchema.parse({ totalCostAmountCents: 12000 })).toThrow(
+      /Cost currency is required/,
+    )
+    expect(
+      updateBookingItemSchema.parse({ costCurrency: "EUR", totalCostAmountCents: 12000 }),
+    ).toMatchObject({ costCurrency: "EUR", totalCostAmountCents: 12000 })
   })
 
   it("accepts metadata", () => {
