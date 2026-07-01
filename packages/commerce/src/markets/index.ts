@@ -1,10 +1,18 @@
 import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
-
 import { marketsRoutes } from "./routes.js"
+import { publicMarketsRoutes } from "./routes-public.js"
 import { marketsService } from "./service.js"
 
 export type { MarketsRoutes } from "./routes.js"
+export type { PublicMarketsRoutes } from "./routes-public.js"
+export { publicMarketSchema } from "./routes-public.js"
+export type {
+  PublicMarket,
+  PublicMarketCurrency,
+  PublicMarketLocale,
+} from "./service-public.js"
+export { listPublicMarkets } from "./service-public.js"
 
 export const marketsModule: Module = {
   name: "markets",
@@ -13,6 +21,10 @@ export const marketsModule: Module = {
 export const marketsHonoModule: HonoModule = {
   module: marketsModule,
   adminRoutes: marketsRoutes,
+  // Read-only market/locale/currency discovery for anonymous storefront clients
+  // (voyant#2643). Only the public projection is exposed; see routes-public.ts.
+  publicRoutes: publicMarketsRoutes,
+  anonymous: true,
 }
 
 export type {
