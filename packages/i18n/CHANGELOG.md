@@ -1,5 +1,11 @@
 # @voyant-travel/i18n
 
+## 0.109.6
+
+### Patch Changes
+
+- 14845ee: Rename the operator Channel sync surface to Distribution and clarify setup, monitoring, retry, reconcile, and delivery messaging.
+
 ## 0.109.5
 
 ### Patch Changes
