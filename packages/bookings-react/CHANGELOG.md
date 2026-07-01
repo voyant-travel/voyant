@@ -1,5 +1,15 @@
 # @voyant-travel/bookings-react
 
+## 0.137.6
+
+### Patch Changes
+
+- cb8df9c: Thread pricing/content scope through the booking journey. `BookingJourney` now accepts an optional `scope` (`market`/`currency`/`locale`/`audience`) and forwards it to its live quote, and `useBookingQuote` includes scope in its React Query key so changing the selected market/currency re-quotes instead of showing a stale price. Storefronts pass the shopper's selected scope so checkout prices in the same market/currency as browse and detail (voyant#2643). Omitting `scope` keeps the previous per-surface default behavior, so admin surfaces are unaffected.
+- Updated dependencies [cb8df9c]
+  - @voyant-travel/catalog-react@0.135.8
+  - @voyant-travel/bookings@0.137.6
+  - @voyant-travel/legal-react@0.137.8
+
 ## 0.137.5
 
 ### Patch Changes
