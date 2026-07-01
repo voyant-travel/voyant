@@ -456,7 +456,11 @@ describe("createProductsBookingHandler.commit", () => {
       bookingNumber: "BK-1",
     }))
     const resolveBillingPerson = vi.fn(async () => "pers_resolved")
-    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+    const handler = createProductsBookingHandler({
+      createBooking,
+      resolveBillingPerson,
+      generateBookingNumber: () => "BK-TEST-1",
+    })
 
     const request: CommitOwnedRequest = {
       entityModule: "products",
@@ -496,10 +500,17 @@ describe("createProductsBookingHandler.commit", () => {
         email: "guest@example.com",
         phone: "+40700333444",
       },
-      expect.objectContaining({ bookingId: "catalog_booking_1", source: "storefront-booking" }),
+      // Provenance ref is the persisted booking NUMBER, not the provisional
+      // `request.bookingId` (which the finance bridge discards for its own id).
+      expect.objectContaining({
+        bookingId: "BK-TEST-1",
+        sourceRef: "BK-TEST-1",
+        source: "storefront-booking",
+      }),
     )
     expect(createBooking).toHaveBeenCalledWith(
       expect.objectContaining({
+        bookingNumber: "BK-TEST-1",
         personId: "pers_resolved",
         organizationId: null,
         contactFirstName: "Guest",

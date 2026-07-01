@@ -868,6 +868,15 @@ export function createProductsBookingHandler(
         phone: trimToNull(partyBilling.contactPhone ?? draftBillingContact?.phone),
       }
 
+      // Generate the booking number up front so it can double as the resolved
+      // person's provenance ref below. `request.bookingId` is only the
+      // provisional id `bookEntity` allocates — the finance bridge mints its own
+      // persisted booking id (which `bookEntity` then adopts), so stamping
+      // `request.bookingId` would point new CRM people at a booking row that
+      // never exists. The booking NUMBER is caller-supplied, written straight to
+      // the booking row, and known before the create — a stable, resolvable ref.
+      const bookingNumber = generateNumber()
+
       // Resolve (or create) a customer person from the billing contact when no
       // CRM person/organization id is supplied — the anonymous storefront case
       // — same as the sourced/session arm's `resolveBillingPerson`, so
@@ -890,9 +899,9 @@ export function createProductsBookingHandler(
           Boolean(billingContact.firstName?.trim()) && Boolean(billingContact.lastName?.trim())
         if (hasBillingContactPoint && hasBillingName) {
           billingPersonId = await options.resolveBillingPerson(billingContact, {
-            bookingId: request.bookingId,
+            bookingId: bookingNumber,
             source: "storefront-booking",
-            sourceRef: request.bookingId,
+            sourceRef: bookingNumber,
           })
         }
       }
@@ -933,7 +942,7 @@ export function createProductsBookingHandler(
         // Link the departure so the booking item carries availability_slot_id
         // (powers the duplicate-departure check + slot-level reporting).
         slotId: draft.configure?.departureSlotId ?? null,
-        bookingNumber: generateNumber(),
+        bookingNumber,
         personId: billingPersonId,
         organizationId: billingOrganizationId,
         contactFirstName: billingContact.firstName,
