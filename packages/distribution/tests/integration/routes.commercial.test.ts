@@ -248,6 +248,45 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
       expect(body.data.active).toBe(true)
     })
 
+    it("preserves channel-push source fields on product mappings", async () => {
+      const channel = await ctx.seedChannel()
+      const product = await ctx.seedProduct()
+      const res = await ctx.app.request("/product-mappings", {
+        method: "POST",
+        ...json({
+          channelId: channel.id,
+          productId: product.id,
+          externalProductId: "EXT-SOURCE-001",
+          sourceKind: "demo",
+          sourceConnectionId: "default:demo",
+          pushBookings: true,
+          pushAvailability: false,
+          pushContent: true,
+          policy: { compensation: "eventually-consistent" },
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        sourceKind: "demo",
+        sourceConnectionId: "default:demo",
+        pushBookings: true,
+        pushAvailability: false,
+        pushContent: true,
+        policy: { compensation: "eventually-consistent" },
+      })
+
+      const readRes = await ctx.app.request(`/product-mappings/${body.data.id}`, { method: "GET" })
+      expect(readRes.status).toBe(200)
+      expect((await readRes.json()).data).toMatchObject({
+        sourceKind: "demo",
+        sourceConnectionId: "default:demo",
+        pushAvailability: false,
+        policy: { compensation: "eventually-consistent" },
+      })
+    })
+
     it("allows product mappings for unmanaged external product ids", async () => {
       const channel = await ctx.seedChannel()
       const res = await ctx.app.request("/product-mappings", {
@@ -319,6 +358,34 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
       })
       expect(res.status).toBe(200)
       expect((await res.json()).data.active).toBe(false)
+    })
+
+    it("updates channel-push source fields on product mappings", async () => {
+      const channel = await ctx.seedChannel()
+      const product = await ctx.seedProduct()
+      const createRes = await ctx.app.request("/product-mappings", {
+        method: "POST",
+        ...json({ channelId: channel.id, productId: product.id, externalProductId: "EXT-004A" }),
+      })
+      const mapping = (await createRes.json()).data
+
+      const res = await ctx.app.request(`/product-mappings/${mapping.id}`, {
+        method: "PATCH",
+        ...json({
+          sourceKind: "demo",
+          sourceConnectionId: "default:demo",
+          pushBookings: false,
+          policy: { fieldMask: ["bookingNumber"] },
+        }),
+      })
+
+      expect(res.status).toBe(200)
+      expect((await res.json()).data).toMatchObject({
+        sourceKind: "demo",
+        sourceConnectionId: "default:demo",
+        pushBookings: false,
+        policy: { fieldMask: ["bookingNumber"] },
+      })
     })
 
     it("deletes a product mapping", async () => {

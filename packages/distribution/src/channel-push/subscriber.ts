@@ -278,25 +278,15 @@ export async function triggerBookingPushForBookingWithResult(
 ): Promise<TriggerBookingPushResult> {
   const deps = getChannelPushDepsOrThrow()
   const targets = await resolveBookingPushTargets(deps.db, bookingId)
+  let bookingExists: boolean | undefined
+
   if (targets.length === 0) {
     const [booking] = await deps.db
       .select({ id: bookings.id })
       .from(bookings)
       .where(eq(bookings.id, bookingId))
       .limit(1)
-    if (booking) {
-      return {
-        bookingId,
-        attempted: 0,
-        succeeded: 0,
-        failed: 0,
-        compensated: 0,
-        outcomes: [],
-        targetCount: 0,
-        insertedLinks: 0,
-        reason: "no_targets",
-      }
-    }
+    bookingExists = Boolean(booking)
   }
 
   const insertedLinks =
@@ -308,8 +298,10 @@ export async function triggerBookingPushForBookingWithResult(
     targetCount: targets.length,
     insertedLinks,
     reason:
-      targets.length === 0 && result.attempted === 0 && result.outcomes.length === 0
-        ? "no_targets"
-        : result.reason,
+      bookingExists === false
+        ? "booking_missing"
+        : targets.length === 0 && result.attempted === 0 && result.outcomes.length === 0
+          ? "no_targets"
+          : result.reason,
   }
 }
