@@ -236,7 +236,12 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   }, [holdSignature, currentStep])
 
   const available = quote.data?.available !== false
-  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, available)
+  // A failed quote (e.g. the connector adapter 500s) leaves `quote.data` null,
+  // which makes `available` read as true and lets a stale/absent price slip
+  // through to Review where Confirm would silently no-op. Treat a quote error
+  // as a hard block: gate Next/Confirm and surface a recoverable banner + retry.
+  const hasQuoteError = quote.error != null
+  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, available) && !hasQuoteError
   const warnings = warningsForStep(currentStep, draft, shape, messages)
 
   // Stacked layout: there's no "current" step, but the section nav still
@@ -251,11 +256,20 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     [stackedSteps, draft, shape, available],
   )
   const canCommit = useMemo(
-    () => stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)),
-    [stackedSteps, draft, shape, available],
+    () =>
+      stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)) && !hasQuoteError,
+    [stackedSteps, draft, shape, available, hasQuoteError],
   )
   const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
   const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
+  // Set when Confirm can't proceed because there's no valid quote — makes the
+  // click a visible, explained block instead of a silent no-op.
+  const [confirmError, setConfirmError] = useState<string | null>(null)
+  // Clear the "no valid quote" block as soon as a fresh quote settles (via
+  // retry or an auto re-quote), so the message doesn't linger once resolved.
+  useEffect(() => {
+    if (quote.data?.quoteId) setConfirmError(null)
+  }, [quote.data?.quoteId])
 
   const idx = steps.indexOf(currentStep)
   const next = steps[idx + 1]
@@ -369,7 +383,17 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   }
 
   const onConfirm = async () => {
-    if (!quote.data?.quoteId) return
+    // No valid quote (never priced, or the last re-quote 500'd) → Confirm must
+    // NOT be a silent no-op. `useBookingQuote` keeps the prior quote as
+    // placeholder data on a failed refetch, so a stale `quoteId` can still be
+    // present while `quote.error` is set; block on `hasQuoteError` too so the
+    // wizard Review Confirm can never submit against a stale price. Surface a
+    // recoverable message pointing at the retry banner instead of swallowing.
+    if (!quote.data?.quoteId || hasQuoteError) {
+      setConfirmError(messages.bookingJourney.validation.quoteUnavailable)
+      return
+    }
+    setConfirmError(null)
     // 1. Contract is wired → open the dialog. Acceptance triggers
     //    onContractAccepted (the storefront's checkout-start path).
     // 2. No contract but onContractAccepted is wired → call it
@@ -405,6 +429,32 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           departureDate: draft.configure.departureDate,
         })
     : undefined
+
+  // Recoverable quote-failure banner — rendered in both layouts whenever the
+  // live quote is erroring. The manual retry re-runs the query (clearing its
+  // error on success), which re-enables Next/Confirm.
+  const retryQuote = () => {
+    setConfirmError(null)
+    void quote.refetch()
+  }
+  const quoteErrorBanner = hasQuoteError ? (
+    <div
+      role="alert"
+      aria-live="polite"
+      className="flex flex-col items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-destructive text-sm"
+    >
+      <span>{messages.bookingJourney.validation.quoteFailed}</span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={retryQuote}
+        disabled={quote.isQuoting}
+      >
+        {messages.bookingJourney.validation.retryQuote}
+      </Button>
+    </div>
+  ) : null
 
   // Renders one step's content. Shared by both layouts — the wizard shows
   // exactly one at a time; the stacked page renders them all in sections.
@@ -506,11 +556,14 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         steps={stackedSteps}
         renderStep={renderStep}
         isStepComplete={(s) => stackedStepComplete(s, draft, shape, available)}
-        commitError={commit.error}
+        // Surface both the in-process commit error and the "no valid quote"
+        // Confirm block so a failed confirm is never silent.
+        commitError={commit.error ?? confirmError}
         onCancel={props.onCancelled}
         onConfirm={onConfirm}
         isCommitting={commit.isPending || isHandlingCheckout}
         canConfirm={canCommit}
+        banner={quoteErrorBanner}
         sidePanel={
           <PriceSidePanel
             pricing={quote.data?.pricing ?? null}
@@ -562,6 +615,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             shape={shape}
             onJumpTo={jumpTo}
           />
+
+          {quoteErrorBanner}
 
           {currentStep === "departure" ? (
             // First load: the descriptor arrives with the first quote. Show a
@@ -682,6 +737,12 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           {advanceGuardError ? (
             <p className="text-destructive text-sm" role="alert" aria-live="polite">
               {advanceGuardError}
+            </p>
+          ) : null}
+
+          {confirmError ? (
+            <p className="text-destructive text-sm" role="alert" aria-live="polite">
+              {confirmError}
             </p>
           ) : null}
 

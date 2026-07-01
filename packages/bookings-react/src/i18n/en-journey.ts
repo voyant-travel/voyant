@@ -33,6 +33,10 @@ export const bookingsUiEnJourney = {
     validation: {
       completeStepBeforeContinuing: "Complete this step before continuing.",
       unableToContinue: "Unable to continue. Please try again.",
+      quoteFailed: "We couldn't refresh live pricing. Check your connection and try again.",
+      retryQuote: "Retry pricing",
+      quoteUnavailable:
+        "Pricing isn't confirmed yet — retry pricing above before confirming your booking.",
       addAtLeastTravelers: "Add at least {count} traveler{plural} to continue.",
       maxTravelersPerBooking: "Max {count} travelers per booking.",
       ageOutOfRange: "Age {age} is outside the accepted range for this product.",

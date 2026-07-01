@@ -33,6 +33,9 @@ export type BookingsUiJourneyMessages = {
     validation: {
       completeStepBeforeContinuing: string
       unableToContinue: string
+      quoteFailed: string
+      retryQuote: string
+      quoteUnavailable: string
       addAtLeastTravelers: string
       maxTravelersPerBooking: string
       ageOutOfRange: string

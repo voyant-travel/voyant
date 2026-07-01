@@ -69,15 +69,26 @@ export function PaymentStep({
 
   // Snap the draft's intent to a sensible value when the current pick isn't on
   // the list — covers descriptor changes mid-flow (e.g. owned→sourced narrows
-  // the list). In checkbox mode the baseline is always "hold".
-  if (allowed.length > 0 && !allowed.includes(intent)) {
-    setDraft(
-      setPayment(draft, {
-        ...draft.payment,
-        intent: (simpleHoldCard ? "hold" : allowed[0]) as never,
-      }),
-    )
-  }
+  // the list). In checkbox mode the baseline is always "hold". This MUST run in
+  // an effect, not during render: `setDraft` updates the parent BookingJourney,
+  // and calling it in the render body triggers React's "Cannot update a
+  // component while rendering a different component" warning (and drops frames).
+  const allowedKey = allowed.join("|")
+  // biome-ignore lint/correctness/useExhaustiveDependencies: snaps only when the allowed set (allowedKey) or current intent changes -- owner: bookings-react
+  useEffect(() => {
+    if (allowed.length > 0 && !allowed.includes(intent)) {
+      // Functional update: merge onto the LATEST draft, not the render-time
+      // closure. A sibling effect (PaymentScheduleEditor seeding paymentSchedules)
+      // can commit in the same batch; building from a stale `draft` here would
+      // clobber those rows.
+      setDraft((prev) =>
+        setPayment(prev, {
+          ...prev.payment,
+          intent: (simpleHoldCard ? "hold" : allowed[0]) as never,
+        }),
+      )
+    }
+  }, [allowedKey, intent, simpleHoldCard])
 
   return (
     <Card>

@@ -28,7 +28,10 @@ export type RenderUnitsPicker = (props: UnitsPickerProps) => React.ReactNode
 
 export interface StepCommonProps {
   draft: Draft
-  setDraft: (next: Draft) => void
+  // Accepts a value or a functional updater (the underlying `useState`
+  // dispatcher), so effects can merge onto the latest draft without clobbering
+  // concurrent updates.
+  setDraft: (next: Draft | ((prev: Draft) => Draft)) => void
   shape: BookingDraftShape
 }
 
