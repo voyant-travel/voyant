@@ -39,31 +39,47 @@ function wrappedUniqueViolation(constraint: string) {
 }
 
 function createFailingInsertDb(error: unknown): PostgresJsDatabase {
-  const db = {
-    insert: () => ({
-      values: () => ({
-        returning: async () => {
-          throw error
-        },
-      }),
+  const insert = (() => ({
+    values: () => ({
+      returning: async () => {
+        throw error
+      },
     }),
+  })) as PostgresJsDatabase["insert"]
+  const db: Partial<PostgresJsDatabase> = {
+    insert,
   }
   return db as PostgresJsDatabase
 }
 
 function createFailingUpdateDb(error: unknown): PostgresJsDatabase {
-  const db = {
-    update: () => ({
-      set: () => ({
-        where: () => ({
-          returning: async () => {
-            throw error
-          },
-        }),
+  const update = (() => ({
+    set: () => ({
+      where: () => ({
+        returning: async () => {
+          throw error
+        },
       }),
     }),
+  })) as PostgresJsDatabase["update"]
+  const db: Partial<PostgresJsDatabase> = {
+    update,
   }
   return db as PostgresJsDatabase
+}
+
+const baseUpdate: UpdatePromotionalOffer = {
+  discountPercent: null,
+  discountAmountCents: null,
+  currency: null,
+  conditions: {},
+  code: null,
+  stackable: false,
+  active: true,
+}
+
+function updatePatch(patch: Partial<UpdatePromotionalOffer>): UpdatePromotionalOffer {
+  return { ...baseUpdate, ...patch }
 }
 
 function expectConflict(error: unknown, field: "slug" | "code") {
@@ -107,9 +123,9 @@ describe("promotionsService duplicate active offer conflicts", () => {
   })
 
   it.each([
-    ["slug", "uidx_promotional_offers_slug_active", { slug: "winter-sale" }] as const,
-    ["code", "uidx_promotional_offers_code_active", { code: "WINTER10" }] as const,
-  ])("maps update duplicate %s constraints to 409 field errors", async (field, constraint, patch: UpdatePromotionalOffer) => {
+    ["slug", "uidx_promotional_offers_slug_active", updatePatch({ slug: "winter-sale" })] as const,
+    ["code", "uidx_promotional_offers_code_active", updatePatch({ code: "WINTER10" })] as const,
+  ])("maps update duplicate %s constraints to 409 field errors", async (field, constraint, patch) => {
     await expectRejectedConflict(
       promotionsService.updateOffer(
         createFailingUpdateDb(wrappedUniqueViolation(constraint)),
