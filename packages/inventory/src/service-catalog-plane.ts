@@ -132,6 +132,14 @@ export function productRowToProjection(
   return projection
 }
 
+/**
+ * Derives the `supplyModel` classifier (`dynamic` vs `scheduled`) from
+ * `bookingMode`. This is the single source of truth — `supplyModel` is not a
+ * stored column. The decision to keep it derived rather than promote it to a
+ * first-class authored field, plus the revisit trigger and touch points if it
+ * is ever promoted, is recorded in
+ * `docs/adr/0010-supply-model-derived-from-booking-mode.md`.
+ */
 export function deriveProductSupplyModel(bookingMode: ProductBookingMode): "dynamic" | "scheduled" {
   switch (bookingMode) {
     case "open":

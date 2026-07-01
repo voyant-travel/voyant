@@ -43,9 +43,15 @@ Examples (the cases the conflated naming broke):
 | Book-any-date excursion (on request) | `dynamic` | `excursion` |
 | Cruise sailing | `scheduled` | `cruise` |
 
-`supplyModel` is **explicit**, not inferred from `bookingMode`/`capacityMode` — those
-correlate but aren't 1:1, and a supplier/product should be able to opt into a mechanic
-deliberately. It is set at sync/author time and indexed (facetable).
+`supplyModel` is **currently derived from `bookingMode`**, not an authored field:
+`deriveProductSupplyModel(bookingMode)` maps `open`/`stay` → `dynamic` and
+`date`/`date_time`/`transfer`/`itinerary`/`other` → `scheduled`. It is still treated as a
+real structural classifier — projected as a `source-only`, `indexed-column` field
+(facetable) — but one source of truth computes it, so it can't drift from the booking
+mechanic. Promotion to a first-class, explicitly authored column is **deferred until a
+vertical needs a supply model the derivation can't express** (e.g. an `itinerary` product
+sold dynamically). See [ADR-0010](../adr/0010-supply-model-derived-from-booking-mode.md)
+for the decision and the touch points a future promotion would change.
 
 ## 3. Two catalog surfaces (split on the mechanic)
 
@@ -93,12 +99,15 @@ unified slice is possible but out of scope here.)
   `allocation_resources` (seat/cabin allotment) — already used by cruise sailings.
 
 So the mechanics map onto primitives that already exist; the work is the **surface fork**
-(search/list/detail/booking) plus the explicit `supplyModel` field.
+(search/list/detail/booking) over the `supplyModel` classifier (derived from `bookingMode`
+today — see [ADR-0010](../adr/0010-supply-model-derived-from-booking-mode.md)).
 
 ## 6. Phased plan
 
-1. **Foundation** — add `supplyModel` (field + index policy + sync mapping: TUI → `dynamic`,
-   cruises → `scheduled`).
+1. **Foundation** — derive `supplyModel` from `bookingMode` (`deriveProductSupplyModel`) and
+   project it through the catalog field policy as an indexed classifier; TUI (`open`/`stay`)
+   → `dynamic`, cruises/series (`date`/`date_time`) → `scheduled`. No stored column — see
+   [ADR-0010](../adr/0010-supply-model-derived-from-booking-mode.md). *(Done.)*
 2. **Dynamic surface** — top search bar → `packages/search` (by destination) → results +
    filter rail + **individual page** with calendar-of-prices. Buildable now on TUI.
 3. **Scheduled surface** — departures-first list + **individual page** with departures +
@@ -109,4 +118,6 @@ So the mechanics map onto primitives that already exist; the work is the **surfa
 
 - Operator-facing nav labels for the two surfaces (internal mechanic stays `dynamic`/`scheduled`).
 - Whether to eventually collapse the per-vertical slices into one with `category` as a facet.
-- Where `supplyModel` is authored for owned products (a product-form field).
+- When to promote `supplyModel` from derived to a first-class authored column — the trigger and
+  touch points are recorded in [ADR-0010](../adr/0010-supply-model-derived-from-booking-mode.md)
+  (fires when a vertical needs a supply model `bookingMode` can't express).
