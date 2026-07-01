@@ -74,12 +74,16 @@ export function PaymentStep({
   // and calling it in the render body triggers React's "Cannot update a
   // component while rendering a different component" warning (and drops frames).
   const allowedKey = allowed.join("|")
-  // biome-ignore lint/correctness/useExhaustiveDependencies: snaps only when the allowed set or current intent changes; reads latest draft via closure -- owner: bookings-react
+  // biome-ignore lint/correctness/useExhaustiveDependencies: snaps only when the allowed set (allowedKey) or current intent changes -- owner: bookings-react
   useEffect(() => {
     if (allowed.length > 0 && !allowed.includes(intent)) {
-      setDraft(
-        setPayment(draft, {
-          ...draft.payment,
+      // Functional update: merge onto the LATEST draft, not the render-time
+      // closure. A sibling effect (PaymentScheduleEditor seeding paymentSchedules)
+      // can commit in the same batch; building from a stale `draft` here would
+      // clobber those rows.
+      setDraft((prev) =>
+        setPayment(prev, {
+          ...prev.payment,
           intent: (simpleHoldCard ? "hold" : allowed[0]) as never,
         }),
       )
