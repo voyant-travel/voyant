@@ -7,7 +7,7 @@ import {
 } from "@voyant-travel/legal"
 import { createContractDocumentService } from "@voyant-travel/legal/contract-document"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { tryGetCloudClient } from "../../lib/voyant-cloud"
+import { tryGetCloudPdfClient } from "../../lib/voyant-cloud"
 import { createDocumentStorage, guessMimeType } from "../lib/storage"
 import {
   AUTO_GENERATE_CONTRACT_OPTIONS,
@@ -33,7 +33,7 @@ export function resolveContractDocumentGenerator(
   if (!storage) return null
 
   return async (context) => {
-    const cloud = tryGetCloudClient(env)
+    const cloud = tryGetCloudPdfClient(env)
     const legal = await import("@voyant-travel/legal")
     if (cloud) {
       const generator = legal.createStorageBackedContractDocumentGenerator({
@@ -45,12 +45,13 @@ export function resolveContractDocumentGenerator(
       return generator(context)
     }
 
-    // Local dev / no cloud key — fall back to the basic pdf-lib
-    // serializer. Contract PDFs will be plain text but the worker
-    // boots and downstream flows complete. Prod deploys MUST set
-    // VOYANT_API_KEY.
+    // Local dev / no PDF-rendering key — fall back to the basic pdf-lib
+    // serializer. Contract PDFs will be plain text but the worker boots and
+    // downstream flows complete. Cloud deployments can keep using VOYANT_API_KEY
+    // in voyant-cloud auth mode; local/self-hosted deployments should opt in
+    // explicitly with VOYANT_CLOUD_PDF_API_KEY.
     console.warn(
-      "[operator] VOYANT_API_KEY not set — using basic pdf-lib serializer. " +
+      "[operator] VOYANT_CLOUD_PDF_API_KEY not set — using basic pdf-lib serializer. " +
         "Contract PDFs will be unstyled. Set the key to enable browser-rendered output.",
     )
     const generator = legal.createPdfContractDocumentGenerator({ storage })

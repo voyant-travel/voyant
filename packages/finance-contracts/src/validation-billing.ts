@@ -149,6 +149,7 @@ export const invoiceFromBookingSchema = z
     bookingPaymentScheduleId: z.string().min(1).optional(),
     invoiceNumber: z.string().min(1).max(50).optional(),
     seriesId: z.string().min(1).optional(),
+    convertedFromInvoiceId: z.string().min(1).optional().nullable(),
     issueDate: z.string().min(1),
     dueDate: z.string().min(1),
     notes: z.string().optional().nullable(),

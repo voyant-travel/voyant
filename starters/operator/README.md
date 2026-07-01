@@ -21,6 +21,26 @@ pnpm -F operator dev:worker   # Voyant Workflows dev loop
 Dev server runs on port `3300`.
 The local workflows runtime listens on port `3310`.
 
+## Optional Cloud Services
+
+Local and self-hosted deployments can run without a Voyant Cloud API key. Leave
+`VOYANT_API_KEY` unset unless you want Cloud-backed notifications, realtime, or
+Vault KMS.
+
+Cloud-backed legal PDF rendering and finance FX lookup are configured
+separately:
+
+```bash
+# Styled legal/invoice PDF rendering. Omit for the local basic PDF fallback.
+VOYANT_CLOUD_PDF_API_KEY="vc_..."
+
+# Hosted Voyant Data FX lookup for finance invoice/payment rates.
+VOYANT_DATA_API_KEY="vd_..."
+```
+
+In `VOYANT_ADMIN_AUTH_MODE="voyant-cloud"` deployments, `VOYANT_API_KEY` remains
+a legacy fallback for both of those specialized keys.
+
 ## Flights Demo API
 
 The operator starter is wired to the standalone flights demo API when

@@ -2944,6 +2944,18 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       const res = await app.request(`/${booking.id}/items/${item.id}`, { method: "DELETE" })
       expect(res.status).toBe(200)
       expect((await res.json()).success).toBe(true)
+
+      const activityRes = await app.request(`/${booking.id}/activity`, { method: "GET" })
+      expect(activityRes.status).toBe(200)
+      const activityBody = await activityRes.json()
+      expect(
+        activityBody.data.some(
+          (entry: Record<string, unknown>) =>
+            entry.activityType === "item_update" &&
+            entry.description === 'Booking item "Transfer" deleted' &&
+            (entry.metadata as Record<string, unknown> | null)?.bookingItemId === item.id,
+        ),
+      ).toBe(true)
     })
 
     it("returns 404 when adding item to non-existent booking", async () => {
