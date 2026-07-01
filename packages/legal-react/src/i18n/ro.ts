@@ -89,6 +89,8 @@ export const legalUiRo = {
     active: "Activ",
     inactive: "Inactiv",
     empty: "Nu exista serii de numere. Creeaza una pentru numerotarea contractelor.",
+    editAction: "Editeaza seria de numere",
+    deleteAction: "Sterge seria de numere",
     deleteConfirm: 'Stergi seria "{name}"?',
   },
   contractSendDialog: {
@@ -394,6 +396,8 @@ export const legalUiRo = {
       createdAt: "Creat la",
     },
     deleteConfirm: 'Stergi sablonul "{name}"?',
+    editAction: "Editeaza sablonul",
+    deleteAction: "Sterge sablonul",
   },
   templateDetailPage: {
     notFound: "Sablonul nu a fost gasit",
