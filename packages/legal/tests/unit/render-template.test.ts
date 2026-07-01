@@ -122,6 +122,55 @@ describe("renderTemplate — mustache (markdown/html)", () => {
     ).toBe("Alice, Bob")
     expect(renderTemplate(body, "markdown", { travelers: [] })).toBe("No travelers")
   })
+
+  it("renders the default customer agreement traveler heading without the missing-value placeholder", () => {
+    const body = `<h2>Travelers ({% if booking.pax != nil and booking.pax != "" and booking.pax > 0 %}{{ booking.pax }}{% elsif travelers.size > 0 %}{{ travelers.size }}{% else %}TBD{% endif %})</h2>
+<ol>
+{% for t in travelers %}
+  <li>{{ t.firstName }} {{ t.lastName }}{% if t.participantType != "traveler" %} — {{ t.participantType }}{% endif %}</li>
+{% endfor %}
+</ol>
+
+<ul>
+  <li>Pax: {{ booking.pax | default: "TBD" }}</li>
+</ul>`
+
+    expect(renderTemplate(body, "html", { booking: { pax: null }, travelers: [] })).toContain(
+      "<h2>Travelers (TBD)</h2>",
+    )
+    expect(renderTemplate(body, "html", { booking: { pax: null }, travelers: [] })).toContain(
+      "<li>Pax: TBD</li>",
+    )
+    expect(renderTemplate(body, "html", { booking: { pax: null }, travelers: [] })).not.toContain(
+      "Travelers (-)",
+    )
+
+    expect(renderTemplate(body, "html", { booking: { pax: 2 }, travelers: [] })).toContain(
+      "<h2>Travelers (2)</h2>",
+    )
+    expect(renderTemplate(body, "html", { booking: { pax: 0 }, travelers: [] })).toContain(
+      "<h2>Travelers (TBD)</h2>",
+    )
+
+    const renderedWithTravelers = renderTemplate(body, "html", {
+      booking: { pax: null },
+      travelers: [
+        { firstName: "Ada", lastName: "Lovelace", participantType: "traveler" },
+        { firstName: "Grace", lastName: "Hopper", participantType: "child" },
+      ],
+    })
+    expect(renderedWithTravelers).toContain("<h2>Travelers (2)</h2>")
+    expect(renderedWithTravelers).toContain("<li>Ada Lovelace</li>")
+    expect(renderedWithTravelers).toContain("<li>Grace Hopper — child</li>")
+    expect(renderedWithTravelers).not.toContain("Travelers (-)")
+
+    expect(
+      renderTemplate(body, "html", {
+        booking: { pax: 0 },
+        travelers: [{ firstName: "Ada", lastName: "Lovelace", participantType: "traveler" }],
+      }),
+    ).toContain("<h2>Travelers (1)</h2>")
+  })
 })
 
 describe("renderTemplate — lexical_json", () => {
