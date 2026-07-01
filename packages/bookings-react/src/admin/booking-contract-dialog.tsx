@@ -20,6 +20,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { FileText, Loader2, Paperclip, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { VoyantApiError } from "../client.js"
 import { useBookingContractGenerationMutation } from "../index.js"
 
 type ContractDialogMode = "generate" | "upload"
@@ -139,12 +140,14 @@ export function BookingContractDialog({
   const submitting = generate.isPending || uploading
   const previewReady = preview.data != null
   const canSubmit = mode === "generate" ? previewReady && !submitting : file != null && !submitting
+  const previewSetupMissing =
+    preview.error instanceof VoyantApiError && preview.error.status === 404
   const showPreviewSetupHint =
     mode === "generate" &&
     previewRequested &&
     !preview.isPending &&
-    !preview.isError &&
-    !preview.data
+    !preview.data &&
+    (!preview.isError || previewSetupMissing)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -180,7 +183,7 @@ export function BookingContractDialog({
                       <Skeleton className="h-4 w-4/5" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                  ) : preview.isError ? (
+                  ) : preview.isError && !previewSetupMissing ? (
                     <p className="p-6 text-destructive text-sm">
                       {t.previewErrorPrefix}{" "}
                       {preview.error instanceof Error ? preview.error.message : t.previewFailed}

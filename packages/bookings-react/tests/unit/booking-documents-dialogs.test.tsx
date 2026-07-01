@@ -179,6 +179,7 @@ vi.mock("@voyant-travel/ui/components", () => ({
 }))
 
 import { BookingContractDialog } from "../../src/admin/booking-contract-dialog.js"
+import { VoyantApiError } from "../../src/client.js"
 import { BookingDocumentDialog } from "../../src/components/booking-document-dialog.js"
 
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
@@ -253,6 +254,29 @@ describe("booking document dialogs", () => {
     expect(testState.previewMutate).toHaveBeenCalledOnce()
     expect(container.textContent).toContain("Contract generation is not ready for this booking.")
     expect(container.textContent).toContain("Legal > Templates")
+    expect(getButton(container, "Create contract").disabled).toBe(true)
+  })
+
+  it("shows contract setup guidance when preview returns missing template", () => {
+    testState.previewState.isError = true
+    testState.previewState.error = new VoyantApiError("No active customer template", 404, {
+      error: { message: "No active customer template" },
+    })
+
+    act(() => {
+      root.render(
+        <BookingContractDialog
+          open
+          onOpenChange={() => undefined}
+          bookingId="book_123"
+          bookingNumber="BK-123"
+        />,
+      )
+    })
+
+    expect(container.textContent).toContain("Contract generation is not ready for this booking.")
+    expect(container.textContent).toContain("Legal > Templates")
+    expect(container.textContent).not.toContain("Preview error:")
     expect(getButton(container, "Create contract").disabled).toBe(true)
   })
 })
