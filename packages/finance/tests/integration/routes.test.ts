@@ -3178,6 +3178,26 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect((await res.json()).success).toBe(true)
     })
 
+    it("rejects deleting an active guarantee", async () => {
+      const booking = await seedBooking()
+
+      const createRes = await app.request(`/bookings/${booking.id}/guarantees`, {
+        method: "POST",
+        ...json({ guaranteeType: "deposit", status: "active" }),
+      })
+      const { data: guarantee } = await createRes.json()
+
+      const res = await app.request(`/bookings/${booking.id}/guarantees/${guarantee.id}`, {
+        method: "DELETE",
+      })
+      expect(res.status).toBe(400)
+
+      const listRes = await app.request(`/bookings/${booking.id}/guarantees`, { method: "GET" })
+      const { data } = await listRes.json()
+      expect(data).toHaveLength(1)
+      expect(data[0].status).toBe("active")
+    })
+
     it("lists guarantees for a booking", async () => {
       const booking = await seedBooking()
 
@@ -3228,6 +3248,29 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         ...json({ name: "Tax", currency: "USD", amountCents: 100 }),
       })
       expect(res.status).toBe(404)
+    })
+
+    it("rejects negative tax line amounts", async () => {
+      const booking = await seedBooking()
+      const item = await seedBookingItem(booking.id)
+
+      const createRes = await app.request(`/booking-items/${item.id}/tax-lines`, {
+        method: "POST",
+        ...json({ name: "Tax", currency: "USD", amountCents: -1 }),
+      })
+      expect(createRes.status).toBe(400)
+
+      const validRes = await app.request(`/booking-items/${item.id}/tax-lines`, {
+        method: "POST",
+        ...json({ name: "Tax", currency: "USD", amountCents: 500 }),
+      })
+      const { data: taxLine } = await validRes.json()
+
+      const updateRes = await app.request(`/booking-items/${item.id}/tax-lines/${taxLine.id}`, {
+        method: "PATCH",
+        ...json({ amountCents: -1 }),
+      })
+      expect(updateRes.status).toBe(400)
     })
 
     it("updates a tax line", async () => {
@@ -3315,9 +3358,57 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     it("returns 404 for non-existent booking item", async () => {
       const res = await app.request("/booking-items/bkit_00000000000000000000000000/commissions", {
         method: "POST",
-        ...json({ recipientType: "agency" }),
+        ...json({ recipientType: "agency", rateBasisPoints: 1000 }),
       })
       expect(res.status).toBe(404)
+    })
+
+    it("rejects percentage commissions without a rate basis", async () => {
+      const booking = await seedBooking()
+      const item = await seedBookingItem(booking.id)
+
+      const res = await app.request(`/booking-items/${item.id}/commissions`, {
+        method: "POST",
+        ...json({ recipientType: "agency", commissionModel: "percentage" }),
+      })
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects fixed commissions without amount and currency", async () => {
+      const booking = await seedBooking()
+      const item = await seedBookingItem(booking.id)
+
+      const res = await app.request(`/booking-items/${item.id}/commissions`, {
+        method: "POST",
+        ...json({ recipientType: "agency", commissionModel: "fixed" }),
+      })
+      expect(res.status).toBe(400)
+    })
+
+    it("rejects paid commissions without settlement metadata", async () => {
+      const booking = await seedBooking()
+      const item = await seedBookingItem(booking.id)
+
+      const createRes = await app.request(`/booking-items/${item.id}/commissions`, {
+        method: "POST",
+        ...json({ recipientType: "agency", rateBasisPoints: 1000, status: "paid" }),
+      })
+      expect(createRes.status).toBe(400)
+
+      const validRes = await app.request(`/booking-items/${item.id}/commissions`, {
+        method: "POST",
+        ...json({ recipientType: "agency", rateBasisPoints: 1000 }),
+      })
+      const { data: commission } = await validRes.json()
+
+      const updateRes = await app.request(
+        `/booking-items/${item.id}/commissions/${commission.id}`,
+        {
+          method: "PATCH",
+          ...json({ status: "paid" }),
+        },
+      )
+      expect(updateRes.status).toBe(400)
     })
 
     it("updates a commission", async () => {
@@ -3326,17 +3417,24 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
       const createRes = await app.request(`/booking-items/${item.id}/commissions`, {
         method: "POST",
-        ...json({ recipientType: "affiliate", rateBasisPoints: 1000 }),
+        ...json({
+          recipientType: "affiliate",
+          commissionModel: "fixed",
+          amountCents: 2500,
+          currency: "USD",
+        }),
       })
       const { data: comm } = await createRes.json()
 
       const res = await app.request(`/booking-items/${item.id}/commissions/${comm.id}`, {
         method: "PATCH",
-        ...json({ status: "accrued", notes: "Q2 commission" }),
+        ...json({ notes: "Q2 commission" }),
       })
       expect(res.status).toBe(200)
       const { data } = await res.json()
-      expect(data.status).toBe("accrued")
+      expect(data.commissionModel).toBe("fixed")
+      expect(data.amountCents).toBe(2500)
+      expect(data.status).toBe("pending")
       expect(data.notes).toBe("Q2 commission")
     })
 
@@ -3346,7 +3444,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
       const createRes = await app.request(`/booking-items/${item.id}/commissions`, {
         method: "POST",
-        ...json({ recipientType: "agent" }),
+        ...json({ recipientType: "agent", rateBasisPoints: 1000 }),
       })
       const { data: comm } = await createRes.json()
 
@@ -3363,11 +3461,11 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
       await app.request(`/booking-items/${item.id}/commissions`, {
         method: "POST",
-        ...json({ recipientType: "channel" }),
+        ...json({ recipientType: "channel", rateBasisPoints: 1000 }),
       })
       await app.request(`/booking-items/${item.id}/commissions`, {
         method: "POST",
-        ...json({ recipientType: "agency" }),
+        ...json({ recipientType: "agency", rateBasisPoints: 1200 }),
       })
 
       const res = await app.request(`/booking-items/${item.id}/commissions`, { method: "GET" })

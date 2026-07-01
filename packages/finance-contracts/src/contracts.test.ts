@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  insertBookingItemCommissionSchema,
+  insertBookingItemTaxLineSchema,
   insertPaymentSchema,
   invoiceStatusSchema,
   paymentMethodSchema,
   taxClassListQuerySchema,
+  updateBookingItemCommissionSchema,
+  updateBookingItemTaxLineSchema,
   updatePaymentSchema,
 } from "./index.js"
 
@@ -37,5 +41,75 @@ describe("finance-contracts", () => {
     const result = taxClassListQuerySchema.parse({ active: "false" })
 
     expect(result.active).toBe(false)
+  })
+
+  it("rejects negative booking-item tax line amounts", () => {
+    expect(
+      insertBookingItemTaxLineSchema.safeParse({
+        name: "VAT",
+        currency: "USD",
+        amountCents: -1,
+      }).success,
+    ).toBe(false)
+
+    expect(updateBookingItemTaxLineSchema.safeParse({ amountCents: -1 }).success).toBe(false)
+  })
+
+  it("requires booking-item commission value basis by model", () => {
+    expect(
+      insertBookingItemCommissionSchema.safeParse({
+        recipientType: "agency",
+        commissionModel: "percentage",
+      }).success,
+    ).toBe(false)
+
+    expect(
+      insertBookingItemCommissionSchema.safeParse({
+        recipientType: "agency",
+        commissionModel: "fixed",
+      }).success,
+    ).toBe(false)
+
+    expect(
+      insertBookingItemCommissionSchema.safeParse({
+        recipientType: "agency",
+        commissionModel: "percentage",
+        rateBasisPoints: 1000,
+      }).success,
+    ).toBe(true)
+
+    expect(
+      insertBookingItemCommissionSchema.safeParse({
+        recipientType: "agency",
+        commissionModel: "fixed",
+        amountCents: 2500,
+        currency: "USD",
+      }).success,
+    ).toBe(true)
+  })
+
+  it("requires settlement metadata when marking booking-item commissions paid", () => {
+    expect(
+      insertBookingItemCommissionSchema.safeParse({
+        recipientType: "agency",
+        commissionModel: "percentage",
+        rateBasisPoints: 1000,
+        status: "paid",
+      }).success,
+    ).toBe(false)
+
+    expect(updateBookingItemCommissionSchema.safeParse({ status: "paid" }).success).toBe(false)
+
+    expect(
+      updateBookingItemCommissionSchema.safeParse({
+        status: "paid",
+        paidAt: "2026-06-30",
+      }).success,
+    ).toBe(true)
+  })
+
+  it("does not apply create defaults to booking-item commission patches", () => {
+    const result = updateBookingItemCommissionSchema.parse({ notes: "internal note" })
+    expect(result).toEqual({ notes: "internal note" })
   })
 })

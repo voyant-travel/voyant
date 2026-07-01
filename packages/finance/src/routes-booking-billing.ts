@@ -576,6 +576,10 @@ const deleteBookingGuaranteeRoute = createRoute({
       description: "Guarantee deleted",
       content: { "application/json": { schema: successResponseSchema } },
     },
+    400: {
+      description: "invalid_request: guarantee state does not allow deletion",
+      content: { "application/json": { schema: paymentValidationErrorSchema } },
+    },
     404: {
       description: "Booking guarantee not found",
       content: { "application/json": { schema: errorResponseSchema } },
@@ -652,20 +656,27 @@ const bookingGuaranteeRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValida
     return c.json({ data: row }, 200)
   })
   .openapi(deleteBookingGuaranteeRoute, async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.deleteBookingGuarantee(
-      c.get("db"),
-      c.req.valid("param").guaranteeId,
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.booking_guarantee.route",
-      },
-    )
-    if (!row) {
-      return notFound(c, "Booking guarantee not found")
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.deleteBookingGuarantee(
+        c.get("db"),
+        c.req.valid("param").guaranteeId,
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.booking_guarantee.route",
+        },
+      )
+      if (!row) {
+        return notFound(c, "Booking guarantee not found")
+      }
+      return c.json({ success: true }, 200)
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
     }
-    return c.json({ success: true }, 200)
   })
 
 // ===========================================================================
@@ -836,7 +847,7 @@ const createBookingItemCommissionRoute = createRoute({
     },
     400: {
       description: "invalid_request: request body failed validation",
-      content: { "application/json": { schema: errorResponseSchema } },
+      content: { "application/json": { schema: paymentValidationErrorSchema } },
     },
     404: {
       description: "Booking item not found",
@@ -864,7 +875,7 @@ const updateBookingItemCommissionRoute = createRoute({
     },
     400: {
       description: "invalid_request: request body failed validation",
-      content: { "application/json": { schema: errorResponseSchema } },
+      content: { "application/json": { schema: paymentValidationErrorSchema } },
     },
     404: {
       description: "Booking item commission not found",
@@ -902,26 +913,40 @@ const bookingItemCommissionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
     ),
   )
   .openapi(createBookingItemCommissionRoute, async (c) => {
-    const row = await financeService.createBookingItemCommission(
-      c.get("db"),
-      c.req.valid("param").bookingItemId,
-      c.req.valid("json"),
-    )
-    if (!row) {
-      return notFound(c, "Booking item not found")
+    try {
+      const row = await financeService.createBookingItemCommission(
+        c.get("db"),
+        c.req.valid("param").bookingItemId,
+        c.req.valid("json"),
+      )
+      if (!row) {
+        return notFound(c, "Booking item not found")
+      }
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
     }
-    return c.json({ data: row }, 201)
   })
   .openapi(updateBookingItemCommissionRoute, async (c) => {
-    const row = await financeService.updateBookingItemCommission(
-      c.get("db"),
-      c.req.valid("param").commissionId,
-      c.req.valid("json"),
-    )
-    if (!row) {
-      return notFound(c, "Booking item commission not found")
+    try {
+      const row = await financeService.updateBookingItemCommission(
+        c.get("db"),
+        c.req.valid("param").commissionId,
+        c.req.valid("json"),
+      )
+      if (!row) {
+        return notFound(c, "Booking item commission not found")
+      }
+      return c.json({ data: row }, 200)
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
     }
-    return c.json({ data: row }, 200)
   })
   .openapi(deleteBookingItemCommissionRoute, async (c) => {
     const row = await financeService.deleteBookingItemCommission(
