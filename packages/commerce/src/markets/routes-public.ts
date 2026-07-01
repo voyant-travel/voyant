@@ -32,6 +32,7 @@ const publicMarketCurrencySchema = z.object({
 
 /** Customer-facing market discovery row — mirrors `PublicMarket`. */
 export const publicMarketSchema = z.object({
+  id: z.string(),
   code: z.string(),
   name: z.string(),
   regionCode: z.string().nullable(),

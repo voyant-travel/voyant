@@ -8,12 +8,18 @@ import { marketCurrencies, marketLocales, markets } from "./schema.js"
  * the admin market row: it carries only what an anonymous storefront needs to
  * resolve and select a scope (which market, which locales, which currencies).
  *
- * Intentionally OMITTED from the public surface (admin/tenant-internal): the
- * market `id` (internal TypeID), `status`, `timezone`, `taxContext`, `metadata`,
- * timestamps, and every finance/pricing internal — FX rate sets, exchange rates,
- * price catalogs, product/channel rules, and the per-currency `isSettlement` /
- * `isReporting` flags. The stable public scope key is the market `code` (this is
- * the value the storefront threads into catalog search as `market`).
+ * Intentionally OMITTED from the public surface (admin/tenant-internal):
+ * `status`, `timezone`, `taxContext`, `metadata`, timestamps, and every
+ * finance/pricing internal — FX rate sets, exchange rates, price catalogs,
+ * product/channel rules, and the per-currency `isSettlement` / `isReporting`
+ * flags.
+ *
+ * The market `id` IS exposed: it is the scope key the catalog search API
+ * consumes as the `market` parameter. The catalog runtime indexes and searches
+ * slices keyed by `market.id` (see `loadCatalogSlices` in the operator catalog
+ * runtime and `packages/catalog/src/search/routes.ts`), so a storefront that
+ * discovers a non-default market here must send its `id` — not its human-facing
+ * `code` — to hit the right Typesense collection. `code`/`name` are for display.
  */
 export interface PublicMarketLocale {
   languageTag: string
@@ -26,7 +32,13 @@ export interface PublicMarketCurrency {
 }
 
 export interface PublicMarket {
-  /** Stable public scope key — thread this into catalog search as `market`. */
+  /**
+   * Catalog-search scope key — thread this into catalog search as the `market`
+   * parameter. It is the market's stable identifier (`markets.id`), which the
+   * catalog runtime uses to key indexed/searchable slices.
+   */
+  id: string
+  /** Human-facing market code (e.g. `RO`, `UK`) — for display, not for search. */
   code: string
   name: string
   regionCode: string | null
@@ -99,6 +111,7 @@ export async function listPublicMarkets(db: PostgresJsDatabase): Promise<PublicM
   }
 
   return marketRows.map((row) => ({
+    id: row.id,
     code: row.code,
     name: row.name,
     regionCode: row.regionCode,

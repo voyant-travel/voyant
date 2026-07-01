@@ -809,6 +809,9 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string"
+                          },
                           "code": {
                             "type": "string"
                           },
@@ -871,6 +874,7 @@
                           }
                         },
                         "required": [
+                          "id",
                           "code",
                           "name",
                           "regionCode",

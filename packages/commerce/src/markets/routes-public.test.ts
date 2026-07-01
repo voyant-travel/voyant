@@ -94,6 +94,7 @@ describe("listPublicMarkets projection", () => {
 
     expect(result).toEqual([
       {
+        id: "markets_ro0000000000000000000000",
         code: "RO",
         name: "Romania",
         regionCode: "EU",
@@ -110,6 +111,7 @@ describe("listPublicMarkets projection", () => {
         ],
       },
       {
+        id: "markets_uk0000000000000000000000",
         code: "UK",
         name: "United Kingdom",
         regionCode: "EU",
@@ -126,10 +128,12 @@ describe("listPublicMarkets projection", () => {
     const [market] = await listPublicMarkets(makeFakeDb(sampleData))
     if (!market) throw new Error("expected at least one market")
     const keys = Object.keys(market)
-    // Internal identifiers and finance/pricing internals must never surface.
-    for (const forbidden of ["id", "status", "timezone", "taxContext", "metadata"]) {
+    // `id` IS exposed — it is the catalog-search scope key. Status/config and
+    // finance/pricing internals must never surface.
+    for (const forbidden of ["status", "timezone", "taxContext", "metadata"]) {
       expect(keys).not.toContain(forbidden)
     }
+    expect(keys).toContain("id")
     for (const locale of market.locales) {
       expect(Object.keys(locale)).toEqual(["languageTag", "isDefault"])
     }
@@ -169,7 +173,9 @@ describe("GET /v1/public/markets route", () => {
   it("serializes only the public projection (no admin fields on the wire)", async () => {
     const res = await mountApp(sampleData).request("/v1/public/markets")
     const raw = await res.text()
-    for (const forbidden of ["taxContext", "metadata", "isSettlement", "isReporting", "markets_"]) {
+    // The market `id` (the `markets_…` scope key) is intentionally on the wire;
+    // only admin/finance-internal fields must be absent.
+    for (const forbidden of ["taxContext", "metadata", "isSettlement", "isReporting"]) {
       expect(raw).not.toContain(forbidden)
     }
   })
