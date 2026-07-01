@@ -248,7 +248,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "markets",
+        "x-voyant-surface": "storefront"
       }
     }
   },

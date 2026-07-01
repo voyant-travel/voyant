@@ -303,7 +303,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/documents/by-reference": {
@@ -499,7 +501,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/documents": {
@@ -691,7 +695,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/documents/by-reference": {
@@ -895,7 +901,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/payments": {
@@ -1070,7 +1078,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/payment-options": {
@@ -1426,7 +1436,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/payment-sessions/{sessionId}": {
@@ -1932,7 +1944,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session": {
@@ -2841,7 +2855,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session": {
@@ -3750,7 +3766,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/invoices/{invoiceId}/payment-session": {
@@ -4651,7 +4669,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/accountant/{token}/summary": {
@@ -4745,7 +4765,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/accountant/{token}/invoices": {
@@ -4816,7 +4838,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "storefront"
       }
     }
   },

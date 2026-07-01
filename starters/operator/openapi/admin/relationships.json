@@ -438,7 +438,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -750,7 +752,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/organizations/{id}": {
@@ -941,7 +945,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1278,7 +1284,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1331,7 +1339,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/organizations/{id}/merge": {
@@ -1559,7 +1569,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/organizations/{id}/contact-methods": {
@@ -1661,7 +1673,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -1854,7 +1868,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/organizations/{id}/addresses": {
@@ -2008,7 +2024,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -2293,7 +2311,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/organizations/{id}/notes": {
@@ -2354,7 +2374,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -2466,7 +2488,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/organization-notes/{id}": {
@@ -2580,7 +2604,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2633,7 +2659,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people": {
@@ -2946,7 +2974,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3377,7 +3407,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}": {
@@ -3597,7 +3629,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4052,7 +4086,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4105,7 +4141,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/merge": {
@@ -4362,7 +4400,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/contact-methods": {
@@ -4464,7 +4504,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -4657,7 +4699,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/addresses": {
@@ -4811,7 +4855,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -5096,7 +5142,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/notes": {
@@ -5157,7 +5205,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -5269,7 +5319,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/person-notes/{id}": {
@@ -5383,7 +5435,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5436,7 +5490,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/payment-methods": {
@@ -5529,7 +5585,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -5717,7 +5775,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/person-payment-methods/{id}": {
@@ -5903,7 +5963,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5956,7 +6018,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/communications": {
@@ -6125,7 +6189,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -6316,7 +6382,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/segments": {
@@ -6378,7 +6446,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -6486,7 +6556,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/segments/{segmentId}": {
@@ -6541,7 +6613,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/export": {
@@ -6557,7 +6631,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/import": {
@@ -6628,7 +6704,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/contact-methods/{id}": {
@@ -6835,7 +6913,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6888,7 +6968,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/addresses/{id}": {
@@ -7189,7 +7271,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7242,7 +7326,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/documents": {
@@ -7413,7 +7499,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -7656,7 +7744,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/person-documents/{id}": {
@@ -7794,7 +7884,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -8034,7 +8126,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8087,7 +8181,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/person-documents/{id}/set-primary": {
@@ -8225,7 +8321,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/travel-snapshot": {
@@ -8370,7 +8468,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/profile-pii": {
@@ -8501,7 +8601,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/documents/from-plaintext": {
@@ -8756,7 +8858,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/person-documents/{id}/from-plaintext": {
@@ -9008,7 +9112,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/person-documents/{id}/reveal": {
@@ -9115,7 +9221,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/relationships": {
@@ -9306,7 +9414,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -9541,7 +9651,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/person-relationships/{id}": {
@@ -9688,7 +9800,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9930,7 +10044,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -9983,7 +10099,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/customer-signals": {
@@ -10234,7 +10352,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -10536,7 +10656,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/customer-signals/{id}": {
@@ -10711,7 +10833,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -11014,7 +11138,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -11067,7 +11193,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/customer-signals/{id}/resolve": {
@@ -11279,7 +11407,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/people/{id}/signals": {
@@ -11439,7 +11569,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/activities": {
@@ -11652,7 +11784,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -11845,7 +11979,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/activities/{id}": {
@@ -11978,7 +12114,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -12195,7 +12333,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -12248,7 +12388,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/activities/{id}/links": {
@@ -12323,7 +12465,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -12447,7 +12591,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/activity-links/{id}": {
@@ -12502,7 +12648,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/activities/{id}/participants": {
@@ -12563,7 +12711,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -12659,7 +12809,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/activity-participants/{id}": {
@@ -12714,7 +12866,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/custom-fields": {
@@ -12874,7 +13028,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -13075,7 +13231,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/custom-fields/{id}": {
@@ -13208,7 +13366,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -13406,7 +13566,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13459,7 +13621,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/custom-field-values": {
@@ -13634,7 +13798,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/custom-fields/{id}/value": {
@@ -13848,7 +14014,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/relationships/custom-field-values/{id}": {
@@ -13903,7 +14071,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin"
       }
     }
   },

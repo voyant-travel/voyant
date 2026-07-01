@@ -336,7 +336,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -526,7 +528,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/templates/default": {
@@ -685,7 +689,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}": {
@@ -810,7 +816,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1022,7 +1030,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1075,7 +1085,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}/preview": {
@@ -1168,7 +1180,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}/render-preview": {
@@ -1261,7 +1275,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}/versions": {
@@ -1337,7 +1353,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -1484,7 +1502,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/template-versions/{id}": {
@@ -1575,7 +1595,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/number-series": {
@@ -1718,7 +1740,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1924,7 +1948,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/number-series/{id}": {
@@ -2061,7 +2087,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2285,7 +2313,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2338,7 +2368,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/bookings/{bookingId}/generate-document": {
@@ -2541,7 +2573,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts": {
@@ -3035,7 +3069,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3657,7 +3693,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}": {
@@ -3981,7 +4019,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4613,7 +4653,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4684,7 +4726,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/issue": {
@@ -5026,7 +5070,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/send": {
@@ -5386,7 +5432,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/sign": {
@@ -6092,7 +6140,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/execute": {
@@ -6434,7 +6484,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/void": {
@@ -6776,7 +6828,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/render": {
@@ -6869,7 +6923,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/generate-document": {
@@ -6976,7 +7032,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/regenerate-document": {
@@ -7083,7 +7141,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/regenerate-pdf": {
@@ -7190,7 +7250,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/signatures": {
@@ -7370,7 +7432,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/attachments": {
@@ -7512,7 +7576,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -7846,7 +7912,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/attachments/upload": {
@@ -8051,7 +8119,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/{id}/attach-document": {
@@ -8256,7 +8326,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/attachments/{attachmentId}": {
@@ -8589,7 +8661,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8642,7 +8716,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/attachments/{attachmentId}/upload": {
@@ -8847,7 +8923,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/contracts/attachments/{attachmentId}/download": {
@@ -8902,7 +8980,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/{id}/versions": {
@@ -9005,7 +9085,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -9179,7 +9261,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}": {
@@ -9297,7 +9381,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9468,7 +9554,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}/publish": {
@@ -9604,7 +9692,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}/retire": {
@@ -9722,7 +9812,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}/rules": {
@@ -9858,7 +9950,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -10120,7 +10214,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/rules/{ruleId}": {
@@ -10380,7 +10476,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -10430,7 +10528,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/assignments": {
@@ -10645,7 +10745,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -10854,7 +10956,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/assignments/{id}": {
@@ -11089,7 +11193,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -11139,7 +11245,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/acceptances": {
@@ -11410,7 +11518,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -11734,7 +11844,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/resolve": {
@@ -12163,7 +12275,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies": {
@@ -12319,7 +12433,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -12477,7 +12593,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/{id}": {
@@ -12586,7 +12704,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -12766,7 +12886,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -12834,7 +12956,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/policies/{id}/evaluate": {
@@ -12954,7 +13078,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/terms": {
@@ -13266,7 +13392,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -13664,7 +13792,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/legal/terms/{id}": {
@@ -13859,7 +13989,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -14281,7 +14413,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -14331,7 +14465,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "legal",
+        "x-voyant-surface": "admin"
       }
     }
   },

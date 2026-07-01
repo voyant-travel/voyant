@@ -187,7 +187,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips": {
@@ -794,7 +796,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1308,7 +1312,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}": {
@@ -1762,7 +1768,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2084,7 +2092,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/reshop": {
@@ -2450,7 +2460,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/snapshots": {
@@ -2588,7 +2600,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -2797,7 +2811,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/snapshots/{snapshotId}": {
@@ -2951,7 +2967,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/components": {
@@ -3372,7 +3390,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/components/reorder": {
@@ -3734,7 +3754,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/components/{componentId}": {
@@ -4150,7 +4172,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4484,7 +4508,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/components/{componentId}/refs": {
@@ -4869,7 +4895,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/requirements": {
@@ -5113,7 +5141,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       },
       "get": {
         "parameters": [
@@ -5309,7 +5339,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/requirements/{requirementId}/candidates": {
@@ -5677,7 +5709,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/requirements/{requirementId}/select": {
@@ -6216,7 +6250,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/requirements/{requirementId}/reshop": {
@@ -6584,7 +6620,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/price": {
@@ -7147,7 +7185,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/reserve": {
@@ -7708,7 +7748,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/checkout": {
@@ -8252,7 +8294,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/cancellation-preview": {
@@ -8798,7 +8842,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/cancel-components": {
@@ -9349,7 +9395,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
       }
     }
   },

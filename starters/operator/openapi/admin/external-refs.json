@@ -351,7 +351,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "external-refs",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -549,7 +551,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "external-refs",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/external-refs/refs/{id}": {
@@ -676,7 +680,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "external-refs",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -895,7 +901,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "external-refs",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -948,7 +956,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "external-refs",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/external-refs/entities/{entityType}/{entityId}/refs": {
@@ -1170,7 +1180,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "external-refs",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -1374,7 +1386,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "external-refs",
+        "x-voyant-surface": "admin"
       }
     }
   },

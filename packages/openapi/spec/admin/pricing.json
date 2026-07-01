@@ -387,7 +387,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -630,7 +632,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/pricing-categories/{id}": {
@@ -794,7 +798,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1056,7 +1062,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1106,7 +1114,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/pricing-category-dependencies": {
@@ -1274,7 +1284,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1411,7 +1423,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/pricing-category-dependencies/{id}": {
@@ -1522,7 +1536,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1681,7 +1697,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1731,7 +1749,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/cancellation-policies": {
@@ -1913,7 +1933,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2067,7 +2089,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/cancellation-policies/{id}": {
@@ -2186,7 +2210,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2362,7 +2388,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2412,7 +2440,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/cancellation-policy-rules": {
@@ -2564,7 +2594,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2714,7 +2746,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/cancellation-policy-rules/{id}": {
@@ -2831,7 +2865,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3003,7 +3039,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3053,7 +3091,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/price-catalogs": {
@@ -3235,7 +3275,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3393,7 +3435,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/price-catalogs/{id}": {
@@ -3512,7 +3556,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3691,7 +3737,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3741,7 +3789,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/price-schedules": {
@@ -3925,7 +3975,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4132,7 +4184,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/price-schedules/{id}": {
@@ -4273,7 +4327,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4501,7 +4557,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4551,7 +4609,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-price-rules": {
@@ -4811,7 +4871,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -5080,7 +5142,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-price-rules/{id}": {
@@ -5258,7 +5322,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -5545,7 +5611,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5595,7 +5663,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-unit-price-rules": {
@@ -5804,7 +5874,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -6017,7 +6089,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-unit-price-rules/{id}": {
@@ -6167,7 +6241,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -6400,7 +6476,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6450,7 +6528,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-start-time-rules": {
@@ -6635,7 +6715,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -6818,7 +6900,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-start-time-rules/{id}": {
@@ -6952,7 +7036,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -7156,7 +7242,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7206,7 +7294,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-unit-tiers": {
@@ -7346,7 +7436,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -7473,7 +7565,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/option-unit-tiers/{id}": {
@@ -7578,7 +7672,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -7727,7 +7823,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7777,7 +7875,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/pickup-price-rules": {
@@ -7948,7 +8048,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -8103,7 +8205,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/pickup-price-rules/{id}": {
@@ -8223,7 +8327,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -8398,7 +8504,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8448,7 +8556,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/dropoff-price-rules": {
@@ -8633,7 +8743,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -8817,7 +8929,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/dropoff-price-rules/{id}": {
@@ -8951,7 +9065,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9155,7 +9271,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -9205,7 +9323,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/extra-price-rules": {
@@ -9402,7 +9522,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -9591,7 +9713,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/extra-price-rules/{id}": {
@@ -9729,7 +9853,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9939,7 +10065,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -9989,7 +10117,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/departure-price-overrides": {
@@ -10162,7 +10292,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -10305,7 +10437,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/pricing/departure-price-overrides/{id}": {
@@ -10419,7 +10553,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -10582,7 +10718,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -10632,7 +10770,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "pricing",
+        "x-voyant-surface": "admin"
       }
     }
   },

@@ -682,7 +682,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog",
+        "x-voyant-surface": "storefront"
       }
     }
   },

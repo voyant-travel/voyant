@@ -300,7 +300,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -626,7 +628,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/products/{key}/aggregates/recompute": {
@@ -879,7 +883,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/products/{key}/voyages": {
@@ -962,7 +968,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/products/{key}": {
@@ -1048,7 +1056,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       },
       "put": {
         "parameters": [
@@ -1299,7 +1309,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1550,7 +1562,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages": {
@@ -1829,7 +1843,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2165,7 +2181,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/suites/bulk": {
@@ -2393,7 +2411,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/schedule/bulk": {
@@ -2548,7 +2568,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/quote/per-suite": {
@@ -2681,7 +2703,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/bookings/per-suite": {
@@ -2748,7 +2772,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/quote/whole-yacht": {
@@ -2874,7 +2900,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/bookings/whole-yacht": {
@@ -2941,7 +2969,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}": {
@@ -3027,7 +3057,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       },
       "put": {
         "parameters": [
@@ -3269,7 +3301,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/bookings/{bookingId}/myba": {
@@ -3407,7 +3441,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/yachts": {
@@ -3673,7 +3709,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4019,7 +4057,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/yachts/{key}": {
@@ -4105,7 +4145,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       },
       "put": {
         "parameters": [
@@ -4354,7 +4396,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "charters",
+        "x-voyant-surface": "admin"
       }
     }
   },

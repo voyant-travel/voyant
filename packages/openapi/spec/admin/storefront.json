@@ -768,7 +768,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "requestBody": {
@@ -1945,7 +1947,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "storefront",
+        "x-voyant-surface": "admin"
       }
     }
   },

@@ -352,7 +352,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "media",
+        "x-voyant-surface": "admin"
       }
     }
   },

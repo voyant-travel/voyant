@@ -349,7 +349,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "workflow-runs",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/workflow-runs/{id}": {
@@ -644,7 +646,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "workflow-runs",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/workflow-runs/{id}/rerun": {
@@ -804,7 +808,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "workflow-runs",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/workflow-runs/{id}/resume": {
@@ -949,7 +955,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "workflow-runs",
+        "x-voyant-surface": "admin"
       }
     }
   },

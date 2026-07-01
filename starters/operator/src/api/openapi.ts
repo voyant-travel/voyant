@@ -1,9 +1,11 @@
 import {
+  buildModulePathOwnership,
   generateOpenApiDocument,
   mergeLazyOpenApiPaths,
   type OpenApiDocument,
+  partitionByModule,
   selectSurface,
-  splitDocumentByModule,
+  stampModuleMetadata,
 } from "@voyant-travel/hono/openapi"
 import { app } from "./app.js"
 
@@ -45,14 +47,17 @@ export async function buildOperatorOpenApiDocuments(): Promise<OperatorOpenApiDo
   // Lazy route families mount as wildcard dispatch stubs at runtime, so their
   // `.openapi()` operations never reach the composed registry — replay their
   // loaders at build time and merge any documented routes (voyant#2114).
-  const full = await mergeLazyOpenApiPaths(eager, app.lazyMounts ?? [], options)
-  // Partition the FULL surface so `additionalRoutes` (e.g. the workflow-runs
-  // admin surface) and directly-mounted routes aren't dropped from the specs.
-  const modules = await splitDocumentByModule(full, app.moduleMounts ?? [], options)
+  const merged = await mergeLazyOpenApiPaths(eager, app.lazyMounts ?? [], options)
+  // Build the path→module map once, stamp the aggregate with `x-voyant-module` /
+  // `x-voyant-surface` (derived docs inherit it), then partition the FULL surface
+  // so `additionalRoutes` (e.g. the workflow-runs admin surface) and
+  // directly-mounted routes aren't dropped.
+  const owner = await buildModulePathOwnership(app.moduleMounts ?? [], options)
+  const full = stampModuleMetadata(merged, owner)
   return {
     full,
     admin: selectSurface(full, "admin"),
     storefront: selectSurface(full, "storefront"),
-    modules,
+    modules: partitionByModule(full, owner),
   }
 }

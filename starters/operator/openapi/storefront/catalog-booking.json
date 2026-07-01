@@ -1558,7 +1558,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/catalog/book": {
@@ -1933,7 +1935,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/catalog/drafts/{id}": {
@@ -2231,7 +2235,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       },
       "get": {
         "parameters": [
@@ -2373,7 +2379,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       },
       "delete": {
         "parameters": [
@@ -2390,7 +2398,9 @@
           "204": {
             "description": "Draft deleted (idempotent)"
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/catalog/holds/place": {
@@ -2580,7 +2590,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/catalog/holds/release": {
@@ -2713,7 +2725,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/catalog/slots": {
@@ -2846,7 +2860,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "catalog-booking",
+        "x-voyant-surface": "storefront"
       }
     }
   },

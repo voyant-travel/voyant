@@ -586,7 +586,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/sailings/{key}": {
@@ -697,7 +699,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/sailings/{key}/quote": {
@@ -1006,7 +1010,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/ships/{key}": {
@@ -1092,7 +1098,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/{slug}": {
@@ -1449,7 +1457,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "storefront"
       }
     }
   },

@@ -288,7 +288,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/activation-settings/{id}": {
@@ -397,7 +399,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -571,7 +575,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -621,7 +627,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/activation-settings": {
@@ -797,7 +805,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/ticket-settings": {
@@ -953,7 +963,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/ticket-settings/{id}": {
@@ -1074,7 +1086,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1270,7 +1284,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1320,7 +1336,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/ticket-settings": {
@@ -1518,7 +1536,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/visibility-settings": {
@@ -1655,7 +1675,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/visibility-settings/{id}": {
@@ -1743,7 +1765,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1875,7 +1899,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1925,7 +1951,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/visibility-settings": {
@@ -2059,7 +2087,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/capabilities": {
@@ -2219,7 +2249,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/capabilities/{id}": {
@@ -2321,7 +2353,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2479,7 +2513,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2529,7 +2565,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/capabilities": {
@@ -2692,7 +2730,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/delivery-formats": {
@@ -2821,7 +2861,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/delivery-formats/{id}": {
@@ -2911,7 +2953,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3046,7 +3090,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3096,7 +3142,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/delivery-formats": {
@@ -3236,7 +3284,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/features": {
@@ -3370,7 +3420,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/features/{id}": {
@@ -3468,7 +3520,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3620,7 +3674,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3670,7 +3726,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/features": {
@@ -3827,7 +3885,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/faqs": {
@@ -3932,7 +3992,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/faqs/{id}": {
@@ -4016,7 +4078,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4142,7 +4206,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4192,7 +4258,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/faqs": {
@@ -4324,7 +4392,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/locations": {
@@ -4511,7 +4581,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/locations/{id}": {
@@ -4660,7 +4732,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4918,7 +4992,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4968,7 +5044,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/locations": {
@@ -5231,7 +5309,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/destinations": {
@@ -5442,7 +5522,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -5645,7 +5727,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/destinations/{id}": {
@@ -5772,7 +5856,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -6000,7 +6086,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6050,7 +6138,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/destination-translations": {
@@ -6183,7 +6273,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/destinations/{id}/translations": {
@@ -6348,7 +6440,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/destination-translations/{id}": {
@@ -6509,7 +6603,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6559,7 +6655,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-category-translations": {
@@ -6692,7 +6790,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-categories/{id}/translations": {
@@ -6857,7 +6957,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-category-translations/{id}": {
@@ -7018,7 +7120,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7068,7 +7172,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-tag-translations": {
@@ -7180,7 +7286,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-tags/{id}/translations": {
@@ -7305,7 +7413,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-tag-translations/{id}": {
@@ -7426,7 +7536,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7476,7 +7588,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/destination-links": {
@@ -7593,7 +7707,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/destinations": {
@@ -7709,7 +7825,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/destinations/{destinationId}": {
@@ -7769,7 +7887,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/options": {
@@ -7924,7 +8044,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/options/{optionId}": {
@@ -8045,7 +8167,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -8238,7 +8362,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8288,7 +8414,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/options": {
@@ -8489,7 +8617,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/units": {
@@ -8682,7 +8812,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/units/{unitId}": {
@@ -8838,7 +8970,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9102,7 +9236,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -9152,7 +9288,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/options/{optionId}/units": {
@@ -9425,7 +9563,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/translations": {
@@ -9593,7 +9733,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/translations/{translationId}": {
@@ -9729,7 +9871,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -9954,7 +10098,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -10004,7 +10150,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/translations": {
@@ -10235,7 +10383,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/option-translations": {
@@ -10361,7 +10511,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/option-translations/{translationId}": {
@@ -10455,7 +10607,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -10600,7 +10754,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -10650,7 +10806,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/options/{optionId}/translations": {
@@ -10801,7 +10959,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/unit-translations": {
@@ -10927,7 +11087,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/unit-translations/{translationId}": {
@@ -11021,7 +11183,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -11166,7 +11330,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -11216,7 +11382,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/units/{unitId}/translations": {
@@ -11367,7 +11535,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-types": {
@@ -11501,7 +11671,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -11635,7 +11807,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-types/{typeId}": {
@@ -11734,7 +11908,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -11892,7 +12068,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -11942,7 +12120,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-categories": {
@@ -12092,7 +12272,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -12291,7 +12473,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-categories/{categoryId}": {
@@ -12398,7 +12582,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -12621,7 +12807,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -12671,7 +12859,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-tags": {
@@ -12764,7 +12954,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -12844,7 +13036,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/product-tags/{tagId}": {
@@ -12916,7 +13110,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -13021,7 +13217,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13071,7 +13269,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/media/{mediaId}": {
@@ -13218,7 +13418,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -13462,7 +13664,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13607,7 +13811,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/media/{mediaId}/set-cover": {
@@ -13790,7 +13996,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/brochure/versions": {
@@ -13922,7 +14130,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/brochure/versions/{brochureId}/set-current": {
@@ -14077,7 +14287,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/brochure/versions/{brochureId}": {
@@ -14232,7 +14444,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/brochure": {
@@ -14379,7 +14593,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "put": {
         "parameters": [
@@ -14601,7 +14817,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -14746,7 +14964,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/media/reorder": {
@@ -14842,7 +15062,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/media": {
@@ -15059,7 +15281,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -15314,7 +15538,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}/media": {
@@ -15539,7 +15765,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -15802,7 +16030,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/itineraries": {
@@ -15871,7 +16101,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -15999,7 +16231,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/itineraries/{itineraryId}": {
@@ -16126,7 +16360,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -16176,7 +16412,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/itineraries/{itineraryId}/duplicate": {
@@ -16295,7 +16533,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/itineraries/{itineraryId}/days": {
@@ -16385,7 +16625,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -16545,7 +16787,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days": {
@@ -16627,7 +16871,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -16779,7 +17025,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}": {
@@ -16938,7 +17186,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -16996,7 +17246,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}/services": {
@@ -17120,7 +17372,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -17355,7 +17609,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}/services/{serviceId}": {
@@ -17594,7 +17850,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -17660,7 +17918,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}/translations": {
@@ -17762,7 +18022,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -17924,7 +18186,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}/translations/{translationId}": {
@@ -18093,7 +18357,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -18159,7 +18425,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/versions": {
@@ -18228,7 +18496,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -18310,7 +18580,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/notes": {
@@ -18371,7 +18643,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -18483,7 +18757,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/itineraries/{itineraryId}/translations": {
@@ -18568,7 +18844,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -18699,7 +18977,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/itineraries/{itineraryId}/translations/{translationId}": {
@@ -18836,7 +19116,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -18902,7 +19184,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations": {
@@ -19009,7 +19293,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -19174,7 +19460,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations/{translationId}": {
@@ -19345,7 +19633,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -19419,7 +19709,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/categories": {
@@ -19511,7 +19803,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -19600,7 +19894,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/categories/{categoryId}": {
@@ -19660,7 +19956,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/tags": {
@@ -19717,7 +20015,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -19803,7 +20103,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/tags/{tagId}": {
@@ -19863,7 +20165,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/recalculate": {
@@ -19927,7 +20231,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/aggregates": {
@@ -20030,7 +20336,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products": {
@@ -20533,7 +20841,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -21091,7 +21401,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}": {
@@ -21387,7 +21699,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -21962,7 +22276,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -22012,7 +22328,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/action-ledger": {
@@ -22123,7 +22441,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     }
   },

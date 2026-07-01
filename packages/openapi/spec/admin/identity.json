@@ -349,7 +349,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "tags": [
@@ -547,7 +549,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/contact-points/{id}": {
@@ -679,7 +683,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "tags": [
@@ -899,7 +905,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "tags": [
@@ -956,7 +964,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/addresses": {
@@ -1210,7 +1220,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "tags": [
@@ -1499,7 +1511,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/addresses/{id}": {
@@ -1682,7 +1696,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "tags": [
@@ -1995,7 +2011,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "tags": [
@@ -2052,7 +2070,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/named-contacts": {
@@ -2265,7 +2285,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "tags": [
@@ -2479,7 +2501,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/named-contacts/{id}": {
@@ -2619,7 +2643,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "tags": [
@@ -2856,7 +2882,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "tags": [
@@ -2913,7 +2941,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/contact-points": {
@@ -3038,7 +3068,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "tags": [
@@ -3242,7 +3274,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/addresses": {
@@ -3418,7 +3452,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "tags": [
@@ -3711,7 +3747,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/named-contacts": {
@@ -3844,7 +3882,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "tags": [
@@ -4064,7 +4104,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "identity",
+        "x-voyant-surface": "admin"
       }
     }
   },

@@ -539,7 +539,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       },
       "patch": {
         "requestBody": {
@@ -1210,7 +1212,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/me/documents": {
@@ -1317,7 +1321,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       },
       "post": {
         "requestBody": {
@@ -1515,7 +1521,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/me/documents/{id}/set-primary": {
@@ -1647,7 +1655,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/me/documents/{id}": {
@@ -1854,7 +1864,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       },
       "delete": {
         "parameters": [
@@ -1907,7 +1919,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/bootstrap": {
@@ -3186,7 +3200,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/companions": {
@@ -3433,7 +3449,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       },
       "post": {
         "requestBody": {
@@ -3923,7 +3941,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/companions/import-booking-travelers": {
@@ -4220,7 +4240,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/companions/{companionId}": {
@@ -4737,7 +4759,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       },
       "delete": {
         "parameters": [
@@ -4808,7 +4832,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/bookings": {
@@ -4953,7 +4979,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/bookings/{bookingId}": {
@@ -5672,7 +5700,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/bookings/{bookingId}/documents": {
@@ -5788,7 +5818,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/bookings/{bookingId}/billing-contact": {
@@ -5914,7 +5946,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/contact-exists": {
@@ -5970,7 +6004,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/customer-portal/contact-exists/phone": {
@@ -6030,7 +6066,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "customer-portal",
+        "x-voyant-surface": "storefront"
       }
     }
   },

@@ -610,7 +610,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1268,7 +1270,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/promotions/{id}": {
@@ -1617,7 +1621,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2297,7 +2303,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2373,7 +2381,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/promotions/{id}/archive": {
@@ -2722,7 +2732,9 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
       }
     }
   },
