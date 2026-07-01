@@ -53,6 +53,7 @@ export const bookingsUiRoSections = {
     },
     validation: {
       titleRequired: "Titlul este obligatoriu",
+      costCurrencyRequired: "Selecteaza moneda costului cand introduci valori de cost",
     },
     actions: {
       addItem: "Adauga articol",

@@ -1838,6 +1838,17 @@ function conflictResponse(description: string) {
   }
 }
 
+async function ensureBookingItemMutationsAllowed(c: Context<Env>, bookingId: string) {
+  const booking = await bookingsService.getBookingById(c.get("db"), bookingId)
+  if (!booking) {
+    return c.json({ error: "Booking not found" }, 404)
+  }
+  if (booking.status === "cancelled") {
+    return c.json({ error: "Cancelled bookings cannot be changed" }, 409)
+  }
+  return null
+}
+
 function deletedResponse(description: string) {
   return {
     description,
@@ -3391,6 +3402,7 @@ const createItemRoute = createRoute({
     201: dataResponse(bookingItemSchema, "The created booking item"),
     400: invalidRequestResponse,
     404: notFoundResponse("Booking not found"),
+    409: conflictResponse("Booking item mutations are not allowed for this booking"),
   },
 })
 
@@ -3405,6 +3417,7 @@ const updateItemRoute = createRoute({
     200: dataResponse(bookingItemSchema, "The updated booking item"),
     400: invalidRequestResponse,
     404: notFoundResponse("Booking item not found"),
+    409: conflictResponse("Booking item mutations are not allowed for this booking"),
   },
 })
 
@@ -3415,6 +3428,7 @@ const deleteItemRoute = createRoute({
   responses: {
     200: deletedResponse("The booking item was deleted"),
     404: notFoundResponse("Booking item not found"),
+    409: conflictResponse("Booking item mutations are not allowed for this booking"),
   },
 })
 
@@ -3438,6 +3452,7 @@ const linkItemTravelerRoute = createRoute({
     201: dataResponse(bookingItemTravelerSchema, "The created item-traveler link"),
     400: invalidRequestResponse,
     404: notFoundResponse("Booking item or traveler not found"),
+    409: conflictResponse("Booking item mutations are not allowed for this booking"),
   },
 })
 
@@ -3448,6 +3463,7 @@ const unlinkItemTravelerRoute = createRoute({
   responses: {
     200: deletedResponse("The item-traveler link was removed"),
     404: notFoundResponse("Booking item or item-traveler link not found"),
+    409: conflictResponse("Booking item mutations are not allowed for this booking"),
   },
 })
 
@@ -3459,6 +3475,8 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     )
   })
   .openapi(createItemRoute, async (c) => {
+    const blocked = await ensureBookingItemMutationsAllowed(c, c.req.valid("param").id)
+    if (blocked) return blocked
     const body = c.req.valid("json")
     const ledgerContext = getActionLedgerRequestContext(c)
     const row = await c.get("db").transaction(async (tx) => {
@@ -3490,6 +3508,8 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(updateItemRoute, async (c) => {
     const bookingId = c.req.valid("param").id
     const itemId = c.req.valid("param").itemId
+    const blocked = await ensureBookingItemMutationsAllowed(c, bookingId)
+    if (blocked) return blocked
     const before =
       (await bookingsService.listItems(c.get("db"), bookingId)).find(
         (item) => item.id === itemId,
@@ -3523,6 +3543,8 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(deleteItemRoute, async (c) => {
     const bookingId = c.req.valid("param").id
     const itemId = c.req.valid("param").itemId
+    const blocked = await ensureBookingItemMutationsAllowed(c, bookingId)
+    if (blocked) return blocked
     const before =
       (await bookingsService.listItems(c.get("db"), bookingId)).find(
         (item) => item.id === itemId,
@@ -3568,6 +3590,8 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(linkItemTravelerRoute, async (c) => {
     const bookingId = c.req.valid("param").id
     const itemId = c.req.valid("param").itemId
+    const blocked = await ensureBookingItemMutationsAllowed(c, bookingId)
+    if (blocked) return blocked
     const item =
       (await bookingsService.listItems(c.get("db"), bookingId)).find((row) => row.id === itemId) ??
       null
@@ -3602,6 +3626,8 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     const bookingId = c.req.valid("param").id
     const itemId = c.req.valid("param").itemId
     const linkId = c.req.valid("param").linkId
+    const blocked = await ensureBookingItemMutationsAllowed(c, bookingId)
+    if (blocked) return blocked
     const item =
       (await bookingsService.listItems(c.get("db"), bookingId)).find((row) => row.id === itemId) ??
       null

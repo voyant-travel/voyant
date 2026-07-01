@@ -53,6 +53,7 @@ export const bookingsUiEnSections = {
     },
     validation: {
       titleRequired: "Title is required",
+      costCurrencyRequired: "Select a cost currency when entering cost amounts",
     },
     actions: {
       addItem: "Add item",
