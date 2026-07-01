@@ -175,7 +175,8 @@ export function StorefrontBookingJourney({
       if (!bookRes.ok) {
         const errBody = (await bookRes.json().catch(() => ({ error: "book_failed" }))) as {
           error?: string
-          upstreamPayload?: { reason?: string }
+          code?: string
+          context?: { upstreamPayload?: { reason?: string } }
         }
         console.error("[storefront] /book failed", errBody)
         // Reserve failures (e.g. 502 RESERVE_FAILED with reason
@@ -183,7 +184,9 @@ export function StorefrontBookingJourney({
         // surfaces a visible error instead of silently dropping back to
         // Review (voyant#2638). A missing-rate / availability reason gets the
         // "adjust your selection" copy; everything else the generic message.
-        const reason = errBody.upstreamPayload?.reason
+        // The engine error serializer nests the upstream payload under
+        // `context.upstreamPayload` (ReserveFailedError), not at top level.
+        const reason = errBody.context?.upstreamPayload?.reason
         throw new Error(
           reason === "rates_missing"
             ? messages.bookingJourney.reserveFailed
