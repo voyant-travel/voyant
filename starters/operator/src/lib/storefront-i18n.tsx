@@ -27,7 +27,6 @@ const fallbackLocale = "en"
 const storefrontMessagesEn = {
   layout: {
     brand: "Voyant Storefront",
-    signIn: "Sign in",
   },
   scope: {
     market: "Market",
@@ -254,7 +253,6 @@ export type StorefrontMessages = typeof storefrontMessagesEn
 const storefrontMessagesRo: StorefrontMessages = {
   layout: {
     brand: "Magazin Voyant",
-    signIn: "Autentificare",
   },
   scope: {
     market: "Piata",
