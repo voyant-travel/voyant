@@ -1,5 +1,11 @@
 # @voyant-travel/finance-contracts
 
+## 0.105.7
+
+### Patch Changes
+
+- d1b4da2: Preserve proforma conversion linkage while checkout finalization issues final invoices so invoice-issued subscribers can convert existing provider estimates instead of creating standalone invoices.
+
 ## 0.105.6
 
 ### Patch Changes
