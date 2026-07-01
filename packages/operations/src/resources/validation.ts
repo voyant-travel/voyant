@@ -95,12 +95,54 @@ export const resourceSlotAssignmentCoreSchema = z.object({
   resourceId: z.string().nullable().optional(),
   bookingId: z.string().nullable().optional(),
   status: resourceAssignmentStatusSchema.default("reserved"),
+  assignedAt: isoDateTimeSchema.optional(),
   assignedBy: z.string().nullable().optional(),
   releasedAt: isoDateTimeSchema.nullable().optional(),
   notes: z.string().nullable().optional(),
 })
 
-export const insertResourceSlotAssignmentSchema = resourceSlotAssignmentCoreSchema
+function validateSlotAssignmentLifecycle(
+  data: z.infer<typeof resourceSlotAssignmentCoreSchema>,
+  ctx: z.RefinementCtx,
+) {
+  if (!data.poolId && !data.resourceId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Either poolId or resourceId is required",
+      path: ["resourceId"],
+    })
+  }
+
+  const releasedAt = data.releasedAt ? new Date(data.releasedAt) : null
+  const assignedAt = data.assignedAt ? new Date(data.assignedAt) : null
+  if (releasedAt && assignedAt && releasedAt < assignedAt) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "releasedAt must be after assignedAt",
+      path: ["releasedAt"],
+    })
+  }
+
+  if (data.status === "released" && !releasedAt) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "releasedAt is required when status is released",
+      path: ["releasedAt"],
+    })
+  }
+
+  if (data.status !== "released" && releasedAt) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "releasedAt is only allowed when status is released",
+      path: ["releasedAt"],
+    })
+  }
+}
+
+export const insertResourceSlotAssignmentSchema = resourceSlotAssignmentCoreSchema.superRefine(
+  validateSlotAssignmentLifecycle,
+)
 export const updateResourceSlotAssignmentSchema = resourceSlotAssignmentCoreSchema.partial()
 export const resourceSlotAssignmentListQuerySchema = paginationSchema.extend({
   slotId: z.string().optional(),

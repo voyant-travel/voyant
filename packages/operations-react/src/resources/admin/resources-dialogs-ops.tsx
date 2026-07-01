@@ -44,16 +44,31 @@ import {
 import { sendResourcesMutation } from "./resources-admin-api.js"
 
 const getAssignmentFormSchema = (messages: ReturnType<typeof useOperatorAdminMessages>) =>
-  z.object({
-    slotId: z.string().min(1, messages.resources.dialogs.assignment.validationSlotRequired),
-    poolId: z.string().optional(),
-    resourceId: z.string().optional(),
-    bookingId: z.string().optional(),
-    status: z.enum(["reserved", "assigned", "released", "cancelled", "completed"]),
-    assignedBy: z.string().optional(),
-    releasedAt: z.string().optional(),
-    notes: z.string().optional(),
-  })
+  z
+    .object({
+      slotId: z.string().min(1, messages.resources.dialogs.assignment.validationSlotRequired),
+      poolId: z.string().optional(),
+      resourceId: z.string().optional(),
+      bookingId: z.string().optional(),
+      status: z.enum(["reserved", "assigned", "released", "cancelled", "completed"]),
+      assignedBy: z.string().optional(),
+      releasedAt: z.string().optional(),
+      notes: z.string().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (
+        (!values.poolId || values.poolId === NONE_VALUE) &&
+        (!values.resourceId || values.resourceId === NONE_VALUE)
+      ) {
+        const issue = {
+          code: "custom" as const,
+          message: messages.resources.dialogs.assignment.validationTargetRequired,
+        }
+
+        ctx.addIssue({ ...issue, path: ["poolId"] })
+        ctx.addIssue({ ...issue, path: ["resourceId"] })
+      }
+    })
 
 export function ResourceSlotAssignmentDialog({
   open,
@@ -173,7 +188,9 @@ export function ResourceSlotAssignmentDialog({
                 <Label>{dialogMessages.poolLabel}</Label>
                 <Select
                   value={form.watch("poolId")}
-                  onValueChange={(value) => form.setValue("poolId", value ?? NONE_VALUE)}
+                  onValueChange={(value) =>
+                    form.setValue("poolId", value ?? NONE_VALUE, { shouldValidate: true })
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -187,12 +204,17 @@ export function ResourceSlotAssignmentDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                {form.formState.errors.poolId ? (
+                  <p className="text-destructive text-xs">{form.formState.errors.poolId.message}</p>
+                ) : null}
               </div>
               <div className="grid gap-2">
                 <Label>{dialogMessages.resourceLabel}</Label>
                 <Select
                   value={form.watch("resourceId")}
-                  onValueChange={(value) => form.setValue("resourceId", value ?? NONE_VALUE)}
+                  onValueChange={(value) =>
+                    form.setValue("resourceId", value ?? NONE_VALUE, { shouldValidate: true })
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -206,6 +228,11 @@ export function ResourceSlotAssignmentDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                {form.formState.errors.resourceId ? (
+                  <p className="text-destructive text-xs">
+                    {form.formState.errors.resourceId.message}
+                  </p>
+                ) : null}
               </div>
               <div className="grid gap-2">
                 <Label>{dialogMessages.bookingLabel}</Label>

@@ -363,6 +363,7 @@ export const resourcesUiEn: ResourcesUiMessages = {
       startTime: "Start Time",
     },
     assignment: {
+      assignedAt: "Assigned At",
       assignedBy: "Assigned By",
       deleteConfirm: "Delete assignment {name}?",
       deleteFailed: "Assignment could not be deleted.",

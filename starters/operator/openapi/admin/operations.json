@@ -19949,6 +19949,10 @@
                     ],
                     "default": "reserved"
                   },
+                  "assignedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
                   "assignedBy": {
                     "type": [
                       "string",
@@ -20159,6 +20163,10 @@
                           "completed"
                         ],
                         "default": "reserved"
+                      },
+                      "assignedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       },
                       "assignedBy": {
                         "type": [
@@ -20608,6 +20616,10 @@
                       "completed"
                     ],
                     "default": "reserved"
+                  },
+                  "assignedAt": {
+                    "type": "string",
+                    "format": "date-time"
                   },
                   "assignedBy": {
                     "type": [

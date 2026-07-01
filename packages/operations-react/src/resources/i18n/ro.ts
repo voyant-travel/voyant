@@ -364,6 +364,7 @@ export const resourcesUiRo: ResourcesUiMessages = {
       startTime: "Ora de Start",
     },
     assignment: {
+      assignedAt: "Asignat La",
       assignedBy: "Asignat De",
       deleteConfirm: "Stergi asignarea {name}?",
       deleteFailed: "Asignarea nu a putut fi stearsa.",

@@ -130,6 +130,7 @@ export const resourceSlotAssignmentRecordSchema = z.object({
   resourceId: z.string().nullable(),
   bookingId: z.string().nullable(),
   status: resourceStatusSchema,
+  assignedAt: z.string(),
   assignedBy: z.string().nullable(),
   releasedAt: z.string().nullable(),
   notes: z.string().nullable(),
@@ -137,10 +138,7 @@ export const resourceSlotAssignmentRecordSchema = z.object({
 
 export type ResourceSlotAssignmentRow = z.infer<typeof resourceSlotAssignmentRecordSchema>
 
-export const resourceSlotAssignmentDetailSchema = resourceSlotAssignmentRecordSchema.extend({
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
+export const resourceSlotAssignmentDetailSchema = resourceSlotAssignmentRecordSchema
 
 export type ResourceSlotAssignmentDetail = z.infer<typeof resourceSlotAssignmentDetailSchema>
 

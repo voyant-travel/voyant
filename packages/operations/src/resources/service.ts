@@ -51,7 +51,7 @@ type UpdateResourceCloseoutInput = z.infer<typeof updateResourceCloseoutSchema>
 export class ResourcesServiceError extends Error {
   constructor(
     message: string,
-    public readonly status: 404 | 409,
+    public readonly status: 400 | 404 | 409,
   ) {
     super(message)
     this.name = "ResourcesServiceError"
@@ -70,6 +70,34 @@ async function paginate<T extends object>(
 
 function toDateOrNull(value: string | null | undefined) {
   return value ? new Date(value) : null
+}
+
+function toDateOrUndefined(value: string | undefined) {
+  return value === undefined ? undefined : new Date(value)
+}
+
+function validateSlotAssignmentState(data: {
+  poolId: string | null
+  resourceId: string | null
+  status: CreateResourceSlotAssignmentInput["status"]
+  assignedAt: Date
+  releasedAt: Date | null
+}) {
+  if (!data.poolId && !data.resourceId) {
+    throw new ResourcesServiceError("Either poolId or resourceId is required", 400)
+  }
+
+  if (data.releasedAt && data.releasedAt < data.assignedAt) {
+    throw new ResourcesServiceError("releasedAt must be after assignedAt", 400)
+  }
+
+  if (data.status === "released" && !data.releasedAt) {
+    throw new ResourcesServiceError("releasedAt is required when status is released", 400)
+  }
+
+  if (data.status !== "released" && data.releasedAt) {
+    throw new ResourcesServiceError("releasedAt is only allowed when status is released", 400)
+  }
 }
 
 function isPostgresError(error: unknown, code: string, constraint?: string) {
@@ -377,9 +405,19 @@ export const resourcesService = {
   async createSlotAssignment(db: PostgresJsDatabase, data: CreateResourceSlotAssignmentInput) {
     if (data.poolId) await ensurePoolExists(db, data.poolId)
     if (data.resourceId) await ensureResourceExists(db, data.resourceId)
+    const assignedAt = toDateOrUndefined(data.assignedAt) ?? new Date()
+    const releasedAt = toDateOrNull(data.releasedAt)
+    validateSlotAssignmentState({
+      poolId: data.poolId ?? null,
+      resourceId: data.resourceId ?? null,
+      status: data.status,
+      assignedAt,
+      releasedAt,
+    })
+
     const [row] = await db
       .insert(resourceSlotAssignments)
-      .values({ ...data, releasedAt: toDateOrNull(data.releasedAt) })
+      .values({ ...data, assignedAt, releasedAt })
       .returning()
     return row
   },
@@ -389,13 +427,30 @@ export const resourcesService = {
     id: string,
     data: UpdateResourceSlotAssignmentInput,
   ) {
-    if (data.poolId) await ensurePoolExists(db, data.poolId)
-    if (data.resourceId) await ensureResourceExists(db, data.resourceId)
+    if (data.poolId !== undefined && data.poolId !== null) await ensurePoolExists(db, data.poolId)
+    if (data.resourceId !== undefined && data.resourceId !== null) {
+      await ensureResourceExists(db, data.resourceId)
+    }
+    const existing = await this.getSlotAssignmentById(db, id)
+    if (!existing) return null
+
+    const assignedAt = toDateOrUndefined(data.assignedAt) ?? existing.assignedAt
+    const releasedAt =
+      data.releasedAt === undefined ? existing.releasedAt : toDateOrNull(data.releasedAt)
+    validateSlotAssignmentState({
+      poolId: data.poolId === undefined ? existing.poolId : data.poolId,
+      resourceId: data.resourceId === undefined ? existing.resourceId : data.resourceId,
+      status: data.status ?? existing.status,
+      assignedAt,
+      releasedAt,
+    })
+
     const [row] = await db
       .update(resourceSlotAssignments)
       .set({
         ...data,
-        releasedAt: data.releasedAt === undefined ? undefined : toDateOrNull(data.releasedAt),
+        assignedAt: toDateOrUndefined(data.assignedAt),
+        releasedAt: data.releasedAt === undefined ? undefined : releasedAt,
       })
       .where(eq(resourceSlotAssignments.id, id))
       .returning()

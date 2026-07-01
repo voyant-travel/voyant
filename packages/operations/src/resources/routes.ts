@@ -169,6 +169,14 @@ function handleResourcesNotFoundRouteError(c: Context<Env>, error: unknown) {
   throw error
 }
 
+function handleSlotAssignmentRouteError(c: Context<Env>, error: unknown) {
+  if (error instanceof ResourcesServiceError) {
+    if (error.status === 400) return c.json({ error: error.message }, 400)
+    if (error.status === 404) return c.json({ error: error.message }, 404)
+  }
+  throw error
+}
+
 /** Envelope returned by the shared batch-update handler. */
 function batchUpdateResponseSchema<T extends z.ZodTypeAny>(row: T) {
   return z.object({
@@ -1239,7 +1247,7 @@ const slotAssignmentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidati
       const row = await resourcesService.createSlotAssignment(c.get("db"), c.req.valid("json"))
       return c.json({ data: row! }, 201)
     } catch (error) {
-      return handleResourcesNotFoundRouteError(c, error)
+      return handleSlotAssignmentRouteError(c, error)
     }
   })
   .openapi(batchUpdateSlotAssignmentsRoute, async (c) => {
@@ -1282,7 +1290,7 @@ const slotAssignmentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidati
         ? c.json({ data: row }, 200)
         : c.json({ error: "Resource slot assignment not found" }, 404)
     } catch (error) {
-      return handleResourcesNotFoundRouteError(c, error)
+      return handleSlotAssignmentRouteError(c, error)
     }
   })
   .openapi(deleteSlotAssignmentRoute, async (c) => {
