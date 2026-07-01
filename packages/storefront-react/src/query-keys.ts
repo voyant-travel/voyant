@@ -13,6 +13,7 @@ export type StorefrontExtensionsFilters = StorefrontProductExtensionsQuery
 export const storefrontQueryKeys = {
   all: ["voyant", "storefront"] as const,
 
+  markets: () => [...storefrontQueryKeys.all, "markets"] as const,
   settings: () => [...storefrontQueryKeys.all, "settings"] as const,
   adminSettings: () => [...storefrontQueryKeys.all, "admin", "settings"] as const,
   departures: () => [...storefrontQueryKeys.all, "departures"] as const,

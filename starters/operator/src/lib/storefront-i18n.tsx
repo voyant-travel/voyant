@@ -29,6 +29,12 @@ const storefrontMessagesEn = {
     brand: "Voyant Storefront",
     signIn: "Sign in",
   },
+  scope: {
+    market: "Market",
+    currency: "Currency",
+    language: "Language",
+    selectMarket: "Select market",
+  },
   pay: {
     missingIdentifierTitle: "Payment link missing identifier",
     missingIdentifierBody:
@@ -238,6 +244,12 @@ const storefrontMessagesRo: StorefrontMessages = {
   layout: {
     brand: "Magazin Voyant",
     signIn: "Autentificare",
+  },
+  scope: {
+    market: "Piata",
+    currency: "Moneda",
+    language: "Limba",
+    selectMarket: "Alege piata",
   },
   pay: {
     missingIdentifierTitle: "Linkul de plata nu contine un identificator",

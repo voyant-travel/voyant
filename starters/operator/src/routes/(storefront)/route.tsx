@@ -1,6 +1,8 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
 
 import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
+import { StorefrontScopeProvider } from "@/lib/storefront-scope"
+import { StorefrontMarketSelector } from "./storefront-market-selector"
 
 /**
  * `(storefront)` — simulated customer-facing surface inside the
@@ -17,7 +19,9 @@ export const Route = createFileRoute("/(storefront)")({
 function StorefrontLayout(): React.ReactElement {
   return (
     <StorefrontMessagesProvider>
-      <StorefrontChrome />
+      <StorefrontScopeProvider>
+        <StorefrontChrome />
+      </StorefrontScopeProvider>
     </StorefrontMessagesProvider>
   )
 }
@@ -33,6 +37,7 @@ function StorefrontChrome(): React.ReactElement {
             {t.brand}
           </Link>
           <nav className="flex items-center gap-2">
+            <StorefrontMarketSelector />
             <Link
               to="/sign-in"
               className="rounded-md px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"

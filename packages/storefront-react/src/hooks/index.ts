@@ -12,6 +12,10 @@ export {
   useStorefrontDepartureItinerary,
 } from "./use-storefront-departure-itinerary.js"
 export { useStorefrontDeparturePricePreviewMutation } from "./use-storefront-departure-price-preview-mutation.js"
+export {
+  type UseStorefrontMarketsOptions,
+  useStorefrontMarkets,
+} from "./use-storefront-markets.js"
 export { type UseStorefrontOfferOptions, useStorefrontOffer } from "./use-storefront-offer.js"
 export { useStorefrontOfferApplyMutation } from "./use-storefront-offer-apply-mutation.js"
 export { useStorefrontOfferRedeemMutation } from "./use-storefront-offer-redeem-mutation.js"

@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
+import { useStorefrontScope } from "@/lib/storefront-scope"
 import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   type AvailabilitySlot,
@@ -33,6 +34,7 @@ export function ProductDetailPageProducts({
   entityId: string
 }): React.ReactElement {
   const navigate = useNavigate()
+  const scope = useStorefrontScope()
 
   const slots = useQuery({
     queryKey: ["public-catalog-slots", entityModule, entityId],
@@ -77,7 +79,13 @@ export function ProductDetailPageProducts({
     })
   }, [entityModule, entityId, selectedSlotId, adultCount, childCount, infantCount])
 
-  const quote = useBookingQuote({ surface: "public", draft: probeDraft })
+  const quote = useBookingQuote({
+    surface: "public",
+    draft: probeDraft,
+    // Honor the selected storefront scope (voyant#2643) so quotes price in the
+    // shopper's market/currency and resolve content in their locale.
+    scope: { market: scope.marketId, locale: scope.locale, currency: scope.currency },
+  })
 
   const totalPax = adultCount + childCount + infantCount
   const totalCents = quote.data?.pricing?.total ?? 0

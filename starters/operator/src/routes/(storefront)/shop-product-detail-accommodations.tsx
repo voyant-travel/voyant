@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
+import { useStorefrontScope } from "@/lib/storefront-scope"
 import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   BackLink,
@@ -28,6 +29,7 @@ import {
 export function AccommodationDetailPage({ entityId }: { entityId: string }): React.ReactElement {
   const navigate = useNavigate()
   const t = useStorefrontMessagesOrDefault().shopDetailAccommodations
+  const scope = useStorefrontScope()
 
   const content = useQuery({
     queryKey: ["public-accommodations-content", entityId],
@@ -103,7 +105,12 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
     })
   }, [entityId, checkIn, checkOut, selectedRoomId, selectedRatePlanId, adultCount, childCount])
 
-  const quote = useBookingQuote({ surface: "public", draft: probeDraft })
+  const quote = useBookingQuote({
+    surface: "public",
+    draft: probeDraft,
+    // Honor the selected storefront scope (voyant#2643).
+    scope: { market: scope.marketId, locale: scope.locale, currency: scope.currency },
+  })
   const totalCents = quote.data?.pricing?.total ?? 0
   const currency = quote.data?.pricing?.currency
 
