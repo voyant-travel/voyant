@@ -640,6 +640,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-content"
+        ],
         "x-voyant-module": "catalog-content",
         "x-voyant-surface": "storefront"
       }

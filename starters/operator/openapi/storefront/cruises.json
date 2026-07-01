@@ -587,6 +587,9 @@
             }
           }
         },
+        "tags": [
+          "cruises"
+        ],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -700,6 +703,9 @@
             }
           }
         },
+        "tags": [
+          "cruises"
+        ],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -1011,6 +1017,9 @@
             }
           }
         },
+        "tags": [
+          "cruises"
+        ],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -1099,6 +1108,9 @@
             }
           }
         },
+        "tags": [
+          "cruises"
+        ],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -1458,6 +1470,9 @@
             }
           }
         },
+        "tags": [
+          "cruises"
+        ],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }

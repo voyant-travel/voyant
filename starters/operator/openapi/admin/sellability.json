@@ -282,6 +282,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -552,6 +555,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -785,6 +791,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -944,6 +953,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -1190,6 +1202,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -1442,6 +1457,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -1690,6 +1708,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -1850,6 +1871,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2123,6 +2147,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2175,6 +2202,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -2339,6 +2369,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2498,6 +2531,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -2611,6 +2647,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2795,6 +2834,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2847,6 +2889,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -3009,6 +3054,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3177,6 +3225,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -3295,6 +3346,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3488,6 +3542,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3540,6 +3597,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -3700,6 +3760,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3864,6 +3927,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -3981,6 +4047,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4169,6 +4238,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4221,6 +4293,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -4380,6 +4455,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4541,6 +4619,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -4654,6 +4735,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4839,6 +4923,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4891,6 +4978,9 @@
             }
           }
         },
+        "tags": [
+          "sellability"
+        ],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }

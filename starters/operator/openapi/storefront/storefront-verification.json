@@ -331,6 +331,9 @@
             }
           }
         },
+        "tags": [
+          "storefront-verification"
+        ],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront"
       }
@@ -519,6 +522,9 @@
             }
           }
         },
+        "tags": [
+          "storefront-verification"
+        ],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront"
       }
@@ -713,6 +719,9 @@
             }
           }
         },
+        "tags": [
+          "storefront-verification"
+        ],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront"
       }
@@ -908,6 +917,9 @@
             }
           }
         },
+        "tags": [
+          "storefront-verification"
+        ],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront"
       }

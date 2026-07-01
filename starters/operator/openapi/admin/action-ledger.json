@@ -906,6 +906,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -1668,6 +1671,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -2538,6 +2544,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -3141,6 +3150,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -3511,6 +3523,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -4159,6 +4174,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -4871,6 +4889,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -5506,6 +5527,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -5827,6 +5851,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -5963,6 +5990,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }
@@ -6215,6 +6245,9 @@
             }
           }
         },
+        "tags": [
+          "action-ledger"
+        ],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin"
       }

@@ -383,17 +383,19 @@ export async function splitDocumentByModule(
 const HTTP_METHODS = ["get", "put", "post", "delete", "options", "head", "patch", "trace"] as const
 
 /**
- * Stamp every operation with `x-voyant-module` and `x-voyant-surface`
- * extensions (voyant#2733 / voyant#2729), so the specs are self-describing:
- * tooling (a module-grouped docs UI, client generators) can read the owning
- * module and surface off each operation instead of re-deriving them from path
- * prefixes. The module is the authoritative owner from the manifest, so
- * `publicPath` overrides are labelled with their real owning module rather than
- * their mount prefix.
+ * Stamp every operation with its module metadata (voyant#2733 / voyant#2729):
+ *   - `tags: [module]` — so Swagger/Scalar group the sidebar by module (they
+ *     key grouping off `tags` and ignore `x-*`); left untouched when the route
+ *     already declares tags.
+ *   - `x-voyant-module` / `x-voyant-surface` — machine-readable owner + surface
+ *     for custom tooling (a docs UI, client generators) that shouldn't re-derive
+ *     them from path prefixes.
  *
- * Applied to the aggregate before it's split, so the per-module and surface
- * documents (all derived from it) inherit the stamps. Extensions are appended
- * to each operation, keeping key order deterministic for the drift gate.
+ * The module is the authoritative owner from the manifest, so `publicPath`
+ * overrides are labelled with their real owning module rather than their mount
+ * prefix. Applied to the aggregate before it's split, so the per-module and
+ * surface documents (all derived from it) inherit the stamps. Keys are appended,
+ * keeping order deterministic for the drift gate.
  */
 export function stampModuleMetadata(
   doc: OpenApiDocument,
@@ -411,8 +413,15 @@ export function stampModuleMetadata(
     for (const method of HTTP_METHODS) {
       const op = nextItem[method]
       if (op && typeof op === "object") {
+        const operation = op as Record<string, unknown>
+        // Group by module in Swagger/Scalar, which key their sidebar off `tags`
+        // (and ignore `x-*` extensions). Without this a whole-surface document
+        // collapses under one "default" group — the exact pain in voyant#2733.
+        // Never clobber a tag a route already declared.
+        const hasTags = Array.isArray(operation.tags) && operation.tags.length > 0
         nextItem[method] = {
-          ...(op as Record<string, unknown>),
+          ...operation,
+          ...(hasTags ? {} : { tags: [moduleName] }),
           "x-voyant-module": moduleName,
           ...(surface ? { "x-voyant-surface": surface } : {}),
         }

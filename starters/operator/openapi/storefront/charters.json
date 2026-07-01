@@ -274,6 +274,9 @@
             }
           }
         },
+        "tags": [
+          "charters"
+        ],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -555,6 +558,9 @@
             }
           }
         },
+        "tags": [
+          "charters"
+        ],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -836,6 +842,9 @@
             }
           }
         },
+        "tags": [
+          "charters"
+        ],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -996,6 +1005,9 @@
             }
           }
         },
+        "tags": [
+          "charters"
+        ],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -1145,6 +1157,9 @@
             }
           }
         },
+        "tags": [
+          "charters"
+        ],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -1233,6 +1248,9 @@
             }
           }
         },
+        "tags": [
+          "charters"
+        ],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -1302,6 +1320,9 @@
             }
           }
         },
+        "tags": [
+          "charters"
+        ],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }

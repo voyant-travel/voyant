@@ -338,6 +338,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -535,6 +538,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -668,6 +674,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -889,6 +898,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -941,6 +953,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -1190,6 +1205,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -1435,6 +1453,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -1592,6 +1613,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -1861,6 +1885,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -1913,6 +1940,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -2074,6 +2104,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -2205,6 +2238,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -2305,6 +2341,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -2460,6 +2499,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -2512,6 +2554,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -2659,6 +2704,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -2784,6 +2832,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -2878,6 +2929,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -3026,6 +3080,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -3078,6 +3135,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -3237,6 +3297,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -3366,6 +3429,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -3464,6 +3530,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -3617,6 +3686,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -3669,6 +3741,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -3821,6 +3896,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -3936,6 +4014,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -4027,6 +4108,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -4166,6 +4250,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -4218,6 +4305,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -4395,6 +4485,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -4542,6 +4635,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -4650,6 +4746,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -4822,6 +4921,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -4874,6 +4976,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -5097,6 +5202,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -5317,6 +5425,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }
@@ -5464,6 +5575,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -5708,6 +5822,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       },
@@ -5760,6 +5877,9 @@
             }
           }
         },
+        "tags": [
+          "booking-requirements"
+        ],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "admin"
       }

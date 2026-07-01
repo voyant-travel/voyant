@@ -291,6 +291,9 @@
             }
           }
         },
+        "tags": [
+          "workflows"
+        ],
         "x-voyant-module": "workflows",
         "x-voyant-surface": "admin"
       }

@@ -206,6 +206,9 @@
             }
           }
         },
+        "tags": [
+          "payment-link"
+        ],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront"
       }
@@ -289,6 +292,9 @@
             }
           }
         },
+        "tags": [
+          "payment-link"
+        ],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront"
       }
@@ -369,6 +375,9 @@
             }
           }
         },
+        "tags": [
+          "payment-link"
+        ],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront"
       }
@@ -470,6 +479,9 @@
             }
           }
         },
+        "tags": [
+          "payment-link"
+        ],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront"
       }
@@ -642,6 +654,9 @@
             }
           }
         },
+        "tags": [
+          "payment-link"
+        ],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront"
       }
@@ -835,6 +850,9 @@
             }
           }
         },
+        "tags": [
+          "payment-link"
+        ],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront"
       }
@@ -1056,6 +1074,9 @@
             }
           }
         },
+        "tags": [
+          "payment-link"
+        ],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront"
       }

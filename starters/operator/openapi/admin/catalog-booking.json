@@ -1559,6 +1559,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -1936,6 +1939,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -2236,6 +2242,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       },
@@ -2380,6 +2389,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       },
@@ -2399,6 +2411,9 @@
             "description": "Draft deleted (idempotent)"
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -2591,6 +2606,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -2726,6 +2744,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -2798,6 +2819,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -2877,6 +2901,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -3064,6 +3091,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -3199,6 +3229,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -3286,6 +3319,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }

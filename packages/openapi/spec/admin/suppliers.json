@@ -259,6 +259,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -471,6 +474,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -691,6 +697,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -743,6 +752,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -866,6 +878,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -1094,6 +1109,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -1331,6 +1349,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -1383,6 +1404,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -1549,6 +1573,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -1850,6 +1877,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -2163,6 +2193,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -2215,6 +2248,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -2332,6 +2368,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -2548,6 +2587,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -2770,6 +2812,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -2830,6 +2875,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -2951,6 +2999,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -3177,6 +3228,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -3407,6 +3461,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -3475,6 +3532,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -3538,6 +3598,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -3652,6 +3715,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -3738,6 +3804,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -3901,6 +3970,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -4002,6 +4074,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -4188,6 +4263,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -4381,6 +4459,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -4441,6 +4522,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -4551,6 +4635,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -4860,6 +4947,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -5244,6 +5334,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }
@@ -5449,6 +5542,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -5857,6 +5953,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       },
@@ -5909,6 +6008,9 @@
             }
           }
         },
+        "tags": [
+          "suppliers"
+        ],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin"
       }

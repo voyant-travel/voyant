@@ -350,6 +350,9 @@
             }
           }
         },
+        "tags": [
+          "workflow-runs"
+        ],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin"
       }
@@ -647,6 +650,9 @@
             }
           }
         },
+        "tags": [
+          "workflow-runs"
+        ],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin"
       }
@@ -809,6 +815,9 @@
             }
           }
         },
+        "tags": [
+          "workflow-runs"
+        ],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin"
       }
@@ -956,6 +965,9 @@
             }
           }
         },
+        "tags": [
+          "workflow-runs"
+        ],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin"
       }

@@ -306,6 +306,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -483,6 +486,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -932,6 +938,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -1377,6 +1386,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -1670,6 +1682,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -1928,6 +1943,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -2553,6 +2571,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -2940,6 +2961,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -3382,6 +3406,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -3662,6 +3689,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -3804,6 +3834,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }
@@ -4082,6 +4115,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront"
       }

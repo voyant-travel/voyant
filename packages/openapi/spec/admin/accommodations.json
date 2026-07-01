@@ -368,6 +368,9 @@
             }
           }
         },
+        "tags": [
+          "accommodations"
+        ],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -602,6 +605,9 @@
             }
           }
         },
+        "tags": [
+          "accommodations"
+        ],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -767,6 +773,9 @@
             }
           }
         },
+        "tags": [
+          "accommodations"
+        ],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -1062,6 +1071,9 @@
             }
           }
         },
+        "tags": [
+          "accommodations"
+        ],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -1212,6 +1224,9 @@
             }
           }
         },
+        "tags": [
+          "accommodations"
+        ],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -1398,6 +1413,9 @@
             }
           }
         },
+        "tags": [
+          "accommodations"
+        ],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }

@@ -1559,6 +1559,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       }
@@ -1936,6 +1939,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       }
@@ -2236,6 +2242,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       },
@@ -2380,6 +2389,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       },
@@ -2399,6 +2411,9 @@
             "description": "Draft deleted (idempotent)"
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       }
@@ -2591,6 +2606,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       }
@@ -2726,6 +2744,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       }
@@ -2861,6 +2882,9 @@
             }
           }
         },
+        "tags": [
+          "catalog-booking"
+        ],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "storefront"
       }
