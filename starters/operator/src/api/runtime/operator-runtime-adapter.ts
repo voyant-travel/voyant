@@ -67,7 +67,7 @@ export async function createOperatorBookingPiiService(bindings: unknown) {
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
   const env = operatorBindings(bindings)
   const apiKey = resolveVoyantApiKey(env)
-  if (!apiKey) throw new Error("VOYANT_API_KEY is not set")
+  if (!apiKey) return undefined
   return createVoyantDataFxExchangeRateResolver({
     apiKey,
     baseUrl: env.VOYANT_CLOUD_API_URL,

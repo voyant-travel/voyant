@@ -33,11 +33,12 @@ API_BASE_URL="http://localhost:3100/api"
 CORS_ALLOWLIST="http://localhost:3100"
 
 # Voyant API (canonical email / sms / verify / vault / connect provider).
-# Required — templates do not fall back to direct Resend/Twilio.
+# Optional for local/self-hosted no-cloud development. Leave unset/empty to
+# disable Cloud-backed FX, realtime, and notification delivery.
 # Self-hosters who want a different transport can swap the provider in
 # src/lib/notifications.ts (see @voyant-travel/notifications for the
 # NotificationProvider interface).
-VOYANT_API_KEY="vc_..."
+# VOYANT_API_KEY="vc_..."
 # VOYANT_CLOUD_API_URL="https://api.voyant.travel"
 # VOYANT_CLOUD_VAULT_SLUG="main"
 

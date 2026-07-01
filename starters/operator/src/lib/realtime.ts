@@ -1,17 +1,17 @@
 import type { RealtimeProvider, RealtimeRouteResult, RealtimeRoutes } from "@voyant-travel/realtime"
 import { createVoyantCloudRealtimeProvider } from "@voyant-travel/realtime/providers/voyant-cloud"
 
-import { getCloudClient } from "./voyant-cloud"
+import { getCloudClient, isVoyantCloudAdminAuthMode, resolveVoyantApiKey } from "./voyant-cloud"
 
 /**
- * Resolve the realtime transport for this deployment — the Voyant Cloud
- * provider backed by the shared cloud client (mirrors
- * `resolveNotificationProviders`). The SDK's `client.realtime` namespace
- * satisfies the provider's structural contract directly, so no cast is needed.
+ * Resolve the realtime transport for this deployment. Local/self-hosted
+ * operator deployments deliberately leave realtime unconfigured so routine
+ * admin page loads do not call Voyant Cloud with empty or placeholder keys.
  */
 export function resolveRealtimeProviders(
   env: Record<string, unknown>,
 ): ReadonlyArray<RealtimeProvider> {
+  if (!isVoyantCloudAdminAuthMode(env) || !resolveVoyantApiKey(env)) return []
   return [createVoyantCloudRealtimeProvider({ client: getCloudClient(env) })]
 }
 
