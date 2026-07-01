@@ -28,6 +28,7 @@ import {
   useSupplierInvoiceMutation,
 } from "../index.js"
 import { AsyncCombobox, type AsyncComboboxOption } from "./async-combobox.js"
+import { parseNonNegativeCents } from "./supplier-invoice-detail-page/shared.js"
 
 const STATUS_ORDER: SupplierInvoiceStatus[] = [
   "draft",
@@ -113,7 +114,7 @@ function seed(invoice?: SupplierInvoiceRecord): FormState {
   return {
     supplierInvoiceNo: invoice?.supplierInvoiceNo ?? "",
     supplierId: invoice?.supplierId ?? "",
-    status: invoice?.status ?? "received",
+    status: invoice?.status ?? "draft",
     currency: invoice?.currency ?? "EUR",
     issueDate: invoice?.issueDate ?? "",
     dueDate: invoice?.dueDate ?? "",
@@ -123,12 +124,6 @@ function seed(invoice?: SupplierInvoiceRecord): FormState {
     departureId: "",
     total: "",
   }
-}
-
-/** Parse a major-unit amount string ("1250.00") to integer cents. */
-function toCents(major: string): number {
-  const n = Number.parseFloat(major)
-  return Number.isFinite(n) ? Math.round(n * 100) : 0
 }
 
 export function SupplierInvoiceFormDialog({
@@ -181,7 +176,16 @@ export function SupplierInvoiceFormDialog({
 
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }))
 
-  const canSave = form.supplierInvoiceNo.trim() && form.supplierId.trim() && form.issueDate
+  const totalCents = parseNonNegativeCents(form.total)
+  const hasTotal = form.total.trim().length > 0
+  const totalValid = !hasTotal || totalCents != null
+  const allocationNeedsTotal = !isEdit && Boolean(form.productId || form.departureId)
+  const canSave =
+    form.supplierInvoiceNo.trim() &&
+    form.supplierId.trim() &&
+    form.issueDate &&
+    totalValid &&
+    (!allocationNeedsTotal || totalCents != null)
 
   const submit = () => {
     if (!canSave) return
@@ -207,13 +211,12 @@ export function SupplierInvoiceFormDialog({
     } else {
       // Attribute the whole invoice to the picked departure (or, failing that,
       // product) as a single manual cost allocation, seeded with the total.
-      const totalCents = toCents(form.total)
       const allocations = form.departureId
         ? [
             {
               targetType: "departure" as const,
               departureId: form.departureId,
-              amountCents: totalCents,
+              amountCents: totalCents ?? 0,
               splitMethod: "manual" as const,
             },
           ]
@@ -222,15 +225,28 @@ export function SupplierInvoiceFormDialog({
               {
                 targetType: "product" as const,
                 productId: form.productId,
-                amountCents: totalCents,
+                amountCents: totalCents ?? 0,
                 splitMethod: "manual" as const,
+              },
+            ]
+          : undefined
+      const lines =
+        totalCents != null
+          ? [
+              {
+                description: form.supplierInvoiceNo.trim(),
+                serviceType: "other" as const,
+                quantity: 1,
+                unitAmountCents: totalCents,
+                taxAmountCents: 0,
+                totalAmountCents: totalCents,
               },
             ]
           : undefined
       create.mutate(
         {
           ...payload,
-          ...(form.total ? { totalCents } : {}),
+          ...(totalCents != null ? { totalCents, lines } : {}),
           ...(allocations ? { allocations } : {}),
         },
         { onSuccess: (row) => row && onDone(row.id) },
@@ -359,6 +375,7 @@ export function SupplierInvoiceFormDialog({
               >
                 <Input
                   inputMode="decimal"
+                  min="0"
                   value={form.total}
                   onChange={(e) => set({ total: e.target.value })}
                 />
