@@ -10,6 +10,7 @@ import {
   useLiveQueries,
 } from "@voyant-travel/realtime-react"
 import { useMemo } from "react"
+import { authClient } from "@/lib/auth"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -58,7 +59,13 @@ function mapHintToKeys(hint: RealtimeInvalidationHint): ReadonlyArray<QueryKey> 
 }
 
 function AdminLiveRegion() {
-  useLiveQueries(ADMIN_CHANNELS, mapHintToKeys)
+  // Only staff surfaces have an admin session; anonymous storefront pages share
+  // this root provider but must not mint an admin realtime token (the
+  // `/v1/admin/realtime/token` route 401s without a session, spamming the
+  // console). Gate the subscription on a live session so no token is fetched
+  // until someone is signed in.
+  const { data: session } = authClient.useSession()
+  useLiveQueries(ADMIN_CHANNELS, mapHintToKeys, { enabled: Boolean(session) })
   return null
 }
 
