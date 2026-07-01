@@ -1,3 +1,4 @@
+import { ApiHttpError } from "@voyant-travel/hono"
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -113,8 +114,31 @@ export async function getPriceScheduleById(db: PostgresJsDatabase, id: string) {
   return row ?? null
 }
 
+/**
+ * A price schedule stores its owning catalog as a plain text id (module
+ * decoupling — no DB FK), so a nonexistent `priceCatalogId` would otherwise
+ * either materialize a dangling row or surface as a NOT-NULL/DB fault (500).
+ * Guard it before writing and reject with a deterministic `invalid_reference`
+ * 400 that matches the finance reference-data dangling-FK contract.
+ */
+async function assertPriceCatalogExists(db: PostgresJsDatabase, priceCatalogId: string) {
+  const [catalog] = await db
+    .select({ id: priceCatalogs.id })
+    .from(priceCatalogs)
+    .where(eq(priceCatalogs.id, priceCatalogId))
+    .limit(1)
+  if (!catalog) {
+    throw new ApiHttpError("Price schedule references unknown price catalog", {
+      status: 400,
+      code: "invalid_reference",
+      details: { missingPriceCatalogId: priceCatalogId },
+    })
+  }
+}
+
 export async function createPriceSchedule(db: PostgresJsDatabase, data: CreatePriceScheduleInput) {
   assertPricingValidation(validateMergedPriceSchedule(data), "Invalid price schedule")
+  await assertPriceCatalogExists(db, data.priceCatalogId)
   const [row] = await db.insert(priceSchedules).values(data).returning()
   return row ?? null
 }
@@ -144,6 +168,10 @@ export async function updatePriceSchedule(
     }),
     "Invalid price schedule",
   )
+
+  if (data.priceCatalogId != null) {
+    await assertPriceCatalogExists(db, data.priceCatalogId)
+  }
 
   const [row] = await db
     .update(priceSchedules)

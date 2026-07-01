@@ -6,12 +6,14 @@ import {
   insertPaymentAuthorizationSchema,
   insertPaymentCaptureSchema,
   insertPaymentSchema,
+  insertTaxRegimeSchema,
   invoiceStatusSchema,
   paymentMethodSchema,
   taxClassListQuerySchema,
   updateBookingItemCommissionSchema,
   updateBookingItemTaxLineSchema,
   updatePaymentSchema,
+  updateTaxRegimeSchema,
 } from "./index.js"
 
 describe("finance-contracts", () => {
@@ -65,6 +67,33 @@ describe("finance-contracts", () => {
         amountCents: 0,
       }).success,
     ).toBe(false)
+  })
+
+  it("rejects tax regime rates outside the 0..100 percent domain", () => {
+    expect(
+      insertTaxRegimeSchema.safeParse({ code: "standard", name: "Bogus", ratePercent: 1000 })
+        .success,
+    ).toBe(false)
+    expect(updateTaxRegimeSchema.safeParse({ ratePercent: 1000 }).success).toBe(false)
+    expect(
+      insertTaxRegimeSchema.safeParse({ code: "standard", name: "Neg", ratePercent: -1 }).success,
+    ).toBe(false)
+  })
+
+  it("accepts tax regime rates within the 0..100 percent domain", () => {
+    const result = insertTaxRegimeSchema.parse({
+      code: "standard",
+      name: "TVA Standard",
+      ratePercent: 21,
+    })
+
+    expect(result.ratePercent).toBe(21)
+    expect(
+      insertTaxRegimeSchema.parse({ code: "zero_rated", name: "Zero", ratePercent: 0 }).ratePercent,
+    ).toBe(0)
+    expect(
+      insertTaxRegimeSchema.parse({ code: "standard", name: "Full", ratePercent: 100 }).ratePercent,
+    ).toBe(100)
   })
 
   it("parses false tax-class active query filters as false", () => {

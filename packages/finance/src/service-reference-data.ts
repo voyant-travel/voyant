@@ -73,6 +73,41 @@ async function assertTaxClassRegimesExist(
   }
 }
 
+type TaxPolicyRuleReferenceInput = Pick<CreateTaxPolicyRuleInput, "profileId" | "taxRegimeId">
+
+async function assertTaxPolicyRuleReferencesExist(
+  db: PostgresJsDatabase,
+  data: Partial<TaxPolicyRuleReferenceInput>,
+) {
+  const missing: { missingProfileId?: string; missingTaxRegimeId?: string } = {}
+
+  if (data.profileId) {
+    const [profile] = await db
+      .select({ id: taxPolicyProfiles.id })
+      .from(taxPolicyProfiles)
+      .where(eq(taxPolicyProfiles.id, data.profileId))
+      .limit(1)
+    if (!profile) missing.missingProfileId = data.profileId
+  }
+
+  if (data.taxRegimeId) {
+    const [regime] = await db
+      .select({ id: taxRegimes.id })
+      .from(taxRegimes)
+      .where(eq(taxRegimes.id, data.taxRegimeId))
+      .limit(1)
+    if (!regime) missing.missingTaxRegimeId = data.taxRegimeId
+  }
+
+  if (missing.missingProfileId || missing.missingTaxRegimeId) {
+    throw new ReferenceDataValidationError(
+      "Tax policy rule references unknown records",
+      missing,
+      "invalid_reference",
+    )
+  }
+}
+
 export const financeReferenceDataService = {
   async listTaxRegimes(db: PostgresJsDatabase, query: TaxRegimeListQuery) {
     const conditions = []
@@ -297,6 +332,8 @@ export const financeReferenceDataService = {
   },
 
   async createTaxPolicyRule(db: PostgresJsDatabase, data: CreateTaxPolicyRuleInput) {
+    await assertTaxPolicyRuleReferencesExist(db, data)
+
     const [row] = await db
       .insert(taxPolicyRules)
       .values({
@@ -314,6 +351,8 @@ export const financeReferenceDataService = {
   },
 
   async updateTaxPolicyRule(db: PostgresJsDatabase, id: string, data: UpdateTaxPolicyRuleInput) {
+    await assertTaxPolicyRuleReferencesExist(db, data)
+
     const [row] = await db
       .update(taxPolicyRules)
       .set({ ...data, updatedAt: new Date() })

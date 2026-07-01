@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { financeReferenceDataRoutes } from "../../src/routes-reference-data.js"
 import { financeReferenceDataService } from "../../src/service-reference-data.js"
+import { taxPolicyProfiles, taxRegimes } from "../../src/service-shared.js"
 
 function makeTaxClassDb(existingRegimeIds: string[] = []) {
   const where = vi.fn().mockResolvedValue(existingRegimeIds.map((id) => ({ id })))
@@ -144,5 +145,91 @@ describe("financeReferenceDataService tax classes", () => {
       code: "invalid_reference",
       details: { missingRegimeIds: ["txrg_missing"] },
     })
+  })
+})
+
+/**
+ * Existence lookups for a tax policy rule hit two different tables
+ * (`tax_policy_profiles` for `profileId`, `tax_regimes` for `taxRegimeId`), so
+ * the mock resolves each `select().from(table).where().limit()` chain by the
+ * table it was pointed at.
+ */
+function makeTaxPolicyRuleDb(opts: { profileExists: boolean; regimeExists: boolean }) {
+  const rowsFor = (table: unknown) => {
+    if (table === taxPolicyProfiles) return opts.profileExists ? [{ id: "txpp_existing" }] : []
+    if (table === taxRegimes) return opts.regimeExists ? [{ id: "txrg_existing" }] : []
+    return []
+  }
+  const from = vi.fn((table: unknown) => ({
+    where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue(rowsFor(table)) })),
+  }))
+  const select = vi.fn(() => ({ from }))
+
+  const returning = vi.fn().mockResolvedValue([{ id: "txpr_123" }])
+  const values = vi.fn(() => ({ returning }))
+  const insert = vi.fn(() => ({ values }))
+
+  const updateReturning = vi.fn().mockResolvedValue([{ id: "txpr_123" }])
+  const updateWhere = vi.fn(() => ({ returning: updateReturning }))
+  const set = vi.fn(() => ({ where: updateWhere }))
+  const update = vi.fn(() => ({ set }))
+
+  return { db: { select, insert, update } as PostgresJsDatabase, insert, update }
+}
+
+describe("financeReferenceDataService tax policy rules", () => {
+  const basePayload = {
+    profileId: "txpp_existing",
+    side: "sell" as const,
+    priority: 100,
+    name: "Standard sell",
+    appliesTo: "all" as const,
+    taxRegimeId: "txrg_existing",
+    active: true,
+  }
+
+  it("rejects create payloads with nonexistent profile and regime references", async () => {
+    const { db, insert } = makeTaxPolicyRuleDb({ profileExists: false, regimeExists: false })
+
+    await expect(
+      financeReferenceDataService.createTaxPolicyRule(db, {
+        ...basePayload,
+        profileId: "txpp_missing",
+        taxRegimeId: "txrg_missing",
+      }),
+    ).rejects.toMatchObject({
+      name: "ReferenceDataValidationError",
+      code: "invalid_reference",
+      status: 400,
+      details: { missingProfileId: "txpp_missing", missingTaxRegimeId: "txrg_missing" },
+    })
+    expect(insert).not.toHaveBeenCalled()
+  })
+
+  it("rejects create payloads when only the regime reference is dangling", async () => {
+    const { db, insert } = makeTaxPolicyRuleDb({ profileExists: true, regimeExists: false })
+
+    await expect(
+      financeReferenceDataService.createTaxPolicyRule(db, {
+        ...basePayload,
+        taxRegimeId: "txrg_missing",
+      }),
+    ).rejects.toMatchObject({
+      name: "ReferenceDataValidationError",
+      code: "invalid_reference",
+      details: { missingTaxRegimeId: "txrg_missing" },
+    })
+    expect(insert).not.toHaveBeenCalled()
+  })
+
+  it("inserts when both profile and regime references exist", async () => {
+    const { db, insert } = makeTaxPolicyRuleDb({ profileExists: true, regimeExists: true })
+
+    await expect(financeReferenceDataService.createTaxPolicyRule(db, basePayload)).resolves.toEqual(
+      {
+        id: "txpr_123",
+      },
+    )
+    expect(insert).toHaveBeenCalledOnce()
   })
 })

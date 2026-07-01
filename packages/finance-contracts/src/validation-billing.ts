@@ -405,7 +405,10 @@ const taxRegimeCoreSchema = z.object({
   code: taxRegimeCodeSchema,
   name: z.string().min(1).max(255),
   jurisdiction: z.string().max(10).optional().nullable(),
-  ratePercent: z.number().int().min(0).max(10000).optional().nullable(),
+  // `ratePercent` is a whole-number percentage (e.g. 21 = 21% VAT); the booking
+  // tax calculator divides it by 100 to derive the fraction. Bound it to the
+  // 0..100 percent domain so an out-of-range value (e.g. 1000) cannot be stored.
+  ratePercent: z.number().int().min(0).max(100).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
   legalReference: z.string().max(500).optional().nullable(),
   active: z.boolean().default(true),
