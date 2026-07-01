@@ -1,5 +1,11 @@
 # @voyant-travel/core
 
+## 0.111.1
+
+### Patch Changes
+
+- 88edbe6: Keep durable event outbox rows tied to subscriber delivery when request schedulers fail after capture.
+
 ## 0.111.0
 
 ### Minor Changes
