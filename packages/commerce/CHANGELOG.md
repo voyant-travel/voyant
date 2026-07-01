@@ -1,5 +1,28 @@
 # @voyant-travel/commerce
 
+## 0.20.2
+
+### Patch Changes
+
+- 569e2a0: Settings reference-data creates now return a deterministic 409 conflict on
+  duplicate unique keys instead of a generic 500, so the admin UI can render an
+  inline field error. `POST /v1/admin/pricing/price-catalogs` maps a duplicate
+  `code` to `duplicate_price_catalog_code`, and
+  `POST /v1/admin/relationships/custom-fields` maps a duplicate `(entityType,
+key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
+  a 409 `ApiHttpError` carrying `details.fields` / `details.issues`, matching the
+  existing product-type / product-tag duplicate-error shape.
+- bcd76ae: Reject invalid or dangling pricing and tax reference-data before writing.
+  `POST /v1/admin/pricing/price-schedules` now rejects a nonexistent
+  `priceCatalogId` with a deterministic `invalid_reference` 400 instead of a 500.
+  Tax regime rates are bounded to the 0..100 percent domain (matching the
+  booking-tax calculator that divides by 100), and `POST
+/v1/admin/finance/tax-policy-rules` rejects dangling `profileId`/`taxRegimeId`
+  references with an `invalid_reference` 400 (mirroring the existing tax-class
+  regime guard).
+- Updated dependencies [bcd76ae]
+  - @voyant-travel/finance@0.138.6
+
 ## 0.20.1
 
 ### Patch Changes
