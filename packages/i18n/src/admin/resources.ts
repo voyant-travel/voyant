@@ -142,6 +142,7 @@ export const adminResourcesMessages = {
         },
         assignment: {
           validationSlotRequired: "Slot is required",
+          validationTargetRequired: "Select a pool or resource",
           editTitle: "Edit Assignment",
           newTitle: "New Assignment",
           slotLabel: "Slot",
@@ -382,6 +383,7 @@ export const adminResourcesMessages = {
         },
         assignment: {
           validationSlotRequired: "Slotul este obligatoriu",
+          validationTargetRequired: "Selecteaza un pool sau o resursa",
           editTitle: "Editeaza asignarea",
           newTitle: "Asignare noua",
           slotLabel: "Slot",

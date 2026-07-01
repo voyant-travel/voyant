@@ -163,11 +163,8 @@ export function ResourceAssignmentDetailPage({
               formatDateTime: i18n.formatDateTime,
             })}
           </ResourceDetailField>
-          <ResourceDetailField label={page.common.created}>
-            {i18n.formatDateTime(assignment.createdAt)}
-          </ResourceDetailField>
-          <ResourceDetailField label={page.common.updated}>
-            {i18n.formatDateTime(assignment.updatedAt)}
+          <ResourceDetailField label={page.assignment.assignedAt}>
+            {i18n.formatDateTime(assignment.assignedAt)}
           </ResourceDetailField>
         </div>
       </ResourceDetailCard>

@@ -287,6 +287,7 @@ export type ResourcesUiMessages = {
       startTime: string
     }
     assignment: {
+      assignedAt: string
       assignedBy: string
       deleteConfirm: string
       deleteFailed: string

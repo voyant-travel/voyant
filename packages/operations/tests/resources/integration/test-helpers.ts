@@ -122,10 +122,13 @@ export function createResourcesTestContext() {
   }
 
   async function seedSlotAssignment(slotId: string, overrides: Record<string, unknown> = {}) {
+    const target =
+      "poolId" in overrides || "resourceId" in overrides ? {} : { poolId: (await seedPool()).id }
     const res = await app.request("/slot-assignments", {
       method: "POST",
       ...json({
         slotId,
+        ...target,
         ...overrides,
       }),
     })

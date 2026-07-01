@@ -12,6 +12,7 @@ describe.skipIf(!DB_AVAILABLE)("Slot assignment and closeout routes", () => {
       const assignment = await ctx.seedSlotAssignment(slot.id)
       expect(assignment.id).toMatch(/^resa_/)
       expect(assignment.slotId).toBe(slot.id)
+      expect(assignment.assignedAt).toBeTruthy()
       expect(assignment.status).toBe("reserved")
     })
 
@@ -34,6 +35,56 @@ describe.skipIf(!DB_AVAILABLE)("Slot assignment and closeout routes", () => {
       })
       expect(missingResource.status).toBe(404)
       await expect(missingResource.json()).resolves.toEqual({ error: "Resource not found" })
+    })
+
+    it("POST /slot-assignments → 400 when poolId and resourceId are both null", async () => {
+      const product = await ctx.seedProductDirect()
+      const slot = await ctx.seedAvailabilitySlotDirect(product.id)
+      const res = await ctx.request("/slot-assignments", {
+        method: "POST",
+        ...json({ slotId: slot.id, poolId: null, resourceId: null }),
+      })
+      expect(res.status).toBe(400)
+    })
+
+    it("POST /slot-assignments → 400 when releasedAt predates assignedAt", async () => {
+      const product = await ctx.seedProductDirect()
+      const slot = await ctx.seedAvailabilitySlotDirect(product.id)
+      const pool = await ctx.seedPool()
+      const res = await ctx.request("/slot-assignments", {
+        method: "POST",
+        ...json({
+          slotId: slot.id,
+          poolId: pool.id,
+          status: "released",
+          assignedAt: "2025-06-15T10:00:00.000Z",
+          releasedAt: "2025-06-15T09:00:00.000Z",
+        }),
+      })
+      expect(res.status).toBe(400)
+    })
+
+    it("POST /slot-assignments → 400 for incoherent status/releasedAt payloads", async () => {
+      const product = await ctx.seedProductDirect()
+      const slot = await ctx.seedAvailabilitySlotDirect(product.id)
+      const pool = await ctx.seedPool()
+
+      const releasedWithoutTimestamp = await ctx.request("/slot-assignments", {
+        method: "POST",
+        ...json({ slotId: slot.id, poolId: pool.id, status: "released" }),
+      })
+      expect(releasedWithoutTimestamp.status).toBe(400)
+
+      const timestampWithoutReleasedStatus = await ctx.request("/slot-assignments", {
+        method: "POST",
+        ...json({
+          slotId: slot.id,
+          poolId: pool.id,
+          status: "reserved",
+          releasedAt: "2025-06-15T11:00:00.000Z",
+        }),
+      })
+      expect(timestampWithoutReleasedStatus.status).toBe(400)
     })
 
     it("GET /slot-assignments/:id → 200", async () => {
@@ -63,6 +114,35 @@ describe.skipIf(!DB_AVAILABLE)("Slot assignment and closeout routes", () => {
       const body = await res.json()
       expect(body.data.status).toBe("assigned")
       expect(body.data.notes).toBe("Confirmed")
+    })
+
+    it("PATCH /slot-assignments/:id → 400 when final lifecycle state is incoherent", async () => {
+      const product = await ctx.seedProductDirect()
+      const slot = await ctx.seedAvailabilitySlotDirect(product.id)
+      const assignment = await ctx.seedSlotAssignment(slot.id, {
+        assignedAt: "2025-06-15T10:00:00.000Z",
+      })
+
+      const releaseBeforeAssigned = await ctx.request(`/slot-assignments/${assignment.id}`, {
+        method: "PATCH",
+        ...json({ status: "released", releasedAt: "2025-06-15T09:00:00.000Z" }),
+      })
+      expect(releaseBeforeAssigned.status).toBe(400)
+
+      const releasedWithoutTimestamp = await ctx.request(`/slot-assignments/${assignment.id}`, {
+        method: "PATCH",
+        ...json({ status: "released" }),
+      })
+      expect(releasedWithoutTimestamp.status).toBe(400)
+
+      const timestampWithoutReleasedStatus = await ctx.request(
+        `/slot-assignments/${assignment.id}`,
+        {
+          method: "PATCH",
+          ...json({ releasedAt: "2025-06-15T11:00:00.000Z" }),
+        },
+      )
+      expect(timestampWithoutReleasedStatus.status).toBe(400)
     })
 
     it("PATCH /slot-assignments/:id → 404 for missing", async () => {
