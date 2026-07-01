@@ -1,5 +1,11 @@
 # @voyant-travel/openapi
 
+## 0.2.4
+
+### Patch Changes
+
+- 53f949c: Filter legal policy detail acceptances by the current policy so unrelated policy version acceptances are not shown.
+
 ## 0.2.3
 
 ### Patch Changes

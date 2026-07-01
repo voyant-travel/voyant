@@ -1,5 +1,17 @@
 # @voyant-travel/notifications
 
+## 0.116.10
+
+### Patch Changes
+
+- 4c18cc6: Pass structured booking, traveler, payment, and payment schedule context to booking payment reminder templates.
+- 1e5251d: Fix reminder stage channel template selection so active templates can be picked by slug and submitted as `templateSlug`.
+- Updated dependencies [fd17317]
+- Updated dependencies [53f949c]
+  - @voyant-travel/hono@0.118.3
+  - @voyant-travel/legal@0.137.5
+  - @voyant-travel/bookings@0.137.5
+
 ## 0.116.9
 
 ### Patch Changes

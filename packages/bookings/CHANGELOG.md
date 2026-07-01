@@ -1,5 +1,12 @@
 # @voyant-travel/bookings
 
+## 0.137.5
+
+### Patch Changes
+
+- Updated dependencies [fd17317]
+  - @voyant-travel/hono@0.118.3
+
 ## 0.137.4
 
 ## 0.137.3
