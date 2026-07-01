@@ -76,8 +76,13 @@ describe("buildProductDraftShape", () => {
     expect(shape.paxBandsAllowedTotal).toEqual({ min: 2, max: 6 })
   })
 
-  it("declares hold + card payment intents", () => {
+  it("declares the full engine payment-intent allow list", () => {
+    // Capabilities narrow this at render time; the shape lists every
+    // supported intent so the storefront can offer card + bank transfer +
+    // inquiry for owned products, matching sourced ones (voyant#2741).
     const shape = buildProductDraftShape(minimalContent)
-    expect(shape.paymentIntents).toEqual(["hold", "card"])
+    expect(shape.paymentIntents).toEqual(
+      expect.arrayContaining(["hold", "card", "bank_transfer", "inquiry"]),
+    )
   })
 })

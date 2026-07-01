@@ -1,6 +1,7 @@
 import {
   type BookingDraftShape,
   DEFAULT_PAX_BANDS,
+  DEFAULT_PAYMENT_INTENTS,
   defaultBookingFields,
   defaultDraftShapeFlags,
   defaultTravelerFields,
@@ -276,6 +277,6 @@ export function defaultMinimalShape(): BookingDraftShape {
     // narrow further at render time — listing every supported intent
     // here means consumers can opt in via PaymentProviderCapabilities
     // without needing a custom fallbackShape.
-    paymentIntents: ["card", "bank_transfer", "hold", "inquiry", "ticket_on_credit"],
+    paymentIntents: DEFAULT_PAYMENT_INTENTS,
   }
 }

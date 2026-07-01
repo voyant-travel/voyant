@@ -334,6 +334,19 @@ export const DEFAULT_PAX_BANDS: ReadonlyArray<PaxBandSpec> = [
 export const DEFAULT_PAX_TOTAL = { min: 1, max: 8 } as const
 
 /**
+ * Canonical engine-level allow list of payment intents a booking
+ * shape exposes. This is intentionally the *full* set the engine can
+ * handle — deployment/surface `PaymentProviderCapabilities` narrow it
+ * further at render time (see the payment step), so listing every
+ * supported intent here lets consumers opt in via capabilities without
+ * needing a custom shape. Owned + sourced product shapes both use this
+ * so the storefront offers the same payment paths regardless of source.
+ */
+export const DEFAULT_PAYMENT_INTENTS: ReadonlyArray<
+  "hold" | "card" | "bank_transfer" | "ticket_on_credit" | "inquiry"
+> = ["card", "bank_transfer", "hold", "inquiry", "ticket_on_credit"]
+
+/**
  * Compute the aggregate min/max from a list of pax bands. Min is the
  * sum of `minCount`; max is the sum of `maxCount`. Verticals can
  * narrow further (e.g. "max 4 cabins per booking" overrides the
