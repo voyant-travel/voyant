@@ -311,9 +311,7 @@ export function StorefrontBookingJourney({
       // (voyant#2638). Preserve our own localized CheckoutError messages; wrap
       // anything else (native fetch/network error, JSON parse of an HTML 502)
       // in the generic message so raw browser/parser text never reaches the UI.
-      throw err instanceof CheckoutError
-        ? err
-        : new Error(messages.bookingJourney.checkoutFailed)
+      throw err instanceof CheckoutError ? err : new Error(messages.bookingJourney.checkoutFailed)
     }
   }
 
