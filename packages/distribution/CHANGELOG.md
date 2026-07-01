@@ -1,5 +1,17 @@
 # @voyant-travel/distribution
 
+## 0.128.2
+
+### Patch Changes
+
+- 3cacf39: Validate distribution admin booking links and webhook events before insert so dangling references return stable 4xx API errors, while keeping product mappings compatible with unmanaged product references.
+- 3757b75: Preserve channel-push source routing fields on product mappings and report no-work booking retries with `ok: false`.
+- Updated dependencies [a5dfd8f]
+- Updated dependencies [88edbe6]
+  - @voyant-travel/bookings@0.138.1
+  - @voyant-travel/core@0.111.1
+  - @voyant-travel/hono@0.118.4
+
 ## 0.128.1
 
 ### Patch Changes
