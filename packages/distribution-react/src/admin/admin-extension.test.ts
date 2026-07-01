@@ -16,7 +16,7 @@ describe("createDistributionAdminExtension", () => {
     expect(routes).toHaveLength(3)
     expect(routes[0]?.id).toBe("distribution-channel-sync")
     expect(routes[0]?.path).toBe("/channel-sync")
-    expect(routes[0]?.title).toBe("Channel sync")
+    expect(routes[0]?.title).toBe("Distribution")
     expect(routes[1]?.id).toBe("suppliers-index")
     expect(routes[1]?.path).toBe("/suppliers")
     expect(routes[1]?.destination).toBe("supplier.list")
@@ -28,13 +28,13 @@ describe("createDistributionAdminExtension", () => {
   it("honors basePath and labels", () => {
     const extension = createDistributionAdminExtension({
       basePath: "/sincronizare",
-      labels: { channelSync: "Sincronizare canale" },
+      labels: { channelSync: "Distributie" },
     })
     const route = extension.routes?.find(
       (candidate) => candidate.id === "distribution-channel-sync",
     )
     expect(route?.path).toBe("/sincronizare")
-    expect(route?.title).toBe("Sincronizare canale")
+    expect(route?.title).toBe("Distributie")
     const suppliers = extension.routes?.find((candidate) => candidate.id === "suppliers-index")
     expect(suppliers?.title).toBe("Suppliers")
   })

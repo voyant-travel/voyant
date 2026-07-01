@@ -145,9 +145,35 @@ export const distributionUiEn = {
     },
   },
   channelSync: {
-    title: "Channel sync",
-    description:
-      "Outbound delivery to syndication channels. Bookings push first; availability and content ride along in the background.",
+    title: "Distribution",
+    description: "Configure channel distribution separately from live delivery monitoring.",
+    setup: {
+      title: "Setup",
+      description:
+        "Distribution starts with a connector, product mapping, and at least one delivery path.",
+      connector: {
+        title: "Connector",
+        ready: "At least one channel connector is configured.",
+        missing:
+          "Add a channel connector before bookings, availability, or content can leave Voyant.",
+      },
+      mapping: {
+        title: "Mapping",
+        ready: "Booking-channel links are being created from mapped products.",
+        missing:
+          "Map products to channel inventory so confirmed bookings know where to distribute.",
+      },
+      delivery: {
+        title: "Delivery",
+        ready: "A channel has acknowledged or received a delivery attempt.",
+        missing: "Deliveries appear after a mapped booking is pushed, retried, or reconciled.",
+      },
+    },
+    monitoring: {
+      title: "Operations",
+      description:
+        "Watch outbound delivery status, inspect delivery logs, retry failed pushes, or reconcile a flow.",
+    },
     throttledTitle: "Throttled.",
     throttledBody:
       "{count} rate-limited deliveries in the last hour across {channels} {channelLabel}. Lower the per-channel RPS in settings if this persists.",
@@ -173,14 +199,14 @@ export const distributionUiEn = {
       channelEmpty: "No channels configured yet.",
     },
     table: {
-      title: "Booking links",
+      title: "Delivery monitor",
       filteredDescription: "Showing {count} of the most recent matching pushes.",
       defaultDescription: "The most recent per-channel push attempts.",
       noMatchesTitle: "No matches",
-      noLinksTitle: "No links yet",
+      noLinksTitle: "Distribution is not delivering yet",
       noMatchesDescription: "Try clearing the filters or picking a different booking or channel.",
       noLinksDescription:
-        "Channel-push booking links show up here as bookings confirm. The page refreshes automatically.",
+        "Check setup first: a connector must exist, products need channel mappings, and a confirmed mapped booking must create a delivery.",
       booking: "Booking",
       channel: "Channel",
       status: "Status",
@@ -189,17 +215,17 @@ export const distributionUiEn = {
       externalRef: "External ref",
       actions: "Actions",
       itemPrefix: "item: {id}",
-      deliveries: "Deliveries",
-      retry: "Retry",
+      deliveries: "Delivery log",
+      retry: "Retry push",
     },
     reconcile: {
-      trigger: "Reconcile",
-      menuLabel: "Run reconciler",
+      trigger: "Reconcile flow",
+      menuLabel: "Reconcile distribution",
       bookings: "Bookings",
       priority: "priority",
       availability: "Availability",
       content: "Content",
-      lastRun: "Last run: scanned {scanned}, triggered {triggered}.",
+      lastRun: "Outcome: scanned {scanned}, triggered {triggered}.",
     },
     refresh: {
       loading: "Loading...",

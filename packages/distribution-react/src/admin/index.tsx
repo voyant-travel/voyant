@@ -46,7 +46,7 @@ export function createDistributionAdminExtension(
 ): AdminExtension {
   const { basePath = "/channel-sync", labels = {}, suppliers = {} } = options
   const { basePath: suppliersBasePath = "/suppliers" } = suppliers
-  const { channelSync = "Channel sync", suppliers: suppliersLabel = "Suppliers" } = labels
+  const { channelSync = "Distribution", suppliers: suppliersLabel = "Suppliers" } = labels
 
   return defineAdminExtension({
     id: "distribution",

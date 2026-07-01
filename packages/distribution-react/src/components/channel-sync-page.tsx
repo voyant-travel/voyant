@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@voyant-travel/ui/components/table"
-import { AlertTriangle, Loader2, X } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Circle, Loader2, X } from "lucide-react"
 import { useState } from "react"
 import { useDistributionUiMessagesOrDefault } from "../i18n/index.js"
 import { defaultFetcher, useVoyantDistributionContext } from "../index.js"
@@ -93,6 +93,12 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
     refetchIntervalInBackground: false,
   })
 
+  const setupLinksQuery = useQuery<LinksResponse>({
+    queryKey: ["channel-push-links", "setup-readiness"],
+    queryFn: () => fetchJson<LinksResponse>(`${channelPushAdminPaths.links}?limit=25`, client),
+    staleTime: 60_000,
+  })
+
   const throttlingQuery = useQuery<ThrottlingResponse>({
     queryKey: ["channel-push-throttling"],
     queryFn: () => fetchJson<ThrottlingResponse>(channelPushAdminPaths.throttling, client),
@@ -138,9 +144,38 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const counts = linksQuery.data?.counts ?? {}
   const rows = linksQuery.data?.data ?? []
+  const setupRows = setupLinksQuery.data?.data ?? []
   const throttledChannels = throttlingQuery.data?.data ?? []
+  const bookingOptions = bookingsQuery.data?.data ?? []
+  const channelOptions = channelsQuery.data?.data ?? []
   const isThrottled = throttledChannels.length > 0
   const filtersActive = statusFilter !== "all" || bookingId !== null || channelId !== null
+  const hasChannels = channelOptions.length > 0
+  const hasLinks = setupRows.length > 0
+  const hasDeliveryEvidence = setupRows.some(
+    (row) =>
+      row.link.pushStatus === "ok" ||
+      row.link.lastPushAt ||
+      row.link.externalBookingId ||
+      row.link.externalReference,
+  )
+  const setupSteps = [
+    {
+      key: "connector",
+      complete: hasChannels,
+      ...messages.setup.connector,
+    },
+    {
+      key: "mapping",
+      complete: hasLinks,
+      ...messages.setup.mapping,
+    },
+    {
+      key: "delivery",
+      complete: hasDeliveryEvidence,
+      ...messages.setup.delivery,
+    },
+  ]
 
   const clearFilters = () => {
     setStatusFilter("all")
@@ -150,9 +185,6 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
     setChannelId(null)
     setSelectedChannel(null)
   }
-
-  const bookingOptions = bookingsQuery.data?.data ?? []
-  const channelOptions = channelsQuery.data?.data ?? []
 
   return (
     <div data-slot="channel-sync-page" className={cn("flex flex-col gap-6 p-6", className)}>
@@ -178,6 +210,35 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
         </div>
       </div>
 
+      {/* Setup/configuration readiness stays separate from operational monitoring. */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">{messages.setup.title}</CardTitle>
+          <CardDescription>{messages.setup.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-3">
+            {setupSteps.map((step) => (
+              <div key={step.key} className="rounded-md border p-3">
+                <div className="flex items-start gap-2">
+                  {step.complete ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <div>
+                    <div className="text-sm font-medium">{step.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {step.complete ? step.ready : step.missing}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Throttling banner */}
       {isThrottled ? (
         <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
@@ -195,38 +256,45 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
         </div>
       ) : null}
 
-      {/* Status tiles drive the primary status filter. */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {STATUS_TILES.map((tile) => {
-          const isActive = statusFilter === tile.key
-          const value = counts[tile.key] ?? 0
-          const tileMessages = messages.statusTiles[tile.key]
-          return (
-            <button
-              key={tile.key}
-              type="button"
-              onClick={() => setStatusFilter(isActive ? "all" : tile.key)}
-              className={cn(
-                "group rounded-md border bg-card p-4 text-left transition-all",
-                "hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive && "border-primary ring-2 ring-primary/30",
-              )}
-              aria-pressed={isActive}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {tileMessages.label}
-                </span>
-                {tile.key === "failed" && value > 0 ? (
-                  <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-                ) : null}
-              </div>
-              <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{tileMessages.description}</div>
-            </button>
-          )
-        })}
-      </div>
+      <section className="flex flex-col gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">{messages.monitoring.title}</h3>
+          <p className="text-sm text-muted-foreground">{messages.monitoring.description}</p>
+        </div>
+
+        {/* Status tiles drive the primary status filter. */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {STATUS_TILES.map((tile) => {
+            const isActive = statusFilter === tile.key
+            const value = counts[tile.key] ?? 0
+            const tileMessages = messages.statusTiles[tile.key]
+            return (
+              <button
+                key={tile.key}
+                type="button"
+                onClick={() => setStatusFilter(isActive ? "all" : tile.key)}
+                className={cn(
+                  "group rounded-md border bg-card p-4 text-left transition-all",
+                  "hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive && "border-primary ring-2 ring-primary/30",
+                )}
+                aria-pressed={isActive}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {tileMessages.label}
+                  </span>
+                  {tile.key === "failed" && value > 0 ? (
+                    <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                  ) : null}
+                </div>
+                <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{tileMessages.description}</div>
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
       {/* Filter row drives booking and channel filters. */}
       <div className="flex flex-col gap-3 md:flex-row md:items-end">

@@ -146,9 +146,36 @@ export const distributionUiRo = {
     },
   },
   channelSync: {
-    title: "Sincronizare canale",
-    description:
-      "Livrare outbound catre canalele de distributie. Rezervarile se trimit primele; disponibilitatea si continutul ruleaza in fundal.",
+    title: "Distributie",
+    description: "Configureaza distributia pe canale separat de monitorizarea livrarilor live.",
+    setup: {
+      title: "Configurare",
+      description:
+        "Distributia incepe cu un conector, mapari de produse si cel putin o cale de livrare.",
+      connector: {
+        title: "Conector",
+        ready: "Cel putin un conector de canal este configurat.",
+        missing:
+          "Adauga un conector de canal inainte ca rezervarile, disponibilitatea sau continutul sa iasa din Voyant.",
+      },
+      mapping: {
+        title: "Mapare",
+        ready: "Legaturile rezervare-canal sunt create din produse mapate.",
+        missing:
+          "Mapeaza produsele la inventarul canalului ca rezervarile confirmate sa stie unde se distribuie.",
+      },
+      delivery: {
+        title: "Livrare",
+        ready: "Un canal a confirmat sau a primit o incercare de livrare.",
+        missing:
+          "Livrarile apar dupa ce o rezervare mapata este trimisa, reincercata sau reconciliata.",
+      },
+    },
+    monitoring: {
+      title: "Operatiuni",
+      description:
+        "Urmareste statusul livrarilor outbound, inspecteaza jurnale, reincearca trimiteri esuate sau reconciliaza un flux.",
+    },
     throttledTitle: "Limitat.",
     throttledBody:
       "{count} livrari limitate in ultima ora pe {channels} {channelLabel}. Redu RPS per canal in setari daca persista.",
@@ -174,14 +201,14 @@ export const distributionUiRo = {
       channelEmpty: "Nu exista canale configurate.",
     },
     table: {
-      title: "Legaturi rezervari",
+      title: "Monitor livrari",
       filteredDescription: "Se afiseaza {count} dintre cele mai recente trimiteri potrivite.",
       defaultDescription: "Cele mai recente incercari de trimitere per canal.",
       noMatchesTitle: "Nicio potrivire",
-      noLinksTitle: "Nu exista legaturi",
+      noLinksTitle: "Distributia nu livreaza inca",
       noMatchesDescription: "Sterge filtrele sau alege alta rezervare ori alt canal.",
       noLinksDescription:
-        "Legaturile channel-push apar aici dupa confirmarea rezervarilor. Pagina se actualizeaza automat.",
+        "Verifica mai intai configurarea: trebuie sa existe un conector, produsele au nevoie de mapari pe canal, iar o rezervare confirmata si mapata trebuie sa creeze o livrare.",
       booking: "Rezervare",
       channel: "Canal",
       status: "Status",
@@ -190,17 +217,17 @@ export const distributionUiRo = {
       externalRef: "Ref externa",
       actions: "Actiuni",
       itemPrefix: "element: {id}",
-      deliveries: "Livrari",
-      retry: "Reincearca",
+      deliveries: "Jurnal livrari",
+      retry: "Reincearca trimiterea",
     },
     reconcile: {
-      trigger: "Reconciliaza",
-      menuLabel: "Ruleaza reconciliatorul",
+      trigger: "Reconciliaza flux",
+      menuLabel: "Reconciliaza distributia",
       bookings: "Rezervari",
       priority: "prioritar",
       availability: "Disponibilitate",
       content: "Continut",
-      lastRun: "Ultima rulare: scanate {scanned}, declansate {triggered}.",
+      lastRun: "Rezultat: scanate {scanned}, declansate {triggered}.",
     },
     refresh: {
       loading: "Se incarca...",
