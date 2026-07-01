@@ -37,6 +37,9 @@ export const bookingsUiEnJourney = {
       retryQuote: "Retry pricing",
       quoteUnavailable:
         "Pricing isn't confirmed yet — retry pricing above before confirming your booking.",
+      pricingUnavailable:
+        "This selection can't be priced right now. Please adjust your choice before confirming your booking.",
+      checkoutFailed: "We couldn't complete your booking. Please try again.",
       addAtLeastTravelers: "Add at least {count} traveler{plural} to continue.",
       maxTravelersPerBooking: "Max {count} travelers per booking.",
       ageOutOfRange: "Age {age} is outside the accepted range for this product.",

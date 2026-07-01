@@ -31,8 +31,18 @@ import {
 } from "@voyant-travel/finance/payment-policy"
 
 import { getApiUrl } from "@/lib/env"
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { useStorefrontScope } from "@/lib/storefront-scope"
 import { type OperatorInfoVariables, resolveContractVariables } from "./resolve-contract-variables"
+
+/**
+ * Marker for checkout failures we've already turned into a localized,
+ * customer-facing message. Native errors (a `fetch` network drop, a
+ * `Response.json()` parse of an HTML 502) are NOT this type, so the outer catch
+ * can wrap them in the generic message instead of showing raw browser/parser
+ * text to the shopper (voyant#2638).
+ */
+class CheckoutError extends Error {}
 
 interface PublicOperatorProfile extends OperatorInfoVariables {
   customerPaymentPolicy?: PaymentPolicy | null
@@ -101,6 +111,7 @@ export function StorefrontBookingJourney({
   className,
 }: StorefrontBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
+  const messages = useStorefrontMessagesOrDefault()
   // Carry the shopper's selected market/currency/locale (voyant#2643) into the
   // journey's live quote so checkout prices in the same scope as browse/detail,
   // not the default. The `(storefront)` layout provides the scope; unselected
@@ -171,15 +182,31 @@ export function StorefrontBookingJourney({
         }),
       })
       if (!bookRes.ok) {
-        const errBody = await bookRes.json().catch(() => ({ error: "book_failed" }))
+        const errBody = (await bookRes.json().catch(() => ({ error: "book_failed" }))) as {
+          error?: string
+          code?: string
+          context?: { upstreamPayload?: { reason?: string } }
+        }
         console.error("[storefront] /book failed", errBody)
-        return
+        // Reserve failures (e.g. 502 RESERVE_FAILED with reason
+        // "rates_missing") must reach the customer — throw so the journey
+        // surfaces a visible error instead of silently dropping back to
+        // Review (voyant#2638). A missing-rate / availability reason gets the
+        // "adjust your selection" copy; everything else the generic message.
+        // The engine error serializer nests the upstream payload under
+        // `context.upstreamPayload` (ReserveFailedError), not at top level.
+        const reason = errBody.context?.upstreamPayload?.reason
+        throw new CheckoutError(
+          reason === "rates_missing"
+            ? messages.bookingJourney.reserveFailed
+            : messages.bookingJourney.checkoutFailed,
+        )
       }
       const bookJson = (await bookRes.json()) as { bookingId?: string }
       const bookingId = bookJson.bookingId
       if (!bookingId) {
         console.error("[storefront] /book returned no bookingId", bookJson)
-        return
+        throw new CheckoutError(messages.bookingJourney.checkoutFailed)
       }
 
       // Step 2 — start checkout with the payment method selected in
@@ -234,7 +261,7 @@ export function StorefrontBookingJourney({
 
       if ("error" in json) {
         console.error("[storefront] /checkout/start error", json)
-        return
+        throw new CheckoutError(messages.bookingJourney.checkoutFailed)
       }
 
       switch (json.kind) {
@@ -280,6 +307,11 @@ export function StorefrontBookingJourney({
       }
     } catch (err) {
       console.error("[storefront] checkout flow failed", err)
+      // Re-throw so <BookingJourney /> can render a visible checkout error
+      // (voyant#2638). Preserve our own localized CheckoutError messages; wrap
+      // anything else (native fetch/network error, JSON parse of an HTML 502)
+      // in the generic message so raw browser/parser text never reaches the UI.
+      throw err instanceof CheckoutError ? err : new Error(messages.bookingJourney.checkoutFailed)
     }
   }
 

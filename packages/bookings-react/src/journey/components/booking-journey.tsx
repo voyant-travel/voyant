@@ -242,6 +242,23 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   // through to Review where Confirm would silently no-op. Treat a quote error
   // as a hard block: gate Next/Confirm and surface a recoverable banner + retry.
   const hasQuoteError = quote.error != null
+  // A settled quote (no thrown error, a real `quoteId`) can still be
+  // un-committable: the owned accommodation handler returns `available: true`
+  // with `invalidReason: "rates_missing"` and no pricing when the selected stay
+  // has no applicable rate plan. Committing that yields a 502 RESERVE_FAILED at
+  // /book (#2638). Treat any settled quote that is explicitly unavailable or
+  // carries an `invalidReason` as un-priceable and block contract acceptance /
+  // Confirm against it.
+  const quoteUnpriceable =
+    quote.data != null &&
+    (quote.data.available === false ||
+      (quote.data.invalidReason != null && quote.data.invalidReason !== ""))
+  const quoteBlocked = hasQuoteError || quoteUnpriceable
+  // Step navigation only hard-blocks on a thrown quote error (a transient fetch
+  // failure that a retry fixes). An un-priceable quote (e.g. `rates_missing`
+  // from a preselected room) is *corrected by navigating* — often the room/rate
+  // editor is a later step — so Next must stay enabled; commit is still gated on
+  // `quoteBlocked` below so an unpriced booking can never be submitted.
   const canAdvance = canAdvanceFromStep(currentStep, draft, shape, available) && !hasQuoteError
   const warnings = warningsForStep(currentStep, draft, shape, messages)
 
@@ -258,8 +275,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   )
   const canCommit = useMemo(
     () =>
-      stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)) && !hasQuoteError,
-    [stackedSteps, draft, shape, available, hasQuoteError],
+      stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)) && !quoteBlocked,
+    [stackedSteps, draft, shape, available, quoteBlocked],
   )
   const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
   const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
@@ -372,12 +389,23 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       return
     }
     setIsHandlingCheckout(true)
+    setConfirmError(null)
     try {
       await props.onContractAccepted(acceptance, {
         draft,
         pricing: quote.data?.pricing ?? null,
         quoteId: quote.data?.quoteId,
       })
+    } catch (error) {
+      // The storefront checkout handler drives /book + /checkout/start and can
+      // fail (e.g. 502 RESERVE_FAILED with reason "rates_missing"). Surface it
+      // in the checkout UI instead of dropping the customer back on Review with
+      // only a console log (#2638).
+      setConfirmError(
+        error instanceof Error && error.message
+          ? error.message
+          : messages.bookingJourney.validation.checkoutFailed,
+      )
     } finally {
       setIsHandlingCheckout(false)
     }
@@ -390,8 +418,12 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     // present while `quote.error` is set; block on `hasQuoteError` too so the
     // wizard Review Confirm can never submit against a stale price. Surface a
     // recoverable message pointing at the retry banner instead of swallowing.
-    if (!quote.data?.quoteId || hasQuoteError) {
-      setConfirmError(messages.bookingJourney.validation.quoteUnavailable)
+    if (!quote.data?.quoteId || quoteBlocked) {
+      setConfirmError(
+        quoteUnpriceable
+          ? messages.bookingJourney.validation.pricingUnavailable
+          : messages.bookingJourney.validation.quoteUnavailable,
+      )
       return
     }
     setConfirmError(null)
@@ -438,22 +470,31 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     setConfirmError(null)
     void quote.refetch()
   }
-  const quoteErrorBanner = hasQuoteError ? (
+  const quoteErrorBanner = quoteBlocked ? (
     <div
       role="alert"
       aria-live="polite"
       className="flex flex-col items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-destructive text-sm"
     >
-      <span>{messages.bookingJourney.validation.quoteFailed}</span>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={retryQuote}
-        disabled={quote.isQuoting}
-      >
-        {messages.bookingJourney.validation.retryQuote}
-      </Button>
+      <span>
+        {hasQuoteError
+          ? messages.bookingJourney.validation.quoteFailed
+          : messages.bookingJourney.validation.pricingUnavailable}
+      </span>
+      {hasQuoteError ? (
+        // Retry only helps a transient fetch failure — an `invalidReason`
+        // (e.g. rates_missing) re-quotes to the same result, so we ask the
+        // buyer to adjust their selection instead.
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={retryQuote}
+          disabled={quote.isQuoting}
+        >
+          {messages.bookingJourney.validation.retryQuote}
+        </Button>
+      ) : null}
     </div>
   ) : null
 
@@ -690,6 +731,10 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               setDraft={setDraft}
               isCommitting={commit.isPending || isHandlingCheckout}
               onConfirm={onConfirm}
+              // Disable Confirm when the live quote can't be priced (error or
+              // rates_missing) so contract acceptance / commit never fires
+              // against an unpriced booking (#2638).
+              canConfirm={!quoteBlocked}
               renderExtras={props.renderReviewExtras}
               surface={surface}
               pricing={quote.data?.pricing ?? null}
