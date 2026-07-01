@@ -15,6 +15,41 @@ describe.skipIf(!DB_AVAILABLE)("Pool membership and requirement routes", () => {
       expect(member.resourceId).toBe(resource.id)
     })
 
+    it("POST /pool-members → 409 for duplicate pool membership", async () => {
+      const resource = await ctx.seedResource()
+      const pool = await ctx.seedPool()
+      await ctx.seedPoolMember(pool.id, resource.id)
+
+      const res = await ctx.request("/pool-members", {
+        method: "POST",
+        ...json({ poolId: pool.id, resourceId: resource.id }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toEqual({
+        error: "Resource pool member already exists",
+      })
+    })
+
+    it("POST /pool-members → 404 for missing local references", async () => {
+      const resource = await ctx.seedResource()
+      const pool = await ctx.seedPool()
+
+      const missingPool = await ctx.request("/pool-members", {
+        method: "POST",
+        ...json({ poolId: "repo_missing", resourceId: resource.id }),
+      })
+      expect(missingPool.status).toBe(404)
+      await expect(missingPool.json()).resolves.toEqual({ error: "Resource pool not found" })
+
+      const missingResource = await ctx.request("/pool-members", {
+        method: "POST",
+        ...json({ poolId: pool.id, resourceId: "reso_missing" }),
+      })
+      expect(missingResource.status).toBe(404)
+      await expect(missingResource.json()).resolves.toEqual({ error: "Resource not found" })
+    })
+
     it("DELETE /pool-members/:id → 200", async () => {
       const resource = await ctx.seedResource()
       const pool = await ctx.seedPool()
@@ -187,6 +222,17 @@ describe.skipIf(!DB_AVAILABLE)("Pool membership and requirement routes", () => {
       expect(res.status).toBe(201)
       const body = await res.json()
       expect(body.data.id).toMatch(/^rerq_/)
+    })
+
+    it("POST /allocations → 404 for missing pool", async () => {
+      const product = await ctx.seedProductDirect()
+      const res = await ctx.request("/allocations", {
+        method: "POST",
+        ...json({ poolId: "repo_missing", productId: product.id }),
+      })
+
+      expect(res.status).toBe(404)
+      await expect(res.json()).resolves.toEqual({ error: "Resource pool not found" })
     })
 
     it("GET /allocations/:id → 200", async () => {
