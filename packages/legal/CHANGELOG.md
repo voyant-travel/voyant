@@ -1,5 +1,16 @@
 # @voyant-travel/legal
 
+## 0.137.8
+
+### Patch Changes
+
+- f6c8fcf: Delete contract attachment document storage objects when the attachment row is removed.
+- 1d65f48: Preserve omitted contract number series fields during PATCH validation so partial
+  updates no longer apply create-time defaults such as `scope: "customer"`.
+- Updated dependencies [1d65f48]
+  - @voyant-travel/legal-contracts@0.106.8
+  - @voyant-travel/bookings@0.137.6
+
 ## 0.137.7
 
 ### Patch Changes
