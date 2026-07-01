@@ -16987,6 +16987,42 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Referenced resource pool or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource pool member already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       }
@@ -17323,6 +17359,24 @@
           },
           "400": {
             "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced resource pool not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -17882,7 +17936,7 @@
             }
           },
           "404": {
-            "description": "Resource requirement not found",
+            "description": "Resource requirement or referenced resource pool not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -18232,6 +18286,24 @@
           },
           "400": {
             "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced resource pool not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -18791,7 +18863,7 @@
             }
           },
           "404": {
-            "description": "Resource allocation not found",
+            "description": "Resource allocation or referenced resource pool not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -19201,6 +19273,24 @@
           },
           "400": {
             "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced resource pool or resource not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -19837,7 +19927,7 @@
             }
           },
           "404": {
-            "description": "Resource slot assignment not found",
+            "description": "Resource slot assignment or referenced resource pool/resource not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -20158,6 +20248,24 @@
           },
           "400": {
             "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced resource not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -20695,7 +20803,7 @@
             }
           },
           "404": {
-            "description": "Resource closeout not found",
+            "description": "Resource closeout or referenced resource not found",
             "content": {
               "application/json": {
                 "schema": {

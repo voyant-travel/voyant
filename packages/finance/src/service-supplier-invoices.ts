@@ -23,6 +23,7 @@ import {
   buildSupplierInvoiceUpdateActionLedgerInput,
 } from "./service-action-ledger-supplier-invoices.js"
 import { executeBoundaryRows, normalizeDateOnly, sqlList } from "./service-boundary-sql.js"
+import { toRows } from "./service-shared.js"
 import type {
   insertSupplierInvoiceAttachmentSchema,
   insertSupplierInvoiceSchema,
@@ -45,6 +46,7 @@ type CreateAttachmentInput = z.infer<typeof insertSupplierInvoiceAttachmentSchem
 
 export type SupplierInvoiceErrorCode =
   | "supplier_invoice_not_found"
+  | "invalid_payable_state"
   | "mixed_allocation_modes"
   | "over_allocated"
   | "unknown_allocation_line"
@@ -175,6 +177,112 @@ export function recomputeTotalsFromLines(
   return { subtotalCents: total - tax, taxCents: tax, totalCents: total }
 }
 
+function assertNonNegativeCents(label: string, value: number | null | undefined) {
+  if (value != null && value < 0) {
+    throw new SupplierInvoiceServiceError(
+      "invalid_payable_state",
+      `${label} must be greater than or equal to 0`,
+    )
+  }
+}
+
+export function expectedSupplierInvoiceLineTotal(line: SupplierInvoiceLineInput): number {
+  return (line.quantity ?? 1) * line.unitAmountCents + (line.taxAmountCents ?? 0)
+}
+
+export function validateSupplierInvoiceLines(lines: readonly SupplierInvoiceLineInput[]) {
+  for (const [index, line] of lines.entries()) {
+    const label = `line ${index + 1}`
+    if ((line.quantity ?? 1) < 1) {
+      throw new SupplierInvoiceServiceError(
+        "invalid_payable_state",
+        `${label} quantity must be at least 1`,
+      )
+    }
+    assertNonNegativeCents(`${label} unit amount`, line.unitAmountCents)
+    assertNonNegativeCents(`${label} tax amount`, line.taxAmountCents)
+    assertNonNegativeCents(`${label} total amount`, line.totalAmountCents)
+
+    const expectedTotal = expectedSupplierInvoiceLineTotal(line)
+    if (line.totalAmountCents !== expectedTotal) {
+      throw new SupplierInvoiceServiceError(
+        "invalid_payable_state",
+        `${label} total amount must equal quantity × unit amount plus tax (${expectedTotal})`,
+      )
+    }
+  }
+}
+
+function validateHeaderTotals(input: {
+  supplierId?: string | null
+  subtotalCents?: number | null
+  taxCents?: number | null
+  totalCents?: number | null
+  baseSubtotalCents?: number | null
+  baseTaxCents?: number | null
+  baseTotalCents?: number | null
+}) {
+  if (input.supplierId != null && input.supplierId.trim().length === 0) {
+    throw new SupplierInvoiceServiceError(
+      "invalid_payable_state",
+      "supplierId is required for supplier invoices",
+    )
+  }
+  assertNonNegativeCents("subtotalCents", input.subtotalCents)
+  assertNonNegativeCents("taxCents", input.taxCents)
+  assertNonNegativeCents("totalCents", input.totalCents)
+  assertNonNegativeCents("baseSubtotalCents", input.baseSubtotalCents)
+  assertNonNegativeCents("baseTaxCents", input.baseTaxCents)
+  assertNonNegativeCents("baseTotalCents", input.baseTotalCents)
+}
+
+async function assertSupplierReferenceExists(
+  db: PostgresJsDatabase,
+  supplierId: string | null | undefined,
+) {
+  if (!supplierId) return
+
+  const tableResult = await db.execute(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_name = 'suppliers'
+    ) AS table_exists
+  `)
+  const tableExists = Boolean(toRows<{ table_exists: boolean }>(tableResult)[0]?.table_exists)
+  if (!tableExists) return
+
+  const supplierResult = await db.execute(
+    sql`SELECT id FROM suppliers WHERE id = ${supplierId} LIMIT 1`,
+  )
+  if (toRows<{ id: string }>(supplierResult).length === 0) {
+    throw new SupplierInvoiceServiceError(
+      "invalid_payable_state",
+      "supplierId does not reference an existing supplier",
+    )
+  }
+}
+
+function validateProvidedTotalsAgainstLines(
+  input: Pick<CreateSupplierInvoiceInput, "subtotalCents" | "taxCents" | "totalCents">,
+  totals: InvoiceTotals,
+) {
+  const mismatches = [
+    ["subtotalCents", input.subtotalCents, totals.subtotalCents],
+    ["taxCents", input.taxCents, totals.taxCents],
+    ["totalCents", input.totalCents, totals.totalCents],
+  ] as const
+  for (const [field, provided, expected] of mismatches) {
+    if (provided != null && provided !== expected) {
+      throw new SupplierInvoiceServiceError(
+        "invalid_payable_state",
+        `${field} must match the totals derived from supplier invoice lines (${expected})`,
+      )
+    }
+  }
+}
+
 export interface AllocationCheckLine {
   id: string
   totalAmountCents: number
@@ -206,6 +314,15 @@ export function validateAllocations(params: {
 }): AllocationCheckResult {
   const { invoiceTotalCents, lines, allocations } = params
   if (allocations.length === 0) return { ok: true }
+  for (const allocation of allocations) {
+    if (allocation.amountCents < 0) {
+      return {
+        ok: false,
+        code: "invalid_payable_state",
+        message: "supplier invoice allocations must be greater than or equal to 0",
+      }
+    }
+  }
 
   const hasLineLess = allocations.some((a) => a.supplierInvoiceLineId == null)
   const hasPerLine = allocations.some((a) => a.supplierInvoiceLineId != null)
@@ -548,8 +665,10 @@ export const supplierInvoicesService = {
     input: CreateSupplierInvoiceInput,
     runtime: SupplierInvoiceServiceRuntime = {},
   ) {
+    validateHeaderTotals(input)
     const lines = input.lines ?? []
     const allocations = input.allocations ?? []
+    validateSupplierInvoiceLines(lines)
 
     // Create-time allocations must be whole-invoice: new lines have no ids yet,
     // so per-line allocation has to happen via setAllocations after create.
@@ -567,6 +686,7 @@ export const supplierInvoicesService = {
           taxCents: input.taxCents ?? 0,
           totalCents: input.totalCents ?? 0,
         }
+    if (lines.length) validateProvidedTotalsAgainstLines(input, totals)
 
     const check = validateAllocations({
       invoiceTotalCents: totals.totalCents,
@@ -574,6 +694,8 @@ export const supplierInvoicesService = {
       allocations,
     })
     if (!check.ok) throw new SupplierInvoiceServiceError(check.code, check.message)
+
+    await assertSupplierReferenceExists(db, input.supplierId)
 
     const fx = await snapshotSupplierInvoiceFx(
       db,
@@ -657,6 +779,8 @@ export const supplierInvoicesService = {
     input: UpdateSupplierInvoiceInput,
     runtime: SupplierInvoiceServiceRuntime = {},
   ) {
+    validateHeaderTotals(input)
+    await assertSupplierReferenceExists(db, input.supplierId)
     const set: Record<string, unknown> = { updatedAt: new Date() }
     for (const key of [
       "supplierId",
@@ -701,6 +825,12 @@ export const supplierInvoicesService = {
         .limit(1)
       if (current) {
         const totalCents = input.totalCents ?? current.totalCents
+        if (totalCents < current.paidCents) {
+          throw new SupplierInvoiceServiceError(
+            "invalid_payable_state",
+            `supplier invoice total cannot be less than completed payments (${current.paidCents})`,
+          )
+        }
         const fx = await snapshotSupplierInvoiceFx(
           db,
           {
@@ -770,6 +900,7 @@ export const supplierInvoicesService = {
     input: SetLinesInput,
     runtime: SupplierInvoiceServiceRuntime = {},
   ) {
+    validateSupplierInvoiceLines(input.lines)
     const totals = recomputeTotalsFromLines(input.lines)
     const updated = await db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -778,6 +909,12 @@ export const supplierInvoicesService = {
         .where(eq(supplierInvoices.id, id))
         .limit(1)
       if (!invoice) return null
+      if (totals.totalCents < invoice.paidCents) {
+        throw new SupplierInvoiceServiceError(
+          "invalid_payable_state",
+          `supplier invoice total cannot be less than completed payments (${invoice.paidCents})`,
+        )
+      }
 
       await tx.delete(supplierInvoiceLines).where(eq(supplierInvoiceLines.supplierInvoiceId, id))
       if (input.lines.length) {

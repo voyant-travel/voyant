@@ -1,5 +1,28 @@
 # @voyant-travel/inventory
 
+## 0.5.15
+
+### Patch Changes
+
+- 2d3b039: Offer bank transfer and inquiry on owned-product storefront checkout.
+
+  The owned-product booking draft shape hardcoded `paymentIntents: ["hold",
+"card"]`, so the storefront Payment step collapsed to card-only for owned
+  products even though the deployment advertised bank transfer and inquiry
+  (sourced products already offered all three). Both product draft shapes now
+  declare the full engine allow list via a shared `DEFAULT_PAYMENT_INTENTS`
+  constant, and deployment/surface `PaymentProviderCapabilities` narrow it at
+  render time — so owned and sourced products offer the same payment paths. The
+  `/checkout/start` flow already handled bank transfer and inquiry generically on
+  the booking row, so no server change was needed.
+
+- Updated dependencies [dd03968]
+- Updated dependencies [2d3b039]
+- Updated dependencies [bcd76ae]
+  - @voyant-travel/operations@0.5.7
+  - @voyant-travel/catalog@0.136.1
+  - @voyant-travel/commerce@0.20.3
+
 ## 0.5.14
 
 ### Patch Changes

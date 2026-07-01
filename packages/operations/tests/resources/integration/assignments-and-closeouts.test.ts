@@ -15,6 +15,27 @@ describe.skipIf(!DB_AVAILABLE)("Slot assignment and closeout routes", () => {
       expect(assignment.status).toBe("reserved")
     })
 
+    it("POST /slot-assignments → 404 for missing local references", async () => {
+      const product = await ctx.seedProductDirect()
+      const slot = await ctx.seedAvailabilitySlotDirect(product.id)
+      const resource = await ctx.seedResource()
+      const pool = await ctx.seedPool()
+
+      const missingPool = await ctx.request("/slot-assignments", {
+        method: "POST",
+        ...json({ slotId: slot.id, poolId: "repo_missing", resourceId: resource.id }),
+      })
+      expect(missingPool.status).toBe(404)
+      await expect(missingPool.json()).resolves.toEqual({ error: "Resource pool not found" })
+
+      const missingResource = await ctx.request("/slot-assignments", {
+        method: "POST",
+        ...json({ slotId: slot.id, poolId: pool.id, resourceId: "reso_missing" }),
+      })
+      expect(missingResource.status).toBe(404)
+      await expect(missingResource.json()).resolves.toEqual({ error: "Resource not found" })
+    })
+
     it("GET /slot-assignments/:id → 200", async () => {
       const product = await ctx.seedProductDirect()
       const slot = await ctx.seedAvailabilitySlotDirect(product.id)
@@ -127,6 +148,16 @@ describe.skipIf(!DB_AVAILABLE)("Slot assignment and closeout routes", () => {
       expect(closeout.id).toMatch(/^recl_/)
       expect(closeout.resourceId).toBe(resource.id)
       expect(closeout.dateLocal).toBe("2025-07-01")
+    })
+
+    it("POST /closeouts → 404 for missing resource", async () => {
+      const res = await ctx.request("/closeouts", {
+        method: "POST",
+        ...json({ resourceId: "reso_missing", dateLocal: "2025-07-01" }),
+      })
+
+      expect(res.status).toBe(404)
+      await expect(res.json()).resolves.toEqual({ error: "Resource not found" })
     })
 
     it("GET /closeouts/:id → 200", async () => {

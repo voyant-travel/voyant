@@ -24,7 +24,12 @@ function makePriceScheduleDb(opts: { catalogExists: boolean }) {
   const set = vi.fn(() => ({ where: updateWhere }))
   const update = vi.fn(() => ({ set }))
 
-  return { db: { select, insert, update } as PostgresJsDatabase, insert }
+  const db: Partial<PostgresJsDatabase> = {
+    select: select as never,
+    insert: insert as never,
+    update: update as never,
+  }
+  return { db: db as PostgresJsDatabase, insert }
 }
 
 const validScheduleInput = insertPriceScheduleSchema.parse({

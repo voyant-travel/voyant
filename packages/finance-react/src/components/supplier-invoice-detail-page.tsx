@@ -102,7 +102,7 @@ export function SupplierInvoiceDetailPage({
   const allocationList = invoice.allocations.filter((a) => a.supplierInvoiceLineId == null)
   const allocatedCents = allocationList.reduce((sum, a) => sum + a.amountCents, 0)
   const remainderCents = invoice.totalCents - allocatedCents
-  const overAllocated = remainderCents < 0
+  const overAllocated = invoice.totalCents >= 0 && remainderCents < 0
 
   // Lines + allocations are edited via the full-replace mutations.
   const persistLines = (lines: SupplierInvoiceLineInput[]) => setLines.mutate({ id, lines })
@@ -515,6 +515,7 @@ export function SupplierInvoiceDetailPage({
       <PaymentDialog
         open={paymentOpen}
         currency={currency}
+        maxAmountCents={Math.max(0, invoice.balanceDueCents)}
         pending={recordPayment.isPending}
         onOpenChange={setPaymentOpen}
         onSubmit={(input) => {
