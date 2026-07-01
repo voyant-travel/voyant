@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { duplicatePricingValueError } from "./duplicate-errors.js"
 import { priceCatalogs, priceSchedules } from "./schema.js"
 import type {
   CreatePriceCatalogInput,
@@ -44,8 +45,22 @@ export async function getPriceCatalogById(db: PostgresJsDatabase, id: string) {
 }
 
 export async function createPriceCatalog(db: PostgresJsDatabase, data: CreatePriceCatalogInput) {
-  const [row] = await db.insert(priceCatalogs).values(data).returning()
-  return row ?? null
+  const [row] = await db
+    .insert(priceCatalogs)
+    .values(data)
+    .onConflictDoNothing({ target: priceCatalogs.code })
+    .returning()
+
+  if (!row) {
+    throw duplicatePricingValueError({
+      code: "duplicate_price_catalog_code",
+      message: "Price catalog code already exists",
+      resource: "price_catalog",
+      fields: [["code"]],
+    })
+  }
+
+  return row
 }
 
 export async function updatePriceCatalog(
