@@ -33,7 +33,11 @@ import {
 import { getApiUrl } from "@/lib/env"
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { useStorefrontScope } from "@/lib/storefront-scope"
-import { type OperatorInfoVariables, resolveContractVariables } from "./resolve-contract-variables"
+import {
+  type ContractSourceContext,
+  type OperatorInfoVariables,
+  resolveContractVariables,
+} from "./resolve-contract-variables"
 
 /**
  * Marker for checkout failures we've already turned into a localized,
@@ -73,6 +77,14 @@ export interface StorefrontBookingJourneyProps {
    *  journey. */
   entitySummary?: BookingEntitySummary
   /**
+   * Resolved source provenance for the booked entity — kind /
+   * connection / ref + supplier. The `/book` route reads it off the
+   * public content endpoint's `provenance` and passes it here so the
+   * contract preview's `booking.source` block reflects sourced
+   * inventory instead of defaulting to owned/blank (voyant#2619).
+   */
+  entitySource?: ContractSourceContext
+  /**
    * Per-product override for the contract template. When unset (the
    * default), the storefront resolves the active customer-scope
    * template via /v1/public/legal/contracts/templates/default —
@@ -105,6 +117,7 @@ export function StorefrontBookingJourney({
   initialConfigure,
   initialAccommodation,
   entitySummary,
+  entitySource,
   contractTemplateSlug,
   contractMarketingLabel,
   onContractAccepted,
@@ -367,6 +380,7 @@ export function StorefrontBookingJourney({
                   operatorInfo: operatorProfile,
                   paymentSchedule: schedule,
                   paymentPolicySource: source,
+                  source: entitySource,
                 })
               },
               ...(contractMarketingLabel ? { marketingLabel: contractMarketingLabel } : {}),
