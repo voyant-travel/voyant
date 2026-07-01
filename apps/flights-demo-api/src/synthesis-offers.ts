@@ -27,6 +27,20 @@ const POOL_SIZE = 32
 /** Default page size when caller omits pagination.limit. */
 const _DEFAULT_PAGE_SIZE = 20
 
+/**
+ * Compact, deterministic signature of the searched legs — origin, destination,
+ * and date for every slice. This is embedded verbatim in each offer id so that
+ * opposite directions of a round trip (e.g. BCN→FCO outbound vs FCO→BCN return)
+ * ALWAYS produce different ids, independent of the request hash. The booking
+ * page reads the outbound and return offers from the query cache keyed by id,
+ * so a shared id would make both legs resolve to the same offer (#2652).
+ */
+function routeSignature(slices: FlightSlice[]): string {
+  return slices
+    .map((slice) => `${slice.origin}${slice.destination}${slice.departureDate.replace(/-/g, "")}`)
+    .join("-")
+}
+
 export function synthesizeOffers(request: FlightSearchRequest): FlightOffer[] {
   // Hash without pagination so the same route produces the same pool across
   // page navigations — pagination is applied as a slice on top of the pool.
@@ -34,6 +48,9 @@ export function synthesizeOffers(request: FlightSearchRequest): FlightOffer[] {
   const seed = hashRequest(rest)
   const rand = mulberry32(seed)
   const cabin = request.cabin ?? "economy"
+  // Direction + date entropy, explicit in the id so it cannot collide with the
+  // reverse leg even if the request hash were to (the hash is a 32-bit digest).
+  const route = routeSignature(request.slices)
 
   const offers: FlightOffer[] = []
   for (let i = 0; i < POOL_SIZE; i++) {
@@ -66,7 +83,7 @@ export function synthesizeOffers(request: FlightSearchRequest): FlightOffer[] {
       0,
     )
 
-    const offerId = `demo_${seed.toString(36)}_${i}`
+    const offerId = `demo_${route}_${seed.toString(36)}_${i}`
 
     offers.push({
       offerId,
