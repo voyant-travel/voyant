@@ -1,5 +1,11 @@
 # @voyant-travel/ui
 
+## 0.108.10
+
+### Patch Changes
+
+- b254511: Normalize currency inputs safely and prevent booking header totals from drifting from booking items.
+
 ## 0.108.9
 
 ### Patch Changes

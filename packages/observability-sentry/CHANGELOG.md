@@ -1,5 +1,12 @@
 # @voyant-travel/observability-sentry
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [86fbb05]
+  - @voyant-travel/hono@0.119.0
+
 ## 0.4.0
 
 ### Patch Changes

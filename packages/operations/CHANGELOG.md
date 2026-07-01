@@ -1,5 +1,14 @@
 # @voyant-travel/operations
 
+## 0.5.8
+
+### Patch Changes
+
+- Updated dependencies [86fbb05]
+  - @voyant-travel/hono@0.119.0
+  - @voyant-travel/catalog@0.136.2
+  - @voyant-travel/identity@0.138.1
+
 ## 0.5.7
 
 ### Patch Changes

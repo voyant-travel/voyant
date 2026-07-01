@@ -1,5 +1,17 @@
 # @voyant-travel/bookings
 
+## 0.138.5
+
+### Patch Changes
+
+- b254511: Normalize currency inputs safely and prevent booking header totals from drifting from booking items.
+- 141bd2b: Reconcile draft booking items when overriding a booking to confirmed, block item mutations for cancelled bookings, and validate cost currency when cost amounts are entered.
+- Updated dependencies [141bd2b]
+- Updated dependencies [86fbb05]
+  - @voyant-travel/bookings-contracts@0.106.7
+  - @voyant-travel/hono@0.119.0
+  - @voyant-travel/action-ledger@0.105.10
+
 ## 0.138.4
 
 ### Patch Changes
