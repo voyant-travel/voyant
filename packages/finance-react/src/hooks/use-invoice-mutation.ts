@@ -31,9 +31,32 @@ export interface VoidInvoiceInput {
   reason?: string | null
 }
 
+const linkedBookingQueryKeys = {
+  booking: (bookingId: string) => ["voyant", "bookings", "bookings", "detail", bookingId] as const,
+  activity: (bookingId: string) =>
+    [...linkedBookingQueryKeys.booking(bookingId), "activity"] as const,
+  actionLedger: (bookingId: string) =>
+    [...linkedBookingQueryKeys.booking(bookingId), "action-ledger"] as const,
+}
+
 export function useInvoiceMutation() {
   const { baseUrl, fetcher } = useVoyantFinanceContext()
   const queryClient = useQueryClient()
+
+  const invalidateLinkedBooking = (bookingId: string | null | undefined) => {
+    if (!bookingId) return
+    void queryClient.invalidateQueries({ queryKey: linkedBookingQueryKeys.booking(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: linkedBookingQueryKeys.activity(bookingId) })
+    void queryClient.invalidateQueries({
+      queryKey: linkedBookingQueryKeys.actionLedger(bookingId),
+    })
+    void queryClient.invalidateQueries({
+      queryKey: financeQueryKeys.adminBookingPayments(bookingId),
+    })
+    void queryClient.invalidateQueries({
+      queryKey: financeQueryKeys.publicBookingPayments(bookingId),
+    })
+  }
 
   const create = useMutation({
     mutationFn: async (input: CreateInvoiceInput) => {
@@ -48,6 +71,7 @@ export function useInvoiceMutation() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
       queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+      invalidateLinkedBooking(data.bookingId)
     },
   })
 
@@ -64,6 +88,7 @@ export function useInvoiceMutation() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
       queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+      invalidateLinkedBooking(data.bookingId)
     },
   })
 
@@ -100,6 +125,7 @@ export function useInvoiceMutation() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
       queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+      invalidateLinkedBooking(data.bookingId)
     },
   })
 
@@ -121,6 +147,7 @@ export function useInvoiceMutation() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
       queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+      invalidateLinkedBooking(data.bookingId)
     },
   })
 
@@ -153,6 +180,7 @@ export function useInvoiceMutation() {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.payments(variables.id) })
       queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.payments(data.id) })
+      invalidateLinkedBooking(data.bookingId)
     },
   })
 

@@ -34,6 +34,10 @@ const updateSupplierStatusSchema = supplierStatusCoreSchema.partial().extend({
 
 // ---------- service ----------
 
+async function touchBookingUpdatedAt(db: PostgresJsDatabase, bookingId: string, now = new Date()) {
+  await db.update(bookings).set({ updatedAt: now }).where(eq(bookings.id, bookingId))
+}
+
 const supplierStatusService = {
   listSupplierStatuses(db: PostgresJsDatabase, bookingId: string) {
     return db
@@ -70,6 +74,7 @@ const supplierStatusService = {
       activityType: "supplier_update",
       description: `Supplier status for "${data.serviceName}" added`,
     })
+    await touchBookingUpdatedAt(db, bookingId)
 
     return row
   },
@@ -105,6 +110,7 @@ const supplierStatusService = {
         metadata: { supplierStatusId: statusId, newStatus: data.status },
       })
     }
+    await touchBookingUpdatedAt(db, bookingId)
 
     return row
   },

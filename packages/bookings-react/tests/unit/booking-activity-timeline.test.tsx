@@ -7,6 +7,11 @@ const financeHooks = vi.hoisted(() => ({
   usePublicBookingPayments: vi.fn(),
 }))
 
+const bookingHooks = vi.hoisted(() => ({
+  activity: [] as Array<Record<string, unknown>>,
+  documents: [] as Array<Record<string, unknown>>,
+}))
+
 vi.mock("@voyant-travel/finance-react", () => ({
   useAdminBookingPayments: financeHooks.useAdminBookingPayments,
   usePublicBookingPayments: financeHooks.usePublicBookingPayments,
@@ -33,8 +38,8 @@ vi.mock("@voyant-travel/ui/components/pagination", () => ({
 }))
 
 vi.mock("../../src/index.js", () => ({
-  useBookingActivity: () => ({ data: { data: [] } }),
-  useBookingTravelerDocuments: () => ({ data: { data: [] } }),
+  useBookingActivity: () => ({ data: { data: bookingHooks.activity } }),
+  useBookingTravelerDocuments: () => ({ data: { data: bookingHooks.documents } }),
 }))
 
 import { BookingActivityTimeline } from "../../src/components/booking-activity-timeline.js"
@@ -44,6 +49,8 @@ beforeEach(() => {
   financeHooks.usePublicBookingPayments.mockReset()
   financeHooks.useAdminBookingPayments.mockReturnValue({ data: { data: { payments: [] } } })
   financeHooks.usePublicBookingPayments.mockReturnValue({ data: { data: { payments: [] } } })
+  bookingHooks.activity = []
+  bookingHooks.documents = []
 })
 
 describe("BookingActivityTimeline", () => {
@@ -67,5 +74,23 @@ describe("BookingActivityTimeline", () => {
     expect(financeHooks.useAdminBookingPayments).toHaveBeenCalledWith("book_123", {
       enabled: true,
     })
+  })
+
+  it("uses the activity description for note lifecycle rows", () => {
+    bookingHooks.activity = [
+      {
+        id: "act_note_updated",
+        bookingId: "book_123",
+        actorId: "user_123",
+        activityType: "note_added",
+        description: "Note updated",
+        metadata: { noteId: "note_123" },
+        createdAt: "2026-07-01T12:00:00.000Z",
+      },
+    ]
+
+    const html = renderToStaticMarkup(<BookingActivityTimeline bookingId="book_123" />)
+
+    expect(html).toContain("Note updated")
   })
 })

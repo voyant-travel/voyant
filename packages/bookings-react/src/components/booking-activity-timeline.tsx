@@ -129,7 +129,10 @@ export function BookingActivityTimeline({
         id: `activity:${entry.id}`,
         source: "activity",
         title:
-          messages.bookingActivityTimeline.activityTitles[entry.activityType] ?? entry.description,
+          entry.activityType === "note_added"
+            ? entry.description
+            : (messages.bookingActivityTimeline.activityTitles[entry.activityType] ??
+              entry.description),
         description: entry.description,
         // Prefer the hydrated display name; fall back to email then raw
         // id (system actors stay null and skip the "By …" render).

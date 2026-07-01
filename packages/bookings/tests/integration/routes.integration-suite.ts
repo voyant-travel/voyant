@@ -3218,6 +3218,70 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect((await res.json()).data.length).toBe(1)
     })
 
+    it("records note edit/delete activity and advances the booking updated timestamp", async () => {
+      const booking = await seedBooking()
+      const initialUpdatedAt = new Date(booking.updatedAt).getTime()
+
+      const createRes = await app.request(`/${booking.id}/notes`, {
+        method: "POST",
+        ...json({ content: "Original note" }),
+      })
+      expect(createRes.status).toBe(201)
+      const createdNote = (await createRes.json()).data
+
+      const afterCreate = await bookingsService.getBookingById(db, booking.id)
+      expect(afterCreate).toBeTruthy()
+      expect(afterCreate?.updatedAt.getTime()).toBeGreaterThanOrEqual(initialUpdatedAt)
+
+      const updateRes = await app.request(`/${booking.id}/notes/${createdNote.id}`, {
+        method: "PATCH",
+        ...json({ content: "Edited note" }),
+      })
+      expect(updateRes.status).toBe(200)
+
+      const afterUpdate = await bookingsService.getBookingById(db, booking.id)
+      expect(afterUpdate?.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        afterCreate?.updatedAt.getTime() ?? initialUpdatedAt,
+      )
+
+      const deleteRes = await app.request(`/${booking.id}/notes/${createdNote.id}`, {
+        method: "DELETE",
+      })
+      expect(deleteRes.status).toBe(200)
+
+      const afterDelete = await bookingsService.getBookingById(db, booking.id)
+      expect(afterDelete?.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        afterUpdate?.updatedAt.getTime() ?? initialUpdatedAt,
+      )
+
+      const activityRes = await app.request(`/${booking.id}/activity`, { method: "GET" })
+      expect(activityRes.status).toBe(200)
+      const activityBody = await activityRes.json()
+      const noteActivity = activityBody.data.filter(
+        (entry: Record<string, unknown>) =>
+          entry.activityType === "note_added" &&
+          (entry.metadata as Record<string, unknown> | null)?.noteId === createdNote.id,
+      )
+
+      expect(noteActivity.map((entry: Record<string, unknown>) => entry.description)).toEqual([
+        "Note deleted",
+        "Note updated",
+        "Note added",
+      ])
+      expect(noteActivity).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actorId: "test-user-id",
+            description: "Note updated",
+          }),
+          expect.objectContaining({
+            actorId: "test-user-id",
+            description: "Note deleted",
+          }),
+        ]),
+      )
+    })
+
     it("returns 404 when adding note to non-existent booking", async () => {
       const res = await app.request("/book_00000000000000000000000000/notes", {
         method: "POST",

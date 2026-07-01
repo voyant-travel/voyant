@@ -680,6 +680,10 @@ function mapDeliveryFormatToFulfillment(format: string) {
   }
 }
 
+async function touchBookingUpdatedAt(db: PostgresJsDatabase, bookingId: string, now = new Date()) {
+  await db.update(bookings).set({ updatedAt: now }).where(eq(bookings.id, bookingId))
+}
+
 async function getConvertProductData(
   db: PostgresJsDatabase,
   data: ConvertProductInput,
@@ -4073,6 +4077,7 @@ export const bookingsService = {
       description: `Traveler ${data.firstName} ${data.lastName} added`,
       metadata: { travelerId: row.id, participantType: data.participantType },
     })
+    await touchBookingUpdatedAt(db, bookingId)
 
     return row
   },
@@ -4093,6 +4098,7 @@ export const bookingsService = {
     }
 
     await ensureParticipantFlags(db, row.bookingId, row.id, data)
+    await touchBookingUpdatedAt(db, row.bookingId)
 
     return row
   },
@@ -4211,7 +4217,11 @@ export const bookingsService = {
     const [row] = await db
       .delete(bookingTravelers)
       .where(eq(bookingTravelers.id, travelerId))
-      .returning({ id: bookingTravelers.id })
+      .returning({ id: bookingTravelers.id, bookingId: bookingTravelers.bookingId })
+
+    if (row) {
+      await touchBookingUpdatedAt(db, row.bookingId)
+    }
 
     return row ?? null
   },
@@ -4856,6 +4866,7 @@ export const bookingsService = {
       activityType: "supplier_update",
       description: `Supplier status for "${data.serviceName}" added`,
     })
+    await touchBookingUpdatedAt(db, bookingId)
 
     return row ?? null
   },
@@ -4910,6 +4921,7 @@ export const bookingsService = {
         metadata: { supplierStatusId: statusId, newStatus: data.status },
       })
     }
+    await touchBookingUpdatedAt(db, bookingId)
 
     return row
   },
@@ -5228,12 +5240,18 @@ export const bookingsService = {
       })
       .returning()
 
+    if (!row) {
+      return null
+    }
+
     await db.insert(bookingActivityLog).values({
       bookingId,
       actorId: userId,
       activityType: "note_added",
       description: "Note added",
+      metadata: { noteId: row.id },
     })
+    await touchBookingUpdatedAt(db, bookingId)
 
     return row
   },
@@ -5242,6 +5260,7 @@ export const bookingsService = {
     db: PostgresJsDatabase,
     bookingId: string,
     noteId: string,
+    userId: string,
     data: UpdateBookingNoteInput,
   ) {
     // Scope the update to (booking, note) so a stale / cross-booking
@@ -5254,17 +5273,39 @@ export const bookingsService = {
       .where(and(eq(bookingNotes.id, noteId), eq(bookingNotes.bookingId, bookingId)))
       .returning()
 
+    if (row) {
+      await db.insert(bookingActivityLog).values({
+        bookingId,
+        actorId: userId,
+        activityType: "note_added",
+        description: "Note updated",
+        metadata: { noteId },
+      })
+      await touchBookingUpdatedAt(db, bookingId)
+    }
+
     return row ?? null
   },
 
-  async deleteNote(db: PostgresJsDatabase, bookingId: string, noteId: string) {
+  async deleteNote(db: PostgresJsDatabase, bookingId: string, noteId: string, userId: string) {
     // Same scoping as `updateNote` — guards against deleting a note
     // that belongs to a different booking when the audit entry would
     // get filed under the route's `:id`.
     const [row] = await db
       .delete(bookingNotes)
       .where(and(eq(bookingNotes.id, noteId), eq(bookingNotes.bookingId, bookingId)))
-      .returning({ id: bookingNotes.id })
+      .returning({ id: bookingNotes.id, authorId: bookingNotes.authorId })
+
+    if (row) {
+      await db.insert(bookingActivityLog).values({
+        bookingId,
+        actorId: userId,
+        activityType: "note_added",
+        description: "Note deleted",
+        metadata: { noteId },
+      })
+      await touchBookingUpdatedAt(db, bookingId)
+    }
 
     return row ?? null
   },
@@ -5305,6 +5346,10 @@ export const bookingsService = {
       })
       .returning()
 
+    if (row) {
+      await touchBookingUpdatedAt(db, bookingId)
+    }
+
     return row
   },
 
@@ -5312,7 +5357,11 @@ export const bookingsService = {
     const [row] = await db
       .delete(bookingDocuments)
       .where(eq(bookingDocuments.id, documentId))
-      .returning({ id: bookingDocuments.id })
+      .returning({ id: bookingDocuments.id, bookingId: bookingDocuments.bookingId })
+
+    if (row) {
+      await touchBookingUpdatedAt(db, row.bookingId)
+    }
 
     return row ?? null
   },

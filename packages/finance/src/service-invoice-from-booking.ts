@@ -31,6 +31,7 @@ import {
   resolveInvoiceFromBookingDueDate,
   resolveInvoiceLineDescriptions,
   resolvePaymentScheduleDisplayItem,
+  touchLinkedBookingUpdatedAt,
 } from "./service-shared.js"
 
 async function resolveInvoiceNumberForBooking(
@@ -354,6 +355,8 @@ export const financeInvoiceFromBookingService = {
             insertedLineItems.length,
           )
         }
+
+        await touchLinkedBookingUpdatedAt(tx, booking.id)
 
         return invoice
       })

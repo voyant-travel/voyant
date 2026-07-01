@@ -3923,12 +3923,14 @@ const notesRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     return c.json({ data: row }, 201)
   })
   .openapi(updateNoteRoute, async (c) => {
+    const userId = requireUserId(c)
     const bookingId = c.req.valid("param").id
     const noteId = c.req.valid("param").noteId
     const row = await bookingsService.updateNote(
       c.get("db"),
       bookingId,
       noteId,
+      userId,
       c.req.valid("json"),
     )
     if (!row) {
@@ -3949,11 +3951,13 @@ const notesRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     return c.json({ data: row }, 200)
   })
   .openapi(deleteNoteRoute, async (c) => {
+    const userId = requireUserId(c)
     const bookingId = c.req.valid("param").id
     const row = await bookingsService.deleteNote(
       c.get("db"),
       bookingId,
       c.req.valid("param").noteId,
+      userId,
     )
     if (!row) {
       return c.json({ error: "Note not found" }, 404)

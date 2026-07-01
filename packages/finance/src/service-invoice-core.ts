@@ -32,6 +32,7 @@ import {
   payments,
   readStringMetadata,
   sql,
+  touchLinkedBookingUpdatedAt,
 } from "./service-shared.js"
 
 export const financeInvoiceCoreService = {
@@ -152,6 +153,7 @@ export const financeInvoiceCoreService = {
 
   async createInvoice(db: PostgresJsDatabase, data: CreateInvoiceInput) {
     const [row] = await db.insert(invoices).values(data).returning()
+    await touchLinkedBookingUpdatedAt(db, row?.bookingId)
     return row
   },
   async getInvoiceById(db: PostgresJsDatabase, id: string) {
@@ -194,6 +196,7 @@ export const financeInvoiceCoreService = {
           const [row] = await updateInvoiceRow(tx)
 
           if (row) {
+            await touchLinkedBookingUpdatedAt(tx, row.bookingId)
             await appendActionLedgerMutation(
               tx,
               buildInvoiceUpdateActionLedgerInput(
@@ -209,6 +212,7 @@ export const financeInvoiceCoreService = {
       }
 
       const [row] = await updateInvoiceRow(db)
+      await touchLinkedBookingUpdatedAt(db, row?.bookingId)
       return row ?? null
     } catch (error) {
       if (data.invoiceNumber && isInvoiceNumberUniqueConstraintError(error)) {
@@ -233,6 +237,7 @@ export const financeInvoiceCoreService = {
         }
 
         await tx.delete(invoices).where(eq(invoices.id, id))
+        await touchLinkedBookingUpdatedAt(tx, existing.bookingId)
         await appendActionLedgerMutation(
           tx,
           buildInvoiceDeleteActionLedgerInput(
@@ -246,7 +251,7 @@ export const financeInvoiceCoreService = {
     }
 
     const [existing] = await db
-      .select({ id: invoices.id, status: invoices.status })
+      .select({ id: invoices.id, status: invoices.status, bookingId: invoices.bookingId })
       .from(invoices)
       .where(eq(invoices.id, id))
       .limit(1)
@@ -260,6 +265,7 @@ export const financeInvoiceCoreService = {
     }
 
     await db.delete(invoices).where(eq(invoices.id, id))
+    await touchLinkedBookingUpdatedAt(db, existing.bookingId)
     return { status: "deleted" as const }
   },
 
@@ -339,6 +345,8 @@ export const financeInvoiceCoreService = {
       if (!invoice) {
         return { status: "not_found" as const }
       }
+
+      await touchLinkedBookingUpdatedAt(tx, invoice.bookingId)
 
       const actionLedgerContext = runtime.actionLedgerContext
       if (actionLedgerContext) {

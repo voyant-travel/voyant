@@ -25,6 +25,14 @@ export function useTravelerMutation(bookingId: string) {
   const { baseUrl, fetcher } = useVoyantBookingsContext()
   const queryClient = useQueryClient()
 
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.booking(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.bookings() })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.travelers(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.actionLedger(bookingId) })
+  }
+
   const create = useMutation({
     mutationFn: async (input: CreateTravelerInput) => {
       const { data } = await fetchWithValidation(
@@ -37,10 +45,7 @@ export function useTravelerMutation(bookingId: string) {
       )
       return data
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.travelers(bookingId) })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
-    },
+    onSuccess: invalidate,
   })
 
   const update = useMutation({
@@ -55,10 +60,7 @@ export function useTravelerMutation(bookingId: string) {
       )
       return data
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.travelers(bookingId) })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
-    },
+    onSuccess: invalidate,
   })
 
   const remove = useMutation({
@@ -69,10 +71,7 @@ export function useTravelerMutation(bookingId: string) {
         { baseUrl, fetcher },
         { method: "DELETE" },
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.travelers(bookingId) })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
-    },
+    onSuccess: invalidate,
   })
 
   return { create, update, remove }

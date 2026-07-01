@@ -25,6 +25,7 @@ import {
   paymentSessions,
   sql,
   toTimestamp,
+  touchLinkedBookingUpdatedAt,
 } from "./service-shared.js"
 
 type PaymentSessionTargetColumns = {
@@ -33,6 +34,13 @@ type PaymentSessionTargetColumns = {
   bookingPaymentScheduleId?: string
   bookingGuaranteeId?: string
   orderId?: string
+}
+
+async function touchPaymentSessionBooking(
+  db: PostgresJsDatabase,
+  session: typeof paymentSessions.$inferSelect | undefined,
+) {
+  await touchLinkedBookingUpdatedAt(db, session?.bookingId)
 }
 
 function derivePaymentSessionTargetColumns(
@@ -155,6 +163,7 @@ export const financePaymentSessionService = {
         const created = await createSession(tx)
 
         if (created[0]) {
+          await touchPaymentSessionBooking(tx, created[0])
           await appendActionLedgerMutation(
             tx,
             await buildPaymentSessionCreateActionLedgerInput(
@@ -172,6 +181,7 @@ export const financePaymentSessionService = {
     }
 
     const [row] = await createSession(db)
+    await touchPaymentSessionBooking(db, row)
     return row ?? null
   },
 
@@ -220,6 +230,7 @@ export const financePaymentSessionService = {
         const updated = await updateSession(tx)
 
         if (updated[0]) {
+          await touchPaymentSessionBooking(tx, updated[0])
           await appendActionLedgerMutation(
             tx,
             buildPaymentSessionUpdateActionLedgerInput(
@@ -237,6 +248,7 @@ export const financePaymentSessionService = {
     }
 
     const [row] = await updateSession(db)
+    await touchPaymentSessionBooking(db, row)
     return row ?? null
   },
 
@@ -274,6 +286,7 @@ export const financePaymentSessionService = {
         const updated = await markRequiresRedirect(tx)
 
         if (updated[0]) {
+          await touchPaymentSessionBooking(tx, updated[0])
           await appendActionLedgerMutation(
             tx,
             buildPaymentSessionRequiresRedirectActionLedgerInput(
@@ -291,6 +304,7 @@ export const financePaymentSessionService = {
     }
 
     const [row] = await markRequiresRedirect(db)
+    await touchPaymentSessionBooking(db, row)
     return row ?? null
   },
 
@@ -325,6 +339,7 @@ export const financePaymentSessionService = {
         const updated = await failSession(tx)
 
         if (updated[0]) {
+          await touchPaymentSessionBooking(tx, updated[0])
           await appendActionLedgerMutation(
             tx,
             buildPaymentSessionFailedActionLedgerInput(
@@ -342,6 +357,7 @@ export const financePaymentSessionService = {
     }
 
     const [row] = await failSession(db)
+    await touchPaymentSessionBooking(db, row)
     return row ?? null
   },
 
@@ -371,6 +387,7 @@ export const financePaymentSessionService = {
         const updated = await cancelSession(tx)
 
         if (updated[0]) {
+          await touchPaymentSessionBooking(tx, updated[0])
           await appendActionLedgerMutation(
             tx,
             buildPaymentSessionCancelledActionLedgerInput(
@@ -388,6 +405,7 @@ export const financePaymentSessionService = {
     }
 
     const [row] = await cancelSession(db)
+    await touchPaymentSessionBooking(db, row)
     return row ?? null
   },
 
@@ -417,6 +435,7 @@ export const financePaymentSessionService = {
         const updated = await expireSession(tx)
 
         if (updated[0]) {
+          await touchPaymentSessionBooking(tx, updated[0])
           await appendActionLedgerMutation(
             tx,
             buildPaymentSessionExpiredActionLedgerInput(
@@ -434,6 +453,7 @@ export const financePaymentSessionService = {
     }
 
     const [row] = await expireSession(db)
+    await touchPaymentSessionBooking(db, row)
     return row ?? null
   },
 }

@@ -30,6 +30,15 @@ export function useSupplierStatusMutation(bookingId: string) {
   const { baseUrl, fetcher } = useVoyantBookingsContext()
   const queryClient = useQueryClient()
 
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.booking(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.bookings() })
+    void queryClient.invalidateQueries({
+      queryKey: bookingsQueryKeys.supplierStatuses(bookingId),
+    })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
+  }
+
   const create = useMutation({
     mutationFn: async (input: CreateSupplierStatusInput) => {
       const { data } = await fetchWithValidation(
@@ -40,12 +49,7 @@ export function useSupplierStatusMutation(bookingId: string) {
       )
       return data
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: bookingsQueryKeys.supplierStatuses(bookingId),
-      })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
-    },
+    onSuccess: invalidate,
   })
 
   const update = useMutation({
@@ -58,12 +62,7 @@ export function useSupplierStatusMutation(bookingId: string) {
       )
       return data
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: bookingsQueryKeys.supplierStatuses(bookingId),
-      })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
-    },
+    onSuccess: invalidate,
   })
 
   return { create, update }
