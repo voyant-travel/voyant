@@ -364,6 +364,23 @@ export function extractBillingParty(party: Record<string, unknown> | undefined):
   }
 }
 
+// Mirrors `isRealEmail` in @voyant-travel/finance's `requireCompleteBookingParty`
+// (and the trips copy). The owned booking handler resolves a CRM person from the
+// billing contact before calling `createBooking`, which rejects a blank or
+// placeholder email — so the resolver must apply the same rule up front, or it
+// orphans a CRM person on every failed checkout. Keep this set in sync with
+// finance's `placeholderEmails`.
+const placeholderBillingEmails = new Set([
+  "noreply@example.com",
+  "tbd@example.com",
+  "traveler@example.com",
+])
+
+export function isRealBillingEmail(value: string | null | undefined): value is string {
+  const normalized = value?.trim().toLowerCase() ?? ""
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) && !placeholderBillingEmails.has(normalized)
+}
+
 export function extractPartyTravelers(
   party: Record<string, unknown> | undefined,
 ): Array<{ personId?: string | null }> {

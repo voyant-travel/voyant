@@ -1,3 +1,5 @@
+// agent-quality: file-size exception — cohesive booking-engine quote/commit
+// suite; splitting would scatter shared product/context fixtures. See #2618.
 import type {
   CommitOwnedRequest,
   ComputeQuoteRequest,
@@ -445,5 +447,327 @@ describe("createProductsBookingHandler.commit", () => {
         ],
       }),
     )
+  })
+
+  it("resolves a CRM person from the billing contact when an anonymous commit has no person/org", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_resolved")
+    const handler = createProductsBookingHandler({
+      createBooking,
+      resolveBillingPerson,
+      generateBookingNumber: () => "BK-TEST-1",
+    })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      // Anonymous storefront: billing contact only, no personId/organizationId.
+      party: {
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "guest@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      draft: {
+        configure: { pax: { adult: 1 } },
+        travelers: [{ firstName: "Guest", lastName: "Customer", band: "adult" }],
+      },
+      pricing: {
+        base_amount: 14500,
+        taxes: 0,
+        fees: 0,
+        surcharges: 0,
+        currency: "RON",
+      },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).toHaveBeenCalledWith(
+      {
+        firstName: "Guest",
+        lastName: "Customer",
+        email: "guest@example.com",
+        phone: "+40700333444",
+      },
+      // Provenance ref is the persisted booking NUMBER, not the provisional
+      // `request.bookingId` (which the finance bridge discards for its own id).
+      expect.objectContaining({
+        bookingId: "BK-TEST-1",
+        sourceRef: "BK-TEST-1",
+        source: "storefront-booking",
+      }),
+    )
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingNumber: "BK-TEST-1",
+        personId: "pers_resolved",
+        organizationId: null,
+        contactFirstName: "Guest",
+        contactEmail: "guest@example.com",
+      }),
+    )
+  })
+
+  it("resolves the billing person from the saved draft when the storefront commit sends no party", async () => {
+    // The anonymous storefront POSTs only a draftId to /book, so `request.party`
+    // is empty and the billing contact lives in `draft.billing.contact`.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_from_draft")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      // No party — mirrors the storefront /book payload (draftId only).
+      draft: {
+        configure: { pax: { adult: 1 } },
+        travelers: [{ firstName: "Guest", lastName: "Customer", band: "adult" }],
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "guest@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "guest@example.com", phone: "+40700333444" }),
+      expect.objectContaining({ source: "storefront-booking" }),
+    )
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        personId: "pers_from_draft",
+        contactEmail: "guest@example.com",
+        contactFirstName: "Guest",
+      }),
+    )
+  })
+
+  it("skips the billing-person resolver when the commit already carries a person id", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      party: {
+        billing: {
+          personId: "pers_existing",
+          contact: { firstName: "Ana", lastName: "Pop", email: "ana@example.com" },
+        },
+      },
+      draft: { configure: { pax: { adult: 1 } } },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ personId: "pers_existing" }),
+    )
+  })
+
+  it("skips the resolver when the billing contact has a name but no email or phone", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      party: {
+        // Name only, no contact point — resolving would create a CRM person
+        // that still can't satisfy createBooking's email/phone requirement.
+        billing: { contact: { firstName: "Guest", lastName: "Customer" } },
+      },
+      draft: { configure: { pax: { adult: 1 } } },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(expect.objectContaining({ personId: null }))
+  })
+
+  it("skips the resolver when the billing contact point is whitespace-only", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        billing: {
+          // Whitespace-only email/phone must not trigger a name-only CRM person.
+          contact: { firstName: "Guest", lastName: "Customer", email: "   ", phone: "  " },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ personId: null, contactEmail: null, contactPhone: null }),
+    )
+  })
+
+  it("skips the resolver when the billing contact has a contact point but no full name", async () => {
+    // createBooking requires first AND last name once a personId is set, so
+    // resolving on a nameless contact would create a person it then rejects.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        billing: {
+          // Email present, but only a first name — no last name.
+          contact: { firstName: "Guest", email: "guest@example.com" },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(expect.objectContaining({ personId: null }))
+  })
+
+  it("clears a placeholder billing email but still resolves on a real phone", async () => {
+    // createBooking rejects a placeholder email even alongside a phone, so the
+    // handler must treat it as absent — otherwise it resolves a CRM person that
+    // createBooking then rejects, orphaning the row.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_from_phone")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        travelers: [{ firstName: "Guest", lastName: "Customer", band: "adult" }],
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "traveler@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).toHaveBeenCalledWith(
+      expect.objectContaining({ email: null, phone: "+40700333444" }),
+      expect.objectContaining({ source: "storefront-booking" }),
+    )
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ personId: "pers_from_phone", contactEmail: null }),
+    )
+  })
+
+  it("skips the resolver when the draft has a complete billing contact but no travelers", async () => {
+    // createBooking's requireCompleteBookingParty rejects a party with zero
+    // travelers, so resolving a person first would orphan it.
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        // Complete billing contact, but no traveler rows.
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "guest@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(expect.objectContaining({ personId: null }))
   })
 })
