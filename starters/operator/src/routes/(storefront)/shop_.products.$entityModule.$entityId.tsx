@@ -7,7 +7,6 @@ import type React from "react"
 
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { AccommodationDetailPage } from "./shop-product-detail-accommodations"
-import { CruiseDetailPage } from "./shop-product-detail-cruises"
 import { ProductDetailPageProducts } from "./shop-product-detail-products"
 
 export const Route = createFileRoute("/(storefront)/shop_/products/$entityModule/$entityId")({
@@ -33,9 +32,6 @@ function DetailPage(): React.ReactElement {
     )
   }
 
-  if (entityModule === "cruises") {
-    return <CruiseDetailPage entityId={entityId} />
-  }
   if (entityModule === "accommodations") {
     return <AccommodationDetailPage entityId={entityId} />
   }

@@ -25,13 +25,14 @@ import { useStorefrontScope } from "@/lib/storefront-scope"
  * instructions block instead — a usable experience either way.
  *
  * Search only offers verticals that have a working customer detail + booking
- * page. Charters (and flights) have no storefront `/content` endpoint or
- * booking flow yet, so surfacing them produced dead result cards and a broken
- * detail page (voyant#2640). Deriving the accepted verticals from
- * `storefrontCustomerBookableProductVerticals` keeps search in sync
- * automatically as new verticals gain detail pages, and `.catch(undefined)`
- * gracefully drops any stale/crafted `?vertical=charters` URL back to the
- * default vertical instead of erroring.
+ * page. Charters and flights have no storefront `/content` endpoint or booking
+ * flow yet (voyant#2640), and cruises render only SOURCED content publicly —
+ * owned/demo cruises produced dead result cards and a broken detail page
+ * (voyant#2639) — so all three are omitted from
+ * `storefrontCustomerBookableProductVerticals`. Deriving the accepted verticals
+ * from that list keeps search in sync automatically as new verticals gain
+ * detail pages, and `.catch(undefined)` gracefully drops any stale/crafted
+ * `?vertical=cruises` URL back to the default vertical instead of erroring.
  */
 export const shopSearchSchema = z.object({
   q: z.string().optional(),
@@ -98,7 +99,6 @@ function StorefrontIndex(): React.ReactElement {
           }
         >
           <option value="products">{t.verticalProducts}</option>
-          <option value="cruises">{t.verticalCruises}</option>
           <option value="accommodations">{t.verticalAccommodations}</option>
         </select>
       </div>

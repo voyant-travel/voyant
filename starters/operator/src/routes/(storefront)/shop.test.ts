@@ -23,6 +23,14 @@ describe("shopSearchSchema vertical", () => {
     expect(shopSearchSchema.parse({ vertical: "charters" }).vertical).toBeUndefined()
   })
 
+  it("does not surface cruises (voyant#2639)", () => {
+    // The public cruise content endpoint serves sourced cruises only, so owned
+    // seeded cruises produced dead detail pages. A crafted ?vertical=cruises URL
+    // degrades to the default vertical instead of linking to a broken page.
+    expect(storefrontCustomerBookableProductVerticals).not.toContain("cruises")
+    expect(shopSearchSchema.parse({ vertical: "cruises" }).vertical).toBeUndefined()
+  })
+
   it("drops any other unsupported vertical to the default", () => {
     expect(shopSearchSchema.parse({ vertical: "flights" }).vertical).toBeUndefined()
     expect(shopSearchSchema.parse({}).vertical).toBeUndefined()
