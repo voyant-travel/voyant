@@ -45,10 +45,43 @@ in a code comment.
 **Keep `supplyModel` derived from `bookingMode`.** Do not add a schema column,
 migration, authoring field, or consistency validation at this time.
 
-The single derivation function `deriveProductSupplyModel` remains the one place
-the classifier is computed, and the catalog field policy continues to project it
-as a `source-only`, `structural`, `indexed-column` field
-(`packages/inventory/src/catalog-policy.ts`).
+`deriveProductSupplyModel` remains the projection derivation, and the catalog
+field policy continues to project it as a `source-only`, `structural`,
+`indexed-column` field (`packages/inventory/src/catalog-policy.ts`).
+
+Note that the `bookingMode → dynamic/scheduled` mapping is encoded in **four**
+places today, not one — the projection derivation plus three sites that each
+re-derive the scheduled-vs-dynamic split inline:
+
+- `packages/inventory/src/service-catalog-plane.ts` — `deriveProductSupplyModel`
+  (`open`/`stay` → `dynamic`, else `scheduled`), the projection derivation.
+- `packages/inventory/src/service-core.ts` — `DYNAMIC_BOOKING_MODES` +
+  `isScheduledBookingMode`, gating the `no_future_open_departure` publish check.
+- `packages/operations/src/availability/service-core.ts` — `DYNAMIC_BOOKING_MODES`,
+  gating the `dynamic_product_static_availability` authoring check.
+- `packages/operations/src/availability/service-catalog-plane-departures.ts` —
+  `SCHEDULED_BOOKING_MODES`, gating whether a product emits departure facets in
+  the products document builder (wired via the operator catalog runtime).
+
+(This counts only sites that derive the scheduled-vs-dynamic supply classifier.
+Other code branches on specific `bookingMode` values for unrelated reasons —
+e.g. OCTO availability-type or transport-requirement flags — and is out of
+scope.)
+
+These sites do **not** even agree today: the departures gate's
+`SCHEDULED_BOOKING_MODES` includes `stay`, so it treats `stay` products as
+scheduled, whereas `deriveProductSupplyModel` and the two enforcement gates
+treat `open`/`stay` as `dynamic`. So `stay` is already classified `dynamic` by
+the projection but scheduled by the departures facet — a concrete example of the
+drift a scattered derivation invites.
+
+While the classifier stays derived this scattering is *mostly* harmless (the
+publish and static-availability gates match the projection), but it is not a
+single-function contract: a promotion must switch all four sites to the stored
+column together, or publish-readiness, static-availability enforcement, and the
+departures projection would keep keying on `bookingMode` while `supplyModel`
+says otherwise. The "Revisit trigger" touch-point list below enumerates all
+four.
 
 ## Options considered
 
@@ -56,10 +89,12 @@ as a `source-only`, `structural`, `indexed-column` field
 
 `supplyModel` is computed from `bookingMode` wherever it is needed.
 
-- **Pros:** Zero schema surface. One source of truth — the classifier can never
-  drift out of sync with the booking mechanic, so there is nothing to backfill,
-  validate, or reconcile. The enforcement paths added by #2329 stay trivially
-  consistent.
+- **Pros:** Zero schema surface. No stored value to drift — the classifier is
+  always recomputed from `bookingMode`, so there is nothing to backfill,
+  validate, or reconcile. The enforcement paths added by #2329 stay consistent
+  because they too derive from `bookingMode` (each re-encodes the same mapping
+  inline — see the Decision section), so they cannot disagree with the
+  projection.
 - **Cons:** The supply model is permanently coupled to `bookingMode`. A product
   cannot express a supply model the derivation can't produce — for example an
   `itinerary` product sold dynamically, or an `open`/`stay` product sold on a
@@ -88,9 +123,11 @@ that satisfies the #2329 enforcement paths — and avoids introducing a column,
 migration, backfill, and drift-consistency check that would exist only to be
 kept equal to the derivation.
 
-Deferring the promotion is low-cost and reversible: because the classifier is
-computed in one function, promoting it later is a contained change, not a
-scattered refactor.
+Deferring the promotion is low-cost and reversible: the classifier is derived at
+a small, enumerable set of sites (the projection derivation, the two #2329
+enforcement gates, and the departures-facet gate), so promoting it later is a
+contained, well-scoped change — all four listed in the Revisit trigger below —
+not an open-ended refactor.
 
 ## Revisit trigger
 
@@ -110,6 +147,20 @@ When that trigger fires, the touch points to change are:
 - `packages/inventory/src/service-catalog-plane.ts` — change
   `deriveProductSupplyModel` from the source of truth to a default/suggestion
   (read the stored column when present, fall back to the derivation otherwise).
+- `packages/inventory/src/service-core.ts` — switch the publish check
+  (`DYNAMIC_BOOKING_MODES`/`isScheduledBookingMode` →
+  `no_future_open_departure`) to read the resolved `supplyModel` instead of
+  re-deriving from `bookingMode`, so scheduled products promoted off their
+  booking mechanic are still gated correctly.
+- `packages/operations/src/availability/service-core.ts` — switch the
+  static-availability check (`DYNAMIC_BOOKING_MODES` →
+  `dynamic_product_static_availability`) to read the resolved `supplyModel` for
+  the same reason.
+- `packages/operations/src/availability/service-catalog-plane-departures.ts` —
+  switch the departures-facet gate (`SCHEDULED_BOOKING_MODES`) to read the
+  resolved `supplyModel`, so a product promoted to `scheduled` emits departure
+  facets (and this is also the place to reconcile the current `stay`
+  disagreement noted in the Decision section).
 
 ## Consequences
 
