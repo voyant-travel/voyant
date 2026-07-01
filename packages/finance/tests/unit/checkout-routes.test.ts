@@ -2,6 +2,7 @@ import {
   issueCheckoutCapability,
   issueGuestBookingAccess,
 } from "@voyant-travel/bookings/checkout-capability"
+import { createContainer } from "@voyant-travel/core"
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -19,6 +20,7 @@ vi.mock("../../src/checkout-service.js", () => ({
 }))
 
 import {
+  CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE,
   createFinanceCheckoutAdminRoutes,
   createFinanceCheckoutRoutes,
 } from "../../src/checkout-routes.js"
@@ -131,6 +133,38 @@ describe("createFinanceCheckoutRoutes", () => {
       publicCheckoutBaseUrl: "https://brand.example.com",
     })
     expect(runtime.paymentStarters.netopia).toBe(paymentStarter)
+  })
+
+  it("returns setup guidance when the checkout runtime provider is not registered", async () => {
+    const routes = createFinanceCheckoutAdminRoutes()
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      c.set("container", createContainer())
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/initiate-collection",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "card",
+          stage: "manual",
+          amountCents: 12345,
+          ensureDefaultPaymentPlan: true,
+          paymentSession: { provider: "netopia" },
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(501)
+    expect(await res.json()).toEqual({ error: CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE })
+    expect(serviceMocks.initiateCheckoutCollection).not.toHaveBeenCalled()
   })
 
   it("rejects booking collection routes without a checkout capability", async () => {
