@@ -4,7 +4,11 @@ import type { StorageProvider, StorageUploadBody } from "@voyant-travel/storage"
 import { renderPdfDocument } from "@voyant-travel/utils/pdf-renderer"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { ContractLifecycleHook } from "./lifecycle.js"
+import {
+  type ContractLifecycleEvent,
+  type ContractLifecycleHook,
+  emitContractLifecycleEvent,
+} from "./lifecycle.js"
 import { contractAttachments, contracts, contractTemplateVersions } from "./schema.js"
 import { contractRecordsService } from "./service-contracts.js"
 import type { CreateContractAttachmentInput } from "./service-shared.js"
@@ -106,7 +110,50 @@ type EnsureRenderedContractResult =
       templateVersion: typeof contractTemplateVersions.$inferSelect | null
       renderedBody: string
       renderedBodyFormat: "markdown" | "html" | "lexical_json"
+      lifecycleEvent?: ContractLifecycleEvent | null
     }
+
+type ContractDocumentGeneratorFailedResult = {
+  status: "generator_failed"
+  contract: typeof contracts.$inferSelect
+  error: string | null
+}
+
+type ContractDocumentAttemptResult =
+  | {
+      status: "not_found" | "not_draft"
+    }
+  | {
+      status: "render_unavailable"
+      contract: typeof contracts.$inferSelect
+      error: string | null
+    }
+  | ContractDocumentGeneratorFailedResult
+  | ({
+      status: "generated"
+      lifecycleEvent?: ContractLifecycleEvent | null
+    } & GeneratedContractDocumentRecord)
+
+type ContractDocumentPublicResult =
+  | { status: "not_found" | "not_draft" | "render_unavailable" | "generator_failed" }
+  | ({ status: "generated" } & GeneratedContractDocumentRecord)
+
+type ContractDocumentRollbackResult =
+  | ContractDocumentGeneratorFailedResult
+  | {
+      status: "render_unavailable"
+      contract: typeof contracts.$inferSelect
+      error: string | null
+    }
+
+class RollbackDraftDocumentGeneration extends Error {
+  readonly result: ContractDocumentRollbackResult
+
+  constructor(result: ContractDocumentRollbackResult) {
+    super("Rolling back failed draft contract document generation")
+    this.result = result
+  }
+}
 
 function normalizeAttachmentInput(
   input: GeneratedContractDocumentArtifact,
@@ -327,10 +374,10 @@ async function ensureRenderedContract(
   db: PostgresJsDatabase,
   contractId: string,
   issueIfDraft: boolean,
-  runtime?: Pick<ContractDocumentRuntimeOptions, "eventBus" | "lifecycleHooks">,
   options: { forceRerender?: boolean } = {},
 ): Promise<EnsureRenderedContractResult> {
   let contract = await contractRecordsService.getContractById(db, contractId)
+  let lifecycleEvent: ContractLifecycleEvent | null = null
   if (!contract) {
     return { status: "not_found" as const }
   }
@@ -338,7 +385,7 @@ async function ensureRenderedContract(
   if (contract.status === "draft" && issueIfDraft) {
     let issued: Awaited<ReturnType<typeof contractRecordsService.issueContract>>
     try {
-      issued = await contractRecordsService.issueContract(db, contractId, runtime)
+      issued = await contractRecordsService.issueContract(db, contractId)
     } catch (error) {
       if (isContractTemplateSyntaxError(error)) {
         return {
@@ -357,6 +404,7 @@ async function ensureRenderedContract(
       return { status: "not_draft" }
     }
     contract = issued.contract
+    lifecycleEvent = issued.event ?? null
   }
 
   const templateVersion = await loadTemplateVersion(db, contract.templateVersionId ?? null)
@@ -423,6 +471,146 @@ async function ensureRenderedContract(
     templateVersion,
     renderedBody,
     renderedBodyFormat,
+    lifecycleEvent,
+  }
+}
+
+function toPublicResult(result: ContractDocumentAttemptResult): ContractDocumentPublicResult {
+  if (result.status !== "generated") {
+    return { status: result.status }
+  }
+
+  const { lifecycleEvent: _lifecycleEvent, ...publicResult } = result
+  return publicResult
+}
+
+async function emitGenerationEvents(
+  runtime: ContractDocumentRuntimeOptions,
+  result: ContractDocumentAttemptResult,
+  options: { regenerated?: boolean },
+) {
+  if (result.status !== "generated") return
+
+  if (result.lifecycleEvent) {
+    await emitContractLifecycleEvent(runtime, result.lifecycleEvent)
+  }
+
+  await runtime.eventBus?.emit(
+    "contract.document.generated",
+    {
+      contractId: result.contractId,
+      contractStatus: result.contractStatus,
+      attachmentId: result.attachment.id,
+      attachmentKind: result.attachment.kind,
+      attachmentName: result.attachment.name,
+      renderedBodyFormat: result.renderedBodyFormat,
+      regenerated: options.regenerated ?? false,
+    } satisfies ContractDocumentGeneratedEvent,
+    {
+      category: "internal",
+      source: "service",
+    },
+  )
+}
+
+async function generateContractDocumentAttempt(
+  db: PostgresJsDatabase,
+  contractId: string,
+  input: GenerateContractDocumentInput,
+  runtime: ContractDocumentRuntimeOptions,
+  options: { regenerated?: boolean; forceRerender?: boolean } = {},
+): Promise<ContractDocumentAttemptResult> {
+  const prepared = await ensureRenderedContract(db, contractId, input.issueIfDraft, {
+    forceRerender: options.forceRerender,
+  })
+
+  if (prepared.status === "not_found") {
+    return { status: "not_found" }
+  }
+  if (prepared.status === "not_draft") {
+    return { status: "not_draft" }
+  }
+  if (prepared.status === "render_unavailable") {
+    console.error(
+      `[legal] contract document render unavailable for contract ${contractId}: ${prepared.error}`,
+    )
+    await recordGenerationFailure(db, prepared.contract, "render_unavailable", prepared.error)
+    return {
+      status: "render_unavailable",
+      contract: prepared.contract,
+      error: prepared.error,
+    }
+  }
+
+  let artifact: GeneratedContractDocumentArtifact
+  try {
+    artifact = await runtime.generator({
+      db,
+      contract: prepared.contract,
+      templateVersion: prepared.templateVersion,
+      renderedBody: prepared.renderedBody,
+      renderedBodyFormat: prepared.renderedBodyFormat,
+      variables: (prepared.contract.variables as Record<string, unknown> | null) ?? {},
+      bindings: runtime.bindings ?? {},
+    })
+  } catch (err) {
+    // Generator failures (Cloud SDK 5xx, R2 outage, malformed
+    // template) are silently fatal at this layer — the caller
+    // (subscriber / workflow step) only sees `generator_failed`
+    // and can't tell why. Log here so the wrangler dev log /
+    // production observability captures the actual cause.
+    console.error(
+      `[legal] contract document generator failed for contract ${contractId}:`,
+      err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : err,
+    )
+    const error = err instanceof Error ? err.message : String(err)
+    await recordGenerationFailure(db, prepared.contract, "generator_failed", error)
+    return { status: "generator_failed", contract: prepared.contract, error }
+  }
+
+  if (input.replaceExisting) {
+    const existing = await db
+      .select({ id: contractAttachments.id })
+      .from(contractAttachments)
+      .where(eq(contractAttachments.contractId, contractId))
+      .orderBy(desc(contractAttachments.createdAt))
+
+    for (const attachment of existing) {
+      const row = await db
+        .select({ id: contractAttachments.id, kind: contractAttachments.kind })
+        .from(contractAttachments)
+        .where(eq(contractAttachments.id, attachment.id))
+        .limit(1)
+        .then((rows) => rows[0] ?? null)
+
+      if (row?.kind === (artifact.kind ?? input.kind)) {
+        await contractRecordsService.deleteAttachment(db, attachment.id)
+      }
+    }
+  }
+
+  const attachment = await contractRecordsService.createAttachment(
+    db,
+    contractId,
+    normalizeAttachmentInput(artifact, input.kind),
+  )
+
+  if (!attachment) {
+    const error = "Contract document attachment could not be created"
+    await recordGenerationFailure(db, prepared.contract, "generator_failed", error)
+    return { status: "generator_failed", contract: prepared.contract, error }
+  }
+
+  await clearGenerationFailure(db, prepared.contract)
+
+  return {
+    status: "generated",
+    contractId: prepared.contract.id,
+    contractStatus: prepared.contract.status,
+    renderedBodyFormat: prepared.renderedBodyFormat,
+    renderedBody: prepared.renderedBody,
+    attachment,
+    lifecycleEvent: prepared.lifecycleEvent,
   }
 }
 
@@ -437,117 +625,39 @@ export const contractDocumentsService = {
     | { status: "not_found" | "not_draft" | "render_unavailable" | "generator_failed" }
     | ({ status: "generated" } & GeneratedContractDocumentRecord)
   > {
-    const prepared = await ensureRenderedContract(db, contractId, input.issueIfDraft, runtime, {
-      forceRerender: options.forceRerender,
-    })
+    const existing = input.issueIfDraft
+      ? await contractRecordsService.getContractById(db, contractId)
+      : null
+    const rollbackDraftIssue = existing?.status === "draft"
 
-    if (prepared.status === "not_found") {
-      return { status: "not_found" }
-    }
-    if (prepared.status === "not_draft") {
-      return { status: "not_draft" }
-    }
-    if (prepared.status === "render_unavailable") {
-      console.error(
-        `[legal] contract document render unavailable for contract ${contractId}: ${prepared.error}`,
-      )
-      await recordGenerationFailure(db, prepared.contract, "render_unavailable", prepared.error)
-      return { status: "render_unavailable" }
-    }
-
-    let artifact: GeneratedContractDocumentArtifact
     try {
-      artifact = await runtime.generator({
-        db,
-        contract: prepared.contract,
-        templateVersion: prepared.templateVersion,
-        renderedBody: prepared.renderedBody,
-        renderedBodyFormat: prepared.renderedBodyFormat,
-        variables: (prepared.contract.variables as Record<string, unknown> | null) ?? {},
-        bindings: runtime.bindings ?? {},
-      })
-    } catch (err) {
-      // Generator failures (Cloud SDK 5xx, R2 outage, malformed
-      // template) are silently fatal at this layer — the caller
-      // (subscriber / workflow step) only sees `generator_failed`
-      // and can't tell why. Log here so the wrangler dev log /
-      // production observability captures the actual cause.
-      console.error(
-        `[legal] contract document generator failed for contract ${contractId}:`,
-        err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : err,
-      )
-      await recordGenerationFailure(
-        db,
-        prepared.contract,
-        "generator_failed",
-        err instanceof Error ? err.message : String(err),
-      )
-      return { status: "generator_failed" }
-    }
+      const result = rollbackDraftIssue
+        ? await db.transaction(async (tx) => {
+            const attempt = await generateContractDocumentAttempt(
+              tx as PostgresJsDatabase,
+              contractId,
+              input,
+              runtime,
+              options,
+            )
+            if (attempt.status === "generator_failed" || attempt.status === "render_unavailable") {
+              throw new RollbackDraftDocumentGeneration(attempt)
+            }
+            return attempt
+          })
+        : await generateContractDocumentAttempt(db, contractId, input, runtime, options)
 
-    if (input.replaceExisting) {
-      const existing = await db
-        .select({ id: contractAttachments.id })
-        .from(contractAttachments)
-        .where(eq(contractAttachments.contractId, contractId))
-        .orderBy(desc(contractAttachments.createdAt))
-
-      for (const attachment of existing) {
-        const row = await db
-          .select({ id: contractAttachments.id, kind: contractAttachments.kind })
-          .from(contractAttachments)
-          .where(eq(contractAttachments.id, attachment.id))
-          .limit(1)
-          .then((rows) => rows[0] ?? null)
-
-        if (row?.kind === (artifact.kind ?? input.kind)) {
-          await contractRecordsService.deleteAttachment(db, attachment.id)
+      await emitGenerationEvents(runtime, result, options)
+      return toPublicResult(result)
+    } catch (error) {
+      if (error instanceof RollbackDraftDocumentGeneration) {
+        const current = await contractRecordsService.getContractById(db, contractId)
+        if (current) {
+          await recordGenerationFailure(db, current, error.result.status, error.result.error)
         }
+        return toPublicResult(error.result)
       }
-    }
-
-    const attachment = await contractRecordsService.createAttachment(
-      db,
-      contractId,
-      normalizeAttachmentInput(artifact, input.kind),
-    )
-
-    if (!attachment) {
-      await recordGenerationFailure(
-        db,
-        prepared.contract,
-        "generator_failed",
-        "Contract document attachment could not be created",
-      )
-      return { status: "not_found" }
-    }
-
-    await clearGenerationFailure(db, prepared.contract)
-
-    await runtime.eventBus?.emit(
-      "contract.document.generated",
-      {
-        contractId: prepared.contract.id,
-        contractStatus: prepared.contract.status,
-        attachmentId: attachment.id,
-        attachmentKind: attachment.kind,
-        attachmentName: attachment.name,
-        renderedBodyFormat: prepared.renderedBodyFormat,
-        regenerated: options.regenerated ?? false,
-      } satisfies ContractDocumentGeneratedEvent,
-      {
-        category: "internal",
-        source: "service",
-      },
-    )
-
-    return {
-      status: "generated",
-      contractId: prepared.contract.id,
-      contractStatus: prepared.contract.status,
-      renderedBodyFormat: prepared.renderedBodyFormat,
-      renderedBody: prepared.renderedBody,
-      attachment,
+      throw error
     }
   },
 
