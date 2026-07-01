@@ -89,6 +89,7 @@ export {
   type ConfigureSubStep,
   DEFAULT_PAX_BANDS,
   DEFAULT_PAX_TOTAL,
+  DEFAULT_PAYMENT_INTENTS,
   defaultBookingFields,
   defaultDraftShapeFlags,
   defaultTravelerFields,

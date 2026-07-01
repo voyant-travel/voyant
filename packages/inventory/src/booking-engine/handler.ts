@@ -34,6 +34,7 @@ import {
   type ComputeQuoteRequest,
   type ComputeQuoteResult,
   DEFAULT_PAX_BANDS,
+  DEFAULT_PAYMENT_INTENTS,
   defaultBookingFields,
   defaultDraftShapeFlags,
   defaultTravelerFields,
@@ -327,7 +328,11 @@ export function buildOwnedProductDraftShape(
       : {}),
     travelerFields: fields,
     bookingFields: defaultBookingFields(),
-    paymentIntents: ["hold", "card"],
+    // Full engine allow list; deployment/surface capabilities narrow it
+    // at render time (storefront → card + bank transfer + inquiry). Owned
+    // products previously hardcoded ["hold", "card"], which collapsed the
+    // storefront's Payment step to card-only (voyant#2741).
+    paymentIntents: DEFAULT_PAYMENT_INTENTS,
     configureSubSteps: [
       ...(variants.length > 0 ? [{ kind: "product-option" as const, options: variants }] : []),
       // Owned products are scheduled — the operator picks a real departure.

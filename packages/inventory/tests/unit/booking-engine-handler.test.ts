@@ -11,7 +11,12 @@ describe("buildOwnedProductDraftShape", () => {
     expect(shape.showsReview).toBe(true)
     expect(shape.showsAddons).toBe(false)
     expect(shape.travelerFields.length).toBeGreaterThan(0)
-    expect(shape.paymentIntents).toContain("hold")
+    // Full engine allow list — deployment/surface capabilities narrow it
+    // at render time. The storefront (card + bank transfer + inquiry) must
+    // not collapse to card-only for owned products (voyant#2741).
+    expect(shape.paymentIntents).toEqual(
+      expect.arrayContaining(["hold", "card", "bank_transfer", "inquiry"]),
+    )
   })
 
   it("widens travelerFields with caller-supplied requirements", () => {

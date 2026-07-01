@@ -22,6 +22,7 @@
 import {
   type BookingDraftShape,
   DEFAULT_PAX_BANDS,
+  DEFAULT_PAYMENT_INTENTS,
   defaultBookingFields,
   defaultDraftShapeFlags,
   defaultTravelerFields,
@@ -67,7 +68,10 @@ export function buildProductDraftShape(
     paxBandsAllowedTotal: total,
     travelerFields: defaultTravelerFields(),
     bookingFields: defaultBookingFields(),
-    paymentIntents: ["hold", "card"],
+    // Full engine allow list; capabilities narrow it at render time so the
+    // storefront offers card + bank transfer + inquiry, matching sourced
+    // products (voyant#2741).
+    paymentIntents: DEFAULT_PAYMENT_INTENTS,
     configureSubSteps: [
       ...(productOptions.length > 0
         ? [{ kind: "product-option" as const, options: productOptions }]
