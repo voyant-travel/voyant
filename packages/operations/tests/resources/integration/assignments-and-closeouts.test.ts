@@ -230,6 +230,87 @@ describe.skipIf(!DB_AVAILABLE)("Slot assignment and closeout routes", () => {
       expect(closeout.dateLocal).toBe("2025-07-01")
     })
 
+    it("POST /closeouts → 400 for inverted time windows", async () => {
+      const resource = await ctx.seedResource()
+      const res = await ctx.request("/closeouts", {
+        method: "POST",
+        ...json({
+          resourceId: resource.id,
+          dateLocal: "2025-07-01",
+          startsAt: "2025-07-01T17:00:00.000Z",
+          endsAt: "2025-07-01T09:00:00.000Z",
+        }),
+      })
+
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toEqual({
+        error: "Resource closeout startsAt must be before endsAt",
+      })
+    })
+
+    it("POST /closeouts → 409 for duplicate time windows", async () => {
+      const resource = await ctx.seedResource()
+      const window = {
+        dateLocal: "2025-07-01",
+        startsAt: "2025-07-01T09:00:00.000Z",
+        endsAt: "2025-07-01T12:00:00.000Z",
+      }
+      await ctx.seedCloseout(resource.id, window)
+
+      const res = await ctx.request("/closeouts", {
+        method: "POST",
+        ...json({ resourceId: resource.id, ...window }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toEqual({
+        error: "Resource closeout overlaps an existing closeout",
+      })
+    })
+
+    it("POST /closeouts → 409 for overlapping time windows", async () => {
+      const resource = await ctx.seedResource()
+      await ctx.seedCloseout(resource.id, {
+        startsAt: "2025-07-01T09:00:00.000Z",
+        endsAt: "2025-07-01T12:00:00.000Z",
+      })
+
+      const res = await ctx.request("/closeouts", {
+        method: "POST",
+        ...json({
+          resourceId: resource.id,
+          dateLocal: "2025-07-01",
+          startsAt: "2025-07-01T11:00:00.000Z",
+          endsAt: "2025-07-01T13:00:00.000Z",
+        }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toEqual({
+        error: "Resource closeout overlaps an existing closeout",
+      })
+    })
+
+    it("POST /closeouts → 201 for adjacent time windows", async () => {
+      const resource = await ctx.seedResource()
+      await ctx.seedCloseout(resource.id, {
+        startsAt: "2025-07-01T09:00:00.000Z",
+        endsAt: "2025-07-01T12:00:00.000Z",
+      })
+
+      const res = await ctx.request("/closeouts", {
+        method: "POST",
+        ...json({
+          resourceId: resource.id,
+          dateLocal: "2025-07-01",
+          startsAt: "2025-07-01T12:00:00.000Z",
+          endsAt: "2025-07-01T14:00:00.000Z",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+    })
+
     it("POST /closeouts → 404 for missing resource", async () => {
       const res = await ctx.request("/closeouts", {
         method: "POST",
@@ -264,6 +345,46 @@ describe.skipIf(!DB_AVAILABLE)("Slot assignment and closeout routes", () => {
       expect(res.status).toBe(200)
       const body = await res.json()
       expect(body.data.reason).toBe("Maintenance")
+    })
+
+    it("PATCH /closeouts/:id → 400 when merged time window is inverted", async () => {
+      const resource = await ctx.seedResource()
+      const closeout = await ctx.seedCloseout(resource.id, {
+        startsAt: "2025-07-01T09:00:00.000Z",
+        endsAt: "2025-07-01T12:00:00.000Z",
+      })
+
+      const res = await ctx.request(`/closeouts/${closeout.id}`, {
+        method: "PATCH",
+        ...json({ startsAt: "2025-07-01T13:00:00.000Z" }),
+      })
+
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toEqual({
+        error: "Resource closeout startsAt must be before endsAt",
+      })
+    })
+
+    it("PATCH /closeouts/:id → 409 when merged time window overlaps another closeout", async () => {
+      const resource = await ctx.seedResource()
+      await ctx.seedCloseout(resource.id, {
+        startsAt: "2025-07-01T09:00:00.000Z",
+        endsAt: "2025-07-01T12:00:00.000Z",
+      })
+      const closeout = await ctx.seedCloseout(resource.id, {
+        startsAt: "2025-07-01T13:00:00.000Z",
+        endsAt: "2025-07-01T14:00:00.000Z",
+      })
+
+      const res = await ctx.request(`/closeouts/${closeout.id}`, {
+        method: "PATCH",
+        ...json({ startsAt: "2025-07-01T11:00:00.000Z" }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toEqual({
+        error: "Resource closeout overlaps an existing closeout",
+      })
     })
 
     it("PATCH /closeouts/:id → 404 for missing", async () => {

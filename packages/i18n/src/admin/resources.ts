@@ -166,6 +166,7 @@ export const adminResourcesMessages = {
         closeout: {
           validationResourceRequired: "Resource is required",
           validationDateRequired: "Date is required",
+          validationWindowOrder: "Starts At must be before Ends At",
           editTitle: "Edit Closeout",
           newTitle: "New Closeout",
           resourceLabel: "Resource",
@@ -407,6 +408,7 @@ export const adminResourcesMessages = {
         closeout: {
           validationResourceRequired: "Resursa este obligatorie",
           validationDateRequired: "Data este obligatorie",
+          validationWindowOrder: "Ora de inceput trebuie sa fie inainte de ora de sfarsit",
           editTitle: "Editeaza closeout-ul",
           newTitle: "Closeout nou",
           resourceLabel: "Resursa",

@@ -313,14 +313,25 @@ export function ResourceSlotAssignmentDialog({
 }
 
 const getCloseoutFormSchema = (messages: ReturnType<typeof useOperatorAdminMessages>) =>
-  z.object({
-    resourceId: z.string().min(1, messages.resources.dialogs.closeout.validationResourceRequired),
-    dateLocal: z.string().min(1, messages.resources.dialogs.closeout.validationDateRequired),
-    startsAt: z.string().optional(),
-    endsAt: z.string().optional(),
-    reason: z.string().optional(),
-    createdBy: z.string().optional(),
-  })
+  z
+    .object({
+      resourceId: z.string().min(1, messages.resources.dialogs.closeout.validationResourceRequired),
+      dateLocal: z.string().min(1, messages.resources.dialogs.closeout.validationDateRequired),
+      startsAt: z.string().optional(),
+      endsAt: z.string().optional(),
+      reason: z.string().optional(),
+      createdBy: z.string().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (!values.startsAt || !values.endsAt) return
+      if (new Date(values.startsAt).getTime() < new Date(values.endsAt).getTime()) return
+
+      ctx.addIssue({
+        code: "custom",
+        path: ["endsAt"],
+        message: messages.resources.dialogs.closeout.validationWindowOrder,
+      })
+    })
 
 export function ResourceCloseoutDialog({
   open,
@@ -442,7 +453,10 @@ export function ResourceCloseoutDialog({
                 <DateTimePicker
                   value={form.watch("startsAt") || null}
                   onChange={(value) =>
-                    form.setValue("startsAt", value ?? "", { shouldDirty: true })
+                    form.setValue("startsAt", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
                   }
                   className="w-full"
                 />
@@ -451,9 +465,17 @@ export function ResourceCloseoutDialog({
                 <Label>{dialogMessages.endsAtLabel}</Label>
                 <DateTimePicker
                   value={form.watch("endsAt") || null}
-                  onChange={(value) => form.setValue("endsAt", value ?? "", { shouldDirty: true })}
+                  onChange={(value) =>
+                    form.setValue("endsAt", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                   className="w-full"
                 />
+                {form.formState.errors.endsAt ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.endsAt.message}</p>
+                ) : null}
               </div>
               <div className="grid gap-2">
                 <Label>{dialogMessages.createdByLabel}</Label>

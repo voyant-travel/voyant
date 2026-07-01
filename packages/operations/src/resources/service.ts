@@ -100,6 +100,60 @@ function validateSlotAssignmentState(data: {
   }
 }
 
+type ResourceCloseoutWindow = {
+  id?: string
+  resourceId: string
+  dateLocal: string
+  startsAt: Date | null
+  endsAt: Date | null
+}
+
+function assertCloseoutWindowOrder(window: ResourceCloseoutWindow) {
+  if (window.startsAt && window.endsAt && window.startsAt.getTime() >= window.endsAt.getTime()) {
+    throw new ResourcesServiceError("Resource closeout startsAt must be before endsAt", 400)
+  }
+}
+
+function closeoutWindowsOverlap(left: ResourceCloseoutWindow, right: ResourceCloseoutWindow) {
+  const leftStartsAt = left.startsAt?.getTime() ?? Number.NEGATIVE_INFINITY
+  const leftEndsAt = left.endsAt?.getTime() ?? Number.POSITIVE_INFINITY
+  const rightStartsAt = right.startsAt?.getTime() ?? Number.NEGATIVE_INFINITY
+  const rightEndsAt = right.endsAt?.getTime() ?? Number.POSITIVE_INFINITY
+
+  return leftStartsAt < rightEndsAt && rightStartsAt < leftEndsAt
+}
+
+async function ensureCloseoutWindowAvailable(
+  db: PostgresJsDatabase,
+  window: ResourceCloseoutWindow,
+  excludeId?: string,
+) {
+  assertCloseoutWindowOrder(window)
+
+  const existing = await db
+    .select({
+      id: resourceCloseouts.id,
+      resourceId: resourceCloseouts.resourceId,
+      dateLocal: resourceCloseouts.dateLocal,
+      startsAt: resourceCloseouts.startsAt,
+      endsAt: resourceCloseouts.endsAt,
+    })
+    .from(resourceCloseouts)
+    .where(
+      and(
+        eq(resourceCloseouts.resourceId, window.resourceId),
+        eq(resourceCloseouts.dateLocal, window.dateLocal),
+      ),
+    )
+
+  const overlapping = existing.find(
+    (row) => row.id !== excludeId && closeoutWindowsOverlap(window, row),
+  )
+  if (overlapping) {
+    throw new ResourcesServiceError("Resource closeout overlaps an existing closeout", 409)
+  }
+}
+
 function isPostgresError(error: unknown, code: string, constraint?: string) {
   const candidate = error as {
     code?: unknown
@@ -496,12 +550,20 @@ export const resourcesService = {
 
   async createCloseout(db: PostgresJsDatabase, data: CreateResourceCloseoutInput) {
     await ensureResourceExists(db, data.resourceId)
+    const startsAt = toDateOrNull(data.startsAt)
+    const endsAt = toDateOrNull(data.endsAt)
+    await ensureCloseoutWindowAvailable(db, {
+      resourceId: data.resourceId,
+      dateLocal: data.dateLocal,
+      startsAt,
+      endsAt,
+    })
     const [row] = await db
       .insert(resourceCloseouts)
       .values({
         ...data,
-        startsAt: toDateOrNull(data.startsAt),
-        endsAt: toDateOrNull(data.endsAt),
+        startsAt,
+        endsAt,
       })
       .returning()
     return row
@@ -509,12 +571,28 @@ export const resourcesService = {
 
   async updateCloseout(db: PostgresJsDatabase, id: string, data: UpdateResourceCloseoutInput) {
     if (data.resourceId !== undefined) await ensureResourceExists(db, data.resourceId)
+    const current = await resourcesService.getCloseoutById(db, id)
+    if (!current) return null
+
+    const startsAt = data.startsAt === undefined ? current.startsAt : toDateOrNull(data.startsAt)
+    const endsAt = data.endsAt === undefined ? current.endsAt : toDateOrNull(data.endsAt)
+    await ensureCloseoutWindowAvailable(
+      db,
+      {
+        resourceId: data.resourceId ?? current.resourceId,
+        dateLocal: data.dateLocal ?? current.dateLocal,
+        startsAt,
+        endsAt,
+      },
+      id,
+    )
+
     const [row] = await db
       .update(resourceCloseouts)
       .set({
         ...data,
-        startsAt: data.startsAt === undefined ? undefined : toDateOrNull(data.startsAt),
-        endsAt: data.endsAt === undefined ? undefined : toDateOrNull(data.endsAt),
+        startsAt: data.startsAt === undefined ? undefined : startsAt,
+        endsAt: data.endsAt === undefined ? undefined : endsAt,
       })
       .where(eq(resourceCloseouts.id, id))
       .returning()

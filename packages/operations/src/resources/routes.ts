@@ -1336,6 +1336,10 @@ const createCloseoutRoute = createRoute({
       description: "Referenced resource not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    409: {
+      description: "Resource closeout overlaps an existing closeout",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -1419,6 +1423,10 @@ const updateCloseoutRoute = createRoute({
       description: "Resource closeout or referenced resource not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    409: {
+      description: "Resource closeout overlaps an existing closeout",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -1447,7 +1455,7 @@ const closeoutRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook
       const row = await resourcesService.createCloseout(c.get("db"), c.req.valid("json"))
       return c.json({ data: row! }, 201)
     } catch (error) {
-      return handleResourcesNotFoundRouteError(c, error)
+      return handleResourcesRouteError(c, error)
     }
   })
   .openapi(batchUpdateCloseoutsRoute, async (c) => {
@@ -1488,7 +1496,7 @@ const closeoutRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook
         ? c.json({ data: row }, 200)
         : c.json({ error: "Resource closeout not found" }, 404)
     } catch (error) {
-      return handleResourcesNotFoundRouteError(c, error)
+      return handleResourcesRouteError(c, error)
     }
   })
   .openapi(deleteCloseoutRoute, async (c) => {

@@ -21121,6 +21121,24 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Resource closeout overlaps an existing closeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21664,6 +21682,24 @@
           },
           "404": {
             "description": "Resource closeout or referenced resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource closeout overlaps an existing closeout",
             "content": {
               "application/json": {
                 "schema": {
