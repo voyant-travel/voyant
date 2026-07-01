@@ -39,13 +39,14 @@ function wrappedUniqueViolation(constraint: string) {
 }
 
 function createFailingInsertDb(error: unknown): PostgresJsDatabase {
-  const insert = (() => ({
-    values: () => ({
-      returning: async () => {
-        throw error
-      },
-    }),
-  })) as PostgresJsDatabase["insert"]
+  const insert: PostgresJsDatabase["insert"] = () =>
+    ({
+      values: () => ({
+        returning: async () => {
+          throw error
+        },
+      }),
+    }) as never
   const db: Partial<PostgresJsDatabase> = {
     insert,
   }
@@ -53,15 +54,16 @@ function createFailingInsertDb(error: unknown): PostgresJsDatabase {
 }
 
 function createFailingUpdateDb(error: unknown): PostgresJsDatabase {
-  const update = (() => ({
-    set: () => ({
-      where: () => ({
-        returning: async () => {
-          throw error
-        },
+  const update: PostgresJsDatabase["update"] = () =>
+    ({
+      set: () => ({
+        where: () => ({
+          returning: async () => {
+            throw error
+          },
+        }),
       }),
-    }),
-  })) as PostgresJsDatabase["update"]
+    }) as never
   const db: Partial<PostgresJsDatabase> = {
     update,
   }
