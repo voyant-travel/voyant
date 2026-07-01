@@ -295,6 +295,7 @@ export const financeInvoiceFromBookingService = {
           .values({
             invoiceNumber: numberAssignment.invoiceNumber,
             invoiceType: data.invoiceType,
+            convertedFromInvoiceId: data.convertedFromInvoiceId ?? null,
             seriesId: numberAssignment.seriesId,
             sequence: numberAssignment.sequence,
             bookingId: booking.id,

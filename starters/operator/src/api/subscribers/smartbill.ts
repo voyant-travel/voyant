@@ -40,6 +40,7 @@ type InvoiceIssuedPayload = {
   invoiceId?: string
   invoiceNumber?: string
   invoiceType?: "invoice" | "proforma" | "credit_note"
+  convertedFromInvoiceId?: string | null
   externalAllocationRequired?: boolean
 }
 
@@ -254,7 +255,14 @@ async function syncIssuedInvoice(
   if (!invoiceId) return
   await withDbFromEnv(env, async (rawDb) => {
     const db = asFinanceDb(rawDb)
-    await syncIssuedInvoiceWithDb(env, db, runtime, invoiceId, documentType)
+    await syncIssuedInvoiceWithDb(
+      env,
+      db,
+      runtime,
+      invoiceId,
+      documentType,
+      payload.convertedFromInvoiceId,
+    )
   })
 }
 
@@ -264,6 +272,7 @@ async function syncIssuedInvoiceWithDb(
   runtime: SmartbillRuntime,
   invoiceId: string,
   documentType: "invoice" | "proforma",
+  convertedFromInvoiceId?: string | null,
 ) {
   try {
     const externalRefs = await financeService.listInvoiceExternalRefs(db, invoiceId)
@@ -281,7 +290,7 @@ async function syncIssuedInvoiceWithDb(
 
     const sourceEstimateRef =
       documentType === "invoice"
-        ? await resolveConvertedSmartbillEstimateRef(db, runtime, invoiceId)
+        ? await resolveConvertedSmartbillEstimateRef(db, runtime, invoiceId, convertedFromInvoiceId)
         : null
     const result = await issueSmartbillDocument(runtime, body, documentType, sourceEstimateRef)
 
@@ -365,18 +374,23 @@ export async function issueSmartbillDocument(
   return runtime.client.createInvoice(body)
 }
 
-async function resolveConvertedSmartbillEstimateRef(
+export async function resolveConvertedSmartbillEstimateRef(
   db: PostgresJsDatabase,
   runtime: Pick<SmartbillRuntime, "proformaSeriesName">,
   invoiceId: string,
+  convertedFromInvoiceId?: string | null,
 ): Promise<SmartbillEstimateReference | null> {
-  const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
-  if (!invoice?.convertedFromInvoiceId) return null
+  const sourceInvoiceId =
+    convertedFromInvoiceId ??
+    (await db
+      .select({ convertedFromInvoiceId: invoices.convertedFromInvoiceId })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1)
+      .then(([invoice]) => invoice?.convertedFromInvoiceId ?? null))
+  if (!sourceInvoiceId) return null
 
-  const sourceRefs = await financeService.listInvoiceExternalRefs(
-    db,
-    invoice.convertedFromInvoiceId,
-  )
+  const sourceRefs = await financeService.listInvoiceExternalRefs(db, sourceInvoiceId)
   const sourceSmartbillRef = sourceRefs.find(
     (ref) =>
       ref.provider === "smartbill" &&
@@ -391,7 +405,7 @@ async function resolveConvertedSmartbillEstimateRef(
   )
   if (!reference) {
     throw new Error(
-      `SmartBill proforma reference for ${invoice.convertedFromInvoiceId} is missing series or number`,
+      `SmartBill proforma reference for ${sourceInvoiceId} is missing series or number`,
     )
   }
   return reference
@@ -402,7 +416,7 @@ export function resolveSmartbillEstimateReference(
   fallbackSeriesName: string,
 ): SmartbillEstimateReference | null {
   const metadata = toRecord(ref.metadata)
-  const metadataSeriesName = nonEmpty(metadata?.seriesName) ?? nonEmpty(metadata?.series)
+  const metadataSeriesName = nonEmpty(metadata?.series) ?? nonEmpty(metadata?.seriesName)
   const seriesName = metadataSeriesName ?? fallbackSeriesName
   const metadataNumber = nonEmpty(metadata?.number)
   const externalNumber = nonEmpty(ref.externalNumber) ?? nonEmpty(ref.externalId)

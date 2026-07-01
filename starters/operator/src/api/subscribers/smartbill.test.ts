@@ -5,6 +5,7 @@ import {
   buildSmartbillPaymentBody,
   issueSmartbillDocument,
   mapSmartbillPaymentType,
+  resolveConvertedSmartbillEstimateRef,
   resolveSmartbillEstimateReference,
   resolveSmartbillPaymentInvoiceRef,
   syncRecordedInvoicePaymentWithDb,
@@ -325,11 +326,45 @@ describe("SmartBill proforma conversion sync", () => {
         {
           provider: "smartbill",
           externalNumber: "ignored",
-          metadata: { series: "PF-TEST", number: "42" },
+          metadata: { series: "PF-TEST", seriesName: "REQUESTED-PF", number: "42" },
         },
         "OTHER",
       ),
     ).toEqual({ seriesName: "PF-TEST", number: "42" })
+  })
+
+  it("uses emitted conversion context before reading the invoice row", async () => {
+    const listRefs = vi.spyOn(financeService, "listInvoiceExternalRefs").mockResolvedValue([
+      {
+        id: "iner_pf_1",
+        invoiceId: "proforma_1",
+        provider: "smartbill",
+        externalId: "1",
+        externalNumber: "PF-TEST-1",
+        externalUrl: null,
+        status: "issued",
+        metadata: { series: "PF-TEST", number: "1", documentType: "proforma" },
+        syncedAt: null,
+        syncError: null,
+        createdAt: new Date("2026-06-01T00:00:00Z"),
+        updatedAt: new Date("2026-06-01T00:00:00Z"),
+      },
+    ])
+    const db = {
+      select: vi.fn(() => {
+        throw new Error("invoice row should not be read when event carries conversion context")
+      }),
+    }
+
+    await expect(
+      resolveConvertedSmartbillEstimateRef(
+        db as never,
+        { proformaSeriesName: "PF-TEST" },
+        "invoice_1",
+        "proforma_1",
+      ),
+    ).resolves.toEqual({ seriesName: "PF-TEST", number: "1" })
+    expect(listRefs).toHaveBeenCalledWith(db, "proforma_1")
   })
 
   it("rejects refs without a SmartBill estimate number", () => {
