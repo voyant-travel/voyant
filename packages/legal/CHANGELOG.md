@@ -1,5 +1,13 @@
 # @voyant-travel/legal
 
+## 0.137.6
+
+### Patch Changes
+
+- 5928f32: Fix legal policy PATCH schemas so omitted fields do not receive create defaults, and return a 409 conflict when deleting policies with recorded acceptances.
+- Updated dependencies [5928f32]
+  - @voyant-travel/legal-contracts@0.106.7
+
 ## 0.137.5
 
 ### Patch Changes
