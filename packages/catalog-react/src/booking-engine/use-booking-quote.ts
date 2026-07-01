@@ -1,6 +1,6 @@
 "use client"
 
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   type BookingDraftV1,
   type QuoteResponseV1,
@@ -80,7 +80,16 @@ export function useBookingQuote(options: UseBookingQuoteOptions) {
     // in place (price swaps when ready) instead of blanking → falling back
     // to the minimal shape → flashing the whole Configure step on every
     // traveler/room change.
-    placeholderData: keepPreviousData,
+    //
+    // BUT do not carry a quote across a SCOPE change: its price is for the old
+    // market/currency, and keeping it visible would let the shopper confirm the
+    // stale-scope quote in the sub-second window before the re-scoped quote
+    // lands. On a scope change we drop to `null` (loading) so the confirm guard
+    // (`!quote.data?.quoteId`) blocks booking until the new quote resolves.
+    placeholderData: (previous, previousQuery) => {
+      const previousScopeKey = previousQuery?.queryKey?.[3]
+      return previousScopeKey === scopeKey ? previous : undefined
+    },
   })
 
   const requote = useMutation<QuoteResponseV1, Error, void>({
