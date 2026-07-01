@@ -227,6 +227,29 @@ export const distributionUiEn = {
       content: "Content",
       lastRun: "Outcome: scanned {scanned}, triggered {triggered}.",
     },
+    feedback: {
+      dismiss: "Dismiss feedback",
+      retry: {
+        title: "Retry result",
+        processed:
+          "Processed {attempted} pending link(s): {succeeded} succeeded, {failed} failed, {compensated} compensated.",
+        bookingMissing:
+          "No booking exists for {bookingId}. Pending links were marked failed with booking_missing.",
+        noPendingLinks: "No pending links were available to retry for {bookingId}.",
+        noTargets:
+          "No active booking items or channel mappings produced delivery links for {bookingId}.",
+        noAdapter:
+          "Retry reached pending links, but the channel adapter is missing or unsupported.",
+        noMapping: "Retry reached pending links, but a channel product mapping is missing.",
+        ok: "Retry completed for {bookingId}, but the server did not report processed links.",
+        failed: "Retry failed for {bookingId}: {message}",
+      },
+      reconcile: {
+        title: "Reconcile result",
+        success: "Scanned {scanned} record(s) and triggered {triggered} push workflow(s).",
+        failed: "Reconcile failed: {message}",
+      },
+    },
     refresh: {
       loading: "Loading...",
       title: "Auto-refreshes every {seconds}s",
@@ -235,6 +258,10 @@ export const distributionUiEn = {
     },
     drawer: {
       title: "Delivery log - {bookingId}",
+      bookingScopeDescription:
+        "Booking-scoped log. It can include deliveries for every item linked to this booking.",
+      itemScopeDescription:
+        "Booking-scoped log opened from item {itemId}. It can include deliveries for sibling items on the same booking.",
       emptyTitle: "No deliveries yet",
       emptyDescription: "Channel-push attempts log here once they dispatch.",
       attempt: "attempt #{number}",

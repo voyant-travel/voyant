@@ -29,11 +29,13 @@ import {
 
 export function DeliveriesDrawer({
   bookingId,
+  bookingItemId,
   client,
   onClose,
   messages,
 }: {
   bookingId: string | null
+  bookingItemId?: string | null
   client: { baseUrl: string; fetcher: VoyantFetcher }
   onClose: () => void
   messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"]
@@ -57,6 +59,11 @@ export function DeliveriesDrawer({
           <SheetTitle>
             {formatTemplate(messages.drawer.title, { bookingId: bookingId ?? "" })}
           </SheetTitle>
+          <p className="text-sm text-muted-foreground">
+            {bookingItemId
+              ? formatTemplate(messages.drawer.itemScopeDescription, { itemId: bookingItemId })
+              : messages.drawer.bookingScopeDescription}
+          </p>
         </SheetHeader>
         <SheetBody className="flex flex-col gap-3">
           {query.isPending ? (

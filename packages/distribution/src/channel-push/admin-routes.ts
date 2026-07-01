@@ -28,7 +28,7 @@ import { Hono } from "hono"
 
 import { channelBookingLinks, channels } from "../schema.js"
 import { reconcileAvailability, reconcileBookingLinks, reconcileContent } from "./reconciler.js"
-import { triggerBookingPushForBooking } from "./subscriber.js"
+import { triggerBookingPushForBookingWithResult } from "./subscriber.js"
 
 type Env = {
   Variables: {
@@ -94,8 +94,8 @@ export function createChannelPushAdminRoutes() {
   app.post("/retry/:bookingId", async (c) => {
     const bookingId = c.req.param("bookingId")
     try {
-      await triggerBookingPushForBooking(bookingId)
-      return c.json({ data: { ok: true, bookingId } })
+      const result = await triggerBookingPushForBookingWithResult(bookingId)
+      return c.json({ data: { ok: true, ...result } })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       return c.json({ error: message }, 500)

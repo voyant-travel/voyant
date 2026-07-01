@@ -70,6 +70,35 @@ export interface ReconcilerResult {
   triggered: number
 }
 
+export interface RetryPushResult {
+  ok: boolean
+  bookingId: string
+  attempted?: number
+  succeeded?: number
+  failed?: number
+  compensated?: number
+  targetCount?: number
+  insertedLinks?: number
+  reason?: "no_pending_links" | "booking_missing" | "no_targets" | string
+  outcomes?: Array<{
+    channelId: string
+    bookingItemId: string | null
+    status: "ok" | "failed" | "skipped" | "compensated" | string
+    upstreamRef?: string
+    error?: string
+  }>
+}
+
+export type RetryFeedbackKind =
+  | "processed"
+  | "booking_missing"
+  | "no_pending_links"
+  | "no_targets"
+  | "no_adapter"
+  | "no_mapping"
+  | "failed"
+  | "ok"
+
 export interface BookingRecord {
   id: string
   bookingNumber: string
@@ -200,4 +229,23 @@ export function formatTemplate(template: string, values: Record<string, string |
     const value = values[key]
     return value === undefined ? "" : String(value)
   })
+}
+
+export function unwrapData<T>(body: T | { data: T }): T {
+  if (body && typeof body === "object" && "data" in body) {
+    return (body as { data: T }).data
+  }
+  return body as T
+}
+
+export function classifyRetryResult(result: RetryPushResult): RetryFeedbackKind {
+  const errors = new Set((result.outcomes ?? []).map((outcome) => outcome.error).filter(Boolean))
+  if (result.reason === "booking_missing" || errors.has("booking_missing")) return "booking_missing"
+  if (errors.has("no_adapter_registered") || errors.has("adapter_unsupported")) return "no_adapter"
+  if (errors.has("no_mapping")) return "no_mapping"
+  if (result.reason === "no_targets") return "no_targets"
+  if (result.reason === "no_pending_links") return "no_pending_links"
+  if ((result.failed ?? 0) > 0) return "failed"
+  if ((result.attempted ?? 0) > 0) return "processed"
+  return "ok"
 }

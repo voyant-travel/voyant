@@ -10,7 +10,9 @@
  * Per docs/architecture/channel-push-architecture.md §4.1.
  */
 
+import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventEnvelope, Subscriber } from "@voyant-travel/core"
+import { eq } from "drizzle-orm"
 
 import {
   processAvailabilityPushIntents,
@@ -18,6 +20,7 @@ import {
   upsertAvailabilityIntent,
 } from "./availability-push.js"
 import {
+  type ProcessBookingPushResult,
   processBookingPush,
   resolveBookingPushTargets,
   upsertPendingBookingLinks,
@@ -259,4 +262,54 @@ export async function triggerBookingPushForBooking(bookingId: string): Promise<v
   if (targets.length === 0) return
   await upsertPendingBookingLinks(deps.db, bookingId, targets)
   await processBookingPush({ bookingId }, deps)
+}
+
+export interface TriggerBookingPushResult extends Omit<ProcessBookingPushResult, "reason"> {
+  targetCount: number
+  insertedLinks: number
+  reason?: ProcessBookingPushResult["reason"] | "no_targets"
+}
+
+/**
+ * Trigger booking push and return operator-facing diagnostics for retry UI.
+ */
+export async function triggerBookingPushForBookingWithResult(
+  bookingId: string,
+): Promise<TriggerBookingPushResult> {
+  const deps = getChannelPushDepsOrThrow()
+  const targets = await resolveBookingPushTargets(deps.db, bookingId)
+  if (targets.length === 0) {
+    const [booking] = await deps.db
+      .select({ id: bookings.id })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1)
+    if (booking) {
+      return {
+        bookingId,
+        attempted: 0,
+        succeeded: 0,
+        failed: 0,
+        compensated: 0,
+        outcomes: [],
+        targetCount: 0,
+        insertedLinks: 0,
+        reason: "no_targets",
+      }
+    }
+  }
+
+  const insertedLinks =
+    targets.length > 0 ? await upsertPendingBookingLinks(deps.db, bookingId, targets) : 0
+  const result = await processBookingPush({ bookingId }, deps)
+
+  return {
+    ...result,
+    targetCount: targets.length,
+    insertedLinks,
+    reason:
+      targets.length === 0 && result.attempted === 0 && result.outcomes.length === 0
+        ? "no_targets"
+        : result.reason,
+  }
 }
