@@ -97,8 +97,7 @@
     "schema": "./schema",
     "requiresSchemas": [
       "@voyant-travel/bookings",
-      "@voyant-travel/db",
-      "@voyant-travel/inventory"
+      "@voyant-travel/db"
     ]
   }
 }

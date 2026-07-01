@@ -248,7 +248,7 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
       expect(body.data.active).toBe(true)
     })
 
-    it("rejects product mappings for unknown product ids", async () => {
+    it("allows product mappings for unmanaged external product ids", async () => {
       const channel = await ctx.seedChannel()
       const res = await ctx.app.request("/product-mappings", {
         method: "POST",
@@ -258,8 +258,9 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
           externalProductId: "EXT-MISSING",
         }),
       })
-      expect(res.status).toBe(400)
-      expect((await res.json()).code).toBe("invalid_request")
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data.productId).toBe("prod_missing")
     })
 
     it("lists product mappings", async () => {
