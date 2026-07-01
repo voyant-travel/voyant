@@ -1,5 +1,11 @@
 # @voyant-travel/openapi
 
+## 0.2.6
+
+### Patch Changes
+
+- cc29167: Require public document delivery grants for public contract read/sign routes and return signer-safe contract/signature payloads.
+
 ## 0.2.5
 
 ### Patch Changes
