@@ -9,6 +9,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { contractsPublicRoutes, createContractsAdminRoutes } from "../../src/contracts/routes.js"
 import {
   contractAttachments,
+  contractSignatures,
   contracts,
   contractTemplates,
   contractTemplateVersions,
@@ -459,6 +460,133 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
         contentType: "application/pdf",
       }),
     ])
+  })
+
+  it("rejects public contract read and sign by id alone", async () => {
+    const [contract] = await db
+      .insert(contracts)
+      .values({
+        title: "Token-only contract",
+        scope: "customer",
+        status: "sent",
+        renderedBody: "<p>Hello traveler</p>",
+        variables: {
+          customer: { email: "traveler@example.com", passportNumber: "P123456" },
+        },
+        metadata: { internalNote: "Do not expose" },
+      })
+      .returning()
+
+    const readRes = await publicApp.request(`/${contract.id}`)
+    expect(readRes.status).toBe(404)
+    expect(await readRes.json()).toEqual({ error: "Contract not found" })
+
+    const signRes = await publicApp.request(`/${contract.id}/sign`, {
+      method: "POST",
+      ...json({
+        signerName: "Ada Lovelace",
+        method: "manual",
+      }),
+    })
+    expect(signRes.status).toBe(404)
+    expect(await signRes.json()).toEqual({ error: "Contract not found" })
+
+    const signatures = await db
+      .select()
+      .from(contractSignatures)
+      .where(eq(contractSignatures.contractId, contract.id))
+    expect(signatures).toEqual([])
+  })
+
+  it("allows public contract read and sign through a valid delivery grant only", async () => {
+    const [contract] = await db
+      .insert(contracts)
+      .values({
+        title: "Grant-backed contract",
+        scope: "customer",
+        status: "draft",
+        renderedBody: "<p>Hello Ada</p>",
+        variables: {
+          customer: { email: "ada@example.com", passportNumber: "P123456" },
+        },
+        metadata: { internalNote: "Do not expose" },
+      })
+      .returning()
+
+    const documentRes = await adminApp.request(`/${contract.id}/generate-document`, {
+      method: "POST",
+      ...json({ publicDelivery: true }),
+    })
+    expect(documentRes.status).toBe(201)
+    const documentBody = await documentRes.json()
+    const token = new URL(documentBody.data.publicDownload.url).pathname.split("/").at(-1)
+    expect(token).toEqual(expect.any(String))
+
+    const sendRes = await adminApp.request(`/${contract.id}/send`, { method: "POST" })
+    expect(sendRes.status).toBe(200)
+
+    const readRes = await publicApp.request(`/${contract.id}?token=${token}`)
+    expect(readRes.status).toBe(200)
+    const readBody = await readRes.json()
+    expect(readBody.data).toEqual({
+      contractNumber: null,
+      scope: "customer",
+      status: "sent",
+      title: "Grant-backed contract",
+      issuedAt: expect.any(String),
+      sentAt: expect.any(String),
+      executedAt: null,
+      expiresAt: null,
+      voidedAt: null,
+      language: "en",
+      renderedBodyFormat: "html",
+      renderedBody: "<p>Hello Ada</p>",
+    })
+    expect(readBody.data).not.toHaveProperty("id")
+    expect(readBody.data).not.toHaveProperty("variables")
+    expect(readBody.data).not.toHaveProperty("metadata")
+    expect(readBody.data).not.toHaveProperty("personId")
+    expect(JSON.stringify(readBody)).not.toContain("P123456")
+
+    const signRes = await publicApp.request(`/${contract.id}/sign?token=${token}`, {
+      method: "POST",
+      ...json({
+        signerName: "Ada Lovelace",
+        signerEmail: "ada@example.com",
+        signerRole: "Traveler",
+        method: "electronic",
+        personId: "people_should_not_be_accepted",
+        metadata: { internal: true },
+      }),
+    })
+    expect(signRes.status).toBe(200)
+    const signBody = await signRes.json()
+    expect(signBody.data.signature).toEqual({
+      signerName: "Ada Lovelace",
+      signerEmail: "ada@example.com",
+      signerRole: "Traveler",
+      method: "electronic",
+      signedAt: expect.any(String),
+    })
+    expect(signBody.data.signature).not.toHaveProperty("id")
+    expect(signBody.data.signature).not.toHaveProperty("contractId")
+    expect(signBody.data.signature).not.toHaveProperty("personId")
+    expect(signBody.data.signature).not.toHaveProperty("metadata")
+
+    const signatures = await db
+      .select()
+      .from(contractSignatures)
+      .where(eq(contractSignatures.contractId, contract.id))
+    expect(signatures).toHaveLength(1)
+    expect(signatures[0]).toMatchObject({
+      contractId: contract.id,
+      signerName: "Ada Lovelace",
+      signerEmail: "ada@example.com",
+      signerRole: "Traveler",
+      method: "electronic",
+      personId: null,
+      metadata: null,
+    })
   })
 
   it("does not upload a stored document for a missing contract", async () => {
