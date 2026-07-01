@@ -243,15 +243,20 @@ export function BookingInvoiceDialog({
       (schedulesQuery.data?.data ?? []).filter((s) => s.status === "pending" || s.status === "due"),
     [schedulesQuery.data],
   )
+  const scheduleLoadError = schedulesQuery.isError
+    ? schedulesQuery.error instanceof Error
+      ? schedulesQuery.error.message
+      : dialog.scheduleLoadError
+    : null
 
   useEffect(() => {
-    if (!open || schedulesQuery.isLoading || unpaidSchedules.length > 0 || source !== "schedule") {
+    if (!open || !schedulesQuery.isSuccess || unpaidSchedules.length > 0 || source !== "schedule") {
       return
     }
     setSource("custom")
     setScheduleId(null)
     setError(null)
-  }, [open, schedulesQuery.isLoading, unpaidSchedules.length, source])
+  }, [open, schedulesQuery.isSuccess, unpaidSchedules.length, source])
 
   // When the operator picks a schedule, lock the financial fields to it.
   // `useMemo` keeps the lookup cheap on every render.
@@ -349,6 +354,10 @@ export function BookingInvoiceDialog({
     if (submitting) return
     setError(null)
 
+    if (source === "schedule" && scheduleLoadError) {
+      setError(scheduleLoadError)
+      return
+    }
     if (source === "schedule" && !selectedSchedule) {
       setError(dialog.schedulePlaceholder)
       return
@@ -470,6 +479,7 @@ export function BookingInvoiceDialog({
     linesDriveTotals,
     lineItems,
     dialog,
+    scheduleLoadError,
   ])
 
   // ---- render --------------------------------------------------------------
@@ -531,8 +541,10 @@ export function BookingInvoiceDialog({
                     <SelectValue placeholder={dialog.schedulePlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
-                    {unpaidSchedules.length === 0 ? (
-                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                    {scheduleLoadError ? (
+                      <div className="px-3 py-2 text-destructive text-sm">{scheduleLoadError}</div>
+                    ) : unpaidSchedules.length === 0 ? (
+                      <div className="px-3 py-2 text-muted-foreground text-sm">
                         {dialog.scheduleEmpty}
                       </div>
                     ) : (
@@ -547,6 +559,9 @@ export function BookingInvoiceDialog({
                 </Select>
                 {scheduleLocked ? (
                   <p className="text-xs text-muted-foreground">{dialog.scheduleLockedHint}</p>
+                ) : null}
+                {scheduleLoadError ? (
+                  <p className="text-destructive text-xs">{dialog.scheduleLoadError}</p>
                 ) : null}
               </div>
             ) : null}

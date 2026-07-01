@@ -71,6 +71,7 @@ export const invoiceDialog = {
   },
   schedulePlaceholder: "Select a payment schedule",
   scheduleEmpty: "No unpaid schedules available.",
+  scheduleLoadError: "Could not load payment schedules. Try again before creating from schedule.",
   scheduleLockedHint: "Amounts, currency and due date are taken from the schedule.",
   attachmentsHint: "Attach supporting documents. Skipped when SmartBill sync is on.",
   invoiceNumberAutoHint: "SmartBill assigns the number from the next sequence on issue.",

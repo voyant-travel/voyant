@@ -15,6 +15,7 @@ const testState = vi.hoisted(() => ({
     scheduleType: string
   }>,
   schedulesLoading: false,
+  schedulesError: null as Error | null,
   createFromBookingAsync: vi.fn(async () => ({
     id: "inv_123",
     totalCents: 10000,
@@ -29,8 +30,11 @@ const testState = vi.hoisted(() => ({
 
 vi.mock("./index.js", () => ({
   useBookingPaymentSchedules: () => ({
-    data: { data: testState.schedules },
+    data: testState.schedulesError ? undefined : { data: testState.schedules },
     isLoading: testState.schedulesLoading,
+    isError: testState.schedulesError != null,
+    isSuccess: !testState.schedulesLoading && testState.schedulesError == null,
+    error: testState.schedulesError,
   }),
   useInvoiceMutation: () => ({
     createFromBooking: {
@@ -187,6 +191,7 @@ describe("BookingInvoiceDialog", () => {
   beforeEach(() => {
     testState.schedules = []
     testState.schedulesLoading = false
+    testState.schedulesError = null
     testState.createFromBookingAsync.mockClear()
     testState.fetcher.mockClear()
     container = document.createElement("div")
@@ -206,6 +211,23 @@ describe("BookingInvoiceDialog", () => {
 
     expect(container.textContent).toContain("Add line item")
     expect(container.textContent).not.toContain("No unpaid schedules available.")
+  })
+
+  it("does not default to custom invoices when schedule loading fails", async () => {
+    testState.schedulesError = new Error("Schedule API unavailable")
+
+    await act(async () => {
+      root.render(<BookingInvoiceDialog open onOpenChange={() => {}} bookingId="book_123" />)
+    })
+
+    expect(container.textContent).toContain("Schedule API unavailable")
+    expect(container.textContent).not.toContain("Add line item")
+
+    await act(async () => {
+      clickButton(container, "Create Invoice")
+    })
+
+    expect(testState.createFromBookingAsync).not.toHaveBeenCalled()
   })
 
   it("clears the schedule validation message when switching to custom", async () => {
