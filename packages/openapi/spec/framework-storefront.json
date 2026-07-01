@@ -794,6 +794,105 @@
         }
       }
     },
+    "/v1/public/markets": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The supported markets, locales, and currencies for anonymous discovery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "regionCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "countryCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "defaultLocale": {
+                            "type": "string"
+                          },
+                          "defaultCurrency": {
+                            "type": "string"
+                          },
+                          "locales": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "languageTag": {
+                                  "type": "string"
+                                },
+                                "isDefault": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "languageTag",
+                                "isDefault"
+                              ]
+                            }
+                          },
+                          "currencies": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "currencyCode": {
+                                  "type": "string"
+                                },
+                                "isDefault": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "currencyCode",
+                                "isDefault"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "name",
+                          "regionCode",
+                          "countryCode",
+                          "defaultLocale",
+                          "defaultCurrency",
+                          "locales",
+                          "currencies"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/products/tags": {
       "get": {
         "parameters": [
