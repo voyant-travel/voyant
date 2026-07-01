@@ -24,6 +24,7 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
   let adminApp: Hono
   let db: PostgresJsDatabase
   let generatedNames: string[]
+  let generatorError: Error | null
 
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
@@ -43,6 +44,7 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
           expiresAt: "2026-05-23T16:00:00.000Z",
         }),
         documentGenerator: async ({ contract }) => {
+          if (generatorError) throw generatorError
           const name = `contract-${generatedNames.length + 1}.pdf`
           generatedNames.push(name)
           return {
@@ -62,6 +64,7 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
     const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
     generatedNames = []
+    generatorError = null
   })
 
   it("generates a booking contract from the default template and active series", async () => {
@@ -138,6 +141,103 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
       filename: "contract-1.pdf",
     })
     expect(body.data.contract.renderedBody).toBe("Contract for BK-ROUTE-001")
+  })
+
+  it("keeps a failed booking contract generation draft and does not consume a number", async () => {
+    const [template] = await db
+      .insert(contractTemplates)
+      .values({
+        name: "Default Customer Contract",
+        slug: "default-customer-contract",
+        scope: "customer",
+        language: "en",
+        body: "Contract for {{ booking.number }}",
+        active: true,
+        isDefault: true,
+      })
+      .returning()
+
+    const [version] = await db
+      .insert(contractTemplateVersions)
+      .values({
+        templateId: template.id,
+        version: 1,
+        body: "Contract for {{ booking.number }}",
+      })
+      .returning()
+
+    await db
+      .update(contractTemplates)
+      .set({ currentVersionId: version.id })
+      .where(eq(contractTemplates.id, template.id))
+
+    const [series] = await db
+      .insert(contractNumberSeries)
+      .values({
+        name: "Customer Contracts",
+        prefix: "CC",
+        separator: "-",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        active: true,
+      })
+      .returning()
+
+    const [booking] = await db
+      .insert(bookings)
+      .values({
+        bookingNumber: "BK-ROUTE-FAIL",
+        status: "confirmed",
+        sellCurrency: "EUR",
+        sellAmountCents: 125000,
+        startDate: "2026-07-01",
+        pax: 2,
+      })
+      .returning()
+
+    generatorError = new Error("Invalid API token")
+
+    const res = await adminApp.request(`/bookings/${booking.id}/generate-document`, {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(res.status).toBe(502)
+    await expect(res.json()).resolves.toEqual({
+      error: "Contract document generation failed",
+      reason: "generator_failed",
+    })
+
+    const contractRows = await db
+      .select()
+      .from(contracts)
+      .where(eq(contracts.bookingId, booking.id))
+    expect(contractRows).toHaveLength(1)
+    expect(contractRows[0]).toMatchObject({
+      status: "draft",
+      contractNumber: null,
+      issuedAt: null,
+      renderedBody: null,
+      renderedBodyFormat: null,
+    })
+    expect(contractRows[0]?.metadata).toMatchObject({
+      lastGenerationStatus: "generator_failed",
+      lastGenerationError: "Invalid API token",
+    })
+
+    const attachmentRows = await db
+      .select()
+      .from(contractAttachments)
+      .where(eq(contractAttachments.contractId, contractRows[0]!.id))
+    expect(attachmentRows).toHaveLength(0)
+
+    const [seriesAfter] = await db
+      .select()
+      .from(contractNumberSeries)
+      .where(eq(contractNumberSeries.id, series.id))
+    expect(seriesAfter?.currentSequence).toBe(0)
+    expect(generatedNames).toEqual([])
   })
 
   it("does not reuse an existing contract from another scope", async () => {

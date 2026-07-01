@@ -4,6 +4,7 @@ import { ContractTemplateSyntaxError } from "../../src/contracts/service-shared.
 
 const contractRecordMocks = vi.hoisted(() => ({
   createAttachment: vi.fn(),
+  deleteAttachment: vi.fn(),
   getContractById: vi.fn(),
   issueContract: vi.fn(),
 }))
@@ -11,6 +12,7 @@ const contractRecordMocks = vi.hoisted(() => ({
 vi.mock("../../src/contracts/service-contracts.js", () => ({
   contractRecordsService: {
     createAttachment: contractRecordMocks.createAttachment,
+    deleteAttachment: contractRecordMocks.deleteAttachment,
     getContractById: contractRecordMocks.getContractById,
     issueContract: contractRecordMocks.issueContract,
   },
@@ -35,10 +37,15 @@ describe("contractDocumentsService", () => {
     const where = vi.fn()
     const set = vi.fn(() => ({ where }))
     const update = vi.fn(() => ({ set }))
+    const db = {
+      update,
+      transaction: vi.fn(async (callback) => callback(db)),
+    }
 
     return {
-      db: { update } as never,
+      db: db as never,
       set,
+      transaction: db.transaction,
     }
   }
 
@@ -113,6 +120,123 @@ describe("contractDocumentsService", () => {
         metadata: expect.objectContaining({
           lastGenerationStatus: "generator_failed",
           lastGenerationError: "R2 outage",
+          lastGenerationAttemptedAt: expect.any(String),
+        }),
+      }),
+    )
+  })
+
+  it("rolls back draft auto-issue when the generator fails", async () => {
+    const { db, set, transaction } = createDbMock()
+    const draftContract = {
+      id: "cont_draft",
+      status: "draft",
+      templateVersionId: null,
+      renderedBody: "<p>Ready</p>",
+      renderedBodyFormat: "html",
+      variables: {},
+      metadata: { source: "booking" },
+    }
+    contractRecordMocks.getContractById
+      .mockResolvedValueOnce(draftContract)
+      .mockResolvedValueOnce(draftContract)
+      .mockResolvedValueOnce(draftContract)
+    contractRecordMocks.issueContract.mockResolvedValue({
+      status: "issued",
+      contract: {
+        ...draftContract,
+        status: "issued",
+        contractNumber: "CC-0001",
+      },
+      event: {
+        transition: "issued",
+      },
+    })
+    const generator = vi
+      .fn<ContractDocumentGenerator>()
+      .mockRejectedValue(new Error("Invalid API token"))
+    const eventBus = { emit: vi.fn() }
+
+    const result = await contractDocumentsService.generateContractDocument(
+      db,
+      "cont_draft",
+      {
+        kind: "document",
+        replaceExisting: true,
+        issueIfDraft: true,
+      },
+      { generator, eventBus },
+    )
+
+    expect(result).toEqual({ status: "generator_failed" })
+    expect(transaction).toHaveBeenCalledOnce()
+    expect(contractRecordMocks.issueContract).toHaveBeenCalledWith(db, "cont_draft")
+    expect(contractRecordMocks.createAttachment).not.toHaveBeenCalled()
+    expect(eventBus.emit).not.toHaveBeenCalled()
+    expect(set).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          source: "booking",
+          lastGenerationStatus: "generator_failed",
+          lastGenerationError: "Invalid API token",
+          lastGenerationAttemptedAt: expect.any(String),
+        }),
+      }),
+    )
+  })
+
+  it("rolls back draft auto-issue when rendering is unavailable after issue", async () => {
+    const { db, set, transaction } = createDbMock()
+    const draftContract = {
+      id: "cont_draft",
+      status: "draft",
+      templateVersionId: null,
+      renderedBody: null,
+      renderedBodyFormat: "html",
+      variables: {},
+      metadata: { source: "booking" },
+    }
+    contractRecordMocks.getContractById
+      .mockResolvedValueOnce(draftContract)
+      .mockResolvedValueOnce(draftContract)
+      .mockResolvedValueOnce(draftContract)
+    contractRecordMocks.issueContract.mockResolvedValue({
+      status: "issued",
+      contract: {
+        ...draftContract,
+        status: "issued",
+        contractNumber: "CC-0001",
+      },
+      event: {
+        transition: "issued",
+      },
+    })
+    const generator = vi.fn<ContractDocumentGenerator>()
+    const eventBus = { emit: vi.fn() }
+
+    const result = await contractDocumentsService.generateContractDocument(
+      db,
+      "cont_draft",
+      {
+        kind: "document",
+        replaceExisting: true,
+        issueIfDraft: true,
+      },
+      { generator, eventBus },
+    )
+
+    expect(result).toEqual({ status: "render_unavailable" })
+    expect(transaction).toHaveBeenCalledOnce()
+    expect(contractRecordMocks.issueContract).toHaveBeenCalledWith(db, "cont_draft")
+    expect(generator).not.toHaveBeenCalled()
+    expect(contractRecordMocks.createAttachment).not.toHaveBeenCalled()
+    expect(eventBus.emit).not.toHaveBeenCalled()
+    expect(set).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          source: "booking",
+          lastGenerationStatus: "render_unavailable",
+          lastGenerationError: "Contract has no rendered body available for document generation",
           lastGenerationAttemptedAt: expect.any(String),
         }),
       }),
