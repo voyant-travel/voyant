@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
+import { createFileRoute, redirect, useParams, useSearch } from "@tanstack/react-router"
 import type { AccommodationContent } from "@voyant-travel/accommodations/content-shape"
 import type { BookingEntitySummary } from "@voyant-travel/bookings-react/journey"
 import type { CruiseContent } from "@voyant-travel/cruises/content-shape"
 import type { ProductContent } from "@voyant-travel/inventory/content-shape"
+import { isStorefrontCustomerBookableProductVertical } from "@voyant-travel/storefront-react"
 import { useMemo } from "react"
 import { z } from "zod"
 
@@ -52,6 +53,16 @@ const shopBookSearchSchema = z.object({
 })
 
 export const Route = createFileRoute("/(storefront)/shop_/book/$entityModule/$entityId")({
+  // Guard against stale/bookmarked booking URLs for verticals that aren't
+  // customer-bookable (e.g. `/shop/book/cruises/:id` — cruises can't render
+  // public content or book yet, voyant#2639). Search already hides them; gate
+  // the direct booking route on the same source of truth so it can't reach a
+  // broken reserve flow. Redirect back to the shop instead.
+  beforeLoad: ({ params }) => {
+    if (!isStorefrontCustomerBookableProductVertical(params.entityModule)) {
+      throw redirect({ to: "/shop" })
+    }
+  },
   component: ShopBookRouteComponent,
   validateSearch: shopBookSearchSchema,
 })
