@@ -6,11 +6,12 @@ import {
   type NotificationProvider,
   type NotificationTaskRuntimeOptions,
 } from "@voyant-travel/notifications"
-import { getCloudClient } from "./voyant-cloud"
+import { getCloudClient, resolveVoyantApiKey } from "./voyant-cloud"
 
 export const resolveNotificationProviders = (
   env: Record<string, unknown>,
 ): ReadonlyArray<NotificationProvider> => {
+  if (!resolveVoyantApiKey(env)) return []
   const cloud = getCloudClient(env)
   const from =
     typeof env.EMAIL_FROM === "string" && env.EMAIL_FROM.length > 0

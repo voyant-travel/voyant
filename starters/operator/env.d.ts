@@ -69,8 +69,10 @@ interface CloudflareBindings {
   VOYANT_OPERATOR_BROWSER_EVIDENCE?: string
   VOYANT_AUTH_LOG_SECRET_FALLBACKS?: string
 
-  // Voyant API (canonical email/sms/verify/vault/connect provider)
-  VOYANT_API_KEY: string
+  // Voyant API (canonical email/sms/verify/vault/connect provider). Optional
+  // for local/self-hosted deployments that do not use Voyant Cloud-backed
+  // providers.
+  VOYANT_API_KEY?: string
   /** Legacy alias for VOYANT_API_KEY. */
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
