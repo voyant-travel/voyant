@@ -23,6 +23,12 @@
  *                                   reflects the rule edit. Same
  *                                   cross-package pattern as
  *                                   `availability.slot.changed`.
+ *   - `product.publication.changed` → reindex the product whose channel
+ *                                   mapping changed so the storefront
+ *                                   listability gate (active mapping to an
+ *                                   active channel) is re-evaluated. Covers
+ *                                   publish (mapping added/activated) and
+ *                                   unpublish (mapping deactivated/deleted).
  *   - `promotion.changed`         → reindex the affected product set so
  *                                   the `bestOffer*` annotations stay
  *                                   in sync with offer mutations and
@@ -119,6 +125,17 @@ interface PromotionChangedPayload {
   offerId: string
   source: "created" | "updated" | "deleted" | "expired"
   affected: { kind: "products"; productIds: string[] } | { kind: "all" }
+}
+
+/**
+ * Mirrors `ProductPublicationChangedEvent` from `@voyant-travel/distribution`.
+ * Inlined for the same reason as the payloads above — the bridge needs only
+ * the `productId` to re-derive listability from current DB state.
+ */
+interface ProductPublicationChangedPayload {
+  productId: string
+  channelId: string
+  operation: "created" | "updated" | "deleted" | "activated" | "deactivated"
 }
 
 export const catalogBridgeBundle: HonoBundle = {
@@ -231,6 +248,28 @@ export const catalogBridgeBundle: HonoBundle = {
         await ctx.service.reindexEntity("products", productId, ctx.builder)
       })
     })
+
+    // Channel product-mapping create/update/delete (+ activate/deactivate)
+    // reindexes the affected product so the storefront listability gate
+    // (`isPublicAudienceListable` → `hasActiveSalesChannelMapping`) is
+    // re-evaluated. Publishing a product by adding an active mapping to an
+    // active channel now shows up in the customer search collection without
+    // waiting for an unrelated `product.updated`, and unpublishing (deactivate
+    // / delete) tombstones the slice. The document builder re-reads the
+    // mappings, so the single-mapping payload is only a trigger.
+    eventBus.subscribe<ProductPublicationChangedPayload>(
+      "product.publication.changed",
+      async ({ data }) => {
+        if (!data.productId) return
+        const productId = data.productId
+        await withDbFromEnv(env, async (db) => {
+          const ctx = await buildIndexerContext(db)
+          if (!ctx) return
+          await ctx.service.ensureCollections()
+          await ctx.service.reindexEntity("products", productId, ctx.builder)
+        })
+      },
+    )
 
     // Promotion mutations + boundary-scheduler firings reindex the
     // affected product set so `bestOffer*` annotations stay in sync.

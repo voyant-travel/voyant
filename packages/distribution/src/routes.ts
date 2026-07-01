@@ -20,6 +20,11 @@
  * Each resource family is its own small `OpenAPIHono` sub-chain composed onto
  * the parent via `.route("/")` so the `.openapi()` operations propagate up while
  * keeping type-inference cost bounded (one flat chain has O(n²) inference cost).
+ *
+ * agent-quality: file-size exception — this is the aggregated distribution
+ * OpenAPI admin mount; the per-resource sub-chains above already split the
+ * logic, and fragmenting the single mounted `OpenAPIHono` instance across
+ * files would hurt, not help, review. See voyant#2114.
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
@@ -771,28 +776,36 @@ const productMappingRoutes = new OpenAPIHono<DistributionRouteEnv>({
     c.json(await distributionService.listProductMappings(c.get("db"), c.req.valid("query")), 200),
   )
   .openapi(createProductMappingRoute, async (c) => {
-    const row = await distributionService.createProductMapping(c.get("db"), c.req.valid("json"))
+    const row = await distributionService.createProductMapping(
+      c.get("db"),
+      c.req.valid("json"),
+      c.get("eventBus"),
+    )
     return c.json({ data: row! }, 201)
   })
   .openapi(batchUpdateProductMappingsRoute, async (c) => {
     const body = c.req.valid("json")
+    const eventBus = c.get("eventBus")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
         ids: body.ids,
         patch: body.patch,
-        update: distributionService.updateProductMapping,
+        // Bind the bus so each per-id write emits `product.publication.changed`.
+        update: (db, id, patch) =>
+          distributionService.updateProductMapping(db, id, patch, eventBus),
       }),
       200,
     )
   })
   .openapi(batchDeleteProductMappingsRoute, async (c) => {
     const body = c.req.valid("json")
+    const eventBus = c.get("eventBus")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
-        remove: distributionService.deleteProductMapping,
+        remove: (db, id) => distributionService.deleteProductMapping(db, id, eventBus),
       }),
       200,
     )
@@ -811,13 +824,18 @@ const productMappingRoutes = new OpenAPIHono<DistributionRouteEnv>({
       c.get("db"),
       c.req.valid("param").id,
       c.req.valid("json"),
+      c.get("eventBus"),
     )
     return row
       ? c.json({ data: row }, 200)
       : c.json({ error: "Channel product mapping not found" }, 404)
   })
   .openapi(deleteProductMappingRoute, async (c) => {
-    const row = await distributionService.deleteProductMapping(c.get("db"), c.req.valid("param").id)
+    const row = await distributionService.deleteProductMapping(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.get("eventBus"),
+    )
     return row
       ? c.json({ success: true } as const, 200)
       : c.json({ error: "Channel product mapping not found" }, 404)
