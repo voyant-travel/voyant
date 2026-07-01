@@ -3532,7 +3532,11 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     }
     const ledgerContext = getActionLedgerRequestContext(c)
     const row = await c.get("db").transaction(async (tx) => {
-      const row = await bookingsService.deleteItem(tx as PostgresJsDatabase, itemId)
+      const row = await bookingsService.deleteItem(
+        tx as PostgresJsDatabase,
+        itemId,
+        c.get("userId"),
+      )
       if (!row) return null
       await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
         action: "delete",
