@@ -26,11 +26,13 @@ export const resourceCoreSchema = z.object({
   name: z.string().min(1),
   code: z.string().nullable().optional(),
   capacity: z.number().int().min(0).nullable().optional(),
-  active: z.boolean().default(true),
+  active: z.boolean(),
   notes: z.string().nullable().optional(),
 })
 
-export const insertResourceSchema = resourceCoreSchema
+export const insertResourceSchema = resourceCoreSchema.extend({
+  active: resourceCoreSchema.shape.active.default(true),
+})
 export const updateResourceSchema = resourceCoreSchema.partial()
 export const resourceListQuerySchema = paginationSchema.extend({
   supplierId: z.string().optional(),
@@ -44,11 +46,13 @@ export const resourcePoolCoreSchema = z.object({
   kind: resourceKindSchema,
   name: z.string().min(1),
   sharedCapacity: z.number().int().min(0).nullable().optional(),
-  active: z.boolean().default(true),
+  active: z.boolean(),
   notes: z.string().nullable().optional(),
 })
 
-export const insertResourcePoolSchema = resourcePoolCoreSchema
+export const insertResourcePoolSchema = resourcePoolCoreSchema.extend({
+  active: resourcePoolCoreSchema.shape.active.default(true),
+})
 export const updateResourcePoolSchema = resourcePoolCoreSchema.partial()
 export const resourcePoolListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
@@ -71,12 +75,16 @@ export const resourceRequirementCoreSchema = z.object({
   productId: z.string(),
   availabilityRuleId: z.string().nullable().optional(),
   startTimeId: z.string().nullable().optional(),
-  quantityRequired: z.number().int().min(1).default(1),
-  allocationMode: resourceAllocationModeSchema.default("shared"),
-  priority: z.number().int().default(0),
+  quantityRequired: z.number().int().min(1),
+  allocationMode: resourceAllocationModeSchema,
+  priority: z.number().int(),
 })
 
-export const insertResourceRequirementSchema = resourceRequirementCoreSchema
+export const insertResourceRequirementSchema = resourceRequirementCoreSchema.extend({
+  quantityRequired: resourceRequirementCoreSchema.shape.quantityRequired.default(1),
+  allocationMode: resourceRequirementCoreSchema.shape.allocationMode.default("shared"),
+  priority: resourceRequirementCoreSchema.shape.priority.default(0),
+})
 export const updateResourceRequirementSchema = resourceRequirementCoreSchema.partial()
 export const resourceRequirementListQuerySchema = paginationSchema.extend({
   poolId: z.string().optional(),
@@ -94,7 +102,7 @@ export const resourceSlotAssignmentCoreSchema = z.object({
   poolId: z.string().nullable().optional(),
   resourceId: z.string().nullable().optional(),
   bookingId: z.string().nullable().optional(),
-  status: resourceAssignmentStatusSchema.default("reserved"),
+  status: resourceAssignmentStatusSchema,
   assignedAt: isoDateTimeSchema.optional(),
   assignedBy: z.string().nullable().optional(),
   releasedAt: isoDateTimeSchema.nullable().optional(),
@@ -140,9 +148,11 @@ function validateSlotAssignmentLifecycle(
   }
 }
 
-export const insertResourceSlotAssignmentSchema = resourceSlotAssignmentCoreSchema.superRefine(
-  validateSlotAssignmentLifecycle,
-)
+export const insertResourceSlotAssignmentSchema = resourceSlotAssignmentCoreSchema
+  .extend({
+    status: resourceSlotAssignmentCoreSchema.shape.status.default("reserved"),
+  })
+  .superRefine(validateSlotAssignmentLifecycle)
 export const updateResourceSlotAssignmentSchema = resourceSlotAssignmentCoreSchema.partial()
 export const resourceSlotAssignmentListQuerySchema = paginationSchema.extend({
   slotId: z.string().optional(),
