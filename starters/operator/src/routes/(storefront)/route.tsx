@@ -36,14 +36,18 @@ function StorefrontChrome(): React.ReactElement {
           <Link to="/shop" className="font-medium">
             {t.brand}
           </Link>
+          {/*
+           * No customer "Sign in" link in the storefront chrome on purpose.
+           * Customer accounts don't exist yet (#2621), and the operator
+           * `/sign-in` surface is the workspace/admin auth path — presenting it
+           * in customer chrome implied an account system while actually dropping
+           * customers into operator auth. The trip composer
+           * (`shop_.composer.tsx`) keeps its own intentional operator-session
+           * sign-in prompt for the simulated storefront (#2642); that gate is a
+           * separate operator affordance, not a customer account entry point.
+           */}
           <nav className="flex items-center gap-2">
             <StorefrontMarketSelector />
-            <Link
-              to="/sign-in"
-              className="rounded-md px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-            >
-              {t.signIn}
-            </Link>
           </nav>
         </div>
       </header>
