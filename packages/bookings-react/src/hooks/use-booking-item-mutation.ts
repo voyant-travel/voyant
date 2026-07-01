@@ -19,6 +19,20 @@ import { bookingItemsResponse, bookingSingleResponse, successEnvelope } from "..
 export type CreateBookingItemInput = z.input<typeof insertBookingItemSchema>
 export type UpdateBookingItemInput = z.input<typeof updateBookingItemSchema>
 
+function invalidateBookingItemMutationQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  bookingId: string,
+) {
+  void queryClient.invalidateQueries({
+    queryKey: bookingsQueryKeys.booking(bookingId),
+    exact: true,
+  })
+  void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.bookings() })
+  void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.items(bookingId) })
+  void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
+  void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.actionLedger(bookingId) })
+}
+
 export function useBookingItemMutation(bookingId: string) {
   const { baseUrl, fetcher } = useVoyantBookingsContext()
   const queryClient = useQueryClient()
@@ -36,8 +50,7 @@ export function useBookingItemMutation(bookingId: string) {
       return data
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.items(bookingId) })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
+      invalidateBookingItemMutationQueries(queryClient, bookingId)
     },
   })
 
@@ -54,8 +67,7 @@ export function useBookingItemMutation(bookingId: string) {
       return data
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.items(bookingId) })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
+      invalidateBookingItemMutationQueries(queryClient, bookingId)
     },
   })
 
@@ -68,8 +80,7 @@ export function useBookingItemMutation(bookingId: string) {
         { method: "DELETE" },
       ),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.items(bookingId) })
-      void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
+      invalidateBookingItemMutationQueries(queryClient, bookingId)
     },
   })
 

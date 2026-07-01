@@ -4703,12 +4703,16 @@ export const bookingsService = {
     })
   },
 
-  async deleteItem(db: PostgresJsDatabase, itemId: string) {
+  async deleteItem(db: PostgresJsDatabase, itemId: string, userId?: string) {
     return db.transaction(async (tx) => {
       // Look up the parent booking BEFORE the delete so we can roll up
       // afterwards.
       const [item] = await tx
-        .select({ bookingId: bookingItems.bookingId })
+        .select({
+          bookingId: bookingItems.bookingId,
+          title: bookingItems.title,
+          itemType: bookingItems.itemType,
+        })
         .from(bookingItems)
         .where(eq(bookingItems.id, itemId))
         .limit(1)
@@ -4718,8 +4722,15 @@ export const bookingsService = {
         .where(eq(bookingItems.id, itemId))
         .returning({ id: bookingItems.id })
 
-      if (item) {
+      if (item && row) {
         await bookingsService.recomputeBookingTotal(tx as PostgresJsDatabase, item.bookingId)
+        await tx.insert(bookingActivityLog).values({
+          bookingId: item.bookingId,
+          actorId: userId ?? "system",
+          activityType: "item_update",
+          description: `Booking item "${item.title}" deleted`,
+          metadata: { bookingItemId: itemId, itemType: item.itemType },
+        })
       }
 
       return row ?? null
