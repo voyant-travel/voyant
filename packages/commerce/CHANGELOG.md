@@ -1,5 +1,25 @@
 # @voyant-travel/commerce
 
+## 0.20.3
+
+### Patch Changes
+
+- bcd76ae: Reject invalid or dangling pricing and tax reference-data before writing.
+  `POST /v1/admin/pricing/price-schedules` now rejects a nonexistent
+  `priceCatalogId` with a deterministic `invalid_reference` 400 instead of a 500.
+  Tax regime rates are bounded to the 0..100 percent domain (matching the
+  booking-tax calculator that divides by 100), and `POST
+/v1/admin/finance/tax-policy-rules` rejects dangling `profileId`/`taxRegimeId`
+  references with an `invalid_reference` 400 (mirroring the existing tax-class
+  regime guard).
+- Updated dependencies [1544a59]
+- Updated dependencies [2d3b039]
+- Updated dependencies [bcd76ae]
+- Updated dependencies [37e7758]
+  - @voyant-travel/bookings@0.138.4
+  - @voyant-travel/catalog@0.136.1
+  - @voyant-travel/finance@0.138.6
+
 ## 0.20.2
 
 ### Patch Changes

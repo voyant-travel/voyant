@@ -1,5 +1,14 @@
 # @voyant-travel/bookings
 
+## 0.138.4
+
+### Patch Changes
+
+- 1544a59: Keep booking detail traveler additions in sync with booking pax, traveler category,
+  and existing booking item traveler assignments. The traveler dialog now exposes
+  category assignment, and the traveler table reflects revealed travel-document
+  details when no uploaded document rows exist.
+
 ## 0.138.3
 
 ### Patch Changes

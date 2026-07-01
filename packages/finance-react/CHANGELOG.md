@@ -1,5 +1,17 @@
 # @voyant-travel/finance-react
 
+## 0.138.6
+
+### Patch Changes
+
+- 37e7758: Reject invalid supplier-invoice payable states: missing supplier ids, negative AP totals or line money values, line totals that do not match quantity times unit amount plus tax, and completed supplier payments above the payable balance. Supplier-invoice UI dialogs now derive line totals and block above-balance payment submissions.
+- Updated dependencies [1544a59]
+- Updated dependencies [2d3b039]
+- Updated dependencies [bcd76ae]
+- Updated dependencies [37e7758]
+  - @voyant-travel/bookings-react@0.138.4
+  - @voyant-travel/finance@0.138.6
+
 ## 0.138.5
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyant-travel/operations
 
+## 0.5.7
+
+### Patch Changes
+
+- dd03968: Validate operations resource local references and duplicate pool memberships with deterministic 404/409 API errors. Duplicate resource pool memberships are now deduplicated during migration before a unique index enforces the invariant.
+- Updated dependencies [2d3b039]
+  - @voyant-travel/catalog@0.136.1
+
 ## 0.5.6
 
 ### Patch Changes
