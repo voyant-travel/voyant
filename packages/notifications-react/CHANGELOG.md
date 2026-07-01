@@ -1,5 +1,18 @@
 # @voyant-travel/notifications-react
 
+## 0.116.10
+
+### Patch Changes
+
+- b064936: Fix notification template detail previews so the built-in sample JSON is submitted and loop sample values are structured arrays.
+- 412ed62: Fix notification template create/edit status controls so active templates persist correctly.
+- 1e5251d: Fix reminder stage channel template selection so active templates can be picked by slug and submitted as `templateSlug`.
+- Updated dependencies [4c18cc6]
+- Updated dependencies [0b57296]
+- Updated dependencies [1e5251d]
+  - @voyant-travel/notifications@0.116.10
+  - @voyant-travel/ui@0.108.9
+
 ## 0.116.9
 
 ### Patch Changes

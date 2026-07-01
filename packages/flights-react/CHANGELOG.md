@@ -1,5 +1,15 @@
 # @voyant-travel/flights-react
 
+## 0.137.6
+
+### Patch Changes
+
+- c293533: Fix the flight booking wizard landing on a "Booking not found" page after a hold. A flight hold persists a flight order (served at `/v1/admin/flights/orders/:id`), which is a separate entity from a catalog booking and is not resolvable at `/bookings/:id`. The admin wizard previously navigated to the catalog `booking.detail` destination, which 404s for a flight order id. It now renders an inline flight order confirmation from the booking response instead — a readable order surface with no extra fetch.
+- dd162b7: Add accessible names to the flight booking seat-map tiles and the services & extras quantity steppers so screen readers and a11y tooling can identify each control.
+- Updated dependencies [0b57296]
+  - @voyant-travel/ui@0.108.9
+  - @voyant-travel/flights@0.137.6
+
 ## 0.137.5
 
 ### Patch Changes

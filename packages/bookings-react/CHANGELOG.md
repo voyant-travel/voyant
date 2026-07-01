@@ -1,5 +1,20 @@
 # @voyant-travel/bookings-react
 
+## 0.137.5
+
+### Patch Changes
+
+- 7ee0420: Handle live-quote failures in the storefront booking journey. When a connected supplier product's quote request errors (e.g. the connector adapter returns 500), the journey previously let the shopper reach Review with a stale/absent price, and `Confirm booking` became a silent no-op. It now surfaces a recoverable inline error with a retry action, blocks Next/Confirm while the quote is failing, and shows an explicit message instead of silently swallowing the Confirm click. Also fixes a render-phase `setDraft` in `PaymentStep` that triggered React's "Cannot update a component while rendering a different component" warning by moving the intent-snap into an effect.
+- Updated dependencies [7b82e5a]
+- Updated dependencies [8466f47]
+- Updated dependencies [8f2a6d9]
+- Updated dependencies [53f949c]
+- Updated dependencies [0b57296]
+  - @voyant-travel/legal-react@0.137.5
+  - @voyant-travel/commerce-react@0.19.1
+  - @voyant-travel/ui@0.108.9
+  - @voyant-travel/bookings@0.137.5
+
 ## 0.137.4
 
 ### Patch Changes

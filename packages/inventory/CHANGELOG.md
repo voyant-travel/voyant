@@ -1,5 +1,13 @@
 # @voyant-travel/inventory
 
+## 0.5.12
+
+### Patch Changes
+
+- c5cd9cd: Return structured 409 conflicts for duplicate inventory taxonomy and product translation creates.
+- Updated dependencies [fd17317]
+  - @voyant-travel/hono@0.118.3
+
 ## 0.5.11
 
 ### Patch Changes

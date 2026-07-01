@@ -1,5 +1,21 @@
 # @voyant-travel/legal-react
 
+## 0.137.5
+
+### Patch Changes
+
+- 7b82e5a: Navigate contract detail users back to the contracts list after deleting a draft or void contract.
+- 8466f47: Fix the legal number series create dialog preview so edited pad length values render immediately.
+- 8f2a6d9: Add accessible names and hover titles to legal template and number-series row action buttons.
+- 53f949c: Filter legal policy detail acceptances by the current policy so unrelated policy version acceptances are not shown.
+- Updated dependencies [53f949c]
+- Updated dependencies [0b57296]
+- Updated dependencies [7ee0420]
+  - @voyant-travel/legal@0.137.5
+  - @voyant-travel/commerce-react@0.19.1
+  - @voyant-travel/ui@0.108.9
+  - @voyant-travel/bookings-react@0.137.5
+
 ## 0.137.4
 
 ### Patch Changes

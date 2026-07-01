@@ -1,5 +1,16 @@
 # @voyant-travel/legal
 
+## 0.137.5
+
+### Patch Changes
+
+- 53f949c: Filter legal policy detail acceptances by the current policy so unrelated policy version acceptances are not shown.
+- Updated dependencies [fd17317]
+- Updated dependencies [53f949c]
+  - @voyant-travel/hono@0.118.3
+  - @voyant-travel/legal-contracts@0.106.6
+  - @voyant-travel/bookings@0.137.5
+
 ## 0.137.4
 
 ### Patch Changes

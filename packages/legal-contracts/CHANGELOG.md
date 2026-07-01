@@ -1,5 +1,11 @@
 # @voyant-travel/legal-contracts
 
+## 0.106.6
+
+### Patch Changes
+
+- 53f949c: Filter legal policy detail acceptances by the current policy so unrelated policy version acceptances are not shown.
+
 ## 0.106.5
 
 ### Patch Changes
