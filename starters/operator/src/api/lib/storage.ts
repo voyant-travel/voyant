@@ -135,10 +135,40 @@ export async function resolveDocumentDownloadUrl(
   return authenticatedDocumentDownloadResolver(env, storageKey)
 }
 
+function normalizeUrl(value: string) {
+  return value.replace(/\/+$/, "")
+}
+
+function normalizeApiBaseUrl(value: string | undefined) {
+  const trimmed = value?.trim()
+  if (!trimmed) return null
+
+  const normalized = normalizeUrl(trimmed)
+  try {
+    const parsed = new URL(normalized)
+    if (parsed.pathname === "/" || parsed.pathname === "") {
+      parsed.pathname = "/api"
+      return normalizeUrl(parsed.toString())
+    }
+  } catch {
+    return normalized
+  }
+
+  return normalized
+}
+
+function resolveDocumentDownloadApiBaseUrl(env: CloudflareBindings) {
+  return (
+    normalizeApiBaseUrl(env.API_BASE_URL) ??
+    normalizeApiBaseUrl(env.APP_URL) ??
+    normalizeApiBaseUrl(env.DOCUMENTS_BASE_URL) ??
+    null
+  )
+}
+
 const authenticatedDocumentDownloadResolver =
   createAuthenticatedR2DocumentDownloadResolver<CloudflareBindings>({
-    apiBaseUrl: (env) =>
-      env.APP_URL?.trim() || env.API_BASE_URL?.trim() || env.DOCUMENTS_BASE_URL?.trim() || null,
+    apiBaseUrl: resolveDocumentDownloadApiBaseUrl,
     routePrefix: "/v1/admin/documents/files",
     bucketBindingName: "DOCUMENTS_BUCKET",
   })
