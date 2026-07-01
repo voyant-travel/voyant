@@ -83,6 +83,31 @@ interface AcceptanceContextVariables {
   templateId?: string
 }
 
+/**
+ * Source provenance for the booked entity, resolved from the catalog
+ * plane (the public content endpoint returns it as `provenance` +
+ * `product.supplier`). Threaded into the contract preview so the
+ * `booking.source` block reflects the real sourced/owned arm instead
+ * of defaulting to `owned` with a blank supplier (voyant#2619).
+ *
+ * When absent (or `kind` is empty / `"owned"`), the contract renders
+ * the owned arm — blank connection/ref/supplier — exactly as before.
+ */
+export interface ContractSourceContext {
+  /** Provenance kind — `"owned"` for owned inventory, otherwise the
+   *  upstream source kind (e.g. `marketplace:demo`). */
+  kind?: string
+  /** Source connection that produced the row (sourced only). */
+  connectionId?: string
+  /** Stable upstream object id (sourced only). */
+  ref?: string
+  /** Supplier disclosed to the customer in the contract. */
+  supplier?: {
+    id?: string
+    name?: string
+  }
+}
+
 interface ResolveContractVariablesContext {
   entityModule: string
   entityId: string
@@ -104,6 +129,11 @@ interface ResolveContractVariablesContext {
   /** Which layer of the cascade the active policy came from. Used
    *  for traceability in contract templates. */
   paymentPolicySource?: PaymentPolicySource
+  /** Resolved source provenance for the booked entity. Populated by
+   *  the storefront wrapper from the public content endpoint's
+   *  `provenance` + supplier. When omitted the booking renders as the
+   *  owned arm (voyant#2619). */
+  source?: ContractSourceContext
 }
 
 export function resolveContractVariables(
@@ -334,17 +364,11 @@ export function resolveContractVariables(
       // overrides with the persisted booking_items rows.
       roomsSummary: buildRoomsSummary(draft),
 
-      // Source provenance — populated post-book on owned arm; the
-      // sourced arm overrides this from the snapshot
-      source: {
-        kind: "owned",
-        connectionId: "",
-        ref: "",
-        supplier: {
-          id: "",
-          name: "",
-        },
-      },
+      // Source provenance — resolved from the catalog plane via the
+      // public content endpoint's `provenance` + supplier and threaded
+      // in by the storefront wrapper. Falls back to the owned arm
+      // (blank connection/ref/supplier) when unresolved (voyant#2619).
+      source: buildBookingSource(ctx.source),
 
       // Notes
       internalNotes: draft.internalNotes ?? "",
@@ -454,6 +478,37 @@ export function resolveContractVariables(
       marketingConsent: acceptance.marketingConsent ?? false,
       templateSlug: acceptance.templateSlug ?? "",
       templateId: acceptance.templateId ?? "",
+    },
+  }
+}
+
+/**
+ * Map resolved provenance into the contract's `booking.source` block.
+ *
+ * A missing context, or an explicit `"owned"` / empty `kind`, renders
+ * the owned arm with blank connection/ref/supplier — preserving the
+ * pre-fix behavior for genuinely owned inventory. Sourced inventory
+ * carries its real `kind`, `connectionId`, `ref`, and supplier so the
+ * customer contract can disclose the correct supplier/operator split
+ * (voyant#2619).
+ */
+function buildBookingSource(source: ContractSourceContext | undefined): {
+  kind: string
+  connectionId: string
+  ref: string
+  supplier: { id: string; name: string }
+} {
+  const kind = source?.kind?.trim() ? source.kind : "owned"
+  const isOwned = kind === "owned"
+  return {
+    kind,
+    connectionId: source?.connectionId ?? "",
+    ref: source?.ref ?? "",
+    supplier: {
+      // Owned inventory has no upstream supplier — keep it blank so the
+      // owned arm is unchanged from before the fix.
+      id: isOwned ? "" : (source?.supplier?.id ?? ""),
+      name: isOwned ? "" : (source?.supplier?.name ?? ""),
     },
   }
 }

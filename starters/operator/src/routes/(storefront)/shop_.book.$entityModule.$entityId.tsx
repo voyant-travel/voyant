@@ -8,6 +8,7 @@ import { isStorefrontCustomerBookableProductVertical } from "@voyant-travel/stor
 import { useMemo } from "react"
 import { z } from "zod"
 
+import type { ContractSourceContext } from "@/components/voyant/booking-journey/resolve-contract-variables"
 import { StorefrontBookingJourney } from "@/components/voyant/booking-journey/storefront-booking-journey"
 import { getApiUrl } from "@/lib/env"
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
@@ -106,7 +107,11 @@ function ShopBookRouteComponent(): React.ReactElement {
       }
     : undefined
 
-  const entitySummary = useEntitySummary(entityModule, entityId, search)
+  const { summary: entitySummary, source: entitySource } = useEntityContent(
+    entityModule,
+    entityId,
+    search,
+  )
 
   return (
     <StorefrontBookingJourney
@@ -116,6 +121,7 @@ function ShopBookRouteComponent(): React.ReactElement {
       initialConfigure={initialConfigure}
       initialAccommodation={initialAccommodation}
       entitySummary={entitySummary}
+      entitySource={entitySource}
       // No `contractTemplateSlug` — the wrapper resolves whichever
       // customer-scope template the operator has marked active via
       // /v1/public/legal/contracts/templates/default. Per-product
@@ -127,16 +133,36 @@ function ShopBookRouteComponent(): React.ReactElement {
 }
 
 /**
- * Pull the entity content for the side-panel summary. Three
- * vertical-specific endpoints share the same `{ data: { content,
- * served_locale, ... } }` envelope; we map each into a
- * vertical-agnostic `BookingEntitySummary`.
+ * Provenance block returned alongside the content payload by the
+ * vertical content endpoints (`{ data: { content, provenance, ... } }`).
+ * Mirrors `contentProvenanceSchema` in the vertical `routes-content.ts`.
  */
-function useEntitySummary(
+interface ContentProvenance {
+  source_kind: string
+  source_provider?: string
+  source_connection_id?: string
+  source_ref?: string
+}
+
+interface EntityContentEnvelope {
+  content?: unknown
+  provenance?: ContentProvenance
+}
+
+/**
+ * Pull the entity content for the side-panel summary AND the contract
+ * preview's source provenance. Three vertical-specific endpoints share
+ * the same `{ data: { content, provenance, served_locale, ... } }`
+ * envelope; we map each into a vertical-agnostic `BookingEntitySummary`
+ * plus a `ContractSourceContext` so a sourced/connected product carries
+ * its real supplier + provenance into the customer contract instead of
+ * defaulting to owned/blank (voyant#2619).
+ */
+function useEntityContent(
   entityModule: string,
   entityId: string,
   search: ShopBookSearch,
-): BookingEntitySummary | undefined {
+): { summary: BookingEntitySummary | undefined; source: ContractSourceContext | undefined } {
   const url =
     entityModule === "cruises"
       ? `${getApiUrl()}/v1/public/cruises/${encodeURIComponent(entityId)}/content`
@@ -148,21 +174,28 @@ function useEntitySummary(
 
   const { data } = useQuery({
     queryKey: ["public-entity-summary", entityModule, entityId],
-    queryFn: async (): Promise<unknown> => {
+    queryFn: async (): Promise<EntityContentEnvelope | null> => {
       if (!url) return null
       const res = await fetch(url, { credentials: "include" })
       if (!res.ok) return null
-      const json = (await res.json()) as { data?: { content?: unknown } }
-      return json.data?.content ?? null
+      const json = (await res.json()) as { data?: EntityContentEnvelope }
+      return json.data ?? null
     },
     enabled: Boolean(url),
     staleTime: 60_000,
   })
 
-  return useMemo<BookingEntitySummary | undefined>(() => {
-    if (!data) return undefined
+  const content = data?.content ?? null
+
+  const source = useMemo<ContractSourceContext | undefined>(
+    () => resolveEntitySource(entityModule, data?.provenance, content),
+    [entityModule, data?.provenance, content],
+  )
+
+  const summary = useMemo<BookingEntitySummary | undefined>(() => {
+    if (!content) return undefined
     if (entityModule === "products") {
-      const c = data as ProductContent
+      const c = content as ProductContent
       const subtitleParts = [
         c.product.duration_days
           ? `${c.product.duration_days} day${c.product.duration_days === 1 ? "" : "s"}`
@@ -183,7 +216,7 @@ function useEntitySummary(
       }
     }
     if (entityModule === "cruises") {
-      const c = data as CruiseContent
+      const c = content as CruiseContent
       const sailing = c.sailings.find((s) => s.id === search.departureSlotId)
       const subtitleParts = [
         c.cruise.duration_nights
@@ -209,7 +242,7 @@ function useEntitySummary(
       }
     }
     if (entityModule === "accommodations") {
-      const c = data as AccommodationContent
+      const c = content as AccommodationContent
       const stars = c.hotel.star_rating ? "★".repeat(Math.floor(c.hotel.star_rating)) : null
       return {
         name: c.hotel.name,
@@ -226,7 +259,40 @@ function useEntitySummary(
       }
     }
     return undefined
-  }, [data, entityModule, search.departureSlotId, search.checkIn, search.checkOut])
+  }, [content, entityModule, search.departureSlotId, search.checkIn, search.checkOut])
+
+  return { summary, source }
+}
+
+/**
+ * Map the content endpoint's `provenance` block + vertical supplier
+ * into the `ContractSourceContext` the contract preview reads. Owned
+ * inventory (`source_kind: "owned"`) and a missing provenance both
+ * yield the owned arm downstream; sourced inventory carries its real
+ * kind / connection / ref + supplier name (voyant#2619).
+ */
+function resolveEntitySource(
+  entityModule: string,
+  provenance: ContentProvenance | undefined,
+  content: unknown,
+): ContractSourceContext | undefined {
+  if (!provenance) return undefined
+  const supplierName = extractSupplierName(entityModule, content)
+  return {
+    kind: provenance.source_kind,
+    connectionId: provenance.source_connection_id ?? "",
+    ref: provenance.source_ref ?? "",
+    supplier: { id: "", name: supplierName },
+  }
+}
+
+/** Pull the customer-facing supplier display name off the vertical
+ *  content payload. Only products currently expose it. */
+function extractSupplierName(entityModule: string, content: unknown): string {
+  if (entityModule === "products" && content) {
+    return (content as ProductContent).product.supplier ?? ""
+  }
+  return ""
 }
 
 function formatDate(iso: string): string {
