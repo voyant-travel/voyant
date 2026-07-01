@@ -1,5 +1,13 @@
 # @voyant-travel/crm
 
+## 0.123.13
+
+### Patch Changes
+
+- Updated dependencies [86fbb05]
+  - @voyant-travel/hono@0.119.0
+  - @voyant-travel/trips@0.129.1
+
 ## 0.123.12
 
 ### Patch Changes

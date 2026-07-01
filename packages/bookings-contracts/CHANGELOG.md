@@ -1,5 +1,11 @@
 # @voyant-travel/bookings-contracts
 
+## 0.106.7
+
+### Patch Changes
+
+- 141bd2b: Reconcile draft booking items when overriding a booking to confirmed, block item mutations for cancelled bookings, and validate cost currency when cost amounts are entered.
+
 ## 0.106.6
 
 ### Patch Changes

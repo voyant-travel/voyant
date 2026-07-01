@@ -1,5 +1,13 @@
 # @voyant-travel/workflows-react
 
+## 0.111.13
+
+### Patch Changes
+
+- Updated dependencies [b254511]
+  - @voyant-travel/ui@0.108.10
+  - @voyant-travel/workflows@0.111.13
+
 ## 0.111.12
 
 ### Patch Changes
