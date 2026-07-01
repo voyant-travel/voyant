@@ -26,6 +26,7 @@ vi.mock("@voyant-travel/catalog-react/booking-engine", () => ({
   useBookingQuote: mocks.useBookingQuote,
 }))
 
+import { StorefrontScopeProvider } from "@/lib/storefront-scope"
 import { AccommodationDetailPage } from "./shop-product-detail-accommodations"
 
 describe("AccommodationDetailPage", () => {
@@ -51,7 +52,11 @@ describe("AccommodationDetailPage", () => {
     mocks.useQuery.mockReturnValue({ data: null, isLoading: false })
 
     await act(async () => {
-      root.render(<AccommodationDetailPage entityId="cdmi_demo_hotel_20260629" />)
+      root.render(
+        <StorefrontScopeProvider>
+          <AccommodationDetailPage entityId="cdmi_demo_hotel_20260629" />
+        </StorefrontScopeProvider>,
+      )
     })
 
     expect(host.textContent).toContain("Detail content isn't available for this item yet.")
