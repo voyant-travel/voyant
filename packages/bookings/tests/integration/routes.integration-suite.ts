@@ -30,6 +30,7 @@ import {
   bookingDocuments,
   bookingFulfillments,
   bookingItems,
+  bookingItemTravelers,
   bookingPiiAccessLog,
   bookingTravelers,
 } from "../../src/schema.js"
@@ -2369,6 +2370,52 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       const body = await res.json()
       expect(body.data.firstName).toBe("John")
       expect(body.data.participantType).toBe("traveler")
+      expect(body.data.travelerCategory).toBe("adult")
+    })
+
+    it("keeps pax, traveler category, and item assignments in sync when adding traveler details", async () => {
+      const booking = await seedBooking({ pax: 1 })
+      await app.request(`/${booking.id}/travelers`, {
+        method: "POST",
+        ...json({ firstName: "Existing", lastName: "Traveler" }),
+      })
+      const itemRes = await app.request(`/${booking.id}/items`, {
+        method: "POST",
+        ...json({ title: "Tour", sellCurrency: "USD" }),
+      })
+      const { data: item } = await itemRes.json()
+
+      const res = await app.request(`/${booking.id}/travelers/with-travel-details`, {
+        method: "POST",
+        ...json({
+          firstName: "New",
+          lastName: "Traveler",
+          documentType: "passport",
+          documentNumber: "DOC-123",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data.traveler.travelerCategory).toBe("adult")
+      expect(body.data.travelDetails.documentNumber).toBe("DOC-123")
+
+      const bookingRes = await app.request(`/${booking.id}`, { method: "GET" })
+      expect((await bookingRes.json()).data.pax).toBe(2)
+
+      const links = await db
+        .select()
+        .from(bookingItemTravelers)
+        .where(eq(bookingItemTravelers.bookingItemId, item.id))
+
+      expect(links).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            travelerId: body.data.traveler.id,
+            role: "traveler",
+          }),
+        ]),
+      )
     })
 
     it("lists travelers", async () => {

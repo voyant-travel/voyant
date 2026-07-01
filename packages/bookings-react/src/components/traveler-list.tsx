@@ -83,8 +83,8 @@ export function TravelerList({ bookingId, autoReveal = false }: TravelerListProp
   }, [])
 
   const isRevealed = React.useCallback(
-    (travelerId: string) => autoReveal || revealedIds.has(travelerId),
-    [autoReveal, revealedIds],
+    (travelerId: string) => autoReveal || allAlreadyRevealed || revealedIds.has(travelerId),
+    [allAlreadyRevealed, autoReveal, revealedIds],
   )
 
   const deleteMessages = messages.travelerList.actions.deleteConfirm
@@ -151,24 +151,14 @@ export function TravelerList({ bookingId, autoReveal = false }: TravelerListProp
       {
         id: "documents",
         header: messages.travelerList.columns.documents,
-        cell: ({ row }) => {
-          const documents = documentsByTraveler.get(row.original.id) ?? []
-          if (documents.length === 0) {
-            return (
-              <span className="text-muted-foreground text-xs">
-                {messages.travelerList.values.documentsUnavailable}
-              </span>
-            )
-          }
-          return (
-            <div className="flex flex-wrap gap-1.5">
-              {documents.slice(0, 2).map((document) => (
-                <MiniPill key={document.id}>{document.type.replaceAll("_", " ")}</MiniPill>
-              ))}
-              {documents.length > 2 ? <MiniPill>+{documents.length - 2}</MiniPill> : null}
-            </div>
-          )
-        },
+        cell: ({ row }) => (
+          <TravelerDocumentsCell
+            bookingId={bookingId}
+            traveler={row.original}
+            revealed={isRevealed(row.original.id)}
+            documents={documentsByTraveler.get(row.original.id) ?? []}
+          />
+        ),
       },
       {
         id: "actions",
@@ -409,7 +399,13 @@ function RolePills({ traveler }: { traveler: BookingTravelerRecord }) {
   const messages = useBookingsUiMessagesOrDefault()
   const pills: string[] = []
   if (traveler.isPrimary) pills.push(messages.travelerList.roles.primary)
-  if (traveler.travelerCategory) pills.push(traveler.travelerCategory)
+  if (traveler.travelerCategory) {
+    pills.push(
+      messages.travelerDialog.travelerCategoryLabels[
+        traveler.travelerCategory as keyof typeof messages.travelerDialog.travelerCategoryLabels
+      ] ?? traveler.travelerCategory,
+    )
+  }
   if (pills.length === 0) return <span className="text-muted-foreground text-xs">—</span>
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -418,6 +414,61 @@ function RolePills({ traveler }: { traveler: BookingTravelerRecord }) {
       ))}
     </div>
   )
+}
+
+function TravelerDocumentsCell({
+  bookingId,
+  traveler,
+  revealed,
+  documents,
+}: {
+  bookingId: string
+  traveler: BookingTravelerRecord
+  revealed: boolean
+  documents: BookingTravelerDocumentRecord[]
+}) {
+  const { travelDetails, loading } = useRevealed(bookingId, traveler, revealed)
+  const messages = useBookingsUiMessagesOrDefault()
+  const travelDocumentLabel = getTravelDocumentLabel(travelDetails, messages)
+
+  if (loading) return <RowLoading />
+  if (!revealed && documents.length === 0) {
+    return (
+      <span className="text-muted-foreground text-xs">
+        {messages.travelerList.values.documentsHidden}
+      </span>
+    )
+  }
+  if (documents.length === 0 && !travelDocumentLabel) {
+    return (
+      <span className="text-muted-foreground text-xs">
+        {messages.travelerList.values.documentsUnavailable}
+      </span>
+    )
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {travelDocumentLabel ? <MiniPill>{travelDocumentLabel}</MiniPill> : null}
+      {documents.slice(0, travelDocumentLabel ? 1 : 2).map((document) => (
+        <MiniPill key={document.id}>{document.type.replaceAll("_", " ")}</MiniPill>
+      ))}
+      {documents.length > (travelDocumentLabel ? 1 : 2) ? (
+        <MiniPill>+{documents.length - (travelDocumentLabel ? 1 : 2)}</MiniPill>
+      ) : null}
+    </div>
+  )
+}
+
+function getTravelDocumentLabel(
+  travelDetails: BookingTravelerRevealRecord["travelDetails"],
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+) {
+  if (!travelDetails) return null
+  if (!travelDetails.documentNumber && !travelDetails.documentExpiry) return null
+
+  const documentType = travelDetails.documentType ?? "passport"
+  return messages.travelerDialog.documentTypeLabels[documentType]
 }
 
 function TravelerSnapshotBody({
@@ -448,7 +499,13 @@ function TravelerSnapshotBody({
   const roles: string[] = []
   if (display.isPrimary) roles.push(messages.travelerList.roles.primary)
   if (travelDetails?.isLeadTraveler) roles.push(messages.travelerList.roles.lead)
-  if (display.travelerCategory) roles.push(display.travelerCategory)
+  if (display.travelerCategory) {
+    roles.push(
+      messages.travelerDialog.travelerCategoryLabels[
+        display.travelerCategory as keyof typeof messages.travelerDialog.travelerCategoryLabels
+      ] ?? display.travelerCategory,
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pb-4">

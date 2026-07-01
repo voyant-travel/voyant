@@ -41,11 +41,13 @@ import {
 } from "../index.js"
 
 const identityDocumentTypes = ["passport", "id_card", "driver_license", "visa", "other"] as const
+const travelerCategories = ["adult", "child", "infant", "senior", "other"] as const
 
 function createTravelerFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
   return z.object({
     firstName: z.string().min(1, messages.travelerDialog.validation.firstNameRequired),
     lastName: z.string().min(1, messages.travelerDialog.validation.lastNameRequired),
+    travelerCategory: z.enum(travelerCategories).default("adult"),
     email: z.string().email().optional().or(z.literal("")).nullable(),
     phone: z.string().optional().nullable(),
     specialRequests: z.string().optional().nullable(),
@@ -72,6 +74,12 @@ const EMPTY_PII_FORM = {
   dateOfBirth: "",
   dietaryRequirements: "",
   accessibilityNeeds: "",
+}
+
+function normalizeTravelerCategory(value: string | null | undefined) {
+  return travelerCategories.includes(value as (typeof travelerCategories)[number])
+    ? (value as (typeof travelerCategories)[number])
+    : "adult"
 }
 
 export interface TravelerDialogProps {
@@ -116,6 +124,7 @@ export function TravelerDialog({
     defaultValues: {
       firstName: "",
       lastName: "",
+      travelerCategory: "adult",
       email: "",
       phone: "",
       specialRequests: "",
@@ -134,6 +143,7 @@ export function TravelerDialog({
       form.reset({
         firstName: traveler.firstName,
         lastName: traveler.lastName,
+        travelerCategory: normalizeTravelerCategory(traveler.travelerCategory),
         email: traveler.email ?? "",
         phone: traveler.phone ?? "",
         specialRequests: traveler.specialRequests ?? "",
@@ -150,6 +160,7 @@ export function TravelerDialog({
       form.reset({
         firstName: "",
         lastName: "",
+        travelerCategory: "adult",
         email: "",
         phone: "",
         specialRequests: "",
@@ -187,6 +198,7 @@ export function TravelerDialog({
       specialRequests: values.specialRequests || null,
       isPrimary: traveler?.isPrimary ?? false,
       participantType: "traveler",
+      travelerCategory: values.travelerCategory,
       documentType: values.documentType,
       documentNumber: trimOrNull(values.documentNumber),
       documentExpiry: trimOrNull(values.documentExpiry),
@@ -355,6 +367,34 @@ export function TravelerDialog({
                   onChange={(next) => form.setValue("phone", next, { shouldDirty: true })}
                 />
               </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>{messages.travelerDialog.fields.travelerCategory}</Label>
+              <Select
+                value={form.watch("travelerCategory") ?? "adult"}
+                onValueChange={(nextValue) =>
+                  form.setValue(
+                    "travelerCategory",
+                    nextValue as (typeof travelerCategories)[number],
+                    {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    },
+                  )
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {travelerCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {messages.travelerDialog.travelerCategoryLabels[category]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex flex-col gap-2">
