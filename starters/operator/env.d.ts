@@ -75,6 +75,18 @@ interface CloudflareBindings {
   VOYANT_API_KEY?: string
   /** Legacy alias for VOYANT_API_KEY. */
   VOYANT_CLOUD_API_KEY?: string
+  /**
+   * Voyant Cloud Browser Rendering credential for styled PDF generation.
+   * Local/self-hosted deployments can leave this unset to use the bundled
+   * basic PDF fallback while still configuring other Voyant-backed providers.
+   */
+  VOYANT_CLOUD_PDF_API_KEY?: string
+  /**
+   * Voyant Data credential for hosted FX lookups. Local/self-hosted deployments
+   * can leave this unset to disable hosted invoice FX without affecting PDF
+   * rendering or notification providers.
+   */
+  VOYANT_DATA_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
   VOYANT_CLOUD_VAULT_SLUG?: string
   EMAIL_FROM: string
