@@ -182,6 +182,14 @@ export const financeInvoiceCoreService = {
     data: UpdateInvoiceInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const readExistingBookingId = async (reader: PostgresJsDatabase) => {
+      const [existing] = await reader
+        .select({ bookingId: invoices.bookingId })
+        .from(invoices)
+        .where(eq(invoices.id, id))
+        .limit(1)
+      return existing?.bookingId ?? null
+    }
     const updateInvoiceRow = (writer: PostgresJsDatabase) =>
       writer
         .update(invoices)
@@ -193,10 +201,11 @@ export const financeInvoiceCoreService = {
       const actionLedgerContext = runtime.actionLedgerContext
       if (actionLedgerContext) {
         return await db.transaction(async (tx) => {
+          const previousBookingId = await readExistingBookingId(tx)
           const [row] = await updateInvoiceRow(tx)
 
           if (row) {
-            await touchLinkedBookingUpdatedAt(tx, row.bookingId)
+            await touchInvoiceBookingLinks(tx, previousBookingId, row.bookingId)
             await appendActionLedgerMutation(
               tx,
               buildInvoiceUpdateActionLedgerInput(
@@ -211,8 +220,9 @@ export const financeInvoiceCoreService = {
         })
       }
 
+      const previousBookingId = await readExistingBookingId(db)
       const [row] = await updateInvoiceRow(db)
-      await touchLinkedBookingUpdatedAt(db, row?.bookingId)
+      await touchInvoiceBookingLinks(db, previousBookingId, row?.bookingId)
       return row ?? null
     } catch (error) {
       if (data.invoiceNumber && isInvoiceNumberUniqueConstraintError(error)) {
@@ -413,4 +423,15 @@ export const financeInvoiceCoreService = {
 
     return result
   },
+}
+
+async function touchInvoiceBookingLinks(
+  db: PostgresJsDatabase,
+  previousBookingId: string | null | undefined,
+  nextBookingId: string | null | undefined,
+) {
+  await touchLinkedBookingUpdatedAt(db, nextBookingId)
+  if (previousBookingId && previousBookingId !== nextBookingId) {
+    await touchLinkedBookingUpdatedAt(db, previousBookingId)
+  }
 }

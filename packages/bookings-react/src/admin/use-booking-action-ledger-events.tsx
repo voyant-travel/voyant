@@ -85,7 +85,8 @@ function getLedgerTimelinePresentation(actionName: string): {
   if (
     actionName.startsWith("finance.invoice.") ||
     actionName.startsWith("finance.invoice_line_item.") ||
-    actionName.startsWith("finance.credit_note.")
+    actionName.startsWith("finance.credit_note.") ||
+    actionName.startsWith("finance.credit_note_line_item.")
   ) {
     return { source: "document", icon: FileText }
   }

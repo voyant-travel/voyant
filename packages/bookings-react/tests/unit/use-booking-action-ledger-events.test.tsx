@@ -85,11 +85,21 @@ describe("useBookingActionLedgerEvents", () => {
         principalId: "user_123",
         occurredAt: "2026-07-01T12:01:00.000Z",
       },
+      {
+        id: "act_credit_note_line_item",
+        actionName: "finance.credit_note_line_item.create",
+        targetId: "book_123",
+        targetType: "booking",
+        status: "succeeded",
+        evaluatedRisk: "low",
+        principalId: "user_123",
+        occurredAt: "2026-07-01T12:02:00.000Z",
+      },
     ]
 
     const html = renderToStaticMarkup(<EventsProbe />)
 
-    expect(html).toContain('data-source="document"')
+    expect(html.match(/data-source="document"/g)).toHaveLength(2)
     expect(html).toContain('data-source="payment"')
   })
 })
