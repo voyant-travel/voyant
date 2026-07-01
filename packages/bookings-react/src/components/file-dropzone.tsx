@@ -25,6 +25,8 @@ export interface FileDropzoneProps {
   maxSize?: number
   /** Called after a successful upload. */
   onUploaded: (file: UploadedFile) => void
+  /** Called after a previously uploaded file is cleared from the dropzone. */
+  onCleared?: () => void
   /** Called when an error occurs (validation, upload failure). */
   onError?: (message: string) => void
   /** Helper text shown in the idle state. */
@@ -38,6 +40,7 @@ export function FileDropzone({
   accept,
   maxSize,
   onUploaded,
+  onCleared,
   onError,
   helperText,
   disabled,
@@ -149,6 +152,7 @@ export function FileDropzone({
   const reset = () => {
     setUploaded(null)
     setError(null)
+    onCleared?.()
   }
 
   if (uploaded) {

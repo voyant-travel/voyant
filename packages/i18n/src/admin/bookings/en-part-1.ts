@@ -267,7 +267,7 @@ export const adminBookingsMessagesEnPart1 = {
       uploadDocument: "Upload document",
       loading: "Loading documents…",
       empty:
-        'No documents on this booking yet. Use "Generate contract" above, or upload traveler documents (passport, visa, insurance). Invoices are generated per payment from the Finance tab.',
+        'No documents on this booking yet. Use "Add contract" above, or upload traveler documents (passport, visa, insurance). Invoices are generated per payment from the Finance tab.',
       headerCategory: "Category",
       headerDocument: "Document",
       headerFor: "For",
@@ -310,6 +310,9 @@ export const adminBookingsMessagesEnPart1 = {
       previewTemplateLabel: "Template:",
       previewFailed: "Could not render the contract preview.",
       previewErrorPrefix: "Preview error:",
+      previewUnavailable: "Contract generation is not ready for this booking.",
+      previewSetupHint:
+        "Configure an active customer contract template with a published version in Legal > Templates, and make sure the deployment has contract document generation configured.",
       uploadTitleLabel: "Title",
       uploadTitlePlaceholder: "Contract title",
       uploadTitleHint: "Defaults to the booking reference when left empty.",

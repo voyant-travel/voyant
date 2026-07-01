@@ -331,6 +331,7 @@ export const bookingsUiEnSections = {
       notes: "Additional notes...",
     },
     validation: {
+      fileRequired: "Choose a file before adding the document.",
       fileNameRequired: "File name is required",
       fileUrlInvalid: "Must be a valid URL",
     },
