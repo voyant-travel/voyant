@@ -15,6 +15,8 @@ import {
   paymentInstruments,
   paymentSessions,
   payments,
+  voucherRedemptions,
+  vouchers,
 } from "../../src/schema.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -60,6 +62,8 @@ async function cleanupFinanceTestData(
   const tableNames = [
     "payment_sessions",
     "supplier_payments",
+    "voucher_redemptions",
+    "vouchers",
     "payments",
     "payment_captures",
     "payment_authorizations",
@@ -181,6 +185,22 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       .returning({ id: invoices.id, invoiceNumber: invoices.invoiceNumber })
 
     return invoice
+  }
+
+  async function seedVoucher(overrides: Partial<typeof vouchers.$inferInsert> = {}) {
+    const [voucher] = await db
+      .insert(vouchers)
+      .values({
+        code: `VCH-PUBLIC-${String(seq + 1).padStart(5, "0")}`,
+        currency: "USD",
+        initialAmountCents: 50000,
+        remainingAmountCents: 40000,
+        sourceType: "gift",
+        ...overrides,
+      })
+      .returning()
+
+    return voucher
   }
 
   it("lists public payment options for a booking", async () => {
@@ -502,26 +522,48 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       balanceDueCents: 20000,
     })
 
-    await db.insert(payments).values([
-      {
-        invoiceId: invoice.id,
-        amountCents: 10000,
-        currency: "USD",
-        paymentMethod: "credit_card",
-        status: "completed",
-        paymentDate: "2025-06-03",
-        referenceNumber: "PAY-1001",
-      },
-      {
-        invoiceId: invoice.id,
-        amountCents: 20000,
-        currency: "USD",
-        paymentMethod: "bank_transfer",
-        status: "pending",
-        paymentDate: "2025-06-05",
-        referenceNumber: "PAY-1002",
-      },
-    ])
+    const [cardPayment, bankPayment] = await db
+      .insert(payments)
+      .values([
+        {
+          invoiceId: invoice.id,
+          amountCents: 10000,
+          currency: "USD",
+          paymentMethod: "credit_card",
+          status: "completed",
+          paymentDate: "2025-06-03",
+          referenceNumber: "PAY-1001",
+        },
+        {
+          invoiceId: invoice.id,
+          amountCents: 20000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          status: "pending",
+          paymentDate: "2025-06-05",
+          referenceNumber: "PAY-1002",
+        },
+      ])
+      .returning()
+
+    const voucher = await seedVoucher({
+      code: "VCH-PUBLIC-PAYMENTS",
+      notes: "Internal voucher handling note",
+    })
+    const [redemption] = await db
+      .insert(voucherRedemptions)
+      .values({
+        voucherId: voucher.id,
+        bookingId: booking.id,
+        amountCents: 15000,
+      })
+      .returning()
+    await db.insert(voucherRedemptions).values({
+      voucherId: voucher.id,
+      bookingId: booking.id,
+      amountCents: 10000,
+      paymentId: cardPayment.id,
+    })
 
     const res = await app.request(`/bookings/${booking.id}/payments`, {
       headers: await capabilityHeaders(booking.id),
@@ -532,6 +574,20 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(body.data.bookingId).toBe(booking.id)
     expect(body.data.payments).toEqual([
       expect.objectContaining({
+        id: redemption.id,
+        source: "voucher_redemption",
+        invoiceId: null,
+        invoiceNumber: null,
+        invoiceType: null,
+        paymentMethod: "voucher",
+        status: "completed",
+        amountCents: 15000,
+        referenceNumber: "VCH-PUBLIC-PAYMENTS",
+        notes: null,
+      }),
+      expect.objectContaining({
+        id: bankPayment.id,
+        source: "payment",
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         invoiceType: "invoice",
@@ -541,6 +597,8 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
         referenceNumber: "PAY-1002",
       }),
       expect.objectContaining({
+        id: cardPayment.id,
+        source: "payment",
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         invoiceType: "invoice",
@@ -550,6 +608,43 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
         referenceNumber: "PAY-1001",
       }),
     ])
+  })
+
+  it("lists voucher redemptions when a booking has no invoices", async () => {
+    const booking = await seedBooking()
+    const voucher = await seedVoucher({ code: "VCH-PUBLIC-NO-INVOICE" })
+    const [redemption] = await db
+      .insert(voucherRedemptions)
+      .values({
+        voucherId: voucher.id,
+        bookingId: booking.id,
+        amountCents: 12000,
+      })
+      .returning()
+
+    const res = await app.request(`/bookings/${booking.id}/payments`, {
+      headers: await capabilityHeaders(booking.id),
+    })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.data).toEqual({
+      bookingId: booking.id,
+      payments: [
+        expect.objectContaining({
+          id: redemption.id,
+          source: "voucher_redemption",
+          invoiceId: null,
+          invoiceNumber: null,
+          invoiceType: null,
+          paymentMethod: "voucher",
+          status: "completed",
+          amountCents: 12000,
+          currency: "USD",
+          referenceNumber: "VCH-PUBLIC-NO-INVOICE",
+        }),
+      ],
+    })
   })
 
   it("starts and reads a public payment session for a booking schedule", async () => {

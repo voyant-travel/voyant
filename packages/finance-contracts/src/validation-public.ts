@@ -243,9 +243,10 @@ export const publicFinanceDocumentLookupSchema = publicFinanceBookingDocumentSch
 
 export const publicFinanceBookingPaymentSchema = z.object({
   id: z.string(),
-  invoiceId: z.string(),
-  invoiceNumber: z.string(),
-  invoiceType: publicFinanceInvoiceTypeSchema,
+  source: z.enum(["payment", "voucher_redemption"]).default("payment"),
+  invoiceId: z.string().nullable(),
+  invoiceNumber: z.string().nullable(),
+  invoiceType: publicFinanceInvoiceTypeSchema.nullable(),
   status: z.enum(["pending", "completed", "failed", "refunded"]),
   paymentMethod: paymentMethodSchema,
   amountCents: z.number().int(),

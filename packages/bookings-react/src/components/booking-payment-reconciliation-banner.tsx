@@ -3,7 +3,7 @@
 import {
   type BookingPaymentScheduleRecord,
   type InvoiceRecord,
-  type PublicFinanceBookingPaymentRecord,
+  type PaymentStatus,
   useAdminBookingPayments,
   useBookingPaymentSchedules,
   useInvoices,
@@ -18,6 +18,11 @@ export interface BookingPaymentReconciliationBannerProps {
 }
 
 type MoneyTotals = Map<string, number>
+type PaymentTotalRow = {
+  status: PaymentStatus
+  currency: string
+  amountCents: number
+}
 
 export function BookingPaymentReconciliationBanner({
   bookingId,
@@ -143,7 +148,7 @@ function sumInvoiceTotals(invoices: InvoiceRecord[], field: "paidCents" | "total
   return totals
 }
 
-function sumCompletedPayments(payments: PublicFinanceBookingPaymentRecord[]) {
+function sumCompletedPayments(payments: PaymentTotalRow[]) {
   const totals: MoneyTotals = new Map()
   for (const payment of payments) {
     if (payment.status !== "completed") continue

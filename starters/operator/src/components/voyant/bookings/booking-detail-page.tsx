@@ -75,7 +75,7 @@ export function BookingDetailPage({
             bookingId={id}
             defaultCurrency={booking.sellCurrency}
             editingPayment={
-              editingPayment
+              editingPayment?.source === "payment"
                 ? {
                     id: editingPayment.id,
                     invoiceId: editingPayment.invoiceId,
