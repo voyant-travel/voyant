@@ -1,5 +1,11 @@
 # @voyant-travel/bookings
 
+## 0.138.2
+
+### Patch Changes
+
+- d388565: Refresh booking detail caches after booking item mutations and record booking item deletions in the booking activity log.
+
 ## 0.138.1
 
 ### Patch Changes
