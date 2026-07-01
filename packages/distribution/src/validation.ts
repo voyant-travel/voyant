@@ -160,10 +160,23 @@ export const channelProductMappingCoreSchema = z.object({
   externalRateId: z.string().nullable().optional(),
   externalCategoryId: z.string().nullable().optional(),
   active: z.boolean().default(true),
+  sourceKind: z.string().min(1).nullable().optional(),
+  sourceConnectionId: z.string().min(1).nullable().optional(),
+  pushBookings: z.boolean().default(true),
+  pushAvailability: z.boolean().default(true),
+  pushContent: z.boolean().default(true),
+  policy: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 
 export const insertChannelProductMappingSchema = channelProductMappingCoreSchema
-export const updateChannelProductMappingSchema = channelProductMappingCoreSchema.partial()
+export const updateChannelProductMappingSchema = channelProductMappingCoreSchema
+  .extend({
+    active: z.boolean().optional(),
+    pushBookings: z.boolean().optional(),
+    pushAvailability: z.boolean().optional(),
+    pushContent: z.boolean().optional(),
+  })
+  .partial()
 export const channelProductMappingListQuerySchema = paginationSchema.extend({
   channelId: z.string().optional(),
   productId: z.string().optional(),
