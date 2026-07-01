@@ -229,6 +229,31 @@ export const distributionUiRo = {
       content: "Continut",
       lastRun: "Rezultat: scanate {scanned}, declansate {triggered}.",
     },
+    feedback: {
+      dismiss: "Inchide feedbackul",
+      retry: {
+        title: "Rezultat reincercare",
+        processed:
+          "Procesate {attempted} legaturi in asteptare: {succeeded} reusite, {failed} esuate, {compensated} compensate.",
+        bookingMissing:
+          "Nu exista nicio rezervare pentru {bookingId}. Legaturile in asteptare au fost marcate esuate cu booking_missing.",
+        noPendingLinks: "Nu au existat legaturi in asteptare de reincercat pentru {bookingId}.",
+        noTargets:
+          "Niciun element de rezervare activ sau nicio mapare de canal nu a produs legaturi de livrare pentru {bookingId}.",
+        noAdapter:
+          "Reincercarea a gasit legaturi in asteptare, dar adaptorul canalului lipseste sau nu este suportat.",
+        noMapping:
+          "Reincercarea a gasit legaturi in asteptare, dar lipseste o mapare produs-canal.",
+        ok: "Reincercarea s-a finalizat pentru {bookingId}, dar serverul nu a raportat legaturi procesate.",
+        failed: "Reincercarea a esuat pentru {bookingId}: {message}",
+      },
+      reconcile: {
+        title: "Rezultat reconciliere",
+        success:
+          "Scanate {scanned} inregistrari si declansate {triggered} workflow-uri de trimitere.",
+        failed: "Reconcilierea a esuat: {message}",
+      },
+    },
     refresh: {
       loading: "Se incarca...",
       title: "Se actualizeaza automat la fiecare {seconds}s",
@@ -237,6 +262,10 @@ export const distributionUiRo = {
     },
     drawer: {
       title: "Jurnal livrari - {bookingId}",
+      bookingScopeDescription:
+        "Jurnal la nivel de rezervare. Poate include livrari pentru toate elementele legate de aceasta rezervare.",
+      itemScopeDescription:
+        "Jurnal la nivel de rezervare deschis din elementul {itemId}. Poate include livrari pentru elemente surori din aceeasi rezervare.",
       emptyTitle: "Nu exista livrari",
       emptyDescription: "Incercarile channel-push apar aici dupa expediere.",
       attempt: "incercarea #{number}",

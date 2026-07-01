@@ -197,6 +197,25 @@ export type DistributionUiMessages = {
       content: string
       lastRun: string
     }
+    feedback: {
+      dismiss: string
+      retry: {
+        title: string
+        processed: string
+        bookingMissing: string
+        noPendingLinks: string
+        noTargets: string
+        noAdapter: string
+        noMapping: string
+        ok: string
+        failed: string
+      }
+      reconcile: {
+        title: string
+        success: string
+        failed: string
+      }
+    }
     refresh: {
       loading: string
       title: string
@@ -205,6 +224,8 @@ export type DistributionUiMessages = {
     }
     drawer: {
       title: string
+      bookingScopeDescription: string
+      itemScopeDescription: string
       emptyTitle: string
       emptyDescription: string
       attempt: string

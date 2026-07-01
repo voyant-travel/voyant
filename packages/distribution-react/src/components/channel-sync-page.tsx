@@ -36,10 +36,12 @@ import { DeliveriesDrawer } from "./channel-sync-deliveries-drawer.js"
 import {
   type BookingRecord,
   type BookingsResponse,
+  type ChannelBookingLinkRow,
   type ChannelRecord,
   type ChannelSyncPageProps,
   type ChannelsResponse,
   channelPushAdminPaths,
+  classifyRetryResult,
   fetchJson,
   formatChannelKind,
   formatRelative,
@@ -48,10 +50,13 @@ import {
   type LinksResponse,
   type PushStatus,
   type ReconcilerResult,
+  type RetryFeedbackKind,
+  type RetryPushResult,
   STATUS_TILES,
   STATUS_VARIANTS,
   THROTTLING_REFETCH_MS,
   type ThrottlingResponse,
+  unwrapData,
   useDebouncedValue,
 } from "./channel-sync-page-utils.js"
 
@@ -59,6 +64,12 @@ export type { ChannelSyncPageProps } from "./channel-sync-page-utils.js"
 
 interface ProductMappingsReadinessResponse {
   data: unknown[]
+}
+
+type OperationFeedback = {
+  tone: "success" | "error"
+  title: string
+  body: string
 }
 
 // Page
@@ -80,7 +91,11 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
   const [channelId, setChannelId] = useState<string | null>(null)
   const [selectedChannel, setSelectedChannel] = useState<ChannelRecord | null>(null)
 
-  const [drilldownBookingId, setDrilldownBookingId] = useState<string | null>(null)
+  const [drilldown, setDrilldown] = useState<{
+    bookingId: string
+    bookingItemId: string | null
+  } | null>(null)
+  const [feedback, setFeedback] = useState<OperationFeedback | null>(null)
 
   const queryClient = useQueryClient()
 
@@ -137,22 +152,60 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
   })
 
   const retryMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetchJson<{ ok: boolean; bookingId: string }>(channelPushAdminPaths.retry(id), client, {
-        method: "POST",
-      }),
-    onSuccess: () => {
+    mutationFn: (row: ChannelBookingLinkRow) =>
+      fetchJson<RetryPushResult | { data: RetryPushResult }>(
+        channelPushAdminPaths.retry(row.link.bookingId),
+        client,
+        {
+          method: "POST",
+        },
+      ),
+    onSuccess: (body, row) => {
+      const result = unwrapData<RetryPushResult>(body)
+      setFeedback(buildRetryFeedback(result, row, messages))
       void queryClient.invalidateQueries({ queryKey: ["channel-push-links"] })
+    },
+    onError: (error, row) => {
+      setFeedback({
+        tone: "error",
+        title: messages.feedback.retry.title,
+        body: formatTemplate(messages.feedback.retry.failed, {
+          bookingId: row.link.bookingId,
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      })
     },
   })
 
   const reconcileMutation = useMutation({
     mutationFn: (flow: "bookings" | "availability" | "content") =>
-      fetchJson<ReconcilerResult>(channelPushAdminPaths.reconcile(flow), client, {
-        method: "POST",
-      }),
-    onSuccess: () => {
+      fetchJson<ReconcilerResult | { data: ReconcilerResult }>(
+        channelPushAdminPaths.reconcile(flow),
+        client,
+        {
+          method: "POST",
+        },
+      ),
+    onSuccess: (body) => {
+      const result = unwrapData<ReconcilerResult>(body)
+      setFeedback({
+        tone: "success",
+        title: messages.feedback.reconcile.title,
+        body: formatTemplate(messages.feedback.reconcile.success, {
+          scanned: result.scanned,
+          triggered: result.triggered,
+        }),
+      })
       void queryClient.invalidateQueries({ queryKey: ["channel-push-links"] })
+    },
+    onError: (error) => {
+      setFeedback({
+        tone: "error",
+        title: messages.feedback.reconcile.title,
+        body: formatTemplate(messages.feedback.reconcile.failed, {
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      })
     },
   })
 
@@ -213,11 +266,46 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
           <ReconcileMenu
             onRun={(flow) => reconcileMutation.mutate(flow)}
             isRunning={reconcileMutation.isPending}
-            lastResult={reconcileMutation.data ?? null}
+            lastResult={
+              reconcileMutation.data ? unwrapData<ReconcilerResult>(reconcileMutation.data) : null
+            }
             messages={messages}
           />
         </div>
       </div>
+
+      {feedback ? (
+        <div
+          role="status"
+          className={cn(
+            "flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm",
+            feedback.tone === "error"
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
+          )}
+        >
+          <div className="flex items-start gap-2">
+            {feedback.tone === "error" ? (
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            ) : (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            )}
+            <div>
+              <div className="font-medium">{feedback.title}</div>
+              <div>{feedback.body}</div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0"
+            aria-label={messages.feedback.dismiss}
+            onClick={() => setFeedback(null)}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ) : null}
 
       {/* Setup/configuration readiness stays separate from operational monitoring. */}
       <Card>
@@ -461,7 +549,12 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setDrilldownBookingId(row.link.bookingId)}
+                            onClick={() =>
+                              setDrilldown({
+                                bookingId: row.link.bookingId,
+                                bookingItemId: row.link.bookingItemId,
+                              })
+                            }
                           >
                             {messages.table.deliveries}
                           </Button>
@@ -470,12 +563,12 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
                             size="sm"
                             disabled={
                               retryMutation.isPending &&
-                              retryMutation.variables === row.link.bookingId
+                              retryMutation.variables?.link.id === row.link.id
                             }
-                            onClick={() => retryMutation.mutate(row.link.bookingId)}
+                            onClick={() => retryMutation.mutate(row)}
                           >
                             {retryMutation.isPending &&
-                            retryMutation.variables === row.link.bookingId ? (
+                            retryMutation.variables?.link.id === row.link.id ? (
                               <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                             ) : null}
                             {messages.table.retry}
@@ -492,11 +585,63 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       </Card>
 
       <DeliveriesDrawer
-        bookingId={drilldownBookingId}
+        bookingId={drilldown?.bookingId ?? null}
+        bookingItemId={drilldown?.bookingItemId ?? null}
         client={client}
-        onClose={() => setDrilldownBookingId(null)}
+        onClose={() => setDrilldown(null)}
         messages={messages}
       />
     </div>
   )
+}
+
+function buildRetryFeedback(
+  result: RetryPushResult,
+  row: ChannelBookingLinkRow,
+  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"],
+): OperationFeedback {
+  const kind = classifyRetryResult(result)
+  const tone = kind === "processed" || kind === "ok" ? "success" : "error"
+  const body = retryFeedbackBody(kind, result, row, messages)
+
+  return {
+    tone,
+    title: messages.feedback.retry.title,
+    body,
+  }
+}
+
+function retryFeedbackBody(
+  kind: RetryFeedbackKind,
+  result: RetryPushResult,
+  row: ChannelBookingLinkRow,
+  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"],
+): string {
+  const bookingId = result.bookingId || row.link.bookingId
+  switch (kind) {
+    case "processed":
+      return formatTemplate(messages.feedback.retry.processed, {
+        attempted: result.attempted ?? 0,
+        succeeded: result.succeeded ?? 0,
+        failed: result.failed ?? 0,
+        compensated: result.compensated ?? 0,
+      })
+    case "booking_missing":
+      return formatTemplate(messages.feedback.retry.bookingMissing, { bookingId })
+    case "no_pending_links":
+      return formatTemplate(messages.feedback.retry.noPendingLinks, { bookingId })
+    case "no_targets":
+      return formatTemplate(messages.feedback.retry.noTargets, { bookingId })
+    case "no_adapter":
+      return messages.feedback.retry.noAdapter
+    case "no_mapping":
+      return messages.feedback.retry.noMapping
+    case "failed":
+      return formatTemplate(messages.feedback.retry.failed, {
+        bookingId,
+        message: result.outcomes?.find((outcome) => outcome.error)?.error ?? "unknown error",
+      })
+    case "ok":
+      return formatTemplate(messages.feedback.retry.ok, { bookingId })
+  }
 }

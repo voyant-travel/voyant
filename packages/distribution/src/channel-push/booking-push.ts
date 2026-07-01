@@ -68,6 +68,7 @@ export interface ProcessBookingPushResult {
     upstreamRef?: string
     error?: string
   }>
+  reason?: "no_pending_links" | "booking_missing"
 }
 
 /**
@@ -267,6 +268,7 @@ export async function processBookingPush(
       failed: 0,
       compensated: 0,
       outcomes,
+      reason: "no_pending_links",
     }
   }
 
@@ -278,13 +280,23 @@ export async function processBookingPush(
 
   if (!booking) {
     logger.error?.(`processBookingPush: booking ${input.bookingId} not found`, {})
+    for (const { link, channel } of links) {
+      await markLinkFailed(db, link.id, link.pushAttempts + 1, "booking_missing")
+      outcomes.push({
+        channelId: channel.id,
+        bookingItemId: link.bookingItemId ?? null,
+        status: "failed",
+        error: "booking_missing",
+      })
+    }
     return {
       bookingId: input.bookingId,
-      attempted: 0,
+      attempted: links.length,
       succeeded: 0,
-      failed: 0,
+      failed: links.length,
       compensated: 0,
       outcomes,
+      reason: "booking_missing",
     }
   }
 

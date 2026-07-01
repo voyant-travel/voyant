@@ -18,6 +18,7 @@ import {
   upsertAvailabilityIntent,
 } from "./availability-push.js"
 import {
+  type ProcessBookingPushResult,
   processBookingPush,
   resolveBookingPushTargets,
   upsertPendingBookingLinks,
@@ -259,4 +260,33 @@ export async function triggerBookingPushForBooking(bookingId: string): Promise<v
   if (targets.length === 0) return
   await upsertPendingBookingLinks(deps.db, bookingId, targets)
   await processBookingPush({ bookingId }, deps)
+}
+
+export interface TriggerBookingPushResult extends Omit<ProcessBookingPushResult, "reason"> {
+  targetCount: number
+  insertedLinks: number
+  reason?: ProcessBookingPushResult["reason"] | "no_targets"
+}
+
+/**
+ * Trigger booking push and return operator-facing diagnostics for retry UI.
+ */
+export async function triggerBookingPushForBookingWithResult(
+  bookingId: string,
+): Promise<TriggerBookingPushResult> {
+  const deps = getChannelPushDepsOrThrow()
+  const targets = await resolveBookingPushTargets(deps.db, bookingId)
+  const insertedLinks =
+    targets.length > 0 ? await upsertPendingBookingLinks(deps.db, bookingId, targets) : 0
+  const result = await processBookingPush({ bookingId }, deps)
+
+  return {
+    ...result,
+    targetCount: targets.length,
+    insertedLinks,
+    reason:
+      targets.length === 0 && result.attempted === 0 && result.outcomes.length === 0
+        ? "no_targets"
+        : result.reason,
+  }
 }
