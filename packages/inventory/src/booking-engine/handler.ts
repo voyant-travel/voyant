@@ -851,12 +851,15 @@ export function createProductsBookingHandler(
       let billingPersonId = partyBilling.personId ?? null
       const billingOrganizationId = partyBilling.organizationId ?? null
       if (!billingPersonId && !billingOrganizationId && options.resolveBillingPerson) {
-        const hasBillingContact =
-          Boolean(partyBilling.contactEmail) ||
-          Boolean(partyBilling.contactPhone) ||
-          Boolean(partyBilling.contactFirstName) ||
-          Boolean(partyBilling.contactLastName)
-        if (hasBillingContact) {
+        // Only resolve when there's a real contact POINT (email or phone). A
+        // name alone is insufficient: `createBooking`'s billing-party check
+        // requires an email or phone, so resolving on name-only would create a
+        // CRM person that still can't satisfy the booking — orphaning a person
+        // on every failed attempt. Without a contact point, skip and let the
+        // commit reject as before.
+        const hasBillingContactPoint =
+          Boolean(partyBilling.contactEmail) || Boolean(partyBilling.contactPhone)
+        if (hasBillingContactPoint) {
           billingPersonId = await options.resolveBillingPerson(
             {
               firstName: partyBilling.contactFirstName,
