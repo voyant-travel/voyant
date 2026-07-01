@@ -1,5 +1,12 @@
 # @voyant-travel/commerce
 
+## 0.19.6
+
+### Patch Changes
+
+- 2156dcb: Map duplicate active promotion slug and code constraints to 409 API errors with field-level details.
+  - @voyant-travel/bookings@0.137.7
+
 ## 0.19.5
 
 ### Patch Changes
