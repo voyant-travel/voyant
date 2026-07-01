@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PayRouteImport } from './routes/pay'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as storefrontRouteRouteImport } from './routes/(storefront)/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
@@ -33,6 +34,11 @@ import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './ro
 const PayRoute = PayRouteImport.update({
   id: '/pay',
   path: '/pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceRouteRoute = WorkspaceRouteRouteImport.update({
@@ -133,6 +139,7 @@ const storefrontShopBookEntityModuleEntityIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceRouteRoute
+  '/docs': typeof DocsRoute
   '/pay': typeof PayRoute
   '/accept-invitation': typeof authAcceptInvitationRoute
   '/accept-invite': typeof authAcceptInviteRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof WorkspaceRouteRoute
+  '/docs': typeof DocsRoute
   '/pay': typeof PayRoute
   '/accept-invitation': typeof authAcceptInvitationRoute
   '/accept-invite': typeof authAcceptInviteRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/(auth)': typeof authRouteRouteWithChildren
   '/(storefront)': typeof storefrontRouteRouteWithChildren
   '/_workspace': typeof WorkspaceRouteRoute
+  '/docs': typeof DocsRoute
   '/pay': typeof PayRoute
   '/(auth)/accept-invitation': typeof authAcceptInvitationRoute
   '/(auth)/accept-invite': typeof authAcceptInviteRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/docs'
     | '/pay'
     | '/accept-invitation'
     | '/accept-invite'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/docs'
     | '/pay'
     | '/accept-invitation'
     | '/accept-invite'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/(auth)'
     | '/(storefront)'
     | '/_workspace'
+    | '/docs'
     | '/pay'
     | '/(auth)/accept-invitation'
     | '/(auth)/accept-invite'
@@ -263,6 +275,7 @@ export interface RootRouteChildren {
   authRouteRoute: typeof authRouteRouteWithChildren
   storefrontRouteRoute: typeof storefrontRouteRouteWithChildren
   WorkspaceRouteRoute: typeof WorkspaceRouteRoute
+  DocsRoute: typeof DocsRoute
   PayRoute: typeof PayRoute
   AccountantTokenRoute: typeof AccountantTokenRoute
   PaySessionIdRoute: typeof PaySessionIdRoute
@@ -276,6 +289,13 @@ declare module '@tanstack/react-router' {
       path: '/pay'
       fullPath: '/pay'
       preLoaderRoute: typeof PayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_workspace': {
@@ -467,6 +487,7 @@ const rootRouteChildren: RootRouteChildren = {
   authRouteRoute: authRouteRouteWithChildren,
   storefrontRouteRoute: storefrontRouteRouteWithChildren,
   WorkspaceRouteRoute: WorkspaceRouteRoute,
+  DocsRoute: DocsRoute,
   PayRoute: PayRoute,
   AccountantTokenRoute: AccountantTokenRoute,
   PaySessionIdRoute: PaySessionIdRoute,
