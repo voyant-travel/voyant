@@ -1,3 +1,4 @@
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { beforeAll, beforeEach } from "vitest"
 
@@ -32,6 +33,7 @@ export function setupDistributionRoutes() {
       await next()
     })
     app.route("/", distributionRoutes)
+    app.onError(handleApiError)
   })
 
   beforeEach(async () => {
@@ -60,6 +62,18 @@ export function setupDistributionRoutes() {
     const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
       .insert(products)
       .values({ name: `Test Product ${Date.now()}`, sellCurrency: "USD" })
+      .returning()
+    return row!
+  }
+
+  async function seedBooking() {
+    const { bookings } = await import("@voyant-travel/bookings/schema")
+    const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
+      .insert(bookings)
+      .values({
+        bookingNumber: `BK-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        sellCurrency: "USD",
+      })
       .returning()
     return row!
   }
@@ -110,6 +124,7 @@ export function setupDistributionRoutes() {
     seedChannel,
     seedContract,
     seedProduct,
+    seedBooking,
     seedSettlementRun,
     seedReconciliationRun,
     seedInventoryAllotment,

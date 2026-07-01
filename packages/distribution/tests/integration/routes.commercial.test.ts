@@ -248,6 +248,20 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
       expect(body.data.active).toBe(true)
     })
 
+    it("rejects product mappings for unknown product ids", async () => {
+      const channel = await ctx.seedChannel()
+      const res = await ctx.app.request("/product-mappings", {
+        method: "POST",
+        ...json({
+          channelId: channel.id,
+          productId: "prod_missing",
+          externalProductId: "EXT-MISSING",
+        }),
+      })
+      expect(res.status).toBe(400)
+      expect((await res.json()).code).toBe("invalid_request")
+    })
+
     it("lists product mappings", async () => {
       const channel = await ctx.seedChannel()
       const product = await ctx.seedProduct()
@@ -330,25 +344,63 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
   describe("Booking Links CRUD", () => {
     it("creates a booking link", async () => {
       const channel = await ctx.seedChannel()
+      const booking = await ctx.seedBooking()
       const res = await ctx.app.request("/booking-links", {
         method: "POST",
         ...json({
           channelId: channel.id,
-          bookingId: "book_test123",
+          bookingId: booking.id,
           externalBookingId: "EXT-BK-001",
         }),
       })
       expect(res.status).toBe(201)
       const body = await res.json()
-      expect(body.data.bookingId).toBe("book_test123")
+      expect(body.data.bookingId).toBe(booking.id)
       expect(body.data.externalBookingId).toBe("EXT-BK-001")
+    })
+
+    it("rejects booking links for unknown booking ids", async () => {
+      const channel = await ctx.seedChannel()
+      const res = await ctx.app.request("/booking-links", {
+        method: "POST",
+        ...json({
+          channelId: channel.id,
+          bookingId: "book_missing",
+          externalBookingId: "EXT-BK-MISSING",
+        }),
+      })
+      expect(res.status).toBe(400)
+      expect((await res.json()).code).toBe("invalid_request")
+    })
+
+    it("returns 409 for duplicate booking links", async () => {
+      const channel = await ctx.seedChannel()
+      const booking = await ctx.seedBooking()
+      const body = {
+        channelId: channel.id,
+        bookingId: booking.id,
+        externalBookingId: "EXT-BK-DUP",
+      }
+      const first = await ctx.app.request("/booking-links", {
+        method: "POST",
+        ...json(body),
+      })
+      expect(first.status).toBe(201)
+
+      const second = await ctx.app.request("/booking-links", {
+        method: "POST",
+        ...json(body),
+      })
+      expect(second.status).toBe(409)
+      expect((await second.json()).code).toBe("duplicate_channel_booking_link")
     })
 
     it("lists booking links", async () => {
       const channel = await ctx.seedChannel()
+      const booking = await ctx.seedBooking()
       await ctx.app.request("/booking-links", {
         method: "POST",
-        ...json({ channelId: channel.id, bookingId: "book_test456" }),
+        ...json({ channelId: channel.id, bookingId: booking.id }),
       })
       const res = await ctx.app.request("/booking-links", { method: "GET" })
       expect(res.status).toBe(200)
@@ -357,9 +409,10 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
 
     it("gets a booking link by id", async () => {
       const channel = await ctx.seedChannel()
+      const booking = await ctx.seedBooking()
       const createRes = await ctx.app.request("/booking-links", {
         method: "POST",
-        ...json({ channelId: channel.id, bookingId: "book_test789" }),
+        ...json({ channelId: channel.id, bookingId: booking.id }),
       })
       const link = (await createRes.json()).data
       const res = await ctx.app.request(`/booking-links/${link.id}`, { method: "GET" })
@@ -369,9 +422,10 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
 
     it("updates a booking link", async () => {
       const channel = await ctx.seedChannel()
+      const booking = await ctx.seedBooking()
       const createRes = await ctx.app.request("/booking-links", {
         method: "POST",
-        ...json({ channelId: channel.id, bookingId: "book_test_upd" }),
+        ...json({ channelId: channel.id, bookingId: booking.id }),
       })
       const link = (await createRes.json()).data
       const res = await ctx.app.request(`/booking-links/${link.id}`, {
@@ -384,9 +438,10 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
 
     it("deletes a booking link", async () => {
       const channel = await ctx.seedChannel()
+      const booking = await ctx.seedBooking()
       const createRes = await ctx.app.request("/booking-links", {
         method: "POST",
-        ...json({ channelId: channel.id, bookingId: "book_test_del" }),
+        ...json({ channelId: channel.id, bookingId: booking.id }),
       })
       const link = (await createRes.json()).data
       const res = await ctx.app.request(`/booking-links/${link.id}`, { method: "DELETE" })
@@ -417,6 +472,19 @@ describe.skipIf(!DB_AVAILABLE)("Distribution commercial routes", () => {
       const body = await res.json()
       expect(body.data.eventType).toBe("booking.created")
       expect(body.data.status).toBe("pending")
+    })
+
+    it("rejects webhook events for unknown channel ids", async () => {
+      const res = await ctx.app.request("/webhook-events", {
+        method: "POST",
+        ...json({
+          channelId: "chan_missing",
+          eventType: "booking.created",
+          payload: { bookingId: "ext-123" },
+        }),
+      })
+      expect(res.status).toBe(400)
+      expect((await res.json()).code).toBe("invalid_request")
     })
 
     it("lists webhook events", async () => {
