@@ -1,5 +1,11 @@
 # @voyant-travel/finance
 
+## 0.138.1
+
+### Patch Changes
+
+- ee4cbf0: Emit an `invoice.payment.recorded` domain event when a completed customer payment is recorded against an invoice.
+
 ## 0.138.0
 
 ### Patch Changes

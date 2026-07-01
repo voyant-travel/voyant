@@ -1,5 +1,13 @@
 # @voyant-travel/distribution-react
 
+## 0.128.1
+
+### Patch Changes
+
+- bd59b12: Surface actionable channel sync retry and reconcile outcomes in the operator UI.
+- Updated dependencies [bd59b12]
+  - @voyant-travel/distribution@0.128.1
+
 ## 0.128.0
 
 ### Patch Changes
