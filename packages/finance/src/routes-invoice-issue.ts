@@ -34,6 +34,7 @@ import {
   InvoiceFromBookingValidationError,
   InvoiceNumberAllocationError,
   InvoiceNumberConflictError,
+  InvoiceValidationError,
 } from "./service.js"
 import {
   insertInvoiceSchema,
@@ -71,6 +72,14 @@ const createInvoiceRoute = createRoute({
     },
     400: {
       description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Booking, person, or organization reference not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Invoice number already exists",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -172,12 +181,32 @@ financeInvoiceIssueRoutes
   .openapi(listInvoicesRoute, async (c) =>
     c.json(await financeService.listInvoices(c.get("db"), c.req.valid("query")), 200),
   )
-  .openapi(createInvoiceRoute, async (c) =>
-    c.json(
-      { data: (await financeService.createInvoice(c.get("db"), c.req.valid("json"))) ?? null },
-      201,
-    ),
-  )
+  .openapi(createInvoiceRoute, async (c) => {
+    try {
+      return c.json(
+        { data: (await financeService.createInvoice(c.get("db"), c.req.valid("json"))) ?? null },
+        201,
+      )
+    } catch (error) {
+      if (error instanceof InvoiceNumberConflictError) {
+        return c.json(
+          {
+            error: "Invoice number already exists",
+            code: error.code,
+            invoiceNumber: error.invoiceNumber,
+          },
+          409,
+        )
+      }
+      if (error instanceof InvoiceValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+      throw error
+    }
+  })
   .openapi(issueInvoiceFromBookingRoute, async (c) => {
     const input = c.req.valid("json")
     const db = c.get("db")

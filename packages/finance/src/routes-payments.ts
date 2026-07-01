@@ -21,7 +21,7 @@ import { errorResponseSchema, paymentSchema } from "./routes-invoice-schemas.js"
 import { supplierPaymentSchema, unifiedPaymentSchema } from "./routes-payment-schemas.js"
 import { getActionLedgerRequestContext, getFinanceRouteRuntime } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"
-import { financeService } from "./service.js"
+import { financeService, PaymentValidationError } from "./service.js"
 import {
   insertSupplierPaymentSchema,
   paymentListQuerySchema,
@@ -92,6 +92,10 @@ const updatePaymentRoute = createRoute({
       description: "Payment not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    409: {
+      description: "The payment conflicts with the invoice state (e.g. overpayment)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -133,12 +137,22 @@ const unifiedPaymentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidati
       return c.json({ error: "Use /supplier-payments/:id to update supplier payments" }, 400)
     }
     const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.updatePayment(c.get("db"), id, c.req.valid("json"), {
-      eventBus: runtime?.eventBus,
-      actionLedgerContext: getActionLedgerRequestContext(c),
-      actionLedgerAuthorizationSource: "finance.payment.route",
-    })
-    return row ? c.json({ data: row }, 200) : c.json({ error: "Payment not found" }, 404)
+    try {
+      const row = await financeService.updatePayment(c.get("db"), id, c.req.valid("json"), {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment.route",
+      })
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Payment not found" }, 404)
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        if (error.status === 409) {
+          return c.json({ error: error.message, code: error.code, details: error.details }, 409)
+        }
+        return c.json({ error: error.message, code: error.code, details: error.details }, 400)
+      }
+      throw error
+    }
   })
   .openapi(deletePaymentRoute, async (c) => {
     const id = c.req.valid("param").id

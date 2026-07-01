@@ -424,6 +424,24 @@ export class InvoiceFromBookingValidationError extends Error {
   }
 }
 
+export class InvoiceValidationError extends Error {
+  readonly status: 400 | 404 | 409
+  readonly code: string
+  readonly details?: Record<string, unknown>
+
+  constructor(
+    message: string,
+    details?: Record<string, unknown>,
+    options: { status?: 400 | 404 | 409; code?: string } = {},
+  ) {
+    super(message)
+    this.name = "InvoiceValidationError"
+    this.status = options.status ?? 400
+    this.code = options.code ?? "invalid_invoice"
+    this.details = details
+  }
+}
+
 export class InvoiceLineItemsPersistenceError extends Error {
   readonly code = "invoice_line_items_not_persisted"
   readonly invoiceId: string
