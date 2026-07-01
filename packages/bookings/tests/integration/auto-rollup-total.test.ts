@@ -39,12 +39,13 @@ describe.skipIf(!DB_AVAILABLE)("bookings auto-rollup", () => {
     await cleanupTestDb(db)
   })
 
-  async function seedBooking() {
+  async function seedBooking(overrides: Partial<typeof bookings.$inferInsert> = {}) {
     const [row] = await db
       .insert(bookings)
       .values({
         bookingNumber: nextNumber(),
         sellCurrency: "EUR",
+        ...overrides,
       })
       .returning()
     if (!row) throw new Error("seedBooking: insert returned no rows")
@@ -56,6 +57,20 @@ describe.skipIf(!DB_AVAILABLE)("bookings auto-rollup", () => {
       .select({
         sellAmountCents: bookings.sellAmountCents,
         costAmountCents: bookings.costAmountCents,
+      })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+    return row
+  }
+
+  async function getMoneyFields(bookingId: string) {
+    const [row] = await db
+      .select({
+        sellAmountCents: bookings.sellAmountCents,
+        costAmountCents: bookings.costAmountCents,
+        baseCurrency: bookings.baseCurrency,
+        baseSellAmountCents: bookings.baseSellAmountCents,
+        baseCostAmountCents: bookings.baseCostAmountCents,
       })
       .from(bookings)
       .where(eq(bookings.id, bookingId))
@@ -122,6 +137,85 @@ describe.skipIf(!DB_AVAILABLE)("bookings auto-rollup", () => {
     expect((await getTotals(booking.id))?.sellAmountCents).toBe(17500)
   })
 
+  it("updateBooking does not let direct parent totals diverge from existing items", async () => {
+    const booking = await seedBooking()
+    await bookingsService.createItem(db, booking.id, {
+      title: "Tour",
+      itemType: "unit",
+      status: "draft",
+      quantity: 1,
+      sellCurrency: "EUR",
+      unitSellAmountCents: 16500,
+      totalSellAmountCents: 16500,
+    })
+
+    const updated = await bookingsService.updateBooking(db, booking.id, {
+      sellAmountCents: 1_650_017_000,
+      costAmountCents: 1_650_017_000,
+      internalNotes: "metadata-only update",
+    })
+
+    expect(updated?.internalNotes).toBe("metadata-only update")
+    expect(updated?.sellAmountCents).toBe(16500)
+    expect(updated?.costAmountCents).toBe(0)
+    expect(await getTotals(booking.id)).toEqual({
+      sellAmountCents: 16500,
+      costAmountCents: 0,
+    })
+  })
+
+  it("updateBooking preserves explicit base total clears on itemized bookings", async () => {
+    const booking = await seedBooking({
+      baseCurrency: "USD",
+      baseSellAmountCents: 11000,
+      baseCostAmountCents: 7000,
+    })
+    await bookingsService.createItem(db, booking.id, {
+      title: "Tour",
+      itemType: "unit",
+      status: "draft",
+      quantity: 1,
+      sellCurrency: "EUR",
+      unitSellAmountCents: 10000,
+      totalSellAmountCents: 10000,
+      costCurrency: "EUR",
+      unitCostAmountCents: 6000,
+      totalCostAmountCents: 6000,
+    })
+    await db
+      .update(bookings)
+      .set({
+        baseCurrency: "USD",
+        baseSellAmountCents: 11000,
+        baseCostAmountCents: 7000,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, booking.id))
+
+    const updated = await bookingsService.updateBooking(db, booking.id, {
+      baseCurrency: null,
+      baseSellAmountCents: null,
+      baseCostAmountCents: null,
+      internalNotes: "fx cleared",
+    })
+
+    expect(updated).toMatchObject({
+      baseCurrency: null,
+      baseSellAmountCents: null,
+      baseCostAmountCents: null,
+      internalNotes: "fx cleared",
+      sellAmountCents: 10000,
+      costAmountCents: 6000,
+    })
+    expect(await getMoneyFields(booking.id)).toEqual({
+      sellAmountCents: 10000,
+      costAmountCents: 6000,
+      baseCurrency: null,
+      baseSellAmountCents: null,
+      baseCostAmountCents: null,
+    })
+  })
+
   it("deleteItem re-rolls without the removed item", async () => {
     const booking = await seedBooking()
     const a = await bookingsService.createItem(db, booking.id, {
@@ -170,12 +264,12 @@ describe.skipIf(!DB_AVAILABLE)("bookings auto-rollup", () => {
       .where(eq(bookings.id, booking.id))
 
     const result = await bookingsService.recomputeBookingTotal(db, booking.id)
-    expect(result).toEqual({ sellAmountCents: 5000, costAmountCents: 0 })
+    expect(result).toMatchObject({ sellAmountCents: 5000, costAmountCents: 0 })
     expect((await getTotals(booking.id))?.sellAmountCents).toBe(5000)
 
     // Idempotent — calling again is a no-op.
     const second = await bookingsService.recomputeBookingTotal(db, booking.id)
-    expect(second).toEqual({ sellAmountCents: 5000, costAmountCents: 0 })
+    expect(second).toMatchObject({ sellAmountCents: 5000, costAmountCents: 0 })
   })
 
   it("treats null totalSellAmountCents as 0 — never NaN, never error", async () => {

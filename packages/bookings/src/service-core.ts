@@ -2990,6 +2990,11 @@ export const bookingsService = {
 
   async updateBooking(db: PostgresJsDatabase, id: string, data: UpdateBookingInput) {
     const normalizedData = normalizeBookingBillingPartyUpdate(data)
+    const includesDirectTotalUpdate =
+      data.sellAmountCents !== undefined ||
+      data.baseSellAmountCents !== undefined ||
+      data.costAmountCents !== undefined ||
+      data.baseCostAmountCents !== undefined
 
     return db.transaction(async (tx) => {
       const rows = await tx.execute(
@@ -3002,10 +3007,36 @@ export const bookingsService = {
 
       if (!existing) return null
 
+      let updateData = normalizedData
+      let shouldRecomputeTotals = false
+      if (includesDirectTotalUpdate) {
+        const [itemCount] = await tx
+          .select({ count: sql<number>`count(*)::int` })
+          .from(bookingItems)
+          .where(eq(bookingItems.bookingId, id))
+
+        if ((itemCount?.count ?? 0) > 0) {
+          const rest = { ...normalizedData }
+          delete rest.sellAmountCents
+          delete rest.baseSellAmountCents
+          delete rest.costAmountCents
+          delete rest.baseCostAmountCents
+          if (data.baseCurrency === null) {
+            rest.baseSellAmountCents = null
+            rest.baseCostAmountCents = null
+          } else {
+            if (data.baseSellAmountCents === null) rest.baseSellAmountCents = null
+            if (data.baseCostAmountCents === null) rest.baseCostAmountCents = null
+          }
+          updateData = rest
+          shouldRecomputeTotals = true
+        }
+      }
+
       const [row] = await tx
         .update(bookings)
         .set({
-          ...normalizedData,
+          ...updateData,
           contactFirstName:
             data.contactFirstName === undefined ? undefined : (data.contactFirstName ?? null),
           contactLastName:
@@ -3042,7 +3073,11 @@ export const bookingsService = {
         .where(eq(bookings.id, id))
         .returning()
 
-      return row ?? null
+      if (!row || !shouldRecomputeTotals) return row ?? null
+
+      await bookingsService.recomputeBookingTotal(tx as PostgresJsDatabase, id)
+      const [freshRow] = await tx.select().from(bookings).where(eq(bookings.id, id)).limit(1)
+      return freshRow ?? row
     })
   },
 

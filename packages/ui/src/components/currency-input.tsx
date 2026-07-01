@@ -38,6 +38,24 @@ function getDecimalSeparator(locale: string): string {
   return part?.value ?? "."
 }
 
+function isValidGroupedInteger(raw: string, groupingSeparator: "." | ","): boolean {
+  const groups = raw.split(groupingSeparator)
+  if (groups.length <= 1) return true
+  if (groups.some((group) => !/^\d+$/.test(group))) return false
+
+  const [first, ...rest] = groups
+  return Boolean(first && first.length <= 3) && rest.every((group) => group.length === 3)
+}
+
+function hasValidIntegerSeparators(raw: string): boolean {
+  const separators = [".", ","] as const
+  for (const separator of separators) {
+    if (!raw.includes(separator)) continue
+    if (!isValidGroupedInteger(raw, separator)) return false
+  }
+  return true
+}
+
 function normalizeCurrency(currency: string | null | undefined): string | null {
   const code = currency?.trim().toUpperCase()
   return code || null
@@ -92,8 +110,14 @@ export function parseCurrencyInput(
 
   const integerRaw = decimalIndex >= 0 ? normalized.slice(0, decimalIndex) : normalized
   const fractionalRaw = decimalIndex >= 0 ? normalized.slice(decimalIndex + 1) : ""
+
+  if (/[.,]/.test(fractionalRaw)) return null
+  if (!hasValidIntegerSeparators(integerRaw)) return null
+
   const integer = integerRaw.replace(/\D/g, "") || "0"
-  const fractional = fractionalRaw.replace(/\D/g, "").slice(0, decimals).padEnd(decimals, "0")
+  const fractionalDigits = fractionalRaw.replace(/\D/g, "")
+  if (fractionalDigits.length > decimals) return null
+  const fractional = fractionalDigits.padEnd(decimals, "0")
   const amount = Number.parseInt(`${integer}${fractional}`, 10)
 
   if (!Number.isFinite(amount)) return null
@@ -149,6 +173,7 @@ export function CurrencyInput({
         }}
         onFocus={(event) => {
           setIsFocused(true)
+          event.currentTarget.select()
           onFocus?.(event)
         }}
         onBlur={(event) => {
