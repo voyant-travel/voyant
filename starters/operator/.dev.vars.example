@@ -34,11 +34,19 @@ CORS_ALLOWLIST="http://localhost:3100"
 
 # Voyant API (canonical email / sms / verify / vault / connect provider).
 # Optional for local/self-hosted no-cloud development. Leave unset/empty to
-# disable Cloud-backed FX, realtime, and notification delivery.
+# disable Cloud-backed realtime and notification delivery. Do not use a dummy
+# local placeholder; older generated VOYANT_API_KEY="local-dev" values are
+# treated as unset, and Cloud-backed capabilities now have their own opt-in keys.
 # Self-hosters who want a different transport can swap the provider in
 # src/lib/notifications.ts (see @voyant-travel/notifications for the
 # NotificationProvider interface).
 # VOYANT_API_KEY="vc_..."
+# Styled legal/invoice PDF rendering via Voyant Cloud Browser Rendering.
+# Leave unset/empty locally to use the bundled basic PDF fallback.
+# VOYANT_CLOUD_PDF_API_KEY="vc_..."
+# Hosted Voyant Data FX lookup for finance invoice/payment rates.
+# Leave unset/empty locally to disable hosted FX lookup.
+# VOYANT_DATA_API_KEY="vd_..."
 # VOYANT_CLOUD_API_URL="https://api.voyant.travel"
 # VOYANT_CLOUD_VAULT_SLUG="main"
 
