@@ -337,6 +337,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -529,6 +532,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -690,6 +696,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -817,6 +826,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -1031,6 +1043,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -1086,6 +1101,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -1181,6 +1199,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -1276,6 +1297,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -1354,6 +1378,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -1503,6 +1530,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -1596,6 +1626,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -1741,6 +1774,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -1949,6 +1985,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -2088,6 +2127,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -2314,6 +2356,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -2369,6 +2414,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -2574,6 +2622,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -3070,6 +3121,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -3694,6 +3748,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -4020,6 +4077,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -4654,6 +4714,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -4727,6 +4790,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -5071,6 +5137,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -5433,6 +5502,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -6141,6 +6213,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -6485,6 +6560,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -6829,6 +6907,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -6924,6 +7005,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -7033,6 +7117,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -7142,6 +7229,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -7251,6 +7341,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -7433,6 +7526,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -7577,6 +7673,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -7913,6 +8012,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -8120,6 +8222,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -8327,6 +8432,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -8662,6 +8770,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -8717,6 +8828,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -8924,6 +9038,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -8981,6 +9098,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -9086,6 +9206,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -9262,6 +9385,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -9382,6 +9508,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -9555,6 +9684,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -9693,6 +9825,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -9813,6 +9948,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -9951,6 +10089,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -10215,6 +10356,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -10477,6 +10621,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -10529,6 +10676,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -10746,6 +10896,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -10957,6 +11110,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -11194,6 +11350,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -11246,6 +11405,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -11519,6 +11681,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -11845,6 +12010,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -12276,6 +12444,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -12434,6 +12605,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -12594,6 +12768,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -12705,6 +12882,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -12887,6 +13067,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -12957,6 +13140,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -13079,6 +13265,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -13393,6 +13582,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -13793,6 +13985,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }
@@ -13990,6 +14185,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -14414,6 +14612,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       },
@@ -14466,6 +14667,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "admin"
       }

@@ -683,6 +683,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -744,6 +747,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -823,6 +829,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -907,6 +916,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -956,6 +968,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -1019,6 +1034,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -1101,6 +1119,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }

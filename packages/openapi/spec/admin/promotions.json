@@ -611,6 +611,9 @@
             }
           }
         },
+        "tags": [
+          "promotions"
+        ],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       },
@@ -1271,6 +1274,9 @@
             }
           }
         },
+        "tags": [
+          "promotions"
+        ],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       }
@@ -1622,6 +1628,9 @@
             }
           }
         },
+        "tags": [
+          "promotions"
+        ],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       },
@@ -2304,6 +2313,9 @@
             }
           }
         },
+        "tags": [
+          "promotions"
+        ],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       },
@@ -2382,6 +2394,9 @@
             }
           }
         },
+        "tags": [
+          "promotions"
+        ],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       }
@@ -2733,6 +2748,9 @@
             }
           }
         },
+        "tags": [
+          "promotions"
+        ],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       }

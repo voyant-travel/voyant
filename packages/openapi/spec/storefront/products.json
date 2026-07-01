@@ -229,6 +229,9 @@
             }
           }
         },
+        "tags": [
+          "products"
+        ],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -344,6 +347,9 @@
             }
           }
         },
+        "tags": [
+          "products"
+        ],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -553,6 +559,9 @@
             }
           }
         },
+        "tags": [
+          "products"
+        ],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -1427,6 +1436,9 @@
             }
           }
         },
+        "tags": [
+          "products"
+        ],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -2110,6 +2122,9 @@
             }
           }
         },
+        "tags": [
+          "products"
+        ],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -2793,6 +2808,9 @@
             }
           }
         },
+        "tags": [
+          "products"
+        ],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -2915,6 +2933,9 @@
             }
           }
         },
+        "tags": [
+          "products"
+        ],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }

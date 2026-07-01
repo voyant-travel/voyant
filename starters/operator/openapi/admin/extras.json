@@ -390,6 +390,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -676,6 +679,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -853,6 +859,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -1163,6 +1172,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -1215,6 +1227,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -1439,6 +1454,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -1693,6 +1711,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -1856,6 +1877,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -2134,6 +2158,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -2186,6 +2213,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -2440,6 +2470,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -2742,6 +2775,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -2926,6 +2962,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -3251,6 +3290,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -3303,6 +3345,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -3852,6 +3897,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -4128,6 +4176,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -4420,6 +4471,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -4677,6 +4731,9 @@
             }
           }
         },
+        "tags": [
+          "extras"
+        ],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }

@@ -305,6 +305,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -397,6 +400,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -489,6 +495,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -581,6 +590,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -673,6 +685,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -847,6 +862,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1057,6 +1075,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1246,6 +1267,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1584,6 +1608,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1898,6 +1925,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -2095,6 +2125,9 @@
             }
           }
         },
+        "tags": [
+          "legal"
+        ],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }

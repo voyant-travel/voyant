@@ -304,6 +304,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -502,6 +505,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -696,6 +702,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -902,6 +911,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -1079,6 +1091,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -1437,6 +1452,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -1945,6 +1963,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -2856,6 +2877,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -3767,6 +3791,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -4670,6 +4697,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -4766,6 +4796,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -4839,6 +4872,9 @@
             }
           }
         },
+        "tags": [
+          "finance"
+        ],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }

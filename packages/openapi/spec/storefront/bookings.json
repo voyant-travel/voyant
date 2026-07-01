@@ -1139,6 +1139,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -1788,6 +1791,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       },
@@ -2588,6 +2594,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -2689,6 +2698,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       },
@@ -2824,6 +2836,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -3707,6 +3722,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -4392,6 +4410,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -5077,6 +5098,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -5611,6 +5635,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -6148,6 +6175,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }

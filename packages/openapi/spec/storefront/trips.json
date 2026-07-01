@@ -188,6 +188,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -797,6 +800,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       },
@@ -1313,6 +1319,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -1769,6 +1778,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       },
@@ -2093,6 +2105,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -2461,6 +2476,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -2601,6 +2619,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       },
@@ -2812,6 +2833,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -2968,6 +2992,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -3391,6 +3418,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -3755,6 +3785,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -4173,6 +4206,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       },
@@ -4509,6 +4545,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -4896,6 +4935,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -5142,6 +5184,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       },
@@ -5340,6 +5385,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -5710,6 +5758,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -6251,6 +6302,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -6621,6 +6675,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -7186,6 +7243,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -7749,6 +7809,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -8295,6 +8358,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -8843,6 +8909,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }
@@ -9396,6 +9465,9 @@
             }
           }
         },
+        "tags": [
+          "trips"
+        ],
         "x-voyant-module": "trips",
         "x-voyant-surface": "storefront"
       }

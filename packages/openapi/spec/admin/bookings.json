@@ -240,6 +240,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -484,6 +487,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -1000,6 +1006,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -1088,6 +1097,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -1171,6 +1183,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -1323,6 +1338,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -1422,6 +1440,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -1491,6 +1512,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -2412,6 +2436,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -2493,6 +2520,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -2951,6 +2981,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -3383,6 +3416,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -3838,6 +3874,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -4293,6 +4332,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -4748,6 +4790,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -5203,6 +5248,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -5686,6 +5734,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -5846,6 +5897,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -6035,6 +6089,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -6165,6 +6222,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -6406,6 +6466,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -6596,6 +6659,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -6689,6 +6755,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -6922,6 +6991,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -7018,6 +7090,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -7307,6 +7382,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -7600,6 +7678,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -7847,6 +7928,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -7907,6 +7991,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -8161,6 +8248,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -8659,6 +8749,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -9163,6 +9256,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -9241,6 +9337,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -9322,6 +9421,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -9483,6 +9585,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -9571,6 +9676,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -9694,6 +9802,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -9909,6 +10020,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -10135,6 +10249,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -10272,6 +10389,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -10530,6 +10650,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -10794,6 +10917,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -10899,6 +11025,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -11098,6 +11227,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -11161,6 +11293,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -11276,6 +11411,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -11401,6 +11539,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -11461,6 +11602,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -11556,6 +11700,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -11737,6 +11884,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -11799,6 +11949,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -11971,6 +12124,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -12126,6 +12282,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -12273,6 +12432,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -12453,6 +12615,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -12505,6 +12670,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -12572,6 +12740,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -12720,6 +12891,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -12782,6 +12956,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -12834,6 +13011,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -13427,6 +13607,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -14174,6 +14357,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -14928,6 +15114,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -15703,6 +15892,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       },
@@ -15755,6 +15947,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -16421,6 +16616,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -17342,6 +17540,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
@@ -18921,6 +19122,9 @@
             }
           }
         },
+        "tags": [
+          "bookings"
+        ],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }

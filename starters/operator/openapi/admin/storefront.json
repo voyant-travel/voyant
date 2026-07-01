@@ -769,6 +769,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "admin"
       },
@@ -1948,6 +1951,9 @@
             }
           }
         },
+        "tags": [
+          "storefront"
+        ],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "admin"
       }

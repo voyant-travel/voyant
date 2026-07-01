@@ -273,6 +273,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       },
@@ -512,6 +515,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       }
@@ -585,6 +591,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       },
@@ -692,6 +701,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       }
@@ -752,6 +764,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       },
@@ -885,6 +900,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       }
@@ -1042,6 +1060,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       },
@@ -1396,6 +1417,9 @@
             }
           }
         },
+        "tags": [
+          "operator-settings"
+        ],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin"
       }

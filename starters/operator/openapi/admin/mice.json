@@ -375,6 +375,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -628,6 +631,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -772,6 +778,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -954,6 +963,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -1265,6 +1277,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -1452,6 +1467,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -1676,6 +1694,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -1891,6 +1912,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -2117,6 +2141,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -2172,6 +2199,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -2354,6 +2384,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -2547,6 +2580,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -2758,6 +2794,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -2941,6 +2980,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -3155,6 +3197,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -3360,6 +3405,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -3509,6 +3557,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -3690,6 +3741,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -3859,6 +3913,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -4043,6 +4100,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -4231,6 +4291,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -4382,6 +4445,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -4555,6 +4621,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -4732,6 +4801,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -4919,6 +4991,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -5174,6 +5249,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -5410,6 +5488,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -5585,6 +5666,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -5750,6 +5834,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -5903,6 +5990,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }
@@ -6137,6 +6227,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       },
@@ -6315,6 +6408,9 @@
             }
           }
         },
+        "tags": [
+          "mice"
+        ],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin"
       }

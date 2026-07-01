@@ -683,6 +683,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "storefront"
       }
@@ -1038,6 +1041,9 @@
             }
           }
         },
+        "tags": [
+          "catalog"
+        ],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "storefront"
       }

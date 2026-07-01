@@ -163,15 +163,30 @@ describe("stampModuleMetadata", () => {
     const op = (path: string, method: string) =>
       (stamped.paths as Record<string, Record<string, Record<string, unknown>>>)[path][method]
 
-    // Segment-derived module + admin surface.
+    // Segment-derived module + admin surface + module tag (for Swagger grouping).
     expect(op("/v1/admin/bookings/list", "get")["x-voyant-module"]).toBe("bookings")
     expect(op("/v1/admin/bookings/list", "get")["x-voyant-surface"]).toBe("admin")
+    expect(op("/v1/admin/bookings/list", "get").tags).toEqual(["bookings"])
     // publicPath override → authoritative owner, not the `booking-engine` prefix.
     expect(op("/v1/public/booking-engine/hold", "post")["x-voyant-module"]).toBe("commerce")
     expect(op("/v1/public/booking-engine/hold", "post")["x-voyant-surface"]).toBe("storefront")
     // Non-surface route: module stamped, surface omitted.
     expect(op("/v1/webhooks/netopia", "post")["x-voyant-module"]).toBe("webhooks")
     expect(op("/v1/webhooks/netopia", "post")["x-voyant-surface"]).toBeUndefined()
+  })
+
+  it("does not clobber tags a route already declares", () => {
+    const tagged = {
+      openapi: "3.1.0",
+      info: INFO,
+      paths: { "/v1/admin/legal/contracts": { get: { tags: ["Legal"], responses: {} } } },
+    } as unknown as OpenApiDocument
+    const stamped = stampModuleMetadata(tagged, new Map())
+    const op = (stamped.paths as Record<string, Record<string, Record<string, unknown>>>)[
+      "/v1/admin/legal/contracts"
+    ].get
+    expect(op.tags).toEqual(["Legal"])
+    expect(op["x-voyant-module"]).toBe("legal")
   })
 
   it("does not mutate the input document", () => {

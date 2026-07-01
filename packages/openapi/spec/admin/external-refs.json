@@ -352,6 +352,9 @@
             }
           }
         },
+        "tags": [
+          "external-refs"
+        ],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin"
       },
@@ -552,6 +555,9 @@
             }
           }
         },
+        "tags": [
+          "external-refs"
+        ],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin"
       }
@@ -681,6 +687,9 @@
             }
           }
         },
+        "tags": [
+          "external-refs"
+        ],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin"
       },
@@ -902,6 +911,9 @@
             }
           }
         },
+        "tags": [
+          "external-refs"
+        ],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin"
       },
@@ -957,6 +969,9 @@
             }
           }
         },
+        "tags": [
+          "external-refs"
+        ],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin"
       }
@@ -1181,6 +1196,9 @@
             }
           }
         },
+        "tags": [
+          "external-refs"
+        ],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin"
       },
@@ -1387,6 +1405,9 @@
             }
           }
         },
+        "tags": [
+          "external-refs"
+        ],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin"
       }
