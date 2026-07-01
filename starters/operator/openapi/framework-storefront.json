@@ -15357,11 +15357,19 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "token",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "A public-safe contract by id (metadata stripped)",
+            "description": "A token-authorized public-safe contract",
             "content": {
               "application/json": {
                 "schema": {
@@ -15370,9 +15378,6 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
-                          "type": "string"
-                        },
                         "contractNumber": {
                           "type": [
                             "string",
@@ -15401,158 +15406,8 @@
                             "void"
                           ]
                         },
-                        "stageHistory": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "stage": {
-                                "type": "string",
-                                "enum": [
-                                  "draft",
-                                  "issued",
-                                  "sent",
-                                  "signed",
-                                  "executed",
-                                  "expired",
-                                  "void"
-                                ]
-                              },
-                              "previousStage": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "draft",
-                                  "issued",
-                                  "sent",
-                                  "signed",
-                                  "executed",
-                                  "expired",
-                                  "void",
-                                  null
-                                ]
-                              },
-                              "transition": {
-                                "type": "string",
-                                "enum": [
-                                  "created",
-                                  "issued",
-                                  "sent",
-                                  "signed",
-                                  "executed",
-                                  "voided"
-                                ]
-                              },
-                              "enteredAt": {
-                                "type": "string"
-                              },
-                              "actorId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "stage",
-                              "previousStage",
-                              "transition",
-                              "enteredAt"
-                            ]
-                          }
-                        },
                         "title": {
                           "type": "string"
-                        },
-                        "templateVersionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "seriesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "supplierId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "channelId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "targetKind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "booking",
-                            "quote_version",
-                            "program",
-                            "product",
-                            "inventory_item",
-                            "supplier_channel_relationship",
-                            "provider_source_ref",
-                            null
-                          ]
-                        },
-                        "targetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "targetProvider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "targetSourceRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "legacyTransactionOfferId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "legacyTransactionOrderId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
                         },
                         "issuedAt": {
                           "type": [
@@ -15600,35 +15455,13 @@
                             "string",
                             "null"
                           ]
-                        },
-                        "variables": {},
-                        "createdAt": {
-                          "type": "string"
-                        },
-                        "updatedAt": {
-                          "type": "string"
                         }
                       },
                       "required": [
-                        "id",
                         "contractNumber",
                         "scope",
                         "status",
-                        "stageHistory",
                         "title",
-                        "templateVersionId",
-                        "seriesId",
-                        "personId",
-                        "organizationId",
-                        "supplierId",
-                        "channelId",
-                        "bookingId",
-                        "targetKind",
-                        "targetId",
-                        "targetProvider",
-                        "targetSourceRef",
-                        "legacyTransactionOfferId",
-                        "legacyTransactionOrderId",
                         "issuedAt",
                         "sentAt",
                         "executedAt",
@@ -15636,9 +15469,7 @@
                         "voidedAt",
                         "language",
                         "renderedBodyFormat",
-                        "renderedBody",
-                        "createdAt",
-                        "updatedAt"
+                        "renderedBody"
                       ]
                     }
                   },
@@ -15651,6 +15482,24 @@
           },
           "404": {
             "description": "Contract not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Contract access grant is no longer available",
             "content": {
               "application/json": {
                 "schema": {
@@ -15680,6 +15529,14 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "token",
+            "in": "query"
           }
         ],
         "requestBody": {
@@ -15708,112 +15565,6 @@
                     ],
                     "maxLength": 255
                   },
-                  "personId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "targetKind": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "booking",
-                      "quote_version",
-                      "program",
-                      "product",
-                      "inventory_item",
-                      "supplier_channel_relationship",
-                      "provider_source_ref",
-                      null
-                    ]
-                  },
-                  "targetId": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      },
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "targetProvider": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 100
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "targetSourceRef": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 500
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "legacyTransactionOfferId": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      },
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "legacyTransactionOrderId": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      },
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
                   "method": {
                     "type": "string",
                     "enum": [
@@ -15824,46 +15575,11 @@
                     ],
                     "default": "manual"
                   },
-                  "provider": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "maxLength": 255
-                  },
-                  "externalReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "maxLength": 255
-                  },
                   "signatureData": {
                     "type": [
                       "string",
                       "null"
                     ]
-                  },
-                  "ipAddress": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "maxLength": 64
-                  },
-                  "userAgent": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "maxLength": 500
-                  },
-                  "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
-                    "additionalProperties": {}
                   }
                 },
                 "required": [
@@ -15887,12 +15603,6 @@
                         "signature": {
                           "type": "object",
                           "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "contractId": {
-                              "type": "string"
-                            },
                             "signerName": {
                               "type": "string"
                             },
@@ -15908,58 +15618,6 @@
                                 "null"
                               ]
                             },
-                            "personId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "targetKind": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "booking",
-                                "quote_version",
-                                "program",
-                                "product",
-                                "inventory_item",
-                                "supplier_channel_relationship",
-                                "provider_source_ref",
-                                null
-                              ]
-                            },
-                            "targetId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "targetProvider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "targetSourceRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "legacyTransactionOfferId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "legacyTransactionOrderId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
                             "method": {
                               "type": "string",
                               "enum": [
@@ -15969,65 +15627,16 @@
                                 "other"
                               ]
                             },
-                            "provider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "externalReference": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "signatureData": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "ipAddress": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "userAgent": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
                             "signedAt": {
-                              "type": "string"
-                            },
-                            "metadata": {},
-                            "createdAt": {
                               "type": "string"
                             }
                           },
                           "required": [
-                            "id",
-                            "contractId",
                             "signerName",
                             "signerEmail",
                             "signerRole",
-                            "personId",
-                            "targetKind",
-                            "targetId",
-                            "targetProvider",
-                            "targetSourceRef",
-                            "legacyTransactionOfferId",
-                            "legacyTransactionOrderId",
                             "method",
-                            "provider",
-                            "externalReference",
-                            "signatureData",
-                            "ipAddress",
-                            "userAgent",
-                            "signedAt",
-                            "createdAt"
+                            "signedAt"
                           ]
                         }
                       },
@@ -16081,6 +15690,24 @@
           },
           "409": {
             "description": "Contract is not in a signable state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Contract access grant is no longer available",
             "content": {
               "application/json": {
                 "schema": {

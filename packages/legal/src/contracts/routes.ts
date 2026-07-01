@@ -29,6 +29,7 @@ import {
   openApiValidationHook,
   parseJsonBody,
   parseOptionalJsonBody,
+  resolvePublicDocumentDeliveryGrant,
   resolveStoredDocumentDownload,
 } from "@voyant-travel/hono"
 import { legalTargetKindSchema } from "@voyant-travel/legal-contracts/targets/validation"
@@ -43,6 +44,7 @@ import {
   type ContractsRouteRuntime,
 } from "./route-runtime.js"
 import { renderPreviewResponse } from "./route-template-preview.js"
+import type { Contract, ContractSignature } from "./schema.js"
 import { contractsService } from "./service.js"
 import { generateContractForBookingFromDefaults } from "./service-auto-generate.js"
 import {
@@ -104,6 +106,15 @@ function cachePublicLegalRead(c: Context) {
 
 function preventSharedCache(c: Context) {
   c.header("Cache-Control", PRIVATE_NO_STORE_CACHE_CONTROL)
+}
+
+function getClientIp(c: Context) {
+  return (
+    c.req.header("cf-connecting-ip") ??
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+    c.req.header("x-real-ip") ??
+    null
+  )
 }
 
 export type ContractDocumentGenerator = Parameters<
@@ -723,6 +734,122 @@ const contractAttachmentSchema = z.object({
   metadata: jsonValue,
   createdAt: isoTimestamp,
 })
+
+const publicContractAccessQuerySchema = z.object({
+  token: z.string().optional(),
+})
+
+const publicContractSchema = contractSchema.pick({
+  contractNumber: true,
+  scope: true,
+  status: true,
+  title: true,
+  issuedAt: true,
+  sentAt: true,
+  executedAt: true,
+  expiresAt: true,
+  voidedAt: true,
+  language: true,
+  renderedBodyFormat: true,
+  renderedBody: true,
+})
+
+const publicInsertContractSignatureSchema = insertContractSignatureSchema.omit({
+  personId: true,
+  targetKind: true,
+  targetId: true,
+  targetProvider: true,
+  targetSourceRef: true,
+  legacyTransactionOfferId: true,
+  legacyTransactionOrderId: true,
+  provider: true,
+  externalReference: true,
+  ipAddress: true,
+  userAgent: true,
+  metadata: true,
+})
+
+const publicContractSignatureSchema = contractSignatureSchema.pick({
+  signerName: true,
+  signerEmail: true,
+  signerRole: true,
+  method: true,
+  signedAt: true,
+})
+
+function nullableIsoTimestamp(value: Date | null) {
+  return value ? value.toISOString() : null
+}
+
+function toPublicContract(contract: Contract): z.infer<typeof publicContractSchema> {
+  return {
+    contractNumber: contract.contractNumber,
+    scope: contract.scope,
+    status: contract.status,
+    title: contract.title,
+    issuedAt: nullableIsoTimestamp(contract.issuedAt),
+    sentAt: nullableIsoTimestamp(contract.sentAt),
+    executedAt: nullableIsoTimestamp(contract.executedAt),
+    expiresAt: nullableIsoTimestamp(contract.expiresAt),
+    voidedAt: nullableIsoTimestamp(contract.voidedAt),
+    language: contract.language,
+    renderedBodyFormat: contract.renderedBodyFormat,
+    renderedBody: contract.renderedBody,
+  }
+}
+
+function toPublicSignature(
+  signature: ContractSignature,
+): z.infer<typeof publicContractSignatureSchema> {
+  return {
+    signerName: signature.signerName,
+    signerEmail: signature.signerEmail,
+    signerRole: signature.signerRole,
+    method: signature.method,
+    signedAt: signature.signedAt.toISOString(),
+  }
+}
+
+async function authorizePublicContractAccess(
+  c: Context<Env>,
+  contractId: string,
+  token: string | undefined,
+): Promise<"ready" | "not_found" | "gone"> {
+  if (!token) return "not_found"
+
+  const store = createDrizzlePublicDocumentDeliveryGrantStore(c.get("db"))
+  const resolution = await resolvePublicDocumentDeliveryGrant(store, token)
+  if (resolution.status === "not_found") return "not_found"
+  if (resolution.status === "expired" || resolution.status === "revoked") return "gone"
+
+  const grant = resolution.grant
+  if (grant.sourceModule !== "legal") return "not_found"
+
+  if (grant.sourceEntity === "contract" && grant.sourceId === contractId) {
+    await store.recordAccess(grant.id, {
+      accessedAt: new Date(),
+      ip: getClientIp(c),
+      userAgent: c.req.header("user-agent") ?? null,
+    })
+    return "ready"
+  }
+
+  if (grant.sourceEntity !== "contract_attachment" || !grant.sourceId) {
+    return "not_found"
+  }
+
+  const attachment = await contractsService.getAttachmentById(c.get("db"), grant.sourceId)
+  if (!attachment || attachment.contractId !== contractId) {
+    return "not_found"
+  }
+
+  await store.recordAccess(grant.id, {
+    accessedAt: new Date(),
+    ip: getClientIp(c),
+    userAgent: c.req.header("user-agent") ?? null,
+  })
+  return "ready"
+}
 
 // `renderPreviewResponse` serializes `{ data: { rendered, ...extra } }` — the
 // rendered payload + optional template descriptor are loosely typed (handler
@@ -1831,15 +1958,16 @@ export function createContractsPublicRoutes(options: ContractsRouteOptions = {})
   const getContractRoute = createRoute({
     method: "get",
     path: "/{id}",
-    request: { params: idParamSchema },
+    request: { params: idParamSchema, query: publicContractAccessQuerySchema },
     responses: {
       200: {
-        description: "A public-safe contract by id (metadata stripped)",
+        description: "A token-authorized public-safe contract",
         content: {
-          "application/json": { schema: dataEnvelope(contractSchema.omit({ metadata: true })) },
+          "application/json": { schema: dataEnvelope(publicContractSchema) },
         },
       },
       404: notFoundResponse("Contract not found"),
+      410: notFoundResponse("Contract access grant is no longer available"),
     },
   })
 
@@ -1848,9 +1976,10 @@ export function createContractsPublicRoutes(options: ContractsRouteOptions = {})
     path: "/{id}/sign",
     request: {
       params: idParamSchema,
+      query: publicContractAccessQuerySchema,
       body: {
         required: true,
-        content: { "application/json": { schema: insertContractSignatureSchema } },
+        content: { "application/json": { schema: publicInsertContractSignatureSchema } },
       },
     },
     responses: {
@@ -1858,12 +1987,13 @@ export function createContractsPublicRoutes(options: ContractsRouteOptions = {})
         description: "The recorded signature",
         content: {
           "application/json": {
-            schema: z.object({ data: z.object({ signature: contractSignatureSchema }) }),
+            schema: z.object({ data: z.object({ signature: publicContractSignatureSchema }) }),
           },
         },
       },
       400: invalidRequestResponse,
       404: notFoundResponse("Contract not found"),
+      410: notFoundResponse("Contract access grant is no longer available"),
       409: conflictResponse("Contract is not in a signable state"),
     },
   })
@@ -1887,25 +2017,50 @@ export function createContractsPublicRoutes(options: ContractsRouteOptions = {})
   const contractRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(getContractRoute, async (c) => {
       preventSharedCache(c)
-      const row = await contractsService.getContractById(c.get("db"), c.req.valid("param").id)
+      const contractId = c.req.valid("param").id
+      const authorization = await authorizePublicContractAccess(
+        c,
+        contractId,
+        c.req.valid("query").token,
+      )
+      if (authorization === "gone") {
+        return c.json({ error: "Contract access grant is no longer available" }, 410)
+      }
+      if (authorization !== "ready") return c.json({ error: "Contract not found" }, 404)
+
+      const row = await contractsService.getContractById(c.get("db"), contractId)
       if (!row) return c.json({ error: "Contract not found" }, 404)
-      const { metadata: _metadata, ...publicContract } = row
-      return c.json({ data: publicContract }, 200)
+      return c.json({ data: toPublicContract(row) }, 200)
     })
     .openapi(signContractRoute, async (c) => {
       preventSharedCache(c)
+      const contractId = c.req.valid("param").id
+      const authorization = await authorizePublicContractAccess(
+        c,
+        contractId,
+        c.req.valid("query").token,
+      )
+      if (authorization === "gone") {
+        return c.json({ error: "Contract access grant is no longer available" }, 410)
+      }
+      if (authorization !== "ready") return c.json({ error: "Contract not found" }, 404)
+
       const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
       const result = await contractsService.signContract(
         c.get("db"),
-        c.req.valid("param").id,
-        c.req.valid("json"),
+        contractId,
+        {
+          ...c.req.valid("json"),
+          ipAddress: getClientIp(c),
+          userAgent: c.req.header("user-agent") ?? null,
+        },
         runtime,
       )
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
       if (result.status === "not_signable") {
         return c.json({ error: "Contract is not in a signable state" }, 409)
       }
-      return c.json({ data: { signature: result.signature! } }, 200)
+      return c.json({ data: { signature: toPublicSignature(result.signature!) } }, 200)
     })
 
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
