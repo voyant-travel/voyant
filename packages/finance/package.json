@@ -24,10 +24,10 @@
     "./public-validation": "./src/validation-public.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=4096 tsc -p tsconfig.typecheck.json",
     "lint": "biome check src/",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
     "migrate:vouchers": "node --experimental-strip-types --experimental-transform-types scripts/migrate-vouchers.ts",

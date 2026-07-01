@@ -48,6 +48,7 @@ export type BookingsUiSectionsMessages = {
     }
     validation: {
       titleRequired: string
+      costCurrencyRequired: string
     }
     actions: {
       addItem: string

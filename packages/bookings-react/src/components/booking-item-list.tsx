@@ -32,6 +32,7 @@ export type BookingItemResourceKind = "product" | "availabilitySlot"
 
 export interface BookingItemListProps {
   bookingId: string
+  readOnly?: boolean
   /**
    * Open a linked resource (product / availability slot) in the host app.
    * When omitted, the snapshot sheet renders the names as plain text
@@ -40,7 +41,11 @@ export interface BookingItemListProps {
   onResourceOpen?: (kind: BookingItemResourceKind, id: string) => void
 }
 
-export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListProps) {
+export function BookingItemList({
+  bookingId,
+  readOnly = false,
+  onResourceOpen,
+}: BookingItemListProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingItemRecord | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = React.useState<BookingItemRecord | null>(null)
@@ -148,29 +153,33 @@ export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListPr
                 setViewing(row.original)
               }}
             />
-            <IconActionButton
-              label={messages.bookingItemList.actions.editItem}
-              icon={<Pencil className="h-3.5 w-3.5" />}
-              onClick={(e) => {
-                e.stopPropagation()
-                setEditing(row.original)
-                setDialogOpen(true)
-              }}
-            />
-            <IconActionButton
-              label={messages.bookingItemList.actions.deleteItem}
-              icon={<Trash2 className="h-3.5 w-3.5" />}
-              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation()
-                setDeleteTarget(row.original)
-              }}
-            />
+            {readOnly ? null : (
+              <>
+                <IconActionButton
+                  label={messages.bookingItemList.actions.editItem}
+                  icon={<Pencil className="h-3.5 w-3.5" />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setEditing(row.original)
+                    setDialogOpen(true)
+                  }}
+                />
+                <IconActionButton
+                  label={messages.bookingItemList.actions.deleteItem}
+                  icon={<Trash2 className="h-3.5 w-3.5" />}
+                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDeleteTarget(row.original)
+                  }}
+                />
+              </>
+            )}
           </div>
         ),
       },
     ],
-    [formatCurrency, formatDateTime, messages],
+    [formatCurrency, formatDateTime, messages, readOnly],
   )
 
   return (
@@ -180,17 +189,19 @@ export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListPr
           <Package className="h-4 w-4" />
           {messages.bookingItemList.title}
         </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setEditing(undefined)
-            setDialogOpen(true)
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {messages.bookingItemList.addItem}
-        </Button>
+        {readOnly ? null : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditing(undefined)
+              setDialogOpen(true)
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {messages.bookingItemList.addItem}
+          </Button>
+        )}
       </div>
 
       <DataTable

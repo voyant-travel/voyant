@@ -251,6 +251,7 @@ export function BookingDetailPage({
   }
 
   const canCancel = ["draft", "on_hold", "confirmed", "in_progress"].includes(booking.status)
+  const isCancelled = booking.status === "cancelled"
   const sellHint = booking.priceOverride?.isManual
     ? `${detailMessages.summaryPriceOverride}: ${booking.priceOverride.reason}`
     : undefined
@@ -373,32 +374,34 @@ export function BookingDetailPage({
             </div>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-            {detailMessages.editAction}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)}>
-            <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-            {detailMessages.changeStatusAction}
-          </Button>
-          {canCancel ? (
-            <Button variant="outline" size="sm" onClick={() => setCancelDialogOpen(true)}>
-              <Ban className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              {detailMessages.cancelBookingAction}
+        {isCancelled ? null : (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {detailMessages.editAction}
             </Button>
-          ) : null}
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            disabled={remove.isPending}
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-            {detailMessages.deleteAction}
-          </Button>
-        </div>
+            <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)}>
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {detailMessages.changeStatusAction}
+            </Button>
+            {canCancel ? (
+              <Button variant="outline" size="sm" onClick={() => setCancelDialogOpen(true)}>
+                <Ban className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                {detailMessages.cancelBookingAction}
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={remove.isPending}
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {detailMessages.deleteAction}
+            </Button>
+          </div>
+        )}
       </div>
 
       {slots?.header?.(booking)}
@@ -476,7 +479,11 @@ export function BookingDetailPage({
 
         <TabsContent value="items" className="mt-4 flex flex-col gap-6">
           {slots?.overviewStart?.(booking)}
-          <BookingItemList bookingId={id} onResourceOpen={onItemResourceOpen} />
+          <BookingItemList
+            bookingId={id}
+            onResourceOpen={onItemResourceOpen}
+            readOnly={isCancelled}
+          />
           <BookingGroupSection bookingId={id} />
           {visibleInternalNotes(booking.internalNotes) ? (
             <Card>

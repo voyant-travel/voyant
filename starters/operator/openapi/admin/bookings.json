@@ -8441,6 +8441,24 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Booking item mutations are not allowed for this booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       }
@@ -8925,6 +8943,24 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Booking item mutations are not allowed for this booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       },
@@ -8968,6 +9004,24 @@
           },
           "404": {
             "description": "Booking item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Booking item mutations are not allowed for this booking",
             "content": {
               "application/json": {
                 "schema": {
@@ -9203,6 +9257,24 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Booking item mutations are not allowed for this booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       }
@@ -9256,6 +9328,24 @@
           },
           "404": {
             "description": "Booking item or item-traveler link not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Booking item mutations are not allowed for this booking",
             "content": {
               "application/json": {
                 "schema": {

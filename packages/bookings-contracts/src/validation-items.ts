@@ -16,7 +16,7 @@ import {
 
 // ---------- booking items ----------
 
-const bookingItemCoreSchema = z.object({
+const bookingItemCoreShape = {
   title: z.string().min(1).max(255),
   description: z.string().optional().nullable(),
   itemType: bookingItemTypeSchema.default("unit"),
@@ -48,10 +48,33 @@ const bookingItemCoreSchema = z.object({
   sourceSnapshotId: z.string().optional().nullable(),
   sourceOfferId: z.string().optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
-})
+}
+
+function hasCostAmount(value: {
+  unitCostAmountCents?: number | null
+  totalCostAmountCents?: number | null
+}) {
+  return value.unitCostAmountCents != null || value.totalCostAmountCents != null
+}
+
+const bookingItemCoreObjectSchema = z.object(bookingItemCoreShape)
+type BookingItemCoreInput = z.input<typeof bookingItemCoreObjectSchema>
+
+const bookingItemCoreSchema = bookingItemCoreObjectSchema.refine(
+  (value) => !hasCostAmount(value) || Boolean(value.costCurrency),
+  {
+    message: "Cost currency is required when cost amounts are provided",
+    path: ["costCurrency"],
+  },
+)
 
 export const insertBookingItemSchema = bookingItemCoreSchema
-export const updateBookingItemSchema = bookingItemCoreSchema.partial()
+export const updateBookingItemSchema = bookingItemCoreObjectSchema
+  .partial()
+  .refine((value) => !hasCostAmount(value) || Boolean(value.costCurrency), {
+    message: "Cost currency is required when cost amounts are provided",
+    path: ["costCurrency"],
+  }) as z.ZodType<Partial<BookingItemCoreInput>>
 
 export const insertBookingAllocationSchema = z.object({
   bookingItemId: z.string().min(1),
