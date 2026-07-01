@@ -13,4 +13,6 @@ export {
   buildOwnedProductDraftShape,
   type CreateProductsBookingHandlerOptions,
   createProductsBookingHandler,
+  type OwnedBillingContact,
+  type ResolveOwnedBillingPerson,
 } from "./handler.js"

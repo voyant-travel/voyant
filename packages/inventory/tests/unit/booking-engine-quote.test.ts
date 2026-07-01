@@ -446,4 +446,95 @@ describe("createProductsBookingHandler.commit", () => {
       }),
     )
   })
+
+  it("resolves a CRM person from the billing contact when an anonymous commit has no person/org", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_resolved")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      // Anonymous storefront: billing contact only, no personId/organizationId.
+      party: {
+        billing: {
+          contact: {
+            firstName: "Guest",
+            lastName: "Customer",
+            email: "guest@example.com",
+            phone: "+40700333444",
+          },
+        },
+      },
+      draft: {
+        configure: { pax: { adult: 1 } },
+        travelers: [{ firstName: "Guest", lastName: "Customer", band: "adult" }],
+      },
+      pricing: {
+        base_amount: 14500,
+        taxes: 0,
+        fees: 0,
+        surcharges: 0,
+        currency: "RON",
+      },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).toHaveBeenCalledWith(
+      {
+        firstName: "Guest",
+        lastName: "Customer",
+        email: "guest@example.com",
+        phone: "+40700333444",
+      },
+      expect.objectContaining({ bookingId: "catalog_booking_1", source: "storefront-booking" }),
+    )
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        personId: "pers_resolved",
+        organizationId: null,
+        contactFirstName: "Guest",
+        contactEmail: "guest@example.com",
+      }),
+    )
+  })
+
+  it("skips the billing-person resolver when the commit already carries a person id", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      party: {
+        billing: {
+          personId: "pers_existing",
+          contact: { firstName: "Ana", lastName: "Pop", email: "ana@example.com" },
+        },
+      },
+      draft: { configure: { pax: { adult: 1 } } },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ personId: "pers_existing" }),
+    )
+  })
 })

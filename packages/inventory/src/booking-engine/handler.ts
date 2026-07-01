@@ -196,6 +196,33 @@ export type BookingCreateBridge = (
   options?: { userId?: string },
 ) => Promise<BookingCreateBridgeResult>
 
+/** Billing contact snapshot handed to `ResolveOwnedBillingPerson`. */
+export interface OwnedBillingContact {
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+  phone?: string | null
+}
+
+/**
+ * Caller-supplied bridge that resolves (or creates) a CRM person from a
+ * booking's billing contact when the commit carries no `personId` /
+ * `organizationId` — e.g. an anonymous storefront checkout for an owned
+ * product. Mirrors the bookings module's `resolveBillingPerson` runtime
+ * hook (both wire to `relationshipsService.upsertPersonFromContact`), so
+ * the owned catalog arm links a customer the same way the session/sourced
+ * arm does. Returns the resolved person id, or `null` to leave the
+ * booking person unset (the finance layer then rejects a party with no
+ * person/org). The operator + trips reserve paths always supply a
+ * `personId` directly, so the resolver only fires for anonymous
+ * storefront commits. Keeps Inventory free of a direct
+ * `@voyant-travel/relationships` dependency.
+ */
+export type ResolveOwnedBillingPerson = (
+  contact: OwnedBillingContact,
+  ctx: { bookingId: string; source: string; sourceRef: string },
+) => Promise<string | null>
+
 // ─────────────────────────────────────────────────────────────────
 // Draft shape — what the wizard reads off the quote response
 // ─────────────────────────────────────────────────────────────────
@@ -498,6 +525,15 @@ export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeL
    * `@voyant-travel/finance`.
    */
   createBooking: BookingCreateBridge
+  /**
+   * Optional bridge that resolves/creates a CRM person from the billing
+   * contact when a commit carries no `personId`/`organizationId` (the
+   * anonymous storefront checkout case). Wired by the template to
+   * `relationshipsService.upsertPersonFromContact`. When omitted, the
+   * commit forwards the raw contact snapshot and the finance layer's
+   * billing-party check rejects a party with no person/org.
+   */
+  resolveBillingPerson?: ResolveOwnedBillingPerson
   /**
    * Generator for booking numbers. Defaults to a timestamp-based
    * value if not supplied. Templates that have a sequence service
@@ -803,6 +839,39 @@ export function createProductsBookingHandler(
 
       const partyBilling = extractBillingParty(request.party)
       const partyTravelers = extractPartyTravelers(request.party)
+
+      // Anonymous storefront checkout carries a billing contact but no
+      // CRM person/organization id. Resolve (or create) a customer person
+      // from that contact — same as the sourced/session arm's
+      // `resolveBillingPerson` — so `createBooking`'s billing-party check
+      // passes and the owned booking links a real CRM record instead of
+      // 400ing "Select a billing person or organization". When a person
+      // or an org is already supplied (operator/trips paths) or no
+      // resolver is wired, this is a no-op.
+      let billingPersonId = partyBilling.personId ?? null
+      const billingOrganizationId = partyBilling.organizationId ?? null
+      if (!billingPersonId && !billingOrganizationId && options.resolveBillingPerson) {
+        const hasBillingContact =
+          Boolean(partyBilling.contactEmail) ||
+          Boolean(partyBilling.contactPhone) ||
+          Boolean(partyBilling.contactFirstName) ||
+          Boolean(partyBilling.contactLastName)
+        if (hasBillingContact) {
+          billingPersonId = await options.resolveBillingPerson(
+            {
+              firstName: partyBilling.contactFirstName,
+              lastName: partyBilling.contactLastName,
+              email: partyBilling.contactEmail,
+              phone: partyBilling.contactPhone,
+            },
+            {
+              bookingId: request.bookingId,
+              source: "storefront-booking",
+              sourceRef: request.bookingId,
+            },
+          )
+        }
+      }
       const travelers = (draft.travelers ?? []).map((t, index) => ({
         firstName: t.firstName,
         lastName: t.lastName,
@@ -841,8 +910,8 @@ export function createProductsBookingHandler(
         // (powers the duplicate-departure check + slot-level reporting).
         slotId: draft.configure?.departureSlotId ?? null,
         bookingNumber: generateNumber(),
-        personId: partyBilling.personId,
-        organizationId: partyBilling.organizationId,
+        personId: billingPersonId,
+        organizationId: billingOrganizationId,
         contactFirstName: partyBilling.contactFirstName,
         contactLastName: partyBilling.contactLastName,
         contactEmail: partyBilling.contactEmail,

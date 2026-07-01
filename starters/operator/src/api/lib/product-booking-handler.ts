@@ -29,6 +29,7 @@ import {
   releaseAvailabilityHold,
 } from "@voyant-travel/operations"
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
+import { relationshipsService } from "@voyant-travel/relationships"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
 import { asPostgresDb } from "./booking-engine-db"
 import type { BookingEngineEnv } from "./booking-engine-runtime"
@@ -117,6 +118,21 @@ export function registerProductBookingHandler(
             }
           }
           return { status: outcome.status }
+        })
+      },
+      // Resolve (or create) a CRM person from the billing contact when an
+      // anonymous storefront commit for an owned product carries no
+      // person/organization id. Mirrors the sourced/session arm's
+      // `resolveBillingPerson` wiring (framework composition) so both
+      // booking arms link a customer the same way.
+      async resolveBillingPerson(contact, ctx) {
+        return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+          const db = asPostgresDb(rawDb)
+          const person = await relationshipsService.upsertPersonFromContact(db, contact, {
+            source: ctx.source,
+            sourceRef: ctx.sourceRef,
+          })
+          return person?.id ?? null
         })
       },
       async loadTravelerFields(ctx, productId) {
