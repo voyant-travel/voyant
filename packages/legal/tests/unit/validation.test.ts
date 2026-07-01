@@ -5,6 +5,7 @@ import {
   contractTemplateListQuerySchema,
   insertContractNumberSeriesSchema,
   insertContractSchema,
+  updateContractNumberSeriesSchema,
   updateContractSchema,
 } from "../../src/contracts/validation.js"
 import { insertPolicyAcceptanceSchema } from "../../src/policies/validation.js"
@@ -51,6 +52,10 @@ describe("legal contract validation", () => {
       externalConfigKey: "customer-contracts",
       active: true,
     })
+  })
+
+  it("does not default contract number series fields on update input", () => {
+    expect(updateContractNumberSeriesSchema.parse({ separator: "-" })).toEqual({ separator: "-" })
   })
 
   it("treats empty optional contract fields as omitted on create input", () => {
