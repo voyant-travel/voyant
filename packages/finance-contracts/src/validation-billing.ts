@@ -18,7 +18,7 @@ const bookingItemTaxLineCoreSchema = z.object({
   jurisdiction: z.string().max(255).optional().nullable(),
   scope: taxScopeSchema.default("excluded"),
   currency: z.string().min(3).max(3),
-  amountCents: z.number().int(),
+  amountCents: z.number().int().min(0),
   rateBasisPoints: z.number().int().min(0).optional().nullable(),
   includedInPrice: z.boolean().default(false),
   remittanceParty: z.string().max(255).optional().nullable(),
@@ -28,21 +28,86 @@ const bookingItemTaxLineCoreSchema = z.object({
 export const insertBookingItemTaxLineSchema = bookingItemTaxLineCoreSchema
 export const updateBookingItemTaxLineSchema = bookingItemTaxLineCoreSchema.partial()
 
-const bookingItemCommissionCoreSchema = z.object({
+const bookingItemCommissionShape = {
   channelId: z.string().optional().nullable(),
   recipientType: commissionRecipientTypeSchema,
   commissionModel: commissionModelSchema.default("percentage"),
   currency: z.string().min(3).max(3).optional().nullable(),
-  amountCents: z.number().int().optional().nullable(),
+  amountCents: z.number().int().min(0).optional().nullable(),
   rateBasisPoints: z.number().int().min(0).optional().nullable(),
   status: commissionStatusSchema.default("pending"),
   payableAt: z.string().optional().nullable(),
   paidAt: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+}
+
+const bookingItemCommissionCoreSchema = z.object(bookingItemCommissionShape)
+const updateBookingItemCommissionCoreSchema = z.object({
+  ...bookingItemCommissionShape,
+  commissionModel: commissionModelSchema,
+  status: commissionStatusSchema,
 })
 
-export const insertBookingItemCommissionSchema = bookingItemCommissionCoreSchema
-export const updateBookingItemCommissionSchema = bookingItemCommissionCoreSchema.partial()
+function validateBookingItemCommissionBasis(
+  value: {
+    commissionModel?: "percentage" | "fixed" | "markup" | "net"
+    currency?: string | null
+    amountCents?: number | null
+    rateBasisPoints?: number | null
+    status?: "pending" | "accrued" | "payable" | "paid" | "void"
+    paidAt?: string | null
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (value.commissionModel === "percentage" && value.rateBasisPoints == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["rateBasisPoints"],
+      message: "Percentage commissions require rateBasisPoints.",
+    })
+  }
+
+  if (value.commissionModel === "fixed") {
+    if (value.amountCents == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["amountCents"],
+        message: "Fixed commissions require amountCents.",
+      })
+    }
+
+    if (!value.currency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["currency"],
+        message: "Fixed commissions require currency.",
+      })
+    }
+  }
+
+  if (value.status === "paid" && !value.paidAt) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["paidAt"],
+      message: "Paid commissions require paidAt settlement metadata.",
+    })
+  }
+}
+
+export const insertBookingItemCommissionSchema = bookingItemCommissionCoreSchema.superRefine(
+  validateBookingItemCommissionBasis,
+)
+export const updateBookingItemCommissionSchema = updateBookingItemCommissionCoreSchema
+  .partial()
+  .superRefine((value, ctx) => {
+    if (value.status === "paid" && !value.paidAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["paidAt"],
+        message: "Paid commissions require paidAt settlement metadata.",
+      })
+    }
+  })
 
 const invoiceCoreSchema = z.object({
   invoiceNumber: z.string().min(1).max(50),

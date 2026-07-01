@@ -12,7 +12,48 @@ import {
   bookingItemTaxLines,
   desc,
   eq,
+  PaymentValidationError,
 } from "./service-shared.js"
+
+type CommissionValidationInput = {
+  commissionModel?: "percentage" | "fixed" | "markup" | "net" | null
+  currency?: string | null
+  amountCents?: number | null
+  rateBasisPoints?: number | null
+  status?: "pending" | "accrued" | "payable" | "paid" | "void" | null
+  paidAt?: string | Date | null
+}
+
+function validateBookingItemCommissionState(data: CommissionValidationInput) {
+  const commissionModel = data.commissionModel ?? "percentage"
+
+  if (commissionModel === "percentage" && data.rateBasisPoints == null) {
+    throw new PaymentValidationError(
+      "Percentage commissions require rateBasisPoints",
+      { field: "rateBasisPoints", commissionModel },
+      { code: "invalid_commission_basis" },
+    )
+  }
+
+  if (commissionModel === "fixed" && (data.amountCents == null || !data.currency)) {
+    throw new PaymentValidationError(
+      "Fixed commissions require amountCents and currency",
+      {
+        field: data.amountCents == null ? "amountCents" : "currency",
+        commissionModel,
+      },
+      { code: "invalid_commission_basis" },
+    )
+  }
+
+  if (data.status === "paid" && !data.paidAt) {
+    throw new PaymentValidationError(
+      "Paid commissions require paidAt settlement metadata",
+      { field: "paidAt", status: data.status },
+      { code: "missing_commission_settlement_metadata" },
+    )
+  }
+}
 
 export const financeBookingItemBillingService = {
   listBookingItemTaxLines(db: PostgresJsDatabase, bookingItemId: string) {
@@ -92,6 +133,8 @@ export const financeBookingItemBillingService = {
       return null
     }
 
+    validateBookingItemCommissionState(data)
+
     const [row] = await db
       .insert(bookingItemCommissions)
       .values({ ...data, bookingItemId })
@@ -105,6 +148,18 @@ export const financeBookingItemBillingService = {
     commissionId: string,
     data: UpdateBookingItemCommissionInput,
   ) {
+    const [existing] = await db
+      .select()
+      .from(bookingItemCommissions)
+      .where(eq(bookingItemCommissions.id, commissionId))
+      .limit(1)
+
+    if (!existing) {
+      return null
+    }
+
+    validateBookingItemCommissionState({ ...existing, ...data })
+
     const [row] = await db
       .update(bookingItemCommissions)
       .set({ ...data, updatedAt: new Date() })

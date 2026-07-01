@@ -7,6 +7,7 @@ import type {
   UpdateBookingGuaranteeInput,
 } from "./service-shared.js"
 import {
+  and,
   appendActionLedgerMutation,
   bookingGuarantees,
   bookings,
@@ -15,6 +16,8 @@ import {
   buildBookingGuaranteeUpdateActionLedgerInput,
   desc,
   eq,
+  ne,
+  PaymentValidationError,
   toTimestamp,
 } from "./service-shared.js"
 
@@ -209,6 +212,26 @@ export const financeBookingGuaranteeService = {
     guaranteeId: string,
     runtime: FinanceServiceRuntime = {},
   ) {
+    function assertCanDeleteGuarantee(guarantee: typeof bookingGuarantees.$inferSelect) {
+      if (guarantee.status === "active") {
+        throw new PaymentValidationError(
+          "Active guarantees must be released, cancelled, failed, or expired before deletion",
+          { field: "status", status: guarantee.status, guaranteeId: guarantee.id },
+          { code: "active_guarantee_delete_forbidden" },
+        )
+      }
+    }
+
+    function assertDeleteSucceeded(row: { id: string } | undefined | null, guaranteeId: string) {
+      if (!row) {
+        throw new PaymentValidationError(
+          "Active guarantees must be released, cancelled, failed, or expired before deletion",
+          { field: "status", status: "active", guaranteeId },
+          { code: "active_guarantee_delete_forbidden" },
+        )
+      }
+    }
+
     const actionLedgerContext = runtime.actionLedgerContext
     if (actionLedgerContext) {
       return db.transaction(async (tx) => {
@@ -222,7 +245,13 @@ export const financeBookingGuaranteeService = {
           return null
         }
 
-        await tx.delete(bookingGuarantees).where(eq(bookingGuarantees.id, guaranteeId))
+        assertCanDeleteGuarantee(existing)
+
+        const [deleted] = await tx
+          .delete(bookingGuarantees)
+          .where(and(eq(bookingGuarantees.id, guaranteeId), ne(bookingGuarantees.status, "active")))
+          .returning({ id: bookingGuarantees.id })
+        assertDeleteSucceeded(deleted, guaranteeId)
         await appendActionLedgerMutation(
           tx,
           buildBookingGuaranteeDeleteActionLedgerInput(
@@ -236,11 +265,24 @@ export const financeBookingGuaranteeService = {
       })
     }
 
+    const [existing] = await db
+      .select()
+      .from(bookingGuarantees)
+      .where(eq(bookingGuarantees.id, guaranteeId))
+      .limit(1)
+
+    if (!existing) {
+      return null
+    }
+
+    assertCanDeleteGuarantee(existing)
+
     const [row] = await db
       .delete(bookingGuarantees)
-      .where(eq(bookingGuarantees.id, guaranteeId))
+      .where(and(eq(bookingGuarantees.id, guaranteeId), ne(bookingGuarantees.status, "active")))
       .returning({ id: bookingGuarantees.id })
 
+    assertDeleteSucceeded(row, guaranteeId)
     return row ?? null
   },
 }
