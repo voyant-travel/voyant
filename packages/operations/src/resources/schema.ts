@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core"
 
 export const resourceKindEnum = pgEnum("resource_kind", [
@@ -94,6 +95,7 @@ export const resourcePoolMembers = pgTable(
     index("idx_resource_pool_members_created").on(table.createdAt),
     index("idx_resource_pool_members_pool_created").on(table.poolId, table.createdAt),
     index("idx_resource_pool_members_resource_created").on(table.resourceId, table.createdAt),
+    uniqueIndex("uidx_resource_pool_members_pool_resource").on(table.poolId, table.resourceId),
   ],
 )
 

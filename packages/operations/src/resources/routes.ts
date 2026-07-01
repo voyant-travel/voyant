@@ -27,8 +27,9 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 
-import { resourcesService } from "./service.js"
+import { ResourcesServiceError, resourcesService } from "./service.js"
 import {
   insertResourceCloseoutSchema,
   insertResourcePoolMemberSchema,
@@ -92,16 +93,24 @@ async function handleBatchUpdate<TPatch, TRow>({
   patch: TPatch
   update: (db: PostgresJsDatabase, id: string, patch: TPatch) => Promise<TRow | null>
 }) {
-  const results: Array<{ id: string; row: TRow | null }> = []
+  const results: Array<{ id: string; row: TRow | null; error?: string }> = []
   for (const id of ids) {
-    const row = await update(db, id, patch)
-    results.push({ id, row })
+    try {
+      const row = await update(db, id, patch)
+      results.push({ id, row })
+    } catch (error) {
+      if (error instanceof ResourcesServiceError) {
+        results.push({ id, row: null, error: error.message })
+        continue
+      }
+      throw error
+    }
   }
 
   const data = results.flatMap((result) => (result.row ? [result.row] : []))
   const failed = results
     .filter((result) => result.row === null)
-    .map((result) => ({ id: result.id, error: "Not found" }))
+    .map((result) => ({ id: result.id, error: result.error ?? "Not found" }))
 
   return {
     data,
@@ -145,6 +154,20 @@ const errorResponseSchema = z.object({ error: z.string() })
 const successResponseSchema = z.object({ success: z.literal(true) })
 const idSchema = z.string()
 const idParamSchema = z.object({ id: idSchema })
+
+function handleResourcesRouteError(c: Context<Env>, error: unknown) {
+  if (error instanceof ResourcesServiceError) {
+    return c.json({ error: error.message }, error.status)
+  }
+  throw error
+}
+
+function handleResourcesNotFoundRouteError(c: Context<Env>, error: unknown) {
+  if (error instanceof ResourcesServiceError && error.status === 404) {
+    return c.json({ error: error.message }, 404)
+  }
+  throw error
+}
 
 /** Envelope returned by the shared batch-update handler. */
 function batchUpdateResponseSchema<T extends z.ZodTypeAny>(row: T) {
@@ -619,6 +642,14 @@ const createPoolMemberRoute = createRoute({
       description: "invalid_request: request body failed validation",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    404: {
+      description: "Referenced resource pool or resource not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Resource pool member already exists",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -643,8 +674,12 @@ const poolMemberRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHo
     c.json(await resourcesService.listPoolMembers(c.get("db"), c.req.valid("query")), 200),
   )
   .openapi(createPoolMemberRoute, async (c) => {
-    const row = await resourcesService.createPoolMember(c.get("db"), c.req.valid("json"))
-    return c.json({ data: row! }, 201)
+    try {
+      const row = await resourcesService.createPoolMember(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    } catch (error) {
+      return handleResourcesRouteError(c, error)
+    }
   })
   .openapi(deletePoolMemberRoute, async (c) => {
     const row = await resourcesService.deletePoolMember(c.get("db"), c.req.valid("param").id)
@@ -683,6 +718,10 @@ const createRequirementRoute = createRoute({
     },
     400: {
       description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Referenced resource pool not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -765,7 +804,7 @@ const updateRequirementRoute = createRoute({
       content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
-      description: "Resource requirement not found",
+      description: "Resource requirement or referenced resource pool not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -792,8 +831,12 @@ const requirementRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationH
     c.json(await resourcesService.listRequirements(c.get("db"), c.req.valid("query")), 200),
   )
   .openapi(createRequirementRoute, async (c) => {
-    const row = await resourcesService.createRequirement(c.get("db"), c.req.valid("json"))
-    return c.json({ data: row! }, 201)
+    try {
+      const row = await resourcesService.createRequirement(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(batchUpdateRequirementsRoute, async (c) => {
     const body = c.req.valid("json")
@@ -825,14 +868,18 @@ const requirementRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationH
       : c.json({ error: "Resource requirement not found" }, 404)
   })
   .openapi(updateRequirementRoute, async (c) => {
-    const row = await resourcesService.updateRequirement(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    return row
-      ? c.json({ data: row }, 200)
-      : c.json({ error: "Resource requirement not found" }, 404)
+    try {
+      const row = await resourcesService.updateRequirement(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row
+        ? c.json({ data: row }, 200)
+        : c.json({ error: "Resource requirement not found" }, 404)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(deleteRequirementRoute, async (c) => {
     const row = await resourcesService.deleteRequirement(c.get("db"), c.req.valid("param").id)
@@ -873,6 +920,10 @@ const createAllocationRoute = createRoute({
     },
     400: {
       description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Referenced resource pool not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -955,7 +1006,7 @@ const updateAllocationRoute = createRoute({
       content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
-      description: "Resource allocation not found",
+      description: "Resource allocation or referenced resource pool not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -982,8 +1033,12 @@ const allocationRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHo
     c.json(await resourcesService.listRequirements(c.get("db"), c.req.valid("query")), 200),
   )
   .openapi(createAllocationRoute, async (c) => {
-    const row = await resourcesService.createRequirement(c.get("db"), c.req.valid("json"))
-    return c.json({ data: row! }, 201)
+    try {
+      const row = await resourcesService.createRequirement(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(batchUpdateAllocationsRoute, async (c) => {
     const body = c.req.valid("json")
@@ -1015,14 +1070,18 @@ const allocationRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHo
       : c.json({ error: "Resource allocation not found" }, 404)
   })
   .openapi(updateAllocationRoute, async (c) => {
-    const row = await resourcesService.updateRequirement(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    return row
-      ? c.json({ data: row }, 200)
-      : c.json({ error: "Resource allocation not found" }, 404)
+    try {
+      const row = await resourcesService.updateRequirement(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row
+        ? c.json({ data: row }, 200)
+        : c.json({ error: "Resource allocation not found" }, 404)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(deleteAllocationRoute, async (c) => {
     const row = await resourcesService.deleteRequirement(c.get("db"), c.req.valid("param").id)
@@ -1063,6 +1122,10 @@ const createSlotAssignmentRoute = createRoute({
     },
     400: {
       description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Referenced resource pool or resource not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -1145,7 +1208,7 @@ const updateSlotAssignmentRoute = createRoute({
       content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
-      description: "Resource slot assignment not found",
+      description: "Resource slot assignment or referenced resource pool/resource not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -1172,8 +1235,12 @@ const slotAssignmentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidati
     c.json(await resourcesService.listSlotAssignments(c.get("db"), c.req.valid("query")), 200),
   )
   .openapi(createSlotAssignmentRoute, async (c) => {
-    const row = await resourcesService.createSlotAssignment(c.get("db"), c.req.valid("json"))
-    return c.json({ data: row! }, 201)
+    try {
+      const row = await resourcesService.createSlotAssignment(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(batchUpdateSlotAssignmentsRoute, async (c) => {
     const body = c.req.valid("json")
@@ -1205,14 +1272,18 @@ const slotAssignmentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidati
       : c.json({ error: "Resource slot assignment not found" }, 404)
   })
   .openapi(updateSlotAssignmentRoute, async (c) => {
-    const row = await resourcesService.updateSlotAssignment(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    return row
-      ? c.json({ data: row }, 200)
-      : c.json({ error: "Resource slot assignment not found" }, 404)
+    try {
+      const row = await resourcesService.updateSlotAssignment(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row
+        ? c.json({ data: row }, 200)
+        : c.json({ error: "Resource slot assignment not found" }, 404)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(deleteSlotAssignmentRoute, async (c) => {
     const row = await resourcesService.deleteSlotAssignment(c.get("db"), c.req.valid("param").id)
@@ -1251,6 +1322,10 @@ const createCloseoutRoute = createRoute({
     },
     400: {
       description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Referenced resource not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -1333,7 +1408,7 @@ const updateCloseoutRoute = createRoute({
       content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
-      description: "Resource closeout not found",
+      description: "Resource closeout or referenced resource not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -1360,8 +1435,12 @@ const closeoutRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook
     c.json(await resourcesService.listCloseouts(c.get("db"), c.req.valid("query")), 200),
   )
   .openapi(createCloseoutRoute, async (c) => {
-    const row = await resourcesService.createCloseout(c.get("db"), c.req.valid("json"))
-    return c.json({ data: row! }, 201)
+    try {
+      const row = await resourcesService.createCloseout(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(batchUpdateCloseoutsRoute, async (c) => {
     const body = c.req.valid("json")
@@ -1391,12 +1470,18 @@ const closeoutRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook
     return row ? c.json({ data: row }, 200) : c.json({ error: "Resource closeout not found" }, 404)
   })
   .openapi(updateCloseoutRoute, async (c) => {
-    const row = await resourcesService.updateCloseout(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    return row ? c.json({ data: row }, 200) : c.json({ error: "Resource closeout not found" }, 404)
+    try {
+      const row = await resourcesService.updateCloseout(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row
+        ? c.json({ data: row }, 200)
+        : c.json({ error: "Resource closeout not found" }, 404)
+    } catch (error) {
+      return handleResourcesNotFoundRouteError(c, error)
+    }
   })
   .openapi(deleteCloseoutRoute, async (c) => {
     const row = await resourcesService.deleteCloseout(c.get("db"), c.req.valid("param").id)

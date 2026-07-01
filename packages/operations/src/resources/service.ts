@@ -48,6 +48,16 @@ type UpdateResourceSlotAssignmentInput = z.infer<typeof updateResourceSlotAssign
 type CreateResourceCloseoutInput = z.infer<typeof insertResourceCloseoutSchema>
 type UpdateResourceCloseoutInput = z.infer<typeof updateResourceCloseoutSchema>
 
+export class ResourcesServiceError extends Error {
+  constructor(
+    message: string,
+    public readonly status: 404 | 409,
+  ) {
+    super(message)
+    this.name = "ResourcesServiceError"
+  }
+}
+
 async function paginate<T extends object>(
   rowsQuery: Promise<T[]>,
   countQuery: Promise<Array<{ count: number }>>,
@@ -60,6 +70,55 @@ async function paginate<T extends object>(
 
 function toDateOrNull(value: string | null | undefined) {
   return value ? new Date(value) : null
+}
+
+function isPostgresError(error: unknown, code: string, constraint?: string) {
+  const candidate = error as {
+    code?: unknown
+    constraint?: unknown
+    constraint_name?: unknown
+  }
+  return (
+    candidate.code === code &&
+    (constraint === undefined ||
+      candidate.constraint === constraint ||
+      candidate.constraint_name === constraint)
+  )
+}
+
+async function ensurePoolExists(db: PostgresJsDatabase, id: string) {
+  const [row] = await db
+    .select({ id: resourcePools.id })
+    .from(resourcePools)
+    .where(eq(resourcePools.id, id))
+    .limit(1)
+  if (!row) throw new ResourcesServiceError("Resource pool not found", 404)
+}
+
+async function ensureResourceExists(db: PostgresJsDatabase, id: string) {
+  const [row] = await db
+    .select({ id: resources.id })
+    .from(resources)
+    .where(eq(resources.id, id))
+    .limit(1)
+  if (!row) throw new ResourcesServiceError("Resource not found", 404)
+}
+
+async function ensurePoolMemberNotExists(
+  db: PostgresJsDatabase,
+  data: CreateResourcePoolMemberInput,
+) {
+  const [row] = await db
+    .select({ id: resourcePoolMembers.id })
+    .from(resourcePoolMembers)
+    .where(
+      and(
+        eq(resourcePoolMembers.poolId, data.poolId),
+        eq(resourcePoolMembers.resourceId, data.resourceId),
+      ),
+    )
+    .limit(1)
+  if (row) throw new ResourcesServiceError("Resource pool member already exists", 409)
 }
 
 export const resourcesService = {
@@ -181,8 +240,18 @@ export const resourcesService = {
   },
 
   async createPoolMember(db: PostgresJsDatabase, data: CreateResourcePoolMemberInput) {
-    const [row] = await db.insert(resourcePoolMembers).values(data).returning()
-    return row
+    await ensurePoolExists(db, data.poolId)
+    await ensureResourceExists(db, data.resourceId)
+    await ensurePoolMemberNotExists(db, data)
+    try {
+      const [row] = await db.insert(resourcePoolMembers).values(data).returning()
+      return row
+    } catch (error) {
+      if (isPostgresError(error, "23505", "uidx_resource_pool_members_pool_resource")) {
+        throw new ResourcesServiceError("Resource pool member already exists", 409)
+      }
+      throw error
+    }
   },
 
   async deletePoolMember(db: PostgresJsDatabase, id: string) {
@@ -226,6 +295,7 @@ export const resourcesService = {
   },
 
   async createRequirement(db: PostgresJsDatabase, data: CreateResourceRequirementInput) {
+    await ensurePoolExists(db, data.poolId)
     const [row] = await db.insert(resourceRequirements).values(data).returning()
     return row
   },
@@ -235,6 +305,7 @@ export const resourcesService = {
     id: string,
     data: UpdateResourceRequirementInput,
   ) {
+    if (data.poolId !== undefined) await ensurePoolExists(db, data.poolId)
     const [row] = await db
       .update(resourceRequirements)
       .set({ ...data, updatedAt: new Date() })
@@ -304,6 +375,8 @@ export const resourcesService = {
   },
 
   async createSlotAssignment(db: PostgresJsDatabase, data: CreateResourceSlotAssignmentInput) {
+    if (data.poolId) await ensurePoolExists(db, data.poolId)
+    if (data.resourceId) await ensureResourceExists(db, data.resourceId)
     const [row] = await db
       .insert(resourceSlotAssignments)
       .values({ ...data, releasedAt: toDateOrNull(data.releasedAt) })
@@ -316,6 +389,8 @@ export const resourcesService = {
     id: string,
     data: UpdateResourceSlotAssignmentInput,
   ) {
+    if (data.poolId) await ensurePoolExists(db, data.poolId)
+    if (data.resourceId) await ensureResourceExists(db, data.resourceId)
     const [row] = await db
       .update(resourceSlotAssignments)
       .set({
@@ -365,6 +440,7 @@ export const resourcesService = {
   },
 
   async createCloseout(db: PostgresJsDatabase, data: CreateResourceCloseoutInput) {
+    await ensureResourceExists(db, data.resourceId)
     const [row] = await db
       .insert(resourceCloseouts)
       .values({
@@ -377,6 +453,7 @@ export const resourcesService = {
   },
 
   async updateCloseout(db: PostgresJsDatabase, id: string, data: UpdateResourceCloseoutInput) {
+    if (data.resourceId !== undefined) await ensureResourceExists(db, data.resourceId)
     const [row] = await db
       .update(resourceCloseouts)
       .set({
