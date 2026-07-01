@@ -269,6 +269,8 @@ export type RecordBookingPaymentDialogMessages = {
   invoiceMeta: string
   loadingInvoices: string
   noInvoices: string
+  /** Explains why positive-balance draft / external-allocation rows are not payable here. */
+  payableStatusHint: string
   actions: {
     record: string
     save: string

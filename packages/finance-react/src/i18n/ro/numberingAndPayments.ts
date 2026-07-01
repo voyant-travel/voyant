@@ -395,6 +395,8 @@ export const recordBookingPaymentDialog = {
   invoiceMeta: "Total {total} {currency} • platit {paid} {currency} • de incasat {due} {currency}",
   loadingInvoices: "Se incarca facturile…",
   noInvoices: "Nu exista facturi neachitate pe aceasta rezervare.",
+  payableStatusHint:
+    "Platile se pot inregistra doar pe facturi emise, partial platite sau scadente depasite cu rest de plata pozitiv. Ciornele si facturile in asteptarea alocarii sunt excluse.",
   actions: {
     record: "Inregistreaza plata",
     save: "Salveaza modificarile",

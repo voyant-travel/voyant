@@ -49,6 +49,8 @@ import {
   parseFxRate,
 } from "./record-booking-payment-dialog/shared.js"
 
+const PAYABLE_INVOICE_STATUSES = new Set(["issued", "partially_paid", "overdue"])
+
 export type {
   EditingPaymentSnapshot,
   RecordBookingPaymentDialogProps,
@@ -70,11 +72,14 @@ export function RecordBookingPaymentDialog({
 
   const invoicesQuery = useInvoices({ bookingId, enabled: open })
   const invoices = invoicesQuery.data?.data ?? []
-  // Operator records a payment AGAINST money still owed. Paid / voided
-  // invoices have no remaining balance to settle, so they don't belong
-  // in the picker — keep the surface focused on what's actionable.
+  // Operator records a payment against issued receivables still owed. Drafts
+  // and external-allocation placeholders are not payable yet, even when they
+  // carry a balance, so keep them out of the settlement picker.
   const selectableInvoices = invoices.filter(
-    (inv) => inv.status !== "void" && inv.balanceDueCents > 0,
+    (inv) => PAYABLE_INVOICE_STATUSES.has(inv.status) && inv.balanceDueCents > 0,
+  )
+  const hasExcludedInvoicesWithBalance = invoices.some(
+    (inv) => inv.balanceDueCents > 0 && !PAYABLE_INVOICE_STATUSES.has(inv.status),
   )
 
   const [state, setState] = React.useState<FormState>(() => buildInitialFormState(defaultCurrency))
@@ -286,6 +291,9 @@ export function RecordBookingPaymentDialog({
           <>
             <div className="px-6 py-6">
               <p className="text-sm text-muted-foreground">{dialog.noInvoices}</p>
+              {hasExcludedInvoicesWithBalance ? (
+                <p className="mt-2 text-xs text-muted-foreground">{dialog.payableStatusHint}</p>
+              ) : null}
             </div>
             <div className="flex items-center justify-end gap-2 px-6 pb-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -334,6 +342,9 @@ export function RecordBookingPaymentDialog({
                     </SelectContent>
                   </Select>
                 )}
+                {hasExcludedInvoicesWithBalance ? (
+                  <p className="text-xs text-muted-foreground">{dialog.payableStatusHint}</p>
+                ) : null}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">

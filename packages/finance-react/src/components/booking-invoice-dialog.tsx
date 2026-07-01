@@ -207,6 +207,10 @@ export function BookingInvoiceDialog({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
+
   // ---- prefill / reset on open ---------------------------------------------
   useEffect(() => {
     if (!open) return
@@ -239,6 +243,15 @@ export function BookingInvoiceDialog({
       (schedulesQuery.data?.data ?? []).filter((s) => s.status === "pending" || s.status === "due"),
     [schedulesQuery.data],
   )
+
+  useEffect(() => {
+    if (!open || schedulesQuery.isLoading || unpaidSchedules.length > 0 || source !== "schedule") {
+      return
+    }
+    setSource("custom")
+    setScheduleId(null)
+    setError(null)
+  }, [open, schedulesQuery.isLoading, unpaidSchedules.length, source])
 
   // When the operator picks a schedule, lock the financial fields to it.
   // `useMemo` keeps the lookup cheap on every render.
@@ -486,6 +499,7 @@ export function BookingInvoiceDialog({
               <SegmentedChoice
                 value={source}
                 onChange={(next) => {
+                  clearError()
                   setSource(next)
                   if (next === "custom") setScheduleId(null)
                 }}
@@ -508,7 +522,10 @@ export function BookingInvoiceDialog({
                 <Label>{dialog.fields.schedule}</Label>
                 <Select
                   value={scheduleId ?? undefined}
-                  onValueChange={(v) => setScheduleId(v ?? null)}
+                  onValueChange={(v) => {
+                    clearError()
+                    setScheduleId(v ?? null)
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={dialog.schedulePlaceholder} />
@@ -751,7 +768,10 @@ export function BookingInvoiceDialog({
                 <Label>{dialog.fields.issueDate}</Label>
                 <DatePicker
                   value={issueDate || null}
-                  onChange={(next) => setIssueDate(next ?? "")}
+                  onChange={(next) => {
+                    clearError()
+                    setIssueDate(next ?? "")
+                  }}
                   placeholder={dialog.placeholders.issueDate}
                   className="w-full"
                 />
@@ -760,7 +780,10 @@ export function BookingInvoiceDialog({
                 <Label>{dialog.fields.dueDate}</Label>
                 <DatePicker
                   value={dueDate || null}
-                  onChange={(next) => setDueDate(next ?? "")}
+                  onChange={(next) => {
+                    clearError()
+                    setDueDate(next ?? "")
+                  }}
                   placeholder={dialog.placeholders.dueDate}
                   className="w-full"
                   disabled={scheduleLocked}

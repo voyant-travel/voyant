@@ -393,6 +393,8 @@ export const recordBookingPaymentDialog = {
   invoiceMeta: "Total {total} {currency} • paid {paid} {currency} • due {due} {currency}",
   loadingInvoices: "Loading invoices…",
   noInvoices: "No unpaid invoices on this booking.",
+  payableStatusHint:
+    "Payments can be recorded only against issued, partially paid, or overdue invoices with a positive balance. Draft and pending allocation invoices are excluded.",
   actions: {
     record: "Record payment",
     save: "Save changes",

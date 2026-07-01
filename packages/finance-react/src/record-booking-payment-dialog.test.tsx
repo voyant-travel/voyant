@@ -10,7 +10,7 @@ const testState = vi.hoisted(() => ({
     {
       id: "inv_123",
       invoiceNumber: "PF-2026-001",
-      status: "draft",
+      status: "issued",
       currency: "EUR",
       totalCents: 66000,
       paidCents: 0,
@@ -205,7 +205,7 @@ describe("RecordBookingPaymentDialog", () => {
       {
         id: "inv_123",
         invoiceNumber: "PF-2026-001",
-        status: "draft",
+        status: "issued",
         currency: "EUR",
         totalCents: 66000,
         paidCents: 0,
@@ -269,12 +269,57 @@ describe("RecordBookingPaymentDialog", () => {
     )
   })
 
+  it("offers issued unpaid invoices while excluding pending allocation placeholders", async () => {
+    testState.invoices = [
+      {
+        id: "inv_pending",
+        invoiceNumber: "PENDING-INVOICE",
+        status: "pending_external_allocation",
+        currency: "EUR",
+        totalCents: 30000,
+        paidCents: 0,
+        balanceDueCents: 30000,
+      },
+      {
+        id: "inv_issued",
+        invoiceNumber: "INV-2026-010",
+        status: "issued",
+        currency: "EUR",
+        totalCents: 66000,
+        paidCents: 0,
+        balanceDueCents: 66000,
+      },
+    ]
+
+    await act(async () => {
+      root.render(
+        <RecordBookingPaymentDialog
+          open
+          onOpenChange={() => {}}
+          bookingId="book_123"
+          defaultCurrency="EUR"
+        />,
+      )
+    })
+
+    const optionText = Array.from(container.querySelectorAll("option")).map(
+      (option) => option.textContent ?? "",
+    )
+
+    expect(optionText).toContain("INV-2026-010 — issued — 660.00 EUR due")
+    expect(optionText).not.toContain(
+      "PENDING-INVOICE — pending_external_allocation — 300.00 EUR due",
+    )
+    expect(container.textContent).toContain("Draft and pending allocation invoices are excluded.")
+    expect(container.textContent).not.toContain("No unpaid invoices on this booking.")
+  })
+
   it("preserves invoice currency casing for same-currency payments", async () => {
     testState.invoices = [
       {
         id: "inv_123",
         invoiceNumber: "PF-2026-001",
-        status: "draft",
+        status: "issued",
         currency: "eur",
         totalCents: 66000,
         paidCents: 0,
