@@ -89,6 +89,8 @@ export const legalUiEn = {
     active: "Active",
     inactive: "Inactive",
     empty: "No number series yet. Create one to configure contract numbering.",
+    editAction: "Edit number series",
+    deleteAction: "Delete number series",
     deleteConfirm: 'Delete series "{name}"?',
   },
   contractSendDialog: {
@@ -392,6 +394,8 @@ export const legalUiEn = {
       createdAt: "Created At",
     },
     deleteConfirm: 'Delete template "{name}"?',
+    editAction: "Edit template",
+    deleteAction: "Delete template",
   },
   templateDetailPage: {
     notFound: "Template not found",

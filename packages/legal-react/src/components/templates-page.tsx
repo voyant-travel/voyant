@@ -242,6 +242,8 @@ export function TemplatesPage({
                           <Button
                             variant="ghost"
                             size="sm"
+                            aria-label={f.editAction}
+                            title={f.editAction}
                             onClick={() => {
                               setEditingTemplate(template)
                               setDialogOpen(true)
@@ -253,6 +255,8 @@ export function TemplatesPage({
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label={f.deleteAction}
+                          title={f.deleteAction}
                           onClick={() => {
                             if (confirm(formatMessage(f.deleteConfirm, { name: template.name }))) {
                               remove.mutate(template.id, { onSuccess: () => void refetch() })

@@ -100,6 +100,8 @@ export type LegalUiMessages = {
     active: string
     inactive: string
     empty: string
+    editAction: string
+    deleteAction: string
     deleteConfirm: string
   }
   contractSendDialog: {
@@ -390,6 +392,8 @@ export type LegalUiMessages = {
       createdAt: string
     }
     deleteConfirm: string
+    editAction: string
+    deleteAction: string
   }
   templateDetailPage: {
     notFound: string

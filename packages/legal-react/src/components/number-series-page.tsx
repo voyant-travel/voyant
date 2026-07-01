@@ -103,6 +103,8 @@ export function NumberSeriesPage({ renderNumberSeriesDialog }: NumberSeriesPageP
                       {renderNumberSeriesDialog ? (
                         <button
                           type="button"
+                          aria-label={page.editAction}
+                          title={page.editAction}
                           onClick={() => {
                             setEditingSeries(series)
                             setDialogOpen(true)
@@ -114,6 +116,8 @@ export function NumberSeriesPage({ renderNumberSeriesDialog }: NumberSeriesPageP
                       ) : null}
                       <button
                         type="button"
+                        aria-label={page.deleteAction}
+                        title={page.deleteAction}
                         onClick={() => {
                           if (confirm(formatMessage(page.deleteConfirm, { name: series.name }))) {
                             remove.mutate(series.id, { onSuccess: () => void refetch() })
