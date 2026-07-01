@@ -35,6 +35,15 @@ import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { useStorefrontScope } from "@/lib/storefront-scope"
 import { type OperatorInfoVariables, resolveContractVariables } from "./resolve-contract-variables"
 
+/**
+ * Marker for checkout failures we've already turned into a localized,
+ * customer-facing message. Native errors (a `fetch` network drop, a
+ * `Response.json()` parse of an HTML 502) are NOT this type, so the outer catch
+ * can wrap them in the generic message instead of showing raw browser/parser
+ * text to the shopper (voyant#2638).
+ */
+class CheckoutError extends Error {}
+
 interface PublicOperatorProfile extends OperatorInfoVariables {
   customerPaymentPolicy?: PaymentPolicy | null
 }
@@ -187,7 +196,7 @@ export function StorefrontBookingJourney({
         // The engine error serializer nests the upstream payload under
         // `context.upstreamPayload` (ReserveFailedError), not at top level.
         const reason = errBody.context?.upstreamPayload?.reason
-        throw new Error(
+        throw new CheckoutError(
           reason === "rates_missing"
             ? messages.bookingJourney.reserveFailed
             : messages.bookingJourney.checkoutFailed,
@@ -197,7 +206,7 @@ export function StorefrontBookingJourney({
       const bookingId = bookJson.bookingId
       if (!bookingId) {
         console.error("[storefront] /book returned no bookingId", bookJson)
-        throw new Error(messages.bookingJourney.checkoutFailed)
+        throw new CheckoutError(messages.bookingJourney.checkoutFailed)
       }
 
       // Step 2 — start checkout with the payment method selected in
@@ -252,7 +261,7 @@ export function StorefrontBookingJourney({
 
       if ("error" in json) {
         console.error("[storefront] /checkout/start error", json)
-        throw new Error(messages.bookingJourney.checkoutFailed)
+        throw new CheckoutError(messages.bookingJourney.checkoutFailed)
       }
 
       switch (json.kind) {
@@ -299,9 +308,12 @@ export function StorefrontBookingJourney({
     } catch (err) {
       console.error("[storefront] checkout flow failed", err)
       // Re-throw so <BookingJourney /> can render a visible checkout error
-      // (voyant#2638). Preserve our own localized messages; wrap anything else
-      // (network error, JSON parse, etc.) in the generic checkout message.
-      throw err instanceof Error ? err : new Error(messages.bookingJourney.checkoutFailed)
+      // (voyant#2638). Preserve our own localized CheckoutError messages; wrap
+      // anything else (native fetch/network error, JSON parse of an HTML 502)
+      // in the generic message so raw browser/parser text never reaches the UI.
+      throw err instanceof CheckoutError
+        ? err
+        : new Error(messages.bookingJourney.checkoutFailed)
     }
   }
 
