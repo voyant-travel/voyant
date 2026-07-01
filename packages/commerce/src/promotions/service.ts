@@ -20,7 +20,7 @@
 import type { EventBus } from "@voyant-travel/core"
 import { and, count, desc, eq, gte, ilike, isNotNull, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { mapPromotionalOfferWriteError } from "./errors.js"
 import {
   PROMOTION_CHANGED_EVENT,
   type PromotionChangedAffected,
@@ -355,7 +355,13 @@ async function createOffer(
   input: InsertPromotionalOffer,
   runtime: OfferMutationRuntime = {},
 ): Promise<PromotionalOffer> {
-  const [row] = await db.insert(promotionalOffers).values(toRowValues(input)).returning()
+  let row: PromotionalOffer | undefined
+  try {
+    const [inserted] = await db.insert(promotionalOffers).values(toRowValues(input)).returning()
+    row = inserted
+  } catch (err) {
+    mapPromotionalOfferWriteError(err)
+  }
   if (!row) throw new Error("createOffer: insert returned no row")
 
   const { productIds } = await recomputeOfferLinks(db, row.id, input.scope, runtime)
@@ -382,11 +388,17 @@ async function updateOffer(
       : null
   if (patch.scope !== undefined && previousScope === undefined) return null
 
-  const [row] = await db
-    .update(promotionalOffers)
-    .set(updateValues)
-    .where(eq(promotionalOffers.id, id))
-    .returning()
+  let row: PromotionalOffer | undefined
+  try {
+    const [updated] = await db
+      .update(promotionalOffers)
+      .set(updateValues)
+      .where(eq(promotionalOffers.id, id))
+      .returning()
+    row = updated
+  } catch (err) {
+    mapPromotionalOfferWriteError(err)
+  }
   if (!row) return null
 
   // Re-materialize links if the scope changed. The link table reflects

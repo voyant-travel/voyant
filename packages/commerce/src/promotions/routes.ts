@@ -10,7 +10,7 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import { listResponseSchema } from "@voyant-travel/types"
+import { apiErrorSchema, listResponseSchema } from "@voyant-travel/types"
 
 import { type Env, notFound } from "./routes-shared.js"
 import { promotionsService } from "./service.js"
@@ -60,6 +60,10 @@ const createPromotionRoute = createRoute({
       description: "The created promotional offer",
       content: { "application/json": { schema: offerResponseSchema } },
     },
+    409: {
+      description: "Active promotional offer slug or code already exists",
+      content: { "application/json": { schema: apiErrorSchema } },
+    },
   },
 })
 
@@ -104,6 +108,10 @@ const updatePromotionRoute = createRoute({
     404: {
       description: "Promotional offer not found",
       content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Active promotional offer slug or code already exists",
+      content: { "application/json": { schema: apiErrorSchema } },
     },
   },
 })
