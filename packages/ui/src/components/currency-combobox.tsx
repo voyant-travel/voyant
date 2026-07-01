@@ -71,14 +71,6 @@ export function CurrencyCombobox({
   id,
   emptyLabel = "No currencies found.",
 }: CurrencyComboboxProps) {
-  const [search, setSearch] = React.useState("")
-
-  const filtered = React.useMemo(() => {
-    const q = search.trim()
-    if (!q) return ALL_CURRENCIES
-    return ALL_CURRENCIES.filter((c) => matchesSearch(c, q))
-  }, [search])
-
   const selected = value ? currencies[value as CurrencyCode] : undefined
   const selectedLabel = triggerLabel(selected)
   const [inputValue, setInputValue] = React.useState(selectedLabel)
@@ -88,6 +80,17 @@ export function CurrencyCombobox({
     setInputValue(selectedLabel)
   }, [selectedLabel])
 
+  // Treat the input as an active search only when it differs from the selected
+  // value's display label. When it equals that label — right after a commit, or
+  // when opened with an existing value — show the full list rather than
+  // filtering by the label (e.g. "EUR (€)"), which matches no item and would
+  // leave the dropdown empty.
+  const query = inputValue.trim() === selectedLabel.trim() ? "" : inputValue.trim()
+  const filtered = React.useMemo(() => {
+    if (!query) return ALL_CURRENCIES
+    return ALL_CURRENCIES.filter((c) => matchesSearch(c, query))
+  }, [query])
+
   return (
     <Combobox
       items={filtered.map((c) => c.code)}
@@ -95,10 +98,12 @@ export function CurrencyCombobox({
       inputValue={inputValue}
       autoHighlight
       disabled={disabled}
+      // We filter `items` ourselves (see `query`); disable Base UI's built-in
+      // filtering so it doesn't re-filter by the input label and empty the list.
+      filter={null}
       itemToStringValue={(code) => triggerLabel(currencies[code as CurrencyCode])}
       onInputValueChange={(next) => {
         setInputValue(next)
-        setSearch(next)
         if (!next.trim()) {
           onChange(null)
           return
