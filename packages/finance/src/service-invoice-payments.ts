@@ -1,6 +1,7 @@
 import type {
   CreatePaymentInput,
   FinanceServiceRuntime,
+  InvoicePaymentRecordedEvent,
   PaymentListQuery,
   PostgresJsDatabase,
   RawUnifiedPaymentRow,
@@ -306,7 +307,8 @@ export const financeInvoicePaymentService = {
 
     const paymentId = newId("payments")
 
-    return db.transaction(async (tx) => {
+    let recordedPaymentEvent: InvoicePaymentRecordedEvent | null = null
+    const payment = await db.transaction(async (tx) => {
       if (runtime.actionLedgerContext) {
         const ledgerResult = await appendActionLedgerMutation(
           tx,
@@ -344,6 +346,10 @@ export const financeInvoicePaymentService = {
         })
         .returning()
 
+      if (!payment) {
+        throw new Error("Failed to insert invoice payment")
+      }
+
       const [sumResult] = await tx
         .select({ total: paymentSettlementAmountSql(invoice.currency) })
         .from(payments)
@@ -364,8 +370,39 @@ export const financeInvoicePaymentService = {
         .set({ paidCents, balanceDueCents, status: newStatus, updatedAt: new Date() })
         .where(eq(invoices.id, invoiceId))
 
+      if (payment.status === "completed") {
+        recordedPaymentEvent = {
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceType: invoice.invoiceType,
+          bookingId: invoice.bookingId,
+          invoiceCurrency: invoice.currency,
+          invoiceTotalCents: invoice.totalCents,
+          invoicePaidCents: paidCents,
+          invoiceBalanceDueCents: balanceDueCents,
+          paymentId: payment.id,
+          amountCents: payment.amountCents,
+          currency: payment.currency,
+          baseCurrency: payment.baseCurrency ?? null,
+          baseAmountCents: payment.baseAmountCents ?? null,
+          paymentMethod: payment.paymentMethod,
+          status: payment.status,
+          referenceNumber: payment.referenceNumber ?? null,
+          paymentDate: payment.paymentDate,
+        }
+      }
+
       return payment
     })
+
+    if (recordedPaymentEvent) {
+      await runtime.eventBus?.emit("invoice.payment.recorded", recordedPaymentEvent, {
+        category: "domain",
+        source: "service",
+      })
+    }
+
+    return payment
   },
 
   async updatePayment(

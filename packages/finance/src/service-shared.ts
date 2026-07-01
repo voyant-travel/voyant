@@ -1064,6 +1064,26 @@ export interface PaymentCompletedEvent {
   provider: string | null
 }
 
+export interface InvoicePaymentRecordedEvent {
+  invoiceId: string
+  invoiceNumber: string
+  invoiceType: (typeof invoices.$inferSelect)["invoiceType"]
+  bookingId: string | null
+  invoiceCurrency: string
+  invoiceTotalCents: number
+  invoicePaidCents: number
+  invoiceBalanceDueCents: number
+  paymentId: string
+  amountCents: number
+  currency: string
+  baseCurrency: string | null
+  baseAmountCents: number | null
+  paymentMethod: (typeof payments.$inferSelect)["paymentMethod"]
+  status: (typeof payments.$inferSelect)["status"]
+  referenceNumber: string | null
+  paymentDate: string
+}
+
 export type BookingGuaranteeRecord = typeof bookingGuarantees.$inferSelect
 
 export interface BindInvoiceRenditionInput {

@@ -123,6 +123,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   const invoiceVoidedEvents: Array<Record<string, unknown>> = []
   const invoiceIssuedEvents: Array<Record<string, unknown>> = []
   const proformaConvertedEvents: Array<Record<string, unknown>> = []
+  const invoicePaymentRecordedEvents: Array<Record<string, unknown>> = []
   const autoRenditionBookings = new Map<string, { delayMs: number; storageKey: string }>()
 
   beforeAll(async () => {
@@ -297,6 +298,9 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         })
       }, request.delayMs)
     })
+    eventBus.subscribe("invoice.payment.recorded", (event) => {
+      invoicePaymentRecordedEvents.push(event as Record<string, unknown>)
+    })
     const financeRouteRuntime = {
       eventBus,
       invoiceSettlementPollers: {},
@@ -333,6 +337,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     invoiceVoidedEvents.length = 0
     invoiceIssuedEvents.length = 0
     proformaConvertedEvents.length = 0
+    invoicePaymentRecordedEvents.length = 0
     autoRenditionBookings.clear()
   })
 
@@ -696,6 +701,24 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         newlyAppliedAmountCents: 110000,
         paidCents: 110000,
         balanceDueCents: 0,
+      })
+      expect(invoicePaymentRecordedEvents).toHaveLength(1)
+      expect(invoicePaymentRecordedEvents[0]).toMatchObject({
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceType: "invoice",
+        bookingId: booking.id,
+        invoiceCurrency: "USD",
+        invoiceTotalCents: 110000,
+        invoicePaidCents: 110000,
+        invoiceBalanceDueCents: 0,
+        paymentId: data.paymentId,
+        amountCents: 110000,
+        currency: "USD",
+        paymentMethod: "credit_card",
+        status: "completed",
+        referenceNumber: "REF-1",
+        paymentDate: "2025-06-02",
       })
     })
 
@@ -2265,6 +2288,25 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.id).toMatch(/^pay_/)
       expect(data.amountCents).toBe(20000)
       expect(data.invoiceId).toBe(inv.id)
+      expect(invoicePaymentRecordedEvents).toHaveLength(1)
+      expect(invoicePaymentRecordedEvents[0]?.data).toEqual(
+        expect.objectContaining({
+          invoiceId: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          invoiceType: "invoice",
+          bookingId: booking.id,
+          invoiceCurrency: "USD",
+          invoiceTotalCents: 50000,
+          invoicePaidCents: 20000,
+          invoiceBalanceDueCents: 30000,
+          paymentId: data.id,
+          amountCents: 20000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          status: "completed",
+          paymentDate: "2025-06-15",
+        }),
+      )
     })
 
     it("replays duplicate payment records with derived idempotency", async () => {
@@ -2285,6 +2327,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       })
       expect(firstRes.status).toBe(201)
       const { data: firstPayment } = await firstRes.json()
+      expect(invoicePaymentRecordedEvents).toHaveLength(1)
 
       const retryRes = await app.request(`/invoices/${inv.id}/payments`, {
         method: "POST",
@@ -2296,6 +2339,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
       const paymentRows = await db.select().from(payments).where(eq(payments.invoiceId, inv.id))
       expect(paymentRows).toHaveLength(1)
+      expect(invoicePaymentRecordedEvents).toHaveLength(1)
 
       const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
       const { data: invoiceAfterRetry } = await check.json()
