@@ -148,7 +148,7 @@
     "parameters": {}
   },
   "paths": {
-    "/v1/admin/bookings/{bookingId}/generate-contract": {
+    "/v1/admin/workflows/{name}/runs": {
       "post": {
         "parameters": [
           {
@@ -156,13 +156,13 @@
               "type": "string"
             },
             "required": true,
-            "name": "bookingId",
+            "name": "name",
             "in": "path"
           }
         ],
         "responses": {
-          "200": {
-            "description": "The generated contract document reference, or a rendered preview",
+          "202": {
+            "description": "Run queued",
             "content": {
               "application/json": {
                 "schema": {
@@ -170,7 +170,22 @@
                   "properties": {
                     "data": {
                       "type": "object",
-                      "additionalProperties": {}
+                      "properties": {
+                        "runId": {
+                          "type": "string"
+                        },
+                        "workflowName": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "runId",
+                        "workflowName",
+                        "status"
+                      ]
                     }
                   },
                   "required": [
@@ -181,7 +196,7 @@
             }
           },
           "400": {
-            "description": "bookingId route param is required",
+            "description": "invalid_request: trigger body failed validation",
             "content": {
               "application/json": {
                 "schema": {
@@ -193,13 +208,33 @@
                   },
                   "required": [
                     "error"
-                  ]
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "workflow_admin_surface_restricted / missing trigger scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": {}
                 }
               }
             }
           },
           "404": {
-            "description": "Contract template not found (preview mode)",
+            "description": "runner_not_registered",
             "content": {
               "application/json": {
                 "schema": {
@@ -211,13 +246,14 @@
                   },
                   "required": [
                     "error"
-                  ]
+                  ],
+                  "additionalProperties": {}
                 }
               }
             }
           },
-          "502": {
-            "description": "Contract document generation failed",
+          "500": {
+            "description": "trigger_failed",
             "content": {
               "application/json": {
                 "schema": {
@@ -229,13 +265,14 @@
                   },
                   "required": [
                     "error"
-                  ]
+                  ],
+                  "additionalProperties": {}
                 }
               }
             }
           },
-          "503": {
-            "description": "Contract document storage not configured (missing DOCUMENTS_BUCKET)",
+          "501": {
+            "description": "trigger_not_configured / trigger_not_supported",
             "content": {
               "application/json": {
                 "schema": {
@@ -247,7 +284,8 @@
                   },
                   "required": [
                     "error"
-                  ]
+                  ],
+                  "additionalProperties": {}
                 }
               }
             }

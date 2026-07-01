@@ -1,9 +1,9 @@
 import {
-  generateModuleOpenApiDocuments,
   generateOpenApiDocument,
   mergeLazyOpenApiPaths,
   type OpenApiDocument,
   selectSurface,
+  splitDocumentByModule,
 } from "@voyant-travel/hono/openapi"
 import { app } from "./app.js"
 
@@ -46,7 +46,9 @@ export async function buildOperatorOpenApiDocuments(): Promise<OperatorOpenApiDo
   // `.openapi()` operations never reach the composed registry — replay their
   // loaders at build time and merge any documented routes (voyant#2114).
   const full = await mergeLazyOpenApiPaths(eager, app.lazyMounts ?? [], options)
-  const modules = await generateModuleOpenApiDocuments(app.moduleMounts ?? [], options)
+  // Partition the FULL surface so `additionalRoutes` (e.g. the workflow-runs
+  // admin surface) and directly-mounted routes aren't dropped from the specs.
+  const modules = await splitDocumentByModule(full, app.moduleMounts ?? [], options)
   return {
     full,
     admin: selectSurface(full, "admin"),

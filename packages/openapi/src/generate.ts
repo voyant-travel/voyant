@@ -1,11 +1,11 @@
 import { createVoyantApp } from "@voyant-travel/framework"
 import {
   type GenerateOpenApiOptions,
-  generateModuleOpenApiDocuments,
   generateOpenApiDocument,
   mergeLazyOpenApiPaths,
   type OpenApiDocument,
   selectSurface,
+  splitDocumentByModule,
 } from "@voyant-travel/hono/openapi"
 
 /**
@@ -65,7 +65,9 @@ export async function buildFrameworkOpenApiDocuments(): Promise<FrameworkOpenApi
   // never reach the composed registry — replay their loaders and merge, matching
   // the operator generator and the per-module docs (which load lazily too).
   const full = await mergeLazyOpenApiPaths(eager, app.lazyMounts ?? [], OPENAPI_OPTIONS)
-  const modules = await generateModuleOpenApiDocuments(app.moduleMounts ?? [], OPENAPI_OPTIONS)
+  // Partition the FULL surface so nothing is dropped — `additionalRoutes` and
+  // directly-mounted routes (`_meta/capabilities`) aren't in the manifest.
+  const modules = await splitDocumentByModule(full, app.moduleMounts ?? [], OPENAPI_OPTIONS)
   return {
     full,
     admin: selectSurface(full, "admin"),

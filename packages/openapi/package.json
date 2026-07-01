@@ -24,7 +24,8 @@
     "lint": "biome check src/",
     "test": "vitest run",
     "generate": "UPDATE_OPENAPI=1 vitest run",
-    "prepack": "UPDATE_OPENAPI=1 vitest run"
+    "build": "pnpm generate",
+    "prepack": "pnpm generate"
   },
   "publishConfig": {
     "access": "public"

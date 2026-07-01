@@ -37,6 +37,10 @@
       "outputs": [],
       "env": ["TEST_DATABASE_URL"]
     },
+    "@voyant-travel/openapi#build": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "lint": {},
     "typecheck": {
       "dependsOn": ["^build"]

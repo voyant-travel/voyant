@@ -279,3 +279,66 @@ export async function generateModuleOpenApiDocuments(
   }
   return result
 }
+
+/** Second path segment after the surface prefix — `/v1/admin/<seg>/...`. */
+function moduleSegment(path: string): string {
+  return path.split("/")[3] ?? "misc"
+}
+
+/**
+ * Partition a composed document into one document per module, covering EVERY
+ * admin/storefront path (voyant#2733).
+ *
+ * `generateModuleOpenApiDocuments` alone only sees routes recorded in the module
+ * mount manifest — it misses `additionalRoutes` and any route mounted directly
+ * on the composed app (e.g. the operator's workflow-runs admin surface, the
+ * `_meta/capabilities` route). Those were present in the old committed aggregate
+ * and must not silently vanish from the committed per-module specs.
+ *
+ * This uses the manifest as the *authoritative* owner for the routes it knows
+ * about — which is what makes `publicPath` overrides (whose prefix isn't the
+ * module name, e.g. `/v1/public/booking-engine`) land under the right module —
+ * and falls back to the path's own second segment for anything the manifest
+ * doesn't claim. The result therefore partitions the full surface exactly: every
+ * `/v1/admin/*` and `/v1/public/*` path lands in exactly one module document.
+ * Non-surface routes (`/v1/<name>` webhooks, legacy `/v1/*`) live only in the
+ * aggregate, as before.
+ *
+ * Each per-module document carries the aggregate's shared `components` verbatim
+ * (there is ~one), so it stays a valid, self-contained OpenAPI document.
+ *
+ * Build-time only.
+ */
+export async function splitDocumentByModule(
+  full: OpenApiDocument,
+  mounts: readonly ModuleMount[],
+  options: GenerateOpenApiOptions,
+): Promise<Map<string, OpenApiDocument>> {
+  const moduleDocs = await generateModuleOpenApiDocuments(mounts, options)
+  const owner = new Map<string, string>()
+  for (const [moduleName, doc] of moduleDocs) {
+    for (const path of Object.keys(doc.paths ?? {})) owner.set(path, moduleName)
+  }
+
+  const buckets = new Map<string, Record<string, unknown>>()
+  for (const [path, item] of Object.entries(full.paths ?? {})) {
+    if (!path.startsWith("/v1/admin/") && !path.startsWith("/v1/public/")) continue
+    const moduleName = owner.get(path) ?? moduleSegment(path)
+    let bucket = buckets.get(moduleName)
+    if (!bucket) {
+      bucket = {}
+      buckets.set(moduleName, bucket)
+    }
+    bucket[path] = item
+  }
+
+  const result = new Map<string, OpenApiDocument>()
+  for (const [moduleName, paths] of buckets) {
+    result.set(moduleName, {
+      ...full,
+      paths,
+      ...(full.components ? { components: full.components } : {}),
+    } as OpenApiDocument)
+  }
+  return result
+}

@@ -1,7 +1,12 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
-import { generateModuleOpenApiDocuments, type ModuleMount } from "../../src/openapi.js"
+import {
+  generateModuleOpenApiDocuments,
+  type ModuleMount,
+  type OpenApiDocument,
+  splitDocumentByModule,
+} from "../../src/openapi.js"
 
 const INFO = { title: "Test", version: "0.0.0" } as const
 
@@ -92,5 +97,50 @@ describe("generateModuleOpenApiDocuments", () => {
     const docs = await generateModuleOpenApiDocuments(mounts, { info: INFO })
 
     expect(Object.keys(docs.get("flights")?.paths ?? {})).toEqual(["/v1/admin/flights/search"])
+  })
+})
+
+describe("splitDocumentByModule", () => {
+  // A composed aggregate: two module-owned paths, one publicPath override owned
+  // by `commerce`, and one route (`workflow-runs`) that no mount claims —
+  // standing in for an `additionalRoutes` mount.
+  const full: OpenApiDocument = {
+    openapi: "3.1.0",
+    info: INFO,
+    paths: {
+      "/v1/admin/bookings/list": { get: {} },
+      "/v1/public/booking-engine/hold": { post: {} },
+      "/v1/admin/workflow-runs/{id}": { get: {} },
+      "/v1/webhooks/netopia": { post: {} }, // non-surface — must be ignored
+    },
+    components: { schemas: {} },
+  } as unknown as OpenApiDocument
+
+  const mounts: ModuleMount[] = [
+    { moduleName: "bookings", prefix: "/v1/admin/bookings", load: () => docApp("/list") },
+    { moduleName: "commerce", prefix: "/v1/public/booking-engine", load: () => docApp("/hold") },
+  ]
+
+  it("covers every admin/storefront path, attributing residual routes by segment", async () => {
+    const docs = await splitDocumentByModule(full, mounts, { info: INFO })
+
+    // publicPath override lands under its owning module, not the path segment.
+    expect(Object.keys(docs.get("commerce")?.paths ?? {})).toEqual([
+      "/v1/public/booking-engine/hold",
+    ])
+    // Unclaimed route falls back to its second path segment.
+    expect(Object.keys(docs.get("workflow-runs")?.paths ?? {})).toEqual([
+      "/v1/admin/workflow-runs/{id}",
+    ])
+    expect(Object.keys(docs.get("bookings")?.paths ?? {})).toEqual(["/v1/admin/bookings/list"])
+
+    // Every surface path is covered exactly once; non-surface routes are excluded.
+    const covered = new Set<string>()
+    for (const doc of docs.values()) for (const p of Object.keys(doc.paths ?? {})) covered.add(p)
+    expect([...covered].sort()).toEqual([
+      "/v1/admin/bookings/list",
+      "/v1/admin/workflow-runs/{id}",
+      "/v1/public/booking-engine/hold",
+    ])
   })
 })

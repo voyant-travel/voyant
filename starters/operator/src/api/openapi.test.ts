@@ -102,6 +102,21 @@ describe("operator openapi spec", () => {
     }
   })
 
+  it("covers every admin/storefront path (nothing dropped, incl. workflow-runs)", () => {
+    const covered = new Set<string>()
+    for (const doc of Object.values(perModule)) {
+      for (const p of Object.keys((doc as { paths?: object }).paths ?? {})) covered.add(p)
+    }
+    const surfacePaths = Object.keys(docs.full.paths ?? {}).filter(
+      (p) => p.startsWith("/v1/admin/") || p.startsWith("/v1/public/"),
+    )
+    const missing = surfacePaths.filter((p) => !covered.has(p))
+    expect(
+      missing,
+      `surface paths missing from every per-module doc: ${missing.join(", ")}`,
+    ).toEqual([])
+  })
+
   it("has no stale or missing committed per-module files", () => {
     expect(committedPerModuleFiles()).toEqual(Object.keys(perModule).sort())
   })
