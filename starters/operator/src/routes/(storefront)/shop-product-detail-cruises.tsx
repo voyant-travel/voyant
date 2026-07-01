@@ -33,10 +33,11 @@ export function CruiseDetailPage({ entityId }: { entityId: string }): React.Reac
   const scope = useStorefrontScope()
 
   const content = useQuery({
-    queryKey: ["public-cruise-content", entityId],
+    queryKey: ["public-cruise-content", entityId, scope.marketId, scope.locale, scope.currency],
     queryFn: () =>
       fetchContent<CruiseContent>(
         `${getApiUrl()}/v1/public/cruises/${encodeURIComponent(entityId)}/content`,
+        { locale: scope.locale, market: scope.marketId, currency: scope.currency },
       ),
     staleTime: 30_000,
   })

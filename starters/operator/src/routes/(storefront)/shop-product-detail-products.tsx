@@ -50,10 +50,18 @@ export function ProductDetailPageProducts({
   })
 
   const content = useQuery({
-    queryKey: ["public-product-content", entityModule, entityId],
+    queryKey: [
+      "public-product-content",
+      entityModule,
+      entityId,
+      scope.marketId,
+      scope.locale,
+      scope.currency,
+    ],
     queryFn: () =>
       fetchContent<ProductContent>(
         `${getApiUrl()}/v1/public/products/${encodeURIComponent(entityId)}/content`,
+        { locale: scope.locale, market: scope.marketId, currency: scope.currency },
       ),
     staleTime: 30_000,
   })

@@ -44,10 +44,30 @@ function getPreferredLocaleHeader(): string {
   return langs.join(",")
 }
 
+/** Selected storefront scope (voyant#2643) — narrows the content the endpoint
+ *  resolves. The content routes honor these query params before falling back to
+ *  the `Accept-Language` header, so a persisted/changed selection localizes the
+ *  detail content, not just the quote. */
+export interface ContentScope {
+  locale?: string
+  market?: string
+  currency?: string
+}
+
+function withContentScope(url: string, scope?: ContentScope): string {
+  if (!scope) return url
+  const target = new URL(url)
+  if (scope.locale) target.searchParams.set("locale", scope.locale)
+  if (scope.market) target.searchParams.set("market", scope.market)
+  if (scope.currency) target.searchParams.set("currency", scope.currency)
+  return target.toString()
+}
+
 export async function fetchContent<T>(
   url: string,
+  scope?: ContentScope,
 ): Promise<{ content: T; resolution: ContentResolution } | null> {
-  const res = await fetch(url, {
+  const res = await fetch(withContentScope(url, scope), {
     credentials: "include",
     headers: {
       "accept-language": getPreferredLocaleHeader(),

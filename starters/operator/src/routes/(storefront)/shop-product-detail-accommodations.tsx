@@ -32,10 +32,17 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
   const scope = useStorefrontScope()
 
   const content = useQuery({
-    queryKey: ["public-accommodations-content", entityId],
+    queryKey: [
+      "public-accommodations-content",
+      entityId,
+      scope.marketId,
+      scope.locale,
+      scope.currency,
+    ],
     queryFn: () =>
       fetchContent<AccommodationContent>(
         `${getApiUrl()}/v1/public/accommodations/${encodeURIComponent(entityId)}/content`,
+        { locale: scope.locale, market: scope.marketId, currency: scope.currency },
       ),
     staleTime: 30_000,
   })
