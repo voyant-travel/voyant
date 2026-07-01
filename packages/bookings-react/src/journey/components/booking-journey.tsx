@@ -384,9 +384,12 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 
   const onConfirm = async () => {
     // No valid quote (never priced, or the last re-quote 500'd) → Confirm must
-    // NOT be a silent no-op. Surface a recoverable message pointing at the retry
-    // banner instead of swallowing the click.
-    if (!quote.data?.quoteId) {
+    // NOT be a silent no-op. `useBookingQuote` keeps the prior quote as
+    // placeholder data on a failed refetch, so a stale `quoteId` can still be
+    // present while `quote.error` is set; block on `hasQuoteError` too so the
+    // wizard Review Confirm can never submit against a stale price. Surface a
+    // recoverable message pointing at the retry banner instead of swallowing.
+    if (!quote.data?.quoteId || hasQuoteError) {
       setConfirmError(messages.bookingJourney.validation.quoteUnavailable)
       return
     }
