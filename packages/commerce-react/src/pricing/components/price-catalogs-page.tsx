@@ -23,19 +23,11 @@ import {
   SheetTitle,
   Switch,
 } from "@voyant-travel/ui/components"
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@voyant-travel/ui/components/combobox"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
-import { currencies } from "@voyant-travel/utils/currencies"
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { usePricingUiMessagesOrDefault } from "../i18n/index.js"
@@ -45,11 +37,6 @@ import { type PriceCatalogRecord, usePriceCatalogMutation, usePriceCatalogs } fr
 const DEFAULT_PAGE_SIZE = 25
 
 const CATALOG_TYPES = ["public", "contract", "net", "gross", "promo", "internal", "other"] as const
-
-const CURRENCY_OPTIONS = Object.values(currencies).map((currency) => ({
-  value: currency.code,
-  label: `${currency.code} - ${currency.name} (${currency.symbol})`,
-}))
 
 type PriceCatalogsPageMessages = PricingUiMessages["priceCatalogsPage"]
 
@@ -238,38 +225,6 @@ function PriceCatalogsListLoading({ loadingLabel }: { loadingLabel: string }) {
   )
 }
 
-function CurrencyCombobox({
-  value,
-  onChange,
-  emptyLabel,
-  inputPlaceholder,
-}: {
-  value: string
-  onChange: (value: string) => void
-  emptyLabel: string
-  inputPlaceholder: string
-}) {
-  return (
-    <Combobox
-      items={CURRENCY_OPTIONS}
-      value={value}
-      onValueChange={(next) => onChange(String(next ?? ""))}
-    >
-      <ComboboxInput placeholder={inputPlaceholder} />
-      <ComboboxContent>
-        <ComboboxEmpty>{emptyLabel}</ComboboxEmpty>
-        <ComboboxList>
-          {CURRENCY_OPTIONS.map((option) => (
-            <ComboboxItem key={option.value} value={option.value}>
-              {option.label}
-            </ComboboxItem>
-          ))}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  )
-}
-
 function CatalogSheet({
   open,
   onOpenChange,
@@ -284,6 +239,7 @@ function CatalogSheet({
   const messages = usePricingUiMessagesOrDefault().priceCatalogsPage
   const { create, update } = usePriceCatalogMutation()
   const catalogFormSchema = useMemo(() => getCatalogFormSchema(messages), [messages])
+  const fieldId = useId()
 
   const form = useForm<CatalogFormValues, unknown, CatalogFormOutput>({
     resolver: zodResolver(catalogFormSchema),
@@ -348,8 +304,9 @@ function CatalogSheet({
           <SheetBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>{messages.nameLabel}</Label>
+                <Label htmlFor={`${fieldId}-name`}>{messages.nameLabel}</Label>
                 <Input
+                  id={`${fieldId}-name`}
                   {...form.register("name")}
                   placeholder={messages.namePlaceholder}
                   autoFocus
@@ -359,8 +316,12 @@ function CatalogSheet({
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>{messages.codeLabel}</Label>
-                <Input {...form.register("code")} placeholder={messages.codePlaceholder} />
+                <Label htmlFor={`${fieldId}-code`}>{messages.codeLabel}</Label>
+                <Input
+                  id={`${fieldId}-code`}
+                  {...form.register("code")}
+                  placeholder={messages.codePlaceholder}
+                />
                 {form.formState.errors.code ? (
                   <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
                 ) : null}
@@ -369,14 +330,13 @@ function CatalogSheet({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>{messages.currencyLabel}</Label>
+                <Label htmlFor={`${fieldId}-currency`}>{messages.currencyLabel}</Label>
                 <CurrencyCombobox
-                  value={form.watch("currencyCode") ?? ""}
-                  onChange={(value) =>
-                    form.setValue("currencyCode", value || null, { shouldDirty: true })
-                  }
+                  id={`${fieldId}-currency`}
+                  value={form.watch("currencyCode") ?? null}
+                  onChange={(value) => form.setValue("currencyCode", value, { shouldDirty: true })}
                   emptyLabel={messages.noCurrenciesFound}
-                  inputPlaceholder={messages.selectCurrencyPlaceholder}
+                  placeholder={messages.selectCurrencyPlaceholder}
                 />
                 {form.formState.errors.currencyCode ? (
                   <p className="text-xs text-destructive">
@@ -428,8 +388,12 @@ function CatalogSheet({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>{messages.notesLabel}</Label>
-              <Input {...form.register("notes")} placeholder={messages.notesPlaceholder} />
+              <Label htmlFor={`${fieldId}-notes`}>{messages.notesLabel}</Label>
+              <Input
+                id={`${fieldId}-notes`}
+                {...form.register("notes")}
+                placeholder={messages.notesPlaceholder}
+              />
             </div>
           </SheetBody>
           <SheetFooter>
