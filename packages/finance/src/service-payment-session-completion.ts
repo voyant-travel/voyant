@@ -2,6 +2,7 @@ import type {
   BookingPaymentSchedulePaidEvent,
   CompletePaymentSessionInput,
   FinanceServiceRuntime,
+  InvoicePaymentRecordedEvent,
   InvoiceSettledEvent,
   PostgresJsDatabase,
 } from "./service-shared.js"
@@ -72,6 +73,7 @@ export const financePaymentSessionCompletionService = {
       // a consistent post-update view. Stays null when this call doesn't
       // result in a new payment being applied to an invoice.
       let settlementForEmit: InvoiceSettledEvent | null = null
+      let recordedPaymentForEmit: InvoicePaymentRecordedEvent | null = null
       let bookingSchedulePaidForEmit: BookingPaymentSchedulePaidEvent | null = null
 
       if (!authorizationId) {
@@ -161,7 +163,7 @@ export const financePaymentSessionCompletionService = {
               .slice(0, 10),
             notes: data.notes ?? session.notes ?? null,
           })
-          .returning({ id: payments.id })
+          .returning()
 
         paymentId = payment?.id ?? null
 
@@ -190,14 +192,33 @@ export const financePaymentSessionCompletionService = {
           })
           .where(eq(invoices.id, invoiceForPayment.id))
 
-        if (paymentId) {
+        if (payment) {
           settlementForEmit = {
             invoiceId: invoiceForPayment.id,
-            paymentId,
+            paymentId: payment.id,
             provider: session.provider ?? "internal",
             newlyAppliedAmountCents: session.amountCents,
             paidCents,
             balanceDueCents,
+          }
+          recordedPaymentForEmit = {
+            invoiceId: invoiceForPayment.id,
+            invoiceNumber: invoiceForPayment.invoiceNumber,
+            invoiceType: invoiceForPayment.invoiceType,
+            bookingId: invoiceForPayment.bookingId,
+            invoiceCurrency: invoiceForPayment.currency,
+            invoiceTotalCents: invoiceForPayment.totalCents,
+            invoicePaidCents: paidCents,
+            invoiceBalanceDueCents: balanceDueCents,
+            paymentId: payment.id,
+            amountCents: payment.amountCents,
+            currency: payment.currency,
+            baseCurrency: payment.baseCurrency ?? null,
+            baseAmountCents: payment.baseAmountCents ?? null,
+            paymentMethod: payment.paymentMethod,
+            status: payment.status,
+            referenceNumber: payment.referenceNumber ?? null,
+            paymentDate: payment.paymentDate,
           }
         }
       }
@@ -293,9 +314,17 @@ export const financePaymentSessionCompletionService = {
       return {
         updated: updated ?? null,
         settlement: settlementForEmit,
+        recordedPayment: recordedPaymentForEmit,
         bookingSchedulePaid: bookingSchedulePaidForEmit,
       }
     })
+
+    if (txResult.recordedPayment) {
+      await runtime.eventBus?.emit("invoice.payment.recorded", txResult.recordedPayment, {
+        category: "domain",
+        source: "service",
+      })
+    }
 
     if (txResult.settlement) {
       await runtime.eventBus?.emit("invoice.settled", txResult.settlement, {

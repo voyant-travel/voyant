@@ -387,6 +387,7 @@ export type {
   InvoiceFromBookingData,
   InvoiceLineDescriptionResolver,
   InvoiceLineDescriptionResolverInput,
+  InvoicePaymentRecordedEvent,
   InvoiceRenderedEvent,
   InvoiceVoidedEvent,
   PaymentCompletedEvent,

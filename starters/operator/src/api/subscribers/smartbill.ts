@@ -2,6 +2,7 @@
 import { bookings } from "@voyant-travel/bookings/schema"
 import {
   financeService,
+  type InvoicePaymentRecordedEvent,
   type InvoiceSettlementPoller,
   invoiceLineItems,
   invoices,
@@ -45,6 +46,8 @@ type InvoiceIssuedPayload = {
 
 type SmartbillRuntime = {
   client: ReturnType<typeof createSmartbillClient>
+  username: string
+  apiToken: string
   companyVatCode: string
   invoiceSeriesName: string
   proformaSeriesName: string
@@ -56,6 +59,29 @@ type SmartbillRuntime = {
 type SmartbillTaxRegime = {
   name: string
   ratePercent: number | null
+}
+
+type SmartbillPaymentType =
+  | "Card"
+  | "CEC"
+  | "Bilet ordin"
+  | "Ordin plata"
+  | "Mandat postal"
+  | "Alta incasare"
+
+type SmartbillPaymentBody = {
+  companyVatCode: string
+  issueDate: string
+  currency: string
+  value: number
+  type: SmartbillPaymentType
+  isCash: boolean
+  observation?: string
+  useInvoiceDetails: boolean
+  invoicesList: Array<{
+    seriesName: string
+    number: string
+  }>
 }
 
 export const smartbillOperatorBundle: HonoBundle = {
@@ -79,6 +105,13 @@ export const smartbillOperatorBundle: HonoBundle = {
     eventBus.subscribe<InvoiceIssuedPayload>("invoice.proforma.issued", async ({ data }) => {
       await syncIssuedInvoice(env, runtime, data, "proforma")
     })
+
+    eventBus.subscribe<InvoicePaymentRecordedEvent>(
+      "invoice.payment.recorded",
+      async ({ data }) => {
+        await syncRecordedInvoicePayment(env, runtime, data)
+      },
+    )
   },
 }
 
@@ -103,7 +136,7 @@ export function createSmartbillSettlementPollers(
 async function ensureSmartbillInvoiceNumberSeries(env: SmartbillEnv, runtime: SmartbillRuntime) {
   try {
     await withDbFromEnv(env, async (rawDb) => {
-      const db = rawDb as unknown as PostgresJsDatabase
+      const db = asFinanceDb(rawDb)
       await financeService.ensureExternalInvoiceNumberSeries(db, [
         {
           provider: "smartbill",
@@ -175,7 +208,7 @@ async function syncIssuedInvoice(
   const invoiceId = payload.invoiceId
   if (!invoiceId) return
   await withDbFromEnv(env, async (rawDb) => {
-    const db = rawDb as unknown as PostgresJsDatabase
+    const db = asFinanceDb(rawDb)
     await syncIssuedInvoiceWithDb(env, db, runtime, invoiceId, documentType)
   })
 }
@@ -261,6 +294,194 @@ async function syncIssuedInvoiceWithDb(
       syncError: error instanceof Error ? error.message : String(error),
     })
   }
+}
+
+async function syncRecordedInvoicePayment(
+  env: SmartbillEnv,
+  runtime: SmartbillRuntime,
+  payload: InvoicePaymentRecordedEvent,
+) {
+  if (payload.status !== "completed") return
+  await withDbFromEnv(env, async (rawDb) => {
+    const db = asFinanceDb(rawDb)
+    await syncRecordedInvoicePaymentWithDb(db, runtime, payload)
+  })
+}
+
+export async function syncRecordedInvoicePaymentWithDb(
+  db: PostgresJsDatabase,
+  runtime: SmartbillRuntime,
+  payload: InvoicePaymentRecordedEvent,
+) {
+  if (payload.status !== "completed" || payload.invoiceType !== "invoice") return
+
+  const externalRefs = await financeService.listInvoiceExternalRefs(db, payload.invoiceId)
+  const smartbillRef = externalRefs.find((ref) => ref.provider === "smartbill")
+  if (!smartbillRef) return
+
+  const invoiceRef = resolveSmartbillPaymentInvoiceRef(smartbillRef)
+  if (!invoiceRef) return
+
+  const metadata = toRecord(smartbillRef.metadata)
+  if (smartbillRef.syncError && !isPaymentSyncError(metadata, smartbillRef.syncError)) return
+  if (metadata?.documentType === "proforma") return
+  if (hasSyncedSmartbillPayment(metadata, payload.paymentId)) return
+
+  const body = buildSmartbillPaymentBody(runtime, payload, invoiceRef)
+  if (!body) return
+
+  try {
+    const result = await createSmartbillPayment(runtime, body)
+    const nextMetadata = {
+      ...withoutLastPaymentSyncError(metadata),
+      lastPaymentSync: {
+        paymentId: payload.paymentId,
+        paymentDate: payload.paymentDate,
+        amountCents: payload.amountCents,
+        currency: payload.currency,
+        smartbillValue: body.value,
+        smartbillCurrency: body.currency,
+        type: body.type,
+        message: typeof result.message === "string" ? result.message : null,
+        number: typeof result.number === "string" ? result.number : null,
+        syncedAt: new Date().toISOString(),
+      },
+    }
+    await financeService.registerInvoiceExternalRef(db, payload.invoiceId, {
+      provider: "smartbill",
+      externalId: smartbillRef.externalId,
+      externalNumber: smartbillRef.externalNumber,
+      externalUrl: smartbillRef.externalUrl,
+      status: payload.invoiceBalanceDueCents <= 0 ? "paid" : "partially_paid",
+      metadata: nextMetadata,
+      syncedAt: new Date().toISOString(),
+      syncError: null,
+    })
+  } catch (error) {
+    await financeService.registerInvoiceExternalRef(db, payload.invoiceId, {
+      provider: "smartbill",
+      externalId: smartbillRef.externalId,
+      externalNumber: smartbillRef.externalNumber,
+      externalUrl: smartbillRef.externalUrl,
+      status: smartbillRef.status,
+      metadata: {
+        ...(metadata ?? {}),
+        lastPaymentSyncError: {
+          paymentId: payload.paymentId,
+          message: error instanceof Error ? error.message : String(error),
+          syncedAt: new Date().toISOString(),
+        },
+      },
+      syncedAt: new Date().toISOString(),
+      syncError: null,
+    })
+  }
+}
+
+function hasSyncedSmartbillPayment(
+  metadata: Record<string, unknown> | null,
+  paymentId: string,
+): boolean {
+  const lastPaymentSync = toRecord(metadata?.lastPaymentSync)
+  return readString(lastPaymentSync, "paymentId") === paymentId
+}
+
+function isPaymentSyncError(
+  metadata: Record<string, unknown> | null,
+  syncError: string | null,
+): boolean {
+  return (
+    Boolean(toRecord(metadata?.lastPaymentSyncError)) ||
+    Boolean(syncError?.startsWith("Payment sync failed:"))
+  )
+}
+
+function withoutLastPaymentSyncError(
+  metadata: Record<string, unknown> | null,
+): Record<string, unknown> {
+  const { lastPaymentSyncError: _lastPaymentSyncError, ...rest } = metadata ?? {}
+  return rest
+}
+
+export function buildSmartbillPaymentBody(
+  runtime: Pick<SmartbillRuntime, "companyVatCode">,
+  payload: InvoicePaymentRecordedEvent,
+  invoiceRef: { seriesName: string; number: string },
+): SmartbillPaymentBody | null {
+  const amountCents =
+    payload.currency === payload.invoiceCurrency
+      ? payload.amountCents
+      : payload.baseCurrency === payload.invoiceCurrency
+        ? payload.baseAmountCents
+        : null
+  if (amountCents == null || amountCents <= 0) return null
+
+  return {
+    companyVatCode: runtime.companyVatCode,
+    issueDate: payload.paymentDate,
+    currency: payload.invoiceCurrency,
+    value: centsToMajor(amountCents),
+    type: mapSmartbillPaymentType(payload.paymentMethod),
+    isCash: payload.paymentMethod === "cash",
+    observation:
+      payload.referenceNumber && payload.referenceNumber.trim().length > 0
+        ? `Voyant payment ${payload.paymentId} (${payload.referenceNumber.trim()})`
+        : `Voyant payment ${payload.paymentId}`,
+    useInvoiceDetails: true,
+    invoicesList: [invoiceRef],
+  }
+}
+
+export function resolveSmartbillPaymentInvoiceRef(ref: {
+  externalId: string | null
+  externalNumber: string | null
+  metadata?: unknown
+}): { seriesName: string; number: string } | null {
+  const metadata = toRecord(ref.metadata)
+  const seriesName =
+    readString(metadata, "seriesName") ??
+    readString(metadata, "series") ??
+    readString(metadata, "invoiceSeriesName")
+  const number = readString(metadata, "number") ?? ref.externalNumber ?? ref.externalId
+  if (!seriesName || !number) return null
+  return { seriesName, number }
+}
+
+export function mapSmartbillPaymentType(
+  method: InvoicePaymentRecordedEvent["paymentMethod"],
+): SmartbillPaymentType {
+  switch (method) {
+    case "bank_transfer":
+    case "direct_bill":
+      return "Ordin plata"
+    case "credit_card":
+    case "debit_card":
+    case "wallet":
+      return "Card"
+    case "cheque":
+      return "CEC"
+    default:
+      return "Alta incasare"
+  }
+}
+
+async function createSmartbillPayment(runtime: SmartbillRuntime, body: SmartbillPaymentBody) {
+  const apiUrl = (runtime.apiUrl ?? "https://ws.smartbill.ro/SBORO/api").replace(/\/$/, "")
+  const response = await fetch(`${apiUrl}/payment`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${btoa(`${runtime.username}:${runtime.apiToken}`)}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  })
+  const text = await response.text()
+  const parsed = toRecord(parseJson(text))
+  if (!response.ok || isSmartbillError(parsed)) {
+    throw new Error(readString(parsed, "errorText") ?? `SmartBill payment sync failed: ${text}`)
+  }
+  return parsed ?? {}
 }
 
 /**
@@ -533,4 +754,33 @@ function formatExternalInvoiceNumber(seriesName: string | undefined, number: str
 
 function parseBoolean(value: unknown): boolean {
   return value === true || value === "true" || value === "1" || value === "yes"
+}
+
+function asFinanceDb(db: unknown): PostgresJsDatabase {
+  return db as PostgresJsDatabase
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function readString(value: unknown, key: string): string | null {
+  const record = toRecord(value)
+  const raw = record?.[key]
+  return typeof raw === "string" && raw.trim().length > 0 ? raw.trim() : null
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return text ? JSON.parse(text) : null
+  } catch {
+    return null
+  }
+}
+
+function isSmartbillError(value: unknown): boolean {
+  const record = toRecord(value)
+  return record?.status === "Error" || Boolean(readString(record, "errorText"))
 }
