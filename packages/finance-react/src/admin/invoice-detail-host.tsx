@@ -109,6 +109,8 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
   const [noteDialogOpen, setNoteDialogOpen] = useState(false)
   const [noteContent, setNoteContent] = useState("")
   const [actionError, setActionError] = useState<string | null>(null)
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [voidDialogOpen, setVoidDialogOpen] = useState(false)
   const [voidReason, setVoidReason] = useState("")
 
@@ -156,6 +158,7 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
     invoice.status,
   )
   const canConvertProforma = invoice.invoiceType === "proforma" && invoice.status !== "void"
+  const canDeleteInvoice = invoice.status === "draft"
 
   const getMutationErrorMessage = (fallback: string) => (error: unknown) =>
     error instanceof Error ? error.message : fallback
@@ -174,34 +177,57 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {canConvertProforma ? (
-            <Button
-              variant="outline"
-              disabled={convertToInvoice.isPending}
-              onClick={() => {
-                if (!confirm(messages.finance.convertConfirm)) return
-                setActionError(null)
-                convertToInvoice.mutate(
-                  { id },
-                  {
-                    onSuccess: (converted) => {
-                      navigateTo("invoice.detail", { invoiceId: converted.id })
-                    },
-                    onError: (error) => {
-                      setActionError(
-                        getMutationErrorMessage(messages.finance.detailPage.convertFailed)(error),
+            <AlertDialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+              <AlertDialogTrigger
+                disabled={convertToInvoice.isPending}
+                render={<Button type="button" variant="outline" />}
+              >
+                {convertToInvoice.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                )}
+                {messages.finance.convertToInvoice}
+              </AlertDialogTrigger>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{messages.finance.convertToInvoice}</AlertDialogTitle>
+                  <AlertDialogDescription>{messages.finance.convertConfirm}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={convertToInvoice.isPending}>
+                    {messages.finance.detailPage.cancel}
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={convertToInvoice.isPending}
+                    onClick={() => {
+                      setActionError(null)
+                      convertToInvoice.mutate(
+                        { id },
+                        {
+                          onSuccess: (converted) => {
+                            setConvertDialogOpen(false)
+                            navigateTo("invoice.detail", { invoiceId: converted.id })
+                          },
+                          onError: (error) => {
+                            setActionError(
+                              getMutationErrorMessage(messages.finance.detailPage.convertFailed)(
+                                error,
+                              ),
+                            )
+                          },
+                        },
                       )
-                    },
-                  },
-                )
-              }}
-            >
-              {convertToInvoice.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <ArrowRightLeft className="mr-2 h-4 w-4" />
-              )}
-              {messages.finance.convertToInvoice}
-            </Button>
+                    }}
+                  >
+                    {convertToInvoice.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : null}
+                    {messages.finance.convertToInvoice}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : null}
           <Button variant="outline" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
@@ -267,36 +293,60 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              if (invoice.status !== "draft") {
-                alert(messages.finance.detailPage.deleteOnlyDraftAlert)
-                return
-              }
-              if (confirm(messages.finance.detailPage.deleteConfirm)) {
-                setActionError(null)
-                deleteInvoice.mutate(id, {
-                  onSuccess: () => {
-                    navigateTo("invoice.list", {})
-                  },
-                  onError: (error) => {
-                    setActionError(
-                      getMutationErrorMessage(messages.finance.detailPage.deleteOnlyDraftAlert)(
-                        error,
-                      ),
-                    )
-                  },
-                })
-              }
-            }}
-            disabled={deleteInvoice.isPending}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {messages.finance.detailPage.delete}
-          </Button>
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogTrigger
+              disabled={!canDeleteInvoice || deleteInvoice.isPending}
+              render={<Button type="button" variant="destructive" />}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {messages.finance.detailPage.delete}
+            </AlertDialogTrigger>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>{messages.finance.detailPage.delete}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {messages.finance.detailPage.deleteConfirm}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleteInvoice.isPending}>
+                  {messages.finance.detailPage.cancel}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  disabled={deleteInvoice.isPending}
+                  onClick={() => {
+                    setActionError(null)
+                    deleteInvoice.mutate(id, {
+                      onSuccess: () => {
+                        setDeleteDialogOpen(false)
+                        navigateTo("invoice.list", {})
+                      },
+                      onError: (error) => {
+                        setActionError(
+                          getMutationErrorMessage(messages.finance.detailPage.deleteOnlyDraftAlert)(
+                            error,
+                          ),
+                        )
+                      },
+                    })
+                  }}
+                >
+                  {deleteInvoice.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : null}
+                  {messages.finance.detailPage.delete}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
+      {!canDeleteInvoice ? (
+        <div className="rounded-md border px-3 py-2 text-muted-foreground text-sm">
+          {messages.finance.detailPage.deleteOnlyDraftAlert}
+        </div>
+      ) : null}
       {actionError ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {actionError}

@@ -45,6 +45,18 @@ export function toCents(major: string): number {
   return Number.isFinite(n) ? Math.round(n * 100) : 0
 }
 
+export function parseNonNegativeCents(major: string): number | null {
+  if (!major.trim()) return null
+  const n = Number.parseFloat(major)
+  if (!Number.isFinite(n) || n < 0) return null
+  return Math.round(n * 100)
+}
+
+export function parseOptionalNonNegativeCents(major: string): number | null {
+  if (!major.trim()) return 0
+  return parseNonNegativeCents(major)
+}
+
 export function targetIdFor(
   targetType: TargetType,
   targetId: string,

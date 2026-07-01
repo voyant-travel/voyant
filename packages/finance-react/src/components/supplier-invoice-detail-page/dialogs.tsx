@@ -30,12 +30,13 @@ import { AsyncCombobox, type AsyncComboboxOption } from "../async-combobox.js"
 import {
   LINE_CATEGORY_NONE,
   PAYMENT_METHODS,
+  parseNonNegativeCents,
+  parseOptionalNonNegativeCents,
   SEARCHABLE_TARGETS,
   type SupplierInvoiceTargetSearch,
   TARGET_TYPES,
   type TargetType,
   targetIdFor,
-  toCents,
 } from "./shared.js"
 
 export function LineDialog({
@@ -77,16 +78,22 @@ export function LineDialog({
     setTotal(line ? (line.totalAmountCents / 100).toFixed(2) : "")
   }
 
+  const unitCents = parseOptionalNonNegativeCents(unit)
+  const taxCents = parseOptionalNonNegativeCents(tax)
+  const totalCents = parseNonNegativeCents(total)
+  const moneyValid = unitCents != null && taxCents != null && totalCents != null
+
   const submit = () => {
+    if (!moneyValid) return
     if (!description.trim()) return
     onSubmit({
       description: description.trim(),
       serviceType,
       costCategoryId: costCategoryId || null,
       quantity: Math.max(1, Number.parseInt(quantity, 10) || 1),
-      unitAmountCents: toCents(unit),
-      taxAmountCents: toCents(tax),
-      totalAmountCents: toCents(total),
+      unitAmountCents: unitCents,
+      taxAmountCents: taxCents,
+      totalAmountCents: totalCents,
     })
   }
 
@@ -130,19 +137,38 @@ export function LineDialog({
           </div>
           <div className="flex flex-col gap-2">
             <Label>{`${t.unitAmount} (${currency})`}</Label>
-            <Input inputMode="decimal" value={unit} onChange={(e) => setUnit(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              min="0"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label>{`${t.taxAmount} (${currency})`}</Label>
-            <Input inputMode="decimal" value={tax} onChange={(e) => setTax(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              min="0"
+              value={tax}
+              onChange={(e) => setTax(e.target.value)}
+            />
           </div>
           <div className="col-span-2 flex flex-col gap-2">
             <Label>{`${t.total} (${currency})`}</Label>
-            <Input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              min="0"
+              value={total}
+              onChange={(e) => setTotal(e.target.value)}
+            />
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button type="button" disabled={!description.trim() || pending} onClick={submit}>
+          <Button
+            type="button"
+            disabled={!description.trim() || !moneyValid || pending}
+            onClick={submit}
+          >
             {t.save}
           </Button>
         </DialogFooter>
@@ -200,11 +226,13 @@ export function AllocationDialog({
   const twoStepDeparture =
     targetType === "departure" && Boolean(searchTargets) && Boolean(listDeparturesForProduct)
 
+  const amountCents = parseNonNegativeCents(amount)
+
   const submit = () => {
-    if (!amount) return
+    if (amountCents == null) return
     onSubmit({
       targetType,
-      amountCents: toCents(amount),
+      amountCents,
       splitMethod: "manual",
       ...targetIdFor(targetType, targetId.trim()),
     })
@@ -240,7 +268,12 @@ export function AllocationDialog({
           </div>
           <div className="flex flex-col gap-2">
             <Label>{formatMessage(t.amountLabel, { currency })}</Label>
-            <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </div>
           {targetType === "unattributed" ? null : twoStepDeparture ? (
             <>
@@ -292,7 +325,9 @@ export function AllocationDialog({
         <DialogFooter>
           <Button
             type="button"
-            disabled={!amount || (targetType !== "unattributed" && !targetId.trim()) || pending}
+            disabled={
+              amountCents == null || (targetType !== "unattributed" && !targetId.trim()) || pending
+            }
             onClick={submit}
           >
             {pending ? t.saving : t.save}
@@ -339,10 +374,12 @@ export function PaymentDialog({
     }
   }
 
+  const amountCents = parseNonNegativeCents(amount)
+
   const submit = () => {
-    if (!amount) return
+    if (amountCents == null) return
     onSubmit({
-      amountCents: toCents(amount),
+      amountCents,
       paymentMethod: method,
       status: "completed",
       paymentDate: date || new Date().toISOString().slice(0, 10),
@@ -358,7 +395,12 @@ export function PaymentDialog({
         <DialogBody className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
             <Label>{formatMessage(t.amountLabel, { currency })}</Label>
-            <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label>{t.methodLabel}</Label>
@@ -385,7 +427,7 @@ export function PaymentDialog({
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button type="button" disabled={!amount || pending} onClick={submit}>
+          <Button type="button" disabled={amountCents == null || pending} onClick={submit}>
             {pending ? t.recording : t.record}
           </Button>
         </DialogFooter>
