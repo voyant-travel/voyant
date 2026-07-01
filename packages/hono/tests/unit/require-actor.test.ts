@@ -214,6 +214,56 @@ describe("requireActor", () => {
     expect(webhook.status).toBe(200)
   })
 
+  it("honors the search action on a POST /search endpoint (voyant#2649)", async () => {
+    // Catalog search is exposed as POST (complex body) but is a read-family
+    // operation, so a `catalog:search`/`catalog:read` token must reach it.
+    const searchToken = () =>
+      makeApp((c) => {
+        c.set("callerType", "api_key")
+        c.set("scopes", ["catalog:read", "catalog:search"])
+      })
+
+    const admin = searchToken()
+    admin.use("*", requireActor("staff"))
+    admin.post("/v1/admin/catalog/search", (c) => c.json({ ok: true }))
+    expect((await admin.request("/v1/admin/catalog/search", { method: "POST" })).status).toBe(200)
+
+    const publicApp = searchToken()
+    publicApp.use("*", requireActor("customer", "partner", "supplier"))
+    publicApp.post("/v1/public/catalog/search", (c) => c.json({ ok: true }))
+    expect((await publicApp.request("/v1/public/catalog/search", { method: "POST" })).status).toBe(
+      200,
+    )
+
+    // A bare `catalog:search` scope alone is sufficient.
+    const searchOnly = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["catalog:search"])
+    })
+    searchOnly.use("*", requireActor("staff"))
+    searchOnly.post("/v1/admin/catalog/search", (c) => c.json({ ok: true }))
+    expect((await searchOnly.request("/v1/admin/catalog/search", { method: "POST" })).status).toBe(
+      200,
+    )
+  })
+
+  it("still gates non-search POST routes for a search/read-only token (voyant#2649)", async () => {
+    // The search relaxation must not leak into write routes.
+    const build = () => {
+      const app = makeApp((c) => {
+        c.set("callerType", "api_key")
+        c.set("scopes", ["catalog:read", "catalog:search", "products:read"])
+      })
+      app.use("*", requireActor("staff"))
+      app.post("/v1/admin/products", (c) => c.json({ ok: true }))
+      app.post("/v1/admin/bookings", (c) => c.json({ ok: true }))
+      return app
+    }
+
+    expect((await build().request("/v1/admin/products", { method: "POST" })).status).toBe(403)
+    expect((await build().request("/v1/admin/bookings", { method: "POST" })).status).toBe(403)
+  })
+
   it("passes through OPTIONS preflight requests", async () => {
     const app = makeApp((c) => c.set("actor", "customer"))
     app.use("*", requireActor("staff"))

@@ -15,7 +15,7 @@ function apiKeyResourceFromPath(pathname: string): string | null {
   return null
 }
 
-function apiKeyPermissionActionsForMethod(method: string): string[] {
+function baseApiKeyPermissionActionsForMethod(method: string): string[] {
   switch (method.toUpperCase()) {
     case "GET":
     case "HEAD":
@@ -30,6 +30,26 @@ function apiKeyPermissionActionsForMethod(method: string): string[] {
     default:
       return []
   }
+}
+
+/**
+ * Search endpoints accept complex request bodies, so they're exposed as `POST`
+ * even though they're read-family operations. Without this, `POST
+ * /v1/<surface>/catalog/search` would only accept `write`/`trigger`/`relay`,
+ * and a `catalog:search`/`catalog:read`-scoped token would be rejected
+ * (voyant#2649). Matching only `/search` sub-paths keeps every other POST route
+ * (product writes, bookings, pricing, …) gated on its normal write actions.
+ */
+function isSearchPath(pathname: string): boolean {
+  return /\/search(?:\/|$)/.test(pathname)
+}
+
+function apiKeyPermissionActionsForMethod(method: string, pathname: string): string[] {
+  const actions = baseApiKeyPermissionActionsForMethod(method)
+  if (isSearchPath(pathname)) {
+    return Array.from(new Set([...actions, "search", "read"]))
+  }
+  return actions
 }
 
 function hasAnyApiKeyPermission(
@@ -129,7 +149,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       // is a reserved namespace (no module is named `_meta`).
       if (resource === "_meta") return next()
 
-      const actions = apiKeyPermissionActionsForMethod(c.req.method)
+      const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
 
       if (resource && hasAnyApiKeyPermission(c.get("scopes"), resource, actions)) {
         return next()
@@ -167,7 +187,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       })
       const resource = apiKeyResourceFromPath(pathname)
       if (resource && resource !== "_meta") {
-        const actions = apiKeyPermissionActionsForMethod(c.req.method)
+        const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
         if (!hasAnyApiKeyPermission(scopes, resource, actions)) {
           return c.json({ error: "Forbidden: missing required permission" }, 403)
         }
