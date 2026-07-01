@@ -948,23 +948,45 @@ const taxPolicyRuleRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidatio
   .openapi(listTaxPolicyRulesRoute, async (c) =>
     c.json(await financeService.listTaxPolicyRules(c.get("db"), c.req.valid("query")), 200),
   )
-  .openapi(createTaxPolicyRuleRoute, async (c) =>
-    c.json(
-      { data: created(await financeService.createTaxPolicyRule(c.get("db"), c.req.valid("json"))) },
-      201,
-    ),
-  )
+  .openapi(createTaxPolicyRuleRoute, async (c) => {
+    try {
+      return c.json(
+        {
+          data: created(await financeService.createTaxPolicyRule(c.get("db"), c.req.valid("json"))),
+        },
+        201,
+      )
+    } catch (error) {
+      if (error instanceof ReferenceDataValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+      throw error
+    }
+  })
   .openapi(getTaxPolicyRuleRoute, async (c) => {
     const row = await financeService.getTaxPolicyRuleById(c.get("db"), c.req.valid("param").id)
     return row ? c.json({ data: row }, 200) : notFound(c, "Tax policy rule not found")
   })
   .openapi(updateTaxPolicyRuleRoute, async (c) => {
-    const row = await financeService.updateTaxPolicyRule(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    return row ? c.json({ data: row }, 200) : notFound(c, "Tax policy rule not found")
+    try {
+      const row = await financeService.updateTaxPolicyRule(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row ? c.json({ data: row }, 200) : notFound(c, "Tax policy rule not found")
+    } catch (error) {
+      if (error instanceof ReferenceDataValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+      throw error
+    }
   })
   .openapi(deleteTaxPolicyRuleRoute, async (c) => {
     const row = await financeService.deleteTaxPolicyRule(c.get("db"), c.req.valid("param").id)
