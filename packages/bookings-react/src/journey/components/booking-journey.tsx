@@ -247,14 +247,19 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   // with `invalidReason: "rates_missing"` and no pricing when the selected stay
   // has no applicable rate plan. Committing that yields a 502 RESERVE_FAILED at
   // /book (#2638). Treat any settled quote that is explicitly unavailable or
-  // carries an `invalidReason` as un-priceable so the buyer can't advance,
-  // accept a contract, or Confirm against an unpriced booking.
+  // carries an `invalidReason` as un-priceable and block contract acceptance /
+  // Confirm against it.
   const quoteUnpriceable =
     quote.data != null &&
     (quote.data.available === false ||
       (quote.data.invalidReason != null && quote.data.invalidReason !== ""))
   const quoteBlocked = hasQuoteError || quoteUnpriceable
-  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, available) && !quoteBlocked
+  // Step navigation only hard-blocks on a thrown quote error (a transient fetch
+  // failure that a retry fixes). An un-priceable quote (e.g. `rates_missing`
+  // from a preselected room) is *corrected by navigating* — often the room/rate
+  // editor is a later step — so Next must stay enabled; commit is still gated on
+  // `quoteBlocked` below so an unpriced booking can never be submitted.
+  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, available) && !hasQuoteError
   const warnings = warningsForStep(currentStep, draft, shape, messages)
 
   // Stacked layout: there's no "current" step, but the section nav still
