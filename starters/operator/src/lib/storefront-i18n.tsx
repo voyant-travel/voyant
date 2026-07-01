@@ -230,6 +230,13 @@ const storefrontMessagesEn = {
   bookingJourney: {
     marketingLabel: "Email me occasional updates about new tours and promotions.",
   },
+  composer: {
+    gateTitle: "Sign in to build a trip",
+    gateBody:
+      "The trip composer saves a working draft against your account, so you need to be signed in before you can start one. Browsing and booking individual items stays open to everyone.",
+    gateSignIn: "Sign in to continue",
+    gateBrowse: "Back to browsing",
+  },
 }
 
 export type StorefrontMessages = typeof storefrontMessagesEn
@@ -439,6 +446,13 @@ const storefrontMessagesRo: StorefrontMessages = {
   },
   bookingJourney: {
     marketingLabel: "Trimite-mi ocazional noutati despre tururi noi si promotii.",
+  },
+  composer: {
+    gateTitle: "Autentifica-te pentru a construi o calatorie",
+    gateBody:
+      "Compozitorul de calatorie salveaza o ciorna de lucru in contul tau, asa ca trebuie sa fii autentificat inainte de a incepe. Navigarea si rezervarea produselor individuale raman deschise tuturor.",
+    gateSignIn: "Autentifica-te pentru a continua",
+    gateBrowse: "Inapoi la navigare",
   },
 }
 
