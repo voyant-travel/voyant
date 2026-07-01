@@ -29,6 +29,7 @@ import {
   shouldNormalizeBaseAmount,
   sql,
   toRows,
+  touchLinkedBookingUpdatedAt,
 } from "./service-shared.js"
 
 export const financeInvoicePaymentService = {
@@ -369,6 +370,7 @@ export const financeInvoicePaymentService = {
         .update(invoices)
         .set({ paidCents, balanceDueCents, status: newStatus, updatedAt: new Date() })
         .where(eq(invoices.id, invoiceId))
+      await touchLinkedBookingUpdatedAt(tx, invoice.bookingId)
 
       if (payment.status === "completed") {
         recordedPaymentEvent = {
@@ -481,6 +483,7 @@ export const financeInvoicePaymentService = {
       }
 
       await recomputeInvoiceTotalsAfterPaymentChange(tx, invoice)
+      await touchLinkedBookingUpdatedAt(tx, invoice.bookingId)
 
       if (runtime.actionLedgerContext) {
         await appendActionLedgerMutation(
@@ -516,6 +519,7 @@ export const financeInvoicePaymentService = {
       await tx.delete(payments).where(eq(payments.id, id))
 
       await recomputeInvoiceTotalsAfterPaymentChange(tx, invoice)
+      await touchLinkedBookingUpdatedAt(tx, invoice.bookingId)
 
       if (runtime.actionLedgerContext) {
         await appendActionLedgerMutation(

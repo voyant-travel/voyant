@@ -15,6 +15,7 @@ vi.mock("../../src/service.js", () => ({
   financeService: {
     createInvoiceFromBooking: vi.fn(),
   },
+  touchLinkedBookingUpdatedAt: vi.fn(),
 }))
 
 describe("issueInvoiceFromBooking", () => {

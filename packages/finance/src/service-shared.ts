@@ -1010,6 +1010,15 @@ export async function paginate<T extends object>(
   return listResponse(data, { total: countResult[0]?.count ?? 0, limit, offset })
 }
 
+export async function touchLinkedBookingUpdatedAt(
+  db: PostgresJsDatabase,
+  bookingId: string | null | undefined,
+  now = new Date(),
+) {
+  if (!bookingId) return
+  await db.update(bookings).set({ updatedAt: now }).where(eq(bookings.id, bookingId))
+}
+
 /**
  * Runtime context for finance service methods that need to emit lifecycle
  * events (e.g. `invoice.settled`). Optional — methods fall back to a no-op

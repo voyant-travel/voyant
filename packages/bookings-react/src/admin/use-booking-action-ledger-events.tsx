@@ -2,9 +2,9 @@
 
 import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import { Button } from "@voyant-travel/ui/components/button"
-import { ScrollText } from "lucide-react"
+import { CreditCard, FileText, ScrollText } from "lucide-react"
 import { useMemo } from "react"
-import type { TimelineEvent } from "../components/booking-activity-timeline.js"
+import type { TimelineEvent, TimelineSource } from "../components/booking-activity-timeline.js"
 import {
   type BookingActionLedgerEntryRecord,
   type BookingActionLedgerTraveler,
@@ -39,9 +39,10 @@ export function useBookingActionLedgerEvents(bookingId: string): {
     for (const page of pages) {
       for (const entry of page.data) {
         const traveler = travelersById.get(entry.targetId) ?? null
+        const presentation = getLedgerTimelinePresentation(entry.actionName)
         all.push({
           id: `action:${entry.id}`,
-          source: "action",
+          source: presentation.source,
           title: formatActionName(entry.actionName),
           description: formatLedgerDescription(
             entry,
@@ -51,7 +52,7 @@ export function useBookingActionLedgerEvents(bookingId: string): {
           ),
           actorId: entry.principalId,
           timestamp: entry.occurredAt,
-          icon: ScrollText,
+          icon: presentation.icon,
         })
       }
     }
@@ -75,6 +76,30 @@ export function useBookingActionLedgerEvents(bookingId: string): {
 
 function formatActionName(value: string) {
   return value.replaceAll(".", " / ").replaceAll("_", " ")
+}
+
+function getLedgerTimelinePresentation(actionName: string): {
+  source: TimelineSource
+  icon: typeof ScrollText
+} {
+  if (
+    actionName.startsWith("finance.invoice.") ||
+    actionName.startsWith("finance.invoice_line_item.") ||
+    actionName.startsWith("finance.credit_note.") ||
+    actionName.startsWith("finance.credit_note_line_item.")
+  ) {
+    return { source: "document", icon: FileText }
+  }
+
+  if (
+    actionName.startsWith("finance.payment") ||
+    actionName.startsWith("finance.booking_payment") ||
+    actionName.startsWith("finance.booking_guarantee")
+  ) {
+    return { source: "payment", icon: CreditCard }
+  }
+
+  return { source: "action", icon: ScrollText }
 }
 
 function formatTarget(

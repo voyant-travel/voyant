@@ -32,6 +32,7 @@ import {
   payments,
   readStringMetadata,
   sql,
+  touchLinkedBookingUpdatedAt,
 } from "./service-shared.js"
 
 export const financeInvoiceCoreService = {
@@ -152,6 +153,7 @@ export const financeInvoiceCoreService = {
 
   async createInvoice(db: PostgresJsDatabase, data: CreateInvoiceInput) {
     const [row] = await db.insert(invoices).values(data).returning()
+    await touchLinkedBookingUpdatedAt(db, row?.bookingId)
     return row
   },
   async getInvoiceById(db: PostgresJsDatabase, id: string) {
@@ -180,6 +182,14 @@ export const financeInvoiceCoreService = {
     data: UpdateInvoiceInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const readExistingBookingId = async (reader: PostgresJsDatabase) => {
+      const [existing] = await reader
+        .select({ bookingId: invoices.bookingId })
+        .from(invoices)
+        .where(eq(invoices.id, id))
+        .limit(1)
+      return existing?.bookingId ?? null
+    }
     const updateInvoiceRow = (writer: PostgresJsDatabase) =>
       writer
         .update(invoices)
@@ -191,9 +201,11 @@ export const financeInvoiceCoreService = {
       const actionLedgerContext = runtime.actionLedgerContext
       if (actionLedgerContext) {
         return await db.transaction(async (tx) => {
+          const previousBookingId = await readExistingBookingId(tx)
           const [row] = await updateInvoiceRow(tx)
 
           if (row) {
+            await touchInvoiceBookingLinks(tx, previousBookingId, row.bookingId)
             await appendActionLedgerMutation(
               tx,
               buildInvoiceUpdateActionLedgerInput(
@@ -208,7 +220,9 @@ export const financeInvoiceCoreService = {
         })
       }
 
+      const previousBookingId = await readExistingBookingId(db)
       const [row] = await updateInvoiceRow(db)
+      await touchInvoiceBookingLinks(db, previousBookingId, row?.bookingId)
       return row ?? null
     } catch (error) {
       if (data.invoiceNumber && isInvoiceNumberUniqueConstraintError(error)) {
@@ -233,6 +247,7 @@ export const financeInvoiceCoreService = {
         }
 
         await tx.delete(invoices).where(eq(invoices.id, id))
+        await touchLinkedBookingUpdatedAt(tx, existing.bookingId)
         await appendActionLedgerMutation(
           tx,
           buildInvoiceDeleteActionLedgerInput(
@@ -246,7 +261,7 @@ export const financeInvoiceCoreService = {
     }
 
     const [existing] = await db
-      .select({ id: invoices.id, status: invoices.status })
+      .select({ id: invoices.id, status: invoices.status, bookingId: invoices.bookingId })
       .from(invoices)
       .where(eq(invoices.id, id))
       .limit(1)
@@ -260,6 +275,7 @@ export const financeInvoiceCoreService = {
     }
 
     await db.delete(invoices).where(eq(invoices.id, id))
+    await touchLinkedBookingUpdatedAt(db, existing.bookingId)
     return { status: "deleted" as const }
   },
 
@@ -340,6 +356,8 @@ export const financeInvoiceCoreService = {
         return { status: "not_found" as const }
       }
 
+      await touchLinkedBookingUpdatedAt(tx, invoice.bookingId)
+
       const actionLedgerContext = runtime.actionLedgerContext
       if (actionLedgerContext) {
         await appendActionLedgerMutation(
@@ -405,4 +423,15 @@ export const financeInvoiceCoreService = {
 
     return result
   },
+}
+
+async function touchInvoiceBookingLinks(
+  db: PostgresJsDatabase,
+  previousBookingId: string | null | undefined,
+  nextBookingId: string | null | undefined,
+) {
+  await touchLinkedBookingUpdatedAt(db, nextBookingId)
+  if (previousBookingId && previousBookingId !== nextBookingId) {
+    await touchLinkedBookingUpdatedAt(db, previousBookingId)
+  }
 }

@@ -1123,6 +1123,13 @@ describe("financeService.applyExternalInvoiceAllocation", () => {
 describe("financeService.updateInvoice number writeback", () => {
   function makeUpdateInvoiceDb(updateError: unknown) {
     return {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(async () => [{ bookingId: "book_existing" }]),
+          })),
+        })),
+      })),
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({

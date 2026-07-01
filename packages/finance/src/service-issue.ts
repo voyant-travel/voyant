@@ -22,6 +22,7 @@ import {
   financeService,
   type InvoiceFromBookingData,
   InvoiceNumberConflictError,
+  touchLinkedBookingUpdatedAt,
 } from "./service.js"
 
 /**
@@ -173,6 +174,7 @@ export async function issueInvoiceFromBooking(
         const [row] = await updateIssuedInvoice(tx)
 
         if (row) {
+          await touchLinkedBookingUpdatedAt(tx, row.bookingId)
           await appendActionLedgerMutation(
             tx,
             await buildInvoiceIssuedActionLedgerInput(
@@ -188,6 +190,9 @@ export async function issueInvoiceFromBooking(
     : (await updateIssuedInvoice(db))[0]
 
   const row = issued ?? draft
+  if (!actionLedgerContext) {
+    await touchLinkedBookingUpdatedAt(db, row.bookingId)
+  }
   await emitIssued(db, runtime, ISSUED_EVENT, row, { skipExternalSync: input.skipExternalSync })
   return row
 }
@@ -221,6 +226,7 @@ export async function issueProformaFromBooking(
         const [row] = await updateIssuedInvoice(tx)
 
         if (row) {
+          await touchLinkedBookingUpdatedAt(tx, row.bookingId)
           await appendActionLedgerMutation(
             tx,
             await buildInvoiceIssuedActionLedgerInput(
@@ -236,6 +242,9 @@ export async function issueProformaFromBooking(
     : (await updateIssuedInvoice(db))[0]
 
   const row = issued ?? draft
+  if (!actionLedgerContext) {
+    await touchLinkedBookingUpdatedAt(db, row.bookingId)
+  }
   await emitIssued(db, runtime, PROFORMA_ISSUED_EVENT, row, {
     skipExternalSync: input.skipExternalSync,
   })
@@ -641,6 +650,8 @@ export async function convertProformaToInvoice(
           updatedAt: now,
         })
         .where(eq(invoices.id, lockedProforma.id))
+
+      await touchLinkedBookingUpdatedAt(tx, inserted.bookingId, now)
 
       return { status: "ok" as const, invoice: inserted, proforma: lockedProforma }
     })

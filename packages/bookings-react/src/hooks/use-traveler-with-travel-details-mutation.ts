@@ -59,8 +59,11 @@ export function useTravelerWithTravelDetailsMutation(bookingId: string) {
   const queryClient = useQueryClient()
 
   const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.booking(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.bookings() })
     void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.travelers(bookingId) })
     void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.activity(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.actionLedger(bookingId) })
   }
 
   const create = useMutation({
