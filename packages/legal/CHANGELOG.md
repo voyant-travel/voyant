@@ -1,5 +1,12 @@
 # @voyant-travel/legal
 
+## 0.137.7
+
+### Patch Changes
+
+- 5288b85: Prevent the seeded customer sales agreement traveler heading from rendering the missing-value placeholder when traveler counts are unknown.
+- cc29167: Require public document delivery grants for public contract read/sign routes and return signer-safe contract/signature payloads.
+
 ## 0.137.6
 
 ### Patch Changes
