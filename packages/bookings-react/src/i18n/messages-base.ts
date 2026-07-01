@@ -139,6 +139,7 @@ export type BookingsUiBaseMessages = {
     fields: {
       firstName: string
       lastName: string
+      travelerCategory: string
       email: string
       phone: string
       specialRequests: string
@@ -153,6 +154,7 @@ export type BookingsUiBaseMessages = {
       accessibilityNeeds: string
       linkedPerson: string
     }
+    travelerCategoryLabels: Record<"adult" | "child" | "infant" | "senior" | "other", string>
     documentTypeLabels: Record<"passport" | "id_card" | "driver_license" | "visa" | "other", string>
     placeholders: {
       firstName: string
@@ -189,6 +191,7 @@ export type BookingsUiBaseMessages = {
     values: {
       emailUnavailable: string
       phoneUnavailable: string
+      documentsHidden: string
       documentsUnavailable: string
       fieldUnavailable: string
       noAdditionalContext: string

@@ -535,6 +535,7 @@ export interface BookingTravelerSharingGroupSummary {
 }
 
 const travelerParticipantTypes = ["traveler", "occupant"] as const
+type TravelerParticipantType = (typeof travelerParticipantTypes)[number]
 const sharingGroupBookingStatuses = [
   "draft",
   "on_hold",
@@ -584,6 +585,10 @@ function toDateValueOrNull(value: Date | string | null) {
   return value instanceof Date ? value : new Date(value)
 }
 
+function isPaxParticipantType(value: string): value is TravelerParticipantType {
+  return travelerParticipantTypes.includes(value as TravelerParticipantType)
+}
+
 function toTravelerResponse(participant: typeof bookingTravelers.$inferSelect) {
   return {
     id: participant.id,
@@ -625,6 +630,56 @@ async function ensureParticipantFlags(
       .set({ isPrimary: false, updatedAt: new Date() })
       .where(and(eq(bookingTravelers.bookingId, bookingId), ne(bookingTravelers.id, travelerId)))
   }
+}
+
+async function recomputeBookingPaxFromTravelers(db: PostgresJsDatabase, bookingId: string) {
+  const [row] = await db
+    .select({ pax: sql<number>`count(*)::int` })
+    .from(bookingTravelers)
+    .where(
+      and(
+        eq(bookingTravelers.bookingId, bookingId),
+        inArray(bookingTravelers.participantType, [...travelerParticipantTypes]),
+      ),
+    )
+
+  const pax = row?.pax ?? 0
+  await db
+    .update(bookings)
+    .set({ pax: pax > 0 ? pax : null, updatedAt: new Date() })
+    .where(eq(bookings.id, bookingId))
+}
+
+async function assignTravelerToExistingBookingItems(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  traveler: Pick<typeof bookingTravelers.$inferSelect, "id" | "participantType" | "isPrimary">,
+) {
+  if (!isPaxParticipantType(traveler.participantType)) return
+
+  const items = await db
+    .select({ id: bookingItems.id })
+    .from(bookingItems)
+    .where(eq(bookingItems.bookingId, bookingId))
+
+  if (items.length === 0) return
+
+  const itemIds = items.map((item) => item.id)
+  if (traveler.isPrimary) {
+    await db
+      .update(bookingItemTravelers)
+      .set({ isPrimary: false })
+      .where(inArray(bookingItemTravelers.bookingItemId, itemIds))
+  }
+
+  await db.insert(bookingItemTravelers).values(
+    items.map((item) => ({
+      bookingItemId: item.id,
+      travelerId: traveler.id,
+      role: traveler.participantType,
+      isPrimary: traveler.isPrimary,
+    })),
+  )
 }
 
 async function ensureBookingScopedLinks(
@@ -4046,13 +4101,19 @@ export const bookingsService = {
       return null
     }
 
+    const participantType = data.participantType
+    const travelerCategory =
+      data.travelerCategory == null && isPaxParticipantType(participantType)
+        ? "adult"
+        : (data.travelerCategory ?? null)
+
     const [row] = await db
       .insert(bookingTravelers)
       .values({
         bookingId,
         personId: data.personId ?? null,
-        participantType: data.participantType,
-        travelerCategory: data.travelerCategory ?? null,
+        participantType,
+        travelerCategory,
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email ?? null,
@@ -4069,15 +4130,16 @@ export const bookingsService = {
     }
 
     await ensureParticipantFlags(db, bookingId, row.id, data)
+    await assignTravelerToExistingBookingItems(db, bookingId, row)
+    await recomputeBookingPaxFromTravelers(db, bookingId)
 
     await db.insert(bookingActivityLog).values({
       bookingId,
       actorId: userId ?? "system",
       activityType: "traveler_update",
       description: `Traveler ${data.firstName} ${data.lastName} added`,
-      metadata: { travelerId: row.id, participantType: data.participantType },
+      metadata: { travelerId: row.id, participantType },
     })
-    await touchBookingUpdatedAt(db, bookingId)
 
     return row
   },
@@ -4098,7 +4160,7 @@ export const bookingsService = {
     }
 
     await ensureParticipantFlags(db, row.bookingId, row.id, data)
-    await touchBookingUpdatedAt(db, row.bookingId)
+    await recomputeBookingPaxFromTravelers(db, row.bookingId)
 
     return row
   },
@@ -4219,9 +4281,7 @@ export const bookingsService = {
       .where(eq(bookingTravelers.id, travelerId))
       .returning({ id: bookingTravelers.id, bookingId: bookingTravelers.bookingId })
 
-    if (row) {
-      await touchBookingUpdatedAt(db, row.bookingId)
-    }
+    if (row) await recomputeBookingPaxFromTravelers(db, row.bookingId)
 
     return row ?? null
   },

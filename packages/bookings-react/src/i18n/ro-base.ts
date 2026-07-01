@@ -165,6 +165,7 @@ export const bookingsUiRoBase = {
     fields: {
       firstName: "Prenume",
       lastName: "Nume",
+      travelerCategory: "Categorie calator",
       email: "Email",
       phone: "Telefon",
       specialRequests: "Cerinte speciale",
@@ -178,6 +179,13 @@ export const bookingsUiRoBase = {
       dietaryRequirements: "Cerinte alimentare",
       accessibilityNeeds: "Cerinte de accesibilitate",
       linkedPerson: "Contact CRM asociat",
+    },
+    travelerCategoryLabels: {
+      adult: "Adult",
+      child: "Copil",
+      infant: "Infant",
+      senior: "Senior",
+      other: "Altul",
     },
     documentTypeLabels: {
       passport: "Pasaport",
@@ -221,6 +229,7 @@ export const bookingsUiRoBase = {
     values: {
       emailUnavailable: "-",
       phoneUnavailable: "-",
+      documentsHidden: "Afiseaza detalii",
       documentsUnavailable: "-",
       fieldUnavailable: "-",
       noAdditionalContext: "Nu exista context suplimentar pentru calator",

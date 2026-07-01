@@ -166,6 +166,7 @@ export const bookingsUiEnBase = {
     fields: {
       firstName: "First name",
       lastName: "Last name",
+      travelerCategory: "Traveler category",
       email: "Email",
       phone: "Phone",
       specialRequests: "Special requests",
@@ -179,6 +180,13 @@ export const bookingsUiEnBase = {
       dietaryRequirements: "Dietary requirements",
       accessibilityNeeds: "Accessibility needs",
       linkedPerson: "Linked CRM contact",
+    },
+    travelerCategoryLabels: {
+      adult: "Adult",
+      child: "Child",
+      infant: "Infant",
+      senior: "Senior",
+      other: "Other",
     },
     documentTypeLabels: {
       passport: "Passport",
@@ -222,6 +230,7 @@ export const bookingsUiEnBase = {
     values: {
       emailUnavailable: "-",
       phoneUnavailable: "-",
+      documentsHidden: "Reveal details",
       documentsUnavailable: "-",
       fieldUnavailable: "-",
       noAdditionalContext: "No additional traveler context",
