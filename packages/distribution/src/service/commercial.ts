@@ -1,6 +1,8 @@
+import type { EventBus } from "@voyant-travel/core"
 import { and, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { classifyMappingUpdate, emitProductPublicationChanged } from "../events.js"
 import {
   channelBookingLinks,
   channelCommissionRules,
@@ -163,8 +165,24 @@ export const commercialServiceOperations = {
     return row ?? null
   },
 
-  async createProductMapping(db: PostgresJsDatabase, data: CreateChannelProductMappingInput) {
+  async createProductMapping(
+    db: PostgresJsDatabase,
+    data: CreateChannelProductMappingInput,
+    eventBus?: EventBus,
+  ) {
     const [row] = await db.insert(channelProductMappings).values(data).returning()
+    if (row) {
+      // Adding a mapping can make the product pass storefront listability —
+      // signal so catalog integrations reindex its customer-facing slices.
+      await emitProductPublicationChanged(eventBus, db, {
+        productId: row.productId,
+        channelId: row.channelId,
+        mappingId: row.id,
+        previousActive: null,
+        nextActive: row.active,
+        operation: "created",
+      })
+    }
     return row
   },
 
@@ -172,20 +190,90 @@ export const commercialServiceOperations = {
     db: PostgresJsDatabase,
     id: string,
     data: UpdateChannelProductMappingInput,
+    eventBus?: EventBus,
   ) {
+    // Read the prior `active` flag (to classify activate/deactivate vs a plain
+    // edit) plus the prior product/channel — an update can REASSIGN the mapping
+    // to a different product (the update schema is a partial of the mapping
+    // schema, so `productId`/`channelId` are editable). Only needed with a bus.
+    const previous = eventBus
+      ? (
+          await db
+            .select({
+              active: channelProductMappings.active,
+              productId: channelProductMappings.productId,
+              channelId: channelProductMappings.channelId,
+            })
+            .from(channelProductMappings)
+            .where(eq(channelProductMappings.id, id))
+            .limit(1)
+        )[0]
+      : undefined
     const [row] = await db
       .update(channelProductMappings)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(channelProductMappings.id, id))
       .returning()
+    if (row && previous) {
+      await emitProductPublicationChanged(eventBus, db, {
+        productId: row.productId,
+        channelId: row.channelId,
+        mappingId: row.id,
+        previousActive: previous.active,
+        nextActive: row.active,
+        operation: classifyMappingUpdate(previous.active, row.active),
+      })
+      // Reassigning the mapping to a different product (or channel) removes it
+      // from the previous (product, channel) — that product may now be
+      // unpublished, so it needs its own event or its catalog doc stays stale
+      // (voyant#2636 review). The subscriber re-derives listability from DB, so
+      // this is a removal trigger from the old product's perspective.
+      if (previous.productId !== row.productId || previous.channelId !== row.channelId) {
+        await emitProductPublicationChanged(eventBus, db, {
+          productId: previous.productId,
+          channelId: previous.channelId,
+          mappingId: row.id,
+          previousActive: previous.active,
+          nextActive: null,
+          operation: "deleted",
+        })
+      }
+    }
     return row ?? null
   },
 
-  async deleteProductMapping(db: PostgresJsDatabase, id: string) {
+  async deleteProductMapping(db: PostgresJsDatabase, id: string, eventBus?: EventBus) {
+    // Capture the row before deleting so the tombstone event carries the
+    // product/channel it affected (the delete only returns the id).
+    const previous = eventBus
+      ? (
+          await db
+            .select({
+              productId: channelProductMappings.productId,
+              channelId: channelProductMappings.channelId,
+              active: channelProductMappings.active,
+            })
+            .from(channelProductMappings)
+            .where(eq(channelProductMappings.id, id))
+            .limit(1)
+        )[0]
+      : undefined
     const [row] = await db
       .delete(channelProductMappings)
       .where(eq(channelProductMappings.id, id))
       .returning({ id: channelProductMappings.id })
+    if (row && previous) {
+      // Removing a mapping can drop the product below storefront listability —
+      // signal so catalog integrations tombstone / reindex the slice.
+      await emitProductPublicationChanged(eventBus, db, {
+        productId: previous.productId,
+        channelId: previous.channelId,
+        mappingId: row.id,
+        previousActive: previous.active,
+        nextActive: null,
+        operation: "deleted",
+      })
+    }
     return row ?? null
   },
 

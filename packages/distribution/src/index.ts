@@ -17,6 +17,13 @@ export const distributionHonoModule: HonoModule = {
 
 export * from "./booking-extension.js"
 export * from "./channel-push/index.js"
+export {
+  classifyMappingUpdate,
+  emitProductPublicationChanged,
+  PRODUCT_PUBLICATION_CHANGED_EVENT,
+  type ProductPublicationChangedEvent,
+  type ProductPublicationOperation,
+} from "./events.js"
 export * from "./external-refs/index.js"
 export type {
   DistributionCounterpartyEntityType,
