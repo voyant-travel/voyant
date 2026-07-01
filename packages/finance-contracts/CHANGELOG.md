@@ -1,5 +1,13 @@
 # @voyant-travel/finance-contracts
 
+## 0.105.8
+
+### Patch Changes
+
+- 3fc4487: Reject invalid booking-item finance subresource states: negative tax-line amounts, incomplete commission value bases, paid commissions without paid metadata, and deletion of active booking guarantees.
+- aa0135c: Reject zero-value payment authorization and payment capture requests in payment-processing validation.
+- 51003c6: Expose booking voucher redemptions in booking-scoped payment reads as voucher payment rows.
+
 ## 0.105.7
 
 ### Patch Changes

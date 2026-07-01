@@ -1,5 +1,19 @@
 # @voyant-travel/finance-react
 
+## 0.138.3
+
+### Patch Changes
+
+- c081c71: Keep booking activity and metadata current for note, document, supplier, invoice, and payment child mutations.
+- Updated dependencies [c081c71]
+- Updated dependencies [bd00f36]
+- Updated dependencies [3fc4487]
+- Updated dependencies [aa0135c]
+- Updated dependencies [51003c6]
+  - @voyant-travel/bookings-react@0.138.3
+  - @voyant-travel/finance@0.138.3
+  - @voyant-travel/i18n@0.109.7
+
 ## 0.138.2
 
 ### Patch Changes

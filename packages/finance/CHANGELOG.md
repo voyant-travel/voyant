@@ -1,5 +1,20 @@
 # @voyant-travel/finance
 
+## 0.138.3
+
+### Patch Changes
+
+- c081c71: Keep booking activity and metadata current for note, document, supplier, invoice, and payment child mutations.
+- 3fc4487: Reject invalid booking-item finance subresource states: negative tax-line amounts, incomplete commission value bases, paid commissions without paid metadata, and deletion of active booking guarantees.
+- aa0135c: Reject zero-value payment authorization and payment capture requests in payment-processing validation.
+- 51003c6: Expose booking voucher redemptions in booking-scoped payment reads as voucher payment rows.
+- Updated dependencies [c081c71]
+- Updated dependencies [3fc4487]
+- Updated dependencies [aa0135c]
+- Updated dependencies [51003c6]
+  - @voyant-travel/bookings@0.138.3
+  - @voyant-travel/finance-contracts@0.105.8
+
 ## 0.138.2
 
 ### Patch Changes
