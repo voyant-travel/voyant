@@ -56,6 +56,32 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
       expect(body.data.id).toBeTruthy()
     })
 
+    it("rejects a duplicate (entityType, key) with a 409 field error", async () => {
+      const first = await app.request("/custom-fields", { method: "POST", ...json(validDef) })
+      expect(first.status).toBe(201)
+
+      const res = await app.request("/custom-fields", {
+        method: "POST",
+        ...json({ ...validDef, label: "Industry Code (dup)" }),
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.code).toBe("duplicate_custom_field_key")
+      expect(body.error).toBe("Custom field key already exists for this entity type")
+      expect(body.details.resource).toBe("custom_field_definition")
+      expect(body.details.fields).toEqual({
+        key: ["Custom field key already exists for this entity type"],
+      })
+      expect(body.details.issues).toEqual([
+        {
+          code: "duplicate_custom_field_key",
+          path: ["key"],
+          message: "Custom field key already exists for this entity type",
+        },
+      ])
+    })
+
     it("lists definitions filtered by entityType", async () => {
       await app.request("/custom-fields", {
         method: "POST",

@@ -19,6 +19,7 @@ import {
   type TypedValueColumns,
   typedFromJsonbValue,
 } from "./custom-fields-value-mapping.js"
+import { duplicateRelationshipsValueError } from "./duplicate-errors.js"
 import { paginate } from "./helpers.js"
 
 type CustomFieldDefinitionListQuery = z.infer<typeof customFieldDefinitionListQuerySchema>
@@ -59,7 +60,23 @@ export const customFieldsService = {
     db: PostgresJsDatabase,
     data: CreateCustomFieldDefinitionInput,
   ) {
-    const [row] = await db.insert(customFieldDefinitions).values(data).returning()
+    const [row] = await db
+      .insert(customFieldDefinitions)
+      .values(data)
+      .onConflictDoNothing({
+        target: [customFieldDefinitions.entityType, customFieldDefinitions.key],
+      })
+      .returning()
+
+    if (!row) {
+      throw duplicateRelationshipsValueError({
+        code: "duplicate_custom_field_key",
+        message: "Custom field key already exists for this entity type",
+        resource: "custom_field_definition",
+        fields: [["key"]],
+      })
+    }
+
     return row
   },
 
