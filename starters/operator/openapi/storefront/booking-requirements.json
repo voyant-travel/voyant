@@ -1,0 +1,229 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {},
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/public/booking-requirements/products/{productId}/transport-requirements": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "productId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public transport requirements for a product",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "hasTransport": {
+                          "type": "boolean"
+                        },
+                        "requiresPassengerDocuments": {
+                          "type": "boolean"
+                        },
+                        "requiresPassport": {
+                          "type": "boolean"
+                        },
+                        "requiresNationality": {
+                          "type": "boolean"
+                        },
+                        "requiresDateOfBirth": {
+                          "type": "boolean"
+                        },
+                        "requiredFields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "date_of_birth",
+                              "nationality",
+                              "passport_number",
+                              "passport_expiry"
+                            ]
+                          }
+                        },
+                        "fieldsByScope": {
+                          "type": "object",
+                          "properties": {
+                            "booking": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "date_of_birth",
+                                  "nationality",
+                                  "passport_number",
+                                  "passport_expiry"
+                                ]
+                              }
+                            },
+                            "lead_traveler": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "date_of_birth",
+                                  "nationality",
+                                  "passport_number",
+                                  "passport_expiry"
+                                ]
+                              }
+                            },
+                            "traveler": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "date_of_birth",
+                                  "nationality",
+                                  "passport_number",
+                                  "passport_expiry"
+                                ]
+                              }
+                            },
+                            "booker": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "date_of_birth",
+                                  "nationality",
+                                  "passport_number",
+                                  "passport_expiry"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "booking",
+                            "lead_traveler",
+                            "traveler",
+                            "booker"
+                          ]
+                        },
+                        "requirements": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "fieldKey": {
+                                "type": "string",
+                                "enum": [
+                                  "date_of_birth",
+                                  "nationality",
+                                  "passport_number",
+                                  "passport_expiry"
+                                ]
+                              },
+                              "scope": {
+                                "type": "string",
+                                "enum": [
+                                  "booking",
+                                  "lead_traveler",
+                                  "traveler",
+                                  "booker"
+                                ]
+                              },
+                              "isRequired": {
+                                "type": "boolean"
+                              },
+                              "perTraveler": {
+                                "type": "boolean"
+                              },
+                              "notes": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "fieldKey",
+                              "scope",
+                              "isRequired",
+                              "perTraveler",
+                              "notes"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "productId",
+                        "optionId",
+                        "hasTransport",
+                        "requiresPassengerDocuments",
+                        "requiresPassport",
+                        "requiresNationality",
+                        "requiresDateOfBirth",
+                        "requiredFields",
+                        "fieldsByScope",
+                        "requirements"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

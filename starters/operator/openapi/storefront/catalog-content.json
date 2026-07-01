@@ -1,0 +1,509 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {},
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/public/products/{id}/content": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resolved product content with locale + freshness metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "object",
+                          "properties": {
+                            "product": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "inclusions_html": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "exclusions_html": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "terms_html": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "contract_template_id": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "contractTemplateId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "highlights": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "hero_image_url": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "duration_days": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "minimum": 0
+                                },
+                                "start_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "end_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "sell_currency": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "supplier": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "country": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "departure_city": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "tags": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name"
+                              ]
+                            },
+                            "options": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "board_basis": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "enum": [
+                                      "room_only",
+                                      "bed_breakfast",
+                                      "half_board",
+                                      "full_board",
+                                      "all_inclusive"
+                                    ]
+                                  },
+                                  "units": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "label": {
+                                          "type": "string"
+                                        },
+                                        "description": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "capacity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "type"
+                                      ]
+                                    },
+                                    "default": []
+                                  },
+                                  "inclusions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "default": []
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ]
+                              },
+                              "default": []
+                            },
+                            "days": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "day_number": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0
+                                  },
+                                  "title": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "description": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "location": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "hero_image_url": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "services": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "default": []
+                                  }
+                                },
+                                "required": [
+                                  "day_number"
+                                ]
+                              },
+                              "default": []
+                            },
+                            "media": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string"
+                                  },
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "image",
+                                      "video",
+                                      "document"
+                                    ],
+                                    "default": "image"
+                                  },
+                                  "caption": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "alt": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "url"
+                                ]
+                              },
+                              "default": []
+                            },
+                            "policies": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "cancellation",
+                                      "payment",
+                                      "supplier_notes",
+                                      "requirements"
+                                    ]
+                                  },
+                                  "body": {
+                                    "type": "string"
+                                  },
+                                  "rules": {}
+                                },
+                                "required": [
+                                  "kind",
+                                  "body"
+                                ]
+                              },
+                              "default": []
+                            },
+                            "departures": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "starts_at": {
+                                    "type": "string"
+                                  },
+                                  "ends_at": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "capacity": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0
+                                  },
+                                  "remaining": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0
+                                  },
+                                  "lowest_price_cents": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0
+                                  },
+                                  "currency": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "note": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "starts_at"
+                                ]
+                              },
+                              "default": []
+                            }
+                          },
+                          "required": [
+                            "product"
+                          ]
+                        },
+                        "provenance": {
+                          "type": "object",
+                          "properties": {
+                            "source_kind": {
+                              "type": "string"
+                            },
+                            "source_provider": {
+                              "type": "string"
+                            },
+                            "source_connection_id": {
+                              "type": "string"
+                            },
+                            "source_ref": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_kind"
+                          ]
+                        },
+                        "served_locale": {
+                          "type": "string"
+                        },
+                        "match_kind": {
+                          "type": "string",
+                          "enum": [
+                            "exact",
+                            "language_match",
+                            "fallback_chain",
+                            "any"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "sourced-cache",
+                            "sourced-fresh",
+                            "synthesized",
+                            "owned"
+                          ]
+                        },
+                        "served_stale": {
+                          "type": "boolean"
+                        },
+                        "synthesized": {
+                          "type": "boolean"
+                        },
+                        "machine_translated": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "content",
+                        "provenance",
+                        "served_locale",
+                        "match_kind",
+                        "source",
+                        "served_stale",
+                        "synthesized",
+                        "machine_translated"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found (no owned row + no sourced-entry row)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "detail"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

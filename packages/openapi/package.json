@@ -12,7 +12,9 @@
   "exports": {
     ".": "./spec/framework-openapi.json",
     "./admin": "./spec/framework-admin.json",
-    "./storefront": "./spec/framework-storefront.json"
+    "./storefront": "./spec/framework-storefront.json",
+    "./admin/*": "./spec/admin/*.json",
+    "./storefront/*": "./spec/storefront/*.json"
   },
   "files": [
     "spec"
@@ -21,7 +23,8 @@
     "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.typecheck.json",
     "lint": "biome check src/",
     "test": "vitest run",
-    "generate": "UPDATE_OPENAPI=1 vitest run"
+    "generate": "UPDATE_OPENAPI=1 vitest run",
+    "prepack": "UPDATE_OPENAPI=1 vitest run"
   },
   "publishConfig": {
     "access": "public"

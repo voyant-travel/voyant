@@ -1,0 +1,4702 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {},
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/admin/sellability/resolve": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "optionId": {
+                    "type": "string"
+                  },
+                  "slotId": {
+                    "type": "string"
+                  },
+                  "dateLocal": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startTimeId": {
+                    "type": "string"
+                  },
+                  "marketId": {
+                    "type": "string"
+                  },
+                  "channelId": {
+                    "type": "string"
+                  },
+                  "pickupPointId": {
+                    "type": "string"
+                  },
+                  "currencyCode": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "requestedUnits": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "requestRef": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "unitId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "pricingCategoryId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "quantity"
+                      ]
+                    },
+                    "default": []
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 25
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolved sellability candidates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "total"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/resolve-and-persist": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "object",
+                    "properties": {
+                      "productId": {
+                        "type": "string"
+                      },
+                      "optionId": {
+                        "type": "string"
+                      },
+                      "slotId": {
+                        "type": "string"
+                      },
+                      "dateLocal": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "startTimeId": {
+                        "type": "string"
+                      },
+                      "marketId": {
+                        "type": "string"
+                      },
+                      "channelId": {
+                        "type": "string"
+                      },
+                      "pickupPointId": {
+                        "type": "string"
+                      },
+                      "currencyCode": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
+                      },
+                      "requestedUnits": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "requestRef": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "unitId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "pricingCategoryId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "minimum": 1
+                            }
+                          },
+                          "required": [
+                            "quantity"
+                          ]
+                        },
+                        "default": []
+                      },
+                      "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 25
+                      }
+                    }
+                  },
+                  "expiresAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resolved candidates plus the persisted snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "snapshot": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "channelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "productId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "slotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "requestedCurrencyCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sourceCurrencyCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "fxRateSetId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "resolved",
+                            "offer_constructed",
+                            "expired"
+                          ]
+                        },
+                        "queryPayload": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "pricingSummary": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "expiresAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "marketId",
+                        "channelId",
+                        "productId",
+                        "optionId",
+                        "slotId",
+                        "requestedCurrencyCode",
+                        "sourceCurrencyCode",
+                        "fxRateSetId",
+                        "status",
+                        "queryPayload",
+                        "pricingSummary",
+                        "expiresAt",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    },
+                    "resolved": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {}
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "total"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data",
+                        "meta"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "snapshot",
+                    "resolved"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/snapshots": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offerId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "marketId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "channelId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "slotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "resolved",
+                "offer_constructed",
+                "expired"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of sellability snapshots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "offerId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "marketId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "channelId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "productId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "slotId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "requestedCurrencyCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "sourceCurrencyCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "fxRateSetId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "resolved",
+                              "offer_constructed",
+                              "expired"
+                            ]
+                          },
+                          "queryPayload": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          },
+                          "pricingSummary": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          },
+                          "expiresAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "offerId",
+                          "marketId",
+                          "channelId",
+                          "productId",
+                          "optionId",
+                          "slotId",
+                          "requestedCurrencyCode",
+                          "sourceCurrencyCode",
+                          "fxRateSetId",
+                          "status",
+                          "queryPayload",
+                          "pricingSummary",
+                          "expiresAt",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/snapshots/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A sellability snapshot by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "channelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "productId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "slotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "requestedCurrencyCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sourceCurrencyCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "fxRateSetId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "resolved",
+                            "offer_constructed",
+                            "expired"
+                          ]
+                        },
+                        "queryPayload": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "pricingSummary": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "expiresAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "marketId",
+                        "channelId",
+                        "productId",
+                        "optionId",
+                        "slotId",
+                        "requestedCurrencyCode",
+                        "sourceCurrencyCode",
+                        "fxRateSetId",
+                        "status",
+                        "queryPayload",
+                        "pricingSummary",
+                        "expiresAt",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability snapshot not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/snapshot-items": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "snapshotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "slotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "unitId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of sellability snapshot items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "snapshotId": {
+                            "type": "string"
+                          },
+                          "candidateIndex": {
+                            "type": "number"
+                          },
+                          "componentIndex": {
+                            "type": "number"
+                          },
+                          "productId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "slotId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "unitId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "requestRef": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "componentKind": {
+                            "type": "string",
+                            "enum": [
+                              "base",
+                              "unit",
+                              "pickup",
+                              "start_time_adjustment"
+                            ]
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "type": "number"
+                          },
+                          "pricingMode": {
+                            "type": "string"
+                          },
+                          "pricingCategoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pricingCategoryName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "unitName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "unitType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currencyCode": {
+                            "type": "string"
+                          },
+                          "sellAmountCents": {
+                            "type": "number"
+                          },
+                          "costAmountCents": {
+                            "type": "number"
+                          },
+                          "sourceRuleId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "tierId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "isSelected": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "snapshotId",
+                          "candidateIndex",
+                          "componentIndex",
+                          "productId",
+                          "optionId",
+                          "slotId",
+                          "unitId",
+                          "requestRef",
+                          "componentKind",
+                          "title",
+                          "quantity",
+                          "pricingMode",
+                          "pricingCategoryId",
+                          "pricingCategoryName",
+                          "unitName",
+                          "unitType",
+                          "currencyCode",
+                          "sellAmountCents",
+                          "costAmountCents",
+                          "sourceRuleId",
+                          "tierId",
+                          "isSelected",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/policies": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "global",
+                "product",
+                "option",
+                "market",
+                "channel"
+              ]
+            },
+            "required": false,
+            "name": "scope",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "capability",
+                "occupancy",
+                "pickup",
+                "question",
+                "allotment",
+                "availability_window",
+                "currency",
+                "custom"
+              ]
+            },
+            "required": false,
+            "name": "policyType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "marketId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "channelId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of sellability policies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "global",
+                              "product",
+                              "option",
+                              "market",
+                              "channel"
+                            ]
+                          },
+                          "policyType": {
+                            "type": "string",
+                            "enum": [
+                              "capability",
+                              "occupancy",
+                              "pickup",
+                              "question",
+                              "allotment",
+                              "availability_window",
+                              "currency",
+                              "custom"
+                            ]
+                          },
+                          "productId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "marketId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "channelId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "priority": {
+                            "type": "number"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "conditions": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          },
+                          "effects": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "scope",
+                          "policyType",
+                          "productId",
+                          "optionId",
+                          "marketId",
+                          "channelId",
+                          "priority",
+                          "active",
+                          "conditions",
+                          "effects",
+                          "notes",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "global",
+                      "product",
+                      "option",
+                      "market",
+                      "channel"
+                    ],
+                    "default": "global"
+                  },
+                  "policyType": {
+                    "type": "string",
+                    "enum": [
+                      "capability",
+                      "occupancy",
+                      "pickup",
+                      "question",
+                      "allotment",
+                      "availability_window",
+                      "currency",
+                      "custom"
+                    ],
+                    "default": "custom"
+                  },
+                  "productId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "marketId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "channelId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "conditions": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "default": {}
+                  },
+                  "effects": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "default": {}
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created sellability policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "global",
+                            "product",
+                            "option",
+                            "market",
+                            "channel"
+                          ]
+                        },
+                        "policyType": {
+                          "type": "string",
+                          "enum": [
+                            "capability",
+                            "occupancy",
+                            "pickup",
+                            "question",
+                            "allotment",
+                            "availability_window",
+                            "currency",
+                            "custom"
+                          ]
+                        },
+                        "productId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "channelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "priority": {
+                          "type": "number"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "conditions": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "effects": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "scope",
+                        "policyType",
+                        "productId",
+                        "optionId",
+                        "marketId",
+                        "channelId",
+                        "priority",
+                        "active",
+                        "conditions",
+                        "effects",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/policies/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A sellability policy by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "global",
+                            "product",
+                            "option",
+                            "market",
+                            "channel"
+                          ]
+                        },
+                        "policyType": {
+                          "type": "string",
+                          "enum": [
+                            "capability",
+                            "occupancy",
+                            "pickup",
+                            "question",
+                            "allotment",
+                            "availability_window",
+                            "currency",
+                            "custom"
+                          ]
+                        },
+                        "productId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "channelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "priority": {
+                          "type": "number"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "conditions": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "effects": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "scope",
+                        "policyType",
+                        "productId",
+                        "optionId",
+                        "marketId",
+                        "channelId",
+                        "priority",
+                        "active",
+                        "conditions",
+                        "effects",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability policy not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "global",
+                      "product",
+                      "option",
+                      "market",
+                      "channel"
+                    ],
+                    "default": "global"
+                  },
+                  "policyType": {
+                    "type": "string",
+                    "enum": [
+                      "capability",
+                      "occupancy",
+                      "pickup",
+                      "question",
+                      "allotment",
+                      "availability_window",
+                      "currency",
+                      "custom"
+                    ],
+                    "default": "custom"
+                  },
+                  "productId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "marketId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "channelId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "conditions": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "default": {}
+                  },
+                  "effects": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "default": {}
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated sellability policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "global",
+                            "product",
+                            "option",
+                            "market",
+                            "channel"
+                          ]
+                        },
+                        "policyType": {
+                          "type": "string",
+                          "enum": [
+                            "capability",
+                            "occupancy",
+                            "pickup",
+                            "question",
+                            "allotment",
+                            "availability_window",
+                            "currency",
+                            "custom"
+                          ]
+                        },
+                        "productId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "channelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "priority": {
+                          "type": "number"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "conditions": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "effects": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "scope",
+                        "policyType",
+                        "productId",
+                        "optionId",
+                        "marketId",
+                        "channelId",
+                        "priority",
+                        "active",
+                        "conditions",
+                        "effects",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability policy not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sellability policy deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability policy not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/policy-results": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "snapshotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "snapshotItemId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "policyId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "passed",
+                "blocked",
+                "warning",
+                "adjusted"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of sellability policy results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "snapshotId": {
+                            "type": "string"
+                          },
+                          "snapshotItemId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "policyId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "candidateIndex": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "passed",
+                              "blocked",
+                              "warning",
+                              "adjusted"
+                            ]
+                          },
+                          "message": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "details": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "snapshotId",
+                          "snapshotItemId",
+                          "policyId",
+                          "candidateIndex",
+                          "status",
+                          "message",
+                          "details",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "snapshotId": {
+                    "type": "string"
+                  },
+                  "snapshotItemId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "policyId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "candidateIndex": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "passed",
+                      "blocked",
+                      "warning",
+                      "adjusted"
+                    ],
+                    "default": "passed"
+                  },
+                  "message": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "details": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "snapshotId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created sellability policy result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": "string"
+                        },
+                        "snapshotItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "policyId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "candidateIndex": {
+                          "type": "number"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "passed",
+                            "blocked",
+                            "warning",
+                            "adjusted"
+                          ]
+                        },
+                        "message": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "details": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "snapshotId",
+                        "snapshotItemId",
+                        "policyId",
+                        "candidateIndex",
+                        "status",
+                        "message",
+                        "details",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/policy-results/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A sellability policy result by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": "string"
+                        },
+                        "snapshotItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "policyId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "candidateIndex": {
+                          "type": "number"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "passed",
+                            "blocked",
+                            "warning",
+                            "adjusted"
+                          ]
+                        },
+                        "message": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "details": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "snapshotId",
+                        "snapshotItemId",
+                        "policyId",
+                        "candidateIndex",
+                        "status",
+                        "message",
+                        "details",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability policy result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "snapshotId": {
+                    "type": "string"
+                  },
+                  "snapshotItemId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "policyId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "candidateIndex": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "passed",
+                      "blocked",
+                      "warning",
+                      "adjusted"
+                    ],
+                    "default": "passed"
+                  },
+                  "message": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "details": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated sellability policy result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": "string"
+                        },
+                        "snapshotItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "policyId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "candidateIndex": {
+                          "type": "number"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "passed",
+                            "blocked",
+                            "warning",
+                            "adjusted"
+                          ]
+                        },
+                        "message": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "details": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "snapshotId",
+                        "snapshotItemId",
+                        "policyId",
+                        "candidateIndex",
+                        "status",
+                        "message",
+                        "details",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability policy result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sellability policy result deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability policy result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/offer-refresh-runs": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offerId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "snapshotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "completed",
+                "failed",
+                "expired"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of offer refresh runs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "offerId": {
+                            "type": "string"
+                          },
+                          "snapshotId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "running",
+                              "completed",
+                              "failed",
+                              "expired"
+                            ]
+                          },
+                          "startedAt": {
+                            "type": "string"
+                          },
+                          "completedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "offerId",
+                          "snapshotId",
+                          "status",
+                          "startedAt",
+                          "completedAt",
+                          "notes",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "offerId": {
+                    "type": "string"
+                  },
+                  "snapshotId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "running",
+                      "completed",
+                      "failed",
+                      "expired"
+                    ],
+                    "default": "pending"
+                  },
+                  "startedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "completedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "offerId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created offer refresh run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "running",
+                            "completed",
+                            "failed",
+                            "expired"
+                          ]
+                        },
+                        "startedAt": {
+                          "type": "string"
+                        },
+                        "completedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "snapshotId",
+                        "status",
+                        "startedAt",
+                        "completedAt",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/offer-refresh-runs/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An offer refresh run by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "running",
+                            "completed",
+                            "failed",
+                            "expired"
+                          ]
+                        },
+                        "startedAt": {
+                          "type": "string"
+                        },
+                        "completedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "snapshotId",
+                        "status",
+                        "startedAt",
+                        "completedAt",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer refresh run not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "offerId": {
+                    "type": "string"
+                  },
+                  "snapshotId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "running",
+                      "completed",
+                      "failed",
+                      "expired"
+                    ],
+                    "default": "pending"
+                  },
+                  "startedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "completedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated offer refresh run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "running",
+                            "completed",
+                            "failed",
+                            "expired"
+                          ]
+                        },
+                        "startedAt": {
+                          "type": "string"
+                        },
+                        "completedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "snapshotId",
+                        "status",
+                        "startedAt",
+                        "completedAt",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer refresh run not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Offer refresh run deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer refresh run not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/offer-expiration-events": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offerId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "snapshotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "expired",
+                "cancelled",
+                "superseded"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of offer expiration events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "offerId": {
+                            "type": "string"
+                          },
+                          "snapshotId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "expiresAt": {
+                            "type": "string"
+                          },
+                          "expiredAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "scheduled",
+                              "expired",
+                              "cancelled",
+                              "superseded"
+                            ]
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "offerId",
+                          "snapshotId",
+                          "expiresAt",
+                          "expiredAt",
+                          "status",
+                          "reason",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "offerId": {
+                    "type": "string"
+                  },
+                  "snapshotId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "expiredAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "scheduled",
+                      "expired",
+                      "cancelled",
+                      "superseded"
+                    ],
+                    "default": "scheduled"
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "offerId",
+                  "expiresAt"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created offer expiration event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiresAt": {
+                          "type": "string"
+                        },
+                        "expiredAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "scheduled",
+                            "expired",
+                            "cancelled",
+                            "superseded"
+                          ]
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "snapshotId",
+                        "expiresAt",
+                        "expiredAt",
+                        "status",
+                        "reason",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/offer-expiration-events/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An offer expiration event by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiresAt": {
+                          "type": "string"
+                        },
+                        "expiredAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "scheduled",
+                            "expired",
+                            "cancelled",
+                            "superseded"
+                          ]
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "snapshotId",
+                        "expiresAt",
+                        "expiredAt",
+                        "status",
+                        "reason",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer expiration event not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "offerId": {
+                    "type": "string"
+                  },
+                  "snapshotId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "expiredAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "scheduled",
+                      "expired",
+                      "cancelled",
+                      "superseded"
+                    ],
+                    "default": "scheduled"
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated offer expiration event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "offerId": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiresAt": {
+                          "type": "string"
+                        },
+                        "expiredAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "scheduled",
+                            "expired",
+                            "cancelled",
+                            "superseded"
+                          ]
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "offerId",
+                        "snapshotId",
+                        "expiresAt",
+                        "expiredAt",
+                        "status",
+                        "reason",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer expiration event not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Offer expiration event deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer expiration event not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/explanations": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "snapshotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "snapshotItemId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sellable",
+                "blocked",
+                "warning",
+                "pricing",
+                "allotment",
+                "pickup",
+                "policy"
+              ]
+            },
+            "required": false,
+            "name": "explanationType",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of sellability explanations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "snapshotId": {
+                            "type": "string"
+                          },
+                          "snapshotItemId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "candidateIndex": {
+                            "type": "number"
+                          },
+                          "explanationType": {
+                            "type": "string",
+                            "enum": [
+                              "sellable",
+                              "blocked",
+                              "warning",
+                              "pricing",
+                              "allotment",
+                              "pickup",
+                              "policy"
+                            ]
+                          },
+                          "code": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "snapshotId",
+                          "snapshotItemId",
+                          "candidateIndex",
+                          "explanationType",
+                          "code",
+                          "message",
+                          "details",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "snapshotId": {
+                    "type": "string"
+                  },
+                  "snapshotItemId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "candidateIndex": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                  },
+                  "explanationType": {
+                    "type": "string",
+                    "enum": [
+                      "sellable",
+                      "blocked",
+                      "warning",
+                      "pricing",
+                      "allotment",
+                      "pickup",
+                      "policy"
+                    ],
+                    "default": "policy"
+                  },
+                  "code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "details": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "snapshotId",
+                  "message"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created sellability explanation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": "string"
+                        },
+                        "snapshotItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "candidateIndex": {
+                          "type": "number"
+                        },
+                        "explanationType": {
+                          "type": "string",
+                          "enum": [
+                            "sellable",
+                            "blocked",
+                            "warning",
+                            "pricing",
+                            "allotment",
+                            "pickup",
+                            "policy"
+                          ]
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "snapshotId",
+                        "snapshotItemId",
+                        "candidateIndex",
+                        "explanationType",
+                        "code",
+                        "message",
+                        "details",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/sellability/explanations/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A sellability explanation by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": "string"
+                        },
+                        "snapshotItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "candidateIndex": {
+                          "type": "number"
+                        },
+                        "explanationType": {
+                          "type": "string",
+                          "enum": [
+                            "sellable",
+                            "blocked",
+                            "warning",
+                            "pricing",
+                            "allotment",
+                            "pickup",
+                            "policy"
+                          ]
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "snapshotId",
+                        "snapshotItemId",
+                        "candidateIndex",
+                        "explanationType",
+                        "code",
+                        "message",
+                        "details",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability explanation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "snapshotId": {
+                    "type": "string"
+                  },
+                  "snapshotItemId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "candidateIndex": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                  },
+                  "explanationType": {
+                    "type": "string",
+                    "enum": [
+                      "sellable",
+                      "blocked",
+                      "warning",
+                      "pricing",
+                      "allotment",
+                      "pickup",
+                      "policy"
+                    ],
+                    "default": "policy"
+                  },
+                  "code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "details": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated sellability explanation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "snapshotId": {
+                          "type": "string"
+                        },
+                        "snapshotItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "candidateIndex": {
+                          "type": "number"
+                        },
+                        "explanationType": {
+                          "type": "string",
+                          "enum": [
+                            "sellable",
+                            "blocked",
+                            "warning",
+                            "pricing",
+                            "allotment",
+                            "pickup",
+                            "policy"
+                          ]
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "snapshotId",
+                        "snapshotItemId",
+                        "candidateIndex",
+                        "explanationType",
+                        "code",
+                        "message",
+                        "details",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability explanation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sellability explanation deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sellability explanation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

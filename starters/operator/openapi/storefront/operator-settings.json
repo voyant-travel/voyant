@@ -1,0 +1,171 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {},
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/public/operator-profile": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The public operator profile (null when unset)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "legalName": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "website": {
+                          "type": "string"
+                        },
+                        "license": {
+                          "type": "string"
+                        },
+                        "licenseAuthority": {
+                          "type": "string"
+                        },
+                        "customerPaymentPolicy": {},
+                        "bookingCheckoutUrlTemplate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "invoicePayUrlTemplate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "legalName",
+                        "address",
+                        "phone",
+                        "email",
+                        "website",
+                        "license",
+                        "licenseAuthority",
+                        "bookingCheckoutUrlTemplate",
+                        "invoicePayUrlTemplate"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/settings/operator": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The public operator settings (null when unset)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "legalName": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "website": {
+                          "type": "string"
+                        },
+                        "license": {
+                          "type": "string"
+                        },
+                        "licenseAuthority": {
+                          "type": "string"
+                        },
+                        "customerPaymentPolicy": {},
+                        "bookingCheckoutUrlTemplate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "invoicePayUrlTemplate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "legalName",
+                        "address",
+                        "phone",
+                        "email",
+                        "website",
+                        "license",
+                        "licenseAuthority",
+                        "bookingCheckoutUrlTemplate",
+                        "invoicePayUrlTemplate"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

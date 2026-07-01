@@ -1,0 +1,4510 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Framework API",
+    "version": "0.0.0",
+    "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
+  },
+  "components": {
+    "schemas": {},
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/admin/extras/product-extras": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "supplierId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated product extras",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "supplierId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "code": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "selectionType": {
+                            "type": "string",
+                            "enum": [
+                              "optional",
+                              "required",
+                              "default_selected",
+                              "unavailable"
+                            ]
+                          },
+                          "pricingMode": {
+                            "type": "string",
+                            "enum": [
+                              "included",
+                              "per_person",
+                              "per_booking",
+                              "quantity_based",
+                              "on_request",
+                              "free"
+                            ]
+                          },
+                          "pricedPerPerson": {
+                            "type": "boolean"
+                          },
+                          "collectionMode": {
+                            "type": "string",
+                            "enum": [
+                              "booking_total",
+                              "cash_on_trip",
+                              "external",
+                              "included",
+                              "none"
+                            ]
+                          },
+                          "showOnSlotManifest": {
+                            "type": "boolean"
+                          },
+                          "minQuantity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "maxQuantity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "defaultQuantity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "supplierId",
+                          "code",
+                          "name",
+                          "description",
+                          "selectionType",
+                          "pricingMode",
+                          "pricedPerPerson",
+                          "collectionMode",
+                          "showOnSlotManifest",
+                          "minQuantity",
+                          "maxQuantity",
+                          "defaultQuantity",
+                          "active",
+                          "sortOrder",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "description": "Product extra",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "supplierId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 100
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "selectionType": {
+                    "type": "string",
+                    "enum": [
+                      "optional",
+                      "required",
+                      "default_selected",
+                      "unavailable"
+                    ],
+                    "default": "optional"
+                  },
+                  "pricingMode": {
+                    "type": "string",
+                    "enum": [
+                      "included",
+                      "per_person",
+                      "per_booking",
+                      "quantity_based",
+                      "on_request",
+                      "free"
+                    ],
+                    "default": "per_booking"
+                  },
+                  "pricedPerPerson": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "collectionMode": {
+                    "type": "string",
+                    "enum": [
+                      "booking_total",
+                      "cash_on_trip",
+                      "external",
+                      "included",
+                      "none"
+                    ],
+                    "default": "booking_total"
+                  },
+                  "showOnSlotManifest": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "minQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "maxQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "defaultQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "productId",
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created product extra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "supplierId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "selectionType": {
+                          "type": "string",
+                          "enum": [
+                            "optional",
+                            "required",
+                            "default_selected",
+                            "unavailable"
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": "string",
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free"
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": "boolean"
+                        },
+                        "collectionMode": {
+                          "type": "string",
+                          "enum": [
+                            "booking_total",
+                            "cash_on_trip",
+                            "external",
+                            "included",
+                            "none"
+                          ]
+                        },
+                        "showOnSlotManifest": {
+                          "type": "boolean"
+                        },
+                        "minQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "maxQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "defaultQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "supplierId",
+                        "code",
+                        "name",
+                        "description",
+                        "selectionType",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "collectionMode",
+                        "showOnSlotManifest",
+                        "minQuantity",
+                        "maxQuantity",
+                        "defaultQuantity",
+                        "active",
+                        "sortOrder",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/product-extras/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A product extra by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "supplierId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "selectionType": {
+                          "type": "string",
+                          "enum": [
+                            "optional",
+                            "required",
+                            "default_selected",
+                            "unavailable"
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": "string",
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free"
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": "boolean"
+                        },
+                        "collectionMode": {
+                          "type": "string",
+                          "enum": [
+                            "booking_total",
+                            "cash_on_trip",
+                            "external",
+                            "included",
+                            "none"
+                          ]
+                        },
+                        "showOnSlotManifest": {
+                          "type": "boolean"
+                        },
+                        "minQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "maxQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "defaultQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "supplierId",
+                        "code",
+                        "name",
+                        "description",
+                        "selectionType",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "collectionMode",
+                        "showOnSlotManifest",
+                        "minQuantity",
+                        "maxQuantity",
+                        "defaultQuantity",
+                        "active",
+                        "sortOrder",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product extra not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Partial product extra update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "supplierId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 100
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "selectionType": {
+                    "type": "string",
+                    "enum": [
+                      "optional",
+                      "required",
+                      "default_selected",
+                      "unavailable"
+                    ],
+                    "default": "optional"
+                  },
+                  "pricingMode": {
+                    "type": "string",
+                    "enum": [
+                      "included",
+                      "per_person",
+                      "per_booking",
+                      "quantity_based",
+                      "on_request",
+                      "free"
+                    ],
+                    "default": "per_booking"
+                  },
+                  "pricedPerPerson": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "collectionMode": {
+                    "type": "string",
+                    "enum": [
+                      "booking_total",
+                      "cash_on_trip",
+                      "external",
+                      "included",
+                      "none"
+                    ],
+                    "default": "booking_total"
+                  },
+                  "showOnSlotManifest": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "minQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "maxQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "defaultQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated product extra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "supplierId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "selectionType": {
+                          "type": "string",
+                          "enum": [
+                            "optional",
+                            "required",
+                            "default_selected",
+                            "unavailable"
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": "string",
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free"
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": "boolean"
+                        },
+                        "collectionMode": {
+                          "type": "string",
+                          "enum": [
+                            "booking_total",
+                            "cash_on_trip",
+                            "external",
+                            "included",
+                            "none"
+                          ]
+                        },
+                        "showOnSlotManifest": {
+                          "type": "boolean"
+                        },
+                        "minQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "maxQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "defaultQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "supplierId",
+                        "code",
+                        "name",
+                        "description",
+                        "selectionType",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "collectionMode",
+                        "showOnSlotManifest",
+                        "minQuantity",
+                        "maxQuantity",
+                        "defaultQuantity",
+                        "active",
+                        "sortOrder",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product extra not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The product extra was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product extra not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/option-extra-configs": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productExtraId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated option extra configs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "optionId": {
+                            "type": "string"
+                          },
+                          "productExtraId": {
+                            "type": "string"
+                          },
+                          "selectionType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "optional",
+                              "required",
+                              "default_selected",
+                              "unavailable",
+                              null
+                            ]
+                          },
+                          "pricingMode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "included",
+                              "per_person",
+                              "per_booking",
+                              "quantity_based",
+                              "on_request",
+                              "free",
+                              null
+                            ]
+                          },
+                          "pricedPerPerson": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ]
+                          },
+                          "minQuantity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "maxQuantity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "defaultQuantity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "isDefault": {
+                            "type": "boolean"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "optionId",
+                          "productExtraId",
+                          "selectionType",
+                          "pricingMode",
+                          "pricedPerPerson",
+                          "minQuantity",
+                          "maxQuantity",
+                          "defaultQuantity",
+                          "isDefault",
+                          "active",
+                          "sortOrder",
+                          "notes",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "description": "Option extra config",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "optionId": {
+                    "type": "string"
+                  },
+                  "productExtraId": {
+                    "type": "string"
+                  },
+                  "selectionType": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "optional",
+                      "required",
+                      "default_selected",
+                      "unavailable",
+                      null
+                    ]
+                  },
+                  "pricingMode": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "included",
+                      "per_person",
+                      "per_booking",
+                      "quantity_based",
+                      "on_request",
+                      "free",
+                      null
+                    ]
+                  },
+                  "pricedPerPerson": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "minQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "maxQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "defaultQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "isDefault": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "optionId",
+                  "productExtraId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created option extra config",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": "string"
+                        },
+                        "productExtraId": {
+                          "type": "string"
+                        },
+                        "selectionType": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "optional",
+                            "required",
+                            "default_selected",
+                            "unavailable",
+                            null
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free",
+                            null
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "minQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "maxQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "defaultQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "isDefault": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "optionId",
+                        "productExtraId",
+                        "selectionType",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "minQuantity",
+                        "maxQuantity",
+                        "defaultQuantity",
+                        "isDefault",
+                        "active",
+                        "sortOrder",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/option-extra-configs/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An option extra config by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": "string"
+                        },
+                        "productExtraId": {
+                          "type": "string"
+                        },
+                        "selectionType": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "optional",
+                            "required",
+                            "default_selected",
+                            "unavailable",
+                            null
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free",
+                            null
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "minQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "maxQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "defaultQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "isDefault": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "optionId",
+                        "productExtraId",
+                        "selectionType",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "minQuantity",
+                        "maxQuantity",
+                        "defaultQuantity",
+                        "isDefault",
+                        "active",
+                        "sortOrder",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Option extra config not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Partial option extra config update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "optionId": {
+                    "type": "string"
+                  },
+                  "productExtraId": {
+                    "type": "string"
+                  },
+                  "selectionType": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "optional",
+                      "required",
+                      "default_selected",
+                      "unavailable",
+                      null
+                    ]
+                  },
+                  "pricingMode": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "included",
+                      "per_person",
+                      "per_booking",
+                      "quantity_based",
+                      "on_request",
+                      "free",
+                      null
+                    ]
+                  },
+                  "pricedPerPerson": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "minQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "maxQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "defaultQuantity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "isDefault": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated option extra config",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": "string"
+                        },
+                        "productExtraId": {
+                          "type": "string"
+                        },
+                        "selectionType": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "optional",
+                            "required",
+                            "default_selected",
+                            "unavailable",
+                            null
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free",
+                            null
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "minQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "maxQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "defaultQuantity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "isDefault": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "optionId",
+                        "productExtraId",
+                        "selectionType",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "minQuantity",
+                        "maxQuantity",
+                        "defaultQuantity",
+                        "isDefault",
+                        "active",
+                        "sortOrder",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Option extra config not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The option extra config was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Option extra config not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/booking-extras": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "bookingId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productExtraId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionExtraConfigId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "selected",
+                "confirmed",
+                "cancelled",
+                "fulfilled"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated booking extras",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "bookingId": {
+                            "type": "string"
+                          },
+                          "productExtraId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "optionExtraConfigId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "draft",
+                              "selected",
+                              "confirmed",
+                              "cancelled",
+                              "fulfilled"
+                            ]
+                          },
+                          "pricingMode": {
+                            "type": "string",
+                            "enum": [
+                              "included",
+                              "per_person",
+                              "per_booking",
+                              "quantity_based",
+                              "on_request",
+                              "free"
+                            ]
+                          },
+                          "pricedPerPerson": {
+                            "type": "boolean"
+                          },
+                          "quantity": {
+                            "type": "integer"
+                          },
+                          "sellCurrency": {
+                            "type": "string"
+                          },
+                          "unitSellAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "totalSellAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "costCurrency": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "unitCostAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "totalCostAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "bookingId",
+                          "productExtraId",
+                          "optionExtraConfigId",
+                          "name",
+                          "description",
+                          "status",
+                          "pricingMode",
+                          "pricedPerPerson",
+                          "quantity",
+                          "sellCurrency",
+                          "unitSellAmountCents",
+                          "totalSellAmountCents",
+                          "costCurrency",
+                          "unitCostAmountCents",
+                          "totalCostAmountCents",
+                          "notes",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "description": "Booking extra",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingId": {
+                    "type": "string"
+                  },
+                  "productExtraId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "optionExtraConfigId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "selected",
+                      "confirmed",
+                      "cancelled",
+                      "fulfilled"
+                    ],
+                    "default": "draft"
+                  },
+                  "pricingMode": {
+                    "type": "string",
+                    "enum": [
+                      "included",
+                      "per_person",
+                      "per_booking",
+                      "quantity_based",
+                      "on_request",
+                      "free"
+                    ],
+                    "default": "per_booking"
+                  },
+                  "pricedPerPerson": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                  },
+                  "sellCurrency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "unitSellAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "totalSellAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "costCurrency": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "unitCostAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "totalCostAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "bookingId",
+                  "name",
+                  "sellCurrency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created booking extra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "productExtraId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionExtraConfigId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "selected",
+                            "confirmed",
+                            "cancelled",
+                            "fulfilled"
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": "string",
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free"
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": "boolean"
+                        },
+                        "quantity": {
+                          "type": "integer"
+                        },
+                        "sellCurrency": {
+                          "type": "string"
+                        },
+                        "unitSellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "totalSellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "costCurrency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "unitCostAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "totalCostAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "bookingId",
+                        "productExtraId",
+                        "optionExtraConfigId",
+                        "name",
+                        "description",
+                        "status",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "quantity",
+                        "sellCurrency",
+                        "unitSellAmountCents",
+                        "totalSellAmountCents",
+                        "costCurrency",
+                        "unitCostAmountCents",
+                        "totalCostAmountCents",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/booking-extras/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A booking extra by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "productExtraId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionExtraConfigId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "selected",
+                            "confirmed",
+                            "cancelled",
+                            "fulfilled"
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": "string",
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free"
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": "boolean"
+                        },
+                        "quantity": {
+                          "type": "integer"
+                        },
+                        "sellCurrency": {
+                          "type": "string"
+                        },
+                        "unitSellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "totalSellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "costCurrency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "unitCostAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "totalCostAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "bookingId",
+                        "productExtraId",
+                        "optionExtraConfigId",
+                        "name",
+                        "description",
+                        "status",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "quantity",
+                        "sellCurrency",
+                        "unitSellAmountCents",
+                        "totalSellAmountCents",
+                        "costCurrency",
+                        "unitCostAmountCents",
+                        "totalCostAmountCents",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking extra not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Partial booking extra update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingId": {
+                    "type": "string"
+                  },
+                  "productExtraId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "optionExtraConfigId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "selected",
+                      "confirmed",
+                      "cancelled",
+                      "fulfilled"
+                    ],
+                    "default": "draft"
+                  },
+                  "pricingMode": {
+                    "type": "string",
+                    "enum": [
+                      "included",
+                      "per_person",
+                      "per_booking",
+                      "quantity_based",
+                      "on_request",
+                      "free"
+                    ],
+                    "default": "per_booking"
+                  },
+                  "pricedPerPerson": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                  },
+                  "sellCurrency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "unitSellAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "totalSellAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "costCurrency": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "unitCostAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "totalCostAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated booking extra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "productExtraId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionExtraConfigId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "selected",
+                            "confirmed",
+                            "cancelled",
+                            "fulfilled"
+                          ]
+                        },
+                        "pricingMode": {
+                          "type": "string",
+                          "enum": [
+                            "included",
+                            "per_person",
+                            "per_booking",
+                            "quantity_based",
+                            "on_request",
+                            "free"
+                          ]
+                        },
+                        "pricedPerPerson": {
+                          "type": "boolean"
+                        },
+                        "quantity": {
+                          "type": "integer"
+                        },
+                        "sellCurrency": {
+                          "type": "string"
+                        },
+                        "unitSellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "totalSellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "costCurrency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "unitCostAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "totalCostAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "bookingId",
+                        "productExtraId",
+                        "optionExtraConfigId",
+                        "name",
+                        "description",
+                        "status",
+                        "pricingMode",
+                        "pricedPerPerson",
+                        "quantity",
+                        "sellCurrency",
+                        "unitSellAmountCents",
+                        "totalSellAmountCents",
+                        "costCurrency",
+                        "unitCostAmountCents",
+                        "totalCostAmountCents",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking extra not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The booking extra was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking extra not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/slot-manifests/{slotId}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slotId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ],
+              "default": false
+            },
+            "required": false,
+            "name": "includeInactiveExtras",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The slot extra manifest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "slot": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "productId": {
+                              "type": "string"
+                            },
+                            "optionId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "facilityId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "availabilityRuleId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "startTimeId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "dateLocal": {
+                              "type": "string"
+                            },
+                            "startsAt": {
+                              "type": "string"
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "timezone": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "closed",
+                                "sold_out",
+                                "cancelled"
+                              ]
+                            },
+                            "unlimited": {
+                              "type": "boolean"
+                            },
+                            "initialPax": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "remainingPax": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "initialPickups": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "remainingPickups": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "remainingResources": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "pastCutoff": {
+                              "type": "boolean"
+                            },
+                            "tooEarly": {
+                              "type": "boolean"
+                            },
+                            "nights": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "notes": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            },
+                            "updatedAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "productId",
+                            "optionId",
+                            "facilityId",
+                            "availabilityRuleId",
+                            "startTimeId",
+                            "dateLocal",
+                            "startsAt",
+                            "endsAt",
+                            "timezone",
+                            "status",
+                            "unlimited",
+                            "initialPax",
+                            "remainingPax",
+                            "initialPickups",
+                            "remainingPickups",
+                            "remainingResources",
+                            "pastCutoff",
+                            "tooEarly",
+                            "nights",
+                            "days",
+                            "notes",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "extras": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "productId": {
+                                "type": "string"
+                              },
+                              "supplierId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "code": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "selectionType": {
+                                "type": "string",
+                                "enum": [
+                                  "optional",
+                                  "required",
+                                  "default_selected",
+                                  "unavailable"
+                                ]
+                              },
+                              "pricingMode": {
+                                "type": "string",
+                                "enum": [
+                                  "included",
+                                  "per_person",
+                                  "per_booking",
+                                  "quantity_based",
+                                  "on_request",
+                                  "free"
+                                ]
+                              },
+                              "pricedPerPerson": {
+                                "type": "boolean"
+                              },
+                              "collectionMode": {
+                                "type": "string",
+                                "enum": [
+                                  "booking_total",
+                                  "cash_on_trip",
+                                  "external",
+                                  "included",
+                                  "none"
+                                ]
+                              },
+                              "showOnSlotManifest": {
+                                "type": "boolean"
+                              },
+                              "minQuantity": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "maxQuantity": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "defaultQuantity": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "active": {
+                                "type": "boolean"
+                              },
+                              "sortOrder": {
+                                "type": "integer"
+                              },
+                              "metadata": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "additionalProperties": {}
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "productId",
+                              "supplierId",
+                              "code",
+                              "name",
+                              "description",
+                              "selectionType",
+                              "pricingMode",
+                              "pricedPerPerson",
+                              "collectionMode",
+                              "showOnSlotManifest",
+                              "minQuantity",
+                              "maxQuantity",
+                              "defaultQuantity",
+                              "active",
+                              "sortOrder",
+                              "metadata",
+                              "createdAt",
+                              "updatedAt"
+                            ]
+                          }
+                        },
+                        "travelers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "bookingId": {
+                                "type": "string"
+                              },
+                              "bookingNumber": {
+                                "type": "string"
+                              },
+                              "bookingStatus": {
+                                "type": "string"
+                              },
+                              "participantType": {
+                                "type": "string"
+                              },
+                              "travelerCategory": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "phone": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "isPrimary": {
+                                "type": "boolean"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "fullName": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "bookingId",
+                              "bookingNumber",
+                              "bookingStatus",
+                              "participantType",
+                              "travelerCategory",
+                              "firstName",
+                              "lastName",
+                              "email",
+                              "phone",
+                              "isPrimary",
+                              "createdAt",
+                              "fullName"
+                            ]
+                          }
+                        },
+                        "selections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bookingId": {
+                                "type": "string"
+                              },
+                              "travelerId": {
+                                "type": "string"
+                              },
+                              "productExtraId": {
+                                "type": "string"
+                              },
+                              "optionExtraConfigId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "bookingItemId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "selected": {
+                                "type": "boolean"
+                              },
+                              "collectionMode": {
+                                "type": "string",
+                                "enum": [
+                                  "booking_total",
+                                  "cash_on_trip",
+                                  "external",
+                                  "included",
+                                  "none"
+                                ]
+                              },
+                              "collectionStatus": {
+                                "type": "string"
+                              },
+                              "collectionCurrency": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "collectionAmountCents": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "collectedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "collectedBy": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "notes": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "metadata": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "additionalProperties": {}
+                              },
+                              "source": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "bookingId",
+                              "travelerId",
+                              "productExtraId",
+                              "optionExtraConfigId",
+                              "bookingItemId",
+                              "status",
+                              "selected",
+                              "collectionMode",
+                              "collectionStatus",
+                              "collectionCurrency",
+                              "collectionAmountCents",
+                              "collectedAt",
+                              "collectedBy",
+                              "notes",
+                              "metadata",
+                              "source"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "slot",
+                        "extras",
+                        "travelers",
+                        "selections"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Slot not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/slot-manifests/{slotId}/selections": {
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slotId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "A single slot extra selection",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "travelerId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "productExtraId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "optionExtraConfigId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "selected",
+                      "cancelled",
+                      "fulfilled",
+                      "no_show"
+                    ],
+                    "default": "selected"
+                  },
+                  "collectionStatus": {
+                    "type": "string",
+                    "enum": [
+                      "not_required",
+                      "pending",
+                      "collected",
+                      "waived",
+                      "refunded"
+                    ]
+                  },
+                  "collectionCurrency": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "collectionAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "bookingId",
+                  "travelerId",
+                  "productExtraId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The upserted selection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "bookingItemId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "travelerId": {
+                          "type": "string"
+                        },
+                        "productExtraId": {
+                          "type": "string"
+                        },
+                        "optionExtraConfigId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "selected",
+                            "cancelled",
+                            "fulfilled",
+                            "no_show"
+                          ]
+                        },
+                        "collectionMode": {
+                          "type": "string",
+                          "enum": [
+                            "booking_total",
+                            "cash_on_trip",
+                            "external",
+                            "included",
+                            "none"
+                          ]
+                        },
+                        "collectionStatus": {
+                          "type": "string",
+                          "enum": [
+                            "not_required",
+                            "pending",
+                            "collected",
+                            "waived",
+                            "refunded"
+                          ]
+                        },
+                        "collectionCurrency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collectionAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "collectedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collectedBy": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "bookingId",
+                        "bookingItemId",
+                        "travelerId",
+                        "productExtraId",
+                        "optionExtraConfigId",
+                        "status",
+                        "collectionMode",
+                        "collectionStatus",
+                        "collectionCurrency",
+                        "collectionAmountCents",
+                        "collectedAt",
+                        "collectedBy",
+                        "notes",
+                        "metadata",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Slot, extra, or traveler not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/slot-manifests/{slotId}/selections/bulk": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slotId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Bulk slot extra selections",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "selections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "bookingId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "travelerId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "productExtraId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "optionExtraConfigId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "selected",
+                            "cancelled",
+                            "fulfilled",
+                            "no_show"
+                          ],
+                          "default": "selected"
+                        },
+                        "collectionStatus": {
+                          "type": "string",
+                          "enum": [
+                            "not_required",
+                            "pending",
+                            "collected",
+                            "waived",
+                            "refunded"
+                          ]
+                        },
+                        "collectionCurrency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 3,
+                          "maxLength": 3
+                        },
+                        "collectionAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "bookingId",
+                        "travelerId",
+                        "productExtraId"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "selections"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The upserted selections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "bookingId": {
+                            "type": "string"
+                          },
+                          "bookingItemId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "travelerId": {
+                            "type": "string"
+                          },
+                          "productExtraId": {
+                            "type": "string"
+                          },
+                          "optionExtraConfigId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "selected",
+                              "cancelled",
+                              "fulfilled",
+                              "no_show"
+                            ]
+                          },
+                          "collectionMode": {
+                            "type": "string",
+                            "enum": [
+                              "booking_total",
+                              "cash_on_trip",
+                              "external",
+                              "included",
+                              "none"
+                            ]
+                          },
+                          "collectionStatus": {
+                            "type": "string",
+                            "enum": [
+                              "not_required",
+                              "pending",
+                              "collected",
+                              "waived",
+                              "refunded"
+                            ]
+                          },
+                          "collectionCurrency": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "collectionAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "collectedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "collectedBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "bookingId",
+                          "bookingItemId",
+                          "travelerId",
+                          "productExtraId",
+                          "optionExtraConfigId",
+                          "status",
+                          "collectionMode",
+                          "collectionStatus",
+                          "collectionCurrency",
+                          "collectionAmountCents",
+                          "collectedAt",
+                          "collectedBy",
+                          "notes",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Slot, extra, or traveler not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/extras/slot-manifests/{slotId}/collections/bulk": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slotId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Bulk slot extra collection updates",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productExtraId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "travelerIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  },
+                  "collectionStatus": {
+                    "type": "string",
+                    "enum": [
+                      "not_required",
+                      "pending",
+                      "collected",
+                      "waived",
+                      "refunded"
+                    ]
+                  },
+                  "collectionCurrency": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "collectionAmountCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "productExtraId",
+                  "travelerIds",
+                  "collectionStatus"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated collection selections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "bookingId": {
+                            "type": "string"
+                          },
+                          "bookingItemId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "travelerId": {
+                            "type": "string"
+                          },
+                          "productExtraId": {
+                            "type": "string"
+                          },
+                          "optionExtraConfigId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "selected",
+                              "cancelled",
+                              "fulfilled",
+                              "no_show"
+                            ]
+                          },
+                          "collectionMode": {
+                            "type": "string",
+                            "enum": [
+                              "booking_total",
+                              "cash_on_trip",
+                              "external",
+                              "included",
+                              "none"
+                            ]
+                          },
+                          "collectionStatus": {
+                            "type": "string",
+                            "enum": [
+                              "not_required",
+                              "pending",
+                              "collected",
+                              "waived",
+                              "refunded"
+                            ]
+                          },
+                          "collectionCurrency": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "collectionAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "collectedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "collectedBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "bookingId",
+                          "bookingItemId",
+                          "travelerId",
+                          "productExtraId",
+                          "optionExtraConfigId",
+                          "status",
+                          "collectionMode",
+                          "collectionStatus",
+                          "collectionCurrency",
+                          "collectionAmountCents",
+                          "collectedAt",
+                          "collectedBy",
+                          "notes",
+                          "metadata",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — request input failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Slot, extra, or traveler not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

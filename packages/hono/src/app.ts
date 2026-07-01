@@ -92,6 +92,22 @@ export interface LazyMount {
 }
 
 /**
+ * A single module route mount recorded at mount time so a build-time generator
+ * can produce one self-contained OpenAPI document per module (voyant#2733).
+ * Mirrors `ModuleMount` in `./openapi.ts` (structurally identical, declared here
+ * to keep the build-time-only openapi module out of the runtime path). `load`
+ * returns the sub-app without serving it — eager mounts wrap the already-built
+ * routes as `() => routes`; lazy mounts pass their loader.
+ */
+export interface ModuleMount {
+  moduleName: string
+  /** Absolute surface mount prefix, or `"/"` for absolute `lazyRoutes`. */
+  prefix: string
+  // biome-ignore lint/suspicious/noExplicitAny: accepts any composed sub-app regardless of its Env/Schema/BasePath, matching LazyRoutesLoader's AnyHono.
+  load: () => Hono<any, any, any> | Promise<Hono<any, any, any>>
+}
+
+/**
  * App handle returned alongside the Hono instance. Carries `ready()` for
  * headless / sibling-process deployments that need to fire the lazy
  * bootstrap before the first HTTP request — workflow runtimes (node
@@ -133,6 +149,14 @@ export interface VoyantAppExtensions<TBindings = unknown> {
    * `.openapi()` operations via `mergeLazyOpenApiPaths`. Never read at runtime.
    */
   lazyMounts: LazyMount[]
+  /**
+   * Every module route mount (admin + public, eager + lazy), tagged with its
+   * owning module name (voyant#2733). A build-time generator reads this to
+   * produce one self-contained OpenAPI document per module via
+   * `generateModuleOpenApiDocuments`, keeping the module boundary authoritative
+   * rather than guessed from path prefixes. Never read at runtime.
+   */
+  moduleMounts: ModuleMount[]
 }
 
 /**
@@ -557,58 +581,81 @@ export function mountApp<TBindings extends VoyantBindings>(
   // them so the prefix logic is single-sourced here. Cheap array pushes — no
   // eager `import()` and no runtime read.
   const lazyMounts: LazyMount[] = []
+  // Per-module OpenAPI generation manifest (voyant#2733). Recorded alongside the
+  // mount so the module name + real prefix are single-sourced here; `publicPath`
+  // overrides are captured with their actual mount, not re-derived. Eager routes
+  // are wrapped as `() => routes` so the generator's loader-based path is
+  // uniform across eager + lazy. Webhook routes are intentionally excluded — the
+  // per-module docs cover the admin/storefront surfaces only.
+  const moduleMounts: ModuleMount[] = []
 
   // Mount module routes
   for (const mod of allModules) {
-    const adminPrefix = `/v1/admin/${mod.module.name}`
-    const publicPrefix = resolveSurfaceMountPath("/v1/public", mod.publicPath, mod.module.name)
+    const moduleName = mod.module.name
+    const adminPrefix = `/v1/admin/${moduleName}`
+    const publicPrefix = resolveSurfaceMountPath("/v1/public", mod.publicPath, moduleName)
     if (mod.adminRoutes) {
-      app.route(adminPrefix, mod.adminRoutes)
+      const adminRoutes = mod.adminRoutes
+      app.route(adminPrefix, adminRoutes)
+      moduleMounts.push({ moduleName, prefix: adminPrefix, load: () => adminRoutes })
     }
     if (mod.publicRoutes) {
-      app.route(publicPrefix, mod.publicRoutes)
+      const publicRoutes = mod.publicRoutes
+      app.route(publicPrefix, publicRoutes)
+      moduleMounts.push({ moduleName, prefix: publicPrefix, load: () => publicRoutes })
     }
     if (mod.lazyAdminRoutes) {
       mountLazyRoutesAt(app, adminPrefix, mod.lazyAdminRoutes)
       lazyMounts.push({ prefix: adminPrefix, load: mod.lazyAdminRoutes })
+      moduleMounts.push({ moduleName, prefix: adminPrefix, load: mod.lazyAdminRoutes })
     }
     if (mod.lazyPublicRoutes) {
       mountLazyRoutesAt(app, publicPrefix, mod.lazyPublicRoutes)
       lazyMounts.push({ prefix: publicPrefix, load: mod.lazyPublicRoutes })
+      moduleMounts.push({ moduleName, prefix: publicPrefix, load: mod.lazyPublicRoutes })
     }
     if (mod.lazyRoutes) {
       mountLazyRoutePaths(app, mod.lazyRoutes.paths, mod.lazyRoutes.load)
       lazyMounts.push({ prefix: "/", load: mod.lazyRoutes.load })
+      moduleMounts.push({ moduleName, prefix: "/", load: mod.lazyRoutes.load })
     }
     if (mod.webhookRoutes) {
-      app.route(`/v1/${mod.module.name}`, mod.webhookRoutes)
+      app.route(`/v1/${moduleName}`, mod.webhookRoutes)
     }
   }
 
   // Mount extension routes
   for (const ext of allExtensions) {
-    const adminPrefix = `/v1/admin/${ext.extension.module}`
-    const publicPrefix = resolveSurfaceMountPath("/v1/public", ext.publicPath, ext.extension.module)
+    const moduleName = ext.extension.module
+    const adminPrefix = `/v1/admin/${moduleName}`
+    const publicPrefix = resolveSurfaceMountPath("/v1/public", ext.publicPath, moduleName)
     if (ext.adminRoutes) {
-      app.route(adminPrefix, ext.adminRoutes)
+      const adminRoutes = ext.adminRoutes
+      app.route(adminPrefix, adminRoutes)
+      moduleMounts.push({ moduleName, prefix: adminPrefix, load: () => adminRoutes })
     }
     if (ext.publicRoutes) {
-      app.route(publicPrefix, ext.publicRoutes)
+      const publicRoutes = ext.publicRoutes
+      app.route(publicPrefix, publicRoutes)
+      moduleMounts.push({ moduleName, prefix: publicPrefix, load: () => publicRoutes })
     }
     if (ext.lazyAdminRoutes) {
       mountLazyRoutesAt(app, adminPrefix, ext.lazyAdminRoutes)
       lazyMounts.push({ prefix: adminPrefix, load: ext.lazyAdminRoutes })
+      moduleMounts.push({ moduleName, prefix: adminPrefix, load: ext.lazyAdminRoutes })
     }
     if (ext.lazyPublicRoutes) {
       mountLazyRoutesAt(app, publicPrefix, ext.lazyPublicRoutes)
       lazyMounts.push({ prefix: publicPrefix, load: ext.lazyPublicRoutes })
+      moduleMounts.push({ moduleName, prefix: publicPrefix, load: ext.lazyPublicRoutes })
     }
     if (ext.lazyRoutes) {
       mountLazyRoutePaths(app, ext.lazyRoutes.paths, ext.lazyRoutes.load)
       lazyMounts.push({ prefix: "/", load: ext.lazyRoutes.load })
+      moduleMounts.push({ moduleName, prefix: "/", load: ext.lazyRoutes.load })
     }
     if (ext.webhookRoutes) {
-      app.route(`/v1/${ext.extension.module}`, ext.webhookRoutes)
+      app.route(`/v1/${moduleName}`, ext.webhookRoutes)
     }
   }
 
@@ -628,6 +675,7 @@ export function mountApp<TBindings extends VoyantBindings>(
   const augmented = app as Hono<MountEnv<TBindings>> & VoyantAppExtensions<TBindings>
   augmented.eventBus = eventBus
   augmented.lazyMounts = lazyMounts
+  augmented.moduleMounts = moduleMounts
   augmented.ready = (bindings?: TBindings) =>
     ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
   return augmented
