@@ -614,4 +614,36 @@ describe("createProductsBookingHandler.commit", () => {
     expect(resolveBillingPerson).not.toHaveBeenCalled()
     expect(createBooking).toHaveBeenCalledWith(expect.objectContaining({ personId: null }))
   })
+
+  it("skips the resolver when the billing contact point is whitespace-only", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const resolveBillingPerson = vi.fn(async () => "pers_should_not_be_used")
+    const handler = createProductsBookingHandler({ createBooking, resolveBillingPerson })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: { pax: { adult: 1 } },
+        billing: {
+          // Whitespace-only email/phone must not trigger a name-only CRM person.
+          contact: { firstName: "Guest", lastName: "Customer", email: "   ", phone: "  " },
+        },
+      },
+      pricing: { base_amount: 14500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(resolveBillingPerson).not.toHaveBeenCalled()
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ personId: null, contactEmail: null, contactPhone: null }),
+    )
+  })
 })

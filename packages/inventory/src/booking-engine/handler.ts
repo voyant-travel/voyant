@@ -847,12 +847,21 @@ export function createProductsBookingHandler(
       // explicit party, fall back to the draft, so BOTH paths stamp the booking
       // contact and can resolve a customer.
       const draftBillingContact = draft.billing?.contact
+      // Trim contact points to null: the draft schema defaults `email` to "" and
+      // a saved draft can carry whitespace-only values. The downstream
+      // `resolveBillingPerson` (and `createBooking`) treat a blank contact point
+      // as absent, so normalizing here keeps the resolver gate honest — a
+      // whitespace-only email must not trigger a name-only CRM person that
+      // `createBooking` then rejects, orphaning a row on every retry.
+      const trimToNull = (value: string | null | undefined): string | null => {
+        const trimmed = value?.trim()
+        return trimmed ? trimmed : null
+      }
       const billingContact = {
         firstName: partyBilling.contactFirstName ?? draftBillingContact?.firstName ?? null,
         lastName: partyBilling.contactLastName ?? draftBillingContact?.lastName ?? null,
-        // The draft schema defaults `email` to "" — treat empty as absent.
-        email: partyBilling.contactEmail ?? (draftBillingContact?.email || null),
-        phone: partyBilling.contactPhone ?? draftBillingContact?.phone ?? null,
+        email: trimToNull(partyBilling.contactEmail ?? draftBillingContact?.email),
+        phone: trimToNull(partyBilling.contactPhone ?? draftBillingContact?.phone),
       }
 
       // Resolve (or create) a customer person from the billing contact when no
