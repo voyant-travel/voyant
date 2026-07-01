@@ -37,6 +37,9 @@ export const bookingsUiRoJourney = {
       retryQuote: "Reincearca pretul",
       quoteUnavailable:
         "Pretul nu este inca confirmat - reincearca pretul de mai sus inainte de a confirma rezervarea.",
+      pricingUnavailable:
+        "Aceasta selectie nu poate fi cotata acum. Ajusteaza alegerea inainte de a confirma rezervarea.",
+      checkoutFailed: "Nu am putut finaliza rezervarea. Incearca din nou.",
       addAtLeastTravelers: "Adauga cel putin {count} calator{plural} pentru a continua.",
       maxTravelersPerBooking: "Maximum {count} calatori per rezervare.",
       ageOutOfRange: "Varsta {age} este in afara intervalului acceptat pentru acest produs.",
