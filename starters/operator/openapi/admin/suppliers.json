@@ -5102,7 +5102,9 @@
                       "string",
                       "null"
                     ],
-                    "maxLength": 3
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "pattern": "^[A-Z]{3}$"
                   },
                   "primaryFacilityId": {
                     "type": [
@@ -5711,7 +5713,9 @@
                       "string",
                       "null"
                     ],
-                    "maxLength": 3
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "pattern": "^[A-Z]{3}$"
                   },
                   "primaryFacilityId": {
                     "type": [
