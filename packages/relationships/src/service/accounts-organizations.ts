@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { organizations } from "../schema.js"
+import { organizations, people } from "../schema.js"
 import type {
   CreateOrganizationInput,
   OrganizationListQuery,
@@ -87,10 +87,30 @@ export const organizationAccountsService = {
   },
 
   async deleteOrganization(db: PostgresJsDatabase, id: string) {
-    const [row] = await db
-      .delete(organizations)
-      .where(eq(organizations.id, id))
-      .returning({ id: organizations.id })
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const [organization] = await tx
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.id, id))
+        .for("update")
+        .limit(1)
+
+      if (!organization) return null
+
+      const [{ count: linkedPeopleCount } = { count: 0 }] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(people)
+        .where(eq(people.organizationId, id))
+
+      if (linkedPeopleCount > 0) {
+        return { conflict: "linked_people" as const, linkedPeopleCount }
+      }
+
+      const [row] = await tx
+        .delete(organizations)
+        .where(eq(organizations.id, id))
+        .returning({ id: organizations.id })
+      return row ?? null
+    })
   },
 }
