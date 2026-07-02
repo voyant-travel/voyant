@@ -152,6 +152,16 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     })
   })
 
+  it("returns not found for empty availability batches on missing suppliers", async () => {
+    const res = await app.request("/supplier_missing/availability", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([]),
+    })
+
+    expect(res.status).toBe(404)
+  })
+
   it("searches suppliers through the supplier directory projection", async () => {
     const createRes = await app.request("/", {
       method: "POST",

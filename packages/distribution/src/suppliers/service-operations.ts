@@ -313,13 +313,13 @@ export async function createAvailability(
   supplierId: string,
   entries: CreateAvailabilityInput[],
 ) {
-  if (entries.length === 0) {
-    return []
-  }
-
   const supplier = await ensureSupplierExists(db, supplierId)
   if (!supplier) {
     return null
+  }
+
+  if (entries.length === 0) {
+    return []
   }
 
   const latestEntriesByDate = new Map<string, CreateAvailabilityInput>()
