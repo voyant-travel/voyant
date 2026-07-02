@@ -3677,6 +3677,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -4476,6 +4479,9 @@ importers:
       '@voyant-travel/legal-react':
         specifier: workspace:^
         version: link:../../packages/legal-react
+      '@voyant-travel/mcp':
+        specifier: workspace:^
+        version: link:../../packages/mcp
       '@voyant-travel/mice':
         specifier: workspace:^
         version: link:../../packages/mice
@@ -4542,6 +4548,9 @@ importers:
       '@voyant-travel/storefront-react':
         specifier: workspace:^
         version: link:../../packages/storefront-react
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../../packages/tools
       '@voyant-travel/trips':
         specifier: workspace:^
         version: link:../../packages/trips
