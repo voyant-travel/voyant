@@ -5,9 +5,11 @@ import { useQuery } from "@tanstack/react-query"
 import { useVoyantContext } from "../provider.js"
 import type { DelegateListFilters, RfpListFilters } from "../query-keys.js"
 import {
+  getBookingMiceDetailsQueryOptions,
   getDelegatesQueryOptions,
   getRfpQueryOptions,
   getRfpsQueryOptions,
+  getRoomingAssignmentQueryOptions,
   getRoomingQueryOptions,
   getSessionsQueryOptions,
 } from "../query-options.js"
@@ -42,6 +44,28 @@ export function useProgramRooming(
   return useQuery({
     ...getRoomingQueryOptions({ baseUrl, fetcher }, programId ?? ""),
     enabled: (options.enabled ?? true) && !!programId,
+  })
+}
+
+export function useRoomingAssignment(
+  assignmentId: string | undefined,
+  options: { enabled?: boolean } = {},
+) {
+  const { baseUrl, fetcher } = useVoyantContext()
+  return useQuery({
+    ...getRoomingAssignmentQueryOptions({ baseUrl, fetcher }, assignmentId ?? ""),
+    enabled: (options.enabled ?? true) && !!assignmentId,
+  })
+}
+
+export function useBookingMiceDetails(
+  bookingId: string | undefined,
+  options: { enabled?: boolean } = {},
+) {
+  const { baseUrl, fetcher } = useVoyantContext()
+  return useQuery({
+    ...getBookingMiceDetailsQueryOptions({ baseUrl, fetcher }, bookingId ?? ""),
+    enabled: (options.enabled ?? true) && !!bookingId,
   })
 }
 

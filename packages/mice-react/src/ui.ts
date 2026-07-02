@@ -16,6 +16,10 @@ export {
   type ProgramRfpsSectionProps,
 } from "./components/program-rfps-section.js"
 export {
+  ProgramRoomingSection,
+  type ProgramRoomingSectionProps,
+} from "./components/program-rooming-section.js"
+export {
   ProgramSessionsSection,
   type ProgramSessionsSectionProps,
 } from "./components/program-sessions-section.js"

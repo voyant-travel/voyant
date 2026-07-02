@@ -92,6 +92,32 @@ export const roomingAssignmentRecordSchema = z.object({
 })
 export type RoomingAssignmentRecord = z.infer<typeof roomingAssignmentRecordSchema>
 export const roomingListResponse = listEnvelope(roomingAssignmentRecordSchema)
+export const roomingAssignmentDelegateRecordSchema = z.object({
+  id: z.string(),
+  roomingAssignmentId: z.string(),
+  delegateId: z.string(),
+  isPrimary: z.boolean(),
+  bedLabel: nullableString,
+})
+export type RoomingAssignmentDelegateRecord = z.infer<typeof roomingAssignmentDelegateRecordSchema>
+export const roomingAssignmentDetailSchema = roomingAssignmentRecordSchema.extend({
+  delegates: z.array(roomingAssignmentDelegateRecordSchema),
+})
+export type RoomingAssignmentDetail = z.infer<typeof roomingAssignmentDetailSchema>
+export const roomingSingleResponse = singleEnvelope(roomingAssignmentRecordSchema)
+export const roomingDetailResponse = singleEnvelope(roomingAssignmentDetailSchema)
+export const roomingDelegatesResponse = singleEnvelope(
+  z.array(roomingAssignmentDelegateRecordSchema),
+)
+
+// ── Booking sidecar linkage ──
+export const bookingMiceDetailRecordSchema = z.object({
+  bookingId: z.string(),
+  programId: nullableString,
+  delegateId: nullableString,
+})
+export type BookingMiceDetailRecord = z.infer<typeof bookingMiceDetailRecordSchema>
+export const bookingMiceDetailResponse = singleEnvelope(bookingMiceDetailRecordSchema.nullable())
 
 // ── RFP + Bid ──
 export const rfpRecordSchema = z.object({
