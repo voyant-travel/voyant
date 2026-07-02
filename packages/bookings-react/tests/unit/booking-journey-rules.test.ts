@@ -66,4 +66,76 @@ describe("booking-journey-rules", () => {
       },
     })
   })
+
+  it("blocks payment advancement when an already-paid row has no payment date", () => {
+    const shape = defaultMinimalShape()
+    const draft = {
+      ...emptyDraft(ENTITY),
+      paymentSchedules: [
+        {
+          scheduleType: "balance",
+          status: "paid",
+          dueDate: "2026-06-15",
+          currency: "EUR",
+          amountCents: 50_000,
+          notes: JSON.stringify({
+            alreadyPaid: true,
+            paymentDate: null,
+            paymentMethod: "bank_transfer",
+            paymentReference: null,
+          }),
+        } as const,
+      ],
+    }
+
+    expect(canAdvanceFromStep("payment", draft, shape, true)).toBe(false)
+  })
+
+  it("blocks payment advancement when an already-paid row has a non-string payment date", () => {
+    const shape = defaultMinimalShape()
+    const draft = {
+      ...emptyDraft(ENTITY),
+      paymentSchedules: [
+        {
+          scheduleType: "balance",
+          status: "paid",
+          dueDate: "2026-06-15",
+          currency: "EUR",
+          amountCents: 50_000,
+          notes: JSON.stringify({
+            alreadyPaid: true,
+            paymentDate: 123,
+            paymentMethod: "bank_transfer",
+            paymentReference: null,
+          }),
+        } as const,
+      ],
+    }
+
+    expect(canAdvanceFromStep("payment", draft, shape, true)).toBe(false)
+  })
+
+  it("allows payment advancement when already-paid rows include payment dates", () => {
+    const shape = defaultMinimalShape()
+    const draft = {
+      ...emptyDraft(ENTITY),
+      paymentSchedules: [
+        {
+          scheduleType: "balance",
+          status: "paid",
+          dueDate: "2026-06-15",
+          currency: "EUR",
+          amountCents: 50_000,
+          notes: JSON.stringify({
+            alreadyPaid: true,
+            paymentDate: "2026-06-10",
+            paymentMethod: "bank_transfer",
+            paymentReference: null,
+          }),
+        } as const,
+      ],
+    }
+
+    expect(canAdvanceFromStep("payment", draft, shape, true)).toBe(true)
+  })
 })

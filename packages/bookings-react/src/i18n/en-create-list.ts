@@ -65,6 +65,7 @@ export const bookingsUiEnCreateList = {
       payloadResolverMismatchFallback:
         "Booking options are out of sync. Review the selected traveler and option lines.",
       payloadResolverMismatchLine: "{label}: sent {submittedQuantity}, expected {resolvedQuantity}",
+      paidPaymentDateRequired: "Payment date is required when Already paid is checked.",
     },
     actions: {
       createDraftBooking: "Create draft booking",

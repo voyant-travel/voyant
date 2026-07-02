@@ -774,6 +774,76 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(bookingsRows).toHaveLength(0)
   })
 
+  it("rejects already-paid schedules without an explicit payment date", async () => {
+    const { productId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      paymentSchedules: [
+        {
+          scheduleType: "balance",
+          status: "paid",
+          dueDate: "2026-06-15",
+          currency: "EUR",
+          amountCents: 50000,
+          notes: JSON.stringify({
+            alreadyPaid: true,
+            paymentDate: null,
+            paymentMethod: "bank_transfer",
+            paymentReference: "BT-PAID-1",
+          }),
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("invalid_payment_schedules")
+    if (outcome.status !== "invalid_payment_schedules") return
+    expect(outcome.issues).toContainEqual({
+      path: ["paymentSchedules", 0, "notes", "paymentDate"],
+      message: "paymentSchedules[0] marked paid requires notes.paymentDate",
+    })
+
+    const bookingsRows = await db.select().from(bookings)
+    expect(bookingsRows).toHaveLength(0)
+  })
+
+  it("rejects already-paid schedules with non-string payment dates", async () => {
+    const { productId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      paymentSchedules: [
+        {
+          scheduleType: "balance",
+          status: "paid",
+          dueDate: "2026-06-15",
+          currency: "EUR",
+          amountCents: 50000,
+          notes: JSON.stringify({
+            alreadyPaid: true,
+            paymentDate: 123,
+            paymentMethod: "bank_transfer",
+            paymentReference: "BT-PAID-1",
+          }),
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("invalid_payment_schedules")
+    if (outcome.status !== "invalid_payment_schedules") return
+    expect(outcome.issues).toContainEqual({
+      path: ["paymentSchedules", 0, "notes", "paymentDate"],
+      message: "paymentSchedules[0] marked paid requires notes.paymentDate",
+    })
+
+    const bookingsRows = await db.select().from(bookings)
+    expect(bookingsRows).toHaveLength(0)
+  })
+
   it("creates an invoice and completed payment records for already-paid schedules", async () => {
     const { productId } = await seedProduct()
 

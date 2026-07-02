@@ -29,6 +29,7 @@ import { Button } from "@voyant-travel/ui/components/button"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
+import { findPaidScheduleRowsMissingPaymentDate } from "../lib/payment-schedule.js"
 import {
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
@@ -424,6 +425,10 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           ? messages.bookingJourney.validation.pricingUnavailable
           : messages.bookingJourney.validation.quoteUnavailable,
       )
+      return
+    }
+    if (findPaidScheduleRowsMissingPaymentDate(draft.paymentSchedules) !== null) {
+      setConfirmError(messages.bookingJourney.validation.paidPaymentDateRequired)
       return
     }
     setConfirmError(null)

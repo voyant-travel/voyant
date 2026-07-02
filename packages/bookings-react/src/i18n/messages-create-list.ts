@@ -58,6 +58,7 @@ export type BookingsUiCreateListMessages = {
       payloadResolverMismatchDetails: string
       payloadResolverMismatchFallback: string
       payloadResolverMismatchLine: string
+      paidPaymentDateRequired: string
     }
     actions: {
       createDraftBooking: string

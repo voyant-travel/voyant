@@ -104,6 +104,15 @@ export function hasAnyPaidPayment(schedule: PaymentScheduleValue): boolean {
   return schedule.installments.some((installment) => installment.alreadyPaid)
 }
 
+export function findAlreadyPaidInstallmentMissingPaymentDate(
+  schedule: PaymentScheduleValue,
+): number | null {
+  const index = schedule.installments.findIndex(
+    (installment) => installment.alreadyPaid && !installment.paymentDate?.trim(),
+  )
+  return index >= 0 ? index : null
+}
+
 /**
  * Inverse of stripUnitSuffix — strip the leading "Option name - " so
  * the per-unit label stands alone for category buttons.

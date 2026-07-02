@@ -10,6 +10,7 @@ import {
 import { type BookingsUiMessages, formatMessage } from "../../i18n/index.js"
 import { type Draft, totalPax } from "../lib/draft-state.js"
 import { evaluatePaxBandDependencies } from "../lib/pax-band-dependencies.js"
+import { findPaidScheduleRowsMissingPaymentDate } from "../lib/payment-schedule.js"
 import type { JourneyStep } from "../types.js"
 
 /**
@@ -146,6 +147,8 @@ export function canAdvanceFromStep(
       // other required fields surface as warnings, fillable later.
       return draft.travelers.every((t) => t.firstName && t.lastName)
     }
+    case "payment":
+      return findPaidScheduleRowsMissingPaymentDate(draft.paymentSchedules) === null
     default:
       return true
   }
@@ -173,7 +176,10 @@ export function stackedStepComplete(
       return hasOptions ? Boolean(draft.configure.variantId) : true
     }
     case "payment":
-      return Boolean(draft.payment.intent)
+      return (
+        Boolean(draft.payment.intent) &&
+        findPaidScheduleRowsMissingPaymentDate(draft.paymentSchedules) === null
+      )
     default:
       return canAdvanceFromStep(step, draft, shape, available)
   }
@@ -233,7 +239,16 @@ export function warningsForStep(
       }
       break
     }
+    case "payment": {
+      if (findPaidScheduleRowsMissingPaymentDate(draft.paymentSchedules) !== null) {
+        warnings.push(messages.bookingJourney.validation.paidPaymentDateRequired)
+      }
+      break
+    }
     case "review": {
+      if (findPaidScheduleRowsMissingPaymentDate(draft.paymentSchedules) !== null) {
+        warnings.push(messages.bookingJourney.validation.paidPaymentDateRequired)
+      }
       if (!draft.payment.intent) {
         warnings.push(messages.bookingJourney.warnings.paymentIntentMissing)
       }

@@ -38,6 +38,7 @@ export type BookingsUiJourneyMessages = {
       quoteUnavailable: string
       pricingUnavailable: string
       checkoutFailed: string
+      paidPaymentDateRequired: string
       addAtLeastTravelers: string
       maxTravelersPerBooking: string
       ageOutOfRange: string

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { findAlreadyPaidInstallmentMissingPaymentDate } from "../../src/components/booking-create-form-utils.js"
 import {
   getBookableDepartureSlots,
   getOverCapacityInventoryAssignments,
@@ -12,6 +13,42 @@ import {
 import { clearSharedRoomValue } from "../../src/components/shared-room-section.js"
 
 describe("booking create helpers", () => {
+  it("requires a payment date when an installment is marked already paid", () => {
+    expect(
+      findAlreadyPaidInstallmentMissingPaymentDate({
+        mode: "full",
+        installments: [
+          {
+            id: "inst_1",
+            amountCents: null,
+            dueDate: "2026-06-15",
+            alreadyPaid: true,
+            paymentDate: null,
+            paymentMethod: "bank_transfer",
+            paymentReference: "",
+          },
+        ],
+      }),
+    ).toBe(0)
+
+    expect(
+      findAlreadyPaidInstallmentMissingPaymentDate({
+        mode: "full",
+        installments: [
+          {
+            id: "inst_1",
+            amountCents: null,
+            dueDate: "2026-06-15",
+            alreadyPaid: true,
+            paymentDate: "2026-06-10",
+            paymentMethod: "bank_transfer",
+            paymentReference: "",
+          },
+        ],
+      }),
+    ).toBeNull()
+  })
+
   it("matches product picker search case-insensitively", () => {
     expect(
       productMatchesPickerSearch(

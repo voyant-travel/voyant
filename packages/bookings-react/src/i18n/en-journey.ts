@@ -40,6 +40,7 @@ export const bookingsUiEnJourney = {
       pricingUnavailable:
         "This selection can't be priced right now. Please adjust your choice before confirming your booking.",
       checkoutFailed: "We couldn't complete your booking. Please try again.",
+      paidPaymentDateRequired: "Payment date is required when Already paid is checked.",
       addAtLeastTravelers: "Add at least {count} traveler{plural} to continue.",
       maxTravelersPerBooking: "Max {count} travelers per booking.",
       ageOutOfRange: "Age {age} is outside the accepted range for this product.",

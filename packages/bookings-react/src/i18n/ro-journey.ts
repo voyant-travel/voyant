@@ -40,6 +40,8 @@ export const bookingsUiRoJourney = {
       pricingUnavailable:
         "Aceasta selectie nu poate fi cotata acum. Ajusteaza alegerea inainte de a confirma rezervarea.",
       checkoutFailed: "Nu am putut finaliza rezervarea. Incearca din nou.",
+      paidPaymentDateRequired:
+        "Data platii este obligatorie cand plata este marcata ca deja achitata.",
       addAtLeastTravelers: "Adauga cel putin {count} calator{plural} pentru a continua.",
       maxTravelersPerBooking: "Maximum {count} calatori per rezervare.",
       ageOutOfRange: "Varsta {age} este in afara intervalului acceptat pentru acest produs.",
