@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.11.3
+
+### Patch Changes
+
+- Updated dependencies [ae115de]
+  - @voyant-travel/inventory@0.5.18
+
 ## 0.11.2
 
 ### Patch Changes
