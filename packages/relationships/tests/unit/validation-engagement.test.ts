@@ -148,6 +148,26 @@ describe("Communication log schemas", () => {
     expect(result.sentAt).toBe("2024-06-15T14:00:00Z")
   })
 
+  it("accepts sentAt timestamps with numeric offsets", () => {
+    const result = insertCommunicationLogSchema.parse({
+      channel: "email",
+      direction: "outbound",
+      sentAt: "2024-06-15T14:00:00+02:00",
+    })
+
+    expect(result.sentAt).toBe("2024-06-15T14:00:00+02:00")
+  })
+
+  it("rejects invalid sentAt timestamp", () => {
+    expect(() =>
+      insertCommunicationLogSchema.parse({
+        channel: "email",
+        direction: "outbound",
+        sentAt: "not-a-date",
+      }),
+    ).toThrow()
+  })
+
   it("rejects subject over 500 chars", () => {
     expect(() =>
       insertCommunicationLogSchema.parse({
