@@ -121,7 +121,12 @@ export const personCoreSchema = z.object({
 })
 
 export const insertPersonSchema = personCoreSchema
-export const updatePersonSchema = personCoreSchema.partial()
+export const updatePersonSchema = personCoreSchema
+  .extend({
+    status: recordStatusSchema.optional(),
+    tags: z.array(z.string()).optional(),
+  })
+  .partial()
 export const mergePersonSchema = z.object({
   mergeId: z.string().min(1),
 })

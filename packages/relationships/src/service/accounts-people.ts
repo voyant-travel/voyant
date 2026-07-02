@@ -215,10 +215,13 @@ export const peopleAccountsService = {
   async updatePerson(db: PostgresJsDatabase, id: string, data: UpdatePersonInput) {
     const existing = await this.getPersonById(db, id)
     if (!existing) return null
+    const updates = Object.fromEntries(
+      Object.entries(personBaseFields(data)).filter(([, value]) => value !== undefined),
+    )
 
     await db
       .update(people)
-      .set({ ...personBaseFields(data), updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(people.id, id))
 
     // Pass the request fields through verbatim: syncPersonIdentity leaves
