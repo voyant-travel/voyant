@@ -10,6 +10,7 @@ import { ProgramCostSheetPanel } from "./program-cost-sheet-panel.js"
 import { ProgramDelegatesSection } from "./program-delegates-section.js"
 import { ProgramFormDialog } from "./program-form-dialog.js"
 import { ProgramRfpsSection } from "./program-rfps-section.js"
+import { ProgramRoomingSection } from "./program-rooming-section.js"
 import { ProgramSessionsSection } from "./program-sessions-section.js"
 
 export interface ProgramDetailPageProps {
@@ -83,6 +84,8 @@ export function ProgramDetailPage({ programId }: ProgramDetailPageProps) {
       <ProgramSessionsSection programId={programId} />
 
       <ProgramDelegatesSection programId={programId} />
+
+      <ProgramRoomingSection programId={programId} />
 
       <ProgramRfpsSection programId={programId} />
     </div>

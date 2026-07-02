@@ -43,6 +43,9 @@ export const miceQueryKeys = {
   roomingList: (programId: string) => [...miceQueryKeys.rooming(), "list", programId] as const,
   roomingAssignment: (id: string) => [...miceQueryKeys.rooming(), "detail", id] as const,
 
+  bookingMiceDetails: (bookingId: string) =>
+    [...miceQueryKeys.all, "booking-mice-details", bookingId] as const,
+
   rfps: () => [...miceQueryKeys.all, "rfps"] as const,
   rfpsList: (filters: RfpListFilters) => [...miceQueryKeys.rfps(), "list", filters] as const,
   rfp: (id: string) => [...miceQueryKeys.rfps(), "detail", id] as const,

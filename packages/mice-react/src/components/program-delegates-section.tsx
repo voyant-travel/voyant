@@ -10,6 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Input,
   Label,
   Select,
   SelectContent,
@@ -23,9 +24,10 @@ import {
   TableHeader,
   TableRow,
 } from "@voyant-travel/ui/components"
-import { Loader2, Plus, UserPlus } from "lucide-react"
-import { useState } from "react"
+import { Link2, Loader2, Plus, UserPlus } from "lucide-react"
+import { useEffect, useState } from "react"
 
+import { useBookingLinkMutation } from "../hooks/use-booking-link-mutation.js"
 import { useDelegateMutation } from "../hooks/use-delegate-mutation.js"
 import { useProgramDelegates, useProgramSessions } from "../hooks/use-mice-lists.js"
 import type { DelegateRecord } from "../schemas.js"
@@ -92,6 +94,7 @@ export function ProgramDelegatesSection({ programId }: ProgramDelegatesSectionPr
   const capped = delegates.length === DELEGATES_PAGE_LIMIT
   const [showCreate, setShowCreate] = useState(false)
   const [enrollTarget, setEnrollTarget] = useState<DelegateRecord | null>(null)
+  const [bookingTarget, setBookingTarget] = useState<DelegateRecord | null>(null)
 
   return (
     <section className="space-y-3">
@@ -110,13 +113,14 @@ export function ProgramDelegatesSection({ programId }: ProgramDelegatesSectionPr
               <TableHead>Delegate</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Booking</TableHead>
               <TableHead> </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {!isLoading && delegates.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
                   No delegates yet.
                 </TableCell>
               </TableRow>
@@ -130,11 +134,20 @@ export function ProgramDelegatesSection({ programId }: ProgramDelegatesSectionPr
                       {statusLabel(d.status)}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {d.bookingId ?? "—"}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setEnrollTarget(d)}>
-                      <UserPlus className="size-4" aria-hidden="true" />
-                      Enroll
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setEnrollTarget(d)}>
+                        <UserPlus className="size-4" aria-hidden="true" />
+                        Enroll
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setBookingTarget(d)}>
+                        <Link2 className="size-4" aria-hidden="true" />
+                        Booking
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -155,6 +168,13 @@ export function ProgramDelegatesSection({ programId }: ProgramDelegatesSectionPr
         delegate={enrollTarget}
         onOpenChange={(open) => {
           if (!open) setEnrollTarget(null)
+        }}
+      />
+      <LinkBookingDialog
+        programId={programId}
+        delegate={bookingTarget}
+        onOpenChange={(open) => {
+          if (!open) setBookingTarget(null)
         }}
       />
     </section>
@@ -352,6 +372,86 @@ function EnrollDelegateDialog({ programId, delegate, onOpenChange }: EnrollDeleg
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : null}
             Enroll
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface LinkBookingDialogProps {
+  programId: string
+  delegate: DelegateRecord | null
+  onOpenChange: (open: boolean) => void
+}
+
+function LinkBookingDialog({ programId, delegate, onOpenChange }: LinkBookingDialogProps) {
+  const open = delegate !== null
+  const { linkDelegateBooking } = useBookingLinkMutation()
+  const [bookingId, setBookingId] = useState("")
+
+  useEffect(() => {
+    if (!open) return
+    setBookingId(delegate?.bookingId ?? "")
+  }, [delegate, open])
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setBookingId("")
+    onOpenChange(next)
+  }
+
+  const submit = async () => {
+    const trimmed = bookingId.trim()
+    if (!delegate || !trimmed) return
+    await linkDelegateBooking.mutateAsync({
+      programId,
+      delegateId: delegate.id,
+      bookingId: trimmed,
+      previousBookingId: delegate.bookingId,
+    })
+    handleOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Link delegate booking</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="delegate-booking-id">Booking ID</Label>
+            <Input
+              id="delegate-booking-id"
+              value={bookingId}
+              onChange={(e) => setBookingId(e.target.value)}
+              placeholder="book_..."
+            />
+          </div>
+          {delegate ? (
+            <p className="text-muted-foreground text-xs">
+              Delegate {delegate.personId ?? delegate.id}
+            </p>
+          ) : null}
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={linkDelegateBooking.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => void submit()}
+            disabled={!bookingId.trim() || linkDelegateBooking.isPending}
+          >
+            {linkDelegateBooking.isPending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Link2 className="size-4" aria-hidden="true" />
+            )}
+            Link booking
           </Button>
         </DialogFooter>
       </DialogContent>

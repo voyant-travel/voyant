@@ -10,12 +10,14 @@ import {
   type RfpListFilters,
 } from "./query-keys.js"
 import {
+  bookingMiceDetailResponse,
   delegateListResponse,
   programCostSheetResponse,
   programListResponse,
   programSingleResponse,
   rfpDetailResponse,
   rfpListResponse,
+  roomingDetailResponse,
   roomingListResponse,
   sessionListResponse,
 } from "./schemas.js"
@@ -106,13 +108,49 @@ export function getDelegatesQueryOptions(
   })
 }
 
-export function getRoomingQueryOptions(client: FetchWithValidationOptions, programId: string) {
+const ROOMING_PAGE_LIMIT = 500
+
+export function getRoomingQueryOptions(
+  client: FetchWithValidationOptions,
+  programId: string,
+  limit: number = ROOMING_PAGE_LIMIT,
+) {
   return queryOptions({
     queryKey: miceQueryKeys.roomingList(programId),
     queryFn: () =>
       fetchWithValidation(
-        `${basePath}/rooming-assignments${qs({ programId })}`,
+        `${basePath}/rooming-assignments${qs({ programId, limit })}`,
         roomingListResponse,
+        client,
+      ),
+  })
+}
+
+export function getRoomingAssignmentQueryOptions(
+  client: FetchWithValidationOptions,
+  assignmentId: string,
+) {
+  return queryOptions({
+    queryKey: miceQueryKeys.roomingAssignment(assignmentId),
+    queryFn: () =>
+      fetchWithValidation(
+        `${basePath}/rooming-assignments/${assignmentId}`,
+        roomingDetailResponse,
+        client,
+      ),
+  })
+}
+
+export function getBookingMiceDetailsQueryOptions(
+  client: FetchWithValidationOptions,
+  bookingId: string,
+) {
+  return queryOptions({
+    queryKey: miceQueryKeys.bookingMiceDetails(bookingId),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/bookings/${encodeURIComponent(bookingId)}/mice-details`,
+        bookingMiceDetailResponse,
         client,
       ),
   })
