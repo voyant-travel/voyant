@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD")
+const PROGRAM_DATE_RANGE_ERROR_MESSAGE = "endDate must be on or after startDate"
 
 export const programTypeSchema = z.enum([
   "meeting",
@@ -19,7 +20,26 @@ export const programStatusSchema = z.enum([
   "cancelled",
 ])
 
-const programMutationSchema = z.object({
+type ProgramDateRangeInput = {
+  startDate?: string | null
+  endDate?: string | null
+}
+
+function isProgramDateRangeValid(value: ProgramDateRangeInput): boolean {
+  return !(value.startDate && value.endDate && value.endDate < value.startDate)
+}
+
+function validateProgramDateRange(value: ProgramDateRangeInput, ctx: z.RefinementCtx) {
+  if (isProgramDateRangeValid(value)) return
+
+  ctx.addIssue({
+    code: "custom",
+    path: ["endDate"],
+    message: PROGRAM_DATE_RANGE_ERROR_MESSAGE,
+  })
+}
+
+const programMutationFields = {
   name: z.string().min(1),
   organizationId: z.string().min(1).optional(),
   primaryContactPersonId: z.string().min(1).optional(),
@@ -34,30 +54,37 @@ const programMutationSchema = z.object({
   confirmedPax: z.number().int().min(0).optional(),
   currency: z.string().optional(),
   budgetAmountCents: z.number().int().min(0).optional(),
-})
+} satisfies z.ZodRawShape
 
-export const createProgramSchema = programMutationSchema.extend({
-  type: programTypeSchema.default("conference"),
-  status: programStatusSchema.default("lead"),
-})
+export const createProgramSchema = z
+  .object({
+    ...programMutationFields,
+    type: programTypeSchema.default("conference"),
+    status: programStatusSchema.default("lead"),
+  })
+  .superRefine(validateProgramDateRange)
 
 // Update accepts `null` on the optional fields so a PATCH can CLEAR them (the
 // columns are nullable and `updateProgram` spreads the body into `.set()`).
 // `.partial()` alone only allows omitting a key, which leaves the prior value
 // in place — operators could set an optional field but never clear it.
-export const updateProgramSchema = programMutationSchema.partial().extend({
-  organizationId: z.string().min(1).nullish(),
-  primaryContactPersonId: z.string().min(1).nullish(),
-  accountManagerId: z.string().min(1).nullish(),
-  code: z.string().nullish(),
-  destination: z.string().nullish(),
-  startDate: isoDate.nullish(),
-  endDate: isoDate.nullish(),
-  estimatedPax: z.number().int().min(0).nullish(),
-  confirmedPax: z.number().int().min(0).nullish(),
-  currency: z.string().nullish(),
-  budgetAmountCents: z.number().int().min(0).nullish(),
-})
+export const updateProgramSchema = z
+  .object(programMutationFields)
+  .partial()
+  .extend({
+    organizationId: z.string().min(1).nullish(),
+    primaryContactPersonId: z.string().min(1).nullish(),
+    accountManagerId: z.string().min(1).nullish(),
+    code: z.string().nullish(),
+    destination: z.string().nullish(),
+    startDate: isoDate.nullish(),
+    endDate: isoDate.nullish(),
+    estimatedPax: z.number().int().min(0).nullish(),
+    confirmedPax: z.number().int().min(0).nullish(),
+    currency: z.string().nullish(),
+    budgetAmountCents: z.number().int().min(0).nullish(),
+  })
+  .superRefine(validateProgramDateRange)
 
 export const programListQuerySchema = z.object({
   status: programStatusSchema.optional(),

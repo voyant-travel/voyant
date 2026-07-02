@@ -29,6 +29,58 @@ describe("mice validation", () => {
     expect(result.success).toBe(false)
   })
 
+  it("accepts a valid program date range", () => {
+    const parsed = createProgramSchema.parse({
+      name: "Acme Kickoff",
+      startDate: "2026-12-01",
+      endDate: "2026-12-10",
+    })
+    expect(parsed.startDate).toBe("2026-12-01")
+    expect(parsed.endDate).toBe("2026-12-10")
+  })
+
+  it("rejects program create when endDate is before startDate", () => {
+    const result = createProgramSchema.safeParse({
+      name: "Acme Kickoff",
+      type: "meeting",
+      startDate: "2026-12-10",
+      endDate: "2026-12-01",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues).toEqual([
+        expect.objectContaining({
+          path: ["endDate"],
+          message: "endDate must be on or after startDate",
+        }),
+      ])
+    }
+  })
+
+  it("rejects program patch when both provided dates are reversed", () => {
+    const result = updateProgramSchema.safeParse({
+      startDate: "2026-12-10",
+      endDate: "2026-12-01",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues).toEqual([
+        expect.objectContaining({
+          path: ["endDate"],
+          message: "endDate must be on or after startDate",
+        }),
+      ])
+    }
+  })
+
+  it("allows program patch payloads that omit one or both dates", () => {
+    expect(updateProgramSchema.safeParse({}).success).toBe(true)
+    expect(updateProgramSchema.safeParse({ startDate: "2026-12-10" }).success).toBe(true)
+    expect(updateProgramSchema.safeParse({ endDate: "2026-12-01" }).success).toBe(true)
+  })
+
   it("coerces + defaults list pagination", () => {
     const parsed = programListQuerySchema.parse({ limit: "25" })
     expect(parsed.limit).toBe(25)
