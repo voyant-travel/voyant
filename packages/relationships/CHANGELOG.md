@@ -1,5 +1,16 @@
 # @voyant-travel/crm
 
+## 0.121.13
+
+### Patch Changes
+
+- 7df89ab: Reject organization deletion with linked people instead of silently unlinking those people.
+- 8cb2124: Accept natural payloads on organization nested contact/address routes and prevent dangling identity rows for missing organizations.
+- e002da8: Preserve existing person fields when PATCH requests omit create-defaulted status and tags.
+- 5fa49b1: Keep person relationship auto-inverse pairs synchronized when either side is updated or deleted.
+- Updated dependencies [e002da8]
+  - @voyant-travel/relationships-contracts@0.108.9
+
 ## 0.121.12
 
 ### Patch Changes

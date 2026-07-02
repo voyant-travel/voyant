@@ -1,5 +1,16 @@
 # @voyant-travel/crm-react
 
+## 0.138.2
+
+### Patch Changes
+
+- 5fa49b1: Keep person relationship auto-inverse pairs synchronized when either side is updated or deleted.
+- Updated dependencies [7df89ab]
+- Updated dependencies [8cb2124]
+- Updated dependencies [e002da8]
+- Updated dependencies [5fa49b1]
+  - @voyant-travel/relationships@0.121.13
+
 ## 0.138.1
 
 ### Patch Changes

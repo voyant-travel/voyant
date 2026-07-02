@@ -1,5 +1,15 @@
 # @voyant-travel/bookings-react
 
+## 0.138.9
+
+### Patch Changes
+
+- 8d090aa: Limit the packaged admin booking journey to hold-only commits until tokenized card, bank-transfer, and agency-credit checkout flows are wired.
+- b91f9ac: Persist and display the selected B2B organization as the booking contact when the admin booking journey uses company-only billing.
+- Updated dependencies [5fa49b1]
+  - @voyant-travel/relationships-react@0.138.2
+  - @voyant-travel/bookings@0.138.9
+
 ## 0.138.8
 
 ### Patch Changes
