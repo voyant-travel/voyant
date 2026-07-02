@@ -179,14 +179,15 @@ export function BookingJourneyHost({
         ...(board ? { board } : {}),
       }}
       defaultBuyerType="B2B"
-      // Operator payment options: hold (reserve, collect later), online payment
-      // link (the customer pays via the hosted PSP page — we never charge a card
-      // instantly here), bank transfer, and agency credit.
+      // The admin in-process commit route can reserve/hold bookings. Tokenized
+      // card charges, bank-transfer checkout instructions, and agency-credit
+      // account collection are separate flows that this packaged host does not
+      // wire yet, so do not advertise them here.
       paymentCapabilities={{
-        acceptsCard: true,
+        acceptsCard: false,
         acceptsHold: true,
-        acceptsBankTransfer: true,
-        acceptsTicketOnCredit: true,
+        acceptsBankTransfer: false,
+        acceptsTicketOnCredit: false,
       }}
       entitySummary={entitySummary}
       className={className}

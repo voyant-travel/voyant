@@ -38,6 +38,7 @@ import {
 } from "../types.js"
 import {
   buildCommitParty,
+  buildCommitPaymentIntent,
   canAdvanceFromStep,
   defaultMinimalShape,
   isStepVisible,
@@ -380,7 +381,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       // draft — without this the create rejects with "no billing person/org".
       party: buildCommitParty(draft),
       initialStatus: resolveInitialStatus(draft),
-      paymentIntent: { type: draft.payment.intent === "card" ? "card" : "hold" } as never,
+      paymentIntent: buildCommitPaymentIntent(draft),
     })
   }
 
