@@ -11,6 +11,7 @@ import { invoiceListQuerySchema } from "./validation.js"
 export interface FinanceToolServices {
   listInvoices(query: z.infer<typeof invoiceListQuerySchema>): Promise<unknown>
   getInvoiceById(id: string): Promise<unknown>
+  voidInvoice(id: string, input: { reason?: string }): Promise<unknown>
 }
 
 export type FinanceToolContext = ToolContext & { finance?: FinanceToolServices }
@@ -55,4 +56,32 @@ export const getInvoiceTool = defineTool<
   },
 })
 
-export const financeTools = [listInvoicesTool, getInvoiceTool] as const
+const voidInvoiceArgs = z.object({
+  id: z.string().min(1).describe("The invoice id to void."),
+  reason: z.string().optional().describe("Optional reason recorded on the void."),
+})
+
+export const voidInvoiceTool = defineTool<
+  z.infer<typeof voidInvoiceArgs>,
+  unknown,
+  FinanceToolContext
+>({
+  name: "void_invoice",
+  description:
+    "Void an invoice (irreversible). Returns a not-found status when the invoice does not exist.",
+  inputSchema: voidInvoiceArgs,
+  outputSchema: z.custom<unknown>(),
+  requiredScopes: ["finance:void"],
+  tier: "destructive",
+  riskPolicy: {
+    destructive: true,
+    reversible: false,
+    dryRunSupported: false,
+    confirmationRequired: true,
+  },
+  async handler({ id, reason }, ctx) {
+    return finance(ctx).voidInvoice(id, { reason })
+  },
+})
+
+export const financeTools = [listInvoicesTool, getInvoiceTool, voidInvoiceTool] as const

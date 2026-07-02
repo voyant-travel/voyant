@@ -22,6 +22,11 @@ import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/t
 import { productsService } from "@voyant-travel/inventory"
 import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
+import { notificationsService } from "@voyant-travel/notifications"
+import {
+  type NotificationsToolServices,
+  notificationsTools,
+} from "@voyant-travel/notifications/tools"
 import { quotesService } from "@voyant-travel/quotes"
 import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
 import { relationshipsService } from "@voyant-travel/relationships"
@@ -46,6 +51,7 @@ type OperatorToolContext = ToolContext & {
   finance: FinanceToolServices
   quotes: QuotesToolServices
   relationships: RelationshipsToolServices
+  notifications: NotificationsToolServices
 }
 
 /** Build the MCP admin routes wired with this deployment's tools + context. */
@@ -58,6 +64,7 @@ export function buildMcpAdminRoutes(): Hono {
   registry.registerAll(financeTools)
   registry.registerAll(quotesTools)
   registry.registerAll(relationshipsTools)
+  registry.registerAll(notificationsTools)
   return createMcpHonoApp({ registry, buildContext: buildToolContext })
 }
 
@@ -82,16 +89,23 @@ function buildToolContext(c: Context): OperatorToolContext {
     finance: {
       listInvoices: (query) => financeService.listInvoices(c.var.db, query),
       getInvoiceById: (id) => financeService.getInvoiceById(c.var.db, id),
+      voidInvoice: (id, input) => financeService.voidInvoice(c.var.db, id, input),
     },
     quotes: {
       listQuotes: (query) => quotesService.listQuotes(c.var.db, query),
       getQuoteById: (id) => quotesService.getQuoteById(c.var.db, id),
+      acceptQuoteVersion: (quoteVersionId) =>
+        quotesService.acceptQuoteVersion(c.var.db, quoteVersionId),
     },
     relationships: {
       listPeople: (query) => relationshipsService.listPeople(c.var.db, query),
       getPersonById: (id) => relationshipsService.getPersonById(c.var.db, id),
       listOrganizations: (query) => relationshipsService.listOrganizations(c.var.db, query),
       getOrganizationById: (id) => relationshipsService.getOrganizationById(c.var.db, id),
+    },
+    notifications: {
+      listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
+      getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
     },
   }
 }

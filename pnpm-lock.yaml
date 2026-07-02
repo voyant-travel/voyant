@@ -2691,6 +2691,9 @@ importers:
       '@voyant-travel/legal':
         specifier: workspace:^
         version: link:../legal
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
