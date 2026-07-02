@@ -298,6 +298,100 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
       expect(res.status).toBe(404)
     })
 
+    it("creates nested contact methods from the organization path", async () => {
+      const createRes = await getApp().request("/organizations", {
+        method: "POST",
+        ...json({ name: "Contact Method Org" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/organizations/${created.id}/contact-methods`, {
+        method: "POST",
+        ...json({
+          entityType: "person",
+          entityId: "pers_wrong_000000000000000000000",
+          kind: "email",
+          value: "ops@example.com",
+          isPrimary: true,
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        entityType: "organization",
+        entityId: created.id,
+        kind: "email",
+        value: "ops@example.com",
+      })
+    })
+
+    it("creates nested addresses from natural organization payloads", async () => {
+      const createRes = await getApp().request("/organizations", {
+        method: "POST",
+        ...json({ name: "Address Org" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/organizations/${created.id}/addresses`, {
+        method: "POST",
+        ...json({
+          label: "billing",
+          line1: "10 Main Street",
+          city: "Bucharest",
+          country: "RO",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        entityType: "organization",
+        entityId: created.id,
+        label: "billing",
+        line1: "10 Main Street",
+      })
+    })
+
+    it("rejects nested identity rows for missing organizations", async () => {
+      const { createTestDb } = await import("@voyant-travel/db/test-utils")
+      const db = createTestDb()
+      const missingOrganizationId = "crm_org_missing_nested_identity_0001"
+
+      const contactRes = await getApp().request(
+        `/organizations/${missingOrganizationId}/contact-methods`,
+        {
+          method: "POST",
+          ...json({ kind: "email", value: "missing@example.com" }),
+        },
+      )
+      const addressRes = await getApp().request(
+        `/organizations/${missingOrganizationId}/addresses`,
+        {
+          method: "POST",
+          ...json({ label: "billing", line1: "Missing Street" }),
+        },
+      )
+
+      expect(contactRes.status).toBe(404)
+      expect(addressRes.status).toBe(404)
+
+      const contactRows = await db.execute<{ count: number }>(sql`
+          SELECT count(*)::int
+          FROM identity_contact_points
+          WHERE entity_type = 'organization'
+            AND entity_id = ${missingOrganizationId}
+        `)
+      const addressRows = await db.execute<{ count: number }>(sql`
+          SELECT count(*)::int
+          FROM identity_addresses
+          WHERE entity_type = 'organization'
+            AND entity_id = ${missingOrganizationId}
+        `)
+      expect(contactRows[0]?.count).toBe(0)
+      expect(addressRows[0]?.count).toBe(0)
+    })
+
     it("creates an organization note", async () => {
       const createRes = await getApp().request("/organizations", {
         method: "POST",
