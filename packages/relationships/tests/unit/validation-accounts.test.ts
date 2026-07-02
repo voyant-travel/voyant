@@ -73,12 +73,26 @@ describe("Organization schemas", () => {
     expect(result.paymentTerms).toBe(30)
   })
 
+  it("rejects excessive paymentTerms", () => {
+    expect(() => insertOrganizationSchema.parse({ name: "Acme", paymentTerms: 999 })).toThrow()
+  })
+
   it("rejects negative paymentTerms", () => {
     expect(() => insertOrganizationSchema.parse({ name: "Acme", paymentTerms: -1 })).toThrow()
   })
 
   it("rejects zero paymentTerms", () => {
     expect(() => insertOrganizationSchema.parse({ name: "Acme", paymentTerms: 0 })).toThrow()
+  })
+
+  it("accepts ISO currency code", () => {
+    const result = insertOrganizationSchema.parse({ name: "Acme", defaultCurrency: "EUR" })
+    expect(result.defaultCurrency).toBe("EUR")
+  })
+
+  it("rejects invalid defaultCurrency", () => {
+    expect(() => insertOrganizationSchema.parse({ name: "Acme", defaultCurrency: "X" })).toThrow()
+    expect(() => insertOrganizationSchema.parse({ name: "Acme", defaultCurrency: "usd" })).toThrow()
   })
 
   it("accepts preferredLanguage", () => {

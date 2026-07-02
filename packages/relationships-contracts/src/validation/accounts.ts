@@ -8,6 +8,11 @@ import {
   relationTypeSchema,
 } from "./common.js"
 
+const currencyCodeSchema = z
+  .string()
+  .length(3)
+  .regex(/^[A-Z]{3}$/, "Expected ISO 4217 code")
+
 export const organizationCoreSchema = z.object({
   name: z.string().min(1),
   legalName: z.string().nullable().optional(),
@@ -22,9 +27,9 @@ export const organizationCoreSchema = z.object({
   industry: z.string().nullable().optional(),
   relation: relationTypeSchema.nullable().optional(),
   ownerId: z.string().nullable().optional(),
-  defaultCurrency: z.string().nullable().optional(),
+  defaultCurrency: currencyCodeSchema.nullable().optional(),
   preferredLanguage: z.string().nullable().optional(),
-  paymentTerms: z.number().int().positive().nullable().optional(),
+  paymentTerms: z.number().int().positive().max(365).nullable().optional(),
   status: recordStatusSchema.default("active"),
   source: z.string().nullable().optional(),
   sourceRef: z.string().nullable().optional(),
