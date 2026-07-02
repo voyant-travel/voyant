@@ -11,13 +11,34 @@
  */
 
 import {
+  bookingsService,
+  redactBookingContact,
+  shouldRevealBookingPii,
+} from "@voyant-travel/bookings"
+import { type BookingsToolServices, bookingsTools } from "@voyant-travel/bookings/tools"
+import {
   type CatalogToolServices,
   catalogTools,
   executeSemanticSearch,
 } from "@voyant-travel/catalog"
+import { financeService } from "@voyant-travel/finance"
+import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/tools"
+import { isStaffRbacEnforced } from "@voyant-travel/hono"
 import { productsService } from "@voyant-travel/inventory"
 import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
+import { notificationsService } from "@voyant-travel/notifications"
+import {
+  type NotificationsToolServices,
+  notificationsTools,
+} from "@voyant-travel/notifications/tools"
+import { quotesService } from "@voyant-travel/quotes"
+import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
+import { relationshipsService } from "@voyant-travel/relationships"
+import {
+  type RelationshipsToolServices,
+  relationshipsTools,
+} from "@voyant-travel/relationships/tools"
 import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
 import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
 import type { Context, Hono } from "hono"
@@ -31,6 +52,23 @@ type OperatorToolContext = ToolContext & {
   catalog: CatalogToolServices
   trips: TripsToolServices
   inventory: InventoryToolServices
+  bookings: BookingsToolServices
+  finance: FinanceToolServices
+  quotes: QuotesToolServices
+  relationships: RelationshipsToolServices
+  notifications: NotificationsToolServices
+}
+
+type BookingContactRow = {
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactTaxId?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactAddressLine1?: string | null
+  contactAddressLine2?: string | null
+  contactPostalCode?: string | null
+  [key: string]: unknown
 }
 
 /** Build the MCP admin routes wired with this deployment's tools + context. */
@@ -39,6 +77,11 @@ export function buildMcpAdminRoutes(): Hono {
   registry.registerAll(catalogTools)
   registry.registerAll(tripsTools)
   registry.registerAll(inventoryTools)
+  registry.registerAll(bookingsTools)
+  registry.registerAll(financeTools)
+  registry.registerAll(quotesTools)
+  registry.registerAll(relationshipsTools)
+  registry.registerAll(notificationsTools)
   return createMcpHonoApp({ registry, buildContext: buildToolContext })
 }
 
@@ -56,6 +99,51 @@ function buildToolContext(c: Context): OperatorToolContext {
     catalog: createCatalogToolServices(c),
     trips: createTripsToolServices(c),
     inventory: createInventoryToolServices(c),
+    bookings: createBookingsToolServices(c),
+    finance: {
+      listInvoices: (query) => financeService.listInvoices(c.var.db, query),
+      getInvoiceById: (id) => financeService.getInvoiceById(c.var.db, id),
+      voidInvoice: (id, input) => financeService.voidInvoice(c.var.db, id, input),
+    },
+    quotes: {
+      listQuotes: (query) => quotesService.listQuotes(c.var.db, query),
+      getQuoteById: (id) => quotesService.getQuoteById(c.var.db, id),
+      acceptQuoteVersion: (quoteVersionId) =>
+        quotesService.acceptQuoteVersion(c.var.db, quoteVersionId),
+    },
+    relationships: {
+      listPeople: (query) => relationshipsService.listPeople(c.var.db, query),
+      getPersonById: (id) => relationshipsService.getPersonById(c.var.db, id),
+      listOrganizations: (query) => relationshipsService.listOrganizations(c.var.db, query),
+      getOrganizationById: (id) => relationshipsService.getOrganizationById(c.var.db, id),
+    },
+    notifications: {
+      listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
+      getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
+    },
+  }
+}
+
+function createBookingsToolServices(c: Context): BookingsToolServices {
+  const reveal = shouldRevealBookingPii({
+    actor: c.var.actor,
+    scopes: c.var.scopes,
+    callerType: c.var.callerType,
+    isInternalRequest: c.var.isInternalRequest,
+    enforceRbac: isStaffRbacEnforced(c.env),
+  })
+
+  return {
+    async listBookings(query) {
+      const result = await bookingsService.listBookings(c.var.db, query)
+      if (reveal) return result
+      return redactBookingListResult(result)
+    },
+    async getBookingById(id) {
+      const row = await bookingsService.getBookingById(c.var.db, id)
+      if (reveal || !row) return row
+      return redactBookingRow(row)
+    },
   }
 }
 
@@ -95,6 +183,20 @@ function createCatalogToolServices(c: Context): CatalogToolServices {
       }
     },
   }
+}
+
+function redactBookingListResult<T>(result: T): T {
+  if (!isRecord(result) || !Array.isArray(result.data)) return result
+  return { ...result, data: result.data.map((row) => redactBookingRow(row)) }
+}
+
+function redactBookingRow<T>(row: T): T {
+  if (!isRecord(row)) return row
+  return redactBookingContact(row as BookingContactRow) as T
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function createInventoryToolServices(c: Context): InventoryToolServices {

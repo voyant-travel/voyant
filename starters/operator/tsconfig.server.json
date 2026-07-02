@@ -303,6 +303,7 @@
         "../../packages/bookings/dist/status-dispatch.d.ts"
       ],
       "@voyant-travel/bookings/tasks": ["../../packages/bookings/dist/tasks/index.d.ts"],
+      "@voyant-travel/bookings/tools": ["../../packages/bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../../packages/bookings/dist/validation.d.ts"],
       "@voyant-travel/catalog": ["../../packages/catalog/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring": ["../../packages/catalog-authoring/dist/index.d.ts"],
@@ -937,6 +938,7 @@
       ],
       "@voyant-travel/finance/routes": ["../../packages/finance/dist/routes.d.ts"],
       "@voyant-travel/finance/schema": ["../../packages/finance/dist/schema.d.ts"],
+      "@voyant-travel/finance/tools": ["../../packages/finance/dist/tools.d.ts"],
       "@voyant-travel/finance/validation": ["../../packages/finance/dist/validation.d.ts"],
       "@voyant-travel/flights": ["../../packages/flights/dist/index.d.ts"],
       "@voyant-travel/flights-contracts": ["../../packages/flights-contracts/dist/index.d.ts"],
@@ -1314,6 +1316,7 @@
       "@voyant-travel/notifications/template-authoring": [
         "../../packages/notifications/dist/template-authoring.d.ts"
       ],
+      "@voyant-travel/notifications/tools": ["../../packages/notifications/dist/tools.d.ts"],
       "@voyant-travel/notifications/types": ["../../packages/notifications/dist/types.d.ts"],
       "@voyant-travel/notifications/validation": [
         "../../packages/notifications/dist/validation.d.ts"
@@ -1546,6 +1549,7 @@
       "@voyant-travel/quotes/proposal-routes": ["../../packages/quotes/dist/proposal-routes.d.ts"],
       "@voyant-travel/quotes/routes": ["../../packages/quotes/dist/routes/index.d.ts"],
       "@voyant-travel/quotes/schema": ["../../packages/quotes/dist/schema.d.ts"],
+      "@voyant-travel/quotes/tools": ["../../packages/quotes/dist/tools.d.ts"],
       "@voyant-travel/quotes/validation": ["../../packages/quotes/dist/validation.d.ts"],
       "@voyant-travel/react": ["../../packages/react/dist/index.d.ts"],
       "@voyant-travel/react/provider": ["../../packages/react/dist/provider.d.ts"],
@@ -1624,6 +1628,7 @@
         "../../packages/relationships/dist/routes/index.d.ts"
       ],
       "@voyant-travel/relationships/schema": ["../../packages/relationships/dist/schema.d.ts"],
+      "@voyant-travel/relationships/tools": ["../../packages/relationships/dist/tools.d.ts"],
       "@voyant-travel/relationships/validation": [
         "../../packages/relationships/dist/validation.d.ts"
       ],

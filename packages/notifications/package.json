@@ -14,7 +14,8 @@
     "./tasks": "./src/tasks/index.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
-    "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts"
+    "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts",
+    "./tools": "./src/tools.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -38,7 +39,8 @@
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "liquidjs": "^10.27.1",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@voyant-travel/tools": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -108,6 +110,11 @@
         "types": "./dist/providers/voyant-cloud-sms.d.ts",
         "import": "./dist/providers/voyant-cloud-sms.js",
         "default": "./dist/providers/voyant-cloud-sms.js"
+      },
+      "./tools": {
+        "types": "./dist/tools.d.ts",
+        "import": "./dist/tools.js",
+        "default": "./dist/tools.js"
       }
     },
     "main": "./dist/index.js",
