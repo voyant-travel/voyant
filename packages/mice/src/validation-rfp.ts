@@ -14,17 +14,21 @@ export const bidStatusSchema = z.enum([
 const rfpEditableStatusSchema = z.enum(["draft", "issued", "closed", "cancelled"])
 const bidEditableStatusSchema = z.enum(["draft", "submitted", "under_review"])
 
-export const createRfpSchema = z.object({
+const rfpMutationSchema = z.object({
   programId: z.string().min(1),
   title: z.string().min(1),
   requirements: z.record(z.string(), z.unknown()).optional(),
-  status: rfpEditableStatusSchema.default("draft"),
+  status: rfpEditableStatusSchema,
   issuedAt: z.string().datetime().optional(),
   dueAt: z.string().datetime().optional(),
   notes: z.string().optional(),
 })
 
-export const updateRfpSchema = createRfpSchema.partial().omit({ programId: true })
+export const createRfpSchema = rfpMutationSchema.extend({
+  status: rfpEditableStatusSchema.default("draft"),
+})
+
+export const updateRfpSchema = rfpMutationSchema.partial().omit({ programId: true })
 
 export const rfpListQuerySchema = z.object({
   programId: z.string().min(1),
@@ -37,9 +41,9 @@ export const inviteSupplierSchema = z.object({
   supplierId: z.string().min(1),
 })
 
-export const createBidSchema = z.object({
+const bidMutationSchema = z.object({
   supplierId: z.string().min(1),
-  status: bidEditableStatusSchema.default("draft"),
+  status: bidEditableStatusSchema,
   totalCents: z.number().int().min(0).optional(),
   currency: z.string().optional(),
   proposalDoc: z.string().optional(),
@@ -47,7 +51,11 @@ export const createBidSchema = z.object({
   notes: z.string().optional(),
 })
 
-export const updateBidSchema = createBidSchema.partial().omit({ supplierId: true })
+export const createBidSchema = bidMutationSchema.extend({
+  status: bidEditableStatusSchema.default("draft"),
+})
+
+export const updateBidSchema = bidMutationSchema.partial().omit({ supplierId: true })
 
 export const setBidLinesSchema = z.object({
   lines: z.array(

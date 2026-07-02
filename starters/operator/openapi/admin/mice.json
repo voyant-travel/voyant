@@ -1040,8 +1040,7 @@
                       "conference",
                       "exhibition",
                       "other"
-                    ],
-                    "default": "conference"
+                    ]
                   },
                   "status": {
                     "type": "string",
@@ -1052,8 +1051,7 @@
                       "operating",
                       "completed",
                       "cancelled"
-                    ],
-                    "default": "lead"
+                    ]
                   },
                   "destination": {
                     "type": [
@@ -1972,8 +1970,7 @@
                       "gala",
                       "excursion",
                       "free"
-                    ],
-                    "default": "breakout"
+                    ]
                   },
                   "functionSpaceId": {
                     "type": "string",
@@ -3056,8 +3053,7 @@
                       "staff",
                       "exhibitor",
                       "organizer"
-                    ],
-                    "default": "attendee"
+                    ]
                   },
                   "status": {
                     "type": "string",
@@ -3068,8 +3064,7 @@
                       "checked_in",
                       "no_show",
                       "cancelled"
-                    ],
-                    "default": "invited"
+                    ]
                   },
                   "arrivalAt": {
                     "type": "string",
@@ -5587,8 +5582,7 @@
                       "issued",
                       "closed",
                       "cancelled"
-                    ],
-                    "default": "draft"
+                    ]
                   },
                   "issuedAt": {
                     "type": "string",
@@ -6325,8 +6319,7 @@
                       "draft",
                       "submitted",
                       "under_review"
-                    ],
-                    "default": "draft"
+                    ]
                   },
                   "totalCents": {
                     "type": "integer",

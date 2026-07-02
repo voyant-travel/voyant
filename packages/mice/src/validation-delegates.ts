@@ -21,18 +21,23 @@ export const delegateStatusSchema = z.enum([
 
 export const enrollmentStatusSchema = z.enum(["registered", "waitlisted", "attended", "cancelled"])
 
-export const createDelegateSchema = z.object({
+const delegateMutationSchema = z.object({
   programId: z.string().min(1),
   personId: z.string().min(1).optional(),
   bookingId: z.string().min(1).optional(),
-  role: delegateRoleSchema.default("attendee"),
-  status: delegateStatusSchema.default("invited"),
+  role: delegateRoleSchema,
+  status: delegateStatusSchema,
   arrivalAt: z.string().datetime().optional(),
   departureAt: z.string().datetime().optional(),
   notes: z.string().optional(),
 })
 
-export const updateDelegateSchema = createDelegateSchema.partial().omit({ programId: true })
+export const createDelegateSchema = delegateMutationSchema.extend({
+  role: delegateRoleSchema.default("attendee"),
+  status: delegateStatusSchema.default("invited"),
+})
+
+export const updateDelegateSchema = delegateMutationSchema.partial().omit({ programId: true })
 
 export const delegateListQuerySchema = z.object({
   programId: z.string().min(1),
