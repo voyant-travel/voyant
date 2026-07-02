@@ -21,7 +21,8 @@
     "./booking-tax": "./src/booking-tax.ts",
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
-    "./public-validation": "./src/validation-public.ts"
+    "./public-validation": "./src/validation-public.ts",
+    "./tools": "./src/tools.ts"
   },
   "scripts": {
     "typecheck": "NODE_OPTIONS=--max-old-space-size=4096 tsc -p tsconfig.typecheck.json",
@@ -48,7 +49,8 @@
     "drizzle-orm": "catalog:",
     "fflate": "^0.8.2",
     "hono": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@voyant-travel/tools": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -152,6 +154,11 @@
         "types": "./dist/validation-public.d.ts",
         "import": "./dist/validation-public.js",
         "default": "./dist/validation-public.js"
+      },
+      "./tools": {
+        "types": "./dist/tools.d.ts",
+        "import": "./dist/tools.js",
+        "default": "./dist/tools.js"
       }
     },
     "main": "./dist/index.js",
