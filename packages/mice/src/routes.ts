@@ -1,4 +1,8 @@
 /**
+ * agent-quality: file-size exception -- owner: mice; the MICE OpenAPI route
+ * definitions and handlers stay co-located until a dedicated route split
+ * preserves generated OpenAPI output and coverage.
+ *
  * MICE program admin routes. Mounted by the deployment under `/v1/admin/mice`.
  * Routes stay thin: validate, call the domain services, serialize. See RFC
  * voyant#1489.
@@ -26,6 +30,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import type { MiceRouteRuntime } from "./route-runtime.js"
 import { createProgram, getProgram, listPrograms, updateProgram } from "./service.js"
 import { commercialsService } from "./service-commercials.js"
 import {
@@ -645,36 +650,51 @@ const enrollDelegateRoute = createRoute({
   },
 })
 
-const delegateRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-  .openapi(listDelegatesRoute, async (c) =>
-    c.json(await listDelegates(c.get("db"), c.req.valid("query")), 200),
-  )
-  .openapi(createDelegateRoute, async (c) => {
-    const outcome = await createDelegate(c.get("db"), c.req.valid("json"))
-    if (outcome.status === "program_not_found") return c.json({ error: "Program not found" }, 404)
-    return c.json({ data: outcome.delegate }, 201)
-  })
-  .openapi(getDelegateRoute, async (c) => {
-    const delegate = await getDelegate(c.get("db"), c.req.valid("param").id)
-    return delegate ? c.json({ data: delegate }, 200) : c.json({ error: "Delegate not found" }, 404)
-  })
-  .openapi(updateDelegateRoute, async (c) => {
-    const delegate = await updateDelegate(c.get("db"), c.req.valid("param").id, c.req.valid("json"))
-    return delegate ? c.json({ data: delegate }, 200) : c.json({ error: "Delegate not found" }, 404)
-  })
-  .openapi(enrollDelegateRoute, async (c) => {
-    const outcome = await enrollDelegate(c.get("db"), c.req.valid("param").id, c.req.valid("json"))
-    switch (outcome.status) {
-      case "ok":
-        return c.json({ data: outcome.enrollment }, outcome.idempotent ? 200 : 201)
-      case "delegate_not_found":
-        return c.json({ error: "Delegate not found" }, 404)
-      case "session_not_found":
-        return c.json({ error: "Session not found" }, 404)
-      case "program_mismatch":
-        return c.json({ error: "Session belongs to a different program" }, 409)
-    }
-  })
+function createDelegateRoutes(runtime: MiceRouteRuntime = {}): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listDelegatesRoute, async (c) =>
+      c.json(await listDelegates(c.get("db"), c.req.valid("query")), 200),
+    )
+    .openapi(createDelegateRoute, async (c) => {
+      const outcome = await createDelegate(c.get("db"), c.req.valid("json"), runtime)
+      if (outcome.status === "program_not_found") return c.json({ error: "Program not found" }, 404)
+      return c.json({ data: outcome.delegate }, 201)
+    })
+    .openapi(getDelegateRoute, async (c) => {
+      const delegate = await getDelegate(c.get("db"), c.req.valid("param").id)
+      return delegate
+        ? c.json({ data: delegate }, 200)
+        : c.json({ error: "Delegate not found" }, 404)
+    })
+    .openapi(updateDelegateRoute, async (c) => {
+      const delegate = await updateDelegate(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        runtime,
+      )
+      return delegate
+        ? c.json({ data: delegate }, 200)
+        : c.json({ error: "Delegate not found" }, 404)
+    })
+    .openapi(enrollDelegateRoute, async (c) => {
+      const outcome = await enrollDelegate(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      switch (outcome.status) {
+        case "ok":
+          return c.json({ data: outcome.enrollment }, outcome.idempotent ? 200 : 201)
+        case "delegate_not_found":
+          return c.json({ error: "Delegate not found" }, 404)
+        case "session_not_found":
+          return c.json({ error: "Session not found" }, 404)
+        case "program_mismatch":
+          return c.json({ error: "Session belongs to a different program" }, 409)
+      }
+    })
+}
 
 // === rooming assignments ====================================================
 
@@ -1110,12 +1130,16 @@ const bidRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
  * `.openapi()` operations propagate up through any parent registry while keeping
  * type-inference cost bounded (one flat chain has O(n²) inference cost).
  */
-export const miceAdminRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-  .route("/", programRoutes)
-  .route("/", sessionRoutes)
-  .route("/", delegateRoutes)
-  .route("/", roomingRoutes)
-  .route("/", rfpRoutes)
-  .route("/", bidRoutes)
+export function createMiceAdminRoutes(runtime: MiceRouteRuntime = {}): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .route("/", programRoutes)
+    .route("/", sessionRoutes)
+    .route("/", createDelegateRoutes(runtime))
+    .route("/", roomingRoutes)
+    .route("/", rfpRoutes)
+    .route("/", bidRoutes)
+}
 
-export type MiceAdminRoutes = typeof miceAdminRoutes
+export const miceAdminRoutes = createMiceAdminRoutes()
+
+export type MiceAdminRoutes = ReturnType<typeof createMiceAdminRoutes>
