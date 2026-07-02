@@ -371,8 +371,30 @@ export const bookingGroupDetailSchema = bookingGroupRecordSchema.extend({
 
 export type BookingGroupDetailRecord = z.infer<typeof bookingGroupDetailSchema>
 
+// The admin booking detail read (`GET /v1/admin/bookings/:id`) hydrates the
+// bookings-owned child collections inline (items, travelers, documents) — see
+// the server's `bookingDetailSchema`. The flat `bookingRecordSchema` used for
+// the list carries only an optional summary `items` and no travelers/documents,
+// so parsing the detail with it silently strips the hydrated collections. The
+// detail parser therefore extends the record with the full child shapes:
+//  - `items` use the full `bookingItemRecordSchema` (same shape as `/items`).
+//  - `travelers` follow the same reveal/redaction gate as `/travelers`; the row
+//    is always the plain traveler shape (PII masked or not), but we accept the
+//    reveal variant too so an inline `travelDetails` is preserved rather than
+//    stripped if the server ever hydrates it.
+//  - `documents` reuse `bookingTravelerDocumentRecordSchema`, which already
+//    mirrors the server's booking-level `bookingDocumentSchema` (the shape the
+//    `/documents` endpoint returns).
+export const bookingDetailSchema = bookingRecordSchema.extend({
+  items: z.array(bookingItemRecordSchema),
+  travelers: z.array(z.union([bookingTravelerRevealRecordSchema, bookingTravelerRecordSchema])),
+  documents: z.array(bookingTravelerDocumentRecordSchema),
+})
+
+export type BookingDetailRecord = z.infer<typeof bookingDetailSchema>
+
 export const bookingListResponse = paginatedEnvelope(bookingRecordSchema)
-export const bookingSingleResponse = singleEnvelope(bookingRecordSchema)
+export const bookingSingleResponse = singleEnvelope(bookingDetailSchema)
 export const bookingItemsResponse = arrayEnvelope(bookingItemRecordSchema)
 export const bookingItemTravelersResponse = arrayEnvelope(bookingItemTravelerRecordSchema)
 export const bookingTravelerDocumentsResponse = arrayEnvelope(bookingTravelerDocumentRecordSchema)
