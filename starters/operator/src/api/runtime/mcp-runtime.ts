@@ -27,7 +27,7 @@ import { isStaffRbacEnforced } from "@voyant-travel/hono"
 import { productsService } from "@voyant-travel/inventory"
 import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
-import { notificationsService } from "@voyant-travel/notifications"
+import { createNotificationService, notificationsService } from "@voyant-travel/notifications"
 import {
   type NotificationsToolServices,
   notificationsTools,
@@ -42,7 +42,7 @@ import {
 import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
 import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
 import type { Context, Hono } from "hono"
-
+import { resolveNotificationProviders } from "../../lib/notifications"
 import { buildCatalogContext } from "../lib/catalog-context"
 import { DEFAULT_SLICES } from "../lib/catalog-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
@@ -120,6 +120,14 @@ function buildToolContext(c: Context): OperatorToolContext {
     notifications: {
       listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
       getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
+      // Template-only send (the tool rejects raw content). Dispatches through the
+      // deployment's real provider runtime — same path the app uses.
+      sendTemplated: (input) =>
+        notificationsService.sendNotification(
+          c.var.db,
+          createNotificationService(resolveNotificationProviders(c.env as Record<string, unknown>)),
+          { ...input, targetType: "other" },
+        ),
     },
   }
 }
