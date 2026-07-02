@@ -394,7 +394,15 @@ export const bookingDetailSchema = bookingRecordSchema.extend({
 export type BookingDetailRecord = z.infer<typeof bookingDetailSchema>
 
 export const bookingListResponse = paginatedEnvelope(bookingRecordSchema)
-export const bookingSingleResponse = singleEnvelope(bookingDetailSchema)
+// `bookingSingleResponse` stays on the flat record schema: it is shared by the
+// mutation hooks (create/update/convert/status/cancel), and the server returns
+// a flat `bookingSchema` (no hydrated child collections) for those endpoints.
+// Only the detail read (`GET /:id`) hydrates the collections — it uses
+// `bookingDetailResponse` below. The `.extend({ data })` mutation hooks that
+// build on `bookingSingleResponse` replace `data` wholesale, so the base shape
+// here does not affect them.
+export const bookingSingleResponse = singleEnvelope(bookingRecordSchema)
+export const bookingDetailResponse = singleEnvelope(bookingDetailSchema)
 export const bookingItemsResponse = arrayEnvelope(bookingItemRecordSchema)
 export const bookingItemTravelersResponse = arrayEnvelope(bookingItemTravelerRecordSchema)
 export const bookingTravelerDocumentsResponse = arrayEnvelope(bookingTravelerDocumentRecordSchema)

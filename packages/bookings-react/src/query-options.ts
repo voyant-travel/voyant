@@ -23,6 +23,7 @@ import {
 } from "./query-keys.js"
 import {
   bookingActivityResponse,
+  bookingDetailResponse,
   bookingGroupDetailResponse,
   bookingGroupForBookingResponse,
   bookingGroupListResponse,
@@ -30,7 +31,6 @@ import {
   bookingItemTravelersResponse,
   bookingListResponse,
   bookingNotesResponse,
-  bookingSingleResponse,
   bookingSupplierStatusesResponse,
   bookingTravelerDocumentsResponse,
   bookingTravelerSharingGroupsResponse,
@@ -101,7 +101,7 @@ export function getBookingQueryOptions(
 
   return queryOptions({
     queryKey: bookingsQueryKeys.booking(id ?? ""),
-    queryFn: () => fetchWithValidation(`/v1/admin/bookings/${id}`, bookingSingleResponse, client),
+    queryFn: () => fetchWithValidation(`/v1/admin/bookings/${id}`, bookingDetailResponse, client),
   })
 }
 

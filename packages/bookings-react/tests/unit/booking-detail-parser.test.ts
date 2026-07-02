@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest"
 
-import { bookingListResponse, bookingSingleResponse } from "../../src/schemas.js"
+import {
+  bookingDetailResponse,
+  bookingListResponse,
+  bookingSingleResponse,
+} from "../../src/schemas.js"
 
 // Regression cover for voyant#2728: the admin booking detail read hydrates
 // items/travelers/documents inline, but the client previously parsed the
 // response with the flat list record schema, which stripped those collections.
-// `bookingSingleResponse` now points at `bookingDetailSchema`, so the parser
-// must preserve them while the list parser stays on the summary shape.
+// The dedicated `bookingDetailResponse` preserves them. The shared
+// `bookingSingleResponse` stays flat (mutation endpoints return a flat booking),
+// and the list parser stays on the summary shape.
 
 const baseBooking = {
   id: "bkg_1",
@@ -82,7 +87,7 @@ const document = {
 
 describe("bookingSingleResponse (detail parser)", () => {
   it("preserves hydrated items, travelers, and documents", () => {
-    const parsed = bookingSingleResponse.parse({
+    const parsed = bookingDetailResponse.parse({
       data: { ...baseBooking, items: [detailItem], travelers: [traveler], documents: [document] },
     })
 
@@ -119,7 +124,7 @@ describe("bookingSingleResponse (detail parser)", () => {
       },
     }
 
-    const parsed = bookingSingleResponse.parse({
+    const parsed = bookingDetailResponse.parse({
       data: { ...baseBooking, items: [], travelers: [revealed], documents: [] },
     })
 
@@ -128,6 +133,17 @@ describe("bookingSingleResponse (detail parser)", () => {
       (parsed.data.travelers[0] as { travelDetails: { nationality: string } }).travelDetails
         .nationality,
     ).toBe("GB")
+  })
+
+  it("keeps bookingSingleResponse flat so mutation responses (no child collections) still parse", () => {
+    // Mutation endpoints (create/update/convert/status/cancel) return a flat
+    // `bookingSchema` with no items/travelers/documents — the shared single
+    // parser must accept that without requiring the detail-only collections.
+    const parsed = bookingSingleResponse.parse({ data: baseBooking })
+
+    expect(parsed.data.id).toBe("bkg_1")
+    expect(parsed.data).not.toHaveProperty("travelers")
+    expect(parsed.data).not.toHaveProperty("documents")
   })
 
   it("keeps the list parser on the summary shape (no travelers/documents required)", () => {
