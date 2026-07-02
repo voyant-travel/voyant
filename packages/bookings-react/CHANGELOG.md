@@ -1,5 +1,30 @@
 # @voyant-travel/bookings-react
 
+## 0.138.7
+
+### Patch Changes
+
+- 9f3ffdf: Preserve the hydrated `items`/`travelers`/`documents` collections on the
+  `useBooking` detail read.
+
+  The admin booking detail (`GET /v1/admin/bookings/:id`) hydrates its
+  bookings-owned child collections inline, but `getBookingQueryOptions` parsed the
+  response with the flat list record schema (`bookingRecordSchema`) — which
+  carries only an optional summary `items` and no `travelers`/`documents` — so Zod
+  silently stripped the newly-hydrated collections for `bookings-react` consumers.
+
+  Adds a `bookingDetailSchema` (record + full `items`, `travelers`, and
+  `documents`) and a dedicated `bookingDetailResponse` that the detail query now
+  uses. Travelers accept both the redacted and reveal shapes so an inline
+  `travelDetails` is preserved. `bookingSingleResponse` stays on the flat record
+  schema because it is shared by the mutation hooks (create/update/convert/
+  status/cancel), whose endpoints return a flat booking with no child collections.
+
+- 3e81078: Clear company billing state when switching booking journeys back to individual buyers and clarify the traveler add action.
+- Updated dependencies [3a14bd5]
+  - @voyant-travel/operations-react@0.19.2
+  - @voyant-travel/bookings@0.138.7
+
 ## 0.138.6
 
 ### Patch Changes

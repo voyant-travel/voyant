@@ -1,5 +1,14 @@
 # @voyant-travel/operations-react
 
+## 0.19.2
+
+### Patch Changes
+
+- 3a14bd5: Expose resources admin edit and pool membership workflows, preserve resources list state across detail navigation, and improve assignment slot labels with product context.
+- Updated dependencies [9f3ffdf]
+- Updated dependencies [3e81078]
+  - @voyant-travel/bookings-react@0.138.7
+
 ## 0.19.1
 
 ### Patch Changes

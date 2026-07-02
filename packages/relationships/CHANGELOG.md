@@ -1,5 +1,14 @@
 # @voyant-travel/crm
 
+## 0.121.11
+
+### Patch Changes
+
+- 46d7d52: Keep organization PATCH requests partial by avoiding create defaults on update
+  payloads, so omitted fields such as status and tags remain unchanged.
+- Updated dependencies [46d7d52]
+  - @voyant-travel/relationships-contracts@0.108.7
+
 ## 0.121.10
 
 ### Patch Changes
