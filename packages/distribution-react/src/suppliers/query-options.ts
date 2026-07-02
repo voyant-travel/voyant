@@ -4,10 +4,16 @@ import { queryOptions } from "@tanstack/react-query"
 
 import { type FetchWithValidationOptions, fetchWithValidation } from "./client.js"
 import type { UseSuppliersOptions } from "./hooks/use-suppliers.js"
+import type { SupplierAvailabilityFilters } from "./query-keys.js"
 import { suppliersQueryKeys } from "./query-keys.js"
 import {
+  supplierAddressesResponse,
+  supplierAvailabilityResponse,
+  supplierContactPointsResponse,
+  supplierContractsResponse,
   supplierDetailResponse,
   supplierListResponse,
+  supplierNamedContactsResponse,
   supplierNotesResponse,
   supplierRatesResponse,
   supplierServicesResponse,
@@ -76,6 +82,87 @@ export function getSupplierNotesQueryOptions(
     queryKey: suppliersQueryKeys.supplierNotes(supplierId),
     queryFn: () =>
       fetchWithValidation(`/v1/admin/suppliers/${supplierId}/notes`, supplierNotesResponse, client),
+  })
+}
+
+export function getSupplierContactPointsQueryOptions(
+  client: FetchWithValidationOptions,
+  supplierId: string,
+) {
+  return queryOptions({
+    queryKey: suppliersQueryKeys.supplierContactPoints(supplierId),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/suppliers/${supplierId}/contact-points`,
+        supplierContactPointsResponse,
+        client,
+      ),
+  })
+}
+
+export function getSupplierContactsQueryOptions(
+  client: FetchWithValidationOptions,
+  supplierId: string,
+) {
+  return queryOptions({
+    queryKey: suppliersQueryKeys.supplierContacts(supplierId),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/suppliers/${supplierId}/contacts`,
+        supplierNamedContactsResponse,
+        client,
+      ),
+  })
+}
+
+export function getSupplierAddressesQueryOptions(
+  client: FetchWithValidationOptions,
+  supplierId: string,
+) {
+  return queryOptions({
+    queryKey: suppliersQueryKeys.supplierAddresses(supplierId),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/suppliers/${supplierId}/addresses`,
+        supplierAddressesResponse,
+        client,
+      ),
+  })
+}
+
+export function getSupplierAvailabilityQueryOptions(
+  client: FetchWithValidationOptions,
+  supplierId: string,
+  filters: SupplierAvailabilityFilters = {},
+) {
+  return queryOptions({
+    queryKey: suppliersQueryKeys.supplierAvailability(supplierId, filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.from) params.set("from", filters.from)
+      if (filters.to) params.set("to", filters.to)
+      const qs = params.toString()
+      return fetchWithValidation(
+        `/v1/admin/suppliers/${supplierId}/availability${qs ? `?${qs}` : ""}`,
+        supplierAvailabilityResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getSupplierContractsQueryOptions(
+  client: FetchWithValidationOptions,
+  supplierId: string,
+) {
+  return queryOptions({
+    queryKey: suppliersQueryKeys.supplierContracts(supplierId),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/suppliers/${supplierId}/contracts`,
+        supplierContractsResponse,
+        client,
+      ),
   })
 }
 

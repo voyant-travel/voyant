@@ -18,6 +18,11 @@ export interface SuppliersListFilters extends PaginationFilters {
   sortDir?: SuppliersListSortDir | undefined
 }
 
+export interface SupplierAvailabilityFilters {
+  from?: string | undefined
+  to?: string | undefined
+}
+
 export const suppliersQueryKeys = {
   all: ["voyant", "suppliers"] as const,
 
@@ -33,6 +38,26 @@ export const suppliersQueryKeys = {
   notes: () => [...suppliersQueryKeys.all, "notes"] as const,
   supplierNotes: (supplierId: string) =>
     [...suppliersQueryKeys.notes(), "list", supplierId] as const,
+
+  contactPoints: () => [...suppliersQueryKeys.all, "contact-points"] as const,
+  supplierContactPoints: (supplierId: string) =>
+    [...suppliersQueryKeys.contactPoints(), "list", supplierId] as const,
+
+  contacts: () => [...suppliersQueryKeys.all, "contacts"] as const,
+  supplierContacts: (supplierId: string) =>
+    [...suppliersQueryKeys.contacts(), "list", supplierId] as const,
+
+  addresses: () => [...suppliersQueryKeys.all, "addresses"] as const,
+  supplierAddresses: (supplierId: string) =>
+    [...suppliersQueryKeys.addresses(), "list", supplierId] as const,
+
+  availability: () => [...suppliersQueryKeys.all, "availability"] as const,
+  supplierAvailability: (supplierId: string, filters: SupplierAvailabilityFilters = {}) =>
+    [...suppliersQueryKeys.availability(), "list", supplierId, filters] as const,
+
+  contracts: () => [...suppliersQueryKeys.all, "contracts"] as const,
+  supplierContracts: (supplierId: string) =>
+    [...suppliersQueryKeys.contracts(), "list", supplierId] as const,
 
   rates: () => [...suppliersQueryKeys.all, "rates"] as const,
   supplierServiceRates: (supplierId: string, serviceId: string) =>

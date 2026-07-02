@@ -19,6 +19,11 @@ export {
   suppliersQueryKeys,
 } from "./query-keys.js"
 export {
+  getSupplierAddressesQueryOptions,
+  getSupplierAvailabilityQueryOptions,
+  getSupplierContactPointsQueryOptions,
+  getSupplierContactsQueryOptions,
+  getSupplierContractsQueryOptions,
   getSupplierNotesQueryOptions,
   getSupplierQueryOptions,
   getSupplierServiceRatesQueryOptions,
