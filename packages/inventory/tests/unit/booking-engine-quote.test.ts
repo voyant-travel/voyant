@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   createProductsBookingHandler,
   type ResolvedOptionPrice,
+  type ResolvedPaxPricingTier,
 } from "../../src/booking-engine/handler.js"
 
 const product = {
@@ -208,6 +209,141 @@ describe("createProductsBookingHandler.computeQuote", () => {
         unitAmount: 32000,
       }),
     )
+  })
+
+  it("uses selected option-unit pax tiers before falling back to the product base price", async () => {
+    const loadPaxPricingTier = vi.fn(
+      async (
+        _ctx: OwnedHandlerContext,
+        args: {
+          productId: string
+          optionUnitId: string
+          tierPax: number
+          date?: string | null
+        },
+      ): Promise<ResolvedPaxPricingTier | null> => {
+        if (args.tierPax !== 2) return null
+        if (args.optionUnitId === "unit_standard_adult") return { pricePerPaxCents: 12000 }
+        if (args.optionUnitId === "unit_champagne_adult") return { pricePerPaxCents: 18000 }
+        return null
+      },
+    )
+    const handler = createProductsBookingHandler({
+      createBooking: vi.fn(),
+      loadProductOptions: async () => [
+        {
+          id: "opt_standard",
+          name: "Standard",
+          units: [{ id: "unit_standard_adult", name: "Adult", unitType: "person" }],
+        },
+        {
+          id: "opt_champagne",
+          name: "Champagne",
+          units: [{ id: "unit_champagne_adult", name: "Adult", unitType: "person" }],
+        },
+      ],
+      loadPaxPricingTier,
+    })
+
+    const standard = await handler.computeQuote(
+      makeCtx([product]),
+      baseRequest({
+        configure: {
+          optionSelections: [
+            { optionId: "opt_standard", optionUnitId: "unit_standard_adult", quantity: 2 },
+          ],
+        },
+      }),
+    )
+    const champagne = await handler.computeQuote(
+      makeCtx([product]),
+      baseRequest({
+        configure: {
+          optionSelections: [
+            { optionId: "opt_champagne", optionUnitId: "unit_champagne_adult", quantity: 2 },
+          ],
+        },
+      }),
+    )
+
+    expect(loadPaxPricingTier).toHaveBeenCalledWith(expect.anything(), {
+      productId: product.id,
+      optionUnitId: "unit_standard_adult",
+      tierPax: 2,
+      date: null,
+    })
+    expect(loadPaxPricingTier).toHaveBeenCalledWith(expect.anything(), {
+      productId: product.id,
+      optionUnitId: "unit_champagne_adult",
+      tierPax: 2,
+      date: null,
+    })
+    const standardBreakdown = standard.pricing?.breakdown as Record<string, unknown>
+    const champagneBreakdown = champagne.pricing?.breakdown as Record<string, unknown>
+    expect(standardBreakdown?.total).toBe(24000)
+    expect(champagneBreakdown?.total).toBe(36000)
+    expect(standardBreakdown?.total).not.toBe(champagneBreakdown?.total)
+  })
+
+  it("uses total person occupancy for mixed option-unit pax tier lookups", async () => {
+    const loadPaxPricingTier = vi.fn(
+      async (
+        _ctx: OwnedHandlerContext,
+        args: {
+          productId: string
+          optionUnitId: string
+          tierPax: number
+          date?: string | null
+        },
+      ): Promise<ResolvedPaxPricingTier | null> => {
+        if (args.tierPax !== 3) return null
+        if (args.optionUnitId === "unit_adult") return { pricePerPaxCents: 11000 }
+        if (args.optionUnitId === "unit_child") return { pricePerPaxCents: 7000 }
+        return null
+      },
+    )
+    const handler = createProductsBookingHandler({
+      createBooking: vi.fn(),
+      loadProductOptions: async () => [
+        {
+          id: "opt_tour",
+          name: "Tour",
+          units: [
+            { id: "unit_adult", name: "Adult", unitType: "person" },
+            { id: "unit_child", name: "Child", unitType: "person" },
+          ],
+        },
+      ],
+      loadPaxPricingTier,
+    })
+
+    const result = await handler.computeQuote(
+      makeCtx([product]),
+      baseRequest({
+        configure: {
+          pax: { adult: 2, child: 1 },
+          optionSelections: [
+            { optionId: "opt_tour", optionUnitId: "unit_adult", quantity: 2 },
+            { optionId: "opt_tour", optionUnitId: "unit_child", quantity: 1 },
+          ],
+        },
+      }),
+    )
+
+    expect(loadPaxPricingTier).toHaveBeenCalledWith(expect.anything(), {
+      productId: product.id,
+      optionUnitId: "unit_adult",
+      tierPax: 3,
+      date: null,
+    })
+    expect(loadPaxPricingTier).toHaveBeenCalledWith(expect.anything(), {
+      productId: product.id,
+      optionUnitId: "unit_child",
+      tierPax: 3,
+      date: null,
+    })
+    const breakdown = result.pricing?.breakdown as Record<string, unknown>
+    expect(breakdown?.total).toBe(29000)
   })
 
   it("falls through to product.sellAmountCents when the resolver returns null", async () => {
