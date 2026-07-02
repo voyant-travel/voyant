@@ -24,6 +24,11 @@ const serviceTypeSchema = z.enum([
 
 const rateUnitSchema = z.enum(["per_person", "per_group", "per_night", "per_vehicle", "flat"])
 
+const currencyCodeSchema = z
+  .string()
+  .length(3)
+  .regex(/^[A-Z]{3}$/, "Expected ISO 4217 code")
+
 // ---------- suppliers ----------
 
 const depositRuleSchema = z.object({
@@ -50,7 +55,7 @@ const supplierCoreSchema = z.object({
   address: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   country: z.string().optional().nullable(),
-  defaultCurrency: z.string().max(3).optional().nullable(),
+  defaultCurrency: currencyCodeSchema.optional().nullable(),
   primaryFacilityId: z.string().optional().nullable(),
   contactName: z.string().optional().nullable(),
   contactEmail: z.string().email().optional().nullable(),
