@@ -10,7 +10,11 @@
  * The route mounts at `/v1/admin/mcp` via the `"operator/mcp"` composition entry.
  */
 
-import { bookingsService } from "@voyant-travel/bookings"
+import {
+  bookingsService,
+  redactBookingContact,
+  shouldRevealBookingPii,
+} from "@voyant-travel/bookings"
 import { type BookingsToolServices, bookingsTools } from "@voyant-travel/bookings/tools"
 import {
   type CatalogToolServices,
@@ -19,6 +23,7 @@ import {
 } from "@voyant-travel/catalog"
 import { financeService } from "@voyant-travel/finance"
 import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/tools"
+import { isStaffRbacEnforced } from "@voyant-travel/hono"
 import { productsService } from "@voyant-travel/inventory"
 import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
@@ -54,6 +59,18 @@ type OperatorToolContext = ToolContext & {
   notifications: NotificationsToolServices
 }
 
+type BookingContactRow = {
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactTaxId?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactAddressLine1?: string | null
+  contactAddressLine2?: string | null
+  contactPostalCode?: string | null
+  [key: string]: unknown
+}
+
 /** Build the MCP admin routes wired with this deployment's tools + context. */
 export function buildMcpAdminRoutes(): Hono {
   const registry = createToolRegistry()
@@ -82,10 +99,7 @@ function buildToolContext(c: Context): OperatorToolContext {
     catalog: createCatalogToolServices(c),
     trips: createTripsToolServices(c),
     inventory: createInventoryToolServices(c),
-    bookings: {
-      listBookings: (query) => bookingsService.listBookings(c.var.db, query),
-      getBookingById: (id) => bookingsService.getBookingById(c.var.db, id),
-    },
+    bookings: createBookingsToolServices(c),
     finance: {
       listInvoices: (query) => financeService.listInvoices(c.var.db, query),
       getInvoiceById: (id) => financeService.getInvoiceById(c.var.db, id),
@@ -106,6 +120,29 @@ function buildToolContext(c: Context): OperatorToolContext {
     notifications: {
       listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
       getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
+    },
+  }
+}
+
+function createBookingsToolServices(c: Context): BookingsToolServices {
+  const reveal = shouldRevealBookingPii({
+    actor: c.var.actor,
+    scopes: c.var.scopes,
+    callerType: c.var.callerType,
+    isInternalRequest: c.var.isInternalRequest,
+    enforceRbac: isStaffRbacEnforced(c.env),
+  })
+
+  return {
+    async listBookings(query) {
+      const result = await bookingsService.listBookings(c.var.db, query)
+      if (reveal) return result
+      return redactBookingListResult(result)
+    },
+    async getBookingById(id) {
+      const row = await bookingsService.getBookingById(c.var.db, id)
+      if (reveal || !row) return row
+      return redactBookingRow(row)
     },
   }
 }
@@ -146,6 +183,20 @@ function createCatalogToolServices(c: Context): CatalogToolServices {
       }
     },
   }
+}
+
+function redactBookingListResult<T>(result: T): T {
+  if (!isRecord(result) || !Array.isArray(result.data)) return result
+  return { ...result, data: result.data.map((row) => redactBookingRow(row)) }
+}
+
+function redactBookingRow<T>(row: T): T {
+  if (!isRecord(row)) return row
+  return redactBookingContact(row as BookingContactRow) as T
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function createInventoryToolServices(c: Context): InventoryToolServices {
