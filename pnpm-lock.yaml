@@ -2236,6 +2236,9 @@ importers:
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../storage
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
