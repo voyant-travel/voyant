@@ -30,6 +30,7 @@ import {
 import { RateDialog } from "./rate-dialog.js"
 import { ServiceDialog } from "./service-dialog.js"
 import { SupplierDialog } from "./supplier-dialog.js"
+import { SupplierNestedResources } from "./supplier-nested-resources.js"
 import { SupplierServiceRow } from "./supplier-service-row.js"
 
 export type SupplierDetailPageProps = {
@@ -245,6 +246,12 @@ export function SupplierDetailPage({
         updateSupplier: (input) => supplierMutation.update.mutateAsync({ id: supplier.id, input }),
         isUpdating: supplierMutation.update.isPending,
       })}
+
+      <SupplierNestedResources
+        supplierId={supplier.id}
+        locale={locale}
+        confirmAction={confirmAction}
+      />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">

@@ -13,6 +13,7 @@ function withProviders(children: ReactNode) {
   )
 }
 
+import { SupplierNestedResources } from "./components/supplier-nested-resources.js"
 import { SupplierServiceRow } from "./components/supplier-service-row.js"
 import { SuppliersPage } from "./components/suppliers-page.js"
 import {
@@ -95,6 +96,11 @@ describe("suppliers-ui i18n", () => {
             onEditRate={() => {}}
             onDeleteRate={() => {}}
           />
+          <SupplierNestedResources
+            supplierId="supplier-1"
+            locale="en-US"
+            confirmAction={() => true}
+          />
           <SuppliersMessageProbe />
         </div>,
       ),
@@ -103,6 +109,9 @@ describe("suppliers-ui i18n", () => {
     expect(html).toContain("Suppliers")
     expect(html).toContain("New Supplier")
     expect(html).toContain("Rates")
+    expect(html).toContain("Contact points")
+    expect(html).toContain("Set availability")
+    expect(html).toContain("Contracts")
     expect(html).toContain("Guide")
     expect(html).toContain("Per person")
   })
@@ -124,6 +133,11 @@ describe("suppliers-ui i18n", () => {
               onEditRate={() => {}}
               onDeleteRate={() => {}}
             />
+            <SupplierNestedResources
+              supplierId="supplier-1"
+              locale="ro-RO"
+              confirmAction={() => true}
+            />
             <SuppliersMessageProbe />
           </div>
         </SuppliersUiMessagesProvider>,
@@ -133,6 +147,9 @@ describe("suppliers-ui i18n", () => {
     expect(html).toContain("Furnizori")
     expect(html).toContain("Furnizor Nou")
     expect(html).toContain("Tarife")
+    expect(html).toContain("Puncte de contact")
+    expect(html).toContain("Seteaza disponibilitate")
+    expect(html).toContain("Contracte")
     expect(html).toContain("Ghid")
     expect(html).toContain("Per persoana")
   })
@@ -145,6 +162,8 @@ function SuppliersMessageProbe() {
     <div>
       <span>{messages.common.serviceTypeLabels.guide}</span>
       <span>{messages.common.rateUnitLabels.per_person}</span>
+      <span>{messages.common.contactPointKindLabels.email}</span>
+      <span>{messages.common.contractStatusLabels.active}</span>
     </div>
   )
 }
