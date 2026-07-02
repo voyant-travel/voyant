@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm"
+import { and, asc, desc, eq, exists, gte, lte, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -48,38 +48,58 @@ export async function createService(
 
 export async function updateService(
   db: PostgresJsDatabase,
+  supplierId: string,
   serviceId: string,
   data: UpdateServiceInput,
 ) {
   const [row] = await db
     .update(supplierServices)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(supplierServices.id, serviceId))
+    .where(and(eq(supplierServices.id, serviceId), eq(supplierServices.supplierId, supplierId)))
     .returning()
   return row ?? null
 }
 
-export async function deleteService(db: PostgresJsDatabase, serviceId: string) {
+export async function deleteService(db: PostgresJsDatabase, supplierId: string, serviceId: string) {
   const [row] = await db
     .delete(supplierServices)
-    .where(eq(supplierServices.id, serviceId))
+    .where(and(eq(supplierServices.id, serviceId), eq(supplierServices.supplierId, supplierId)))
     .returning({ id: supplierServices.id })
   return row ?? null
 }
 
-export function listRates(db: PostgresJsDatabase, serviceId: string) {
+function serviceBelongsToSupplier(db: PostgresJsDatabase, supplierId: string, serviceId: string) {
+  return exists(
+    db
+      .select({ one: sql`1` })
+      .from(supplierServices)
+      .where(and(eq(supplierServices.id, serviceId), eq(supplierServices.supplierId, supplierId))),
+  )
+}
+
+export function listRates(db: PostgresJsDatabase, supplierId: string, serviceId: string) {
   return db
     .select()
     .from(supplierRates)
-    .where(eq(supplierRates.serviceId, serviceId))
+    .where(
+      and(
+        eq(supplierRates.serviceId, serviceId),
+        serviceBelongsToSupplier(db, supplierId, serviceId),
+      ),
+    )
     .orderBy(supplierRates.createdAt)
 }
 
-export async function createRate(db: PostgresJsDatabase, serviceId: string, data: CreateRateInput) {
+export async function createRate(
+  db: PostgresJsDatabase,
+  supplierId: string,
+  serviceId: string,
+  data: CreateRateInput,
+) {
   const [service] = await db
     .select({ id: supplierServices.id })
     .from(supplierServices)
-    .where(eq(supplierServices.id, serviceId))
+    .where(and(eq(supplierServices.id, serviceId), eq(supplierServices.supplierId, supplierId)))
     .limit(1)
   if (!service) {
     return null
@@ -92,19 +112,42 @@ export async function createRate(db: PostgresJsDatabase, serviceId: string, data
   return row ?? null
 }
 
-export async function updateRate(db: PostgresJsDatabase, rateId: string, data: UpdateRateInput) {
+export async function updateRate(
+  db: PostgresJsDatabase,
+  supplierId: string,
+  serviceId: string,
+  rateId: string,
+  data: UpdateRateInput,
+) {
   const [row] = await db
     .update(supplierRates)
     .set(data)
-    .where(eq(supplierRates.id, rateId))
+    .where(
+      and(
+        eq(supplierRates.id, rateId),
+        eq(supplierRates.serviceId, serviceId),
+        serviceBelongsToSupplier(db, supplierId, serviceId),
+      ),
+    )
     .returning()
   return row ?? null
 }
 
-export async function deleteRate(db: PostgresJsDatabase, rateId: string) {
+export async function deleteRate(
+  db: PostgresJsDatabase,
+  supplierId: string,
+  serviceId: string,
+  rateId: string,
+) {
   const [row] = await db
     .delete(supplierRates)
-    .where(eq(supplierRates.id, rateId))
+    .where(
+      and(
+        eq(supplierRates.id, rateId),
+        eq(supplierRates.serviceId, serviceId),
+        serviceBelongsToSupplier(db, supplierId, serviceId),
+      ),
+    )
     .returning({ id: supplierRates.id })
   return row ?? null
 }
@@ -210,21 +253,26 @@ export async function createContract(
 
 export async function updateContract(
   db: PostgresJsDatabase,
+  supplierId: string,
   contractId: string,
   data: UpdateContractInput,
 ) {
   const [row] = await db
     .update(supplierContracts)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(supplierContracts.id, contractId))
+    .where(and(eq(supplierContracts.id, contractId), eq(supplierContracts.supplierId, supplierId)))
     .returning()
   return row ?? null
 }
 
-export async function deleteContract(db: PostgresJsDatabase, contractId: string) {
+export async function deleteContract(
+  db: PostgresJsDatabase,
+  supplierId: string,
+  contractId: string,
+) {
   const [row] = await db
     .delete(supplierContracts)
-    .where(eq(supplierContracts.id, contractId))
+    .where(and(eq(supplierContracts.id, contractId), eq(supplierContracts.supplierId, supplierId)))
     .returning({ id: supplierContracts.id })
   return row ?? null
 }
