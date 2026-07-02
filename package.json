@@ -93,7 +93,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "playwright": "1.61.1",
-    "secretlint": "^11.4.1",
+    "secretlint": "^13.0.2",
     "semver": "^7.8.5",
     "tsx": "catalog:",
     "turbo": "^2.10.0",
