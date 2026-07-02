@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -769,6 +775,8 @@
             }
           }
         },
+        "operationId": "getAdminStorefrontSettings",
+        "summary": "GET /v1/admin/storefront/settings",
         "tags": [
           "storefront"
         ],
@@ -1951,6 +1959,8 @@
             }
           }
         },
+        "operationId": "patchAdminStorefrontSettings",
+        "summary": "PATCH /v1/admin/storefront/settings",
         "tags": [
           "storefront"
         ],

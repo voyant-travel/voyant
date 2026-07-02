@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -249,6 +255,8 @@
             }
           }
         },
+        "operationId": "getPublicMarkets",
+        "summary": "GET /v1/public/markets",
         "tags": [
           "markets"
         ],

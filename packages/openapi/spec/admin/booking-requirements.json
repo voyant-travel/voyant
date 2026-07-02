@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -338,6 +344,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsContactRequirements",
+        "summary": "GET /v1/admin/booking-requirements/contact-requirements",
         "tags": [
           "booking-requirements"
         ],
@@ -538,6 +546,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsContactRequirements",
+        "summary": "POST /v1/admin/booking-requirements/contact-requirements",
         "tags": [
           "booking-requirements"
         ],
@@ -674,6 +684,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsContactRequirementsById",
+        "summary": "GET /v1/admin/booking-requirements/contact-requirements/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -898,6 +910,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsContactRequirementsById",
+        "summary": "PATCH /v1/admin/booking-requirements/contact-requirements/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -953,6 +967,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsContactRequirementsById",
+        "summary": "DELETE /v1/admin/booking-requirements/contact-requirements/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -1205,6 +1221,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsQuestions",
+        "summary": "GET /v1/admin/booking-requirements/questions",
         "tags": [
           "booking-requirements"
         ],
@@ -1453,6 +1471,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsQuestions",
+        "summary": "POST /v1/admin/booking-requirements/questions",
         "tags": [
           "booking-requirements"
         ],
@@ -1613,6 +1633,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsQuestionsById",
+        "summary": "GET /v1/admin/booking-requirements/questions/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -1885,6 +1907,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsQuestionsById",
+        "summary": "PATCH /v1/admin/booking-requirements/questions/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -1940,6 +1964,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsQuestionsById",
+        "summary": "DELETE /v1/admin/booking-requirements/questions/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -2104,6 +2130,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsOptionQuestions",
+        "summary": "GET /v1/admin/booking-requirements/option-questions",
         "tags": [
           "booking-requirements"
         ],
@@ -2238,6 +2266,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsOptionQuestions",
+        "summary": "POST /v1/admin/booking-requirements/option-questions",
         "tags": [
           "booking-requirements"
         ],
@@ -2341,6 +2371,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsOptionQuestionsById",
+        "summary": "GET /v1/admin/booking-requirements/option-questions/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -2499,6 +2531,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsOptionQuestionsById",
+        "summary": "PATCH /v1/admin/booking-requirements/option-questions/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -2554,6 +2588,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsOptionQuestionsById",
+        "summary": "DELETE /v1/admin/booking-requirements/option-questions/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -2704,6 +2740,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsQuestionOptions",
+        "summary": "GET /v1/admin/booking-requirements/question-options",
         "tags": [
           "booking-requirements"
         ],
@@ -2832,6 +2870,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsQuestionOptions",
+        "summary": "POST /v1/admin/booking-requirements/question-options",
         "tags": [
           "booking-requirements"
         ],
@@ -2929,6 +2969,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsQuestionOptionsById",
+        "summary": "GET /v1/admin/booking-requirements/question-options/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -3080,6 +3122,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsQuestionOptionsById",
+        "summary": "PATCH /v1/admin/booking-requirements/question-options/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -3135,6 +3179,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsQuestionOptionsById",
+        "summary": "DELETE /v1/admin/booking-requirements/question-options/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -3297,6 +3343,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsUnitTriggers",
+        "summary": "GET /v1/admin/booking-requirements/unit-triggers",
         "tags": [
           "booking-requirements"
         ],
@@ -3429,6 +3477,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsUnitTriggers",
+        "summary": "POST /v1/admin/booking-requirements/unit-triggers",
         "tags": [
           "booking-requirements"
         ],
@@ -3530,6 +3580,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsUnitTriggersById",
+        "summary": "GET /v1/admin/booking-requirements/unit-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -3686,6 +3738,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsUnitTriggersById",
+        "summary": "PATCH /v1/admin/booking-requirements/unit-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -3741,6 +3795,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsUnitTriggersById",
+        "summary": "DELETE /v1/admin/booking-requirements/unit-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -3896,6 +3952,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsOptionTriggers",
+        "summary": "GET /v1/admin/booking-requirements/option-triggers",
         "tags": [
           "booking-requirements"
         ],
@@ -4014,6 +4072,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsOptionTriggers",
+        "summary": "POST /v1/admin/booking-requirements/option-triggers",
         "tags": [
           "booking-requirements"
         ],
@@ -4108,6 +4168,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsOptionTriggersById",
+        "summary": "GET /v1/admin/booking-requirements/option-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -4250,6 +4312,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsOptionTriggersById",
+        "summary": "PATCH /v1/admin/booking-requirements/option-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -4305,6 +4369,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsOptionTriggersById",
+        "summary": "DELETE /v1/admin/booking-requirements/option-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -4485,6 +4551,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsExtraTriggers",
+        "summary": "GET /v1/admin/booking-requirements/extra-triggers",
         "tags": [
           "booking-requirements"
         ],
@@ -4635,6 +4703,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsExtraTriggers",
+        "summary": "POST /v1/admin/booking-requirements/extra-triggers",
         "tags": [
           "booking-requirements"
         ],
@@ -4746,6 +4816,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsExtraTriggersById",
+        "summary": "GET /v1/admin/booking-requirements/extra-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -4921,6 +4993,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsExtraTriggersById",
+        "summary": "PATCH /v1/admin/booking-requirements/extra-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -4976,6 +5050,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsExtraTriggersById",
+        "summary": "DELETE /v1/admin/booking-requirements/extra-triggers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -5202,6 +5278,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsAnswers",
+        "summary": "GET /v1/admin/booking-requirements/answers",
         "tags": [
           "booking-requirements"
         ],
@@ -5425,6 +5503,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingRequirementsAnswers",
+        "summary": "POST /v1/admin/booking-requirements/answers",
         "tags": [
           "booking-requirements"
         ],
@@ -5575,6 +5655,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingRequirementsAnswersById",
+        "summary": "GET /v1/admin/booking-requirements/answers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -5822,6 +5904,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingRequirementsAnswersById",
+        "summary": "PATCH /v1/admin/booking-requirements/answers/{id}",
         "tags": [
           "booking-requirements"
         ],
@@ -5877,6 +5961,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingRequirementsAnswersById",
+        "summary": "DELETE /v1/admin/booking-requirements/answers/{id}",
         "tags": [
           "booking-requirements"
         ],

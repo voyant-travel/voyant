@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -683,6 +689,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogSearch",
+        "summary": "POST /v1/admin/catalog/search",
         "tags": [
           "catalog"
         ],

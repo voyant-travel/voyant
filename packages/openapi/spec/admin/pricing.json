@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -388,6 +394,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPricingCategories",
+        "summary": "GET /v1/admin/pricing/pricing-categories",
         "tags": [
           "pricing"
         ],
@@ -636,6 +644,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingPricingCategories",
+        "summary": "POST /v1/admin/pricing/pricing-categories",
         "tags": [
           "pricing"
         ],
@@ -805,6 +815,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPricingCategoriesById",
+        "summary": "GET /v1/admin/pricing/pricing-categories/{id}",
         "tags": [
           "pricing"
         ],
@@ -1072,6 +1084,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingPricingCategoriesById",
+        "summary": "PATCH /v1/admin/pricing/pricing-categories/{id}",
         "tags": [
           "pricing"
         ],
@@ -1127,6 +1141,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingPricingCategoriesById",
+        "summary": "DELETE /v1/admin/pricing/pricing-categories/{id}",
         "tags": [
           "pricing"
         ],
@@ -1300,6 +1316,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPricingCategoryDependencies",
+        "summary": "GET /v1/admin/pricing/pricing-category-dependencies",
         "tags": [
           "pricing"
         ],
@@ -1442,6 +1460,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingPricingCategoryDependencies",
+        "summary": "POST /v1/admin/pricing/pricing-category-dependencies",
         "tags": [
           "pricing"
         ],
@@ -1558,6 +1578,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPricingCategoryDependenciesById",
+        "summary": "GET /v1/admin/pricing/pricing-category-dependencies/{id}",
         "tags": [
           "pricing"
         ],
@@ -1722,6 +1744,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingPricingCategoryDependenciesById",
+        "summary": "PATCH /v1/admin/pricing/pricing-category-dependencies/{id}",
         "tags": [
           "pricing"
         ],
@@ -1777,6 +1801,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingPricingCategoryDependenciesById",
+        "summary": "DELETE /v1/admin/pricing/pricing-category-dependencies/{id}",
         "tags": [
           "pricing"
         ],
@@ -1964,6 +1990,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingCancellationPolicies",
+        "summary": "GET /v1/admin/pricing/cancellation-policies",
         "tags": [
           "pricing"
         ],
@@ -2123,6 +2151,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingCancellationPolicies",
+        "summary": "POST /v1/admin/pricing/cancellation-policies",
         "tags": [
           "pricing"
         ],
@@ -2247,6 +2277,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingCancellationPoliciesById",
+        "summary": "GET /v1/admin/pricing/cancellation-policies/{id}",
         "tags": [
           "pricing"
         ],
@@ -2428,6 +2460,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingCancellationPoliciesById",
+        "summary": "PATCH /v1/admin/pricing/cancellation-policies/{id}",
         "tags": [
           "pricing"
         ],
@@ -2483,6 +2517,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingCancellationPoliciesById",
+        "summary": "DELETE /v1/admin/pricing/cancellation-policies/{id}",
         "tags": [
           "pricing"
         ],
@@ -2640,6 +2676,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingCancellationPolicyRules",
+        "summary": "GET /v1/admin/pricing/cancellation-policy-rules",
         "tags": [
           "pricing"
         ],
@@ -2795,6 +2833,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingCancellationPolicyRules",
+        "summary": "POST /v1/admin/pricing/cancellation-policy-rules",
         "tags": [
           "pricing"
         ],
@@ -2917,6 +2957,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingCancellationPolicyRulesById",
+        "summary": "GET /v1/admin/pricing/cancellation-policy-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -3094,6 +3136,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingCancellationPolicyRulesById",
+        "summary": "PATCH /v1/admin/pricing/cancellation-policy-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -3149,6 +3193,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingCancellationPolicyRulesById",
+        "summary": "DELETE /v1/admin/pricing/cancellation-policy-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -3336,6 +3382,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPriceCatalogs",
+        "summary": "GET /v1/admin/pricing/price-catalogs",
         "tags": [
           "pricing"
         ],
@@ -3499,6 +3547,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingPriceCatalogs",
+        "summary": "POST /v1/admin/pricing/price-catalogs",
         "tags": [
           "pricing"
         ],
@@ -3623,6 +3673,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPriceCatalogsById",
+        "summary": "GET /v1/admin/pricing/price-catalogs/{id}",
         "tags": [
           "pricing"
         ],
@@ -3807,6 +3859,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingPriceCatalogsById",
+        "summary": "PATCH /v1/admin/pricing/price-catalogs/{id}",
         "tags": [
           "pricing"
         ],
@@ -3862,6 +3916,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingPriceCatalogsById",
+        "summary": "DELETE /v1/admin/pricing/price-catalogs/{id}",
         "tags": [
           "pricing"
         ],
@@ -4051,6 +4107,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPriceSchedules",
+        "summary": "GET /v1/admin/pricing/price-schedules",
         "tags": [
           "pricing"
         ],
@@ -4263,6 +4321,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingPriceSchedules",
+        "summary": "POST /v1/admin/pricing/price-schedules",
         "tags": [
           "pricing"
         ],
@@ -4409,6 +4469,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPriceSchedulesById",
+        "summary": "GET /v1/admin/pricing/price-schedules/{id}",
         "tags": [
           "pricing"
         ],
@@ -4642,6 +4704,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingPriceSchedulesById",
+        "summary": "PATCH /v1/admin/pricing/price-schedules/{id}",
         "tags": [
           "pricing"
         ],
@@ -4697,6 +4761,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingPriceSchedulesById",
+        "summary": "DELETE /v1/admin/pricing/price-schedules/{id}",
         "tags": [
           "pricing"
         ],
@@ -4962,6 +5028,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionPriceRules",
+        "summary": "GET /v1/admin/pricing/option-price-rules",
         "tags": [
           "pricing"
         ],
@@ -5236,6 +5304,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingOptionPriceRules",
+        "summary": "POST /v1/admin/pricing/option-price-rules",
         "tags": [
           "pricing"
         ],
@@ -5419,6 +5489,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionPriceRulesById",
+        "summary": "GET /v1/admin/pricing/option-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -5711,6 +5783,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingOptionPriceRulesById",
+        "summary": "PATCH /v1/admin/pricing/option-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -5766,6 +5840,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingOptionPriceRulesById",
+        "summary": "DELETE /v1/admin/pricing/option-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -5980,6 +6056,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionUnitPriceRules",
+        "summary": "GET /v1/admin/pricing/option-unit-price-rules",
         "tags": [
           "pricing"
         ],
@@ -6198,6 +6276,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingOptionUnitPriceRules",
+        "summary": "POST /v1/admin/pricing/option-unit-price-rules",
         "tags": [
           "pricing"
         ],
@@ -6353,6 +6433,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionUnitPriceRulesById",
+        "summary": "GET /v1/admin/pricing/option-unit-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -6591,6 +6673,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingOptionUnitPriceRulesById",
+        "summary": "PATCH /v1/admin/pricing/option-unit-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -6646,6 +6730,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingOptionUnitPriceRulesById",
+        "summary": "DELETE /v1/admin/pricing/option-unit-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -6836,6 +6922,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionStartTimeRules",
+        "summary": "GET /v1/admin/pricing/option-start-time-rules",
         "tags": [
           "pricing"
         ],
@@ -7024,6 +7112,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingOptionStartTimeRules",
+        "summary": "POST /v1/admin/pricing/option-start-time-rules",
         "tags": [
           "pricing"
         ],
@@ -7163,6 +7253,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionStartTimeRulesById",
+        "summary": "GET /v1/admin/pricing/option-start-time-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -7372,6 +7464,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingOptionStartTimeRulesById",
+        "summary": "PATCH /v1/admin/pricing/option-start-time-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -7427,6 +7521,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingOptionStartTimeRulesById",
+        "summary": "DELETE /v1/admin/pricing/option-start-time-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -7572,6 +7668,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionUnitTiers",
+        "summary": "GET /v1/admin/pricing/option-unit-tiers",
         "tags": [
           "pricing"
         ],
@@ -7704,6 +7802,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingOptionUnitTiers",
+        "summary": "POST /v1/admin/pricing/option-unit-tiers",
         "tags": [
           "pricing"
         ],
@@ -7814,6 +7914,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingOptionUnitTiersById",
+        "summary": "GET /v1/admin/pricing/option-unit-tiers/{id}",
         "tags": [
           "pricing"
         ],
@@ -7968,6 +8070,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingOptionUnitTiersById",
+        "summary": "PATCH /v1/admin/pricing/option-unit-tiers/{id}",
         "tags": [
           "pricing"
         ],
@@ -8023,6 +8127,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingOptionUnitTiersById",
+        "summary": "DELETE /v1/admin/pricing/option-unit-tiers/{id}",
         "tags": [
           "pricing"
         ],
@@ -8199,6 +8305,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPickupPriceRules",
+        "summary": "GET /v1/admin/pricing/pickup-price-rules",
         "tags": [
           "pricing"
         ],
@@ -8359,6 +8467,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingPickupPriceRules",
+        "summary": "POST /v1/admin/pricing/pickup-price-rules",
         "tags": [
           "pricing"
         ],
@@ -8484,6 +8594,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingPickupPriceRulesById",
+        "summary": "GET /v1/admin/pricing/pickup-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -8664,6 +8776,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingPickupPriceRulesById",
+        "summary": "PATCH /v1/admin/pricing/pickup-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -8719,6 +8833,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingPickupPriceRulesById",
+        "summary": "DELETE /v1/admin/pricing/pickup-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -8909,6 +9025,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingDropoffPriceRules",
+        "summary": "GET /v1/admin/pricing/dropoff-price-rules",
         "tags": [
           "pricing"
         ],
@@ -9098,6 +9216,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingDropoffPriceRules",
+        "summary": "POST /v1/admin/pricing/dropoff-price-rules",
         "tags": [
           "pricing"
         ],
@@ -9237,6 +9357,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingDropoffPriceRulesById",
+        "summary": "GET /v1/admin/pricing/dropoff-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -9446,6 +9568,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingDropoffPriceRulesById",
+        "summary": "PATCH /v1/admin/pricing/dropoff-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -9501,6 +9625,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingDropoffPriceRulesById",
+        "summary": "DELETE /v1/admin/pricing/dropoff-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -9703,6 +9829,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingExtraPriceRules",
+        "summary": "GET /v1/admin/pricing/extra-price-rules",
         "tags": [
           "pricing"
         ],
@@ -9897,6 +10025,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingExtraPriceRules",
+        "summary": "POST /v1/admin/pricing/extra-price-rules",
         "tags": [
           "pricing"
         ],
@@ -10040,6 +10170,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingExtraPriceRulesById",
+        "summary": "GET /v1/admin/pricing/extra-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -10255,6 +10387,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingExtraPriceRulesById",
+        "summary": "PATCH /v1/admin/pricing/extra-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -10310,6 +10444,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingExtraPriceRulesById",
+        "summary": "DELETE /v1/admin/pricing/extra-price-rules/{id}",
         "tags": [
           "pricing"
         ],
@@ -10488,6 +10624,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingDeparturePriceOverrides",
+        "summary": "GET /v1/admin/pricing/departure-price-overrides",
         "tags": [
           "pricing"
         ],
@@ -10636,6 +10774,8 @@
             }
           }
         },
+        "operationId": "postAdminPricingDeparturePriceOverrides",
+        "summary": "POST /v1/admin/pricing/departure-price-overrides",
         "tags": [
           "pricing"
         ],
@@ -10755,6 +10895,8 @@
             }
           }
         },
+        "operationId": "getAdminPricingDeparturePriceOverridesById",
+        "summary": "GET /v1/admin/pricing/departure-price-overrides/{id}",
         "tags": [
           "pricing"
         ],
@@ -10923,6 +11065,8 @@
             }
           }
         },
+        "operationId": "patchAdminPricingDeparturePriceOverridesById",
+        "summary": "PATCH /v1/admin/pricing/departure-price-overrides/{id}",
         "tags": [
           "pricing"
         ],
@@ -10978,6 +11122,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPricingDeparturePriceOverridesById",
+        "summary": "DELETE /v1/admin/pricing/departure-price-overrides/{id}",
         "tags": [
           "pricing"
         ],

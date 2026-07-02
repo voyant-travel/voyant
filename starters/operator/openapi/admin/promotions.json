@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -611,6 +617,8 @@
             }
           }
         },
+        "operationId": "getAdminPromotions",
+        "summary": "GET /v1/admin/promotions",
         "tags": [
           "promotions"
         ],
@@ -1274,6 +1282,8 @@
             }
           }
         },
+        "operationId": "postAdminPromotions",
+        "summary": "POST /v1/admin/promotions",
         "tags": [
           "promotions"
         ],
@@ -1628,6 +1638,8 @@
             }
           }
         },
+        "operationId": "getAdminPromotionsById",
+        "summary": "GET /v1/admin/promotions/{id}",
         "tags": [
           "promotions"
         ],
@@ -2313,6 +2325,8 @@
             }
           }
         },
+        "operationId": "patchAdminPromotionsById",
+        "summary": "PATCH /v1/admin/promotions/{id}",
         "tags": [
           "promotions"
         ],
@@ -2394,6 +2408,8 @@
             }
           }
         },
+        "operationId": "deleteAdminPromotionsById",
+        "summary": "DELETE /v1/admin/promotions/{id}",
         "tags": [
           "promotions"
         ],
@@ -2748,6 +2764,8 @@
             }
           }
         },
+        "operationId": "postAdminPromotionsByIdArchive",
+        "summary": "POST /v1/admin/promotions/{id}/archive",
         "tags": [
           "promotions"
         ],

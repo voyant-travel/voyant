@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -311,6 +317,8 @@
             }
           }
         },
+        "operationId": "getAdminCruises",
+        "summary": "GET /v1/admin/cruises",
         "tags": [
           "cruises"
         ],
@@ -830,6 +838,8 @@
             }
           }
         },
+        "operationId": "postAdminCruises",
+        "summary": "POST /v1/admin/cruises",
         "tags": [
           "cruises"
         ],
@@ -1131,6 +1141,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesVoyageGroups",
+        "summary": "GET /v1/admin/cruises/voyage-groups",
         "tags": [
           "cruises"
         ],
@@ -1522,6 +1534,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesVoyageGroups",
+        "summary": "POST /v1/admin/cruises/voyage-groups",
         "tags": [
           "cruises"
         ],
@@ -1917,6 +1931,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesVoyageGroupsById",
+        "summary": "GET /v1/admin/cruises/voyage-groups/{id}",
         "tags": [
           "cruises"
         ],
@@ -2331,6 +2347,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesVoyageGroupsById",
+        "summary": "PUT /v1/admin/cruises/voyage-groups/{id}",
         "tags": [
           "cruises"
         ],
@@ -2566,6 +2584,8 @@
             }
           }
         },
+        "operationId": "deleteAdminCruisesVoyageGroupsById",
+        "summary": "DELETE /v1/admin/cruises/voyage-groups/{id}",
         "tags": [
           "cruises"
         ],
@@ -2850,6 +2870,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesVoyageGroupsByIdSegments",
+        "summary": "GET /v1/admin/cruises/voyage-groups/{id}/segments",
         "tags": [
           "cruises"
         ],
@@ -3197,6 +3219,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesVoyageGroupsByIdSegments",
+        "summary": "POST /v1/admin/cruises/voyage-groups/{id}/segments",
         "tags": [
           "cruises"
         ],
@@ -3560,6 +3584,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesVoyageGroupSegmentsBySegmentId",
+        "summary": "PUT /v1/admin/cruises/voyage-group-segments/{segmentId}",
         "tags": [
           "cruises"
         ],
@@ -3601,6 +3627,8 @@
             }
           }
         },
+        "operationId": "deleteAdminCruisesVoyageGroupSegmentsBySegmentId",
+        "summary": "DELETE /v1/admin/cruises/voyage-group-segments/{segmentId}",
         "tags": [
           "cruises"
         ],
@@ -3794,6 +3822,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesEnrichmentByProgramId",
+        "summary": "PUT /v1/admin/cruises/enrichment/{programId}",
         "tags": [
           "cruises"
         ],
@@ -3835,6 +3865,8 @@
             }
           }
         },
+        "operationId": "deleteAdminCruisesEnrichmentByProgramId",
+        "summary": "DELETE /v1/admin/cruises/enrichment/{programId}",
         "tags": [
           "cruises"
         ],
@@ -4082,6 +4114,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesSailings",
+        "summary": "GET /v1/admin/cruises/sailings",
         "tags": [
           "cruises"
         ],
@@ -4339,6 +4373,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesSailings",
+        "summary": "POST /v1/admin/cruises/sailings",
         "tags": [
           "cruises"
         ],
@@ -4430,6 +4466,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesSailingsByKey",
+        "summary": "GET /v1/admin/cruises/sailings/{key}",
         "tags": [
           "cruises"
         ],
@@ -4729,6 +4767,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesSailingsByKey",
+        "summary": "PUT /v1/admin/cruises/sailings/{key}",
         "tags": [
           "cruises"
         ],
@@ -4807,6 +4847,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesSailingsByKeyItinerary",
+        "summary": "GET /v1/admin/cruises/sailings/{key}/itinerary",
         "tags": [
           "cruises"
         ],
@@ -5102,6 +5144,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesSailingsByKeyDaysBulk",
+        "summary": "PUT /v1/admin/cruises/sailings/{key}/days/bulk",
         "tags": [
           "cruises"
         ],
@@ -5189,6 +5233,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesSailingsByKeyPricing",
+        "summary": "GET /v1/admin/cruises/sailings/{key}/pricing",
         "tags": [
           "cruises"
         ],
@@ -5656,6 +5702,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesSailingsByKeyPricingBulk",
+        "summary": "PUT /v1/admin/cruises/sailings/{key}/pricing/bulk",
         "tags": [
           "cruises"
         ],
@@ -5836,6 +5884,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesSailingsByKeyQuote",
+        "summary": "POST /v1/admin/cruises/sailings/{key}/quote",
         "tags": [
           "cruises"
         ],
@@ -6170,6 +6220,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesSailingsByKeyBookings",
+        "summary": "POST /v1/admin/cruises/sailings/{key}/bookings",
         "tags": [
           "cruises"
         ],
@@ -6242,6 +6294,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesSailingsByKeyPartyBookings",
+        "summary": "POST /v1/admin/cruises/sailings/{key}/party-bookings",
         "tags": [
           "cruises"
         ],
@@ -6548,6 +6602,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesPrices",
+        "summary": "GET /v1/admin/cruises/prices",
         "tags": [
           "cruises"
         ],
@@ -6915,6 +6971,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesPrices",
+        "summary": "POST /v1/admin/cruises/prices",
         "tags": [
           "cruises"
         ],
@@ -7306,6 +7364,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesPricesByPriceId",
+        "summary": "PUT /v1/admin/cruises/prices/{priceId}",
         "tags": [
           "cruises"
         ],
@@ -7571,6 +7631,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesShips",
+        "summary": "GET /v1/admin/cruises/ships",
         "tags": [
           "cruises"
         ],
@@ -7908,6 +7970,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesShips",
+        "summary": "POST /v1/admin/cruises/ships",
         "tags": [
           "cruises"
         ],
@@ -8180,6 +8244,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesShipsByKey",
+        "summary": "GET /v1/admin/cruises/ships/{key}",
         "tags": [
           "cruises"
         ],
@@ -8560,6 +8626,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesShipsByKey",
+        "summary": "PUT /v1/admin/cruises/ships/{key}",
         "tags": [
           "cruises"
         ],
@@ -8638,6 +8706,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesShipsByKeyDecks",
+        "summary": "GET /v1/admin/cruises/ships/{key}/decks",
         "tags": [
           "cruises"
         ],
@@ -8784,6 +8854,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesShipsByKeyDecks",
+        "summary": "POST /v1/admin/cruises/ships/{key}/decks",
         "tags": [
           "cruises"
         ],
@@ -8913,6 +8985,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesDecksByDeckId",
+        "summary": "PUT /v1/admin/cruises/decks/{deckId}",
         "tags": [
           "cruises"
         ],
@@ -8991,6 +9065,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesShipsByKeyCategories",
+        "summary": "GET /v1/admin/cruises/ships/{key}/categories",
         "tags": [
           "cruises"
         ],
@@ -9402,6 +9478,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesShipsByKeyCategoriesBulk",
+        "summary": "PUT /v1/admin/cruises/ships/{key}/categories/bulk",
         "tags": [
           "cruises"
         ],
@@ -9773,6 +9851,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesCategoriesByCategoryId",
+        "summary": "PUT /v1/admin/cruises/categories/{categoryId}",
         "tags": [
           "cruises"
         ],
@@ -9871,6 +9951,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesCategoriesByCategoryIdCabins",
+        "summary": "GET /v1/admin/cruises/categories/{categoryId}/cabins",
         "tags": [
           "cruises"
         ],
@@ -10028,6 +10110,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesCategoriesByCategoryIdCabinsBulk",
+        "summary": "PUT /v1/admin/cruises/categories/{categoryId}/cabins/bulk",
         "tags": [
           "cruises"
         ],
@@ -10190,6 +10274,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesCabinsByCabinId",
+        "summary": "PUT /v1/admin/cruises/cabins/{cabinId}",
         "tags": [
           "cruises"
         ],
@@ -10483,6 +10569,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesSearchIndexBulk",
+        "summary": "PUT /v1/admin/cruises/search-index/bulk",
         "tags": [
           "cruises"
         ],
@@ -10526,6 +10614,8 @@
             }
           }
         },
+        "operationId": "deleteAdminCruisesSearchIndexByCrsiId",
+        "summary": "DELETE /v1/admin/cruises/search-index/{crsiId}",
         "tags": [
           "cruises"
         ],
@@ -10590,6 +10680,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesSearchIndexRebuild",
+        "summary": "POST /v1/admin/cruises/search-index/rebuild",
         "tags": [
           "cruises"
         ],
@@ -10681,6 +10773,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesByKey",
+        "summary": "GET /v1/admin/cruises/{key}",
         "tags": [
           "cruises"
         ],
@@ -11243,6 +11337,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesByKey",
+        "summary": "PUT /v1/admin/cruises/{key}",
         "tags": [
           "cruises"
         ],
@@ -11608,6 +11704,8 @@
             }
           }
         },
+        "operationId": "deleteAdminCruisesByKey",
+        "summary": "DELETE /v1/admin/cruises/{key}",
         "tags": [
           "cruises"
         ],
@@ -11975,6 +12073,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesByKeyAggregatesRecompute",
+        "summary": "POST /v1/admin/cruises/{key}/aggregates/recompute",
         "tags": [
           "cruises"
         ],
@@ -12063,6 +12163,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesByKeySailings",
+        "summary": "GET /v1/admin/cruises/{key}/sailings",
         "tags": [
           "cruises"
         ],
@@ -12333,6 +12435,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesByKeyDaysBulk",
+        "summary": "PUT /v1/admin/cruises/{key}/days/bulk",
         "tags": [
           "cruises"
         ],
@@ -12424,6 +12528,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesByKeyRefresh",
+        "summary": "POST /v1/admin/cruises/{key}/refresh",
         "tags": [
           "cruises"
         ],
@@ -12772,6 +12878,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesByKeyDetach",
+        "summary": "POST /v1/admin/cruises/{key}/detach",
         "tags": [
           "cruises"
         ],
@@ -12913,6 +13021,8 @@
             }
           }
         },
+        "operationId": "getAdminCruisesByKeyEnrichment",
+        "summary": "GET /v1/admin/cruises/{key}/enrichment",
         "tags": [
           "cruises"
         ],
@@ -13105,6 +13215,8 @@
             }
           }
         },
+        "operationId": "postAdminCruisesByKeyEnrichment",
+        "summary": "POST /v1/admin/cruises/{key}/enrichment",
         "tags": [
           "cruises"
         ],
@@ -13313,6 +13425,8 @@
             }
           }
         },
+        "operationId": "putAdminCruisesByKeyEnrichmentBulk",
+        "summary": "PUT /v1/admin/cruises/{key}/enrichment/bulk",
         "tags": [
           "cruises"
         ],

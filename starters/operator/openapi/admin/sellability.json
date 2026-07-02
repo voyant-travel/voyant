@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -282,6 +288,8 @@
             }
           }
         },
+        "operationId": "postAdminSellabilityResolve",
+        "summary": "POST /v1/admin/sellability/resolve",
         "tags": [
           "sellability"
         ],
@@ -555,6 +563,8 @@
             }
           }
         },
+        "operationId": "postAdminSellabilityResolveAndPersist",
+        "summary": "POST /v1/admin/sellability/resolve-and-persist",
         "tags": [
           "sellability"
         ],
@@ -791,6 +801,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilitySnapshots",
+        "summary": "GET /v1/admin/sellability/snapshots",
         "tags": [
           "sellability"
         ],
@@ -953,6 +965,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilitySnapshotsById",
+        "summary": "GET /v1/admin/sellability/snapshots/{id}",
         "tags": [
           "sellability"
         ],
@@ -1202,6 +1216,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilitySnapshotItems",
+        "summary": "GET /v1/admin/sellability/snapshot-items",
         "tags": [
           "sellability"
         ],
@@ -1457,6 +1473,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityPolicies",
+        "summary": "GET /v1/admin/sellability/policies",
         "tags": [
           "sellability"
         ],
@@ -1708,6 +1726,8 @@
             }
           }
         },
+        "operationId": "postAdminSellabilityPolicies",
+        "summary": "POST /v1/admin/sellability/policies",
         "tags": [
           "sellability"
         ],
@@ -1871,6 +1891,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityPoliciesById",
+        "summary": "GET /v1/admin/sellability/policies/{id}",
         "tags": [
           "sellability"
         ],
@@ -2147,6 +2169,8 @@
             }
           }
         },
+        "operationId": "patchAdminSellabilityPoliciesById",
+        "summary": "PATCH /v1/admin/sellability/policies/{id}",
         "tags": [
           "sellability"
         ],
@@ -2202,6 +2226,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSellabilityPoliciesById",
+        "summary": "DELETE /v1/admin/sellability/policies/{id}",
         "tags": [
           "sellability"
         ],
@@ -2369,6 +2395,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityPolicyResults",
+        "summary": "GET /v1/admin/sellability/policy-results",
         "tags": [
           "sellability"
         ],
@@ -2531,6 +2559,8 @@
             }
           }
         },
+        "operationId": "postAdminSellabilityPolicyResults",
+        "summary": "POST /v1/admin/sellability/policy-results",
         "tags": [
           "sellability"
         ],
@@ -2647,6 +2677,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityPolicyResultsById",
+        "summary": "GET /v1/admin/sellability/policy-results/{id}",
         "tags": [
           "sellability"
         ],
@@ -2834,6 +2866,8 @@
             }
           }
         },
+        "operationId": "patchAdminSellabilityPolicyResultsById",
+        "summary": "PATCH /v1/admin/sellability/policy-results/{id}",
         "tags": [
           "sellability"
         ],
@@ -2889,6 +2923,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSellabilityPolicyResultsById",
+        "summary": "DELETE /v1/admin/sellability/policy-results/{id}",
         "tags": [
           "sellability"
         ],
@@ -3054,6 +3090,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityOfferRefreshRuns",
+        "summary": "GET /v1/admin/sellability/offer-refresh-runs",
         "tags": [
           "sellability"
         ],
@@ -3225,6 +3263,8 @@
             }
           }
         },
+        "operationId": "postAdminSellabilityOfferRefreshRuns",
+        "summary": "POST /v1/admin/sellability/offer-refresh-runs",
         "tags": [
           "sellability"
         ],
@@ -3346,6 +3386,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityOfferRefreshRunsById",
+        "summary": "GET /v1/admin/sellability/offer-refresh-runs/{id}",
         "tags": [
           "sellability"
         ],
@@ -3542,6 +3584,8 @@
             }
           }
         },
+        "operationId": "patchAdminSellabilityOfferRefreshRunsById",
+        "summary": "PATCH /v1/admin/sellability/offer-refresh-runs/{id}",
         "tags": [
           "sellability"
         ],
@@ -3597,6 +3641,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSellabilityOfferRefreshRunsById",
+        "summary": "DELETE /v1/admin/sellability/offer-refresh-runs/{id}",
         "tags": [
           "sellability"
         ],
@@ -3760,6 +3806,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityOfferExpirationEvents",
+        "summary": "GET /v1/admin/sellability/offer-expiration-events",
         "tags": [
           "sellability"
         ],
@@ -3927,6 +3975,8 @@
             }
           }
         },
+        "operationId": "postAdminSellabilityOfferExpirationEvents",
+        "summary": "POST /v1/admin/sellability/offer-expiration-events",
         "tags": [
           "sellability"
         ],
@@ -4047,6 +4097,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityOfferExpirationEventsById",
+        "summary": "GET /v1/admin/sellability/offer-expiration-events/{id}",
         "tags": [
           "sellability"
         ],
@@ -4238,6 +4290,8 @@
             }
           }
         },
+        "operationId": "patchAdminSellabilityOfferExpirationEventsById",
+        "summary": "PATCH /v1/admin/sellability/offer-expiration-events/{id}",
         "tags": [
           "sellability"
         ],
@@ -4293,6 +4347,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSellabilityOfferExpirationEventsById",
+        "summary": "DELETE /v1/admin/sellability/offer-expiration-events/{id}",
         "tags": [
           "sellability"
         ],
@@ -4455,6 +4511,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityExplanations",
+        "summary": "GET /v1/admin/sellability/explanations",
         "tags": [
           "sellability"
         ],
@@ -4619,6 +4677,8 @@
             }
           }
         },
+        "operationId": "postAdminSellabilityExplanations",
+        "summary": "POST /v1/admin/sellability/explanations",
         "tags": [
           "sellability"
         ],
@@ -4735,6 +4795,8 @@
             }
           }
         },
+        "operationId": "getAdminSellabilityExplanationsById",
+        "summary": "GET /v1/admin/sellability/explanations/{id}",
         "tags": [
           "sellability"
         ],
@@ -4923,6 +4985,8 @@
             }
           }
         },
+        "operationId": "patchAdminSellabilityExplanationsById",
+        "summary": "PATCH /v1/admin/sellability/explanations/{id}",
         "tags": [
           "sellability"
         ],
@@ -4978,6 +5042,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSellabilityExplanationsById",
+        "summary": "DELETE /v1/admin/sellability/explanations/{id}",
         "tags": [
           "sellability"
         ],

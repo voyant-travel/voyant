@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -390,6 +396,8 @@
             }
           }
         },
+        "operationId": "getAdminExtrasProductExtras",
+        "summary": "GET /v1/admin/extras/product-extras",
         "tags": [
           "extras"
         ],
@@ -679,6 +687,8 @@
             }
           }
         },
+        "operationId": "postAdminExtrasProductExtras",
+        "summary": "POST /v1/admin/extras/product-extras",
         "tags": [
           "extras"
         ],
@@ -859,6 +869,8 @@
             }
           }
         },
+        "operationId": "getAdminExtrasProductExtrasById",
+        "summary": "GET /v1/admin/extras/product-extras/{id}",
         "tags": [
           "extras"
         ],
@@ -1172,6 +1184,8 @@
             }
           }
         },
+        "operationId": "patchAdminExtrasProductExtrasById",
+        "summary": "PATCH /v1/admin/extras/product-extras/{id}",
         "tags": [
           "extras"
         ],
@@ -1227,6 +1241,8 @@
             }
           }
         },
+        "operationId": "deleteAdminExtrasProductExtrasById",
+        "summary": "DELETE /v1/admin/extras/product-extras/{id}",
         "tags": [
           "extras"
         ],
@@ -1454,6 +1470,8 @@
             }
           }
         },
+        "operationId": "getAdminExtrasOptionExtraConfigs",
+        "summary": "GET /v1/admin/extras/option-extra-configs",
         "tags": [
           "extras"
         ],
@@ -1711,6 +1729,8 @@
             }
           }
         },
+        "operationId": "postAdminExtrasOptionExtraConfigs",
+        "summary": "POST /v1/admin/extras/option-extra-configs",
         "tags": [
           "extras"
         ],
@@ -1877,6 +1897,8 @@
             }
           }
         },
+        "operationId": "getAdminExtrasOptionExtraConfigsById",
+        "summary": "GET /v1/admin/extras/option-extra-configs/{id}",
         "tags": [
           "extras"
         ],
@@ -2158,6 +2180,8 @@
             }
           }
         },
+        "operationId": "patchAdminExtrasOptionExtraConfigsById",
+        "summary": "PATCH /v1/admin/extras/option-extra-configs/{id}",
         "tags": [
           "extras"
         ],
@@ -2213,6 +2237,8 @@
             }
           }
         },
+        "operationId": "deleteAdminExtrasOptionExtraConfigsById",
+        "summary": "DELETE /v1/admin/extras/option-extra-configs/{id}",
         "tags": [
           "extras"
         ],
@@ -2470,6 +2496,8 @@
             }
           }
         },
+        "operationId": "getAdminExtrasBookingExtras",
+        "summary": "GET /v1/admin/extras/booking-extras",
         "tags": [
           "extras"
         ],
@@ -2775,6 +2803,8 @@
             }
           }
         },
+        "operationId": "postAdminExtrasBookingExtras",
+        "summary": "POST /v1/admin/extras/booking-extras",
         "tags": [
           "extras"
         ],
@@ -2962,6 +2992,8 @@
             }
           }
         },
+        "operationId": "getAdminExtrasBookingExtrasById",
+        "summary": "GET /v1/admin/extras/booking-extras/{id}",
         "tags": [
           "extras"
         ],
@@ -3290,6 +3322,8 @@
             }
           }
         },
+        "operationId": "patchAdminExtrasBookingExtrasById",
+        "summary": "PATCH /v1/admin/extras/booking-extras/{id}",
         "tags": [
           "extras"
         ],
@@ -3345,6 +3379,8 @@
             }
           }
         },
+        "operationId": "deleteAdminExtrasBookingExtrasById",
+        "summary": "DELETE /v1/admin/extras/booking-extras/{id}",
         "tags": [
           "extras"
         ],
@@ -3897,6 +3933,8 @@
             }
           }
         },
+        "operationId": "getAdminExtrasSlotManifestsBySlotId",
+        "summary": "GET /v1/admin/extras/slot-manifests/{slotId}",
         "tags": [
           "extras"
         ],
@@ -4176,6 +4214,8 @@
             }
           }
         },
+        "operationId": "patchAdminExtrasSlotManifestsBySlotIdSelections",
+        "summary": "PATCH /v1/admin/extras/slot-manifests/{slotId}/selections",
         "tags": [
           "extras"
         ],
@@ -4471,6 +4511,8 @@
             }
           }
         },
+        "operationId": "postAdminExtrasSlotManifestsBySlotIdSelectionsBulk",
+        "summary": "POST /v1/admin/extras/slot-manifests/{slotId}/selections/bulk",
         "tags": [
           "extras"
         ],
@@ -4731,6 +4773,8 @@
             }
           }
         },
+        "operationId": "postAdminExtrasSlotManifestsBySlotIdCollectionsBulk",
+        "summary": "POST /v1/admin/extras/slot-manifests/{slotId}/collections/bulk",
         "tags": [
           "extras"
         ],

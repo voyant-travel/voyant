@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -683,6 +689,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogSearch",
+        "summary": "POST /v1/admin/catalog/search",
         "tags": [
           "catalog"
         ],
@@ -747,6 +755,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogPackageOffers",
+        "summary": "POST /v1/admin/catalog/package-offers",
         "tags": [
           "catalog"
         ],
@@ -829,6 +839,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogPackageDetail",
+        "summary": "POST /v1/admin/catalog/package-detail",
         "tags": [
           "catalog"
         ],
@@ -916,6 +928,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogPackageSearch",
+        "summary": "POST /v1/admin/catalog/package-search",
         "tags": [
           "catalog"
         ],
@@ -968,6 +982,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogDepartureAirports",
+        "summary": "POST /v1/admin/catalog/departure-airports",
         "tags": [
           "catalog"
         ],
@@ -1034,6 +1050,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogCruisePrice",
+        "summary": "POST /v1/admin/catalog/cruise-price",
         "tags": [
           "catalog"
         ],
@@ -1119,6 +1137,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogCruiseSailingPricing",
+        "summary": "POST /v1/admin/catalog/cruise-sailing-pricing",
         "tags": [
           "catalog"
         ],

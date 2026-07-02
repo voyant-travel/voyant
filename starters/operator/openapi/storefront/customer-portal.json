@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -540,6 +546,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalMe",
+        "summary": "GET /v1/public/customer-portal/me",
         "tags": [
           "customer-portal"
         ],
@@ -1216,6 +1224,8 @@
             }
           }
         },
+        "operationId": "patchPublicCustomerPortalMe",
+        "summary": "PATCH /v1/public/customer-portal/me",
         "tags": [
           "customer-portal"
         ],
@@ -1328,6 +1338,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalMeDocuments",
+        "summary": "GET /v1/public/customer-portal/me/documents",
         "tags": [
           "customer-portal"
         ],
@@ -1531,6 +1543,8 @@
             }
           }
         },
+        "operationId": "postPublicCustomerPortalMeDocuments",
+        "summary": "POST /v1/public/customer-portal/me/documents",
         "tags": [
           "customer-portal"
         ],
@@ -1668,6 +1682,8 @@
             }
           }
         },
+        "operationId": "postPublicCustomerPortalMeDocumentsByIdSetPrimary",
+        "summary": "POST /v1/public/customer-portal/me/documents/{id}/set-primary",
         "tags": [
           "customer-portal"
         ],
@@ -1880,6 +1896,8 @@
             }
           }
         },
+        "operationId": "patchPublicCustomerPortalMeDocumentsById",
+        "summary": "PATCH /v1/public/customer-portal/me/documents/{id}",
         "tags": [
           "customer-portal"
         ],
@@ -1938,6 +1956,8 @@
             }
           }
         },
+        "operationId": "deletePublicCustomerPortalMeDocumentsById",
+        "summary": "DELETE /v1/public/customer-portal/me/documents/{id}",
         "tags": [
           "customer-portal"
         ],
@@ -3222,6 +3242,8 @@
             }
           }
         },
+        "operationId": "postPublicCustomerPortalBootstrap",
+        "summary": "POST /v1/public/customer-portal/bootstrap",
         "tags": [
           "customer-portal"
         ],
@@ -3474,6 +3496,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalCompanions",
+        "summary": "GET /v1/public/customer-portal/companions",
         "tags": [
           "customer-portal"
         ],
@@ -3969,6 +3993,8 @@
             }
           }
         },
+        "operationId": "postPublicCustomerPortalCompanions",
+        "summary": "POST /v1/public/customer-portal/companions",
         "tags": [
           "customer-portal"
         ],
@@ -4271,6 +4297,8 @@
             }
           }
         },
+        "operationId": "postPublicCustomerPortalCompanionsImportBookingTravelers",
+        "summary": "POST /v1/public/customer-portal/companions/import-booking-travelers",
         "tags": [
           "customer-portal"
         ],
@@ -4793,6 +4821,8 @@
             }
           }
         },
+        "operationId": "patchPublicCustomerPortalCompanionsByCompanionId",
+        "summary": "PATCH /v1/public/customer-portal/companions/{companionId}",
         "tags": [
           "customer-portal"
         ],
@@ -4869,6 +4899,8 @@
             }
           }
         },
+        "operationId": "deletePublicCustomerPortalCompanionsByCompanionId",
+        "summary": "DELETE /v1/public/customer-portal/companions/{companionId}",
         "tags": [
           "customer-portal"
         ],
@@ -5019,6 +5051,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalBookings",
+        "summary": "GET /v1/public/customer-portal/bookings",
         "tags": [
           "customer-portal"
         ],
@@ -5743,6 +5777,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalBookingsByBookingId",
+        "summary": "GET /v1/public/customer-portal/bookings/{bookingId}",
         "tags": [
           "customer-portal"
         ],
@@ -5864,6 +5900,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalBookingsByBookingIdDocuments",
+        "summary": "GET /v1/public/customer-portal/bookings/{bookingId}/documents",
         "tags": [
           "customer-portal"
         ],
@@ -5995,6 +6033,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalBookingsByBookingIdBillingContact",
+        "summary": "GET /v1/public/customer-portal/bookings/{bookingId}/billing-contact",
         "tags": [
           "customer-portal"
         ],
@@ -6056,6 +6096,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalContactExists",
+        "summary": "GET /v1/public/customer-portal/contact-exists",
         "tags": [
           "customer-portal"
         ],
@@ -6121,6 +6163,8 @@
             }
           }
         },
+        "operationId": "getPublicCustomerPortalContactExistsPhone",
+        "summary": "GET /v1/public/customer-portal/contact-exists/phone",
         "tags": [
           "customer-portal"
         ],

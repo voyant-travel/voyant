@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -1139,6 +1145,8 @@
             }
           }
         },
+        "operationId": "postPublicBookingsSessions",
+        "summary": "POST /v1/public/bookings/sessions",
         "tags": [
           "bookings"
         ],
@@ -1791,6 +1799,8 @@
             }
           }
         },
+        "operationId": "getPublicBookingsSessionsBySessionId",
+        "summary": "GET /v1/public/bookings/sessions/{sessionId}",
         "tags": [
           "bookings"
         ],
@@ -2594,6 +2604,8 @@
             }
           }
         },
+        "operationId": "patchPublicBookingsSessionsBySessionId",
+        "summary": "PATCH /v1/public/bookings/sessions/{sessionId}",
         "tags": [
           "bookings"
         ],
@@ -2698,6 +2710,8 @@
             }
           }
         },
+        "operationId": "getPublicBookingsSessionsBySessionIdState",
+        "summary": "GET /v1/public/bookings/sessions/{sessionId}/state",
         "tags": [
           "bookings"
         ],
@@ -2836,6 +2850,8 @@
             }
           }
         },
+        "operationId": "putPublicBookingsSessionsBySessionIdState",
+        "summary": "PUT /v1/public/bookings/sessions/{sessionId}/state",
         "tags": [
           "bookings"
         ],
@@ -3722,6 +3738,8 @@
             }
           }
         },
+        "operationId": "postPublicBookingsSessionsBySessionIdReprice",
+        "summary": "POST /v1/public/bookings/sessions/{sessionId}/reprice",
         "tags": [
           "bookings"
         ],
@@ -4410,6 +4428,8 @@
             }
           }
         },
+        "operationId": "postPublicBookingsSessionsBySessionIdConfirm",
+        "summary": "POST /v1/public/bookings/sessions/{sessionId}/confirm",
         "tags": [
           "bookings"
         ],
@@ -5098,6 +5118,8 @@
             }
           }
         },
+        "operationId": "postPublicBookingsSessionsBySessionIdExpire",
+        "summary": "POST /v1/public/bookings/sessions/{sessionId}/expire",
         "tags": [
           "bookings"
         ],
@@ -5635,6 +5657,8 @@
             }
           }
         },
+        "operationId": "getPublicBookingsOverview",
+        "summary": "GET /v1/public/bookings/overview",
         "tags": [
           "bookings"
         ],
@@ -6175,6 +6199,8 @@
             }
           }
         },
+        "operationId": "postPublicBookingsGuestLookup",
+        "summary": "POST /v1/public/bookings/guest-lookup",
         "tags": [
           "bookings"
         ],
@@ -6299,6 +6325,8 @@
             }
           }
         },
+        "operationId": "postPublicPaymentPolicyResolve",
+        "summary": "POST /v1/public/payment-policy/resolve",
         "tags": [
           "bookings"
         ],

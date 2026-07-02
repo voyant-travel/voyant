@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -224,6 +230,8 @@
             }
           }
         },
+        "operationId": "getPublicOperatorProfile",
+        "summary": "GET /v1/public/operator-profile",
         "tags": [
           "operator-settings"
         ],
@@ -307,6 +315,8 @@
             }
           }
         },
+        "operationId": "getPublicSettingsOperator",
+        "summary": "GET /v1/public/settings/operator",
         "tags": [
           "operator-settings"
         ],

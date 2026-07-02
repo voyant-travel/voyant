@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -587,6 +593,8 @@
             }
           }
         },
+        "operationId": "getPublicCruises",
+        "summary": "GET /v1/public/cruises",
         "tags": [
           "cruises"
         ],
@@ -703,6 +711,8 @@
             }
           }
         },
+        "operationId": "getPublicCruisesSailingsByKey",
+        "summary": "GET /v1/public/cruises/sailings/{key}",
         "tags": [
           "cruises"
         ],
@@ -1017,6 +1027,8 @@
             }
           }
         },
+        "operationId": "postPublicCruisesSailingsByKeyQuote",
+        "summary": "POST /v1/public/cruises/sailings/{key}/quote",
         "tags": [
           "cruises"
         ],
@@ -1108,6 +1120,8 @@
             }
           }
         },
+        "operationId": "getPublicCruisesShipsByKey",
+        "summary": "GET /v1/public/cruises/ships/{key}",
         "tags": [
           "cruises"
         ],
@@ -1470,6 +1484,8 @@
             }
           }
         },
+        "operationId": "getPublicCruisesBySlug",
+        "summary": "GET /v1/public/cruises/{slug}",
         "tags": [
           "cruises"
         ],

@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -273,6 +279,8 @@
             }
           }
         },
+        "operationId": "getAdminSettingsOperatorProfile",
+        "summary": "GET /v1/admin/settings/operator-profile",
         "tags": [
           "operator-settings"
         ],
@@ -515,6 +523,8 @@
             }
           }
         },
+        "operationId": "patchAdminSettingsOperatorProfile",
+        "summary": "PATCH /v1/admin/settings/operator-profile",
         "tags": [
           "operator-settings"
         ],
@@ -591,6 +601,8 @@
             }
           }
         },
+        "operationId": "getAdminSettingsOperatorPaymentInstructions",
+        "summary": "GET /v1/admin/settings/operator-payment-instructions",
         "tags": [
           "operator-settings"
         ],
@@ -701,6 +713,8 @@
             }
           }
         },
+        "operationId": "patchAdminSettingsOperatorPaymentInstructions",
+        "summary": "PATCH /v1/admin/settings/operator-payment-instructions",
         "tags": [
           "operator-settings"
         ],
@@ -764,6 +778,8 @@
             }
           }
         },
+        "operationId": "getAdminSettingsOperatorPaymentDefaults",
+        "summary": "GET /v1/admin/settings/operator-payment-defaults",
         "tags": [
           "operator-settings"
         ],
@@ -900,6 +916,8 @@
             }
           }
         },
+        "operationId": "patchAdminSettingsOperatorPaymentDefaults",
+        "summary": "PATCH /v1/admin/settings/operator-payment-defaults",
         "tags": [
           "operator-settings"
         ],
@@ -1060,6 +1078,8 @@
             }
           }
         },
+        "operationId": "getAdminSettingsOperator",
+        "summary": "GET /v1/admin/settings/operator",
         "tags": [
           "operator-settings"
         ],
@@ -1417,6 +1437,8 @@
             }
           }
         },
+        "operationId": "patchAdminSettingsOperator",
+        "summary": "PATCH /v1/admin/settings/operator",
         "tags": [
           "operator-settings"
         ],

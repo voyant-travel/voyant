@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -360,6 +366,8 @@
             }
           }
         },
+        "operationId": "getPublicBookingRequirementsProductsByProductIdTransportRequirements",
+        "summary": "GET /v1/public/booking-requirements/products/{productId}/transport-requirements",
         "tags": [
           "booking-requirements"
         ],

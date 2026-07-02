@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -350,6 +356,8 @@
             }
           }
         },
+        "operationId": "getAdminWorkflowRuns",
+        "summary": "GET /v1/admin/workflow-runs",
         "tags": [
           "workflow-runs"
         ],
@@ -650,6 +658,8 @@
             }
           }
         },
+        "operationId": "getAdminWorkflowRunsById",
+        "summary": "GET /v1/admin/workflow-runs/{id}",
         "tags": [
           "workflow-runs"
         ],
@@ -815,6 +825,8 @@
             }
           }
         },
+        "operationId": "postAdminWorkflowRunsByIdRerun",
+        "summary": "POST /v1/admin/workflow-runs/{id}/rerun",
         "tags": [
           "workflow-runs"
         ],
@@ -965,6 +977,8 @@
             }
           }
         },
+        "operationId": "postAdminWorkflowRunsByIdResume",
+        "summary": "POST /v1/admin/workflow-runs/{id}/resume",
         "tags": [
           "workflow-runs"
         ],

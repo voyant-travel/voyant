@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -301,6 +307,8 @@
             }
           }
         },
+        "operationId": "getAdminChartersProducts",
+        "summary": "GET /v1/admin/charters/products",
         "tags": [
           "charters"
         ],
@@ -632,6 +640,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersProducts",
+        "summary": "POST /v1/admin/charters/products",
         "tags": [
           "charters"
         ],
@@ -890,6 +900,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersProductsByKeyAggregatesRecompute",
+        "summary": "POST /v1/admin/charters/products/{key}/aggregates/recompute",
         "tags": [
           "charters"
         ],
@@ -978,6 +990,8 @@
             }
           }
         },
+        "operationId": "getAdminChartersProductsByKeyVoyages",
+        "summary": "GET /v1/admin/charters/products/{key}/voyages",
         "tags": [
           "charters"
         ],
@@ -1069,6 +1083,8 @@
             }
           }
         },
+        "operationId": "getAdminChartersProductsByKey",
+        "summary": "GET /v1/admin/charters/products/{key}",
         "tags": [
           "charters"
         ],
@@ -1325,6 +1341,8 @@
             }
           }
         },
+        "operationId": "putAdminChartersProductsByKey",
+        "summary": "PUT /v1/admin/charters/products/{key}",
         "tags": [
           "charters"
         ],
@@ -1581,6 +1599,8 @@
             }
           }
         },
+        "operationId": "deleteAdminChartersProductsByKey",
+        "summary": "DELETE /v1/admin/charters/products/{key}",
         "tags": [
           "charters"
         ],
@@ -1865,6 +1885,8 @@
             }
           }
         },
+        "operationId": "getAdminChartersVoyages",
+        "summary": "GET /v1/admin/charters/voyages",
         "tags": [
           "charters"
         ],
@@ -2206,6 +2228,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersVoyages",
+        "summary": "POST /v1/admin/charters/voyages",
         "tags": [
           "charters"
         ],
@@ -2439,6 +2463,8 @@
             }
           }
         },
+        "operationId": "putAdminChartersVoyagesByKeySuitesBulk",
+        "summary": "PUT /v1/admin/charters/voyages/{key}/suites/bulk",
         "tags": [
           "charters"
         ],
@@ -2599,6 +2625,8 @@
             }
           }
         },
+        "operationId": "putAdminChartersVoyagesByKeyScheduleBulk",
+        "summary": "PUT /v1/admin/charters/voyages/{key}/schedule/bulk",
         "tags": [
           "charters"
         ],
@@ -2737,6 +2765,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersVoyagesByKeyQuotePerSuite",
+        "summary": "POST /v1/admin/charters/voyages/{key}/quote/per-suite",
         "tags": [
           "charters"
         ],
@@ -2809,6 +2839,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersVoyagesByKeyBookingsPerSuite",
+        "summary": "POST /v1/admin/charters/voyages/{key}/bookings/per-suite",
         "tags": [
           "charters"
         ],
@@ -2940,6 +2972,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersVoyagesByKeyQuoteWholeYacht",
+        "summary": "POST /v1/admin/charters/voyages/{key}/quote/whole-yacht",
         "tags": [
           "charters"
         ],
@@ -3012,6 +3046,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersVoyagesByKeyBookingsWholeYacht",
+        "summary": "POST /v1/admin/charters/voyages/{key}/bookings/whole-yacht",
         "tags": [
           "charters"
         ],
@@ -3103,6 +3139,8 @@
             }
           }
         },
+        "operationId": "getAdminChartersVoyagesByKey",
+        "summary": "GET /v1/admin/charters/voyages/{key}",
         "tags": [
           "charters"
         ],
@@ -3350,6 +3388,8 @@
             }
           }
         },
+        "operationId": "putAdminChartersVoyagesByKey",
+        "summary": "PUT /v1/admin/charters/voyages/{key}",
         "tags": [
           "charters"
         ],
@@ -3493,6 +3533,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersBookingsByBookingIdMyba",
+        "summary": "POST /v1/admin/charters/bookings/{bookingId}/myba",
         "tags": [
           "charters"
         ],
@@ -3764,6 +3806,8 @@
             }
           }
         },
+        "operationId": "getAdminChartersYachts",
+        "summary": "GET /v1/admin/charters/yachts",
         "tags": [
           "charters"
         ],
@@ -4115,6 +4159,8 @@
             }
           }
         },
+        "operationId": "postAdminChartersYachts",
+        "summary": "POST /v1/admin/charters/yachts",
         "tags": [
           "charters"
         ],
@@ -4206,6 +4252,8 @@
             }
           }
         },
+        "operationId": "getAdminChartersYachtsByKey",
+        "summary": "GET /v1/admin/charters/yachts/{key}",
         "tags": [
           "charters"
         ],
@@ -4460,6 +4508,8 @@
             }
           }
         },
+        "operationId": "putAdminChartersYachtsByKey",
+        "summary": "PUT /v1/admin/charters/yachts/{key}",
         "tags": [
           "charters"
         ],

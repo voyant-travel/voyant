@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -368,6 +374,8 @@
             }
           }
         },
+        "operationId": "postAdminAccommodationsRoomBlocks",
+        "summary": "POST /v1/admin/accommodations/room-blocks",
         "tags": [
           "accommodations"
         ],
@@ -605,6 +613,8 @@
             }
           }
         },
+        "operationId": "getAdminAccommodationsRoomBlocksById",
+        "summary": "GET /v1/admin/accommodations/room-blocks/{id}",
         "tags": [
           "accommodations"
         ],
@@ -773,6 +783,8 @@
             }
           }
         },
+        "operationId": "putAdminAccommodationsRoomBlocksByIdNights",
+        "summary": "PUT /v1/admin/accommodations/room-blocks/{id}/nights",
         "tags": [
           "accommodations"
         ],
@@ -1071,6 +1083,8 @@
             }
           }
         },
+        "operationId": "postAdminAccommodationsRoomBlocksByIdPickups",
+        "summary": "POST /v1/admin/accommodations/room-blocks/{id}/pickups",
         "tags": [
           "accommodations"
         ],
@@ -1224,6 +1238,8 @@
             }
           }
         },
+        "operationId": "postAdminAccommodationsRoomBlocksByIdPickupsReverse",
+        "summary": "POST /v1/admin/accommodations/room-blocks/{id}/pickups/reverse",
         "tags": [
           "accommodations"
         ],
@@ -1413,6 +1429,8 @@
             }
           }
         },
+        "operationId": "postAdminAccommodationsRoomBlocksByIdRelease",
+        "summary": "POST /v1/admin/accommodations/room-blocks/{id}/release",
         "tags": [
           "accommodations"
         ],

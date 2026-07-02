@@ -1,5 +1,6 @@
 import {
   buildModulePathOwnership,
+  type GenerateOpenApiOptions,
   generateOpenApiDocument,
   mergeLazyOpenApiPaths,
   type OpenApiDocument,
@@ -9,11 +10,16 @@ import {
 } from "@voyant-travel/hono/openapi"
 import { app } from "./app.js"
 
-const OPENAPI_INFO = {
-  title: "Voyant Operator API",
-  version: "0.0.0",
-  description: "Generated from the composed operator app. Do not edit by hand.",
-} as const
+const OPENAPI_OPTIONS: GenerateOpenApiOptions = {
+  info: {
+    title: "Voyant Operator API",
+    version: "0.0.0",
+    description: "Generated from the composed operator app. Do not edit by hand.",
+  },
+  // Relative server so Swagger/Scalar "try it out" targets this deployment's
+  // own origin (voyant#2729).
+  servers: [{ url: "/", description: "This deployment (same origin)" }],
+}
 
 /**
  * Build-time OpenAPI generation for the operator deployment (voyant#2114).
@@ -42,7 +48,7 @@ export interface OperatorOpenApiDocuments {
 }
 
 export async function buildOperatorOpenApiDocuments(): Promise<OperatorOpenApiDocuments> {
-  const options = { info: OPENAPI_INFO }
+  const options = OPENAPI_OPTIONS
   const eager = generateOpenApiDocument(app, options)
   // Lazy route families mount as wildcard dispatch stubs at runtime, so their
   // `.openapi()` operations never reach the composed registry — replay their

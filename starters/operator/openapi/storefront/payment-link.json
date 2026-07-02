@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -206,6 +212,8 @@
             }
           }
         },
+        "operationId": "getPublicPaymentLinkConfig",
+        "summary": "GET /v1/public/payment-link-config",
         "tags": [
           "payment-link"
         ],
@@ -292,6 +300,8 @@
             }
           }
         },
+        "operationId": "postPublicPaymentLinkBySessionIdRetry",
+        "summary": "POST /v1/public/payment-link/{sessionId}/retry",
         "tags": [
           "payment-link"
         ],
@@ -375,6 +385,8 @@
             }
           }
         },
+        "operationId": "getPublicPaymentLinkResolve",
+        "summary": "GET /v1/public/payment-link/resolve",
         "tags": [
           "payment-link"
         ],
@@ -479,6 +491,8 @@
             }
           }
         },
+        "operationId": "postPublicPaymentLinkBySessionIdStartCard",
+        "summary": "POST /v1/public/payment-link/{sessionId}/start-card",
         "tags": [
           "payment-link"
         ],
@@ -654,6 +668,8 @@
             }
           }
         },
+        "operationId": "getPublicPaymentLinkBySessionIdTripSummary",
+        "summary": "GET /v1/public/payment-link/{sessionId}/trip-summary",
         "tags": [
           "payment-link"
         ],
@@ -850,6 +866,8 @@
             }
           }
         },
+        "operationId": "getPublicPaymentLinkBySessionIdBookingSummary",
+        "summary": "GET /v1/public/payment-link/{sessionId}/booking-summary",
         "tags": [
           "payment-link"
         ],
@@ -1074,6 +1092,8 @@
             }
           }
         },
+        "operationId": "getPublicBookingsByBookingIdCheckoutStatus",
+        "summary": "GET /v1/public/bookings/{bookingId}/checkout-status",
         "tags": [
           "payment-link"
         ],

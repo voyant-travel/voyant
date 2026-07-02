@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -906,6 +912,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedger",
+        "summary": "GET /v1/admin/action-ledger",
         "tags": [
           "action-ledger"
         ],
@@ -1671,6 +1679,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedgerEntries",
+        "summary": "GET /v1/admin/action-ledger/entries",
         "tags": [
           "action-ledger"
         ],
@@ -2544,6 +2554,8 @@
             }
           }
         },
+        "operationId": "postAdminActionLedgerEntriesByIdReversals",
+        "summary": "POST /v1/admin/action-ledger/entries/{id}/reversals",
         "tags": [
           "action-ledger"
         ],
@@ -3150,6 +3162,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedgerEntriesById",
+        "summary": "GET /v1/admin/action-ledger/entries/{id}",
         "tags": [
           "action-ledger"
         ],
@@ -3523,6 +3537,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedgerApprovals",
+        "summary": "GET /v1/admin/action-ledger/approvals",
         "tags": [
           "action-ledger"
         ],
@@ -4174,6 +4190,8 @@
             }
           }
         },
+        "operationId": "postAdminActionLedgerApprovalsRequest",
+        "summary": "POST /v1/admin/action-ledger/approvals/request",
         "tags": [
           "action-ledger"
         ],
@@ -4889,6 +4907,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedgerApprovalsById",
+        "summary": "GET /v1/admin/action-ledger/approvals/{id}",
         "tags": [
           "action-ledger"
         ],
@@ -5527,6 +5547,8 @@
             }
           }
         },
+        "operationId": "postAdminActionLedgerApprovalsByIdDecide",
+        "summary": "POST /v1/admin/action-ledger/approvals/{id}/decide",
         "tags": [
           "action-ledger"
         ],
@@ -5851,6 +5873,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedgerDelegations",
+        "summary": "GET /v1/admin/action-ledger/delegations",
         "tags": [
           "action-ledger"
         ],
@@ -5990,6 +6014,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedgerDelegationsById",
+        "summary": "GET /v1/admin/action-ledger/delegations/{id}",
         "tags": [
           "action-ledger"
         ],
@@ -6245,6 +6271,8 @@
             }
           }
         },
+        "operationId": "getAdminActionLedgerRelayOutbox",
+        "summary": "GET /v1/admin/action-ledger/relay-outbox",
         "tags": [
           "action-ledger"
         ],
