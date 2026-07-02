@@ -33,7 +33,9 @@ import {
   requireUserId,
 } from "@voyant-travel/hono"
 import {
+  insertAddressForEntitySchema,
   insertAddressSchema,
+  insertContactPointForEntitySchema,
   insertContactPointSchema,
   updateAddressSchema,
   updateContactPointSchema,
@@ -271,13 +273,14 @@ const listOrganizationContactMethodsRoute = createRoute({
 const createOrganizationContactMethodRoute = createRoute({
   method: "post",
   path: "/organizations/{id}/contact-methods",
-  request: { params: idParamSchema, ...requiredJsonBody(insertContactPointSchema) },
+  request: { params: idParamSchema, ...requiredJsonBody(insertContactPointForEntitySchema) },
   responses: {
     201: {
       description: "The created contact method",
       ...jsonContent(z.object({ data: contactMethodSchema })),
     },
     400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Organization not found", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -296,13 +299,14 @@ const listOrganizationAddressesRoute = createRoute({
 const createOrganizationAddressRoute = createRoute({
   method: "post",
   path: "/organizations/{id}/addresses",
-  request: { params: idParamSchema, ...requiredJsonBody(insertAddressSchema) },
+  request: { params: idParamSchema, ...requiredJsonBody(insertAddressForEntitySchema) },
   responses: {
     201: {
       description: "The created address",
       ...jsonContent(z.object({ data: addressSchema })),
     },
     400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Organization not found", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -431,7 +435,7 @@ organizationRoutes
       c.req.valid("param").id,
       c.req.valid("json"),
     )
-    return c.json({ data: row! }, 201)
+    return row ? c.json({ data: row }, 201) : c.json({ error: "Organization not found" }, 404)
   })
   .openapi(listOrganizationAddressesRoute, async (c) =>
     c.json(
@@ -452,7 +456,7 @@ organizationRoutes
       c.req.valid("param").id,
       c.req.valid("json"),
     )
-    return c.json({ data: row! }, 201)
+    return row ? c.json({ data: row }, 201) : c.json({ error: "Organization not found" }, 404)
   })
   .openapi(listOrganizationNotesRoute, async (c) =>
     c.json(
