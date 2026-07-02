@@ -35,10 +35,25 @@ const personRelationshipCoreSchema = z.object({
   autoInverse: z.boolean().optional(),
 })
 
-export const insertPersonRelationshipSchema = personRelationshipCoreSchema
+function validateDateRange(
+  data: { startDate?: string | null; endDate?: string | null },
+  ctx: z.RefinementCtx,
+) {
+  if (data.startDate && data.endDate && data.endDate < data.startDate) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["endDate"],
+      message: "endDate must be on or after startDate",
+    })
+  }
+}
+
+export const insertPersonRelationshipSchema =
+  personRelationshipCoreSchema.superRefine(validateDateRange)
 export const updatePersonRelationshipSchema = personRelationshipCoreSchema
   .partial()
   .omit({ toPersonId: true, autoInverse: true })
+  .superRefine(validateDateRange)
 
 export const personRelationshipListQuerySchema = paginationSchema.extend({
   kind: personRelationshipKindSchema.optional(),

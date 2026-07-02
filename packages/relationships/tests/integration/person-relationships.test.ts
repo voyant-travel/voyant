@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { people } from "../../src/schema.js"
 import { personRelationshipsService } from "../../src/service/person-relationships.js"
+import { insertPersonRelationshipSchema } from "../../src/validation.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -76,7 +77,22 @@ describe.skipIf(!DB_AVAILABLE)("personRelationshipsService", () => {
     ).toBeNull()
   })
 
-  it("enforces uniqueness on (from, to, kind)", async () => {
+  it("rejects reversed date ranges", () => {
+    const result = insertPersonRelationshipSchema.safeParse({
+      toPersonId: "person_b",
+      kind: "travel_companion",
+      inverseKind: "travel_companion",
+      startDate: "2026-07-10",
+      endDate: "2026-07-01",
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.flatten().fieldErrors.endDate).toEqual([
+      "endDate must be on or after startDate",
+    ])
+  })
+
+  it("maps duplicate creates to a stable conflict", async () => {
     const a = await seedPerson("Alice")
     const b = await seedPerson("Bob")
     await personRelationshipsService.createPersonRelationship(db, a.id, {
@@ -88,7 +104,18 @@ describe.skipIf(!DB_AVAILABLE)("personRelationshipsService", () => {
         toPersonId: b.id,
         kind: "friend",
       }),
-    ).rejects.toThrow()
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "duplicate_person_relationship",
+      message: "Person relationship already exists",
+      details: {
+        resource: "person_relationship",
+        fields: {
+          toPersonId: ["Person relationship already exists"],
+          kind: ["Person relationship already exists"],
+        },
+      },
+    })
     // A different kind on the same pair is fine.
     const second = await personRelationshipsService.createPersonRelationship(db, a.id, {
       toPersonId: b.id,
@@ -315,6 +342,27 @@ describe.skipIf(!DB_AVAILABLE)("personRelationshipsService", () => {
         },
       ]),
     )
+  })
+
+  it("rejects partial updates that would reverse an existing date range", async () => {
+    const a = await seedPerson("A")
+    const b = await seedPerson("B")
+    const created = await personRelationshipsService.createPersonRelationship(db, a.id, {
+      toPersonId: b.id,
+      kind: "travel_companion",
+      startDate: "2026-07-10",
+    })
+    if (!created) throw new Error("seed failure")
+
+    await expect(
+      personRelationshipsService.updatePersonRelationship(db, created.id, {
+        endDate: "2026-07-01",
+      }),
+    ).rejects.toMatchObject({
+      status: 400,
+      code: "invalid_request",
+      message: "endDate must be on or after startDate",
+    })
   })
 
   it("deletes an auto-inverse pair when either edge is deleted", async () => {

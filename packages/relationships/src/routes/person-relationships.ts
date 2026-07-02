@@ -65,6 +65,7 @@ const createPersonRelationshipRoute = createRoute({
       description: "invalid_request, person not found, or self-relationship rejected",
       ...jsonContent(errorResponseSchema),
     },
+    409: { description: "Relationship already exists", ...jsonContent(errorResponseSchema) },
   },
 })
 
