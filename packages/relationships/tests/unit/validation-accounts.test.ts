@@ -50,8 +50,13 @@ describe("Organization schemas", () => {
   it("allows partial updates with only provided fields", () => {
     const result = updateOrganizationSchema.parse({ name: "New Name" })
     expect(result.name).toBe("New Name")
-    expect(result.status).toBe("active")
+    expect(result.status).toBeUndefined()
+    expect(result.tags).toBeUndefined()
     expect(result.legalName).toBeUndefined()
+  })
+
+  it("does not apply create defaults to empty updates", () => {
+    expect(updateOrganizationSchema.parse({})).toEqual({})
   })
 
   it("accepts relation enum", () => {

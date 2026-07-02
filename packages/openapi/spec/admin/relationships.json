@@ -1062,8 +1062,7 @@
                       "active",
                       "inactive",
                       "archived"
-                    ],
-                    "default": "active"
+                    ]
                   },
                   "source": {
                     "type": [
@@ -1081,8 +1080,7 @@
                     "type": "array",
                     "items": {
                       "type": "string"
-                    },
-                    "default": []
+                    }
                   },
                   "customFields": {
                     "type": "object",

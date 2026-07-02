@@ -75,9 +75,12 @@ export const organizationAccountsService = {
   },
 
   async updateOrganization(db: PostgresJsDatabase, id: string, data: UpdateOrganizationInput) {
+    const updates = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    )
     const [row] = await db
       .update(organizations)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(organizations.id, id))
       .returning()
     return row ?? null

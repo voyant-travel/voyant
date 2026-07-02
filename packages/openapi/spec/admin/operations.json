@@ -15879,8 +15879,7 @@
                         "minimum": 0
                       },
                       "active": {
-                        "type": "boolean",
-                        "default": true
+                        "type": "boolean"
                       },
                       "notes": {
                         "type": [
@@ -16331,8 +16330,7 @@
                     "minimum": 0
                   },
                   "active": {
-                    "type": "boolean",
-                    "default": true
+                    "type": "boolean"
                   },
                   "notes": {
                     "type": [
@@ -16907,8 +16905,7 @@
                         "minimum": 0
                       },
                       "active": {
-                        "type": "boolean",
-                        "default": true
+                        "type": "boolean"
                       },
                       "notes": {
                         "type": [
@@ -17319,8 +17316,7 @@
                     "minimum": 0
                   },
                   "active": {
-                    "type": "boolean",
-                    "default": true
+                    "type": "boolean"
                   },
                   "notes": {
                     "type": [
@@ -18164,20 +18160,17 @@
                       },
                       "quantityRequired": {
                         "type": "integer",
-                        "minimum": 1,
-                        "default": 1
+                        "minimum": 1
                       },
                       "allocationMode": {
                         "type": "string",
                         "enum": [
                           "shared",
                           "exclusive"
-                        ],
-                        "default": "shared"
+                        ]
                       },
                       "priority": {
-                        "type": "integer",
-                        "default": 0
+                        "type": "integer"
                       }
                     }
                   }
@@ -18567,20 +18560,17 @@
                   },
                   "quantityRequired": {
                     "type": "integer",
-                    "minimum": 1,
-                    "default": 1
+                    "minimum": 1
                   },
                   "allocationMode": {
                     "type": "string",
                     "enum": [
                       "shared",
                       "exclusive"
-                    ],
-                    "default": "shared"
+                    ]
                   },
                   "priority": {
-                    "type": "integer",
-                    "default": 0
+                    "type": "integer"
                   }
                 }
               }
@@ -19126,20 +19116,17 @@
                       },
                       "quantityRequired": {
                         "type": "integer",
-                        "minimum": 1,
-                        "default": 1
+                        "minimum": 1
                       },
                       "allocationMode": {
                         "type": "string",
                         "enum": [
                           "shared",
                           "exclusive"
-                        ],
-                        "default": "shared"
+                        ]
                       },
                       "priority": {
-                        "type": "integer",
-                        "default": 0
+                        "type": "integer"
                       }
                     }
                   }
@@ -19529,20 +19516,17 @@
                   },
                   "quantityRequired": {
                     "type": "integer",
-                    "minimum": 1,
-                    "default": 1
+                    "minimum": 1
                   },
                   "allocationMode": {
                     "type": "string",
                     "enum": [
                       "shared",
                       "exclusive"
-                    ],
-                    "default": "shared"
+                    ]
                   },
                   "priority": {
-                    "type": "integer",
-                    "default": 0
+                    "type": "integer"
                   }
                 }
               }
@@ -20161,8 +20145,7 @@
                           "released",
                           "cancelled",
                           "completed"
-                        ],
-                        "default": "reserved"
+                        ]
                       },
                       "assignedAt": {
                         "type": "string",
@@ -20614,8 +20597,7 @@
                       "released",
                       "cancelled",
                       "completed"
-                    ],
-                    "default": "reserved"
+                    ]
                   },
                   "assignedAt": {
                     "type": "string",

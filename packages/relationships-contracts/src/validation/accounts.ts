@@ -36,7 +36,12 @@ export const organizationCoreSchema = z.object({
 })
 
 export const insertOrganizationSchema = organizationCoreSchema
-export const updateOrganizationSchema = organizationCoreSchema.partial()
+export const updateOrganizationSchema = organizationCoreSchema
+  .extend({
+    status: recordStatusSchema.optional(),
+    tags: z.array(z.string()).optional(),
+  })
+  .partial()
 export const mergeOrganizationSchema = z.object({
   mergeId: z.string().min(1),
 })
