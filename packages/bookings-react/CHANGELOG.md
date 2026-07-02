@@ -1,5 +1,16 @@
 # @voyant-travel/bookings-react
 
+## 0.138.8
+
+### Patch Changes
+
+- f9c3449: Require an explicit payment date when booking payment schedules are marked already paid.
+- Updated dependencies [1c7bbdb]
+  - @voyant-travel/relationships-react@0.138.1
+  - @voyant-travel/identity-react@0.138.3
+  - @voyant-travel/bookings@0.138.8
+  - @voyant-travel/finance-react@0.138.9
+
 ## 0.138.7
 
 ### Patch Changes

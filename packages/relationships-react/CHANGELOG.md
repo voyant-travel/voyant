@@ -1,5 +1,15 @@
 # @voyant-travel/crm-react
 
+## 0.138.1
+
+### Patch Changes
+
+- 1c7bbdb: Expose organization detail management for identity resources, linked people, and linked activities.
+- Updated dependencies [b615127]
+- Updated dependencies [1c7bbdb]
+  - @voyant-travel/relationships@0.121.12
+  - @voyant-travel/identity-react@0.138.3
+
 ## 0.138.0
 
 ### Patch Changes

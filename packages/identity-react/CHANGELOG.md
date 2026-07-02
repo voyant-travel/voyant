@@ -1,5 +1,16 @@
 # @voyant-travel/identity-react
 
+## 0.138.3
+
+### Patch Changes
+
+- 1c7bbdb: Expose organization detail management for identity resources, linked people, and linked activities.
+- Updated dependencies [1c7bbdb]
+- Updated dependencies [f9c3449]
+  - @voyant-travel/relationships-react@0.138.1
+  - @voyant-travel/bookings-react@0.138.8
+  - @voyant-travel/identity@0.138.3
+
 ## 0.138.2
 
 ### Patch Changes
