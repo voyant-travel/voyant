@@ -526,7 +526,10 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "pattern": "^[A-Z]{3}$"
                   },
                   "preferredLanguage": {
                     "type": [
@@ -539,7 +542,8 @@
                       "integer",
                       "null"
                     ],
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 365
                   },
                   "status": {
                     "type": "string",
@@ -1053,7 +1057,10 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "pattern": "^[A-Z]{3}$"
                   },
                   "preferredLanguage": {
                     "type": [
@@ -1066,7 +1073,8 @@
                       "integer",
                       "null"
                     ],
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 365
                   },
                   "status": {
                     "type": "string",
