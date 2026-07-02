@@ -35,6 +35,7 @@ type Mode = { kind: "create" } | { kind: "edit"; person: PersonRecord }
 
 export interface PersonFormProps {
   mode: Mode
+  initialOrganizationId?: string
   onSuccess?: (person: PersonRecord) => void
   onCancel?: () => void
 }
@@ -96,10 +97,11 @@ function initialState(mode: Mode): FormState {
   }
 }
 
-function toPayload(state: FormState): CreatePersonInput {
+function toPayload(state: FormState, organizationId?: string): CreatePersonInput {
   return {
     firstName: state.firstName.trim(),
     lastName: state.lastName.trim(),
+    organizationId: organizationId ?? undefined,
     email: state.email.trim() || null,
     phone: state.phone.trim() || null,
     jobTitle: state.jobTitle.trim() || null,
@@ -138,7 +140,7 @@ function formatAddress(state: FormState): string | null {
  * exposed on `/api/v1/admin/relationships/people` — client-side errors surface as toast-
  * friendly `VoyantApiError`s inside the mutation.
  */
-export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
+export function PersonForm({ mode, initialOrganizationId, onSuccess, onCancel }: PersonFormProps) {
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   // After the operator hits "Create" on a fresh sheet, we flip into an
@@ -171,7 +173,10 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
       return
     }
 
-    const payload = toPayload(state)
+    const payload = toPayload(
+      state,
+      !effectivePerson && initialOrganizationId ? initialOrganizationId : undefined,
+    )
 
     try {
       if (!effectivePerson) {

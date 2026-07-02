@@ -18,28 +18,43 @@ import {
   DialogTitle,
 } from "@voyant-travel/ui/components/dialog"
 import { Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { crmActivityStatuses, crmActivityTypes, crmEntityTypes } from "../i18n/messages.js"
-import { type CreateActivityInput, useActivityMutation } from "../index.js"
+import { type ActivityRecord, type CreateActivityInput, useActivityMutation } from "../index.js"
 import { OrganizationCombobox } from "./organization-combobox.js"
 import { PersonCombobox } from "./person-combobox.js"
 
 type Props = {
   open: boolean
   onOpenChange: (next: boolean) => void
+  initialEntityType?: string
+  initialEntityId?: string
+  onSuccess?: (activity: ActivityRecord) => void
 }
 
-export function CreateActivityDialog({ open, onOpenChange }: Props) {
+export function CreateActivityDialog({
+  open,
+  onOpenChange,
+  initialEntityType = "none",
+  initialEntityId = "",
+  onSuccess,
+}: Props) {
   const { create, addLink } = useActivityMutation()
   const messages = useCrmUiMessagesOrDefault()
   const [subject, setSubject] = useState("")
   const [type, setType] = useState<string>("note")
   const [status, setStatus] = useState<string>("planned")
   const [description, setDescription] = useState("")
-  const [entityType, setEntityType] = useState<string>("none")
-  const [entityId, setEntityId] = useState("")
+  const [entityType, setEntityType] = useState<string>(initialEntityType)
+  const [entityId, setEntityId] = useState(initialEntityId)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    setEntityType(initialEntityType)
+    setEntityId(initialEntityId)
+  }, [initialEntityId, initialEntityType, open])
 
   async function handleCreate() {
     if (!subject.trim()) {
@@ -71,10 +86,11 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
 
       setSubject("")
       setDescription("")
-      setEntityType("none")
-      setEntityId("")
+      setEntityType(initialEntityType)
+      setEntityId(initialEntityId)
       setType("note")
       setStatus("planned")
+      onSuccess?.(activity)
       onOpenChange(false)
     } catch (err) {
       setError(

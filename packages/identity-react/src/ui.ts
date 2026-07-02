@@ -8,10 +8,12 @@ export {
   AddressesTab,
   ContactPointsTab,
   type IdentityEntityTabProps,
+  NamedContactsTab,
+} from "./components/identity-entity-tabs.js"
+export {
   IdentityPage,
   type IdentityPageProps,
   type IdentityTab,
-  NamedContactsTab,
 } from "./components/identity-page.js"
 export {
   NamedContactDialog,

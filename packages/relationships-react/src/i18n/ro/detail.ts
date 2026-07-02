@@ -49,6 +49,9 @@ export const crmUiRoDetailMessages = {
     tabs: {
       overview: "Prezentare",
       people: "Persoane",
+      contactMethods: "Metode de contact",
+      addresses: "Adrese",
+      namedContacts: "Contacte",
       quotes: "Oferte",
       activities: "Activitati",
       bookings: "Rezervari",
@@ -66,6 +69,10 @@ export const crmUiRoDetailMessages = {
       unnamed: "Fara nume",
       noQuotes: "Nu exista oferte.",
       noActivities: "Nu exista activitati.",
+    },
+    actions: {
+      addPerson: "Adauga persoana",
+      addActivity: "Adauga activitate",
     },
     hint: "Campurile se actualizeaza din panoul din stanga. Treci cu mouse-ul pentru a vedea iconita de editare.",
   },

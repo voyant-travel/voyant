@@ -15,6 +15,7 @@ export interface PersonDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   person?: PersonRecord
+  initialOrganizationId?: string
   onSuccess?: (person: PersonRecord) => void
 }
 
@@ -22,7 +23,13 @@ export interface PersonDialogProps {
  * Dialog wrapper for `<PersonForm />`. Determines create vs edit mode from
  * the presence of `person`. Closes the dialog on successful save.
  */
-export function PersonDialog({ open, onOpenChange, person, onSuccess }: PersonDialogProps) {
+export function PersonDialog({
+  open,
+  onOpenChange,
+  person,
+  initialOrganizationId,
+  onSuccess,
+}: PersonDialogProps) {
   const isEdit = Boolean(person)
   const messages = useCrmUiMessagesOrDefault()
 
@@ -41,6 +48,7 @@ export function PersonDialog({ open, onOpenChange, person, onSuccess }: PersonDi
         </DialogHeader>
         <PersonForm
           mode={person ? { kind: "edit", person } : { kind: "create" }}
+          initialOrganizationId={initialOrganizationId}
           onSuccess={(saved) => {
             onSuccess?.(saved)
             onOpenChange(false)

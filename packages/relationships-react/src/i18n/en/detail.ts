@@ -49,6 +49,9 @@ export const crmUiEnDetailMessages = {
     tabs: {
       overview: "Overview",
       people: "People",
+      contactMethods: "Contact methods",
+      addresses: "Addresses",
+      namedContacts: "Contacts",
       quotes: "Quotes",
       activities: "Activities",
       bookings: "Bookings",
@@ -66,6 +69,10 @@ export const crmUiEnDetailMessages = {
       unnamed: "Unnamed",
       noQuotes: "No quotes.",
       noActivities: "No activities yet.",
+    },
+    actions: {
+      addPerson: "Add person",
+      addActivity: "Add activity",
     },
     hint: "Fields update on the left panel. Hover to reveal the edit icon.",
   },
