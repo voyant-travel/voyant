@@ -2626,7 +2626,10 @@
                     "minLength": 1
                   },
                   "personId": {
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "minLength": 1
                   },
                   "bookingId": {
@@ -3036,7 +3039,10 @@
                 "type": "object",
                 "properties": {
                   "personId": {
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "minLength": 1
                   },
                   "bookingId": {

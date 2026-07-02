@@ -23,7 +23,7 @@ export const enrollmentStatusSchema = z.enum(["registered", "waitlisted", "atten
 
 const delegateMutationSchema = z.object({
   programId: z.string().min(1),
-  personId: z.string().min(1).optional(),
+  personId: z.string().min(1).nullable().optional(),
   bookingId: z.string().min(1).optional(),
   role: delegateRoleSchema,
   status: delegateStatusSchema,

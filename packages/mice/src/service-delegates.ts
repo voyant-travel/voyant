@@ -1,5 +1,7 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { MiceRouteRuntime } from "./route-runtime.js"
 import { programs } from "./schema.js"
 import {
   type DelegateSessionEnrollment,
@@ -25,6 +27,24 @@ function withTimestamps<T extends { arrivalAt?: string; departureAt?: string }>(
   }
 }
 
+async function validateDelegatePerson(
+  db: PostgresJsDatabase,
+  personId: string | null | undefined,
+  runtime: MiceRouteRuntime,
+) {
+  if (!personId || !runtime.resolveDelegatePersonById) return
+
+  const exists = await runtime.resolveDelegatePersonById(db, personId)
+  if (!exists) {
+    throw new RequestValidationError("Delegate personId does not reference an existing person", {
+      fields: {
+        fieldErrors: { personId: ["Person not found"] },
+        formErrors: [],
+      },
+    })
+  }
+}
+
 export type CreateDelegateOutcome =
   | { status: "ok"; delegate: ProgramDelegate }
   | { status: "program_not_found" }
@@ -32,6 +52,7 @@ export type CreateDelegateOutcome =
 export async function createDelegate(
   db: PostgresJsDatabase,
   input: CreateDelegateBody,
+  runtime: MiceRouteRuntime = {},
 ): Promise<CreateDelegateOutcome> {
   const [program] = await db
     .select({ id: programs.id })
@@ -39,6 +60,7 @@ export async function createDelegate(
     .where(eq(programs.id, input.programId))
     .limit(1)
   if (!program) return { status: "program_not_found" }
+  await validateDelegatePerson(db, input.personId, runtime)
   const [delegate] = await db.insert(programDelegates).values(withTimestamps(input)).returning()
   if (!delegate) throw new Error("createDelegate: insert returned no rows")
   return { status: "ok", delegate }
@@ -82,7 +104,9 @@ export async function updateDelegate(
   db: PostgresJsDatabase,
   id: string,
   input: UpdateDelegateBody,
+  runtime: MiceRouteRuntime = {},
 ): Promise<ProgramDelegate | null> {
+  await validateDelegatePerson(db, input.personId, runtime)
   const [delegate] = await db
     .update(programDelegates)
     .set({ ...withTimestamps(input), updatedAt: new Date() })

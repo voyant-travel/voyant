@@ -2,7 +2,8 @@ import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { miceLinkable } from "./linkables.js"
-import { miceAdminRoutes } from "./routes.js"
+import type { MiceRouteRuntimeOptions } from "./route-runtime.js"
+import { createMiceAdminRoutes } from "./routes.js"
 
 /**
  * The MICE spine is operator-local (niche) — registered in the deployment, NOT
@@ -27,15 +28,26 @@ export const miceModule: Module = {
   linkable: miceLinkable,
 }
 
-export const miceHonoModule: HonoModule = {
-  module: miceModule,
-  adminRoutes: miceAdminRoutes,
+export interface MiceHonoModuleOptions extends MiceRouteRuntimeOptions {}
+
+export function createMiceHonoModule(options: MiceHonoModuleOptions = {}): HonoModule {
+  return {
+    module: miceModule,
+    adminRoutes: createMiceAdminRoutes(options),
+  }
 }
+
+export const miceHonoModule: HonoModule = createMiceHonoModule()
 
 export const miceHonoModules = [miceHonoModule] as const
 
+export type {
+  MiceRouteRuntime,
+  MiceRouteRuntimeOptions,
+  ResolveMiceDelegatePersonById,
+} from "./route-runtime.js"
 export type { MiceAdminRoutes } from "./routes.js"
-export { miceAdminRoutes } from "./routes.js"
+export { createMiceAdminRoutes, miceAdminRoutes } from "./routes.js"
 export * from "./schema.js"
 export * from "./service.js"
 export * from "./service-commercials.js"

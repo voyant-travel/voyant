@@ -2640,6 +2640,9 @@ importers:
       '@voyant-travel/mice':
         specifier: workspace:^
         version: link:../mice
+      '@voyant-travel/relationships-react':
+        specifier: workspace:^
+        version: link:../relationships-react
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui

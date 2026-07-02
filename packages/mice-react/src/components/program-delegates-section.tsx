@@ -1,5 +1,6 @@
 "use client"
 
+import { PersonCombobox } from "@voyant-travel/relationships-react/ui"
 import {
   Badge,
   Button,
@@ -9,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Input,
   Label,
   Select,
   SelectContent,
@@ -171,12 +171,12 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
   const { create } = useDelegateMutation()
   const [role, setRole] = useState<DelegateRole>("attendee")
   const [status, setStatus] = useState<DelegateStatus>("invited")
-  const [personId, setPersonId] = useState("")
+  const [personId, setPersonId] = useState<string | null>(null)
 
   const reset = () => {
     setRole("attendee")
     setStatus("invited")
-    setPersonId("")
+    setPersonId(null)
   }
 
   // Reset on every close so a cancelled draft doesn't reappear on reopen.
@@ -190,7 +190,7 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
       programId,
       role,
       status,
-      personId: personId.trim() || undefined,
+      personId: personId || undefined,
     })
     handleOpenChange(false)
   }
@@ -235,12 +235,13 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="delegate-person">Person ID (optional)</Label>
-            <Input
-              id="delegate-person"
+            <Label>Person (optional)</Label>
+            <PersonCombobox
               value={personId}
-              onChange={(e) => setPersonId(e.target.value)}
-              placeholder="prsn_…"
+              onChange={setPersonId}
+              placeholder="Search people"
+              emptyText="No people found."
+              disabled={create.isPending}
             />
           </div>
         </DialogBody>
