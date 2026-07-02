@@ -5,6 +5,18 @@ import type { MiddlewareHandler } from "hono"
 import { normalizePathname } from "../lib/public-paths.js"
 import type { VoyantBindings, VoyantVariables } from "../types.js"
 
+/**
+ * Route surfaces exempt from the coarse method+path permission guard because
+ * they enforce authorization at a finer grain internally: `_meta` (capability
+ * discovery) and `mcp` (the agent tool server, which gates every tool by its own
+ * `requiredScopes`). Neither is a real module name.
+ */
+const COARSE_GUARD_EXEMPT_RESOURCES = new Set(["_meta", "mcp"])
+
+function isCoarseGuardExempt(resource: string | null): boolean {
+  return resource !== null && COARSE_GUARD_EXEMPT_RESOURCES.has(resource)
+}
+
 function apiKeyResourceFromPath(pathname: string): string | null {
   const surfaceMatch = pathname.match(/^\/v1\/(?:admin|public)\/([^/]+)/)
   if (surfaceMatch?.[1]) return surfaceMatch[1]
@@ -146,11 +158,13 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       })
       const resource = apiKeyResourceFromPath(pathname)
 
-      // Meta/discovery endpoints (e.g. `/v1/admin/_meta/capabilities`) report
-      // what the caller can do — including the key's own granted scopes — so any
-      // authenticated API key may read them, regardless of module scope. `_meta`
-      // is a reserved namespace (no module is named `_meta`).
-      if (resource === "_meta") return next()
+      // Coarse-guard-exempt surfaces. `_meta` (capability discovery) and `mcp`
+      // (the agent tool server) are dispatch surfaces where authorization is
+      // enforced at a finer grain than method+path: the MCP server filters and
+      // gates each tool by its own `requiredScopes` (voyant#2792, D2). So any
+      // authenticated key reaches them; a key with no relevant scopes simply
+      // sees an empty tool list. Neither is a real module name.
+      if (isCoarseGuardExempt(resource)) return next()
 
       const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
 
@@ -189,7 +203,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
         basePath: options.basePath,
       })
       const resource = apiKeyResourceFromPath(pathname)
-      if (resource && resource !== "_meta") {
+      if (resource && !isCoarseGuardExempt(resource)) {
         const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
         if (!hasAnyApiKeyPermission(scopes, resource, actions)) {
           return c.json({ error: "Forbidden: missing required permission" }, 403)
