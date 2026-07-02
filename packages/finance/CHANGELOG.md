@@ -1,5 +1,12 @@
 # @voyant-travel/finance
 
+## 0.138.9
+
+### Patch Changes
+
+- f9c3449: Require an explicit payment date when booking payment schedules are marked already paid.
+  - @voyant-travel/bookings@0.138.8
+
 ## 0.138.8
 
 ### Patch Changes

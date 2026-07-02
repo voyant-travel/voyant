@@ -1,5 +1,12 @@
 # @voyant-travel/crm
 
+## 0.121.12
+
+### Patch Changes
+
+- b615127: Validate activity links to relationship-owned entity types before creating link rows.
+  - @voyant-travel/identity@0.138.3
+
 ## 0.121.11
 
 ### Patch Changes
