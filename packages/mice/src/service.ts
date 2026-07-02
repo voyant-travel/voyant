@@ -1,13 +1,30 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { type Program, programs } from "./schema.js"
 import type { CreateProgramBody, ProgramListQuery, UpdateProgramBody } from "./validation.js"
 
+const PROGRAM_DATE_RANGE_ERROR_MESSAGE = "endDate must be on or after startDate"
+
+type ProgramDateRangeShape = {
+  startDate?: string | null
+  endDate?: string | null
+}
+
+function assertProgramDateRange(program: ProgramDateRangeShape) {
+  if (!program.startDate || !program.endDate || program.endDate >= program.startDate) return
+
+  throw new RequestValidationError(PROGRAM_DATE_RANGE_ERROR_MESSAGE, {
+    issues: [{ path: ["endDate"], message: PROGRAM_DATE_RANGE_ERROR_MESSAGE }],
+  })
+}
+
 export async function createProgram(
   db: PostgresJsDatabase,
   input: CreateProgramBody,
 ): Promise<Program> {
+  assertProgramDateRange(input)
   const [program] = await db.insert(programs).values(input).returning()
   if (!program) throw new Error("createProgram: insert returned no rows")
   return program
@@ -43,6 +60,11 @@ export async function updateProgram(
   id: string,
   input: UpdateProgramBody,
 ): Promise<Program | null> {
+  const [current] = await db.select().from(programs).where(eq(programs.id, id)).limit(1)
+  if (!current) return null
+
+  assertProgramDateRange({ ...current, ...input })
+
   const [program] = await db
     .update(programs)
     .set({ ...input, updatedAt: new Date() })
