@@ -14,6 +14,7 @@ import {
   type CatalogVerticalDetailBreadcrumb,
   CatalogVerticalDetailPage,
 } from "../components/catalog-vertical-detail-page.js"
+import { bookingJourneyProvenanceSearchParams } from "./booking-journey-provenance.js"
 
 export interface VerticalDetailHostProps {
   surface: CatalogDetailSurface
@@ -62,13 +63,10 @@ export function VerticalDetailHost({ surface, id, locale }: VerticalDetailHostPr
       // when content enrichment exposed it; otherwise let the journey APIs
       // resolve provenance server-side from (entityModule, entityId).
       onBook={(entityModule, entityId, opts) => {
-        const sourceKind = opts.sourceKind?.trim()
         return navigateTo("bookingJourney.start", {
           entityModule,
           entityId,
-          ...(sourceKind ? { sourceKind } : {}),
-          ...(opts.sourceConnectionId ? { sourceConnectionId: opts.sourceConnectionId } : {}),
-          ...(opts.sourceRef ? { sourceRef: opts.sourceRef } : {}),
+          ...bookingJourneyProvenanceSearchParams(opts),
           ...(opts.departureId ? { departureId: opts.departureId } : {}),
           ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
           ...(opts.optionId ? { optionId: opts.optionId } : {}),
