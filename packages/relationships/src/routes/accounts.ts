@@ -254,6 +254,7 @@ const deleteOrganizationRoute = createRoute({
   request: { params: idParamSchema },
   responses: {
     200: { description: "Organization deleted", ...jsonContent(successResponseSchema) },
+    409: { description: "Organization has linked people", ...jsonContent(errorResponseSchema) },
     404: { description: "Organization not found", ...jsonContent(errorResponseSchema) },
   },
 })
@@ -412,6 +413,9 @@ organizationRoutes
   .openapi(deleteOrganizationRoute, async (c) => {
     const id = c.req.valid("param").id
     const row = await relationshipsService.deleteOrganization(c.get("db"), id)
+    if (row && "conflict" in row) {
+      return c.json({ error: "Organization has linked people" }, 409)
+    }
     if (!row) return c.json({ error: "Organization not found" }, 404)
     await emitOrganizationChanged(c.get("eventBus"), { id, action: "deleted" })
     return c.json({ success: true } as const, 200)

@@ -1370,6 +1370,24 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Organization has linked people",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         },
         "operationId": "deleteAdminRelationshipsOrganizationsById",

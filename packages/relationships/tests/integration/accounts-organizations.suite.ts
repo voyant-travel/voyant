@@ -291,6 +291,35 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
       expect(body.success).toBe(true)
     })
 
+    it("rejects deleting an organization while people are linked", async () => {
+      const createRes = await getApp().request("/organizations", {
+        method: "POST",
+        ...json({ name: "Linked People Org" }),
+      })
+      const { data: organization } = await createRes.json()
+
+      const personRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({
+          firstName: "Linked",
+          lastName: "Person",
+          organizationId: organization.id,
+        }),
+      })
+      expect(personRes.status).toBe(201)
+      const { data: person } = await personRes.json()
+
+      const res = await getApp().request(`/organizations/${organization.id}`, { method: "DELETE" })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toBe("Organization has linked people")
+
+      const personAfterDelete = await getApp().request(`/people/${person.id}`, { method: "GET" })
+      expect(personAfterDelete.status).toBe(200)
+      expect((await personAfterDelete.json()).data.organizationId).toBe(organization.id)
+    })
+
     it("returns 404 for non-existent organization", async () => {
       const res = await getApp().request("/organizations/crm_org_00000000000000000000000000", {
         method: "GET",
