@@ -27,6 +27,7 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import type { EventBus } from "@voyant-travel/core"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -103,6 +104,7 @@ import {
 type Env = {
   Variables: {
     db: PostgresJsDatabase
+    eventBus?: EventBus
     userId?: string
   }
 }
@@ -1004,7 +1006,10 @@ const rfpRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   })
   .openapi(awardRfpRoute, async (c) => {
     const { bidId } = c.req.valid("json")
-    const outcome = await rfpService.awardRfp(c.get("db"), c.req.valid("param").id, bidId)
+    const outcome = await rfpService.awardRfp(c.get("db"), c.req.valid("param").id, bidId, {
+      eventBus: c.get("eventBus"),
+      actorId: c.get("userId") ?? null,
+    })
     switch (outcome.status) {
       case "ok":
         return c.json({ data: { rfp: outcome.rfp, bid: outcome.bid } }, 200)

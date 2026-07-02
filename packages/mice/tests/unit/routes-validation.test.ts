@@ -3,6 +3,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { createMiceAdminRoutes, miceAdminRoutes } from "../../src/routes.js"
+import { MICE_RFP_AWARDED_EVENT } from "../../src/service-rfp.js"
 
 function delegateRow(patch: Record<string, unknown> = {}) {
   return {
@@ -74,17 +75,94 @@ function fakeProgramDb(options: FakeProgramDbOptions | unknown[][] = {}) {
 }
 
 function makeApp(
-  db: ReturnType<typeof fakeProgramDb>,
+  db: unknown,
   routes: ReturnType<typeof createMiceAdminRoutes> = miceAdminRoutes,
+  options: { eventBus?: unknown; userId?: string } = {},
 ) {
   const app = new Hono()
   app.onError((err, c) => handleApiError(err, c))
   app.use("*", async (c, next) => {
-    c.set("db", db)
+    c.set("db", db as never)
+    if (options.eventBus) c.set("eventBus" as never, options.eventBus as never)
+    if (options.userId) c.set("userId" as never, options.userId as never)
     await next()
   })
   app.route("/", routes)
   return app
+}
+
+function fakeAwardRfpDb() {
+  const rfp = {
+    id: "mice_rfps_1",
+    programId: "mice_programs_1",
+    title: "Venue RFP",
+    requirements: null,
+    status: "issued",
+    issuedAt: null,
+    dueAt: null,
+    notes: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  }
+  const winner = {
+    id: "mice_bids_winner",
+    rfpId: rfp.id,
+    supplierId: "suppliers_1",
+    status: "submitted",
+    totalCents: 90_000,
+    currency: "EUR",
+    proposalDoc: null,
+    validUntil: null,
+    notes: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  }
+  const acceptedBid = {
+    ...winner,
+    status: "accepted",
+    updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+  }
+  const awardedRfp = {
+    ...rfp,
+    status: "awarded",
+    updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+  }
+  const selectRows = [[rfp], [winner]]
+  const updateReturningRows = [[acceptedBid], [awardedRfp]]
+  let updateCalls = 0
+
+  const tx = {
+    select: vi.fn(() => {
+      const rows = selectRows.shift() ?? []
+      const builder = {
+        from: vi.fn(() => builder),
+        where: vi.fn(() => builder),
+        for: vi.fn(() => builder),
+        limit: vi.fn(() => Promise.resolve(rows)),
+      }
+      return builder
+    }),
+    update: vi.fn(() => {
+      const updateCall = updateCalls
+      updateCalls += 1
+      const builder = {
+        set: vi.fn(() => builder),
+        where: vi.fn(() => (updateCall === 0 ? Promise.resolve([]) : builder)),
+        returning: vi.fn(() => Promise.resolve(updateReturningRows.shift() ?? [])),
+      }
+      return builder
+    }),
+  }
+
+  return {
+    db: {
+      transaction: vi.fn((callback: (transactionDb: typeof tx) => unknown) => callback(tx)),
+    },
+    rfp,
+    winner,
+    acceptedBid,
+    awardedRfp,
+  }
 }
 
 describe("mice program route validation", () => {
@@ -249,5 +327,39 @@ describe("mice program route validation", () => {
 
     expect(response.status).toBe(200)
     expect(updatedValues).toEqual([expect.objectContaining({ personId: null })])
+  })
+
+  it("emits a domain event when awarding an RFP", async () => {
+    const { db, rfp, winner } = fakeAwardRfpDb()
+    const eventBus = { emit: vi.fn(async () => undefined) }
+
+    const response = await makeApp(db, miceAdminRoutes, {
+      eventBus,
+      userId: "user_1",
+    }).request(`/rfps/${rfp.id}/award`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ bidId: winner.id }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        rfp: { id: rfp.id, status: "awarded" },
+        bid: { id: winner.id, status: "accepted" },
+      },
+    })
+    expect(eventBus.emit).toHaveBeenCalledWith(
+      MICE_RFP_AWARDED_EVENT,
+      expect.objectContaining({
+        rfpId: rfp.id,
+        programId: rfp.programId,
+        bidId: winner.id,
+        supplierId: winner.supplierId,
+        actorId: "user_1",
+        awardedAt: expect.any(String),
+      }),
+      { category: "domain", source: "service" },
+    )
   })
 })

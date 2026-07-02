@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyant-travel/core"
 import { and, asc, eq, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -226,18 +227,36 @@ export type AwardRfpOutcome =
   | { status: "bid_not_found" }
   | { status: "already_awarded" }
 
+export const MICE_RFP_AWARDED_EVENT = "mice.rfp.awarded" as const
+
+export interface MiceRfpAwardedEventPayload {
+  rfpId: string
+  programId: string
+  bidId: string
+  supplierId: string
+  actorId: string | null
+  awardedAt: string
+}
+
+export interface AwardRfpRuntime {
+  eventBus?: EventBus
+  actorId?: string | null
+}
+
 /**
  * Award an RFP to a bid: accept the winner, reject every other bid, and move
- * the RFP to `awarded` — all in one transaction. The downstream auto-spawn
- * (legal contract + provisional room block + booking) is a workflow subscriber
- * on the `mice.rfp.awarded` domain event, mounted operator-side (§9-Q6).
+ * the RFP to `awarded` — all in one transaction. On success, emit
+ * `mice.rfp.awarded` so deployment-level workflows can create/link downstream
+ * booking, room-block, and contract artifacts without coupling this package to
+ * those package services.
  */
 export async function awardRfp(
   db: PostgresJsDatabase,
   rfpId: string,
   bidId: string,
+  runtime: AwardRfpRuntime = {},
 ): Promise<AwardRfpOutcome> {
-  return db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
     const [rfp] = await tx.select().from(rfps).where(eq(rfps.id, rfpId)).for("update").limit(1)
     if (!rfp) return { status: "rfp_not_found" as const }
     if (rfp.status === "awarded") return { status: "already_awarded" as const }
@@ -268,6 +287,23 @@ export async function awardRfp(
     if (!acceptedBid || !awardedRfp) throw new Error("awardRfp: update returned no rows")
     return { status: "ok" as const, bid: acceptedBid, rfp: awardedRfp }
   })
+
+  if (outcome.status === "ok") {
+    await runtime.eventBus?.emit<MiceRfpAwardedEventPayload>(
+      MICE_RFP_AWARDED_EVENT,
+      {
+        rfpId: outcome.rfp.id,
+        programId: outcome.rfp.programId,
+        bidId: outcome.bid.id,
+        supplierId: outcome.bid.supplierId,
+        actorId: runtime.actorId ?? null,
+        awardedAt: new Date().toISOString(),
+      },
+      { category: "domain", source: "service" },
+    )
+  }
+
+  return outcome
 }
 
 export const rfpService = {

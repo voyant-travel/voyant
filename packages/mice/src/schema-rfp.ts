@@ -17,8 +17,9 @@ import { programs } from "./schema.js"
  * opportunity/quote model single-deal closure, not multi-supplier bid
  * solicitation/comparison/scoring; this is the gap. See RFC voyant#1489 §3/§5
  * (Phase 4). Award atomically accepts the winning bid, rejects the rest, and
- * moves the RFP to `awarded` (downstream contract/block/booking spawn is a
- * workflow subscriber on `mice.rfp.awarded`).
+ * moves the RFP to `awarded`; the service emits `mice.rfp.awarded` so
+ * deployment-level workflows can create/link downstream contract, room-block,
+ * or booking artifacts.
  */
 export const rfpStatusEnum = pgEnum("mice_rfp_status", [
   "draft",
