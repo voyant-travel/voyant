@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/octo",
-  "version": "0.104.42",
+  "version": "0.104.43",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

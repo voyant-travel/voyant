@@ -1,5 +1,18 @@
 # @voyant-travel/operations-react
 
+## 0.19.1
+
+### Patch Changes
+
+- f1090b7: Align resource assignment detail schemas around `assignedAt`, reject orphan or incoherent slot assignment lifecycle payloads, and surface assignment target validation in the admin UI.
+- 42f662c: Reject inverted, duplicate, and overlapping resource closeout windows and surface matching admin form validation.
+- Updated dependencies [f1090b7]
+- Updated dependencies [42f662c]
+- Updated dependencies [fead555]
+  - @voyant-travel/operations@0.5.9
+  - @voyant-travel/i18n@0.109.8
+  - @voyant-travel/bookings-react@0.138.6
+
 ## 0.19.0
 
 ### Patch Changes
