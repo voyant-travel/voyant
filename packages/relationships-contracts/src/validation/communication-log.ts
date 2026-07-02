@@ -14,7 +14,7 @@ export const insertCommunicationLogSchema = z.object({
   direction: communicationDirectionSchema,
   subject: z.string().max(500).nullable().optional(),
   content: z.string().nullable().optional(),
-  sentAt: z.string().nullable().optional(),
+  sentAt: z.string().datetime({ offset: true }).nullable().optional(),
 })
 
 export const communicationListQuerySchema = paginationSchema.extend({

@@ -218,6 +218,27 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       expect(invalidPatch.status).toBe(400)
     })
 
+    it("rejects invalid communication sentAt values before persistence", async () => {
+      const personRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({ firstName: "Communication", lastName: "Validation" }),
+      })
+      const person = (await personRes.json()).data
+
+      const res = await getApp().request(`/people/${person.id}/communications`, {
+        method: "POST",
+        ...json({
+          channel: "email",
+          direction: "outbound",
+          subject: "Bad date",
+          content: "Body",
+          sentAt: "not-a-date",
+        }),
+      })
+
+      expect(res.status).toBe(400)
+    })
+
     it("reflects contact-point updates without an explicit rebuild (#446 view)", async () => {
       // Replaces the old projection-cache assertion: the
       // `person_directory` view computes email/phone/website live, so
