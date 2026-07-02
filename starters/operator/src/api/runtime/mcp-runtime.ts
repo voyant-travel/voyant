@@ -10,18 +10,25 @@
  * The route mounts at `/v1/admin/mcp` via the `"operator/mcp"` composition entry.
  */
 
+import {
+  type CatalogToolServices,
+  catalogTools,
+  executeSemanticSearch,
+} from "@voyant-travel/catalog"
 import { productsService } from "@voyant-travel/inventory"
 import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
-import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
+import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
 import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
 import type { Context, Hono } from "hono"
 
+import { buildCatalogContext } from "../lib/catalog-context"
 import { DEFAULT_SLICES } from "../lib/catalog-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
 /** The per-request tool context shape this deployment builds (base + injected services). */
 type OperatorToolContext = ToolContext & {
+  catalog: CatalogToolServices
   trips: TripsToolServices
   inventory: InventoryToolServices
 }
@@ -29,6 +36,7 @@ type OperatorToolContext = ToolContext & {
 /** Build the MCP admin routes wired with this deployment's tools + context. */
 export function buildMcpAdminRoutes(): Hono {
   const registry = createToolRegistry()
+  registry.registerAll(catalogTools)
   registry.registerAll(tripsTools)
   registry.registerAll(inventoryTools)
   return createMcpHonoApp({ registry, buildContext: buildToolContext })
@@ -45,8 +53,47 @@ function buildToolContext(c: Context): OperatorToolContext {
     audience,
     tenantId: env.TENANT_ID ?? "default",
     resolverScope: { locale, audience, market: "default", actor },
+    catalog: createCatalogToolServices(c),
     trips: createTripsToolServices(c),
     inventory: createInventoryToolServices(c),
+  }
+}
+
+function createCatalogToolServices(c: Context): CatalogToolServices {
+  const catalogContext = buildCatalogContext(c)
+  return {
+    async search({ slice, request }) {
+      const indexer = catalogContext.catalog.indexer
+      if (!indexer) {
+        throw new ToolError(
+          "Catalog search indexer is not configured for this deployment.",
+          "PROVIDER_ERROR",
+        )
+      }
+      if (request.mode === "keyword") return indexer.search(slice, request)
+
+      try {
+        return await executeSemanticSearch({
+          adapter: indexer,
+          embeddings: catalogContext.catalog.embeddings,
+          slice,
+          request,
+        })
+      } catch {
+        const keywordRequest = { ...request, mode: "keyword" as const, query_embedding: undefined }
+        return indexer.search(slice, keywordRequest)
+      }
+    },
+    async getEntry({ vertical, id, scope }) {
+      const entry = await catalogContext.catalog.resolveEntity?.(vertical, id, scope)
+      if (!entry) return null
+      return {
+        vertical: entry.vertical,
+        id: entry.entityId,
+        fields: entry.fields,
+        provenance: entry.provenance,
+      }
+    },
   }
 }
 
