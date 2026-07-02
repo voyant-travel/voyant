@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { activityTypeSchema, entityTypeSchema, personRelationshipKindSchema } from "./index.js"
+import {
+  activityTypeSchema,
+  entityTypeSchema,
+  insertPersonRelationshipSchema,
+  personRelationshipKindSchema,
+  updatePersonRelationshipSchema,
+} from "./index.js"
 
 describe("@voyant-travel/relationships-contracts validation", () => {
   it("accepts valid enum vocabulary values", () => {
@@ -13,5 +19,22 @@ describe("@voyant-travel/relationships-contracts validation", () => {
     expect(entityTypeSchema.safeParse("vendor").success).toBe(false)
     expect(personRelationshipKindSchema.safeParse("delegate").success).toBe(false)
     expect(activityTypeSchema.safeParse("voicemail").success).toBe(false)
+  })
+
+  it("rejects reversed person relationship date ranges", () => {
+    expect(
+      insertPersonRelationshipSchema.safeParse({
+        toPersonId: "person_b",
+        kind: "travel_companion",
+        startDate: "2026-07-10",
+        endDate: "2026-07-01",
+      }).success,
+    ).toBe(false)
+    expect(
+      updatePersonRelationshipSchema.safeParse({
+        startDate: "2026-07-10",
+        endDate: "2026-07-01",
+      }).success,
+    ).toBe(false)
   })
 })

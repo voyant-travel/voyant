@@ -1,3 +1,4 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import { and, asc, eq, isNull, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -8,6 +9,7 @@ import type {
   personRelationshipListQuerySchema,
   updatePersonRelationshipSchema,
 } from "../validation.js"
+import { duplicateRelationshipsValueError } from "./duplicate-errors.js"
 
 export type CreatePersonRelationshipInput = z.infer<typeof insertPersonRelationshipSchema>
 export type UpdatePersonRelationshipInput = z.infer<typeof updatePersonRelationshipSchema>
@@ -21,6 +23,14 @@ async function personExists(db: PostgresJsDatabase, personId: string) {
     .where(eq(people.id, personId))
     .limit(1)
   return Boolean(row)
+}
+
+function assertValidDateRange(startDate?: string | null, endDate?: string | null) {
+  if (startDate && endDate && endDate < startDate) {
+    throw new RequestValidationError("endDate must be on or after startDate", {
+      fields: { endDate: ["endDate must be on or after startDate"] },
+    })
+  }
 }
 
 export const personRelationshipsService = {
@@ -106,8 +116,22 @@ export const personRelationshipsService = {
           fromPersonId,
           toPersonId,
         })
+        .onConflictDoNothing({
+          target: [
+            personRelationships.fromPersonId,
+            personRelationships.toPersonId,
+            personRelationships.kind,
+          ],
+        })
         .returning()
-      if (!primary) return null
+      if (!primary) {
+        throw duplicateRelationshipsValueError({
+          code: "duplicate_person_relationship",
+          message: "Person relationship already exists",
+          resource: "person_relationship",
+          fields: [["toPersonId"], ["kind"]],
+        })
+      }
 
       if (autoInverse && inverseKind) {
         await tx
@@ -163,6 +187,8 @@ export const personRelationshipsService = {
       if (!existing) return null
 
       const updatedAt = new Date()
+      assertValidDateRange(data.startDate ?? existing.startDate, data.endDate ?? existing.endDate)
+
       const [row] = await tx
         .update(personRelationships)
         .set({ ...data, updatedAt })
