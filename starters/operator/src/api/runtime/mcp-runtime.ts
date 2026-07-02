@@ -9,6 +9,9 @@
  *
  * The route mounts at `/v1/admin/mcp` via the `"operator/mcp"` composition entry.
  */
+
+import { productsService } from "@voyant-travel/inventory"
+import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
@@ -17,14 +20,21 @@ import type { Context, Hono } from "hono"
 import { DEFAULT_SLICES } from "../lib/catalog-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
+/** The per-request tool context shape this deployment builds (base + injected services). */
+type OperatorToolContext = ToolContext & {
+  trips: TripsToolServices
+  inventory: InventoryToolServices
+}
+
 /** Build the MCP admin routes wired with this deployment's tools + context. */
 export function buildMcpAdminRoutes(): Hono {
   const registry = createToolRegistry()
   registry.registerAll(tripsTools)
+  registry.registerAll(inventoryTools)
   return createMcpHonoApp({ registry, buildContext: buildToolContext })
 }
 
-function buildToolContext(c: Context): ToolContext & { trips: TripsToolServices } {
+function buildToolContext(c: Context): OperatorToolContext {
   const env = c.env as CloudflareBindings & { TENANT_ID?: string }
   const actor = (c.var.actor ?? "staff") as ToolContext["actor"]
   const audience = (c.var.audience ?? actor) as ToolContext["audience"]
@@ -36,6 +46,14 @@ function buildToolContext(c: Context): ToolContext & { trips: TripsToolServices 
     tenantId: env.TENANT_ID ?? "default",
     resolverScope: { locale, audience, market: "default", actor },
     trips: createTripsToolServices(c),
+    inventory: createInventoryToolServices(c),
+  }
+}
+
+function createInventoryToolServices(c: Context): InventoryToolServices {
+  return {
+    listProducts: (query) => productsService.listProducts(c.var.db, query),
+    getProductById: (id) => productsService.getProductById(c.var.db, id),
   }
 }
 

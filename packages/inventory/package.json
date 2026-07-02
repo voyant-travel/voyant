@@ -8,6 +8,7 @@
     "./linkables": "./src/linkables.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
+    "./tools": "./src/tools.ts",
     "./routes": "./src/routes.ts",
     "./routes-brochure": "./src/routes-brochure.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
@@ -56,6 +57,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -100,6 +102,11 @@
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
         "default": "./dist/validation.js"
+      },
+      "./tools": {
+        "types": "./dist/tools.d.ts",
+        "import": "./dist/tools.js",
+        "default": "./dist/tools.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",
