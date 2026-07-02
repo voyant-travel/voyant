@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: crm; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import type { CustomFieldDefinition } from "@voyant-travel/core/custom-fields"
+import { RequestValidationError } from "@voyant-travel/hono"
 import { identityContactPoints } from "@voyant-travel/identity/schema"
 import { identityService } from "@voyant-travel/identity/service"
 import { toCsvRow } from "@voyant-travel/utils"
@@ -43,6 +44,35 @@ import {
   type UpdatePersonInput,
 } from "./accounts-shared.js"
 import { paginate } from "./helpers.js"
+
+const cardPaymentMethodBrands = new Set(["visa", "mastercard", "amex", "revolut"])
+
+function assertValidPaymentMethodFields(data: {
+  brand: string
+  last4?: string | null
+  expMonth?: number | null
+  expYear?: number | null
+}) {
+  const fields: Record<string, string[]> = {}
+
+  if (data.brand === "bank_transfer") {
+    for (const field of ["last4", "expMonth", "expYear"] as const) {
+      if (data[field] != null) {
+        fields[field] = [`${field} is only valid for card payment methods`]
+      }
+    }
+  } else if (cardPaymentMethodBrands.has(data.brand)) {
+    for (const field of ["last4", "expMonth", "expYear"] as const) {
+      if (data[field] == null) {
+        fields[field] = [`${field} is required for card payment methods`]
+      }
+    }
+  }
+
+  if (Object.keys(fields).length > 0) {
+    throw new RequestValidationError("Invalid payment method fields", { fields })
+  }
+}
 
 function unaccentedIlike(column: AnyColumn, term: string): SQL {
   // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
@@ -406,6 +436,8 @@ export const peopleAccountsService = {
       .limit(1)
     if (!existing) return null
 
+    assertValidPaymentMethodFields(data)
+
     if (data.isDefault) {
       // Only one default per person — clear the others first.
       await db
@@ -425,18 +457,25 @@ export const peopleAccountsService = {
     id: string,
     data: UpdatePersonPaymentMethodInput,
   ) {
+    const [existing] = await db
+      .select()
+      .from(personPaymentMethods)
+      .where(eq(personPaymentMethods.id, id))
+      .limit(1)
+    if (!existing) return null
+
+    assertValidPaymentMethodFields({
+      brand: data.brand ?? existing.brand,
+      last4: data.last4 !== undefined ? data.last4 : existing.last4,
+      expMonth: data.expMonth !== undefined ? data.expMonth : existing.expMonth,
+      expYear: data.expYear !== undefined ? data.expYear : existing.expYear,
+    })
+
     if (data.isDefault) {
-      const [target] = await db
-        .select({ personId: personPaymentMethods.personId })
-        .from(personPaymentMethods)
-        .where(eq(personPaymentMethods.id, id))
-        .limit(1)
-      if (target) {
-        await db
-          .update(personPaymentMethods)
-          .set({ isDefault: false })
-          .where(eq(personPaymentMethods.personId, target.personId))
-      }
+      await db
+        .update(personPaymentMethods)
+        .set({ isDefault: false })
+        .where(eq(personPaymentMethods.personId, existing.personId))
     }
     const [row] = await db
       .update(personPaymentMethods)

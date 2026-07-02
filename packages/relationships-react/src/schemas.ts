@@ -194,6 +194,64 @@ const personDocumentRevealSchema = z.object({
 })
 export const personDocumentRevealResponse = singleEnvelope(personDocumentRevealSchema)
 
+export const personPaymentMethodBrandSchema = z.enum([
+  "visa",
+  "mastercard",
+  "amex",
+  "revolut",
+  "bank_transfer",
+])
+
+export type PersonPaymentMethodBrand = z.infer<typeof personPaymentMethodBrandSchema>
+
+export const personPaymentMethodRecordSchema = z.object({
+  id: z.string(),
+  personId: z.string(),
+  brand: z.string(),
+  last4: z.string().nullable(),
+  holderName: z.string().nullable(),
+  expMonth: z.number().int().nullable(),
+  expYear: z.number().int().nullable(),
+  processorToken: z.string(),
+  isDefault: z.boolean(),
+  createdAt: z.string(),
+})
+
+export type PersonPaymentMethodRecord = z.infer<typeof personPaymentMethodRecordSchema>
+
+export const personPaymentMethodListResponse = listEnvelope(personPaymentMethodRecordSchema)
+export const personPaymentMethodSingleResponse = singleEnvelope(personPaymentMethodRecordSchema)
+
+export const communicationChannelSchema = z.enum([
+  "email",
+  "phone",
+  "whatsapp",
+  "sms",
+  "meeting",
+  "other",
+])
+export const communicationDirectionSchema = z.enum(["inbound", "outbound"])
+
+export type CommunicationChannel = z.infer<typeof communicationChannelSchema>
+export type CommunicationDirection = z.infer<typeof communicationDirectionSchema>
+
+export const communicationLogRecordSchema = z.object({
+  id: z.string(),
+  personId: z.string(),
+  organizationId: z.string().nullable(),
+  channel: communicationChannelSchema,
+  direction: communicationDirectionSchema,
+  subject: z.string().nullable(),
+  content: z.string().nullable(),
+  sentAt: z.string().nullable(),
+  createdAt: z.string(),
+})
+
+export type CommunicationLogRecord = z.infer<typeof communicationLogRecordSchema>
+
+export const communicationLogListResponse = listEnvelope(communicationLogRecordSchema)
+export const communicationLogSingleResponse = singleEnvelope(communicationLogRecordSchema)
+
 export const customerSignalKindSchema = z.enum([
   "wishlist",
   "notify",

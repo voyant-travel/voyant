@@ -33,6 +33,14 @@ export { type UseOrganizationsOptions, useOrganizations } from "./use-organizati
 export { type UsePeopleOptions, usePeople } from "./use-people.js"
 export { type UsePersonOptions, usePerson } from "./use-person.js"
 export {
+  type CreatePersonCommunicationInput,
+  usePersonCommunicationMutation,
+} from "./use-person-communication-mutation.js"
+export {
+  type UsePersonCommunicationsOptions,
+  usePersonCommunications,
+} from "./use-person-communications.js"
+export {
   type CreatePersonDocumentFromPlaintextInput,
   type CreatePersonDocumentInput,
   type UpdatePersonDocumentFromPlaintextInput,
@@ -49,6 +57,15 @@ export {
   type UpdatePersonProfilePiiInput,
   usePersonMutation,
 } from "./use-person-mutation.js"
+export {
+  type CreatePersonPaymentMethodInput,
+  type UpdatePersonPaymentMethodInput,
+  usePersonPaymentMethodMutation,
+} from "./use-person-payment-method-mutation.js"
+export {
+  type UsePersonPaymentMethodsOptions,
+  usePersonPaymentMethods,
+} from "./use-person-payment-methods.js"
 export {
   type CreatePersonRelationshipInput,
   type UpdatePersonRelationshipInput,

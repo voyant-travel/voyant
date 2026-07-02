@@ -1,8 +1,10 @@
 import type { ReactNode } from "react"
 import type {
   ActivityRecord,
+  CommunicationLogRecord,
   OrganizationRecord,
   PersonDocumentRecord,
+  PersonPaymentMethodRecord,
   PersonRecord,
   PersonRelationshipRecord,
   PersonTravelSnapshotRecord,
@@ -14,6 +16,8 @@ export type PersonDetailTab =
   | "activities"
   | "relationships"
   | "documents"
+  | "paymentMethods"
+  | "communications"
   | "addresses"
   | "bookings"
   | "invoices"
@@ -75,6 +79,24 @@ export type PersonDocument = Pick<
   | "notes"
   | "type"
   | "updatedAt"
+>
+
+export type PersonPaymentMethod = Pick<
+  PersonPaymentMethodRecord,
+  | "brand"
+  | "createdAt"
+  | "expMonth"
+  | "expYear"
+  | "holderName"
+  | "id"
+  | "isDefault"
+  | "last4"
+  | "personId"
+>
+
+export type PersonCommunication = Pick<
+  CommunicationLogRecord,
+  "channel" | "content" | "createdAt" | "direction" | "id" | "personId" | "sentAt" | "subject"
 >
 
 export type PersonTravelSnapshot = PersonTravelSnapshotRecord

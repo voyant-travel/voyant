@@ -7,7 +7,9 @@ import {
   insertCommunicationLogSchema,
   insertOrganizationNoteSchema,
   insertPersonNoteSchema,
+  insertPersonPaymentMethodSchema,
   insertSegmentSchema,
+  updatePersonPaymentMethodSchema,
 } from "../../src/validation.js"
 
 describe("Activity schemas", () => {
@@ -154,6 +156,83 @@ describe("Communication log schemas", () => {
         subject: "x".repeat(501),
       }),
     ).toThrow()
+  })
+})
+
+describe("Payment method schemas", () => {
+  it("accepts valid card payment methods", () => {
+    const result = insertPersonPaymentMethodSchema.parse({
+      brand: "visa",
+      last4: "4242",
+      expMonth: 12,
+      expYear: 2032,
+      processorToken: "tok_card",
+    })
+
+    expect(result.brand).toBe("visa")
+    expect(result.isDefault).toBe(false)
+  })
+
+  it("accepts valid bank transfer payment methods", () => {
+    const result = insertPersonPaymentMethodSchema.parse({
+      brand: "bank_transfer",
+      processorToken: "tok_bank",
+    })
+
+    expect(result.brand).toBe("bank_transfer")
+  })
+
+  it("rejects bank transfers with card fields", () => {
+    expect(() =>
+      insertPersonPaymentMethodSchema.parse({
+        brand: "bank_transfer",
+        last4: "1234",
+        expMonth: 10,
+        expYear: 2031,
+        processorToken: "tok_bank_weird",
+      }),
+    ).toThrow()
+  })
+
+  it("rejects cards without card fields", () => {
+    expect(() =>
+      insertPersonPaymentMethodSchema.parse({
+        brand: "mastercard",
+        processorToken: "tok_card_incomplete",
+      }),
+    ).toThrow()
+  })
+
+  it("rejects unknown payment method fields", () => {
+    expect(() =>
+      insertPersonPaymentMethodSchema.parse({
+        kind: "bank_transfer",
+        brand: "mastercard",
+        last4: "1234",
+        expMonth: 10,
+        expYear: 2031,
+        processorToken: "tok_extra_kind",
+      }),
+    ).toThrow()
+  })
+
+  it("validates explicit update fields", () => {
+    expect(() =>
+      updatePersonPaymentMethodSchema.parse({
+        brand: "bank_transfer",
+        expMonth: 10,
+      }),
+    ).toThrow()
+  })
+
+  it("allows partial card updates for merged service validation", () => {
+    const result = updatePersonPaymentMethodSchema.parse({
+      brand: "mastercard",
+      holderName: "Updated Holder",
+    })
+
+    expect(result.brand).toBe("mastercard")
+    expect(result.holderName).toBe("Updated Holder")
   })
 })
 

@@ -433,6 +433,8 @@ export type CrmUiMessages = {
       activities: string
       relationships: string
       documents: string
+      paymentMethods: string
+      communications: string
       addresses: string
       bookings: string
       invoices: string
@@ -452,6 +454,55 @@ export type CrmUiMessages = {
       passportIssuingCountry: string
       passportIssuingAuthority: string
       primary: string
+    }
+    paymentMethods: {
+      title: string
+      add: string
+      delete: string
+      deleteTitle: string
+      deleteDescription: string
+      makeDefault: string
+      ending: string
+      fields: {
+        brand: string
+        holderName: string
+        last4: string
+        expMonth: string
+        expYear: string
+        processorToken: string
+        default: string
+      }
+      brandLabels: {
+        visa: string
+        mastercard: string
+        amex: string
+        revolut: string
+        bank_transfer: string
+      }
+    }
+    communications: {
+      title: string
+      add: string
+      noSubject: string
+      fields: {
+        channel: string
+        direction: string
+        subject: string
+        content: string
+        sentAt: string
+      }
+      channelLabels: {
+        email: string
+        phone: string
+        whatsapp: string
+        sms: string
+        meeting: string
+        other: string
+      }
+      directionLabels: {
+        inbound: string
+        outbound: string
+      }
     }
     relationshipKindLabels: {
       spouse: string
@@ -478,6 +529,8 @@ export type CrmUiMessages = {
       noActivities: string
       noRelationships: string
       noDocuments: string
+      noPaymentMethods: string
+      noCommunications: string
       noTravelProfile: string
     }
     hint: string
