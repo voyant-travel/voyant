@@ -352,6 +352,9 @@ export type CrmUiMessages = {
     tabs: {
       overview: string
       people: string
+      contactMethods: string
+      addresses: string
+      namedContacts: string
       quotes: string
       activities: string
       bookings: string
@@ -369,6 +372,10 @@ export type CrmUiMessages = {
       unnamed: string
       noQuotes: string
       noActivities: string
+    }
+    actions: {
+      addPerson: string
+      addActivity: string
     }
     hint: string
   }

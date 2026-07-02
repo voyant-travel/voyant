@@ -4,6 +4,9 @@ import type { ActivityRecord, OrganizationRecord, PersonRecord } from "../index.
 export type OrganizationDetailTab =
   | "overview"
   | "people"
+  | "contactMethods"
+  | "addresses"
+  | "namedContacts"
   | "quotes"
   | "activities"
   | "bookings"
@@ -15,6 +18,7 @@ export type OrganizationData = Pick<
   OrganizationRecord,
   | "createdAt"
   | "defaultCurrency"
+  | "id"
   | "industry"
   | "legalName"
   | "name"
@@ -53,6 +57,12 @@ export interface OrganizationDetailPageSlots {
   overviewEnd?: ReactNode
   peopleContent?: ReactNode
   peopleEnd?: ReactNode
+  contactMethodsContent?: ReactNode
+  contactMethodsEnd?: ReactNode
+  addressesContent?: ReactNode
+  addressesEnd?: ReactNode
+  namedContactsContent?: ReactNode
+  namedContactsEnd?: ReactNode
   quotesContent?: ReactNode
   quotesEnd?: ReactNode
   activitiesContent?: ReactNode

@@ -1,16 +1,22 @@
 "use client"
 
 import {
+  AddressesTab,
+  ContactPointsTab,
+  NamedContactsTab,
+} from "@voyant-travel/identity-react/components/identity-entity-tabs"
+import {
   Avatar,
   AvatarFallback,
   Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
 } from "@voyant-travel/ui/components"
 import { Separator } from "@voyant-travel/ui/components/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
-import { Loader2, Pencil } from "lucide-react"
+import { Loader2, Pencil, Plus } from "lucide-react"
 
 import { useCrmUiI18nOrDefault, useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import type { UpdateOrganizationInput } from "../index.js"
@@ -35,6 +41,8 @@ export interface OrganizationMainProps {
   peoplePending: boolean
   activitiesPending: boolean
   onOpenPerson: (id: string) => void
+  onAddPerson: () => void
+  onAddActivity: () => void
   onUpdateField: (patch: UpdateOrganizationInput) => Promise<void>
   slots?: OrganizationDetailPageSlots
 }
@@ -48,6 +56,8 @@ export function OrganizationMain({
   peoplePending,
   activitiesPending,
   onOpenPerson,
+  onAddPerson,
+  onAddActivity,
   onUpdateField,
   slots,
 }: OrganizationMainProps) {
@@ -88,6 +98,15 @@ export function OrganizationMain({
               </TabsTrigger>
               <TabsTrigger value="people">
                 {messages.organizationDetail.tabs.people} ({people.length})
+              </TabsTrigger>
+              <TabsTrigger value="contactMethods">
+                {messages.organizationDetail.tabs.contactMethods}
+              </TabsTrigger>
+              <TabsTrigger value="addresses">
+                {messages.organizationDetail.tabs.addresses}
+              </TabsTrigger>
+              <TabsTrigger value="namedContacts">
+                {messages.organizationDetail.tabs.namedContacts}
               </TabsTrigger>
               {hasQuotesSlot ? (
                 <TabsTrigger value="quotes">{messages.organizationDetail.tabs.quotes}</TabsTrigger>
@@ -165,47 +184,42 @@ export function OrganizationMain({
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : people.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  {messages.organizationDetail.empty.noPeople}
-                </p>
+                <EmptyManagedSection
+                  actionLabel={messages.organizationDetail.actions.addPerson}
+                  emptyLabel={messages.organizationDetail.empty.noPeople}
+                  onAction={onAddPerson}
+                />
               ) : (
-                <ul className="divide-y">
-                  {people.map((person) => {
-                    const name =
-                      [person.firstName, person.lastName].filter(Boolean).join(" ") ||
-                      messages.organizationDetail.empty.unnamed
-                    return (
-                      <li key={person.id}>
-                        <button
-                          type="button"
-                          onClick={() => onOpenPerson(person.id)}
-                          className="flex w-full items-center gap-3 py-2 text-left hover:bg-muted/40"
-                        >
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {initialsFrom(name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{name}</p>
-                            {person.jobTitle && (
-                              <p className="truncate text-xs text-muted-foreground">
-                                {person.jobTitle}
-                              </p>
-                            )}
-                          </div>
-                          {person.email && (
-                            <span className="truncate text-xs text-muted-foreground">
-                              {person.email}
-                            </span>
-                          )}
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
+                <PeopleList people={people} onOpenPerson={onOpenPerson} onAddPerson={onAddPerson} />
               )}
               {slots?.peopleEnd}
+            </TabsContent>
+
+            <TabsContent value="contactMethods" className="m-0">
+              {slots?.contactMethodsContent !== undefined ? (
+                slots.contactMethodsContent
+              ) : (
+                <ContactPointsTab entityType="organization" entityId={org.id} />
+              )}
+              {slots?.contactMethodsEnd}
+            </TabsContent>
+
+            <TabsContent value="addresses" className="m-0">
+              {slots?.addressesContent !== undefined ? (
+                slots.addressesContent
+              ) : (
+                <AddressesTab entityType="organization" entityId={org.id} />
+              )}
+              {slots?.addressesEnd}
+            </TabsContent>
+
+            <TabsContent value="namedContacts" className="m-0">
+              {slots?.namedContactsContent !== undefined ? (
+                slots.namedContactsContent
+              ) : (
+                <NamedContactsTab entityType="organization" entityId={org.id} />
+              )}
+              {slots?.namedContactsEnd}
             </TabsContent>
 
             {hasQuotesSlot ? (
@@ -223,37 +237,17 @@ export function OrganizationMain({
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : activities.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  {messages.organizationDetail.empty.noActivities}
-                </p>
+                <EmptyManagedSection
+                  actionLabel={messages.organizationDetail.actions.addActivity}
+                  emptyLabel={messages.organizationDetail.empty.noActivities}
+                  onAction={onAddActivity}
+                />
               ) : (
-                <ul className="divide-y">
-                  {activities.map((activity) => (
-                    <li key={activity.id} className="py-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{activity.subject}</p>
-                          {activity.description && (
-                            <p className="line-clamp-2 text-xs text-muted-foreground">
-                              {activity.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge variant="outline">
-                            {messages.common.activityTypeLabels[
-                              (activity.type ??
-                                "note") as keyof typeof messages.common.activityTypeLabels
-                            ] ?? activity.type}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {formatCrmRelative(i18n, activity.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <ActivitiesList
+                  activities={activities}
+                  onAddActivity={onAddActivity}
+                  formatRelative={(value) => formatCrmRelative(i18n, value)}
+                />
               )}
               {slots?.activitiesEnd}
             </TabsContent>
@@ -286,5 +280,134 @@ export function OrganizationMain({
         <span className="text-xs text-muted-foreground">{messages.organizationDetail.hint}</span>
       </div>
     </main>
+  )
+}
+
+function SectionAction({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Button type="button" size="sm" onClick={onClick}>
+      <Plus className="mr-2 size-4" aria-hidden="true" />
+      {label}
+    </Button>
+  )
+}
+
+function EmptyManagedSection({
+  actionLabel,
+  emptyLabel,
+  onAction,
+}: {
+  actionLabel: string
+  emptyLabel: string
+  onAction: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <SectionAction label={actionLabel} onClick={onAction} />
+      </div>
+      <p className="py-6 text-center text-sm text-muted-foreground">{emptyLabel}</p>
+    </div>
+  )
+}
+
+function PeopleList({
+  people,
+  onOpenPerson,
+  onAddPerson,
+}: {
+  people: OrganizationPerson[]
+  onOpenPerson: (id: string) => void
+  onAddPerson: () => void
+}) {
+  const messages = useCrmUiMessagesOrDefault()
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <SectionAction
+          label={messages.organizationDetail.actions.addPerson}
+          onClick={onAddPerson}
+        />
+      </div>
+      <ul className="divide-y">
+        {people.map((person) => {
+          const name =
+            [person.firstName, person.lastName].filter(Boolean).join(" ") ||
+            messages.organizationDetail.empty.unnamed
+          return (
+            <li key={person.id}>
+              <button
+                type="button"
+                onClick={() => onOpenPerson(person.id)}
+                className="flex w-full items-center gap-3 py-2 text-left hover:bg-muted/40"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="text-xs">{initialsFrom(name)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{name}</p>
+                  {person.jobTitle ? (
+                    <p className="truncate text-xs text-muted-foreground">{person.jobTitle}</p>
+                  ) : null}
+                </div>
+                {person.email ? (
+                  <span className="truncate text-xs text-muted-foreground">{person.email}</span>
+                ) : null}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
+function ActivitiesList({
+  activities,
+  onAddActivity,
+  formatRelative,
+}: {
+  activities: OrganizationActivity[]
+  onAddActivity: () => void
+  formatRelative: (value: string) => string
+}) {
+  const messages = useCrmUiMessagesOrDefault()
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <SectionAction
+          label={messages.organizationDetail.actions.addActivity}
+          onClick={onAddActivity}
+        />
+      </div>
+      <ul className="divide-y">
+        {activities.map((activity) => (
+          <li key={activity.id} className="py-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{activity.subject}</p>
+                {activity.description ? (
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
+                    {activity.description}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant="outline">
+                  {messages.common.activityTypeLabels[
+                    (activity.type ?? "note") as keyof typeof messages.common.activityTypeLabels
+                  ] ?? activity.type}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {formatRelative(activity.createdAt)}
+                </span>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import type { UpdateOrganizationInput } from "../index.js"
 import { useActivities, useOrganization, useOrganizationMutation, usePeople } from "../index.js"
+import { CreateActivityDialog } from "./create-activity-dialog.js"
 import { OrganizationMergeDialog } from "./merge-dialogs.js"
 import {
   type OrganizationDetailPageSlots,
@@ -14,6 +15,7 @@ import {
   OrganizationSidebar,
   OrganizationTopBar,
 } from "./organization-detail-sections.js"
+import { PersonDialog } from "./person-dialog.js"
 
 export interface OrganizationDetailPageProps {
   id: string
@@ -35,6 +37,8 @@ export function OrganizationDetailPage({
   const messages = useCrmUiMessagesOrDefault()
   const [activeTab, setActiveTab] = useState<OrganizationDetailTab>("overview")
   const [mergeOpen, setMergeOpen] = useState(false)
+  const [personDialogOpen, setPersonDialogOpen] = useState(false)
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false)
   const orgQuery = useOrganization(id)
   const { remove, update } = useOrganizationMutation()
   const hasQuotesSlot = slots?.quotesContent !== undefined || slots?.quotesEnd !== undefined
@@ -134,10 +138,29 @@ export function OrganizationDetailPage({
           peoplePending={peopleQuery.isPending}
           activitiesPending={activitiesQuery.isPending}
           onOpenPerson={(personId) => onPersonOpen?.(personId)}
+          onAddPerson={() => setPersonDialogOpen(true)}
+          onAddActivity={() => setActivityDialogOpen(true)}
           onUpdateField={updateField}
           slots={slots}
         />
       </div>
+      <PersonDialog
+        open={personDialogOpen}
+        onOpenChange={setPersonDialogOpen}
+        initialOrganizationId={id}
+        onSuccess={() => {
+          void peopleQuery.refetch()
+        }}
+      />
+      <CreateActivityDialog
+        open={activityDialogOpen}
+        onOpenChange={setActivityDialogOpen}
+        initialEntityType="organization"
+        initialEntityId={id}
+        onSuccess={() => {
+          void activitiesQuery.refetch()
+        }}
+      />
       <OrganizationMergeDialog
         open={mergeOpen}
         onOpenChange={setMergeOpen}

@@ -39,6 +39,8 @@ describe("crm-ui i18n", () => {
 
     expect(html).toContain("New organization")
     expect(html).toContain("People")
+    expect(html).toContain("Contact methods")
+    expect(html).toContain("Add activity")
     expect(html).toContain("Follow-up")
     expect(html).toContain("Client")
   })
@@ -52,6 +54,8 @@ describe("crm-ui i18n", () => {
 
     expect(html).toContain("Organizatie noua")
     expect(html).toContain("Persoane")
+    expect(html).toContain("Metode de contact")
+    expect(html).toContain("Adauga activitate")
     expect(html).toContain("Urmarire")
     expect(html).toContain("Client")
   })
@@ -64,6 +68,8 @@ function CrmMessageProbe() {
     <div>
       <span>{messages.organizationDialog.titles.create}</span>
       <span>{messages.peoplePage.title}</span>
+      <span>{messages.organizationDetail.tabs.contactMethods}</span>
+      <span>{messages.organizationDetail.actions.addActivity}</span>
       <span>{messages.common.activityTypeLabels.follow_up}</span>
       <span>{messages.common.relationTypeLabels.client}</span>
     </div>
