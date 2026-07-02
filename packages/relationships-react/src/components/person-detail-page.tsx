@@ -17,16 +17,20 @@ import {
   useActivities,
   useOrganization,
   usePerson,
+  usePersonCommunications,
   usePersonDocuments,
   usePersonMutation,
+  usePersonPaymentMethods,
   usePersonRelationships,
 } from "../index.js"
 import { PersonMergeDialog } from "./merge-dialogs.js"
 import { PersonAddressesSection } from "./person-addresses-section.js"
 import {
   PersonActivitiesPanel,
+  PersonCommunicationsPanel,
   PersonDocumentsPanel,
   PersonOverviewPanel,
+  PersonPaymentMethodsPanel,
   PersonRelationshipsPanel,
   personDisplayName,
 } from "./person-detail-panels.js"
@@ -34,12 +38,14 @@ import { PersonSidebar } from "./person-detail-sidebar.js"
 import type {
   PersonActivity,
   PersonCommercialContextTabSlot,
+  PersonCommunication,
   PersonData,
   PersonDetailPageProps,
   PersonDetailPageSlots,
   PersonDetailTab,
   PersonDocument,
   PersonOrganization,
+  PersonPaymentMethod,
   PersonRelationship,
 } from "./person-detail-types.js"
 import { PersonDialog } from "./person-dialog.js"
@@ -47,12 +53,14 @@ import { PersonDialog } from "./person-dialog.js"
 export type {
   PersonActivity,
   PersonCommercialContextTabSlot,
+  PersonCommunication,
   PersonData,
   PersonDetailPageProps,
   PersonDetailPageSlots,
   PersonDetailTab,
   PersonDocument,
   PersonOrganization,
+  PersonPaymentMethod,
   PersonRelationship,
   PersonTravelSnapshot,
 } from "./person-detail-types.js"
@@ -115,6 +123,13 @@ export function PersonDetailPage({
     limit: 50,
     enabled: Boolean(person),
   })
+  const paymentMethodsQuery = usePersonPaymentMethods(id, {
+    enabled: Boolean(person),
+  })
+  const communicationsQuery = usePersonCommunications(id, {
+    limit: 50,
+    enabled: Boolean(person),
+  })
 
   const updateField = async (patch: UpdatePersonInput) => {
     await update.mutateAsync({ id, input: patch })
@@ -144,6 +159,8 @@ export function PersonDetailPage({
   const activities = activitiesQuery.data?.data ?? []
   const relationships = relationshipsQuery.data?.data ?? []
   const documents = documentsQuery.data?.data ?? []
+  const paymentMethods = paymentMethodsQuery.data?.data ?? []
+  const communications = communicationsQuery.data?.data ?? []
   const organization = organizationQuery.data ?? null
   const displayName = personDisplayName(person, messages.personCard.unnamed)
 
@@ -180,9 +197,13 @@ export function PersonDetailPage({
           activities={activities}
           relationships={relationships}
           documents={documents}
+          paymentMethods={paymentMethods}
+          communications={communications}
           activitiesPending={activitiesQuery.isPending}
           relationshipsPending={relationshipsQuery.isPending}
           documentsPending={documentsQuery.isPending}
+          paymentMethodsPending={paymentMethodsQuery.isPending}
+          communicationsPending={communicationsQuery.isPending}
           onUpdateField={updateField}
           onPersonOpen={onPersonOpen}
           slots={slots}
@@ -261,9 +282,13 @@ export interface PersonMainProps {
   activities: PersonActivity[]
   relationships: PersonRelationship[]
   documents: PersonDocument[]
+  paymentMethods: PersonPaymentMethod[]
+  communications: PersonCommunication[]
   activitiesPending: boolean
   relationshipsPending: boolean
   documentsPending: boolean
+  paymentMethodsPending: boolean
+  communicationsPending: boolean
   onUpdateField: (patch: UpdatePersonInput) => Promise<void>
   onPersonOpen?: (personId: string) => void
   slots?: PersonDetailPageSlots
@@ -277,9 +302,13 @@ export function PersonMain({
   activities,
   relationships,
   documents,
+  paymentMethods,
+  communications,
   activitiesPending,
   relationshipsPending,
   documentsPending,
+  paymentMethodsPending,
+  communicationsPending,
   onUpdateField,
   onPersonOpen,
   slots,
@@ -306,6 +335,12 @@ export function PersonMain({
               </TabsTrigger>
               <TabsTrigger value="documents">
                 {messages.personDetail.tabs.documents} ({documents.length})
+              </TabsTrigger>
+              <TabsTrigger value="paymentMethods">
+                {messages.personDetail.tabs.paymentMethods} ({paymentMethods.length})
+              </TabsTrigger>
+              <TabsTrigger value="communications">
+                {messages.personDetail.tabs.communications} ({communications.length})
               </TabsTrigger>
               <TabsTrigger value="addresses">{messages.personDetail.tabs.addresses}</TabsTrigger>
               {slots?.bookingsTab ? (
@@ -386,6 +421,20 @@ export function PersonMain({
               )}
               {slots?.documentsEnd}
             </TabsContent>
+            <TabsContent value="paymentMethods" className="m-0">
+              <PersonPaymentMethodsPanel
+                personId={person.id}
+                paymentMethods={paymentMethods}
+                paymentMethodsPending={paymentMethodsPending}
+              />
+            </TabsContent>
+            <TabsContent value="communications" className="m-0">
+              <PersonCommunicationsPanel
+                personId={person.id}
+                communications={communications}
+                communicationsPending={communicationsPending}
+              />
+            </TabsContent>
             <TabsContent value="addresses" className="m-0">
               <PersonAddressesSection personId={person.id} />
             </TabsContent>
@@ -432,8 +481,10 @@ export type {
   MetricCardProps,
   OverviewTermProps,
   PersonActivitiesPanelProps,
+  PersonCommunicationsPanelProps,
   PersonDocumentsPanelProps,
   PersonOverviewPanelProps,
+  PersonPaymentMethodsPanelProps,
   PersonRelationshipsPanelProps,
 } from "./person-detail-panels.js"
 export {
@@ -443,8 +494,10 @@ export {
   MetricCard,
   OverviewTerm,
   PersonActivitiesPanel,
+  PersonCommunicationsPanel,
   PersonDocumentsPanel,
   PersonOverviewPanel,
+  PersonPaymentMethodsPanel,
   PersonRelationshipsPanel,
   personDisplayName,
 } from "./person-detail-panels.js"

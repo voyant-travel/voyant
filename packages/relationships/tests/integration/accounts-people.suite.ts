@@ -179,6 +179,45 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       expect(replayBody.data.id).toBe(firstBody.data.id)
     })
 
+    it("validates payment method kind-specific fields on create and patch", async () => {
+      const personRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({ firstName: "Payment", lastName: "Validation" }),
+      })
+      const person = (await personRes.json()).data
+
+      const invalidCreate = await getApp().request(`/people/${person.id}/payment-methods`, {
+        method: "POST",
+        ...json({
+          brand: "bank_transfer",
+          last4: "1234",
+          expMonth: 10,
+          expYear: 2031,
+          processorToken: "tok_bank_weird",
+        }),
+      })
+      expect(invalidCreate.status).toBe(400)
+
+      const validCreate = await getApp().request(`/people/${person.id}/payment-methods`, {
+        method: "POST",
+        ...json({
+          brand: "mastercard",
+          last4: "4444",
+          expMonth: 10,
+          expYear: 2031,
+          processorToken: "tok_card",
+        }),
+      })
+      expect(validCreate.status).toBe(201)
+      const paymentMethod = (await validCreate.json()).data
+
+      const invalidPatch = await getApp().request(`/person-payment-methods/${paymentMethod.id}`, {
+        method: "PATCH",
+        ...json({ brand: "bank_transfer" }),
+      })
+      expect(invalidPatch.status).toBe(400)
+    })
+
     it("reflects contact-point updates without an explicit rebuild (#446 view)", async () => {
       // Replaces the old projection-cache assertion: the
       // `person_directory` view computes email/phone/website live, so

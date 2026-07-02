@@ -76,6 +76,15 @@ export interface PersonDocumentsListFilters {
   offset?: number | undefined
 }
 
+export interface PersonCommunicationsListFilters {
+  channel?: string | undefined
+  direction?: "inbound" | "outbound" | undefined
+  dateFrom?: string | undefined
+  dateTo?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export const relationshipsQueryKeys = {
   all: ["voyant", "relationships"] as const,
 
@@ -89,6 +98,12 @@ export const relationshipsQueryKeys = {
     [...relationshipsQueryKeys.all, "person-documents", "detail", id] as const,
   personDocumentReveal: (id: string) =>
     [...relationshipsQueryKeys.all, "person-documents", "reveal", id] as const,
+  personPaymentMethods: (personId: string) =>
+    [...relationshipsQueryKeys.person(personId), "payment-methods"] as const,
+  personPaymentMethod: (id: string) =>
+    [...relationshipsQueryKeys.all, "person-payment-methods", "detail", id] as const,
+  personCommunications: (personId: string, filters: PersonCommunicationsListFilters = {}) =>
+    [...relationshipsQueryKeys.person(personId), "communications", filters] as const,
   personTravelSnapshot: (personId: string) =>
     [...relationshipsQueryKeys.person(personId), "travel-snapshot"] as const,
   personRelationships: (personId: string, filters: PersonRelationshipsListFilters = {}) =>

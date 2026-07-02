@@ -61,6 +61,14 @@ export {
 export { type UsePeopleOptions, usePeople } from "./hooks/use-people.js"
 export { type UsePersonOptions, usePerson } from "./hooks/use-person.js"
 export {
+  type CreatePersonCommunicationInput,
+  usePersonCommunicationMutation,
+} from "./hooks/use-person-communication-mutation.js"
+export {
+  type UsePersonCommunicationsOptions,
+  usePersonCommunications,
+} from "./hooks/use-person-communications.js"
+export {
   type CreatePersonDocumentFromPlaintextInput,
   type CreatePersonDocumentInput,
   type UpdatePersonDocumentFromPlaintextInput,
@@ -78,6 +86,15 @@ export {
   type UpdatePersonProfilePiiInput,
   usePersonMutation,
 } from "./hooks/use-person-mutation.js"
+export {
+  type CreatePersonPaymentMethodInput,
+  type UpdatePersonPaymentMethodInput,
+  usePersonPaymentMethodMutation,
+} from "./hooks/use-person-payment-method-mutation.js"
+export {
+  type UsePersonPaymentMethodsOptions,
+  usePersonPaymentMethods,
+} from "./hooks/use-person-payment-methods.js"
 export {
   type CreatePersonRelationshipInput,
   type UpdatePersonRelationshipInput,
@@ -111,6 +128,7 @@ export {
   type PeopleListFilters,
   type PeopleListSortDir,
   type PeopleListSortField,
+  type PersonCommunicationsListFilters,
   type PersonDocumentsListFilters,
   type PersonRelationshipsListFilters,
   relationshipsQueryKeys,
@@ -130,11 +148,19 @@ export {
   type ActivityRecord,
   activityLinkRecordSchema,
   activityRecordSchema,
+  type CommunicationChannel,
+  type CommunicationDirection,
+  type CommunicationLogRecord,
   type CustomerSignalKind,
   type CustomerSignalRecord,
   type CustomerSignalSource,
   type CustomerSignalStatus,
   type CustomFieldDefinitionRecord,
+  communicationChannelSchema,
+  communicationDirectionSchema,
+  communicationLogListResponse,
+  communicationLogRecordSchema,
+  communicationLogSingleResponse,
   customerSignalKindSchema,
   customerSignalRecordSchema,
   customerSignalSourceSchema,
@@ -147,6 +173,8 @@ export {
   type PersonDocumentRecord,
   type PersonDocumentType,
   type PersonNoteRecord,
+  type PersonPaymentMethodBrand,
+  type PersonPaymentMethodRecord,
   type PersonRecord,
   type PersonRelationshipKind,
   type PersonRelationshipRecord,
@@ -154,6 +182,10 @@ export {
   personDocumentRecordSchema,
   personDocumentTypeSchema,
   personNoteRecordSchema,
+  personPaymentMethodBrandSchema,
+  personPaymentMethodListResponse,
+  personPaymentMethodRecordSchema,
+  personPaymentMethodSingleResponse,
   personRecordSchema,
   personRelationshipKindSchema,
   personRelationshipRecordSchema,

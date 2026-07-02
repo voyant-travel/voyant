@@ -5788,60 +5788,97 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "brand": {
-                    "type": "string",
-                    "enum": [
-                      "visa",
-                      "mastercard",
-                      "amex",
-                      "revolut",
-                      "bank_transfer"
-                    ]
-                  },
-                  "last4": {
-                    "type": [
-                      "string",
-                      "null"
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "holderName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "processorToken": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "isDefault": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "brand": {
+                        "type": "string",
+                        "enum": [
+                          "visa",
+                          "mastercard",
+                          "amex",
+                          "revolut"
+                        ]
+                      },
+                      "last4": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 8
+                      },
+                      "expMonth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                      },
+                      "expYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      }
+                    },
+                    "required": [
+                      "processorToken",
+                      "brand",
+                      "last4",
+                      "expMonth",
+                      "expYear"
                     ],
-                    "minLength": 2,
-                    "maxLength": 8
+                    "additionalProperties": false
                   },
-                  "holderName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "expMonth": {
-                    "type": [
-                      "integer",
-                      "null"
+                  {
+                    "type": "object",
+                    "properties": {
+                      "holderName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "processorToken": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "isDefault": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "brand": {
+                        "type": "string",
+                        "enum": [
+                          "bank_transfer"
+                        ]
+                      },
+                      "last4": {
+                        "type": "null"
+                      },
+                      "expMonth": {
+                        "type": "null"
+                      },
+                      "expYear": {
+                        "type": "null"
+                      }
+                    },
+                    "required": [
+                      "processorToken",
+                      "brand"
                     ],
-                    "minimum": 1,
-                    "maximum": 12
-                  },
-                  "expYear": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
-                    "minimum": 2000,
-                    "maximum": 2100
-                  },
-                  "processorToken": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "isDefault": {
-                    "type": "boolean",
-                    "default": false
+                    "additionalProperties": false
                   }
-                },
-                "required": [
-                  "brand",
-                  "processorToken"
                 ]
               }
             }
@@ -5987,6 +6024,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "holderName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "processorToken": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "isDefault": {
+                    "type": "boolean",
+                    "default": false
+                  },
                   "brand": {
                     "type": "string",
                     "enum": [
@@ -6005,12 +6056,6 @@
                     "minLength": 2,
                     "maxLength": 8
                   },
-                  "holderName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
                   "expMonth": {
                     "type": [
                       "integer",
@@ -6026,16 +6071,9 @@
                     ],
                     "minimum": 2000,
                     "maximum": 2100
-                  },
-                  "processorToken": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "isDefault": {
-                    "type": "boolean",
-                    "default": false
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
