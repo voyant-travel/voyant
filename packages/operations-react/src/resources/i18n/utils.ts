@@ -1,6 +1,6 @@
 import type { PackageI18nValue } from "@voyant-travel/i18n"
 import { formatMessage } from "@voyant-travel/i18n"
-import type { SlotOption } from "../index.js"
+import type { ProductOption, SlotOption } from "../index.js"
 import type { ResourcesUiMessages } from "./messages.js"
 
 export const RESOURCE_KIND_VALUES = [
@@ -32,15 +32,18 @@ export function formatResourceSlotLabel(
   options: {
     template: string
     formatDate: PackageI18nValue<ResourcesUiMessages>["formatDate"]
+    products?: ProductOption[]
   },
 ) {
   const time = slot.startsAt
     ? options.formatDate(slot.startsAt, { timeStyle: "short" })
     : slot.dateLocal
-  return formatMessage(options.template, {
+  const dateTime = formatMessage(options.template, {
     date: slot.dateLocal,
     time,
   })
+  const product = options.products?.find((entry) => entry.id === slot.productId)
+  return product ? `${product.name} · ${dateTime}` : dateTime
 }
 
 export function formatDateTimeOrFallback(

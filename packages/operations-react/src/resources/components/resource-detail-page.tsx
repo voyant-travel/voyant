@@ -21,6 +21,7 @@ import {
   useBookings,
   useCloseouts,
   usePools,
+  useProducts,
   useResource,
   useSlots,
   useSuppliers,
@@ -47,6 +48,7 @@ export interface ResourceDetailPageProps {
   deleting?: boolean
   onBack?: () => void
   onDelete?: (resource: ResourceDetail) => Promise<void> | void
+  onEdit?: (resource: ResourceDetail) => void
   onOpenSupplier?: (supplierId: string) => void
   onOpenAssignment?: (assignmentId: string) => void
   confirmAction?: ConfirmAction
@@ -59,6 +61,7 @@ export function ResourceDetailPage({
   id,
   onBack,
   onDelete,
+  onEdit,
   onOpenAssignment,
   onOpenSupplier,
 }: ResourceDetailPageProps) {
@@ -72,6 +75,7 @@ export function ResourceDetailPage({
   const assignmentsQuery = useAssignmentsByResource(id)
   const slotsQuery = useSlots({ limit: 25 })
   const bookingsQuery = useBookings({ limit: 25 })
+  const productsQuery = useProducts({ limit: 25 })
   const closeoutsQuery = useCloseouts({ resourceId: id, limit: 25 })
 
   if (resourceQuery.isPending) {
@@ -98,6 +102,7 @@ export function ResourceDetailPage({
   const pools = poolsQuery.data?.data ?? []
   const slots = slotsQuery.data?.data ?? []
   const bookings = bookingsQuery.data?.data ?? []
+  const products = productsQuery.data?.data ?? []
   const poolsById = new Map(pools.map((pool) => [pool.id, pool]))
   const slotsById = new Map(slots.map((slot) => [slot.id, slot]))
   const bookingsById = new Map(bookings.map((booking) => [booking.id, booking]))
@@ -116,6 +121,7 @@ export function ResourceDetailPage({
         confirmAction={confirmAction}
         onBack={onBack}
         onDelete={onDelete ? () => onDelete(resource) : undefined}
+        onEdit={onEdit ? () => onEdit(resource) : undefined}
         badges={
           <>
             <Badge variant="outline">{m.common.resourceKindLabels[resource.kind]}</Badge>
@@ -205,6 +211,7 @@ export function ResourceDetailPage({
                     ? formatResourceSlotLabel(slotsById.get(assignment.slotId)!, {
                         template: m.common.slotLabel,
                         formatDate: i18n.formatDate,
+                        products,
                       })
                     : assignment.slotId
                 }

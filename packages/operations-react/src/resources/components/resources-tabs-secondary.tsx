@@ -9,7 +9,7 @@ import {
 import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { DataTableColumnHeader } from "@voyant-travel/ui/components/data-table-column-header"
 import { TabsContent } from "@voyant-travel/ui/components/tabs"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, Pencil } from "lucide-react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import {
   formatDateTimeOrFallback,
@@ -20,6 +20,7 @@ import {
 import {
   type BookingOption,
   labelById,
+  type ProductOption,
   type ResourceCloseoutRow,
   type ResourceRow,
   type ResourceSlotAssignmentRow,
@@ -50,9 +51,11 @@ type DeleteFn = (args: {
 const assignmentColumns = (
   i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   slots: SlotOption[],
+  products: ProductOption[],
   resources: ResourceRow[],
   bookings: BookingOption[],
   onView: (assignmentId: string) => void,
+  onEdit: (assignment: ResourceSlotAssignmentRow) => void,
 ): ColumnDef<ResourceSlotAssignmentRow>[] => [
   {
     accessorKey: "slotId",
@@ -73,6 +76,7 @@ const assignmentColumns = (
         {
           template: i18n.messages.common.slotLabel,
           formatDate: i18n.formatDate,
+          products,
         },
       ),
   },
@@ -128,17 +132,30 @@ const assignmentColumns = (
     id: "view",
     header: i18n.messages.tabsSecondary.columns.assignments.view,
     cell: ({ row }) => (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(event) => {
-          event.stopPropagation()
-          onView(row.original.id)
-        }}
-      >
-        <ExternalLink className="mr-2 h-4 w-4" />
-        {i18n.messages.common.open}
-      </Button>
+      <div className="flex flex-wrap items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onView(row.original.id)
+          }}
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          {i18n.messages.common.open}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit(row.original)
+          }}
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          {i18n.messages.common.edit}
+        </Button>
+      </div>
     ),
   },
 ]
@@ -146,6 +163,7 @@ const assignmentColumns = (
 const closeoutColumns = (
   i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   resources: ResourceRow[],
+  onEdit: (closeout: ResourceCloseoutRow) => void,
 ): ColumnDef<ResourceCloseoutRow>[] => [
   {
     accessorKey: "resourceId",
@@ -204,10 +222,28 @@ const closeoutColumns = (
     ),
     cell: ({ row }) => row.original.reason ?? "-",
   },
+  {
+    id: "edit",
+    header: i18n.messages.common.edit,
+    cell: ({ row }) => (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={(event) => {
+          event.stopPropagation()
+          onEdit(row.original)
+        }}
+      >
+        <Pencil className="mr-2 h-4 w-4" />
+        {i18n.messages.common.edit}
+      </Button>
+    ),
+  },
 ]
 
 export function AssignmentsTab(props: {
   slots: SlotOption[]
+  products?: ProductOption[]
   resources: ResourceRow[]
   bookings: BookingOption[]
   filteredAssignments: ResourceSlotAssignmentRow[]
@@ -224,6 +260,7 @@ export function AssignmentsTab(props: {
   const m = i18n.messages
   const section = m.tabsSecondary.sections.assignments
   const selection = m.common.selectionNouns.assignment
+  const products = props.products ?? []
 
   return (
     <TabsContent value="assignments" className="space-y-4">
@@ -237,9 +274,11 @@ export function AssignmentsTab(props: {
         columns={assignmentColumns(
           i18n,
           props.slots,
+          products,
           props.resources,
           props.bookings,
           props.onOpenRoute,
+          props.onEdit,
         )}
         data={props.filteredAssignments}
         emptyMessage={section.emptyMessage}
@@ -367,7 +406,7 @@ export function CloseoutsTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={closeoutColumns(i18n, props.resources)}
+        columns={closeoutColumns(i18n, props.resources, props.onEdit)}
         data={props.filteredCloseouts}
         emptyMessage={section.emptyMessage}
         enableRowSelection

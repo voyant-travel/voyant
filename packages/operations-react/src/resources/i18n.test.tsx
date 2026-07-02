@@ -40,6 +40,7 @@ describe("resources-ui i18n", () => {
     const html = renderToStaticMarkup(
       <ResourcesOverview
         bookings={[]}
+        products={[]}
         slots={[]}
         closeouts={[]}
         filteredResources={[]}
@@ -68,6 +69,7 @@ describe("resources-ui i18n", () => {
       <ResourcesUiMessagesProvider locale="ro-RO">
         <ResourcesOverview
           bookings={[]}
+          products={[]}
           slots={[]}
           closeouts={[]}
           filteredResources={[]}

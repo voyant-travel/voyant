@@ -2,6 +2,7 @@ import type { ResourcesUiMessages } from "./messages.js"
 
 export const resourcesUiRo: ResourcesUiMessages = {
   common: {
+    edit: "Editeaza",
     open: "Deschide",
     view: "Vizualizare",
     cancel: "Anuleaza",
@@ -299,6 +300,7 @@ export const resourcesUiRo: ResourcesUiMessages = {
       code: "Cod",
       created: "Creat",
       delete: "Sterge",
+      edit: "Editeaza",
       noBooking: "Fara rezervare",
       noPool: "Fara pool",
       noResource: "Fara resursa",
@@ -335,6 +337,7 @@ export const resourcesUiRo: ResourcesUiMessages = {
       notFound: "Resursa nu a fost gasita.",
       poolMembershipsEmpty: "Aceasta resursa nu este asignata niciunui pool.",
       poolMembershipsTitle: "Apartenenta la Pool-uri",
+      removePoolMember: "Elimina",
       released: "Eliberat",
     },
     pool: {
@@ -348,6 +351,10 @@ export const resourcesUiRo: ResourcesUiMessages = {
       loadFailed: "Pool-ul nu a putut fi incarcat.",
       membersEmpty: "Nicio resursa nu este asignata acestui pool.",
       membersTitle: "Membri",
+      addMember: "Adauga membru",
+      addMemberPlaceholder: "Selecteaza o resursa",
+      memberAlreadyAssigned: "Toate resursele listate sunt deja asignate.",
+      removeMember: "Elimina",
       noResource: "Resursa indisponibila",
       notFound: "Pool-ul de resurse nu a fost gasit.",
       sharedCapacity: "Capacitate Partajata",

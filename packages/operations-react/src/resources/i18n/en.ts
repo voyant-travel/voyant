@@ -2,6 +2,7 @@ import type { ResourcesUiMessages } from "./messages.js"
 
 export const resourcesUiEn: ResourcesUiMessages = {
   common: {
+    edit: "Edit",
     open: "Open",
     view: "View",
     cancel: "Cancel",
@@ -298,6 +299,7 @@ export const resourcesUiEn: ResourcesUiMessages = {
       code: "Code",
       created: "Created",
       delete: "Delete",
+      edit: "Edit",
       noBooking: "No booking",
       noPool: "No pool",
       noResource: "No resource",
@@ -334,6 +336,7 @@ export const resourcesUiEn: ResourcesUiMessages = {
       notFound: "Resource not found.",
       poolMembershipsEmpty: "This resource is not assigned to any pool.",
       poolMembershipsTitle: "Pool Memberships",
+      removePoolMember: "Remove",
       released: "Released",
     },
     pool: {
@@ -347,6 +350,10 @@ export const resourcesUiEn: ResourcesUiMessages = {
       loadFailed: "Pool could not be loaded.",
       membersEmpty: "No resources are assigned to this pool.",
       membersTitle: "Members",
+      addMember: "Add member",
+      addMemberPlaceholder: "Select a resource",
+      memberAlreadyAssigned: "All listed resources are already assigned.",
+      removeMember: "Remove",
       noResource: "Resource unavailable",
       notFound: "Resource pool not found.",
       sharedCapacity: "Shared Capacity",

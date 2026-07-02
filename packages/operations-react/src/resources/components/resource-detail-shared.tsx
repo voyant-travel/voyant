@@ -3,7 +3,7 @@
 import { formatMessage } from "@voyant-travel/i18n"
 import { Button, Card, CardContent, CardHeader, CardTitle, cn } from "@voyant-travel/ui/components"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
-import { ArrowLeft, Loader2, Trash2 } from "lucide-react"
+import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
 
@@ -76,6 +76,7 @@ export function ResourceDetailHeader({
   deleting: deletingProp,
   onBack,
   onDelete,
+  onEdit,
   title,
 }: {
   actions?: ReactNode
@@ -88,6 +89,7 @@ export function ResourceDetailHeader({
   deleting?: boolean
   onBack?: () => void
   onDelete?: () => Promise<void> | void
+  onEdit?: () => void
   title: string
 }) {
   const messages = useResourcesUiMessagesOrDefault()
@@ -130,6 +132,12 @@ export function ResourceDetailHeader({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {actions}
+          {onEdit ? (
+            <Button type="button" variant="outline" onClick={onEdit}>
+              <Pencil data-icon="inline-start" aria-hidden="true" />
+              {messages.detailPages.common.edit}
+            </Button>
+          ) : null}
           {onDelete ? (
             <Button
               type="button"

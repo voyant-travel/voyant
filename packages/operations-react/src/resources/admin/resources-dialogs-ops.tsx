@@ -25,17 +25,19 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
+import { formatResourceSlotLabel } from "../i18n/utils.js"
 import {
   assignmentStatusOptions,
   type BookingOption,
   NONE_VALUE,
   nullableString,
+  type ProductOption,
   type ResourceCloseoutRow,
   type ResourcePoolRow,
   type ResourceRow,
   type ResourceSlotAssignmentRow,
   type SlotOption,
-  slotLabel,
   toIsoDateTime,
   toLocalDateTimeInput,
   useVoyantResourcesContext,
@@ -78,6 +80,7 @@ export function ResourceSlotAssignmentDialog({
   pools,
   resources,
   bookings,
+  products,
   onSuccess,
 }: {
   open: boolean
@@ -87,11 +90,19 @@ export function ResourceSlotAssignmentDialog({
   pools: ResourcePoolRow[]
   resources: ResourceRow[]
   bookings: BookingOption[]
+  products: ProductOption[]
   onSuccess: () => void
 }) {
   const client = useVoyantResourcesContext()
   const messages = useOperatorAdminMessages()
+  const i18n = useResourcesUiI18nOrDefault()
   const dialogMessages = messages.resources.dialogs.assignment
+  const slotLabel = (slot: SlotOption) =>
+    formatResourceSlotLabel(slot, {
+      template: i18n.messages.common.slotLabel,
+      formatDate: i18n.formatDate,
+      products,
+    })
   const assignmentFormSchema = getAssignmentFormSchema(messages)
   const form = useForm({
     resolver: zodResolver(assignmentFormSchema),

@@ -35,6 +35,7 @@ export interface ResourceAssignmentDetailPageProps {
   deleting?: boolean
   onBack?: () => void
   onDelete?: (assignment: ResourceSlotAssignmentDetail) => Promise<void> | void
+  onEdit?: (assignment: ResourceSlotAssignmentDetail) => void
   onOpenResource?: (resourceId: string) => void
   onOpenSlot?: (slotId: string) => void
   confirmAction?: ConfirmAction
@@ -47,6 +48,7 @@ export function ResourceAssignmentDetailPage({
   id,
   onBack,
   onDelete,
+  onEdit,
   onOpenResource,
   onOpenSlot,
 }: ResourceAssignmentDetailPageProps) {
@@ -90,6 +92,7 @@ export function ResourceAssignmentDetailPage({
     ? formatResourceSlotLabel(slot, {
         template: m.common.slotLabel,
         formatDate: i18n.formatDate,
+        products: productsQuery.data?.data ?? [],
       })
     : assignment.slotId
 
@@ -107,6 +110,7 @@ export function ResourceAssignmentDetailPage({
         confirmAction={confirmAction}
         onBack={onBack}
         onDelete={onDelete ? () => onDelete(assignment) : undefined}
+        onEdit={onEdit ? () => onEdit(assignment) : undefined}
         badges={
           <>
             <Badge variant="outline">{m.common.assignmentStatusLabels[assignment.status]}</Badge>

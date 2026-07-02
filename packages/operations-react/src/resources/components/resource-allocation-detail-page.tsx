@@ -33,6 +33,7 @@ export interface ResourceAllocationDetailPageProps {
   deleting?: boolean
   onBack?: () => void
   onDelete?: (allocation: ResourceAllocationDetail) => Promise<void> | void
+  onEdit?: (allocation: ResourceAllocationDetail) => void
   onOpenPool?: (poolId: string) => void
   onOpenProduct?: (productId: string) => void
   confirmAction?: ConfirmAction
@@ -45,6 +46,7 @@ export function ResourceAllocationDetailPage({
   id,
   onBack,
   onDelete,
+  onEdit,
   onOpenPool,
   onOpenProduct,
 }: ResourceAllocationDetailPageProps) {
@@ -107,6 +109,7 @@ export function ResourceAllocationDetailPage({
         confirmAction={confirmAction}
         onBack={onBack}
         onDelete={onDelete ? () => onDelete(allocation) : undefined}
+        onEdit={onEdit ? () => onEdit(allocation) : undefined}
         badges={
           <>
             <Badge variant="outline">
