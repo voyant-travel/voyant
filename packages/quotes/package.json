@@ -10,7 +10,8 @@
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes/index.ts",
     "./booking-extension": "./src/booking-extension.ts",
-    "./proposal-routes": "./src/proposal-routes.ts"
+    "./proposal-routes": "./src/proposal-routes.ts",
+    "./tools": "./src/tools.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -31,7 +32,8 @@
     "@voyant-travel/trips": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@voyant-travel/tools": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -80,6 +82,11 @@
         "types": "./dist/proposal-routes.d.ts",
         "import": "./dist/proposal-routes.js",
         "default": "./dist/proposal-routes.js"
+      },
+      "./tools": {
+        "types": "./dist/tools.d.ts",
+        "import": "./dist/tools.js",
+        "default": "./dist/tools.js"
       }
     },
     "main": "./dist/index.js",
