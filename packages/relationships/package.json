@@ -11,7 +11,8 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes/index.ts",
-    "./action-ledger-capabilities": "./src/action-ledger-capabilities.ts"
+    "./action-ledger-capabilities": "./src/action-ledger-capabilities.ts",
+    "./tools": "./src/tools.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -34,7 +35,8 @@
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@voyant-travel/tools": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -88,6 +90,11 @@
         "types": "./dist/action-ledger-capabilities.d.ts",
         "import": "./dist/action-ledger-capabilities.js",
         "default": "./dist/action-ledger-capabilities.js"
+      },
+      "./tools": {
+        "types": "./dist/tools.d.ts",
+        "import": "./dist/tools.js",
+        "default": "./dist/tools.js"
       }
     },
     "main": "./dist/index.js",

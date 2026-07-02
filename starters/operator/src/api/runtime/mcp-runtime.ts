@@ -10,9 +10,20 @@
  * The route mounts at `/v1/admin/mcp` via the `"operator/mcp"` composition entry.
  */
 
+import { bookingsService } from "@voyant-travel/bookings"
+import { type BookingsToolServices, bookingsTools } from "@voyant-travel/bookings/tools"
+import { financeService } from "@voyant-travel/finance"
+import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/tools"
 import { productsService } from "@voyant-travel/inventory"
 import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
+import { quotesService } from "@voyant-travel/quotes"
+import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
+import { relationshipsService } from "@voyant-travel/relationships"
+import {
+  type RelationshipsToolServices,
+  relationshipsTools,
+} from "@voyant-travel/relationships/tools"
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
 import type { Context, Hono } from "hono"
@@ -24,6 +35,10 @@ import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 type OperatorToolContext = ToolContext & {
   trips: TripsToolServices
   inventory: InventoryToolServices
+  bookings: BookingsToolServices
+  finance: FinanceToolServices
+  quotes: QuotesToolServices
+  relationships: RelationshipsToolServices
 }
 
 /** Build the MCP admin routes wired with this deployment's tools + context. */
@@ -31,6 +46,10 @@ export function buildMcpAdminRoutes(): Hono {
   const registry = createToolRegistry()
   registry.registerAll(tripsTools)
   registry.registerAll(inventoryTools)
+  registry.registerAll(bookingsTools)
+  registry.registerAll(financeTools)
+  registry.registerAll(quotesTools)
+  registry.registerAll(relationshipsTools)
   return createMcpHonoApp({ registry, buildContext: buildToolContext })
 }
 
@@ -47,6 +66,24 @@ function buildToolContext(c: Context): OperatorToolContext {
     resolverScope: { locale, audience, market: "default", actor },
     trips: createTripsToolServices(c),
     inventory: createInventoryToolServices(c),
+    bookings: {
+      listBookings: (query) => bookingsService.listBookings(c.var.db, query),
+      getBookingById: (id) => bookingsService.getBookingById(c.var.db, id),
+    },
+    finance: {
+      listInvoices: (query) => financeService.listInvoices(c.var.db, query),
+      getInvoiceById: (id) => financeService.getInvoiceById(c.var.db, id),
+    },
+    quotes: {
+      listQuotes: (query) => quotesService.listQuotes(c.var.db, query),
+      getQuoteById: (id) => quotesService.getQuoteById(c.var.db, id),
+    },
+    relationships: {
+      listPeople: (query) => relationshipsService.listPeople(c.var.db, query),
+      getPersonById: (id) => relationshipsService.getPersonById(c.var.db, id),
+      listOrganizations: (query) => relationshipsService.listOrganizations(c.var.db, query),
+      getOrganizationById: (id) => relationshipsService.getOrganizationById(c.var.db, id),
+    },
   }
 }
 
