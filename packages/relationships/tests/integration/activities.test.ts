@@ -147,12 +147,31 @@ describe.skipIf(!DB_AVAILABLE)("Activity routes", () => {
       return data
     }
 
+    async function seedOrganization() {
+      const res = await app.request("/organizations", {
+        method: "POST",
+        ...json({ name: "Link Target Org" }),
+      })
+      const { data } = await res.json()
+      return data
+    }
+
+    async function seedPerson() {
+      const res = await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Link", lastName: "Target" }),
+      })
+      const { data } = await res.json()
+      return data
+    }
+
     it("creates and lists links", async () => {
       const activity = await seedActivity()
+      const organization = await seedOrganization()
 
       const createRes = await app.request(`/activities/${activity.id}/links`, {
         method: "POST",
-        ...json({ entityType: "organization", entityId: "crm_org_fake123" }),
+        ...json({ entityType: "organization", entityId: organization.id }),
       })
 
       expect(createRes.status).toBe(201)
@@ -167,12 +186,35 @@ describe.skipIf(!DB_AVAILABLE)("Activity routes", () => {
       expect(listBody.data.length).toBe(1)
     })
 
-    it("deletes a link", async () => {
+    it("rejects links to missing organizations", async () => {
       const activity = await seedActivity()
 
       const createRes = await app.request(`/activities/${activity.id}/links`, {
         method: "POST",
-        ...json({ entityType: "person", entityId: "crm_ppl_fake123" }),
+        ...json({ entityType: "organization", entityId: "org_missing" }),
+      })
+
+      expect(createRes.status).toBe(404)
+      const createBody = await createRes.json()
+      expect(createBody.error).toBe("Linked entity not found")
+
+      const listRes = await app.request(
+        "/activities?entityType=organization&entityId=org_missing",
+        { method: "GET" },
+      )
+
+      expect(listRes.status).toBe(200)
+      const listBody = await listRes.json()
+      expect(listBody.data).toEqual([])
+    })
+
+    it("deletes a link", async () => {
+      const activity = await seedActivity()
+      const person = await seedPerson()
+
+      const createRes = await app.request(`/activities/${activity.id}/links`, {
+        method: "POST",
+        ...json({ entityType: "person", entityId: person.id }),
       })
       const { data: link } = await createRes.json()
 
