@@ -1,5 +1,11 @@
 # @voyant-travel/catalog-react
 
+## 0.136.4
+
+### Patch Changes
+
+- 7f8f45a: Avoid pinning unscoped Voyant Connect source kinds into admin booking journey links, and keep booking Confirm disabled until live pricing returns a quote id.
+
 ## 0.136.3
 
 ### Patch Changes
