@@ -73,6 +73,12 @@ export type ApiKeyResource = (typeof API_KEY_RESOURCES)[number]
  */
 export const PII_API_KEY_RESOURCES = new Set<string>(["bookings-pii"])
 
+/**
+ * High-impact actions that must be granted as an exact `resource:action` scope.
+ * These are **never** satisfied by `*`, `*:action`, or `resource:*` grants.
+ */
+export const EXPLICIT_API_KEY_PERMISSIONS = new Set<string>(["notifications:send"])
+
 export type ApiKeyPermissions = Record<string, string[]>
 export type ApiKeyPermissionString =
   | "*"
@@ -733,6 +739,10 @@ export function hasApiKeyPermission(
   const normalized = normalizeApiKeyPermissions(permissions)
   const resourceKey = resource.trim().toLowerCase()
   const actionKey = action.trim().toLowerCase()
+
+  if (EXPLICIT_API_KEY_PERMISSIONS.has(`${resourceKey}:${actionKey}`)) {
+    return normalized[resourceKey]?.includes(actionKey) === true
+  }
 
   // PII-sensitive resources are never satisfied by the `*` resource wildcard;
   // only an explicit grant on the resource itself counts.
