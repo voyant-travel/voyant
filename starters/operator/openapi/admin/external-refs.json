@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -352,6 +358,8 @@
             }
           }
         },
+        "operationId": "getAdminExternalRefsRefs",
+        "summary": "GET /v1/admin/external-refs/refs",
         "tags": [
           "external-refs"
         ],
@@ -555,6 +563,8 @@
             }
           }
         },
+        "operationId": "postAdminExternalRefsRefs",
+        "summary": "POST /v1/admin/external-refs/refs",
         "tags": [
           "external-refs"
         ],
@@ -687,6 +697,8 @@
             }
           }
         },
+        "operationId": "getAdminExternalRefsRefsById",
+        "summary": "GET /v1/admin/external-refs/refs/{id}",
         "tags": [
           "external-refs"
         ],
@@ -911,6 +923,8 @@
             }
           }
         },
+        "operationId": "patchAdminExternalRefsRefsById",
+        "summary": "PATCH /v1/admin/external-refs/refs/{id}",
         "tags": [
           "external-refs"
         ],
@@ -969,6 +983,8 @@
             }
           }
         },
+        "operationId": "deleteAdminExternalRefsRefsById",
+        "summary": "DELETE /v1/admin/external-refs/refs/{id}",
         "tags": [
           "external-refs"
         ],
@@ -1196,6 +1212,8 @@
             }
           }
         },
+        "operationId": "getAdminExternalRefsEntitiesByEntityTypeByEntityIdRefs",
+        "summary": "GET /v1/admin/external-refs/entities/{entityType}/{entityId}/refs",
         "tags": [
           "external-refs"
         ],
@@ -1405,6 +1423,8 @@
             }
           }
         },
+        "operationId": "postAdminExternalRefsEntitiesByEntityTypeByEntityIdRefs",
+        "summary": "POST /v1/admin/external-refs/entities/{entityType}/{entityId}/refs",
         "tags": [
           "external-refs"
         ],

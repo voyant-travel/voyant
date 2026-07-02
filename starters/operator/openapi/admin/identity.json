@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -350,6 +356,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityContactPoints",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -550,6 +557,7 @@
             }
           }
         },
+        "operationId": "postAdminIdentityContactPoints",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -684,6 +692,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityContactPointsById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -906,6 +915,7 @@
             }
           }
         },
+        "operationId": "patchAdminIdentityContactPointsById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -965,6 +975,7 @@
             }
           }
         },
+        "operationId": "deleteAdminIdentityContactPointsById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -1221,6 +1232,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityAddresses",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -1512,6 +1524,7 @@
             }
           }
         },
+        "operationId": "postAdminIdentityAddresses",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -1697,6 +1710,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityAddressesById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -2012,6 +2026,7 @@
             }
           }
         },
+        "operationId": "patchAdminIdentityAddressesById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -2071,6 +2086,7 @@
             }
           }
         },
+        "operationId": "deleteAdminIdentityAddressesById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -2286,6 +2302,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityNamedContacts",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -2502,6 +2519,7 @@
             }
           }
         },
+        "operationId": "postAdminIdentityNamedContacts",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -2644,6 +2662,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityNamedContactsById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -2883,6 +2902,7 @@
             }
           }
         },
+        "operationId": "patchAdminIdentityNamedContactsById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -2942,6 +2962,7 @@
             }
           }
         },
+        "operationId": "deleteAdminIdentityNamedContactsById",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -3069,6 +3090,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityEntitiesByEntityTypeByEntityIdContactPoints",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -3275,6 +3297,7 @@
             }
           }
         },
+        "operationId": "postAdminIdentityEntitiesByEntityTypeByEntityIdContactPoints",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -3453,6 +3476,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityEntitiesByEntityTypeByEntityIdAddresses",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -3748,6 +3772,7 @@
             }
           }
         },
+        "operationId": "postAdminIdentityEntitiesByEntityTypeByEntityIdAddresses",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }
@@ -3883,6 +3908,7 @@
             }
           }
         },
+        "operationId": "getAdminIdentityEntitiesByEntityTypeByEntityIdNamedContacts",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       },
@@ -4105,6 +4131,7 @@
             }
           }
         },
+        "operationId": "postAdminIdentityEntitiesByEntityTypeByEntityIdNamedContacts",
         "x-voyant-module": "identity",
         "x-voyant-surface": "admin"
       }

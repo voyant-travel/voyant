@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -274,6 +280,8 @@
             }
           }
         },
+        "operationId": "getPublicCharters",
+        "summary": "GET /v1/public/charters",
         "tags": [
           "charters"
         ],
@@ -558,6 +566,8 @@
             }
           }
         },
+        "operationId": "getPublicChartersVoyages",
+        "summary": "GET /v1/public/charters/voyages",
         "tags": [
           "charters"
         ],
@@ -842,6 +852,8 @@
             }
           }
         },
+        "operationId": "getPublicChartersVoyagesByKey",
+        "summary": "GET /v1/public/charters/voyages/{key}",
         "tags": [
           "charters"
         ],
@@ -1005,6 +1017,8 @@
             }
           }
         },
+        "operationId": "postPublicChartersVoyagesByKeyQuotePerSuite",
+        "summary": "POST /v1/public/charters/voyages/{key}/quote/per-suite",
         "tags": [
           "charters"
         ],
@@ -1157,6 +1171,8 @@
             }
           }
         },
+        "operationId": "postPublicChartersVoyagesByKeyQuoteWholeYacht",
+        "summary": "POST /v1/public/charters/voyages/{key}/quote/whole-yacht",
         "tags": [
           "charters"
         ],
@@ -1248,6 +1264,8 @@
             }
           }
         },
+        "operationId": "getPublicChartersYachtsByKey",
+        "summary": "GET /v1/public/charters/yachts/{key}",
         "tags": [
           "charters"
         ],
@@ -1320,6 +1338,8 @@
             }
           }
         },
+        "operationId": "getPublicChartersProductsByKey",
+        "summary": "GET /v1/public/charters/products/{key}",
         "tags": [
           "charters"
         ],

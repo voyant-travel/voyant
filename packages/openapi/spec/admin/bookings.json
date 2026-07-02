@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -240,6 +246,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsPricingPreview",
+        "summary": "POST /v1/admin/bookings/pricing-preview",
         "tags": [
           "bookings"
         ],
@@ -487,6 +495,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsAggregates",
+        "summary": "GET /v1/admin/bookings/aggregates",
         "tags": [
           "bookings"
         ],
@@ -1006,6 +1016,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsOverview",
+        "summary": "GET /v1/admin/bookings/overview",
         "tags": [
           "bookings"
         ],
@@ -1097,6 +1109,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsSharingGroups",
+        "summary": "GET /v1/admin/bookings/sharing-groups",
         "tags": [
           "bookings"
         ],
@@ -1183,6 +1197,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsSharingGroupsByGroupIdTravelers",
+        "summary": "GET /v1/admin/bookings/sharing-groups/{groupId}/travelers",
         "tags": [
           "bookings"
         ],
@@ -1338,6 +1354,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdAllocations",
+        "summary": "GET /v1/admin/bookings/{id}/allocations",
         "tags": [
           "bookings"
         ],
@@ -1440,6 +1458,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdActivity",
+        "summary": "GET /v1/admin/bookings/{id}/activity",
         "tags": [
           "bookings"
         ],
@@ -1512,6 +1532,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdGroup",
+        "summary": "GET /v1/admin/bookings/{id}/group",
         "tags": [
           "bookings"
         ],
@@ -2436,6 +2458,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsReserve",
+        "summary": "POST /v1/admin/bookings/reserve",
         "tags": [
           "bookings"
         ],
@@ -2520,6 +2544,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsExpireStale",
+        "summary": "POST /v1/admin/bookings/expire-stale",
         "tags": [
           "bookings"
         ],
@@ -2981,6 +3007,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdConfirm",
+        "summary": "POST /v1/admin/bookings/{id}/confirm",
         "tags": [
           "bookings"
         ],
@@ -3416,6 +3444,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdExtendHold",
+        "summary": "POST /v1/admin/bookings/{id}/extend-hold",
         "tags": [
           "bookings"
         ],
@@ -3874,6 +3904,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdExpire",
+        "summary": "POST /v1/admin/bookings/{id}/expire",
         "tags": [
           "bookings"
         ],
@@ -4332,6 +4364,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdCancel",
+        "summary": "POST /v1/admin/bookings/{id}/cancel",
         "tags": [
           "bookings"
         ],
@@ -4790,6 +4824,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdStart",
+        "summary": "POST /v1/admin/bookings/{id}/start",
         "tags": [
           "bookings"
         ],
@@ -5248,6 +5284,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdComplete",
+        "summary": "POST /v1/admin/bookings/{id}/complete",
         "tags": [
           "bookings"
         ],
@@ -5734,6 +5772,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdOverrideStatus",
+        "summary": "POST /v1/admin/bookings/{id}/override-status",
         "tags": [
           "bookings"
         ],
@@ -5897,6 +5937,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdActionLedger",
+        "summary": "GET /v1/admin/bookings/{id}/action-ledger",
         "tags": [
           "bookings"
         ],
@@ -6089,6 +6131,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdActionApprovalsByApprovalIdDecide",
+        "summary": "POST /v1/admin/bookings/{id}/action-approvals/{approvalId}/decide",
         "tags": [
           "bookings"
         ],
@@ -6222,6 +6266,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdTravelers",
+        "summary": "GET /v1/admin/bookings/{id}/travelers",
         "tags": [
           "bookings"
         ],
@@ -6466,6 +6512,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdTravelers",
+        "summary": "POST /v1/admin/bookings/{id}/travelers",
         "tags": [
           "bookings"
         ],
@@ -6659,6 +6707,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdTravelersByTravelerIdReveal",
+        "summary": "GET /v1/admin/bookings/{id}/travelers/{travelerId}/reveal",
         "tags": [
           "bookings"
         ],
@@ -6755,6 +6805,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdTravelersByTravelerIdTravelDetails",
+        "summary": "GET /v1/admin/bookings/{id}/travelers/{travelerId}/travel-details",
         "tags": [
           "bookings"
         ],
@@ -6991,6 +7043,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsByIdTravelersByTravelerIdTravelDetails",
+        "summary": "PATCH /v1/admin/bookings/{id}/travelers/{travelerId}/travel-details",
         "tags": [
           "bookings"
         ],
@@ -7090,6 +7144,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsByIdTravelersByTravelerIdTravelDetails",
+        "summary": "DELETE /v1/admin/bookings/{id}/travelers/{travelerId}/travel-details",
         "tags": [
           "bookings"
         ],
@@ -7382,6 +7438,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdTravelersWithTravelDetails",
+        "summary": "POST /v1/admin/bookings/{id}/travelers/with-travel-details",
         "tags": [
           "bookings"
         ],
@@ -7678,6 +7736,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsByIdTravelersByTravelerIdWithTravelDetails",
+        "summary": "PATCH /v1/admin/bookings/{id}/travelers/{travelerId}/with-travel-details",
         "tags": [
           "bookings"
         ],
@@ -7928,6 +7988,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsByIdTravelersByTravelerId",
+        "summary": "PATCH /v1/admin/bookings/{id}/travelers/{travelerId}",
         "tags": [
           "bookings"
         ],
@@ -7991,6 +8053,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsByIdTravelersByTravelerId",
+        "summary": "DELETE /v1/admin/bookings/{id}/travelers/{travelerId}",
         "tags": [
           "bookings"
         ],
@@ -8248,6 +8312,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdItems",
+        "summary": "GET /v1/admin/bookings/{id}/items",
         "tags": [
           "bookings"
         ],
@@ -8749,6 +8815,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdItems",
+        "summary": "POST /v1/admin/bookings/{id}/items",
         "tags": [
           "bookings"
         ],
@@ -9256,6 +9324,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsByIdItemsByItemId",
+        "summary": "PATCH /v1/admin/bookings/{id}/items/{itemId}",
         "tags": [
           "bookings"
         ],
@@ -9337,6 +9407,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsByIdItemsByItemId",
+        "summary": "DELETE /v1/admin/bookings/{id}/items/{itemId}",
         "tags": [
           "bookings"
         ],
@@ -9421,6 +9493,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdItemsByItemIdTravelers",
+        "summary": "GET /v1/admin/bookings/{id}/items/{itemId}/travelers",
         "tags": [
           "bookings"
         ],
@@ -9585,6 +9659,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdItemsByItemIdTravelers",
+        "summary": "POST /v1/admin/bookings/{id}/items/{itemId}/travelers",
         "tags": [
           "bookings"
         ],
@@ -9676,6 +9752,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsByIdItemsByItemIdTravelersByLinkId",
+        "summary": "DELETE /v1/admin/bookings/{id}/items/{itemId}/travelers/{linkId}",
         "tags": [
           "bookings"
         ],
@@ -9802,6 +9880,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdSupplierStatuses",
+        "summary": "GET /v1/admin/bookings/{id}/supplier-statuses",
         "tags": [
           "bookings"
         ],
@@ -10020,6 +10100,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdSupplierStatuses",
+        "summary": "POST /v1/admin/bookings/{id}/supplier-statuses",
         "tags": [
           "bookings"
         ],
@@ -10249,6 +10331,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsByIdSupplierStatusesByStatusId",
+        "summary": "PATCH /v1/admin/bookings/{id}/supplier-statuses/{statusId}",
         "tags": [
           "bookings"
         ],
@@ -10389,6 +10473,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdFulfillments",
+        "summary": "GET /v1/admin/bookings/{id}/fulfillments",
         "tags": [
           "bookings"
         ],
@@ -10650,6 +10736,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdFulfillments",
+        "summary": "POST /v1/admin/bookings/{id}/fulfillments",
         "tags": [
           "bookings"
         ],
@@ -10917,6 +11005,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsByIdFulfillmentsByFulfillmentId",
+        "summary": "PATCH /v1/admin/bookings/{id}/fulfillments/{fulfillmentId}",
         "tags": [
           "bookings"
         ],
@@ -11025,6 +11115,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdRedemptions",
+        "summary": "GET /v1/admin/bookings/{id}/redemptions",
         "tags": [
           "bookings"
         ],
@@ -11227,6 +11319,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdRedemptions",
+        "summary": "POST /v1/admin/bookings/{id}/redemptions",
         "tags": [
           "bookings"
         ],
@@ -11293,6 +11387,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdNotes",
+        "summary": "GET /v1/admin/bookings/{id}/notes",
         "tags": [
           "bookings"
         ],
@@ -11411,6 +11507,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdNotes",
+        "summary": "POST /v1/admin/bookings/{id}/notes",
         "tags": [
           "bookings"
         ],
@@ -11539,6 +11637,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsByIdNotesByNoteId",
+        "summary": "PATCH /v1/admin/bookings/{id}/notes/{noteId}",
         "tags": [
           "bookings"
         ],
@@ -11602,6 +11702,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsByIdNotesByNoteId",
+        "summary": "DELETE /v1/admin/bookings/{id}/notes/{noteId}",
         "tags": [
           "bookings"
         ],
@@ -11700,6 +11802,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdDocuments",
+        "summary": "GET /v1/admin/bookings/{id}/documents",
         "tags": [
           "bookings"
         ],
@@ -11884,6 +11988,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByIdDocuments",
+        "summary": "POST /v1/admin/bookings/{id}/documents",
         "tags": [
           "bookings"
         ],
@@ -11949,6 +12055,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsByIdDocumentsByDocumentId",
+        "summary": "DELETE /v1/admin/bookings/{id}/documents/{documentId}",
         "tags": [
           "bookings"
         ],
@@ -12124,6 +12232,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsGroups",
+        "summary": "GET /v1/admin/bookings/groups",
         "tags": [
           "bookings"
         ],
@@ -12282,6 +12392,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsGroups",
+        "summary": "POST /v1/admin/bookings/groups",
         "tags": [
           "bookings"
         ],
@@ -12432,6 +12544,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsGroupsById",
+        "summary": "GET /v1/admin/bookings/groups/{id}",
         "tags": [
           "bookings"
         ],
@@ -12615,6 +12729,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsGroupsById",
+        "summary": "PATCH /v1/admin/bookings/groups/{id}",
         "tags": [
           "bookings"
         ],
@@ -12670,6 +12786,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsGroupsById",
+        "summary": "DELETE /v1/admin/bookings/groups/{id}",
         "tags": [
           "bookings"
         ],
@@ -12740,6 +12858,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsGroupsByIdMembers",
+        "summary": "GET /v1/admin/bookings/groups/{id}/members",
         "tags": [
           "bookings"
         ],
@@ -12891,6 +13011,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsGroupsByIdMembers",
+        "summary": "POST /v1/admin/bookings/groups/{id}/members",
         "tags": [
           "bookings"
         ],
@@ -12956,6 +13078,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsGroupsByIdMembersByBookingId",
+        "summary": "DELETE /v1/admin/bookings/groups/{id}/members/{bookingId}",
         "tags": [
           "bookings"
         ],
@@ -13011,6 +13135,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsGroupsByIdTravelers",
+        "summary": "GET /v1/admin/bookings/groups/{id}/travelers",
         "tags": [
           "bookings"
         ],
@@ -13607,6 +13733,8 @@
             }
           }
         },
+        "operationId": "getAdminBookings",
+        "summary": "GET /v1/admin/bookings",
         "tags": [
           "bookings"
         ],
@@ -14357,6 +14485,8 @@
             }
           }
         },
+        "operationId": "postAdminBookings",
+        "summary": "POST /v1/admin/bookings",
         "tags": [
           "bookings"
         ],
@@ -15114,6 +15244,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsById",
+        "summary": "GET /v1/admin/bookings/{id}",
         "tags": [
           "bookings"
         ],
@@ -15892,6 +16024,8 @@
             }
           }
         },
+        "operationId": "patchAdminBookingsById",
+        "summary": "PATCH /v1/admin/bookings/{id}",
         "tags": [
           "bookings"
         ],
@@ -15947,6 +16081,8 @@
             }
           }
         },
+        "operationId": "deleteAdminBookingsById",
+        "summary": "DELETE /v1/admin/bookings/{id}",
         "tags": [
           "bookings"
         ],
@@ -16616,6 +16752,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsFromProduct",
+        "summary": "POST /v1/admin/bookings/from-product",
         "tags": [
           "bookings"
         ],
@@ -17540,6 +17678,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsCreate",
+        "summary": "POST /v1/admin/bookings/create",
         "tags": [
           "bookings"
         ],
@@ -19122,6 +19262,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsDualCreate",
+        "summary": "POST /v1/admin/bookings/dual-create",
         "tags": [
           "bookings"
         ],

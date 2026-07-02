@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -253,6 +259,8 @@
             }
           }
         },
+        "operationId": "postAdminBookingsByBookingIdGenerateContract",
+        "summary": "POST /v1/admin/bookings/{bookingId}/generate-contract",
         "tags": [
           "contract-document"
         ],

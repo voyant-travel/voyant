@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -337,6 +343,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsTemplates",
+        "summary": "GET /v1/admin/legal/contracts/templates",
         "tags": [
           "legal"
         ],
@@ -532,6 +540,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsTemplates",
+        "summary": "POST /v1/admin/legal/contracts/templates",
         "tags": [
           "legal"
         ],
@@ -696,6 +706,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsTemplatesDefault",
+        "summary": "GET /v1/admin/legal/contracts/templates/default",
         "tags": [
           "legal"
         ],
@@ -826,6 +838,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsTemplatesById",
+        "summary": "GET /v1/admin/legal/contracts/templates/{id}",
         "tags": [
           "legal"
         ],
@@ -1043,6 +1057,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalContractsTemplatesById",
+        "summary": "PATCH /v1/admin/legal/contracts/templates/{id}",
         "tags": [
           "legal"
         ],
@@ -1101,6 +1117,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalContractsTemplatesById",
+        "summary": "DELETE /v1/admin/legal/contracts/templates/{id}",
         "tags": [
           "legal"
         ],
@@ -1199,6 +1217,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsTemplatesByIdPreview",
+        "summary": "POST /v1/admin/legal/contracts/templates/{id}/preview",
         "tags": [
           "legal"
         ],
@@ -1297,6 +1317,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsTemplatesByIdRenderPreview",
+        "summary": "POST /v1/admin/legal/contracts/templates/{id}/render-preview",
         "tags": [
           "legal"
         ],
@@ -1378,6 +1400,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsTemplatesByIdVersions",
+        "summary": "GET /v1/admin/legal/contracts/templates/{id}/versions",
         "tags": [
           "legal"
         ],
@@ -1530,6 +1554,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsTemplatesByIdVersions",
+        "summary": "POST /v1/admin/legal/contracts/templates/{id}/versions",
         "tags": [
           "legal"
         ],
@@ -1626,6 +1652,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsTemplateVersionsById",
+        "summary": "GET /v1/admin/legal/contracts/template-versions/{id}",
         "tags": [
           "legal"
         ],
@@ -1774,6 +1802,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsNumberSeries",
+        "summary": "GET /v1/admin/legal/contracts/number-series",
         "tags": [
           "legal"
         ],
@@ -1985,6 +2015,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsNumberSeries",
+        "summary": "POST /v1/admin/legal/contracts/number-series",
         "tags": [
           "legal"
         ],
@@ -2127,6 +2159,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsNumberSeriesById",
+        "summary": "GET /v1/admin/legal/contracts/number-series/{id}",
         "tags": [
           "legal"
         ],
@@ -2356,6 +2390,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalContractsNumberSeriesById",
+        "summary": "PATCH /v1/admin/legal/contracts/number-series/{id}",
         "tags": [
           "legal"
         ],
@@ -2414,6 +2450,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalContractsNumberSeriesById",
+        "summary": "DELETE /v1/admin/legal/contracts/number-series/{id}",
         "tags": [
           "legal"
         ],
@@ -2622,6 +2660,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsBookingsByBookingIdGenerateDocument",
+        "summary": "POST /v1/admin/legal/contracts/bookings/{bookingId}/generate-document",
         "tags": [
           "legal"
         ],
@@ -3121,6 +3161,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContracts",
+        "summary": "GET /v1/admin/legal/contracts",
         "tags": [
           "legal"
         ],
@@ -3748,6 +3790,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContracts",
+        "summary": "POST /v1/admin/legal/contracts",
         "tags": [
           "legal"
         ],
@@ -4077,6 +4121,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsById",
+        "summary": "GET /v1/admin/legal/contracts/{id}",
         "tags": [
           "legal"
         ],
@@ -4714,6 +4760,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalContractsById",
+        "summary": "PATCH /v1/admin/legal/contracts/{id}",
         "tags": [
           "legal"
         ],
@@ -4790,6 +4838,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalContractsById",
+        "summary": "DELETE /v1/admin/legal/contracts/{id}",
         "tags": [
           "legal"
         ],
@@ -5137,6 +5187,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdIssue",
+        "summary": "POST /v1/admin/legal/contracts/{id}/issue",
         "tags": [
           "legal"
         ],
@@ -5502,6 +5554,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdSend",
+        "summary": "POST /v1/admin/legal/contracts/{id}/send",
         "tags": [
           "legal"
         ],
@@ -6213,6 +6267,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdSign",
+        "summary": "POST /v1/admin/legal/contracts/{id}/sign",
         "tags": [
           "legal"
         ],
@@ -6560,6 +6616,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdExecute",
+        "summary": "POST /v1/admin/legal/contracts/{id}/execute",
         "tags": [
           "legal"
         ],
@@ -6907,6 +6965,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdVoid",
+        "summary": "POST /v1/admin/legal/contracts/{id}/void",
         "tags": [
           "legal"
         ],
@@ -7005,6 +7065,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdRender",
+        "summary": "POST /v1/admin/legal/contracts/{id}/render",
         "tags": [
           "legal"
         ],
@@ -7117,6 +7179,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdGenerateDocument",
+        "summary": "POST /v1/admin/legal/contracts/{id}/generate-document",
         "tags": [
           "legal"
         ],
@@ -7229,6 +7293,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdRegenerateDocument",
+        "summary": "POST /v1/admin/legal/contracts/{id}/regenerate-document",
         "tags": [
           "legal"
         ],
@@ -7341,6 +7407,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdRegeneratePdf",
+        "summary": "POST /v1/admin/legal/contracts/{id}/regenerate-pdf",
         "tags": [
           "legal"
         ],
@@ -7526,6 +7594,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsByIdSignatures",
+        "summary": "GET /v1/admin/legal/contracts/{id}/signatures",
         "tags": [
           "legal"
         ],
@@ -7673,6 +7743,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsByIdAttachments",
+        "summary": "GET /v1/admin/legal/contracts/{id}/attachments",
         "tags": [
           "legal"
         ],
@@ -8012,6 +8084,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdAttachments",
+        "summary": "POST /v1/admin/legal/contracts/{id}/attachments",
         "tags": [
           "legal"
         ],
@@ -8222,6 +8296,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdAttachmentsUpload",
+        "summary": "POST /v1/admin/legal/contracts/{id}/attachments/upload",
         "tags": [
           "legal"
         ],
@@ -8432,6 +8508,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalContractsByIdAttachDocument",
+        "summary": "POST /v1/admin/legal/contracts/{id}/attach-document",
         "tags": [
           "legal"
         ],
@@ -8770,6 +8848,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalContractsAttachmentsByAttachmentId",
+        "summary": "PATCH /v1/admin/legal/contracts/attachments/{attachmentId}",
         "tags": [
           "legal"
         ],
@@ -8828,6 +8908,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalContractsAttachmentsByAttachmentId",
+        "summary": "DELETE /v1/admin/legal/contracts/attachments/{attachmentId}",
         "tags": [
           "legal"
         ],
@@ -9038,6 +9120,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalContractsAttachmentsByAttachmentIdUpload",
+        "summary": "PATCH /v1/admin/legal/contracts/attachments/{attachmentId}/upload",
         "tags": [
           "legal"
         ],
@@ -9098,6 +9182,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalContractsAttachmentsByAttachmentIdDownload",
+        "summary": "GET /v1/admin/legal/contracts/attachments/{attachmentId}/download",
         "tags": [
           "legal"
         ],
@@ -9206,6 +9292,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPoliciesByIdVersions",
+        "summary": "GET /v1/admin/legal/policies/{id}/versions",
         "tags": [
           "legal"
         ],
@@ -9385,6 +9473,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPoliciesByIdVersions",
+        "summary": "POST /v1/admin/legal/policies/{id}/versions",
         "tags": [
           "legal"
         ],
@@ -9508,6 +9598,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPoliciesVersionsByVersionId",
+        "summary": "GET /v1/admin/legal/policies/versions/{versionId}",
         "tags": [
           "legal"
         ],
@@ -9684,6 +9776,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalPoliciesVersionsByVersionId",
+        "summary": "PATCH /v1/admin/legal/policies/versions/{versionId}",
         "tags": [
           "legal"
         ],
@@ -9825,6 +9919,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPoliciesVersionsByVersionIdPublish",
+        "summary": "POST /v1/admin/legal/policies/versions/{versionId}/publish",
         "tags": [
           "legal"
         ],
@@ -9948,6 +10044,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPoliciesVersionsByVersionIdRetire",
+        "summary": "POST /v1/admin/legal/policies/versions/{versionId}/retire",
         "tags": [
           "legal"
         ],
@@ -10089,6 +10187,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPoliciesVersionsByVersionIdRules",
+        "summary": "GET /v1/admin/legal/policies/versions/{versionId}/rules",
         "tags": [
           "legal"
         ],
@@ -10356,6 +10456,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPoliciesVersionsByVersionIdRules",
+        "summary": "POST /v1/admin/legal/policies/versions/{versionId}/rules",
         "tags": [
           "legal"
         ],
@@ -10621,6 +10723,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalPoliciesRulesByRuleId",
+        "summary": "PATCH /v1/admin/legal/policies/rules/{ruleId}",
         "tags": [
           "legal"
         ],
@@ -10676,6 +10780,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalPoliciesRulesByRuleId",
+        "summary": "DELETE /v1/admin/legal/policies/rules/{ruleId}",
         "tags": [
           "legal"
         ],
@@ -10896,6 +11002,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPoliciesAssignments",
+        "summary": "GET /v1/admin/legal/policies/assignments",
         "tags": [
           "legal"
         ],
@@ -11110,6 +11218,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPoliciesAssignments",
+        "summary": "POST /v1/admin/legal/policies/assignments",
         "tags": [
           "legal"
         ],
@@ -11350,6 +11460,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalPoliciesAssignmentsById",
+        "summary": "PATCH /v1/admin/legal/policies/assignments/{id}",
         "tags": [
           "legal"
         ],
@@ -11405,6 +11517,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalPoliciesAssignmentsById",
+        "summary": "DELETE /v1/admin/legal/policies/assignments/{id}",
         "tags": [
           "legal"
         ],
@@ -11681,6 +11795,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPoliciesAcceptances",
+        "summary": "GET /v1/admin/legal/policies/acceptances",
         "tags": [
           "legal"
         ],
@@ -12010,6 +12126,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPoliciesAcceptances",
+        "summary": "POST /v1/admin/legal/policies/acceptances",
         "tags": [
           "legal"
         ],
@@ -12444,6 +12562,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPoliciesResolve",
+        "summary": "GET /v1/admin/legal/policies/resolve",
         "tags": [
           "legal"
         ],
@@ -12605,6 +12725,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPolicies",
+        "summary": "GET /v1/admin/legal/policies",
         "tags": [
           "legal"
         ],
@@ -12768,6 +12890,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPolicies",
+        "summary": "POST /v1/admin/legal/policies",
         "tags": [
           "legal"
         ],
@@ -12882,6 +13006,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalPoliciesById",
+        "summary": "GET /v1/admin/legal/policies/{id}",
         "tags": [
           "legal"
         ],
@@ -13067,6 +13193,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalPoliciesById",
+        "summary": "PATCH /v1/admin/legal/policies/{id}",
         "tags": [
           "legal"
         ],
@@ -13140,6 +13268,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalPoliciesById",
+        "summary": "DELETE /v1/admin/legal/policies/{id}",
         "tags": [
           "legal"
         ],
@@ -13265,6 +13395,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalPoliciesByIdEvaluate",
+        "summary": "POST /v1/admin/legal/policies/{id}/evaluate",
         "tags": [
           "legal"
         ],
@@ -13582,6 +13714,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalTerms",
+        "summary": "GET /v1/admin/legal/terms",
         "tags": [
           "legal"
         ],
@@ -13985,6 +14119,8 @@
             }
           }
         },
+        "operationId": "postAdminLegalTerms",
+        "summary": "POST /v1/admin/legal/terms",
         "tags": [
           "legal"
         ],
@@ -14185,6 +14321,8 @@
             }
           }
         },
+        "operationId": "getAdminLegalTermsById",
+        "summary": "GET /v1/admin/legal/terms/{id}",
         "tags": [
           "legal"
         ],
@@ -14612,6 +14750,8 @@
             }
           }
         },
+        "operationId": "patchAdminLegalTermsById",
+        "summary": "PATCH /v1/admin/legal/terms/{id}",
         "tags": [
           "legal"
         ],
@@ -14667,6 +14807,8 @@
             }
           }
         },
+        "operationId": "deleteAdminLegalTermsById",
+        "summary": "DELETE /v1/admin/legal/terms/{id}",
         "tags": [
           "legal"
         ],

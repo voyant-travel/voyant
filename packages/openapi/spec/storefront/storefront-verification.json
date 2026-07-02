@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -331,6 +337,8 @@
             }
           }
         },
+        "operationId": "postPublicStorefrontVerificationEmailStart",
+        "summary": "POST /v1/public/storefront-verification/email/start",
         "tags": [
           "storefront-verification"
         ],
@@ -522,6 +530,8 @@
             }
           }
         },
+        "operationId": "postPublicStorefrontVerificationSmsStart",
+        "summary": "POST /v1/public/storefront-verification/sms/start",
         "tags": [
           "storefront-verification"
         ],
@@ -719,6 +729,8 @@
             }
           }
         },
+        "operationId": "postPublicStorefrontVerificationEmailConfirm",
+        "summary": "POST /v1/public/storefront-verification/email/confirm",
         "tags": [
           "storefront-verification"
         ],
@@ -917,6 +929,8 @@
             }
           }
         },
+        "operationId": "postPublicStorefrontVerificationSmsConfirm",
+        "summary": "POST /v1/public/storefront-verification/sms/confirm",
         "tags": [
           "storefront-verification"
         ],

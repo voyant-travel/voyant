@@ -58,6 +58,10 @@ const OPENAPI_OPTIONS: GenerateOpenApiOptions = {
     description:
       "Generated from the Voyant framework's standard module composition. Do not edit by hand.",
   },
+  // Relative server so Swagger/Scalar "try it out" targets whatever origin the
+  // deployment serves this contract from (voyant#2729). A deployment can
+  // override with a concrete host.
+  servers: [{ url: "/", description: "This deployment (same origin)" }],
 }
 
 export async function buildFrameworkOpenApiDocuments(): Promise<FrameworkOpenApiDocuments> {

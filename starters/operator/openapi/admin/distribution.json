@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -345,6 +351,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionChannels",
+        "summary": "GET /v1/admin/distribution/channels",
         "tags": [
           "distribution"
         ],
@@ -581,6 +589,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionChannels",
+        "summary": "POST /v1/admin/distribution/channels",
         "tags": [
           "distribution"
         ],
@@ -862,6 +872,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionChannelsBatchUpdate",
+        "summary": "POST /v1/admin/distribution/channels/batch-update",
         "tags": [
           "distribution"
         ],
@@ -962,6 +974,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionChannelsBatchDelete",
+        "summary": "POST /v1/admin/distribution/channels/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -1122,6 +1136,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionChannelsById",
+        "summary": "GET /v1/admin/distribution/channels/{id}",
         "tags": [
           "distribution"
         ],
@@ -1382,6 +1398,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionChannelsById",
+        "summary": "PATCH /v1/admin/distribution/channels/{id}",
         "tags": [
           "distribution"
         ],
@@ -1440,6 +1458,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionChannelsById",
+        "summary": "DELETE /v1/admin/distribution/channels/{id}",
         "tags": [
           "distribution"
         ],
@@ -1565,6 +1585,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionChannelsByIdContactPoints",
+        "summary": "GET /v1/admin/distribution/channels/{id}/contact-points",
         "tags": [
           "distribution"
         ],
@@ -1769,6 +1791,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionChannelsByIdContactPoints",
+        "summary": "POST /v1/admin/distribution/channels/{id}/contact-points",
         "tags": [
           "distribution"
         ],
@@ -1981,6 +2005,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionChannelContactPointsByContactPointId",
+        "summary": "PATCH /v1/admin/distribution/channel-contact-points/{contactPointId}",
         "tags": [
           "distribution"
         ],
@@ -2039,6 +2065,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionChannelContactPointsByContactPointId",
+        "summary": "DELETE /v1/admin/distribution/channel-contact-points/{contactPointId}",
         "tags": [
           "distribution"
         ],
@@ -2171,6 +2199,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionChannelsByIdContacts",
+        "summary": "GET /v1/admin/distribution/channels/{id}/contacts",
         "tags": [
           "distribution"
         ],
@@ -2390,6 +2420,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionChannelsByIdContacts",
+        "summary": "POST /v1/admin/distribution/channels/{id}/contacts",
         "tags": [
           "distribution"
         ],
@@ -2618,6 +2650,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionChannelContactsByContactId",
+        "summary": "PATCH /v1/admin/distribution/channel-contacts/{contactId}",
         "tags": [
           "distribution"
         ],
@@ -2676,6 +2710,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionChannelContactsByContactId",
+        "summary": "DELETE /v1/admin/distribution/channel-contacts/{contactId}",
         "tags": [
           "distribution"
         ],
@@ -2888,6 +2924,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionContracts",
+        "summary": "GET /v1/admin/distribution/contracts",
         "tags": [
           "distribution"
         ],
@@ -3121,6 +3159,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionContracts",
+        "summary": "POST /v1/admin/distribution/contracts",
         "tags": [
           "distribution"
         ],
@@ -3399,6 +3439,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionContractsBatchUpdate",
+        "summary": "POST /v1/admin/distribution/contracts/batch-update",
         "tags": [
           "distribution"
         ],
@@ -3499,6 +3541,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionContractsBatchDelete",
+        "summary": "POST /v1/admin/distribution/contracts/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -3668,6 +3712,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionContractsById",
+        "summary": "GET /v1/admin/distribution/contracts/{id}",
         "tags": [
           "distribution"
         ],
@@ -3925,6 +3971,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionContractsById",
+        "summary": "PATCH /v1/admin/distribution/contracts/{id}",
         "tags": [
           "distribution"
         ],
@@ -3983,6 +4031,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionContractsById",
+        "summary": "DELETE /v1/admin/distribution/contracts/{id}",
         "tags": [
           "distribution"
         ],
@@ -4170,6 +4220,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionCommissionRules",
+        "summary": "GET /v1/admin/distribution/commission-rules",
         "tags": [
           "distribution"
         ],
@@ -4384,6 +4436,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionCommissionRules",
+        "summary": "POST /v1/admin/distribution/commission-rules",
         "tags": [
           "distribution"
         ],
@@ -4642,6 +4696,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionCommissionRulesBatchUpdate",
+        "summary": "POST /v1/admin/distribution/commission-rules/batch-update",
         "tags": [
           "distribution"
         ],
@@ -4742,6 +4798,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionCommissionRulesBatchDelete",
+        "summary": "POST /v1/admin/distribution/commission-rules/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -4886,6 +4944,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionCommissionRulesById",
+        "summary": "GET /v1/admin/distribution/commission-rules/{id}",
         "tags": [
           "distribution"
         ],
@@ -5123,6 +5183,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionCommissionRulesById",
+        "summary": "PATCH /v1/admin/distribution/commission-rules/{id}",
         "tags": [
           "distribution"
         ],
@@ -5181,6 +5243,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionCommissionRulesById",
+        "summary": "DELETE /v1/admin/distribution/commission-rules/{id}",
         "tags": [
           "distribution"
         ],
@@ -5378,6 +5442,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionProductMappings",
+        "summary": "GET /v1/admin/distribution/product-mappings",
         "tags": [
           "distribution"
         ],
@@ -5598,6 +5664,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionProductMappings",
+        "summary": "POST /v1/admin/distribution/product-mappings",
         "tags": [
           "distribution"
         ],
@@ -5859,6 +5927,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionProductMappingsBatchUpdate",
+        "summary": "POST /v1/admin/distribution/product-mappings/batch-update",
         "tags": [
           "distribution"
         ],
@@ -5959,6 +6029,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionProductMappingsBatchDelete",
+        "summary": "POST /v1/admin/distribution/product-mappings/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -6113,6 +6185,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionProductMappingsById",
+        "summary": "GET /v1/admin/distribution/product-mappings/{id}",
         "tags": [
           "distribution"
         ],
@@ -6353,6 +6427,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionProductMappingsById",
+        "summary": "PATCH /v1/admin/distribution/product-mappings/{id}",
         "tags": [
           "distribution"
         ],
@@ -6411,6 +6487,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionProductMappingsById",
+        "summary": "DELETE /v1/admin/distribution/product-mappings/{id}",
         "tags": [
           "distribution"
         ],
@@ -6621,6 +6699,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionBookingLinks",
+        "summary": "GET /v1/admin/distribution/booking-links",
         "tags": [
           "distribution"
         ],
@@ -6854,6 +6934,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionBookingLinks",
+        "summary": "POST /v1/admin/distribution/booking-links",
         "tags": [
           "distribution"
         ],
@@ -7114,6 +7196,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionBookingLinksBatchUpdate",
+        "summary": "POST /v1/admin/distribution/booking-links/batch-update",
         "tags": [
           "distribution"
         ],
@@ -7214,6 +7298,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionBookingLinksBatchDelete",
+        "summary": "POST /v1/admin/distribution/booking-links/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -7387,6 +7473,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionBookingLinksById",
+        "summary": "GET /v1/admin/distribution/booking-links/{id}",
         "tags": [
           "distribution"
         ],
@@ -7626,6 +7714,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionBookingLinksById",
+        "summary": "PATCH /v1/admin/distribution/booking-links/{id}",
         "tags": [
           "distribution"
         ],
@@ -7684,6 +7774,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionBookingLinksById",
+        "summary": "DELETE /v1/admin/distribution/booking-links/{id}",
         "tags": [
           "distribution"
         ],
@@ -7844,6 +7936,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionWebhookEvents",
+        "summary": "GET /v1/admin/distribution/webhook-events",
         "tags": [
           "distribution"
         ],
@@ -8013,6 +8107,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionWebhookEvents",
+        "summary": "POST /v1/admin/distribution/webhook-events",
         "tags": [
           "distribution"
         ],
@@ -8226,6 +8322,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionWebhookEventsBatchUpdate",
+        "summary": "POST /v1/admin/distribution/webhook-events/batch-update",
         "tags": [
           "distribution"
         ],
@@ -8326,6 +8424,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionWebhookEventsBatchDelete",
+        "summary": "POST /v1/admin/distribution/webhook-events/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -8443,6 +8543,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionWebhookEventsById",
+        "summary": "GET /v1/admin/distribution/webhook-events/{id}",
         "tags": [
           "distribution"
         ],
@@ -8635,6 +8737,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionWebhookEventsById",
+        "summary": "PATCH /v1/admin/distribution/webhook-events/{id}",
         "tags": [
           "distribution"
         ],
@@ -8693,6 +8797,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionWebhookEventsById",
+        "summary": "DELETE /v1/admin/distribution/webhook-events/{id}",
         "tags": [
           "distribution"
         ],
@@ -8901,6 +9007,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryAllotments",
+        "summary": "GET /v1/admin/distribution/inventory-allotments",
         "tags": [
           "distribution"
         ],
@@ -9108,6 +9216,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryAllotments",
+        "summary": "POST /v1/admin/distribution/inventory-allotments",
         "tags": [
           "distribution"
         ],
@@ -9360,6 +9470,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryAllotmentsBatchUpdate",
+        "summary": "POST /v1/admin/distribution/inventory-allotments/batch-update",
         "tags": [
           "distribution"
         ],
@@ -9460,6 +9572,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryAllotmentsBatchDelete",
+        "summary": "POST /v1/admin/distribution/inventory-allotments/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -9601,6 +9715,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryAllotmentsById",
+        "summary": "GET /v1/admin/distribution/inventory-allotments/{id}",
         "tags": [
           "distribution"
         ],
@@ -9832,6 +9948,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionInventoryAllotmentsById",
+        "summary": "PATCH /v1/admin/distribution/inventory-allotments/{id}",
         "tags": [
           "distribution"
         ],
@@ -9890,6 +10008,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionInventoryAllotmentsById",
+        "summary": "DELETE /v1/admin/distribution/inventory-allotments/{id}",
         "tags": [
           "distribution"
         ],
@@ -10080,6 +10200,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryAllotmentTargets",
+        "summary": "GET /v1/admin/distribution/inventory-allotment-targets",
         "tags": [
           "distribution"
         ],
@@ -10267,6 +10389,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryAllotmentTargets",
+        "summary": "POST /v1/admin/distribution/inventory-allotment-targets",
         "tags": [
           "distribution"
         ],
@@ -10500,6 +10624,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryAllotmentTargetsBatchUpdate",
+        "summary": "POST /v1/admin/distribution/inventory-allotment-targets/batch-update",
         "tags": [
           "distribution"
         ],
@@ -10600,6 +10726,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryAllotmentTargetsBatchDelete",
+        "summary": "POST /v1/admin/distribution/inventory-allotment-targets/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -10730,6 +10858,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryAllotmentTargetsById",
+        "summary": "GET /v1/admin/distribution/inventory-allotment-targets/{id}",
         "tags": [
           "distribution"
         ],
@@ -10942,6 +11072,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionInventoryAllotmentTargetsById",
+        "summary": "PATCH /v1/admin/distribution/inventory-allotment-targets/{id}",
         "tags": [
           "distribution"
         ],
@@ -11000,6 +11132,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionInventoryAllotmentTargetsById",
+        "summary": "DELETE /v1/admin/distribution/inventory-allotment-targets/{id}",
         "tags": [
           "distribution"
         ],
@@ -11148,6 +11282,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryReleaseRules",
+        "summary": "GET /v1/admin/distribution/inventory-release-rules",
         "tags": [
           "distribution"
         ],
@@ -11306,6 +11442,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryReleaseRules",
+        "summary": "POST /v1/admin/distribution/inventory-release-rules",
         "tags": [
           "distribution"
         ],
@@ -11510,6 +11648,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryReleaseRulesBatchUpdate",
+        "summary": "POST /v1/admin/distribution/inventory-release-rules/batch-update",
         "tags": [
           "distribution"
         ],
@@ -11610,6 +11750,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryReleaseRulesBatchDelete",
+        "summary": "POST /v1/admin/distribution/inventory-release-rules/batch-delete",
         "tags": [
           "distribution"
         ],
@@ -11725,6 +11867,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryReleaseRulesById",
+        "summary": "GET /v1/admin/distribution/inventory-release-rules/{id}",
         "tags": [
           "distribution"
         ],
@@ -11908,6 +12052,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionInventoryReleaseRulesById",
+        "summary": "PATCH /v1/admin/distribution/inventory-release-rules/{id}",
         "tags": [
           "distribution"
         ],
@@ -11966,6 +12112,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionInventoryReleaseRulesById",
+        "summary": "DELETE /v1/admin/distribution/inventory-release-rules/{id}",
         "tags": [
           "distribution"
         ],
@@ -12169,6 +12317,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementRuns",
+        "summary": "GET /v1/admin/distribution/settlement-runs",
         "tags": [
           "distribution"
         ],
@@ -12411,6 +12561,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionSettlementRuns",
+        "summary": "POST /v1/admin/distribution/settlement-runs",
         "tags": [
           "distribution"
         ],
@@ -12570,6 +12722,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementRunsById",
+        "summary": "GET /v1/admin/distribution/settlement-runs/{id}",
         "tags": [
           "distribution"
         ],
@@ -12837,6 +12991,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionSettlementRunsById",
+        "summary": "PATCH /v1/admin/distribution/settlement-runs/{id}",
         "tags": [
           "distribution"
         ],
@@ -12895,6 +13051,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionSettlementRunsById",
+        "summary": "DELETE /v1/admin/distribution/settlement-runs/{id}",
         "tags": [
           "distribution"
         ],
@@ -13096,6 +13254,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementItems",
+        "summary": "GET /v1/admin/distribution/settlement-items",
         "tags": [
           "distribution"
         ],
@@ -13318,6 +13478,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionSettlementItems",
+        "summary": "POST /v1/admin/distribution/settlement-items",
         "tags": [
           "distribution"
         ],
@@ -13467,6 +13629,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementItemsById",
+        "summary": "GET /v1/admin/distribution/settlement-items/{id}",
         "tags": [
           "distribution"
         ],
@@ -13714,6 +13878,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionSettlementItemsById",
+        "summary": "PATCH /v1/admin/distribution/settlement-items/{id}",
         "tags": [
           "distribution"
         ],
@@ -13772,6 +13938,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionSettlementItemsById",
+        "summary": "DELETE /v1/admin/distribution/settlement-items/{id}",
         "tags": [
           "distribution"
         ],
@@ -13959,6 +14127,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReconciliationRuns",
+        "summary": "GET /v1/admin/distribution/reconciliation-runs",
         "tags": [
           "distribution"
         ],
@@ -14172,6 +14342,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionReconciliationRuns",
+        "summary": "POST /v1/admin/distribution/reconciliation-runs",
         "tags": [
           "distribution"
         ],
@@ -14316,6 +14488,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReconciliationRunsById",
+        "summary": "GET /v1/admin/distribution/reconciliation-runs/{id}",
         "tags": [
           "distribution"
         ],
@@ -14554,6 +14728,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionReconciliationRunsById",
+        "summary": "PATCH /v1/admin/distribution/reconciliation-runs/{id}",
         "tags": [
           "distribution"
         ],
@@ -14612,6 +14788,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionReconciliationRunsById",
+        "summary": "DELETE /v1/admin/distribution/reconciliation-runs/{id}",
         "tags": [
           "distribution"
         ],
@@ -14820,6 +14998,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReconciliationItems",
+        "summary": "GET /v1/admin/distribution/reconciliation-items",
         "tags": [
           "distribution"
         ],
@@ -15029,6 +15209,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionReconciliationItems",
+        "summary": "POST /v1/admin/distribution/reconciliation-items",
         "tags": [
           "distribution"
         ],
@@ -15171,6 +15353,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReconciliationItemsById",
+        "summary": "GET /v1/admin/distribution/reconciliation-items/{id}",
         "tags": [
           "distribution"
         ],
@@ -15405,6 +15589,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionReconciliationItemsById",
+        "summary": "PATCH /v1/admin/distribution/reconciliation-items/{id}",
         "tags": [
           "distribution"
         ],
@@ -15463,6 +15649,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionReconciliationItemsById",
+        "summary": "DELETE /v1/admin/distribution/reconciliation-items/{id}",
         "tags": [
           "distribution"
         ],
@@ -15669,6 +15857,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryReleaseExecutions",
+        "summary": "GET /v1/admin/distribution/inventory-release-executions",
         "tags": [
           "distribution"
         ],
@@ -15887,6 +16077,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionInventoryReleaseExecutions",
+        "summary": "POST /v1/admin/distribution/inventory-release-executions",
         "tags": [
           "distribution"
         ],
@@ -16034,6 +16226,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionInventoryReleaseExecutionsById",
+        "summary": "GET /v1/admin/distribution/inventory-release-executions/{id}",
         "tags": [
           "distribution"
         ],
@@ -16277,6 +16471,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionInventoryReleaseExecutionsById",
+        "summary": "PATCH /v1/admin/distribution/inventory-release-executions/{id}",
         "tags": [
           "distribution"
         ],
@@ -16335,6 +16531,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionInventoryReleaseExecutionsById",
+        "summary": "DELETE /v1/admin/distribution/inventory-release-executions/{id}",
         "tags": [
           "distribution"
         ],
@@ -16534,6 +16732,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementPolicies",
+        "summary": "GET /v1/admin/distribution/settlement-policies",
         "tags": [
           "distribution"
         ],
@@ -16743,6 +16943,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionSettlementPolicies",
+        "summary": "POST /v1/admin/distribution/settlement-policies",
         "tags": [
           "distribution"
         ],
@@ -16885,6 +17087,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementPoliciesById",
+        "summary": "GET /v1/admin/distribution/settlement-policies/{id}",
         "tags": [
           "distribution"
         ],
@@ -17119,6 +17323,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionSettlementPoliciesById",
+        "summary": "PATCH /v1/admin/distribution/settlement-policies/{id}",
         "tags": [
           "distribution"
         ],
@@ -17177,6 +17383,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionSettlementPoliciesById",
+        "summary": "DELETE /v1/admin/distribution/settlement-policies/{id}",
         "tags": [
           "distribution"
         ],
@@ -17370,6 +17578,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReconciliationPolicies",
+        "summary": "GET /v1/admin/distribution/reconciliation-policies",
         "tags": [
           "distribution"
         ],
@@ -17568,6 +17778,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionReconciliationPolicies",
+        "summary": "POST /v1/admin/distribution/reconciliation-policies",
         "tags": [
           "distribution"
         ],
@@ -17704,6 +17916,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReconciliationPoliciesById",
+        "summary": "GET /v1/admin/distribution/reconciliation-policies/{id}",
         "tags": [
           "distribution"
         ],
@@ -17927,6 +18141,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionReconciliationPoliciesById",
+        "summary": "PATCH /v1/admin/distribution/reconciliation-policies/{id}",
         "tags": [
           "distribution"
         ],
@@ -17985,6 +18201,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionReconciliationPoliciesById",
+        "summary": "DELETE /v1/admin/distribution/reconciliation-policies/{id}",
         "tags": [
           "distribution"
         ],
@@ -18152,6 +18370,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReleaseSchedules",
+        "summary": "GET /v1/admin/distribution/release-schedules",
         "tags": [
           "distribution"
         ],
@@ -18317,6 +18537,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionReleaseSchedules",
+        "summary": "POST /v1/admin/distribution/release-schedules",
         "tags": [
           "distribution"
         ],
@@ -18436,6 +18658,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionReleaseSchedulesById",
+        "summary": "GET /v1/admin/distribution/release-schedules/{id}",
         "tags": [
           "distribution"
         ],
@@ -18626,6 +18850,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionReleaseSchedulesById",
+        "summary": "PATCH /v1/admin/distribution/release-schedules/{id}",
         "tags": [
           "distribution"
         ],
@@ -18684,6 +18910,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionReleaseSchedulesById",
+        "summary": "DELETE /v1/admin/distribution/release-schedules/{id}",
         "tags": [
           "distribution"
         ],
@@ -18875,6 +19103,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionRemittanceExceptions",
+        "summary": "GET /v1/admin/distribution/remittance-exceptions",
         "tags": [
           "distribution"
         ],
@@ -19084,6 +19314,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionRemittanceExceptions",
+        "summary": "POST /v1/admin/distribution/remittance-exceptions",
         "tags": [
           "distribution"
         ],
@@ -19224,6 +19456,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionRemittanceExceptionsById",
+        "summary": "GET /v1/admin/distribution/remittance-exceptions/{id}",
         "tags": [
           "distribution"
         ],
@@ -19457,6 +19691,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionRemittanceExceptionsById",
+        "summary": "PATCH /v1/admin/distribution/remittance-exceptions/{id}",
         "tags": [
           "distribution"
         ],
@@ -19515,6 +19751,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionRemittanceExceptionsById",
+        "summary": "DELETE /v1/admin/distribution/remittance-exceptions/{id}",
         "tags": [
           "distribution"
         ],
@@ -19664,6 +19902,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementApprovals",
+        "summary": "GET /v1/admin/distribution/settlement-approvals",
         "tags": [
           "distribution"
         ],
@@ -19820,6 +20060,8 @@
             }
           }
         },
+        "operationId": "postAdminDistributionSettlementApprovals",
+        "summary": "POST /v1/admin/distribution/settlement-approvals",
         "tags": [
           "distribution"
         ],
@@ -19935,6 +20177,8 @@
             }
           }
         },
+        "operationId": "getAdminDistributionSettlementApprovalsById",
+        "summary": "GET /v1/admin/distribution/settlement-approvals/{id}",
         "tags": [
           "distribution"
         ],
@@ -20116,6 +20360,8 @@
             }
           }
         },
+        "operationId": "patchAdminDistributionSettlementApprovalsById",
+        "summary": "PATCH /v1/admin/distribution/settlement-approvals/{id}",
         "tags": [
           "distribution"
         ],
@@ -20174,6 +20420,8 @@
             }
           }
         },
+        "operationId": "deleteAdminDistributionSettlementApprovalsById",
+        "summary": "DELETE /v1/admin/distribution/settlement-approvals/{id}",
         "tags": [
           "distribution"
         ],

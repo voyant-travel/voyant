@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -306,6 +312,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsByProductIdOffers",
+        "summary": "GET /v1/public/products/{productId}/offers",
         "tags": [
           "storefront"
         ],
@@ -486,6 +494,8 @@
             }
           }
         },
+        "operationId": "getPublicOffersBySlug",
+        "summary": "GET /v1/public/offers/{slug}",
         "tags": [
           "storefront"
         ],
@@ -938,6 +948,8 @@
             }
           }
         },
+        "operationId": "postPublicOffersBySlugApply",
+        "summary": "POST /v1/public/offers/{slug}/apply",
         "tags": [
           "storefront"
         ],
@@ -1386,6 +1398,8 @@
             }
           }
         },
+        "operationId": "postPublicOffersRedeem",
+        "summary": "POST /v1/public/offers/redeem",
         "tags": [
           "storefront"
         ],
@@ -1682,6 +1696,8 @@
             }
           }
         },
+        "operationId": "postPublicLeads",
+        "summary": "POST /v1/public/leads",
         "tags": [
           "storefront"
         ],
@@ -1943,6 +1959,8 @@
             }
           }
         },
+        "operationId": "postPublicNewsletterSubscribe",
+        "summary": "POST /v1/public/newsletter/subscribe",
         "tags": [
           "storefront"
         ],
@@ -2571,6 +2589,8 @@
             }
           }
         },
+        "operationId": "getPublicSettings",
+        "summary": "GET /v1/public/settings",
         "tags": [
           "storefront"
         ],
@@ -2961,6 +2981,8 @@
             }
           }
         },
+        "operationId": "getPublicDeparturesByDepartureId",
+        "summary": "GET /v1/public/departures/{departureId}",
         "tags": [
           "storefront"
         ],
@@ -3406,6 +3428,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsByProductIdDepartures",
+        "summary": "GET /v1/public/products/{productId}/departures",
         "tags": [
           "storefront"
         ],
@@ -3689,6 +3713,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsByProductIdAvailability",
+        "summary": "GET /v1/public/products/{productId}/availability",
         "tags": [
           "storefront"
         ],
@@ -3834,6 +3860,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsByProductIdDeparturesByDepartureIdItinerary",
+        "summary": "GET /v1/public/products/{productId}/departures/{departureId}/itinerary",
         "tags": [
           "storefront"
         ],
@@ -4115,6 +4143,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsByProductIdExtensions",
+        "summary": "GET /v1/public/products/{productId}/extensions",
         "tags": [
           "storefront"
         ],

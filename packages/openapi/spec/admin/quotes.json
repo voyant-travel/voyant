@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -263,6 +269,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesPipelines",
+        "summary": "GET /v1/admin/quotes/pipelines",
         "tags": [
           "quotes"
         ],
@@ -383,6 +391,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesPipelines",
+        "summary": "POST /v1/admin/quotes/pipelines",
         "tags": [
           "quotes"
         ],
@@ -478,6 +488,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesPipelinesById",
+        "summary": "GET /v1/admin/quotes/pipelines/{id}",
         "tags": [
           "quotes"
         ],
@@ -623,6 +635,8 @@
             }
           }
         },
+        "operationId": "patchAdminQuotesPipelinesById",
+        "summary": "PATCH /v1/admin/quotes/pipelines/{id}",
         "tags": [
           "quotes"
         ],
@@ -699,6 +713,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesPipelinesById",
+        "summary": "DELETE /v1/admin/quotes/pipelines/{id}",
         "tags": [
           "quotes"
         ],
@@ -824,6 +840,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesStages",
+        "summary": "GET /v1/admin/quotes/stages",
         "tags": [
           "quotes"
         ],
@@ -963,6 +981,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesStages",
+        "summary": "POST /v1/admin/quotes/stages",
         "tags": [
           "quotes"
         ],
@@ -1067,6 +1087,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesStagesById",
+        "summary": "GET /v1/admin/quotes/stages/{id}",
         "tags": [
           "quotes"
         ],
@@ -1230,6 +1252,8 @@
             }
           }
         },
+        "operationId": "patchAdminQuotesStagesById",
+        "summary": "PATCH /v1/admin/quotes/stages/{id}",
         "tags": [
           "quotes"
         ],
@@ -1288,6 +1312,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesStagesById",
+        "summary": "DELETE /v1/admin/quotes/stages/{id}",
         "tags": [
           "quotes"
         ],
@@ -1579,6 +1605,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuotes",
+        "summary": "GET /v1/admin/quotes/quotes",
         "tags": [
           "quotes"
         ],
@@ -1901,6 +1929,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuotes",
+        "summary": "POST /v1/admin/quotes/quotes",
         "tags": [
           "quotes"
         ],
@@ -2117,6 +2147,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuotesById",
+        "summary": "GET /v1/admin/quotes/quotes/{id}",
         "tags": [
           "quotes"
         ],
@@ -2462,6 +2494,8 @@
             }
           }
         },
+        "operationId": "patchAdminQuotesQuotesById",
+        "summary": "PATCH /v1/admin/quotes/quotes/{id}",
         "tags": [
           "quotes"
         ],
@@ -2520,6 +2554,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesQuotesById",
+        "summary": "DELETE /v1/admin/quotes/quotes/{id}",
         "tags": [
           "quotes"
         ],
@@ -2597,6 +2633,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuotesByIdParticipants",
+        "summary": "GET /v1/admin/quotes/quotes/{id}/participants",
         "tags": [
           "quotes"
         ],
@@ -2720,6 +2758,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuotesByIdParticipants",
+        "summary": "POST /v1/admin/quotes/quotes/{id}/participants",
         "tags": [
           "quotes"
         ],
@@ -2780,6 +2820,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesQuoteParticipantsById",
+        "summary": "DELETE /v1/admin/quotes/quote-participants/{id}",
         "tags": [
           "quotes"
         ],
@@ -2899,6 +2941,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuotesByIdProducts",
+        "summary": "GET /v1/admin/quotes/quotes/{id}/products",
         "tags": [
           "quotes"
         ],
@@ -3097,6 +3141,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuotesByIdProducts",
+        "summary": "POST /v1/admin/quotes/quotes/{id}/products",
         "tags": [
           "quotes"
         ],
@@ -3312,6 +3358,8 @@
             }
           }
         },
+        "operationId": "patchAdminQuotesQuoteProductsById",
+        "summary": "PATCH /v1/admin/quotes/quote-products/{id}",
         "tags": [
           "quotes"
         ],
@@ -3370,6 +3418,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesQuoteProductsById",
+        "summary": "DELETE /v1/admin/quotes/quote-products/{id}",
         "tags": [
           "quotes"
         ],
@@ -3476,6 +3526,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuotesByIdMedia",
+        "summary": "GET /v1/admin/quotes/quotes/{id}/media",
         "tags": [
           "quotes"
         ],
@@ -3655,6 +3707,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuotesByIdMedia",
+        "summary": "POST /v1/admin/quotes/quotes/{id}/media",
         "tags": [
           "quotes"
         ],
@@ -3715,6 +3769,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesQuoteMediaById",
+        "summary": "DELETE /v1/admin/quotes/quote-media/{id}",
         "tags": [
           "quotes"
         ],
@@ -3920,6 +3976,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuoteVersions",
+        "summary": "GET /v1/admin/quotes/quote-versions",
         "tags": [
           "quotes"
         ],
@@ -4219,6 +4277,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuotesByIdVersions",
+        "summary": "POST /v1/admin/quotes/quotes/{id}/versions",
         "tags": [
           "quotes"
         ],
@@ -4427,6 +4487,8 @@
             }
           }
         },
+        "operationId": "patchAdminQuotesQuoteVersionsByIdValidity",
+        "summary": "PATCH /v1/admin/quotes/quote-versions/{id}/validity",
         "tags": [
           "quotes"
         ],
@@ -4613,6 +4675,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuotesByIdVersionsSnapshot",
+        "summary": "POST /v1/admin/quotes/quotes/{id}/versions/snapshot",
         "tags": [
           "quotes"
         ],
@@ -4757,6 +4821,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuoteVersionsExpire",
+        "summary": "POST /v1/admin/quotes/quote-versions/expire",
         "tags": [
           "quotes"
         ],
@@ -4925,6 +4991,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuoteVersionsById",
+        "summary": "GET /v1/admin/quotes/quote-versions/{id}",
         "tags": [
           "quotes"
         ],
@@ -5218,6 +5286,8 @@
             }
           }
         },
+        "operationId": "patchAdminQuotesQuoteVersionsById",
+        "summary": "PATCH /v1/admin/quotes/quote-versions/{id}",
         "tags": [
           "quotes"
         ],
@@ -5294,6 +5364,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesQuoteVersionsById",
+        "summary": "DELETE /v1/admin/quotes/quote-versions/{id}",
         "tags": [
           "quotes"
         ],
@@ -5655,6 +5727,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuoteVersionsByIdTripSnapshot",
+        "summary": "POST /v1/admin/quotes/quote-versions/{id}/trip-snapshot",
         "tags": [
           "quotes"
         ],
@@ -5842,6 +5916,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuoteVersionsByIdSend",
+        "summary": "POST /v1/admin/quotes/quote-versions/{id}/send",
         "tags": [
           "quotes"
         ],
@@ -6010,6 +6086,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuoteVersionsByIdView",
+        "summary": "POST /v1/admin/quotes/quote-versions/{id}/view",
         "tags": [
           "quotes"
         ],
@@ -6486,6 +6564,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuoteVersionsByIdAccept",
+        "summary": "POST /v1/admin/quotes/quote-versions/{id}/accept",
         "tags": [
           "quotes"
         ],
@@ -6673,6 +6753,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuoteVersionsByIdDecline",
+        "summary": "POST /v1/admin/quotes/quote-versions/{id}/decline",
         "tags": [
           "quotes"
         ],
@@ -6769,6 +6851,8 @@
             }
           }
         },
+        "operationId": "getAdminQuotesQuoteVersionsByIdLines",
+        "summary": "GET /v1/admin/quotes/quote-versions/{id}/lines",
         "tags": [
           "quotes"
         ],
@@ -6963,6 +7047,8 @@
             }
           }
         },
+        "operationId": "postAdminQuotesQuoteVersionsByIdLines",
+        "summary": "POST /v1/admin/quotes/quote-versions/{id}/lines",
         "tags": [
           "quotes"
         ],
@@ -7155,6 +7241,8 @@
             }
           }
         },
+        "operationId": "patchAdminQuotesQuoteVersionLinesById",
+        "summary": "PATCH /v1/admin/quotes/quote-version-lines/{id}",
         "tags": [
           "quotes"
         ],
@@ -7231,6 +7319,8 @@
             }
           }
         },
+        "operationId": "deleteAdminQuotesQuoteVersionLinesById",
+        "summary": "DELETE /v1/admin/quotes/quote-version-lines/{id}",
         "tags": [
           "quotes"
         ],

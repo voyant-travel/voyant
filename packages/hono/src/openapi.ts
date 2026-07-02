@@ -382,14 +382,55 @@ export async function splitDocumentByModule(
 
 const HTTP_METHODS = ["get", "put", "post", "delete", "options", "head", "patch", "trace"] as const
 
+/** PascalCase a path segment, splitting on non-alphanumerics (kebab, etc.). */
+function pascalCase(segment: string): string {
+  return segment
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join("")
+}
+
 /**
- * Stamp every operation with its module metadata (voyant#2733 / voyant#2729):
+ * Stable camelCase operationId derived from method + path (voyant#2729) — gives
+ * client generators readable, deterministic method names instead of guessing.
+ * Path params render as `ByX`, the `v1` prefix is dropped:
+ * `GET /v1/admin/bookings/{id}` → `getAdminBookingsById`. Method + path is unique
+ * per OpenAPI, so the derived id is too (a numeric suffix guards edge cases).
+ */
+function deriveOperationId(method: string, path: string): string {
+  const parts = path
+    .split("/")
+    .filter(Boolean)
+    .filter((segment) => segment !== "v1")
+    .map((segment) => {
+      const param = /^\{(.+)\}$/.exec(segment)
+      return param?.[1] ? `By${pascalCase(param[1])}` : pascalCase(segment)
+    })
+  return `${method}${parts.join("")}`
+}
+
+/**
+ * A readable, always-correct operation summary (voyant#2729): the method + path
+ * signature. Deliberately mechanical rather than guessed prose — a hand-authored
+ * per-route `summary` overrides it (forward-only).
+ */
+function deriveSummary(method: string, path: string): string {
+  return `${method.toUpperCase()} ${path}`
+}
+
+/**
+ * Stamp every operation with the metadata standard OpenAPI tooling expects
+ * (voyant#2733 / voyant#2729). All fields are non-destructive — a value a route
+ * already declares is never overwritten:
+ *   - `operationId` — stable camelCase id from method + path, for readable
+ *     generated client method names.
+ *   - `summary` — the method + path signature, so viewers/linters have a title
+ *     for every operation.
  *   - `tags: [module]` — so Swagger/Scalar group the sidebar by module (they
- *     key grouping off `tags` and ignore `x-*`); left untouched when the route
- *     already declares tags.
+ *     key grouping off `tags` and ignore `x-*`).
  *   - `x-voyant-module` / `x-voyant-surface` — machine-readable owner + surface
- *     for custom tooling (a docs UI, client generators) that shouldn't re-derive
- *     them from path prefixes.
+ *     for custom tooling that shouldn't re-derive them from path prefixes.
  *
  * The module is the authoritative owner from the manifest, so `publicPath`
  * overrides are labelled with their real owning module rather than their mount
@@ -402,6 +443,9 @@ export function stampModuleMetadata(
   owner: ReadonlyMap<string, string>,
 ): OpenApiDocument {
   const paths: Record<string, unknown> = {}
+  // operationId must be unique across the document; track what we've assigned
+  // (including route-declared ids) so a derived id never collides.
+  const usedOperationIds = new Set<string>()
   for (const [path, item] of Object.entries(doc.paths ?? {})) {
     if (!item || typeof item !== "object") {
       paths[path] = item
@@ -412,19 +456,34 @@ export function stampModuleMetadata(
     const nextItem: Record<string, unknown> = { ...(item as Record<string, unknown>) }
     for (const method of HTTP_METHODS) {
       const op = nextItem[method]
-      if (op && typeof op === "object") {
-        const operation = op as Record<string, unknown>
-        // Group by module in Swagger/Scalar, which key their sidebar off `tags`
-        // (and ignore `x-*` extensions). Without this a whole-surface document
-        // collapses under one "default" group — the exact pain in voyant#2733.
-        // Never clobber a tag a route already declared.
-        const hasTags = Array.isArray(operation.tags) && operation.tags.length > 0
-        nextItem[method] = {
-          ...operation,
-          ...(hasTags ? {} : { tags: [moduleName] }),
-          "x-voyant-module": moduleName,
-          ...(surface ? { "x-voyant-surface": surface } : {}),
+      if (!op || typeof op !== "object") continue
+      const operation = op as Record<string, unknown>
+
+      const declaredId =
+        typeof operation.operationId === "string" && operation.operationId.length > 0
+          ? operation.operationId
+          : null
+      let operationId = declaredId ?? deriveOperationId(method, path)
+      if (!declaredId) {
+        let suffix = 2
+        while (usedOperationIds.has(operationId)) {
+          operationId = `${deriveOperationId(method, path)}_${suffix++}`
         }
+      }
+      usedOperationIds.add(operationId)
+
+      const hasSummary = typeof operation.summary === "string" && operation.summary.length > 0
+      // Swagger/Scalar group by `tags` (and ignore `x-*`) — without one a
+      // whole-surface document collapses under a single "default" group (#2733).
+      const hasTags = Array.isArray(operation.tags) && operation.tags.length > 0
+
+      nextItem[method] = {
+        ...operation,
+        operationId,
+        ...(hasSummary ? {} : { summary: deriveSummary(method, path) }),
+        ...(hasTags ? {} : { tags: [moduleName] }),
+        "x-voyant-module": moduleName,
+        ...(surface ? { "x-voyant-surface": surface } : {}),
       }
     }
     paths[path] = nextItem

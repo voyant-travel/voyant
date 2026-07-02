@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -305,6 +311,8 @@
             }
           }
         },
+        "operationId": "getPublicLegalContractsTemplatesDefault",
+        "summary": "GET /v1/public/legal/contracts/templates/default",
         "tags": [
           "legal"
         ],
@@ -400,6 +408,8 @@
             }
           }
         },
+        "operationId": "postPublicLegalContractsTemplatesByIdPreview",
+        "summary": "POST /v1/public/legal/contracts/templates/{id}/preview",
         "tags": [
           "legal"
         ],
@@ -495,6 +505,8 @@
             }
           }
         },
+        "operationId": "postPublicLegalContractsTemplatesByIdRenderPreview",
+        "summary": "POST /v1/public/legal/contracts/templates/{id}/render-preview",
         "tags": [
           "legal"
         ],
@@ -590,6 +602,8 @@
             }
           }
         },
+        "operationId": "postPublicLegalContractsTemplatesBySlugBySlugPreview",
+        "summary": "POST /v1/public/legal/contracts/templates/by-slug/{slug}/preview",
         "tags": [
           "legal"
         ],
@@ -685,6 +699,8 @@
             }
           }
         },
+        "operationId": "postPublicLegalContractsTemplatesBySlugBySlugRenderPreview",
+        "summary": "POST /v1/public/legal/contracts/templates/by-slug/{slug}/render-preview",
         "tags": [
           "legal"
         ],
@@ -862,6 +878,8 @@
             }
           }
         },
+        "operationId": "getPublicLegalContractsById",
+        "summary": "GET /v1/public/legal/contracts/{id}",
         "tags": [
           "legal"
         ],
@@ -1075,6 +1093,8 @@
             }
           }
         },
+        "operationId": "postPublicLegalContractsByIdSign",
+        "summary": "POST /v1/public/legal/contracts/{id}/sign",
         "tags": [
           "legal"
         ],
@@ -1267,6 +1287,8 @@
             }
           }
         },
+        "operationId": "getPublicLegalPoliciesBySlug",
+        "summary": "GET /v1/public/legal/policies/{slug}",
         "tags": [
           "legal"
         ],
@@ -1608,6 +1630,8 @@
             }
           }
         },
+        "operationId": "postPublicLegalPoliciesByIdAccept",
+        "summary": "POST /v1/public/legal/policies/{id}/accept",
         "tags": [
           "legal"
         ],
@@ -1925,6 +1949,8 @@
             }
           }
         },
+        "operationId": "getPublicLegalTerms",
+        "summary": "GET /v1/public/legal/terms",
         "tags": [
           "legal"
         ],
@@ -2125,6 +2151,8 @@
             }
           }
         },
+        "operationId": "getPublicLegalTermsById",
+        "summary": "GET /v1/public/legal/terms/{id}",
         "tags": [
           "legal"
         ],

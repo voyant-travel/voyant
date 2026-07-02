@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -1559,6 +1565,8 @@
             }
           }
         },
+        "operationId": "postPublicCatalogQuote",
+        "summary": "POST /v1/public/catalog/quote",
         "tags": [
           "catalog-booking"
         ],
@@ -1939,6 +1947,8 @@
             }
           }
         },
+        "operationId": "postPublicCatalogBook",
+        "summary": "POST /v1/public/catalog/book",
         "tags": [
           "catalog-booking"
         ],
@@ -2242,6 +2252,8 @@
             }
           }
         },
+        "operationId": "putPublicCatalogDraftsById",
+        "summary": "PUT /v1/public/catalog/drafts/{id}",
         "tags": [
           "catalog-booking"
         ],
@@ -2389,6 +2401,8 @@
             }
           }
         },
+        "operationId": "getPublicCatalogDraftsById",
+        "summary": "GET /v1/public/catalog/drafts/{id}",
         "tags": [
           "catalog-booking"
         ],
@@ -2411,6 +2425,8 @@
             "description": "Draft deleted (idempotent)"
           }
         },
+        "operationId": "deletePublicCatalogDraftsById",
+        "summary": "DELETE /v1/public/catalog/drafts/{id}",
         "tags": [
           "catalog-booking"
         ],
@@ -2606,6 +2622,8 @@
             }
           }
         },
+        "operationId": "postPublicCatalogHoldsPlace",
+        "summary": "POST /v1/public/catalog/holds/place",
         "tags": [
           "catalog-booking"
         ],
@@ -2744,6 +2762,8 @@
             }
           }
         },
+        "operationId": "postPublicCatalogHoldsRelease",
+        "summary": "POST /v1/public/catalog/holds/release",
         "tags": [
           "catalog-booking"
         ],
@@ -2882,6 +2902,8 @@
             }
           }
         },
+        "operationId": "getPublicCatalogSlots",
+        "summary": "GET /v1/public/catalog/slots",
         "tags": [
           "catalog-booking"
         ],

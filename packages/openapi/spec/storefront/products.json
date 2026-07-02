@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -229,6 +235,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsTags",
+        "summary": "GET /v1/public/products/tags",
         "tags": [
           "products"
         ],
@@ -347,6 +355,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsCategories",
+        "summary": "GET /v1/public/products/categories",
         "tags": [
           "products"
         ],
@@ -559,6 +569,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsDestinations",
+        "summary": "GET /v1/public/products/destinations",
         "tags": [
           "products"
         ],
@@ -1436,6 +1448,8 @@
             }
           }
         },
+        "operationId": "getPublicProducts",
+        "summary": "GET /v1/public/products",
         "tags": [
           "products"
         ],
@@ -2122,6 +2136,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsSlugBySlug",
+        "summary": "GET /v1/public/products/slug/{slug}",
         "tags": [
           "products"
         ],
@@ -2808,6 +2824,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsById",
+        "summary": "GET /v1/public/products/{id}",
         "tags": [
           "products"
         ],
@@ -2933,6 +2951,8 @@
             }
           }
         },
+        "operationId": "getPublicProductsByIdBrochure",
+        "summary": "GET /v1/public/products/{id}/brochure",
         "tags": [
           "products"
         ],

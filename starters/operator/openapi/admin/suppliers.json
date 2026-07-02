@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -259,6 +265,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdContactPoints",
+        "summary": "GET /v1/admin/suppliers/{id}/contact-points",
         "tags": [
           "suppliers"
         ],
@@ -474,6 +482,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdContactPoints",
+        "summary": "POST /v1/admin/suppliers/{id}/contact-points",
         "tags": [
           "suppliers"
         ],
@@ -697,6 +707,8 @@
             }
           }
         },
+        "operationId": "patchAdminSuppliersContactPointsByContactPointId",
+        "summary": "PATCH /v1/admin/suppliers/contact-points/{contactPointId}",
         "tags": [
           "suppliers"
         ],
@@ -752,6 +764,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSuppliersContactPointsByContactPointId",
+        "summary": "DELETE /v1/admin/suppliers/contact-points/{contactPointId}",
         "tags": [
           "suppliers"
         ],
@@ -878,6 +892,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdContacts",
+        "summary": "GET /v1/admin/suppliers/{id}/contacts",
         "tags": [
           "suppliers"
         ],
@@ -1109,6 +1125,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdContacts",
+        "summary": "POST /v1/admin/suppliers/{id}/contacts",
         "tags": [
           "suppliers"
         ],
@@ -1349,6 +1367,8 @@
             }
           }
         },
+        "operationId": "patchAdminSuppliersContactsByContactId",
+        "summary": "PATCH /v1/admin/suppliers/contacts/{contactId}",
         "tags": [
           "suppliers"
         ],
@@ -1404,6 +1424,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSuppliersContactsByContactId",
+        "summary": "DELETE /v1/admin/suppliers/contacts/{contactId}",
         "tags": [
           "suppliers"
         ],
@@ -1573,6 +1595,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdAddresses",
+        "summary": "GET /v1/admin/suppliers/{id}/addresses",
         "tags": [
           "suppliers"
         ],
@@ -1877,6 +1901,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdAddresses",
+        "summary": "POST /v1/admin/suppliers/{id}/addresses",
         "tags": [
           "suppliers"
         ],
@@ -2193,6 +2219,8 @@
             }
           }
         },
+        "operationId": "patchAdminSuppliersAddressesByAddressId",
+        "summary": "PATCH /v1/admin/suppliers/addresses/{addressId}",
         "tags": [
           "suppliers"
         ],
@@ -2248,6 +2276,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSuppliersAddressesByAddressId",
+        "summary": "DELETE /v1/admin/suppliers/addresses/{addressId}",
         "tags": [
           "suppliers"
         ],
@@ -2368,6 +2398,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdServices",
+        "summary": "GET /v1/admin/suppliers/{id}/services",
         "tags": [
           "suppliers"
         ],
@@ -2587,6 +2619,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdServices",
+        "summary": "POST /v1/admin/suppliers/{id}/services",
         "tags": [
           "suppliers"
         ],
@@ -2812,6 +2846,8 @@
             }
           }
         },
+        "operationId": "patchAdminSuppliersByIdServicesByServiceId",
+        "summary": "PATCH /v1/admin/suppliers/{id}/services/{serviceId}",
         "tags": [
           "suppliers"
         ],
@@ -2875,6 +2911,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSuppliersByIdServicesByServiceId",
+        "summary": "DELETE /v1/admin/suppliers/{id}/services/{serviceId}",
         "tags": [
           "suppliers"
         ],
@@ -2999,6 +3037,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdServicesByServiceIdRates",
+        "summary": "GET /v1/admin/suppliers/{id}/services/{serviceId}/rates",
         "tags": [
           "suppliers"
         ],
@@ -3228,6 +3268,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdServicesByServiceIdRates",
+        "summary": "POST /v1/admin/suppliers/{id}/services/{serviceId}/rates",
         "tags": [
           "suppliers"
         ],
@@ -3461,6 +3503,8 @@
             }
           }
         },
+        "operationId": "patchAdminSuppliersByIdServicesByServiceIdRatesByRateId",
+        "summary": "PATCH /v1/admin/suppliers/{id}/services/{serviceId}/rates/{rateId}",
         "tags": [
           "suppliers"
         ],
@@ -3532,6 +3576,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSuppliersByIdServicesByServiceIdRatesByRateId",
+        "summary": "DELETE /v1/admin/suppliers/{id}/services/{serviceId}/rates/{rateId}",
         "tags": [
           "suppliers"
         ],
@@ -3598,6 +3644,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdNotes",
+        "summary": "GET /v1/admin/suppliers/{id}/notes",
         "tags": [
           "suppliers"
         ],
@@ -3715,6 +3763,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdNotes",
+        "summary": "POST /v1/admin/suppliers/{id}/notes",
         "tags": [
           "suppliers"
         ],
@@ -3804,6 +3854,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdAvailability",
+        "summary": "GET /v1/admin/suppliers/{id}/availability",
         "tags": [
           "suppliers"
         ],
@@ -3970,6 +4022,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdAvailability",
+        "summary": "POST /v1/admin/suppliers/{id}/availability",
         "tags": [
           "suppliers"
         ],
@@ -4074,6 +4128,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersByIdContracts",
+        "summary": "GET /v1/admin/suppliers/{id}/contracts",
         "tags": [
           "suppliers"
         ],
@@ -4263,6 +4319,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliersByIdContracts",
+        "summary": "POST /v1/admin/suppliers/{id}/contracts",
         "tags": [
           "suppliers"
         ],
@@ -4459,6 +4517,8 @@
             }
           }
         },
+        "operationId": "patchAdminSuppliersByIdContractsByContractId",
+        "summary": "PATCH /v1/admin/suppliers/{id}/contracts/{contractId}",
         "tags": [
           "suppliers"
         ],
@@ -4522,6 +4582,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSuppliersByIdContractsByContractId",
+        "summary": "DELETE /v1/admin/suppliers/{id}/contracts/{contractId}",
         "tags": [
           "suppliers"
         ],
@@ -4635,6 +4697,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersAggregates",
+        "summary": "GET /v1/admin/suppliers/aggregates",
         "tags": [
           "suppliers"
         ],
@@ -4947,6 +5011,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliers",
+        "summary": "GET /v1/admin/suppliers",
         "tags": [
           "suppliers"
         ],
@@ -5334,6 +5400,8 @@
             }
           }
         },
+        "operationId": "postAdminSuppliers",
+        "summary": "POST /v1/admin/suppliers",
         "tags": [
           "suppliers"
         ],
@@ -5542,6 +5610,8 @@
             }
           }
         },
+        "operationId": "getAdminSuppliersById",
+        "summary": "GET /v1/admin/suppliers/{id}",
         "tags": [
           "suppliers"
         ],
@@ -5953,6 +6023,8 @@
             }
           }
         },
+        "operationId": "patchAdminSuppliersById",
+        "summary": "PATCH /v1/admin/suppliers/{id}",
         "tags": [
           "suppliers"
         ],
@@ -6008,6 +6080,8 @@
             }
           }
         },
+        "operationId": "deleteAdminSuppliersById",
+        "summary": "DELETE /v1/admin/suppliers/{id}",
         "tags": [
           "suppliers"
         ],

@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -317,6 +323,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsMarkets",
+        "summary": "GET /v1/admin/markets/markets",
         "tags": [
           "markets"
         ],
@@ -523,6 +531,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsMarkets",
+        "summary": "POST /v1/admin/markets/markets",
         "tags": [
           "markets"
         ],
@@ -657,6 +667,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsMarketsById",
+        "summary": "GET /v1/admin/markets/markets/{id}",
         "tags": [
           "markets"
         ],
@@ -885,6 +897,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsMarketsById",
+        "summary": "PATCH /v1/admin/markets/markets/{id}",
         "tags": [
           "markets"
         ],
@@ -943,6 +957,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsMarketsById",
+        "summary": "DELETE /v1/admin/markets/markets/{id}",
         "tags": [
           "markets"
         ],
@@ -1082,6 +1098,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsMarketLocales",
+        "summary": "GET /v1/admin/markets/market-locales",
         "tags": [
           "markets"
         ],
@@ -1227,6 +1245,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsMarketsByIdLocales",
+        "summary": "POST /v1/admin/markets/markets/{id}/locales",
         "tags": [
           "markets"
         ],
@@ -1369,6 +1389,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsMarketLocalesById",
+        "summary": "PATCH /v1/admin/markets/market-locales/{id}",
         "tags": [
           "markets"
         ],
@@ -1427,6 +1449,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsMarketLocalesById",
+        "summary": "DELETE /v1/admin/markets/market-locales/{id}",
         "tags": [
           "markets"
         ],
@@ -1574,6 +1598,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsMarketCurrencies",
+        "summary": "GET /v1/admin/markets/market-currencies",
         "tags": [
           "markets"
         ],
@@ -1735,6 +1761,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsMarketsByIdCurrencies",
+        "summary": "POST /v1/admin/markets/markets/{id}/currencies",
         "tags": [
           "markets"
         ],
@@ -1893,6 +1921,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsMarketCurrenciesById",
+        "summary": "PATCH /v1/admin/markets/market-currencies/{id}",
         "tags": [
           "markets"
         ],
@@ -1951,6 +1981,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsMarketCurrenciesById",
+        "summary": "DELETE /v1/admin/markets/market-currencies/{id}",
         "tags": [
           "markets"
         ],
@@ -2109,6 +2141,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsFxRateSets",
+        "summary": "GET /v1/admin/markets/fx-rate-sets",
         "tags": [
           "markets"
         ],
@@ -2280,6 +2314,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsFxRateSets",
+        "summary": "POST /v1/admin/markets/fx-rate-sets",
         "tags": [
           "markets"
         ],
@@ -2398,6 +2434,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsFxRateSetsById",
+        "summary": "GET /v1/admin/markets/fx-rate-sets/{id}",
         "tags": [
           "markets"
         ],
@@ -2593,6 +2631,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsFxRateSetsById",
+        "summary": "PATCH /v1/admin/markets/fx-rate-sets/{id}",
         "tags": [
           "markets"
         ],
@@ -2651,6 +2691,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsFxRateSetsById",
+        "summary": "DELETE /v1/admin/markets/fx-rate-sets/{id}",
         "tags": [
           "markets"
         ],
@@ -2793,6 +2835,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsExchangeRates",
+        "summary": "GET /v1/admin/markets/exchange-rates",
         "tags": [
           "markets"
         ],
@@ -2957,6 +3001,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsFxRateSetsByIdExchangeRates",
+        "summary": "POST /v1/admin/markets/fx-rate-sets/{id}/exchange-rates",
         "tags": [
           "markets"
         ],
@@ -3116,6 +3162,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsExchangeRatesById",
+        "summary": "PATCH /v1/admin/markets/exchange-rates/{id}",
         "tags": [
           "markets"
         ],
@@ -3174,6 +3222,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsExchangeRatesById",
+        "summary": "DELETE /v1/admin/markets/exchange-rates/{id}",
         "tags": [
           "markets"
         ],
@@ -3325,6 +3375,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsPriceCatalogs",
+        "summary": "GET /v1/admin/markets/price-catalogs",
         "tags": [
           "markets"
         ],
@@ -3486,6 +3538,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsPriceCatalogs",
+        "summary": "POST /v1/admin/markets/price-catalogs",
         "tags": [
           "markets"
         ],
@@ -3594,6 +3648,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsPriceCatalogsById",
+        "summary": "GET /v1/admin/markets/price-catalogs/{id}",
         "tags": [
           "markets"
         ],
@@ -3761,6 +3817,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsPriceCatalogsById",
+        "summary": "PATCH /v1/admin/markets/price-catalogs/{id}",
         "tags": [
           "markets"
         ],
@@ -3819,6 +3877,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsPriceCatalogsById",
+        "summary": "DELETE /v1/admin/markets/price-catalogs/{id}",
         "tags": [
           "markets"
         ],
@@ -4031,6 +4091,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsProductRules",
+        "summary": "GET /v1/admin/markets/product-rules",
         "tags": [
           "markets"
         ],
@@ -4271,6 +4333,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsProductRules",
+        "summary": "POST /v1/admin/markets/product-rules",
         "tags": [
           "markets"
         ],
@@ -4419,6 +4483,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsProductRulesById",
+        "summary": "GET /v1/admin/markets/product-rules/{id}",
         "tags": [
           "markets"
         ],
@@ -4665,6 +4731,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsProductRulesById",
+        "summary": "PATCH /v1/admin/markets/product-rules/{id}",
         "tags": [
           "markets"
         ],
@@ -4723,6 +4791,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsProductRulesById",
+        "summary": "DELETE /v1/admin/markets/product-rules/{id}",
         "tags": [
           "markets"
         ],
@@ -4900,6 +4970,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsChannelRules",
+        "summary": "GET /v1/admin/markets/channel-rules",
         "tags": [
           "markets"
         ],
@@ -5087,6 +5159,8 @@
             }
           }
         },
+        "operationId": "postAdminMarketsChannelRules",
+        "summary": "POST /v1/admin/markets/channel-rules",
         "tags": [
           "markets"
         ],
@@ -5208,6 +5282,8 @@
             }
           }
         },
+        "operationId": "getAdminMarketsChannelRulesById",
+        "summary": "GET /v1/admin/markets/channel-rules/{id}",
         "tags": [
           "markets"
         ],
@@ -5401,6 +5477,8 @@
             }
           }
         },
+        "operationId": "patchAdminMarketsChannelRulesById",
+        "summary": "PATCH /v1/admin/markets/channel-rules/{id}",
         "tags": [
           "markets"
         ],
@@ -5459,6 +5537,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMarketsChannelRulesById",
+        "summary": "DELETE /v1/admin/markets/channel-rules/{id}",
         "tags": [
           "markets"
         ],

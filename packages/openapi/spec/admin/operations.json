@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -251,6 +257,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityAggregates",
+        "summary": "GET /v1/admin/operations/availability/aggregates",
         "tags": [
           "operations"
         ],
@@ -511,6 +519,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityOverview",
+        "summary": "GET /v1/admin/operations/availability/overview",
         "tags": [
           "operations"
         ],
@@ -703,6 +713,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityRules",
+        "summary": "GET /v1/admin/operations/availability/rules",
         "tags": [
           "operations"
         ],
@@ -903,6 +915,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityRules",
+        "summary": "POST /v1/admin/operations/availability/rules",
         "tags": [
           "operations"
         ],
@@ -1146,6 +1160,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityRulesBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/rules/batch-update",
         "tags": [
           "operations"
         ],
@@ -1246,6 +1262,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityRulesBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/rules/batch-delete",
         "tags": [
           "operations"
         ],
@@ -1381,6 +1399,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityRulesById",
+        "summary": "GET /v1/admin/operations/availability/rules/{id}",
         "tags": [
           "operations"
         ],
@@ -1603,6 +1623,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityRulesById",
+        "summary": "PATCH /v1/admin/operations/availability/rules/{id}",
         "tags": [
           "operations"
         ],
@@ -1661,6 +1683,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityRulesById",
+        "summary": "DELETE /v1/admin/operations/availability/rules/{id}",
         "tags": [
           "operations"
         ],
@@ -1835,6 +1859,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityStartTimes",
+        "summary": "GET /v1/admin/operations/availability/start-times",
         "tags": [
           "operations"
         ],
@@ -1996,6 +2022,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityStartTimes",
+        "summary": "POST /v1/admin/operations/availability/start-times",
         "tags": [
           "operations"
         ],
@@ -2202,6 +2230,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityStartTimesBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/start-times/batch-update",
         "tags": [
           "operations"
         ],
@@ -2302,6 +2332,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityStartTimesBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/start-times/batch-delete",
         "tags": [
           "operations"
         ],
@@ -2419,6 +2451,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityStartTimesById",
+        "summary": "GET /v1/admin/operations/availability/start-times/{id}",
         "tags": [
           "operations"
         ],
@@ -2604,6 +2638,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityStartTimesById",
+        "summary": "PATCH /v1/admin/operations/availability/start-times/{id}",
         "tags": [
           "operations"
         ],
@@ -2662,6 +2698,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityStartTimesById",
+        "summary": "DELETE /v1/admin/operations/availability/start-times/{id}",
         "tags": [
           "operations"
         ],
@@ -2977,6 +3015,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlots",
+        "summary": "GET /v1/admin/operations/availability/slots",
         "tags": [
           "operations"
         ],
@@ -3328,6 +3368,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlots",
+        "summary": "POST /v1/admin/operations/availability/slots",
         "tags": [
           "operations"
         ],
@@ -3722,6 +3764,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotsBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/slots/batch-update",
         "tags": [
           "operations"
         ],
@@ -3822,6 +3866,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotsBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/slots/batch-delete",
         "tags": [
           "operations"
         ],
@@ -4038,6 +4084,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotsById",
+        "summary": "GET /v1/admin/operations/availability/slots/{id}",
         "tags": [
           "operations"
         ],
@@ -4411,6 +4459,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilitySlotsById",
+        "summary": "PATCH /v1/admin/operations/availability/slots/{id}",
         "tags": [
           "operations"
         ],
@@ -4469,6 +4519,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilitySlotsById",
+        "summary": "DELETE /v1/admin/operations/availability/slots/{id}",
         "tags": [
           "operations"
         ],
@@ -4566,6 +4618,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotsByIdUnitAvailability",
+        "summary": "GET /v1/admin/operations/availability/slots/{id}/unit-availability",
         "tags": [
           "operations"
         ],
@@ -4709,6 +4763,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityCloseouts",
+        "summary": "GET /v1/admin/operations/availability/closeouts",
         "tags": [
           "operations"
         ],
@@ -4836,6 +4892,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityCloseouts",
+        "summary": "POST /v1/admin/operations/availability/closeouts",
         "tags": [
           "operations"
         ],
@@ -5008,6 +5066,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityCloseoutsBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/closeouts/batch-update",
         "tags": [
           "operations"
         ],
@@ -5108,6 +5168,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityCloseoutsBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/closeouts/batch-delete",
         "tags": [
           "operations"
         ],
@@ -5206,6 +5268,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityCloseoutsById",
+        "summary": "GET /v1/admin/operations/availability/closeouts/{id}",
         "tags": [
           "operations"
         ],
@@ -5357,6 +5421,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityCloseoutsById",
+        "summary": "PATCH /v1/admin/operations/availability/closeouts/{id}",
         "tags": [
           "operations"
         ],
@@ -5415,6 +5481,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityCloseoutsById",
+        "summary": "DELETE /v1/admin/operations/availability/closeouts/{id}",
         "tags": [
           "operations"
         ],
@@ -5839,6 +5907,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotsByIdAllocation",
+        "summary": "GET /v1/admin/operations/availability/slots/{id}/allocation",
         "tags": [
           "operations"
         ],
@@ -6037,6 +6107,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotsByIdAllocationResources",
+        "summary": "POST /v1/admin/operations/availability/slots/{id}/allocation/resources",
         "tags": [
           "operations"
         ],
@@ -6275,6 +6347,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilitySlotsByIdAllocationResourcesByResourceId",
+        "summary": "PATCH /v1/admin/operations/availability/slots/{id}/allocation/resources/{resourceId}",
         "tags": [
           "operations"
         ],
@@ -6361,6 +6435,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilitySlotsByIdAllocationResourcesByResourceId",
+        "summary": "DELETE /v1/admin/operations/availability/slots/{id}/allocation/resources/{resourceId}",
         "tags": [
           "operations"
         ],
@@ -6530,6 +6606,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilitySlotsByIdAllocationTravelersByTravelerId",
+        "summary": "PATCH /v1/admin/operations/availability/slots/{id}/allocation/travelers/{travelerId}",
         "tags": [
           "operations"
         ],
@@ -6690,6 +6768,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilitySlotsByIdAllocationTravelersByTravelerIdSharingGroup",
+        "summary": "PATCH /v1/admin/operations/availability/slots/{id}/allocation/travelers/{travelerId}/sharing-group",
         "tags": [
           "operations"
         ],
@@ -6848,6 +6928,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotsByIdAllocationSharingGroupsPair",
+        "summary": "POST /v1/admin/operations/availability/slots/{id}/allocation/sharing-groups/pair",
         "tags": [
           "operations"
         ],
@@ -7011,6 +7093,8 @@
             }
           }
         },
+        "operationId": "putAdminOperationsAvailabilitySlotsByIdAllocationSharingGroupsByGroupIdLabel",
+        "summary": "PUT /v1/admin/operations/availability/slots/{id}/allocation/sharing-groups/{groupId}/label",
         "tags": [
           "operations"
         ],
@@ -7152,6 +7236,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilitySlotsByIdAllocationSharingGroupsByGroupIdLabel",
+        "summary": "DELETE /v1/admin/operations/availability/slots/{id}/allocation/sharing-groups/{groupId}/label",
         "tags": [
           "operations"
         ],
@@ -7262,6 +7348,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotsByIdAllocationAuditLog",
+        "summary": "GET /v1/admin/operations/availability/slots/{id}/allocation/audit-log",
         "tags": [
           "operations"
         ],
@@ -7311,6 +7399,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotsByIdAllocationExportPassengers",
+        "summary": "GET /v1/admin/operations/availability/slots/{id}/allocation/export-passengers",
         "tags": [
           "operations"
         ],
@@ -7360,6 +7450,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotsByIdAllocationExportRoomingList",
+        "summary": "GET /v1/admin/operations/availability/slots/{id}/allocation/export-rooming-list",
         "tags": [
           "operations"
         ],
@@ -7581,6 +7673,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotsByIdAllocationAutoMaterialize",
+        "summary": "POST /v1/admin/operations/availability/slots/{id}/allocation/auto-materialize",
         "tags": [
           "operations"
         ],
@@ -7704,6 +7798,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotsByIdAllocationMaterializeTemplates",
+        "summary": "POST /v1/admin/operations/availability/slots/{id}/allocation/materialize-templates",
         "tags": [
           "operations"
         ],
@@ -7925,6 +8021,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotsByIdAllocationAutoAllocate",
+        "summary": "POST /v1/admin/operations/availability/slots/{id}/allocation/auto-allocate",
         "tags": [
           "operations"
         ],
@@ -8077,6 +8175,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityProductsByProductIdAllocationResourceTemplates",
+        "summary": "GET /v1/admin/operations/availability/products/{productId}/allocation/resource-templates",
         "tags": [
           "operations"
         ],
@@ -8331,6 +8431,8 @@
             }
           }
         },
+        "operationId": "putAdminOperationsAvailabilityProductsByProductIdOptionsByOptionIdAllocationResourceTemplatesByKind",
+        "summary": "PUT /v1/admin/operations/availability/products/{productId}/options/{optionId}/allocation/resource-templates/{kind}",
         "tags": [
           "operations"
         ],
@@ -8480,6 +8582,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityProductsByProductIdOptionsByOptionIdAllocationResourceTemplatesByKind",
+        "summary": "DELETE /v1/admin/operations/availability/products/{productId}/options/{optionId}/allocation/resource-templates/{kind}",
         "tags": [
           "operations"
         ],
@@ -8622,6 +8726,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityProductsByIdAllocationMaterializeOpenSlots",
+        "summary": "POST /v1/admin/operations/availability/products/{id}/allocation/materialize-open-slots",
         "tags": [
           "operations"
         ],
@@ -8777,6 +8883,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityPickupPoints",
+        "summary": "GET /v1/admin/operations/availability/pickup-points",
         "tags": [
           "operations"
         ],
@@ -8916,6 +9024,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupPoints",
+        "summary": "POST /v1/admin/operations/availability/pickup-points",
         "tags": [
           "operations"
         ],
@@ -9100,6 +9210,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupPointsBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/pickup-points/batch-update",
         "tags": [
           "operations"
         ],
@@ -9200,6 +9312,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupPointsBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/pickup-points/batch-delete",
         "tags": [
           "operations"
         ],
@@ -9306,6 +9420,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityPickupPointsById",
+        "summary": "GET /v1/admin/operations/availability/pickup-points/{id}",
         "tags": [
           "operations"
         ],
@@ -9469,6 +9585,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityPickupPointsById",
+        "summary": "PATCH /v1/admin/operations/availability/pickup-points/{id}",
         "tags": [
           "operations"
         ],
@@ -9527,6 +9645,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityPickupPointsById",
+        "summary": "DELETE /v1/admin/operations/availability/pickup-points/{id}",
         "tags": [
           "operations"
         ],
@@ -9651,6 +9771,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotPickups",
+        "summary": "GET /v1/admin/operations/availability/slot-pickups",
         "tags": [
           "operations"
         ],
@@ -9770,6 +9892,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotPickups",
+        "summary": "POST /v1/admin/operations/availability/slot-pickups",
         "tags": [
           "operations"
         ],
@@ -9934,6 +10058,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotPickupsBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/slot-pickups/batch-update",
         "tags": [
           "operations"
         ],
@@ -10034,6 +10160,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilitySlotPickupsBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/slot-pickups/batch-delete",
         "tags": [
           "operations"
         ],
@@ -10129,6 +10257,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilitySlotPickupsById",
+        "summary": "GET /v1/admin/operations/availability/slot-pickups/{id}",
         "tags": [
           "operations"
         ],
@@ -10272,6 +10402,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilitySlotPickupsById",
+        "summary": "PATCH /v1/admin/operations/availability/slot-pickups/{id}",
         "tags": [
           "operations"
         ],
@@ -10330,6 +10462,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilitySlotPickupsById",
+        "summary": "DELETE /v1/admin/operations/availability/slot-pickups/{id}",
         "tags": [
           "operations"
         ],
@@ -10545,6 +10679,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityMeetingConfigs",
+        "summary": "GET /v1/admin/operations/availability/meeting-configs",
         "tags": [
           "operations"
         ],
@@ -10759,6 +10895,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityMeetingConfigs",
+        "summary": "POST /v1/admin/operations/availability/meeting-configs",
         "tags": [
           "operations"
         ],
@@ -11019,6 +11157,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityMeetingConfigsBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/meeting-configs/batch-update",
         "tags": [
           "operations"
         ],
@@ -11119,6 +11259,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityMeetingConfigsBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/meeting-configs/batch-delete",
         "tags": [
           "operations"
         ],
@@ -11264,6 +11406,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityMeetingConfigsById",
+        "summary": "GET /v1/admin/operations/availability/meeting-configs/{id}",
         "tags": [
           "operations"
         ],
@@ -11503,6 +11647,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityMeetingConfigsById",
+        "summary": "PATCH /v1/admin/operations/availability/meeting-configs/{id}",
         "tags": [
           "operations"
         ],
@@ -11561,6 +11707,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityMeetingConfigsById",
+        "summary": "DELETE /v1/admin/operations/availability/meeting-configs/{id}",
         "tags": [
           "operations"
         ],
@@ -11714,6 +11862,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityPickupGroups",
+        "summary": "GET /v1/admin/operations/availability/pickup-groups",
         "tags": [
           "operations"
         ],
@@ -11853,6 +12003,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupGroups",
+        "summary": "POST /v1/admin/operations/availability/pickup-groups",
         "tags": [
           "operations"
         ],
@@ -12036,6 +12188,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupGroupsBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/pickup-groups/batch-update",
         "tags": [
           "operations"
         ],
@@ -12136,6 +12290,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupGroupsBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/pickup-groups/batch-delete",
         "tags": [
           "operations"
         ],
@@ -12241,6 +12397,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityPickupGroupsById",
+        "summary": "GET /v1/admin/operations/availability/pickup-groups/{id}",
         "tags": [
           "operations"
         ],
@@ -12403,6 +12561,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityPickupGroupsById",
+        "summary": "PATCH /v1/admin/operations/availability/pickup-groups/{id}",
         "tags": [
           "operations"
         ],
@@ -12461,6 +12621,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityPickupGroupsById",
+        "summary": "DELETE /v1/admin/operations/availability/pickup-groups/{id}",
         "tags": [
           "operations"
         ],
@@ -12621,6 +12783,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityPickupLocations",
+        "summary": "GET /v1/admin/operations/availability/pickup-locations",
         "tags": [
           "operations"
         ],
@@ -12782,6 +12946,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupLocations",
+        "summary": "POST /v1/admin/operations/availability/pickup-locations",
         "tags": [
           "operations"
         ],
@@ -12988,6 +13154,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupLocationsBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/pickup-locations/batch-update",
         "tags": [
           "operations"
         ],
@@ -13088,6 +13256,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityPickupLocationsBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/pickup-locations/batch-delete",
         "tags": [
           "operations"
         ],
@@ -13205,6 +13375,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityPickupLocationsById",
+        "summary": "GET /v1/admin/operations/availability/pickup-locations/{id}",
         "tags": [
           "operations"
         ],
@@ -13390,6 +13562,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityPickupLocationsById",
+        "summary": "PATCH /v1/admin/operations/availability/pickup-locations/{id}",
         "tags": [
           "operations"
         ],
@@ -13448,6 +13622,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityPickupLocationsById",
+        "summary": "DELETE /v1/admin/operations/availability/pickup-locations/{id}",
         "tags": [
           "operations"
         ],
@@ -13637,6 +13813,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityLocationPickupTimes",
+        "summary": "GET /v1/admin/operations/availability/location-pickup-times",
         "tags": [
           "operations"
         ],
@@ -13837,6 +14015,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityLocationPickupTimes",
+        "summary": "POST /v1/admin/operations/availability/location-pickup-times",
         "tags": [
           "operations"
         ],
@@ -14083,6 +14263,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityLocationPickupTimesBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/location-pickup-times/batch-update",
         "tags": [
           "operations"
         ],
@@ -14183,6 +14365,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityLocationPickupTimesBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/location-pickup-times/batch-delete",
         "tags": [
           "operations"
         ],
@@ -14321,6 +14505,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityLocationPickupTimesById",
+        "summary": "GET /v1/admin/operations/availability/location-pickup-times/{id}",
         "tags": [
           "operations"
         ],
@@ -14546,6 +14732,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityLocationPickupTimesById",
+        "summary": "PATCH /v1/admin/operations/availability/location-pickup-times/{id}",
         "tags": [
           "operations"
         ],
@@ -14604,6 +14792,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityLocationPickupTimesById",
+        "summary": "DELETE /v1/admin/operations/availability/location-pickup-times/{id}",
         "tags": [
           "operations"
         ],
@@ -14738,6 +14928,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityCustomPickupAreas",
+        "summary": "GET /v1/admin/operations/availability/custom-pickup-areas",
         "tags": [
           "operations"
         ],
@@ -14864,6 +15056,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityCustomPickupAreas",
+        "summary": "POST /v1/admin/operations/availability/custom-pickup-areas",
         "tags": [
           "operations"
         ],
@@ -15035,6 +15229,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityCustomPickupAreasBatchUpdate",
+        "summary": "POST /v1/admin/operations/availability/custom-pickup-areas/batch-update",
         "tags": [
           "operations"
         ],
@@ -15135,6 +15331,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAvailabilityCustomPickupAreasBatchDelete",
+        "summary": "POST /v1/admin/operations/availability/custom-pickup-areas/batch-delete",
         "tags": [
           "operations"
         ],
@@ -15234,6 +15432,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAvailabilityCustomPickupAreasById",
+        "summary": "GET /v1/admin/operations/availability/custom-pickup-areas/{id}",
         "tags": [
           "operations"
         ],
@@ -15384,6 +15584,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAvailabilityCustomPickupAreasById",
+        "summary": "PATCH /v1/admin/operations/availability/custom-pickup-areas/{id}",
         "tags": [
           "operations"
         ],
@@ -15442,6 +15644,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAvailabilityCustomPickupAreasById",
+        "summary": "DELETE /v1/admin/operations/availability/custom-pickup-areas/{id}",
         "tags": [
           "operations"
         ],
@@ -15629,6 +15833,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsResources",
+        "summary": "GET /v1/admin/operations/resources",
         "tags": [
           "operations"
         ],
@@ -15811,6 +16017,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsResources",
+        "summary": "POST /v1/admin/operations/resources",
         "tags": [
           "operations"
         ],
@@ -15879,8 +16087,7 @@
                         "minimum": 0
                       },
                       "active": {
-                        "type": "boolean",
-                        "default": true
+                        "type": "boolean"
                       },
                       "notes": {
                         "type": [
@@ -16038,6 +16245,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsResourcesBatchUpdate",
+        "summary": "POST /v1/admin/operations/resources/batch-update",
         "tags": [
           "operations"
         ],
@@ -16138,6 +16347,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsResourcesBatchDelete",
+        "summary": "POST /v1/admin/operations/resources/batch-delete",
         "tags": [
           "operations"
         ],
@@ -16266,6 +16477,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsResourcesById",
+        "summary": "GET /v1/admin/operations/resources/{id}",
         "tags": [
           "operations"
         ],
@@ -16331,8 +16544,7 @@
                     "minimum": 0
                   },
                   "active": {
-                    "type": "boolean",
-                    "default": true
+                    "type": "boolean"
                   },
                   "notes": {
                     "type": [
@@ -16472,6 +16684,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsResourcesById",
+        "summary": "PATCH /v1/admin/operations/resources/{id}",
         "tags": [
           "operations"
         ],
@@ -16530,6 +16744,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsResourcesById",
+        "summary": "DELETE /v1/admin/operations/resources/{id}",
         "tags": [
           "operations"
         ],
@@ -16695,6 +16911,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPools",
+        "summary": "GET /v1/admin/operations/pools",
         "tags": [
           "operations"
         ],
@@ -16851,6 +17069,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsPools",
+        "summary": "POST /v1/admin/operations/pools",
         "tags": [
           "operations"
         ],
@@ -16907,8 +17127,7 @@
                         "minimum": 0
                       },
                       "active": {
-                        "type": "boolean",
-                        "default": true
+                        "type": "boolean"
                       },
                       "notes": {
                         "type": [
@@ -17052,6 +17271,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsPoolsBatchUpdate",
+        "summary": "POST /v1/admin/operations/pools/batch-update",
         "tags": [
           "operations"
         ],
@@ -17152,6 +17373,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsPoolsBatchDelete",
+        "summary": "POST /v1/admin/operations/pools/batch-delete",
         "tags": [
           "operations"
         ],
@@ -17266,6 +17489,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPoolsById",
+        "summary": "GET /v1/admin/operations/pools/{id}",
         "tags": [
           "operations"
         ],
@@ -17319,8 +17544,7 @@
                     "minimum": 0
                   },
                   "active": {
-                    "type": "boolean",
-                    "default": true
+                    "type": "boolean"
                   },
                   "notes": {
                     "type": [
@@ -17446,6 +17670,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsPoolsById",
+        "summary": "PATCH /v1/admin/operations/pools/{id}",
         "tags": [
           "operations"
         ],
@@ -17504,6 +17730,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsPoolsById",
+        "summary": "DELETE /v1/admin/operations/pools/{id}",
         "tags": [
           "operations"
         ],
@@ -17610,6 +17838,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPoolMembers",
+        "summary": "GET /v1/admin/operations/pool-members",
         "tags": [
           "operations"
         ],
@@ -17733,6 +17963,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsPoolMembers",
+        "summary": "POST /v1/admin/operations/pool-members",
         "tags": [
           "operations"
         ],
@@ -17793,6 +18025,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsPoolMembersById",
+        "summary": "DELETE /v1/admin/operations/pool-members/{id}",
         "tags": [
           "operations"
         ],
@@ -17949,6 +18183,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsRequirements",
+        "summary": "GET /v1/admin/operations/requirements",
         "tags": [
           "operations"
         ],
@@ -18117,6 +18353,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsRequirements",
+        "summary": "POST /v1/admin/operations/requirements",
         "tags": [
           "operations"
         ],
@@ -18164,20 +18402,17 @@
                       },
                       "quantityRequired": {
                         "type": "integer",
-                        "minimum": 1,
-                        "default": 1
+                        "minimum": 1
                       },
                       "allocationMode": {
                         "type": "string",
                         "enum": [
                           "shared",
                           "exclusive"
-                        ],
-                        "default": "shared"
+                        ]
                       },
                       "priority": {
-                        "type": "integer",
-                        "default": 0
+                        "type": "integer"
                       }
                     }
                   }
@@ -18312,6 +18547,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsRequirementsBatchUpdate",
+        "summary": "POST /v1/admin/operations/requirements/batch-update",
         "tags": [
           "operations"
         ],
@@ -18412,6 +18649,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsRequirementsBatchDelete",
+        "summary": "POST /v1/admin/operations/requirements/batch-delete",
         "tags": [
           "operations"
         ],
@@ -18523,6 +18762,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsRequirementsById",
+        "summary": "GET /v1/admin/operations/requirements/{id}",
         "tags": [
           "operations"
         ],
@@ -18567,20 +18808,17 @@
                   },
                   "quantityRequired": {
                     "type": "integer",
-                    "minimum": 1,
-                    "default": 1
+                    "minimum": 1
                   },
                   "allocationMode": {
                     "type": "string",
                     "enum": [
                       "shared",
                       "exclusive"
-                    ],
-                    "default": "shared"
+                    ]
                   },
                   "priority": {
-                    "type": "integer",
-                    "default": 0
+                    "type": "integer"
                   }
                 }
               }
@@ -18697,6 +18935,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsRequirementsById",
+        "summary": "PATCH /v1/admin/operations/requirements/{id}",
         "tags": [
           "operations"
         ],
@@ -18755,6 +18995,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsRequirementsById",
+        "summary": "DELETE /v1/admin/operations/requirements/{id}",
         "tags": [
           "operations"
         ],
@@ -18911,6 +19153,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAllocations",
+        "summary": "GET /v1/admin/operations/allocations",
         "tags": [
           "operations"
         ],
@@ -19079,6 +19323,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAllocations",
+        "summary": "POST /v1/admin/operations/allocations",
         "tags": [
           "operations"
         ],
@@ -19126,20 +19372,17 @@
                       },
                       "quantityRequired": {
                         "type": "integer",
-                        "minimum": 1,
-                        "default": 1
+                        "minimum": 1
                       },
                       "allocationMode": {
                         "type": "string",
                         "enum": [
                           "shared",
                           "exclusive"
-                        ],
-                        "default": "shared"
+                        ]
                       },
                       "priority": {
-                        "type": "integer",
-                        "default": 0
+                        "type": "integer"
                       }
                     }
                   }
@@ -19274,6 +19517,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAllocationsBatchUpdate",
+        "summary": "POST /v1/admin/operations/allocations/batch-update",
         "tags": [
           "operations"
         ],
@@ -19374,6 +19619,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsAllocationsBatchDelete",
+        "summary": "POST /v1/admin/operations/allocations/batch-delete",
         "tags": [
           "operations"
         ],
@@ -19485,6 +19732,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsAllocationsById",
+        "summary": "GET /v1/admin/operations/allocations/{id}",
         "tags": [
           "operations"
         ],
@@ -19529,20 +19778,17 @@
                   },
                   "quantityRequired": {
                     "type": "integer",
-                    "minimum": 1,
-                    "default": 1
+                    "minimum": 1
                   },
                   "allocationMode": {
                     "type": "string",
                     "enum": [
                       "shared",
                       "exclusive"
-                    ],
-                    "default": "shared"
+                    ]
                   },
                   "priority": {
-                    "type": "integer",
-                    "default": 0
+                    "type": "integer"
                   }
                 }
               }
@@ -19659,6 +19905,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAllocationsById",
+        "summary": "PATCH /v1/admin/operations/allocations/{id}",
         "tags": [
           "operations"
         ],
@@ -19717,6 +19965,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAllocationsById",
+        "summary": "DELETE /v1/admin/operations/allocations/{id}",
         "tags": [
           "operations"
         ],
@@ -19903,6 +20153,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsSlotAssignments",
+        "summary": "GET /v1/admin/operations/slot-assignments",
         "tags": [
           "operations"
         ],
@@ -20105,6 +20357,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsSlotAssignments",
+        "summary": "POST /v1/admin/operations/slot-assignments",
         "tags": [
           "operations"
         ],
@@ -20161,8 +20415,7 @@
                           "released",
                           "cancelled",
                           "completed"
-                        ],
-                        "default": "reserved"
+                        ]
                       },
                       "assignedAt": {
                         "type": "string",
@@ -20335,6 +20588,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsSlotAssignmentsBatchUpdate",
+        "summary": "POST /v1/admin/operations/slot-assignments/batch-update",
         "tags": [
           "operations"
         ],
@@ -20435,6 +20690,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsSlotAssignmentsBatchDelete",
+        "summary": "POST /v1/admin/operations/slot-assignments/batch-delete",
         "tags": [
           "operations"
         ],
@@ -20561,6 +20818,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsSlotAssignmentsById",
+        "summary": "GET /v1/admin/operations/slot-assignments/{id}",
         "tags": [
           "operations"
         ],
@@ -20614,8 +20873,7 @@
                       "released",
                       "cancelled",
                       "completed"
-                    ],
-                    "default": "reserved"
+                    ]
                   },
                   "assignedAt": {
                     "type": "string",
@@ -20770,6 +21028,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsSlotAssignmentsById",
+        "summary": "PATCH /v1/admin/operations/slot-assignments/{id}",
         "tags": [
           "operations"
         ],
@@ -20828,6 +21088,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsSlotAssignmentsById",
+        "summary": "DELETE /v1/admin/operations/slot-assignments/{id}",
         "tags": [
           "operations"
         ],
@@ -20963,6 +21225,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsCloseouts",
+        "summary": "GET /v1/admin/operations/closeouts",
         "tags": [
           "operations"
         ],
@@ -21141,6 +21405,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsCloseouts",
+        "summary": "POST /v1/admin/operations/closeouts",
         "tags": [
           "operations"
         ],
@@ -21328,6 +21594,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsCloseoutsBatchUpdate",
+        "summary": "POST /v1/admin/operations/closeouts/batch-update",
         "tags": [
           "operations"
         ],
@@ -21428,6 +21696,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsCloseoutsBatchDelete",
+        "summary": "POST /v1/admin/operations/closeouts/batch-delete",
         "tags": [
           "operations"
         ],
@@ -21533,6 +21803,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsCloseoutsById",
+        "summary": "GET /v1/admin/operations/closeouts/{id}",
         "tags": [
           "operations"
         ],
@@ -21717,6 +21989,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsCloseoutsById",
+        "summary": "PATCH /v1/admin/operations/closeouts/{id}",
         "tags": [
           "operations"
         ],
@@ -21775,6 +22049,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsCloseoutsById",
+        "summary": "DELETE /v1/admin/operations/closeouts/{id}",
         "tags": [
           "operations"
         ],
@@ -21927,6 +22203,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsOperators",
+        "summary": "GET /v1/admin/operations/operators",
         "tags": [
           "operations"
         ],
@@ -22073,6 +22351,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsOperators",
+        "summary": "POST /v1/admin/operations/operators",
         "tags": [
           "operations"
         ],
@@ -22182,6 +22462,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsOperatorsById",
+        "summary": "GET /v1/admin/operations/operators/{id}",
         "tags": [
           "operations"
         ],
@@ -22353,6 +22635,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsOperatorsById",
+        "summary": "PATCH /v1/admin/operations/operators/{id}",
         "tags": [
           "operations"
         ],
@@ -22411,6 +22695,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsOperatorsById",
+        "summary": "DELETE /v1/admin/operations/operators/{id}",
         "tags": [
           "operations"
         ],
@@ -22634,6 +22920,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsVehicles",
+        "summary": "GET /v1/admin/operations/vehicles",
         "tags": [
           "operations"
         ],
@@ -22883,6 +23171,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsVehicles",
+        "summary": "POST /v1/admin/operations/vehicles",
         "tags": [
           "operations"
         ],
@@ -23044,6 +23334,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsVehiclesById",
+        "summary": "GET /v1/admin/operations/vehicles/{id}",
         "tags": [
           "operations"
         ],
@@ -23318,6 +23610,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsVehiclesById",
+        "summary": "PATCH /v1/admin/operations/vehicles/{id}",
         "tags": [
           "operations"
         ],
@@ -23376,6 +23670,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsVehiclesById",
+        "summary": "DELETE /v1/admin/operations/vehicles/{id}",
         "tags": [
           "operations"
         ],
@@ -23536,6 +23832,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDrivers",
+        "summary": "GET /v1/admin/operations/drivers",
         "tags": [
           "operations"
         ],
@@ -23699,6 +23997,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsDrivers",
+        "summary": "POST /v1/admin/operations/drivers",
         "tags": [
           "operations"
         ],
@@ -23816,6 +24116,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDriversById",
+        "summary": "GET /v1/admin/operations/drivers/{id}",
         "tags": [
           "operations"
         ],
@@ -24004,6 +24306,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsDriversById",
+        "summary": "PATCH /v1/admin/operations/drivers/{id}",
         "tags": [
           "operations"
         ],
@@ -24062,6 +24366,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsDriversById",
+        "summary": "DELETE /v1/admin/operations/drivers/{id}",
         "tags": [
           "operations"
         ],
@@ -24338,6 +24644,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsTransferPreferences",
+        "summary": "GET /v1/admin/operations/transfer-preferences",
         "tags": [
           "operations"
         ],
@@ -24720,6 +25028,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsTransferPreferences",
+        "summary": "POST /v1/admin/operations/transfer-preferences",
         "tags": [
           "operations"
         ],
@@ -24952,6 +25262,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsTransferPreferencesById",
+        "summary": "GET /v1/admin/operations/transfer-preferences/{id}",
         "tags": [
           "operations"
         ],
@@ -25359,6 +25671,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsTransferPreferencesById",
+        "summary": "PATCH /v1/admin/operations/transfer-preferences/{id}",
         "tags": [
           "operations"
         ],
@@ -25417,6 +25731,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsTransferPreferencesById",
+        "summary": "DELETE /v1/admin/operations/transfer-preferences/{id}",
         "tags": [
           "operations"
         ],
@@ -25693,6 +26009,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatches",
+        "summary": "GET /v1/admin/operations/dispatches",
         "tags": [
           "operations"
         ],
@@ -25991,6 +26309,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsDispatches",
+        "summary": "POST /v1/admin/operations/dispatches",
         "tags": [
           "operations"
         ],
@@ -26178,6 +26498,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchesById",
+        "summary": "GET /v1/admin/operations/dispatches/{id}",
         "tags": [
           "operations"
         ],
@@ -26500,6 +26822,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsDispatchesById",
+        "summary": "PATCH /v1/admin/operations/dispatches/{id}",
         "tags": [
           "operations"
         ],
@@ -26558,6 +26882,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsDispatchesById",
+        "summary": "DELETE /v1/admin/operations/dispatches/{id}",
         "tags": [
           "operations"
         ],
@@ -26719,6 +27045,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsExecutionEvents",
+        "summary": "GET /v1/admin/operations/execution-events",
         "tags": [
           "operations"
         ],
@@ -26893,6 +27221,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsExecutionEvents",
+        "summary": "POST /v1/admin/operations/execution-events",
         "tags": [
           "operations"
         ],
@@ -27014,6 +27344,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsExecutionEventsById",
+        "summary": "GET /v1/admin/operations/execution-events/{id}",
         "tags": [
           "operations"
         ],
@@ -27213,6 +27545,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsExecutionEventsById",
+        "summary": "PATCH /v1/admin/operations/execution-events/{id}",
         "tags": [
           "operations"
         ],
@@ -27271,6 +27605,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsExecutionEventsById",
+        "summary": "DELETE /v1/admin/operations/execution-events/{id}",
         "tags": [
           "operations"
         ],
@@ -27462,6 +27798,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchAssignments",
+        "summary": "GET /v1/admin/operations/dispatch-assignments",
         "tags": [
           "operations"
         ],
@@ -27655,6 +27993,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsDispatchAssignments",
+        "summary": "POST /v1/admin/operations/dispatch-assignments",
         "tags": [
           "operations"
         ],
@@ -27788,6 +28128,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchAssignmentsById",
+        "summary": "GET /v1/admin/operations/dispatch-assignments/{id}",
         "tags": [
           "operations"
         ],
@@ -28006,6 +28348,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsDispatchAssignmentsById",
+        "summary": "PATCH /v1/admin/operations/dispatch-assignments/{id}",
         "tags": [
           "operations"
         ],
@@ -28064,6 +28408,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsDispatchAssignmentsById",
+        "summary": "DELETE /v1/admin/operations/dispatch-assignments/{id}",
         "tags": [
           "operations"
         ],
@@ -28233,6 +28579,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchLegs",
+        "summary": "GET /v1/admin/operations/dispatch-legs",
         "tags": [
           "operations"
         ],
@@ -28427,6 +28775,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsDispatchLegs",
+        "summary": "POST /v1/admin/operations/dispatch-legs",
         "tags": [
           "operations"
         ],
@@ -28561,6 +28911,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchLegsById",
+        "summary": "GET /v1/admin/operations/dispatch-legs/{id}",
         "tags": [
           "operations"
         ],
@@ -28780,6 +29132,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsDispatchLegsById",
+        "summary": "PATCH /v1/admin/operations/dispatch-legs/{id}",
         "tags": [
           "operations"
         ],
@@ -28838,6 +29192,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsDispatchLegsById",
+        "summary": "DELETE /v1/admin/operations/dispatch-legs/{id}",
         "tags": [
           "operations"
         ],
@@ -28972,6 +29328,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchPassengers",
+        "summary": "GET /v1/admin/operations/dispatch-passengers",
         "tags": [
           "operations"
         ],
@@ -29107,6 +29465,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsDispatchPassengers",
+        "summary": "POST /v1/admin/operations/dispatch-passengers",
         "tags": [
           "operations"
         ],
@@ -29212,6 +29572,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchPassengersById",
+        "summary": "GET /v1/admin/operations/dispatch-passengers/{id}",
         "tags": [
           "operations"
         ],
@@ -29372,6 +29734,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsDispatchPassengersById",
+        "summary": "PATCH /v1/admin/operations/dispatch-passengers/{id}",
         "tags": [
           "operations"
         ],
@@ -29430,6 +29794,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsDispatchPassengersById",
+        "summary": "DELETE /v1/admin/operations/dispatch-passengers/{id}",
         "tags": [
           "operations"
         ],
@@ -29607,6 +29973,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDriverShifts",
+        "summary": "GET /v1/admin/operations/driver-shifts",
         "tags": [
           "operations"
         ],
@@ -29784,6 +30152,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsDriverShifts",
+        "summary": "POST /v1/admin/operations/driver-shifts",
         "tags": [
           "operations"
         ],
@@ -29909,6 +30279,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDriverShiftsById",
+        "summary": "GET /v1/admin/operations/driver-shifts/{id}",
         "tags": [
           "operations"
         ],
@@ -30109,6 +30481,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsDriverShiftsById",
+        "summary": "PATCH /v1/admin/operations/driver-shifts/{id}",
         "tags": [
           "operations"
         ],
@@ -30167,6 +30541,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsDriverShiftsById",
+        "summary": "DELETE /v1/admin/operations/driver-shifts/{id}",
         "tags": [
           "operations"
         ],
@@ -30341,6 +30717,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsServiceIncidents",
+        "summary": "GET /v1/admin/operations/service-incidents",
         "tags": [
           "operations"
         ],
@@ -30524,6 +30902,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsServiceIncidents",
+        "summary": "POST /v1/admin/operations/service-incidents",
         "tags": [
           "operations"
         ],
@@ -30650,6 +31030,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsServiceIncidentsById",
+        "summary": "GET /v1/admin/operations/service-incidents/{id}",
         "tags": [
           "operations"
         ],
@@ -30857,6 +31239,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsServiceIncidentsById",
+        "summary": "PATCH /v1/admin/operations/service-incidents/{id}",
         "tags": [
           "operations"
         ],
@@ -30915,6 +31299,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsServiceIncidentsById",
+        "summary": "DELETE /v1/admin/operations/service-incidents/{id}",
         "tags": [
           "operations"
         ],
@@ -31088,6 +31474,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchCheckpoints",
+        "summary": "GET /v1/admin/operations/dispatch-checkpoints",
         "tags": [
           "operations"
         ],
@@ -31291,6 +31679,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsDispatchCheckpoints",
+        "summary": "POST /v1/admin/operations/dispatch-checkpoints",
         "tags": [
           "operations"
         ],
@@ -31429,6 +31819,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsDispatchCheckpointsById",
+        "summary": "GET /v1/admin/operations/dispatch-checkpoints/{id}",
         "tags": [
           "operations"
         ],
@@ -31656,6 +32048,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsDispatchCheckpointsById",
+        "summary": "PATCH /v1/admin/operations/dispatch-checkpoints/{id}",
         "tags": [
           "operations"
         ],
@@ -31714,6 +32108,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsDispatchCheckpointsById",
+        "summary": "DELETE /v1/admin/operations/dispatch-checkpoints/{id}",
         "tags": [
           "operations"
         ],
@@ -32037,6 +32433,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFacilities",
+        "summary": "GET /v1/admin/operations/facilities",
         "tags": [
           "operations"
         ],
@@ -32401,6 +32799,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsFacilities",
+        "summary": "POST /v1/admin/operations/facilities",
         "tags": [
           "operations"
         ],
@@ -32627,6 +33027,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFacilitiesById",
+        "summary": "GET /v1/admin/operations/facilities/{id}",
         "tags": [
           "operations"
         ],
@@ -33015,6 +33417,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsFacilitiesById",
+        "summary": "PATCH /v1/admin/operations/facilities/{id}",
         "tags": [
           "operations"
         ],
@@ -33073,6 +33477,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsFacilitiesById",
+        "summary": "DELETE /v1/admin/operations/facilities/{id}",
         "tags": [
           "operations"
         ],
@@ -33191,6 +33597,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFacilitiesByIdContactPoints",
+        "summary": "GET /v1/admin/operations/facilities/{id}/contact-points",
         "tags": [
           "operations"
         ],
@@ -33406,6 +33814,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsFacilitiesByIdContactPoints",
+        "summary": "POST /v1/admin/operations/facilities/{id}/contact-points",
         "tags": [
           "operations"
         ],
@@ -33629,6 +34039,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsContactPointsById",
+        "summary": "PATCH /v1/admin/operations/contact-points/{id}",
         "tags": [
           "operations"
         ],
@@ -33687,6 +34099,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsContactPointsById",
+        "summary": "DELETE /v1/admin/operations/contact-points/{id}",
         "tags": [
           "operations"
         ],
@@ -33856,6 +34270,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFacilitiesByIdAddresses",
+        "summary": "GET /v1/admin/operations/facilities/{id}/addresses",
         "tags": [
           "operations"
         ],
@@ -34160,6 +34576,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsFacilitiesByIdAddresses",
+        "summary": "POST /v1/admin/operations/facilities/{id}/addresses",
         "tags": [
           "operations"
         ],
@@ -34476,6 +34894,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsAddressesById",
+        "summary": "PATCH /v1/admin/operations/addresses/{id}",
         "tags": [
           "operations"
         ],
@@ -34534,6 +34954,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsAddressesById",
+        "summary": "DELETE /v1/admin/operations/addresses/{id}",
         "tags": [
           "operations"
         ],
@@ -34713,6 +35135,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFacilityContacts",
+        "summary": "GET /v1/admin/operations/facility-contacts",
         "tags": [
           "operations"
         ],
@@ -34929,6 +35353,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsFacilitiesByIdContacts",
+        "summary": "POST /v1/admin/operations/facilities/{id}/contacts",
         "tags": [
           "operations"
         ],
@@ -35142,6 +35568,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsFacilityContactsById",
+        "summary": "PATCH /v1/admin/operations/facility-contacts/{id}",
         "tags": [
           "operations"
         ],
@@ -35200,6 +35628,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsFacilityContactsById",
+        "summary": "DELETE /v1/admin/operations/facility-contacts/{id}",
         "tags": [
           "operations"
         ],
@@ -35359,6 +35789,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFacilityFeatures",
+        "summary": "GET /v1/admin/operations/facility-features",
         "tags": [
           "operations"
         ],
@@ -35558,6 +35990,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsFacilitiesByIdFeatures",
+        "summary": "POST /v1/admin/operations/facilities/{id}/features",
         "tags": [
           "operations"
         ],
@@ -35754,6 +36188,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsFacilityFeaturesById",
+        "summary": "PATCH /v1/admin/operations/facility-features/{id}",
         "tags": [
           "operations"
         ],
@@ -35812,6 +36248,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsFacilityFeaturesById",
+        "summary": "DELETE /v1/admin/operations/facility-features/{id}",
         "tags": [
           "operations"
         ],
@@ -35983,6 +36421,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFacilityOperationSchedules",
+        "summary": "GET /v1/admin/operations/facility-operation-schedules",
         "tags": [
           "operations"
         ],
@@ -36198,6 +36638,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsFacilitiesByIdOperationSchedules",
+        "summary": "POST /v1/admin/operations/facilities/{id}/operation-schedules",
         "tags": [
           "operations"
         ],
@@ -36413,6 +36855,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsFacilityOperationSchedulesById",
+        "summary": "PATCH /v1/admin/operations/facility-operation-schedules/{id}",
         "tags": [
           "operations"
         ],
@@ -36471,6 +36915,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsFacilityOperationSchedulesById",
+        "summary": "DELETE /v1/admin/operations/facility-operation-schedules/{id}",
         "tags": [
           "operations"
         ],
@@ -36673,6 +37119,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsProperties",
+        "summary": "GET /v1/admin/operations/properties",
         "tags": [
           "operations"
         ],
@@ -36910,6 +37358,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsProperties",
+        "summary": "POST /v1/admin/operations/properties",
         "tags": [
           "operations"
         ],
@@ -37057,6 +37507,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPropertiesById",
+        "summary": "GET /v1/admin/operations/properties/{id}",
         "tags": [
           "operations"
         ],
@@ -37301,6 +37753,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsPropertiesById",
+        "summary": "PATCH /v1/admin/operations/properties/{id}",
         "tags": [
           "operations"
         ],
@@ -37359,6 +37813,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsPropertiesById",
+        "summary": "DELETE /v1/admin/operations/properties/{id}",
         "tags": [
           "operations"
         ],
@@ -37567,6 +38023,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPropertyGroups",
+        "summary": "GET /v1/admin/operations/property-groups",
         "tags": [
           "operations"
         ],
@@ -37791,6 +38249,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsPropertyGroups",
+        "summary": "POST /v1/admin/operations/property-groups",
         "tags": [
           "operations"
         ],
@@ -37940,6 +38400,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPropertyGroupsById",
+        "summary": "GET /v1/admin/operations/property-groups/{id}",
         "tags": [
           "operations"
         ],
@@ -38189,6 +38651,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsPropertyGroupsById",
+        "summary": "PATCH /v1/admin/operations/property-groups/{id}",
         "tags": [
           "operations"
         ],
@@ -38247,6 +38711,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsPropertyGroupsById",
+        "summary": "DELETE /v1/admin/operations/property-groups/{id}",
         "tags": [
           "operations"
         ],
@@ -38408,6 +38874,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPropertyGroupMembers",
+        "summary": "GET /v1/admin/operations/property-group-members",
         "tags": [
           "operations"
         ],
@@ -38588,6 +39056,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsPropertyGroupMembers",
+        "summary": "POST /v1/admin/operations/property-group-members",
         "tags": [
           "operations"
         ],
@@ -38705,6 +39175,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsPropertyGroupMembersById",
+        "summary": "GET /v1/admin/operations/property-group-members/{id}",
         "tags": [
           "operations"
         ],
@@ -38891,6 +39363,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsPropertyGroupMembersById",
+        "summary": "PATCH /v1/admin/operations/property-group-members/{id}",
         "tags": [
           "operations"
         ],
@@ -38949,6 +39423,8 @@
             }
           }
         },
+        "operationId": "deleteAdminOperationsPropertyGroupMembersById",
+        "summary": "DELETE /v1/admin/operations/property-group-members/{id}",
         "tags": [
           "operations"
         ],
@@ -39123,6 +39599,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFunctionSpaces",
+        "summary": "GET /v1/admin/operations/function-spaces",
         "tags": [
           "operations"
         ],
@@ -39334,6 +39812,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsFunctionSpaces",
+        "summary": "POST /v1/admin/operations/function-spaces",
         "tags": [
           "operations"
         ],
@@ -39518,6 +39998,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsFunctionSpacesById",
+        "summary": "GET /v1/admin/operations/function-spaces/{id}",
         "tags": [
           "operations"
         ],
@@ -39738,6 +40220,8 @@
             }
           }
         },
+        "operationId": "patchAdminOperationsFunctionSpacesById",
+        "summary": "PATCH /v1/admin/operations/function-spaces/{id}",
         "tags": [
           "operations"
         ],
@@ -39890,6 +40374,8 @@
             }
           }
         },
+        "operationId": "putAdminOperationsFunctionSpacesByIdCapacities",
+        "summary": "PUT /v1/admin/operations/function-spaces/{id}/capacities",
         "tags": [
           "operations"
         ],
@@ -40131,6 +40617,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsSpaceBlocks",
+        "summary": "POST /v1/admin/operations/space-blocks",
         "tags": [
           "operations"
         ],
@@ -40354,6 +40842,8 @@
             }
           }
         },
+        "operationId": "getAdminOperationsSpaceBlocksById",
+        "summary": "GET /v1/admin/operations/space-blocks/{id}",
         "tags": [
           "operations"
         ],
@@ -40513,6 +41003,8 @@
             }
           }
         },
+        "operationId": "putAdminOperationsSpaceBlocksByIdSlots",
+        "summary": "PUT /v1/admin/operations/space-blocks/{id}/slots",
         "tags": [
           "operations"
         ],
@@ -40786,6 +41278,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsSpaceBlocksByIdPickups",
+        "summary": "POST /v1/admin/operations/space-blocks/{id}/pickups",
         "tags": [
           "operations"
         ],
@@ -40934,6 +41428,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsSpaceBlocksByIdPickupsReverse",
+        "summary": "POST /v1/admin/operations/space-blocks/{id}/pickups/reverse",
         "tags": [
           "operations"
         ],
@@ -41117,6 +41613,8 @@
             }
           }
         },
+        "operationId": "postAdminOperationsSpaceBlocksByIdRelease",
+        "summary": "POST /v1/admin/operations/space-blocks/{id}/release",
         "tags": [
           "operations"
         ],

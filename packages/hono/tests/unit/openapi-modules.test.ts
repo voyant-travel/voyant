@@ -167,6 +167,9 @@ describe("stampModuleMetadata", () => {
     expect(op("/v1/admin/bookings/list", "get")["x-voyant-module"]).toBe("bookings")
     expect(op("/v1/admin/bookings/list", "get")["x-voyant-surface"]).toBe("admin")
     expect(op("/v1/admin/bookings/list", "get").tags).toEqual(["bookings"])
+    // Derived operationId (camelCase, `v1` dropped) + method+path summary.
+    expect(op("/v1/admin/bookings/list", "get").operationId).toBe("getAdminBookingsList")
+    expect(op("/v1/admin/bookings/list", "get").summary).toBe("GET /v1/admin/bookings/list")
     // publicPath override → authoritative owner, not the `booking-engine` prefix.
     expect(op("/v1/public/booking-engine/hold", "post")["x-voyant-module"]).toBe("commerce")
     expect(op("/v1/public/booking-engine/hold", "post")["x-voyant-surface"]).toBe("storefront")
@@ -175,17 +178,28 @@ describe("stampModuleMetadata", () => {
     expect(op("/v1/webhooks/netopia", "post")["x-voyant-surface"]).toBeUndefined()
   })
 
-  it("does not clobber tags a route already declares", () => {
+  it("does not clobber tags / operationId / summary a route already declares", () => {
     const tagged = {
       openapi: "3.1.0",
       info: INFO,
-      paths: { "/v1/admin/legal/contracts": { get: { tags: ["Legal"], responses: {} } } },
+      paths: {
+        "/v1/admin/legal/contracts": {
+          get: {
+            tags: ["Legal"],
+            operationId: "listContracts",
+            summary: "List all contracts",
+            responses: {},
+          },
+        },
+      },
     } as unknown as OpenApiDocument
     const stamped = stampModuleMetadata(tagged, new Map())
     const op = (stamped.paths as Record<string, Record<string, Record<string, unknown>>>)[
       "/v1/admin/legal/contracts"
     ].get
     expect(op.tags).toEqual(["Legal"])
+    expect(op.operationId).toBe("listContracts")
+    expect(op.summary).toBe("List all contracts")
     expect(op["x-voyant-module"]).toBe("legal")
   })
 

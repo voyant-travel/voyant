@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -188,6 +194,8 @@
             }
           }
         },
+        "operationId": "getAdminTripsHealth",
+        "summary": "GET /v1/admin/trips/health",
         "tags": [
           "trips"
         ],
@@ -800,6 +808,8 @@
             }
           }
         },
+        "operationId": "getAdminTrips",
+        "summary": "GET /v1/admin/trips",
         "tags": [
           "trips"
         ],
@@ -1319,6 +1329,8 @@
             }
           }
         },
+        "operationId": "postAdminTrips",
+        "summary": "POST /v1/admin/trips",
         "tags": [
           "trips"
         ],
@@ -1778,6 +1790,8 @@
             }
           }
         },
+        "operationId": "getAdminTripsByEnvelopeId",
+        "summary": "GET /v1/admin/trips/{envelopeId}",
         "tags": [
           "trips"
         ],
@@ -2105,6 +2119,8 @@
             }
           }
         },
+        "operationId": "patchAdminTripsByEnvelopeId",
+        "summary": "PATCH /v1/admin/trips/{envelopeId}",
         "tags": [
           "trips"
         ],
@@ -2476,6 +2492,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdReshop",
+        "summary": "POST /v1/admin/trips/{envelopeId}/reshop",
         "tags": [
           "trips"
         ],
@@ -2619,6 +2637,8 @@
             }
           }
         },
+        "operationId": "getAdminTripsByEnvelopeIdSnapshots",
+        "summary": "GET /v1/admin/trips/{envelopeId}/snapshots",
         "tags": [
           "trips"
         ],
@@ -2833,6 +2853,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdSnapshots",
+        "summary": "POST /v1/admin/trips/{envelopeId}/snapshots",
         "tags": [
           "trips"
         ],
@@ -2992,6 +3014,8 @@
             }
           }
         },
+        "operationId": "getAdminTripsSnapshotsBySnapshotId",
+        "summary": "GET /v1/admin/trips/snapshots/{snapshotId}",
         "tags": [
           "trips"
         ],
@@ -3418,6 +3442,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdComponents",
+        "summary": "POST /v1/admin/trips/{envelopeId}/components",
         "tags": [
           "trips"
         ],
@@ -3785,6 +3811,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdComponentsReorder",
+        "summary": "POST /v1/admin/trips/{envelopeId}/components/reorder",
         "tags": [
           "trips"
         ],
@@ -4206,6 +4234,8 @@
             }
           }
         },
+        "operationId": "patchAdminTripsComponentsByComponentId",
+        "summary": "PATCH /v1/admin/trips/components/{componentId}",
         "tags": [
           "trips"
         ],
@@ -4545,6 +4575,8 @@
             }
           }
         },
+        "operationId": "deleteAdminTripsComponentsByComponentId",
+        "summary": "DELETE /v1/admin/trips/components/{componentId}",
         "tags": [
           "trips"
         ],
@@ -4935,6 +4967,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsComponentsByComponentIdRefs",
+        "summary": "POST /v1/admin/trips/components/{componentId}/refs",
         "tags": [
           "trips"
         ],
@@ -5184,6 +5218,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdRequirements",
+        "summary": "POST /v1/admin/trips/{envelopeId}/requirements",
         "tags": [
           "trips"
         ],
@@ -5385,6 +5421,8 @@
             }
           }
         },
+        "operationId": "getAdminTripsByEnvelopeIdRequirements",
+        "summary": "GET /v1/admin/trips/{envelopeId}/requirements",
         "tags": [
           "trips"
         ],
@@ -5758,6 +5796,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsRequirementsByRequirementIdCandidates",
+        "summary": "POST /v1/admin/trips/requirements/{requirementId}/candidates",
         "tags": [
           "trips"
         ],
@@ -6302,6 +6342,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsRequirementsByRequirementIdSelect",
+        "summary": "POST /v1/admin/trips/requirements/{requirementId}/select",
         "tags": [
           "trips"
         ],
@@ -6675,6 +6717,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsRequirementsByRequirementIdReshop",
+        "summary": "POST /v1/admin/trips/requirements/{requirementId}/reshop",
         "tags": [
           "trips"
         ],
@@ -7243,6 +7287,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdPrice",
+        "summary": "POST /v1/admin/trips/{envelopeId}/price",
         "tags": [
           "trips"
         ],
@@ -7809,6 +7855,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdReserve",
+        "summary": "POST /v1/admin/trips/{envelopeId}/reserve",
         "tags": [
           "trips"
         ],
@@ -8358,6 +8406,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdCheckout",
+        "summary": "POST /v1/admin/trips/{envelopeId}/checkout",
         "tags": [
           "trips"
         ],
@@ -8909,6 +8959,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdCancellationPreview",
+        "summary": "POST /v1/admin/trips/{envelopeId}/cancellation-preview",
         "tags": [
           "trips"
         ],
@@ -9465,6 +9517,8 @@
             }
           }
         },
+        "operationId": "postAdminTripsByEnvelopeIdCancelComponents",
+        "summary": "POST /v1/admin/trips/{envelopeId}/cancel-components",
         "tags": [
           "trips"
         ],

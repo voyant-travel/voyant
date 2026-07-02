@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -289,6 +295,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsActivationSettings",
+        "summary": "GET /v1/admin/products/activation-settings",
         "tags": [
           "products"
         ],
@@ -403,6 +411,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsActivationSettingsById",
+        "summary": "GET /v1/admin/products/activation-settings/{id}",
         "tags": [
           "products"
         ],
@@ -582,6 +592,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsActivationSettingsById",
+        "summary": "PATCH /v1/admin/products/activation-settings/{id}",
         "tags": [
           "products"
         ],
@@ -637,6 +649,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsActivationSettingsById",
+        "summary": "DELETE /v1/admin/products/activation-settings/{id}",
         "tags": [
           "products"
         ],
@@ -818,6 +832,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdActivationSettings",
+        "summary": "POST /v1/admin/products/{id}/activation-settings",
         "tags": [
           "products"
         ],
@@ -979,6 +995,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsTicketSettings",
+        "summary": "GET /v1/admin/products/ticket-settings",
         "tags": [
           "products"
         ],
@@ -1105,6 +1123,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsTicketSettingsById",
+        "summary": "GET /v1/admin/products/ticket-settings/{id}",
         "tags": [
           "products"
         ],
@@ -1306,6 +1326,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsTicketSettingsById",
+        "summary": "PATCH /v1/admin/products/ticket-settings/{id}",
         "tags": [
           "products"
         ],
@@ -1361,6 +1383,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsTicketSettingsById",
+        "summary": "DELETE /v1/admin/products/ticket-settings/{id}",
         "tags": [
           "products"
         ],
@@ -1564,6 +1588,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdTicketSettings",
+        "summary": "POST /v1/admin/products/{id}/ticket-settings",
         "tags": [
           "products"
         ],
@@ -1706,6 +1732,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsVisibilitySettings",
+        "summary": "GET /v1/admin/products/visibility-settings",
         "tags": [
           "products"
         ],
@@ -1799,6 +1827,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsVisibilitySettingsById",
+        "summary": "GET /v1/admin/products/visibility-settings/{id}",
         "tags": [
           "products"
         ],
@@ -1936,6 +1966,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsVisibilitySettingsById",
+        "summary": "PATCH /v1/admin/products/visibility-settings/{id}",
         "tags": [
           "products"
         ],
@@ -1991,6 +2023,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsVisibilitySettingsById",
+        "summary": "DELETE /v1/admin/products/visibility-settings/{id}",
         "tags": [
           "products"
         ],
@@ -2130,6 +2164,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdVisibilitySettings",
+        "summary": "POST /v1/admin/products/{id}/visibility-settings",
         "tags": [
           "products"
         ],
@@ -2295,6 +2331,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsCapabilities",
+        "summary": "GET /v1/admin/products/capabilities",
         "tags": [
           "products"
         ],
@@ -2402,6 +2440,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsCapabilitiesById",
+        "summary": "GET /v1/admin/products/capabilities/{id}",
         "tags": [
           "products"
         ],
@@ -2565,6 +2605,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsCapabilitiesById",
+        "summary": "PATCH /v1/admin/products/capabilities/{id}",
         "tags": [
           "products"
         ],
@@ -2620,6 +2662,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsCapabilitiesById",
+        "summary": "DELETE /v1/admin/products/capabilities/{id}",
         "tags": [
           "products"
         ],
@@ -2788,6 +2832,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdCapabilities",
+        "summary": "POST /v1/admin/products/{id}/capabilities",
         "tags": [
           "products"
         ],
@@ -2922,6 +2968,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsDeliveryFormats",
+        "summary": "GET /v1/admin/products/delivery-formats",
         "tags": [
           "products"
         ],
@@ -3017,6 +3065,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsDeliveryFormatsById",
+        "summary": "GET /v1/admin/products/delivery-formats/{id}",
         "tags": [
           "products"
         ],
@@ -3157,6 +3207,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsDeliveryFormatsById",
+        "summary": "PATCH /v1/admin/products/delivery-formats/{id}",
         "tags": [
           "products"
         ],
@@ -3212,6 +3264,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsDeliveryFormatsById",
+        "summary": "DELETE /v1/admin/products/delivery-formats/{id}",
         "tags": [
           "products"
         ],
@@ -3357,6 +3411,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdDeliveryFormats",
+        "summary": "POST /v1/admin/products/{id}/delivery-formats",
         "tags": [
           "products"
         ],
@@ -3496,6 +3552,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsFeatures",
+        "summary": "GET /v1/admin/products/features",
         "tags": [
           "products"
         ],
@@ -3599,6 +3657,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsFeaturesById",
+        "summary": "GET /v1/admin/products/features/{id}",
         "tags": [
           "products"
         ],
@@ -3756,6 +3816,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsFeaturesById",
+        "summary": "PATCH /v1/admin/products/features/{id}",
         "tags": [
           "products"
         ],
@@ -3811,6 +3873,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsFeaturesById",
+        "summary": "DELETE /v1/admin/products/features/{id}",
         "tags": [
           "products"
         ],
@@ -3973,6 +4037,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdFeatures",
+        "summary": "POST /v1/admin/products/{id}/features",
         "tags": [
           "products"
         ],
@@ -4083,6 +4149,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsFaqs",
+        "summary": "GET /v1/admin/products/faqs",
         "tags": [
           "products"
         ],
@@ -4172,6 +4240,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsFaqsById",
+        "summary": "GET /v1/admin/products/faqs/{id}",
         "tags": [
           "products"
         ],
@@ -4303,6 +4373,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsFaqsById",
+        "summary": "PATCH /v1/admin/products/faqs/{id}",
         "tags": [
           "products"
         ],
@@ -4358,6 +4430,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsFaqsById",
+        "summary": "DELETE /v1/admin/products/faqs/{id}",
         "tags": [
           "products"
         ],
@@ -4495,6 +4569,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdFaqs",
+        "summary": "POST /v1/admin/products/{id}/faqs",
         "tags": [
           "products"
         ],
@@ -4687,6 +4763,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsLocations",
+        "summary": "GET /v1/admin/products/locations",
         "tags": [
           "products"
         ],
@@ -4841,6 +4919,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsLocationsById",
+        "summary": "GET /v1/admin/products/locations/{id}",
         "tags": [
           "products"
         ],
@@ -5104,6 +5184,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsLocationsById",
+        "summary": "PATCH /v1/admin/products/locations/{id}",
         "tags": [
           "products"
         ],
@@ -5159,6 +5241,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsLocationsById",
+        "summary": "DELETE /v1/admin/products/locations/{id}",
         "tags": [
           "products"
         ],
@@ -5427,6 +5511,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdLocations",
+        "summary": "POST /v1/admin/products/{id}/locations",
         "tags": [
           "products"
         ],
@@ -5643,6 +5729,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsDestinations",
+        "summary": "GET /v1/admin/products/destinations",
         "tags": [
           "products"
         ],
@@ -5851,6 +5939,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsDestinations",
+        "summary": "POST /v1/admin/products/destinations",
         "tags": [
           "products"
         ],
@@ -5983,6 +6073,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsDestinationsById",
+        "summary": "GET /v1/admin/products/destinations/{id}",
         "tags": [
           "products"
         ],
@@ -6216,6 +6308,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsDestinationsById",
+        "summary": "PATCH /v1/admin/products/destinations/{id}",
         "tags": [
           "products"
         ],
@@ -6271,6 +6365,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsDestinationsById",
+        "summary": "DELETE /v1/admin/products/destinations/{id}",
         "tags": [
           "products"
         ],
@@ -6409,6 +6505,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsDestinationTranslations",
+        "summary": "GET /v1/admin/products/destination-translations",
         "tags": [
           "products"
         ],
@@ -6579,6 +6677,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsDestinationsByIdTranslations",
+        "summary": "POST /v1/admin/products/destinations/{id}/translations",
         "tags": [
           "products"
         ],
@@ -6745,6 +6845,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsDestinationTranslationsById",
+        "summary": "PATCH /v1/admin/products/destination-translations/{id}",
         "tags": [
           "products"
         ],
@@ -6800,6 +6902,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsDestinationTranslationsById",
+        "summary": "DELETE /v1/admin/products/destination-translations/{id}",
         "tags": [
           "products"
         ],
@@ -6938,6 +7042,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductCategoryTranslations",
+        "summary": "GET /v1/admin/products/product-category-translations",
         "tags": [
           "products"
         ],
@@ -7108,6 +7214,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsProductCategoriesByIdTranslations",
+        "summary": "POST /v1/admin/products/product-categories/{id}/translations",
         "tags": [
           "products"
         ],
@@ -7274,6 +7382,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsProductCategoryTranslationsById",
+        "summary": "PATCH /v1/admin/products/product-category-translations/{id}",
         "tags": [
           "products"
         ],
@@ -7329,6 +7439,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsProductCategoryTranslationsById",
+        "summary": "DELETE /v1/admin/products/product-category-translations/{id}",
         "tags": [
           "products"
         ],
@@ -7446,6 +7558,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductTagTranslations",
+        "summary": "GET /v1/admin/products/product-tag-translations",
         "tags": [
           "products"
         ],
@@ -7576,6 +7690,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsProductTagsByIdTranslations",
+        "summary": "POST /v1/admin/products/product-tags/{id}/translations",
         "tags": [
           "products"
         ],
@@ -7702,6 +7818,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsProductTagTranslationsById",
+        "summary": "PATCH /v1/admin/products/product-tag-translations/{id}",
         "tags": [
           "products"
         ],
@@ -7757,6 +7875,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsProductTagTranslationsById",
+        "summary": "DELETE /v1/admin/products/product-tag-translations/{id}",
         "tags": [
           "products"
         ],
@@ -7879,6 +7999,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsDestinationLinks",
+        "summary": "GET /v1/admin/products/destination-links",
         "tags": [
           "products"
         ],
@@ -8000,6 +8122,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdDestinations",
+        "summary": "POST /v1/admin/products/{id}/destinations",
         "tags": [
           "products"
         ],
@@ -8065,6 +8189,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdDestinationsByDestinationId",
+        "summary": "DELETE /v1/admin/products/{id}/destinations/{destinationId}",
         "tags": [
           "products"
         ],
@@ -8225,6 +8351,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsOptions",
+        "summary": "GET /v1/admin/products/options",
         "tags": [
           "products"
         ],
@@ -8351,6 +8479,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsOptionsByOptionId",
+        "summary": "GET /v1/admin/products/options/{optionId}",
         "tags": [
           "products"
         ],
@@ -8549,6 +8679,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsOptionsByOptionId",
+        "summary": "PATCH /v1/admin/products/options/{optionId}",
         "tags": [
           "products"
         ],
@@ -8604,6 +8736,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsOptionsByOptionId",
+        "summary": "DELETE /v1/admin/products/options/{optionId}",
         "tags": [
           "products"
         ],
@@ -8810,6 +8944,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdOptions",
+        "summary": "POST /v1/admin/products/{id}/options",
         "tags": [
           "products"
         ],
@@ -9008,6 +9144,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsUnits",
+        "summary": "GET /v1/admin/products/units",
         "tags": [
           "products"
         ],
@@ -9169,6 +9307,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsUnitsByUnitId",
+        "summary": "GET /v1/admin/products/units/{unitId}",
         "tags": [
           "products"
         ],
@@ -9438,6 +9578,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsUnitsByUnitId",
+        "summary": "PATCH /v1/admin/products/units/{unitId}",
         "tags": [
           "products"
         ],
@@ -9493,6 +9635,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsUnitsByUnitId",
+        "summary": "DELETE /v1/admin/products/units/{unitId}",
         "tags": [
           "products"
         ],
@@ -9771,6 +9915,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsOptionsByOptionIdUnits",
+        "summary": "POST /v1/admin/products/options/{optionId}/units",
         "tags": [
           "products"
         ],
@@ -9944,6 +10090,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsTranslations",
+        "summary": "GET /v1/admin/products/translations",
         "tags": [
           "products"
         ],
@@ -10085,6 +10233,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsTranslationsByTranslationId",
+        "summary": "GET /v1/admin/products/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -10315,6 +10465,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsTranslationsByTranslationId",
+        "summary": "PATCH /v1/admin/products/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -10370,6 +10522,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsTranslationsByTranslationId",
+        "summary": "DELETE /v1/admin/products/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -10606,6 +10760,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdTranslations",
+        "summary": "POST /v1/admin/products/{id}/translations",
         "tags": [
           "products"
         ],
@@ -10737,6 +10893,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsOptionTranslations",
+        "summary": "GET /v1/admin/products/option-translations",
         "tags": [
           "products"
         ],
@@ -10836,6 +10994,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsOptionTranslationsByTranslationId",
+        "summary": "GET /v1/admin/products/option-translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -10986,6 +11146,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsOptionTranslationsByTranslationId",
+        "summary": "PATCH /v1/admin/products/option-translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -11041,6 +11203,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsOptionTranslationsByTranslationId",
+        "summary": "DELETE /v1/admin/products/option-translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -11197,6 +11361,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsOptionsByOptionIdTranslations",
+        "summary": "POST /v1/admin/products/options/{optionId}/translations",
         "tags": [
           "products"
         ],
@@ -11328,6 +11494,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsUnitTranslations",
+        "summary": "GET /v1/admin/products/unit-translations",
         "tags": [
           "products"
         ],
@@ -11427,6 +11595,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsUnitTranslationsByTranslationId",
+        "summary": "GET /v1/admin/products/unit-translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -11577,6 +11747,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsUnitTranslationsByTranslationId",
+        "summary": "PATCH /v1/admin/products/unit-translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -11632,6 +11804,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsUnitTranslationsByTranslationId",
+        "summary": "DELETE /v1/admin/products/unit-translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -11788,6 +11962,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsUnitsByUnitIdTranslations",
+        "summary": "POST /v1/admin/products/units/{unitId}/translations",
         "tags": [
           "products"
         ],
@@ -11927,6 +12103,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductTypes",
+        "summary": "GET /v1/admin/products/product-types",
         "tags": [
           "products"
         ],
@@ -12066,6 +12244,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsProductTypes",
+        "summary": "POST /v1/admin/products/product-types",
         "tags": [
           "products"
         ],
@@ -12170,6 +12350,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductTypesByTypeId",
+        "summary": "GET /v1/admin/products/product-types/{typeId}",
         "tags": [
           "products"
         ],
@@ -12333,6 +12515,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsProductTypesByTypeId",
+        "summary": "PATCH /v1/admin/products/product-types/{typeId}",
         "tags": [
           "products"
         ],
@@ -12388,6 +12572,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsProductTypesByTypeId",
+        "summary": "DELETE /v1/admin/products/product-types/{typeId}",
         "tags": [
           "products"
         ],
@@ -12543,6 +12729,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductCategories",
+        "summary": "GET /v1/admin/products/product-categories",
         "tags": [
           "products"
         ],
@@ -12747,6 +12935,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsProductCategories",
+        "summary": "POST /v1/admin/products/product-categories",
         "tags": [
           "products"
         ],
@@ -12859,6 +13049,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductCategoriesByCategoryId",
+        "summary": "GET /v1/admin/products/product-categories/{categoryId}",
         "tags": [
           "products"
         ],
@@ -13087,6 +13279,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsProductCategoriesByCategoryId",
+        "summary": "PATCH /v1/admin/products/product-categories/{categoryId}",
         "tags": [
           "products"
         ],
@@ -13142,6 +13336,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsProductCategoriesByCategoryId",
+        "summary": "DELETE /v1/admin/products/product-categories/{categoryId}",
         "tags": [
           "products"
         ],
@@ -13240,6 +13436,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductTags",
+        "summary": "GET /v1/admin/products/product-tags",
         "tags": [
           "products"
         ],
@@ -13325,6 +13523,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsProductTags",
+        "summary": "POST /v1/admin/products/product-tags",
         "tags": [
           "products"
         ],
@@ -13402,6 +13602,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsProductTagsByTagId",
+        "summary": "GET /v1/admin/products/product-tags/{tagId}",
         "tags": [
           "products"
         ],
@@ -13512,6 +13714,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsProductTagsByTagId",
+        "summary": "PATCH /v1/admin/products/product-tags/{tagId}",
         "tags": [
           "products"
         ],
@@ -13567,6 +13771,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsProductTagsByTagId",
+        "summary": "DELETE /v1/admin/products/product-tags/{tagId}",
         "tags": [
           "products"
         ],
@@ -13719,6 +13925,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsMediaByMediaId",
+        "summary": "GET /v1/admin/products/media/{mediaId}",
         "tags": [
           "products"
         ],
@@ -13968,6 +14176,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsMediaByMediaId",
+        "summary": "PATCH /v1/admin/products/media/{mediaId}",
         "tags": [
           "products"
         ],
@@ -14118,6 +14328,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsMediaByMediaId",
+        "summary": "DELETE /v1/admin/products/media/{mediaId}",
         "tags": [
           "products"
         ],
@@ -14306,6 +14518,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsMediaByMediaIdSetCover",
+        "summary": "PATCH /v1/admin/products/media/{mediaId}/set-cover",
         "tags": [
           "products"
         ],
@@ -14443,6 +14657,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdBrochureVersions",
+        "summary": "GET /v1/admin/products/{id}/brochure/versions",
         "tags": [
           "products"
         ],
@@ -14603,6 +14819,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdBrochureVersionsByBrochureIdSetCurrent",
+        "summary": "POST /v1/admin/products/{id}/brochure/versions/{brochureId}/set-current",
         "tags": [
           "products"
         ],
@@ -14763,6 +14981,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdBrochureVersionsByBrochureId",
+        "summary": "DELETE /v1/admin/products/{id}/brochure/versions/{brochureId}",
         "tags": [
           "products"
         ],
@@ -14915,6 +15135,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdBrochure",
+        "summary": "GET /v1/admin/products/{id}/brochure",
         "tags": [
           "products"
         ],
@@ -15142,6 +15364,8 @@
             }
           }
         },
+        "operationId": "putAdminProductsByIdBrochure",
+        "summary": "PUT /v1/admin/products/{id}/brochure",
         "tags": [
           "products"
         ],
@@ -15292,6 +15516,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdBrochure",
+        "summary": "DELETE /v1/admin/products/{id}/brochure",
         "tags": [
           "products"
         ],
@@ -15393,6 +15619,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdMediaReorder",
+        "summary": "POST /v1/admin/products/{id}/media/reorder",
         "tags": [
           "products"
         ],
@@ -15615,6 +15843,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdMedia",
+        "summary": "GET /v1/admin/products/{id}/media",
         "tags": [
           "products"
         ],
@@ -15875,6 +16105,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdMedia",
+        "summary": "POST /v1/admin/products/{id}/media",
         "tags": [
           "products"
         ],
@@ -16105,6 +16337,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdDaysByDayIdMedia",
+        "summary": "GET /v1/admin/products/{id}/days/{dayId}/media",
         "tags": [
           "products"
         ],
@@ -16373,6 +16607,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdDaysByDayIdMedia",
+        "summary": "POST /v1/admin/products/{id}/days/{dayId}/media",
         "tags": [
           "products"
         ],
@@ -16447,6 +16683,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdItineraries",
+        "summary": "GET /v1/admin/products/{id}/itineraries",
         "tags": [
           "products"
         ],
@@ -16580,6 +16818,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdItineraries",
+        "summary": "POST /v1/admin/products/{id}/itineraries",
         "tags": [
           "products"
         ],
@@ -16712,6 +16952,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsItinerariesByItineraryId",
+        "summary": "PATCH /v1/admin/products/itineraries/{itineraryId}",
         "tags": [
           "products"
         ],
@@ -16767,6 +17009,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsItinerariesByItineraryId",
+        "summary": "DELETE /v1/admin/products/itineraries/{itineraryId}",
         "tags": [
           "products"
         ],
@@ -16891,6 +17135,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsItinerariesByItineraryIdDuplicate",
+        "summary": "POST /v1/admin/products/itineraries/{itineraryId}/duplicate",
         "tags": [
           "products"
         ],
@@ -16986,6 +17232,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdItinerariesByItineraryIdDays",
+        "summary": "GET /v1/admin/products/{id}/itineraries/{itineraryId}/days",
         "tags": [
           "products"
         ],
@@ -17151,6 +17399,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdItinerariesByItineraryIdDays",
+        "summary": "POST /v1/admin/products/{id}/itineraries/{itineraryId}/days",
         "tags": [
           "products"
         ],
@@ -17238,6 +17488,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdDays",
+        "summary": "GET /v1/admin/products/{id}/days",
         "tags": [
           "products"
         ],
@@ -17395,6 +17647,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdDays",
+        "summary": "POST /v1/admin/products/{id}/days",
         "tags": [
           "products"
         ],
@@ -17559,6 +17813,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsByIdDaysByDayId",
+        "summary": "PATCH /v1/admin/products/{id}/days/{dayId}",
         "tags": [
           "products"
         ],
@@ -17622,6 +17878,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdDaysByDayId",
+        "summary": "DELETE /v1/admin/products/{id}/days/{dayId}",
         "tags": [
           "products"
         ],
@@ -17751,6 +18009,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdDaysByDayIdServices",
+        "summary": "GET /v1/admin/products/{id}/days/{dayId}/services",
         "tags": [
           "products"
         ],
@@ -17991,6 +18251,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdDaysByDayIdServices",
+        "summary": "POST /v1/admin/products/{id}/days/{dayId}/services",
         "tags": [
           "products"
         ],
@@ -18235,6 +18497,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsByIdDaysByDayIdServicesByServiceId",
+        "summary": "PATCH /v1/admin/products/{id}/days/{dayId}/services/{serviceId}",
         "tags": [
           "products"
         ],
@@ -18306,6 +18570,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdDaysByDayIdServicesByServiceId",
+        "summary": "DELETE /v1/admin/products/{id}/days/{dayId}/services/{serviceId}",
         "tags": [
           "products"
         ],
@@ -18413,6 +18679,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdDaysByDayIdTranslations",
+        "summary": "GET /v1/admin/products/{id}/days/{dayId}/translations",
         "tags": [
           "products"
         ],
@@ -18580,6 +18848,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdDaysByDayIdTranslations",
+        "summary": "POST /v1/admin/products/{id}/days/{dayId}/translations",
         "tags": [
           "products"
         ],
@@ -18754,6 +19024,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsByIdDaysByDayIdTranslationsByTranslationId",
+        "summary": "PATCH /v1/admin/products/{id}/days/{dayId}/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -18825,6 +19097,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdDaysByDayIdTranslationsByTranslationId",
+        "summary": "DELETE /v1/admin/products/{id}/days/{dayId}/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -18899,6 +19173,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdVersions",
+        "summary": "GET /v1/admin/products/{id}/versions",
         "tags": [
           "products"
         ],
@@ -18986,6 +19262,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdVersions",
+        "summary": "POST /v1/admin/products/{id}/versions",
         "tags": [
           "products"
         ],
@@ -19052,6 +19330,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdNotes",
+        "summary": "GET /v1/admin/products/{id}/notes",
         "tags": [
           "products"
         ],
@@ -19169,6 +19449,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdNotes",
+        "summary": "POST /v1/admin/products/{id}/notes",
         "tags": [
           "products"
         ],
@@ -19259,6 +19541,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdItinerariesByItineraryIdTranslations",
+        "summary": "GET /v1/admin/products/{id}/itineraries/{itineraryId}/translations",
         "tags": [
           "products"
         ],
@@ -19395,6 +19679,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdItinerariesByItineraryIdTranslations",
+        "summary": "POST /v1/admin/products/{id}/itineraries/{itineraryId}/translations",
         "tags": [
           "products"
         ],
@@ -19537,6 +19823,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsByIdItinerariesByItineraryIdTranslationsByTranslationId",
+        "summary": "PATCH /v1/admin/products/{id}/itineraries/{itineraryId}/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -19608,6 +19896,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdItinerariesByItineraryIdTranslationsByTranslationId",
+        "summary": "DELETE /v1/admin/products/{id}/itineraries/{itineraryId}/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -19720,6 +20010,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdDaysByDayIdServicesByServiceIdTranslations",
+        "summary": "GET /v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations",
         "tags": [
           "products"
         ],
@@ -19890,6 +20182,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdDaysByDayIdServicesByServiceIdTranslations",
+        "summary": "POST /v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations",
         "tags": [
           "products"
         ],
@@ -20066,6 +20360,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsByIdDaysByDayIdServicesByServiceIdTranslationsByTranslationId",
+        "summary": "PATCH /v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -20145,6 +20441,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdDaysByDayIdServicesByServiceIdTranslationsByTranslationId",
+        "summary": "DELETE /v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations/{translationId}",
         "tags": [
           "products"
         ],
@@ -20242,6 +20540,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdCategories",
+        "summary": "GET /v1/admin/products/{id}/categories",
         "tags": [
           "products"
         ],
@@ -20336,6 +20636,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdCategories",
+        "summary": "POST /v1/admin/products/{id}/categories",
         "tags": [
           "products"
         ],
@@ -20401,6 +20703,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdCategoriesByCategoryId",
+        "summary": "DELETE /v1/admin/products/{id}/categories/{categoryId}",
         "tags": [
           "products"
         ],
@@ -20463,6 +20767,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdTags",
+        "summary": "GET /v1/admin/products/{id}/tags",
         "tags": [
           "products"
         ],
@@ -20554,6 +20860,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdTags",
+        "summary": "POST /v1/admin/products/{id}/tags",
         "tags": [
           "products"
         ],
@@ -20619,6 +20927,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsByIdTagsByTagId",
+        "summary": "DELETE /v1/admin/products/{id}/tags/{tagId}",
         "tags": [
           "products"
         ],
@@ -20688,6 +20998,8 @@
             }
           }
         },
+        "operationId": "postAdminProductsByIdRecalculate",
+        "summary": "POST /v1/admin/products/{id}/recalculate",
         "tags": [
           "products"
         ],
@@ -20796,6 +21108,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsAggregates",
+        "summary": "GET /v1/admin/products/aggregates",
         "tags": [
           "products"
         ],
@@ -21304,6 +21618,8 @@
             }
           }
         },
+        "operationId": "getAdminProducts",
+        "summary": "GET /v1/admin/products",
         "tags": [
           "products"
         ],
@@ -21867,6 +22183,8 @@
             }
           }
         },
+        "operationId": "postAdminProducts",
+        "summary": "POST /v1/admin/products",
         "tags": [
           "products"
         ],
@@ -22168,6 +22486,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsById",
+        "summary": "GET /v1/admin/products/{id}",
         "tags": [
           "products"
         ],
@@ -22748,6 +23068,8 @@
             }
           }
         },
+        "operationId": "patchAdminProductsById",
+        "summary": "PATCH /v1/admin/products/{id}",
         "tags": [
           "products"
         ],
@@ -22803,6 +23125,8 @@
             }
           }
         },
+        "operationId": "deleteAdminProductsById",
+        "summary": "DELETE /v1/admin/products/{id}",
         "tags": [
           "products"
         ],
@@ -22919,6 +23243,8 @@
             }
           }
         },
+        "operationId": "getAdminProductsByIdActionLedger",
+        "summary": "GET /v1/admin/products/{id}/action-ledger",
         "tags": [
           "products"
         ],

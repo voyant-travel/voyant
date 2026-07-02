@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -1559,6 +1565,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogQuote",
+        "summary": "POST /v1/admin/catalog/quote",
         "tags": [
           "catalog-booking"
         ],
@@ -1939,6 +1947,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogBook",
+        "summary": "POST /v1/admin/catalog/book",
         "tags": [
           "catalog-booking"
         ],
@@ -2242,6 +2252,8 @@
             }
           }
         },
+        "operationId": "putAdminCatalogDraftsById",
+        "summary": "PUT /v1/admin/catalog/drafts/{id}",
         "tags": [
           "catalog-booking"
         ],
@@ -2389,6 +2401,8 @@
             }
           }
         },
+        "operationId": "getAdminCatalogDraftsById",
+        "summary": "GET /v1/admin/catalog/drafts/{id}",
         "tags": [
           "catalog-booking"
         ],
@@ -2411,6 +2425,8 @@
             "description": "Draft deleted (idempotent)"
           }
         },
+        "operationId": "deleteAdminCatalogDraftsById",
+        "summary": "DELETE /v1/admin/catalog/drafts/{id}",
         "tags": [
           "catalog-booking"
         ],
@@ -2606,6 +2622,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogHoldsPlace",
+        "summary": "POST /v1/admin/catalog/holds/place",
         "tags": [
           "catalog-booking"
         ],
@@ -2744,6 +2762,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogHoldsRelease",
+        "summary": "POST /v1/admin/catalog/holds/release",
         "tags": [
           "catalog-booking"
         ],
@@ -2819,6 +2839,8 @@
             }
           }
         },
+        "operationId": "getAdminCatalogOrders",
+        "summary": "GET /v1/admin/catalog/orders",
         "tags": [
           "catalog-booking"
         ],
@@ -2901,6 +2923,8 @@
             }
           }
         },
+        "operationId": "getAdminCatalogOrdersById",
+        "summary": "GET /v1/admin/catalog/orders/{id}",
         "tags": [
           "catalog-booking"
         ],
@@ -3091,6 +3115,8 @@
             }
           }
         },
+        "operationId": "postAdminCatalogOrdersByIdCancel",
+        "summary": "POST /v1/admin/catalog/orders/{id}/cancel",
         "tags": [
           "catalog-booking"
         ],
@@ -3229,6 +3255,8 @@
             }
           }
         },
+        "operationId": "getAdminCatalogSlots",
+        "summary": "GET /v1/admin/catalog/slots",
         "tags": [
           "catalog-booking"
         ],
@@ -3319,6 +3347,8 @@
             }
           }
         },
+        "operationId": "getAdminBookingsByIdCatalogSnapshot",
+        "summary": "GET /v1/admin/bookings/{id}/catalog-snapshot",
         "tags": [
           "catalog-booking"
         ],

@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -291,6 +297,8 @@
             }
           }
         },
+        "operationId": "postAdminWorkflowsByNameRuns",
+        "summary": "POST /v1/admin/workflows/{name}/runs",
         "tags": [
           "workflows"
         ],

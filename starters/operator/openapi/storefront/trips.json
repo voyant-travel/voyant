@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -188,6 +194,8 @@
             }
           }
         },
+        "operationId": "getPublicTripsHealth",
+        "summary": "GET /v1/public/trips/health",
         "tags": [
           "trips"
         ],
@@ -800,6 +808,8 @@
             }
           }
         },
+        "operationId": "getPublicTrips",
+        "summary": "GET /v1/public/trips",
         "tags": [
           "trips"
         ],
@@ -1319,6 +1329,8 @@
             }
           }
         },
+        "operationId": "postPublicTrips",
+        "summary": "POST /v1/public/trips",
         "tags": [
           "trips"
         ],
@@ -1778,6 +1790,8 @@
             }
           }
         },
+        "operationId": "getPublicTripsByEnvelopeId",
+        "summary": "GET /v1/public/trips/{envelopeId}",
         "tags": [
           "trips"
         ],
@@ -2105,6 +2119,8 @@
             }
           }
         },
+        "operationId": "patchPublicTripsByEnvelopeId",
+        "summary": "PATCH /v1/public/trips/{envelopeId}",
         "tags": [
           "trips"
         ],
@@ -2476,6 +2492,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdReshop",
+        "summary": "POST /v1/public/trips/{envelopeId}/reshop",
         "tags": [
           "trips"
         ],
@@ -2619,6 +2637,8 @@
             }
           }
         },
+        "operationId": "getPublicTripsByEnvelopeIdSnapshots",
+        "summary": "GET /v1/public/trips/{envelopeId}/snapshots",
         "tags": [
           "trips"
         ],
@@ -2833,6 +2853,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdSnapshots",
+        "summary": "POST /v1/public/trips/{envelopeId}/snapshots",
         "tags": [
           "trips"
         ],
@@ -2992,6 +3014,8 @@
             }
           }
         },
+        "operationId": "getPublicTripsSnapshotsBySnapshotId",
+        "summary": "GET /v1/public/trips/snapshots/{snapshotId}",
         "tags": [
           "trips"
         ],
@@ -3418,6 +3442,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdComponents",
+        "summary": "POST /v1/public/trips/{envelopeId}/components",
         "tags": [
           "trips"
         ],
@@ -3785,6 +3811,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdComponentsReorder",
+        "summary": "POST /v1/public/trips/{envelopeId}/components/reorder",
         "tags": [
           "trips"
         ],
@@ -4206,6 +4234,8 @@
             }
           }
         },
+        "operationId": "patchPublicTripsComponentsByComponentId",
+        "summary": "PATCH /v1/public/trips/components/{componentId}",
         "tags": [
           "trips"
         ],
@@ -4545,6 +4575,8 @@
             }
           }
         },
+        "operationId": "deletePublicTripsComponentsByComponentId",
+        "summary": "DELETE /v1/public/trips/components/{componentId}",
         "tags": [
           "trips"
         ],
@@ -4935,6 +4967,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsComponentsByComponentIdRefs",
+        "summary": "POST /v1/public/trips/components/{componentId}/refs",
         "tags": [
           "trips"
         ],
@@ -5184,6 +5218,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdRequirements",
+        "summary": "POST /v1/public/trips/{envelopeId}/requirements",
         "tags": [
           "trips"
         ],
@@ -5385,6 +5421,8 @@
             }
           }
         },
+        "operationId": "getPublicTripsByEnvelopeIdRequirements",
+        "summary": "GET /v1/public/trips/{envelopeId}/requirements",
         "tags": [
           "trips"
         ],
@@ -5758,6 +5796,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsRequirementsByRequirementIdCandidates",
+        "summary": "POST /v1/public/trips/requirements/{requirementId}/candidates",
         "tags": [
           "trips"
         ],
@@ -6302,6 +6342,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsRequirementsByRequirementIdSelect",
+        "summary": "POST /v1/public/trips/requirements/{requirementId}/select",
         "tags": [
           "trips"
         ],
@@ -6675,6 +6717,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsRequirementsByRequirementIdReshop",
+        "summary": "POST /v1/public/trips/requirements/{requirementId}/reshop",
         "tags": [
           "trips"
         ],
@@ -7243,6 +7287,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdPrice",
+        "summary": "POST /v1/public/trips/{envelopeId}/price",
         "tags": [
           "trips"
         ],
@@ -7809,6 +7855,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdReserve",
+        "summary": "POST /v1/public/trips/{envelopeId}/reserve",
         "tags": [
           "trips"
         ],
@@ -8358,6 +8406,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdCheckout",
+        "summary": "POST /v1/public/trips/{envelopeId}/checkout",
         "tags": [
           "trips"
         ],
@@ -8909,6 +8959,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdCancellationPreview",
+        "summary": "POST /v1/public/trips/{envelopeId}/cancellation-preview",
         "tags": [
           "trips"
         ],
@@ -9465,6 +9517,8 @@
             }
           }
         },
+        "operationId": "postPublicTripsByEnvelopeIdCancelComponents",
+        "summary": "POST /v1/public/trips/{envelopeId}/cancel-components",
         "tags": [
           "trips"
         ],

@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -304,6 +310,8 @@
             }
           }
         },
+        "operationId": "postPublicFinanceVouchersValidate",
+        "summary": "POST /v1/public/finance/vouchers/validate",
         "tags": [
           "finance"
         ],
@@ -505,6 +513,8 @@
             }
           }
         },
+        "operationId": "getPublicFinanceDocumentsByReference",
+        "summary": "GET /v1/public/finance/documents/by-reference",
         "tags": [
           "finance"
         ],
@@ -702,6 +712,8 @@
             }
           }
         },
+        "operationId": "getPublicFinanceBookingsByBookingIdDocuments",
+        "summary": "GET /v1/public/finance/bookings/{bookingId}/documents",
         "tags": [
           "finance"
         ],
@@ -911,6 +923,8 @@
             }
           }
         },
+        "operationId": "getPublicFinanceBookingsByBookingIdDocumentsByReference",
+        "summary": "GET /v1/public/finance/bookings/{bookingId}/documents/by-reference",
         "tags": [
           "finance"
         ],
@@ -1091,6 +1105,8 @@
             }
           }
         },
+        "operationId": "getPublicFinanceBookingsByBookingIdPayments",
+        "summary": "GET /v1/public/finance/bookings/{bookingId}/payments",
         "tags": [
           "finance"
         ],
@@ -1452,6 +1468,8 @@
             }
           }
         },
+        "operationId": "getPublicFinanceBookingsByBookingIdPaymentOptions",
+        "summary": "GET /v1/public/finance/bookings/{bookingId}/payment-options",
         "tags": [
           "finance"
         ],
@@ -1963,6 +1981,8 @@
             }
           }
         },
+        "operationId": "getPublicFinancePaymentSessionsBySessionId",
+        "summary": "GET /v1/public/finance/payment-sessions/{sessionId}",
         "tags": [
           "finance"
         ],
@@ -2877,6 +2897,8 @@
             }
           }
         },
+        "operationId": "postPublicFinanceBookingsByBookingIdPaymentSchedulesByScheduleIdPaymentSession",
+        "summary": "POST /v1/public/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session",
         "tags": [
           "finance"
         ],
@@ -3791,6 +3813,8 @@
             }
           }
         },
+        "operationId": "postPublicFinanceBookingsByBookingIdGuaranteesByGuaranteeIdPaymentSession",
+        "summary": "POST /v1/public/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session",
         "tags": [
           "finance"
         ],
@@ -4697,6 +4721,8 @@
             }
           }
         },
+        "operationId": "postPublicFinanceInvoicesByInvoiceIdPaymentSession",
+        "summary": "POST /v1/public/finance/invoices/{invoiceId}/payment-session",
         "tags": [
           "finance"
         ],
@@ -4796,6 +4822,8 @@
             }
           }
         },
+        "operationId": "getPublicFinanceAccountantByTokenSummary",
+        "summary": "GET /v1/public/finance/accountant/{token}/summary",
         "tags": [
           "finance"
         ],
@@ -4872,6 +4900,8 @@
             }
           }
         },
+        "operationId": "getPublicFinanceAccountantByTokenInvoices",
+        "summary": "GET /v1/public/finance/accountant/{token}/invoices",
         "tags": [
           "finance"
         ],

@@ -5,6 +5,12 @@
     "version": "0.0.0",
     "description": "Generated from the composed operator app. Do not edit by hand."
   },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
   "components": {
     "schemas": {
       "CatalogSearchFilter": {
@@ -375,6 +381,8 @@
             }
           }
         },
+        "operationId": "getAdminMicePrograms",
+        "summary": "GET /v1/admin/mice/programs",
         "tags": [
           "mice"
         ],
@@ -631,6 +639,8 @@
             }
           }
         },
+        "operationId": "postAdminMicePrograms",
+        "summary": "POST /v1/admin/mice/programs",
         "tags": [
           "mice"
         ],
@@ -778,6 +788,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceProgramsByIdCostSheet",
+        "summary": "GET /v1/admin/mice/programs/{id}/cost-sheet",
         "tags": [
           "mice"
         ],
@@ -963,6 +975,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceProgramsById",
+        "summary": "GET /v1/admin/mice/programs/{id}",
         "tags": [
           "mice"
         ],
@@ -1277,6 +1291,8 @@
             }
           }
         },
+        "operationId": "patchAdminMiceProgramsById",
+        "summary": "PATCH /v1/admin/mice/programs/{id}",
         "tags": [
           "mice"
         ],
@@ -1467,6 +1483,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceSessions",
+        "summary": "GET /v1/admin/mice/sessions",
         "tags": [
           "mice"
         ],
@@ -1694,6 +1712,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceSessions",
+        "summary": "POST /v1/admin/mice/sessions",
         "tags": [
           "mice"
         ],
@@ -1912,6 +1932,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceSessionsById",
+        "summary": "GET /v1/admin/mice/sessions/{id}",
         "tags": [
           "mice"
         ],
@@ -2141,6 +2163,8 @@
             }
           }
         },
+        "operationId": "patchAdminMiceSessionsById",
+        "summary": "PATCH /v1/admin/mice/sessions/{id}",
         "tags": [
           "mice"
         ],
@@ -2199,6 +2223,8 @@
             }
           }
         },
+        "operationId": "deleteAdminMiceSessionsById",
+        "summary": "DELETE /v1/admin/mice/sessions/{id}",
         "tags": [
           "mice"
         ],
@@ -2384,6 +2410,8 @@
             }
           }
         },
+        "operationId": "putAdminMiceSessionsByIdInclusions",
+        "summary": "PUT /v1/admin/mice/sessions/{id}/inclusions",
         "tags": [
           "mice"
         ],
@@ -2580,6 +2608,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceDelegates",
+        "summary": "GET /v1/admin/mice/delegates",
         "tags": [
           "mice"
         ],
@@ -2794,6 +2824,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceDelegates",
+        "summary": "POST /v1/admin/mice/delegates",
         "tags": [
           "mice"
         ],
@@ -2980,6 +3012,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceDelegatesById",
+        "summary": "GET /v1/admin/mice/delegates/{id}",
         "tags": [
           "mice"
         ],
@@ -3197,6 +3231,8 @@
             }
           }
         },
+        "operationId": "patchAdminMiceDelegatesById",
+        "summary": "PATCH /v1/admin/mice/delegates/{id}",
         "tags": [
           "mice"
         ],
@@ -3405,6 +3441,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceDelegatesByIdEnrollments",
+        "summary": "POST /v1/admin/mice/delegates/{id}/enrollments",
         "tags": [
           "mice"
         ],
@@ -3557,6 +3595,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceRoomingAssignments",
+        "summary": "GET /v1/admin/mice/rooming-assignments",
         "tags": [
           "mice"
         ],
@@ -3741,6 +3781,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceRoomingAssignments",
+        "summary": "POST /v1/admin/mice/rooming-assignments",
         "tags": [
           "mice"
         ],
@@ -3913,6 +3955,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceRoomingAssignmentsById",
+        "summary": "GET /v1/admin/mice/rooming-assignments/{id}",
         "tags": [
           "mice"
         ],
@@ -4100,6 +4144,8 @@
             }
           }
         },
+        "operationId": "patchAdminMiceRoomingAssignmentsById",
+        "summary": "PATCH /v1/admin/mice/rooming-assignments/{id}",
         "tags": [
           "mice"
         ],
@@ -4291,6 +4337,8 @@
             }
           }
         },
+        "operationId": "putAdminMiceRoomingAssignmentsByIdDelegates",
+        "summary": "PUT /v1/admin/mice/rooming-assignments/{id}/delegates",
         "tags": [
           "mice"
         ],
@@ -4445,6 +4493,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceRfps",
+        "summary": "GET /v1/admin/mice/rfps",
         "tags": [
           "mice"
         ],
@@ -4621,6 +4671,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceRfps",
+        "summary": "POST /v1/admin/mice/rfps",
         "tags": [
           "mice"
         ],
@@ -4801,6 +4853,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceRfpsByIdInvitations",
+        "summary": "POST /v1/admin/mice/rfps/{id}/invitations",
         "tags": [
           "mice"
         ],
@@ -4991,6 +5045,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceRfpsByIdBids",
+        "summary": "POST /v1/admin/mice/rfps/{id}/bids",
         "tags": [
           "mice"
         ],
@@ -5249,6 +5305,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceRfpsByIdAward",
+        "summary": "POST /v1/admin/mice/rfps/{id}/award",
         "tags": [
           "mice"
         ],
@@ -5488,6 +5546,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceRfpsById",
+        "summary": "GET /v1/admin/mice/rfps/{id}",
         "tags": [
           "mice"
         ],
@@ -5666,6 +5726,8 @@
             }
           }
         },
+        "operationId": "patchAdminMiceRfpsById",
+        "summary": "PATCH /v1/admin/mice/rfps/{id}",
         "tags": [
           "mice"
         ],
@@ -5834,6 +5896,8 @@
             }
           }
         },
+        "operationId": "putAdminMiceBidsByIdLines",
+        "summary": "PUT /v1/admin/mice/bids/{id}/lines",
         "tags": [
           "mice"
         ],
@@ -5990,6 +6054,8 @@
             }
           }
         },
+        "operationId": "postAdminMiceBidsByIdEvaluations",
+        "summary": "POST /v1/admin/mice/bids/{id}/evaluations",
         "tags": [
           "mice"
         ],
@@ -6227,6 +6293,8 @@
             }
           }
         },
+        "operationId": "getAdminMiceBidsById",
+        "summary": "GET /v1/admin/mice/bids/{id}",
         "tags": [
           "mice"
         ],
@@ -6408,6 +6476,8 @@
             }
           }
         },
+        "operationId": "patchAdminMiceBidsById",
+        "summary": "PATCH /v1/admin/mice/bids/{id}",
         "tags": [
           "mice"
         ],
