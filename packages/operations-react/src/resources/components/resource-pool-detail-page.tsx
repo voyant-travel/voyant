@@ -8,8 +8,14 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@voyant-travel/ui/components"
-import { Package, Users, Wrench } from "lucide-react"
+import { Loader2, Package, Plus, Trash2, Users, Wrench } from "lucide-react"
+import { useState } from "react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatResourceSlotLabel } from "../i18n/utils.js"
 import {
@@ -24,6 +30,7 @@ import {
   useResources,
   useSlots,
 } from "../index.js"
+import type { ResourcePoolMemberRow } from "./resource-detail-data.js"
 import { useResourcePoolMembers } from "./resource-detail-data.js"
 import { ResourceAssignmentSummary } from "./resource-detail-page.js"
 import {
@@ -47,6 +54,9 @@ export interface ResourcePoolDetailPageProps {
   deleting?: boolean
   onBack?: () => void
   onDelete?: (pool: ResourcePoolDetail) => Promise<void> | void
+  onEdit?: (pool: ResourcePoolDetail) => void
+  onAddMember?: (pool: ResourcePoolDetail, resourceId: string) => Promise<void> | void
+  onRemoveMember?: (member: ResourcePoolMemberRow) => Promise<void> | void
   onOpenAllocation?: (allocationId: string) => void
   onOpenProduct?: (productId: string) => void
   onOpenResource?: (resourceId: string) => void
@@ -61,10 +71,13 @@ export function ResourcePoolDetailPage({
   id,
   onBack,
   onDelete,
+  onEdit,
+  onAddMember,
   onOpenAllocation,
   onOpenAssignment,
   onOpenProduct,
   onOpenResource,
+  onRemoveMember,
 }: ResourcePoolDetailPageProps) {
   const i18n = useResourcesUiI18nOrDefault()
   const m = i18n.messages
@@ -77,6 +90,8 @@ export function ResourcePoolDetailPage({
   const assignmentsQuery = useAssignments({ poolId: id, limit: 25 })
   const slotsQuery = useSlots({ limit: 25 })
   const bookingsQuery = useBookings({ limit: 25 })
+  const [selectedResourceId, setSelectedResourceId] = useState("")
+  const [memberMutationId, setMemberMutationId] = useState<string | null>(null)
 
   if (poolQuery.isPending) {
     return <ResourcePoolDetailSkeleton />
@@ -102,6 +117,30 @@ export function ResourcePoolDetailPage({
   const resourcesById = new Map(resources.map((resource) => [resource.id, resource]))
   const slotsById = new Map(slots.map((slot) => [slot.id, slot]))
   const bookingsById = new Map(bookings.map((booking) => [booking.id, booking]))
+  const members = membersQuery.data?.data ?? []
+  const memberResourceIds = new Set(members.map((member) => member.resourceId))
+  const addableResources = resources.filter((resource) => !memberResourceIds.has(resource.id))
+
+  async function handleAddMember() {
+    if (!onAddMember || !selectedResourceId) return
+    setMemberMutationId("add")
+    try {
+      await onAddMember(pool, selectedResourceId)
+      setSelectedResourceId("")
+    } finally {
+      setMemberMutationId(null)
+    }
+  }
+
+  async function handleRemoveMember(member: ResourcePoolMemberRow) {
+    if (!onRemoveMember) return
+    setMemberMutationId(member.id)
+    try {
+      await onRemoveMember(member)
+    } finally {
+      setMemberMutationId(null)
+    }
+  }
 
   return (
     <div data-slot="resource-pool-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
@@ -114,6 +153,7 @@ export function ResourcePoolDetailPage({
         confirmAction={confirmAction}
         onBack={onBack}
         onDelete={onDelete ? () => onDelete(pool) : undefined}
+        onEdit={onEdit ? () => onEdit(pool) : undefined}
         badges={
           <>
             <Badge variant="outline">{m.common.resourceKindLabels[pool.kind]}</Badge>
@@ -161,10 +201,47 @@ export function ResourcePoolDetailPage({
           <CardTitle>{page.pool.membersTitle}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
-          {(membersQuery.data?.data.length ?? 0) === 0 ? (
+          {onAddMember ? (
+            <div className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center">
+              <Select
+                value={selectedResourceId}
+                onValueChange={(value) => setSelectedResourceId(value ?? "")}
+              >
+                <SelectTrigger className="min-w-0 flex-1">
+                  <SelectValue placeholder={page.pool.addMemberPlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {addableResources.length === 0 ? (
+                    <SelectItem value="__none" disabled>
+                      {page.pool.memberAlreadyAssigned}
+                    </SelectItem>
+                  ) : (
+                    addableResources.map((resource) => (
+                      <SelectItem key={resource.id} value={resource.id}>
+                        {resource.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                onClick={() => void handleAddMember()}
+                disabled={!selectedResourceId || memberMutationId === "add"}
+              >
+                {memberMutationId === "add" ? (
+                  <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Plus data-icon="inline-start" aria-hidden="true" />
+                )}
+                {page.pool.addMember}
+              </Button>
+            </div>
+          ) : null}
+          {members.length === 0 ? (
             <p className="text-muted-foreground">{page.pool.membersEmpty}</p>
           ) : (
-            membersQuery.data?.data.map((member) => {
+            members.map((member) => {
               const resource = resourcesById.get(member.resourceId)
               const body = (
                 <>
@@ -177,18 +254,39 @@ export function ResourcePoolDetailPage({
                 </>
               )
 
-              return onOpenResource && resource ? (
-                <button
-                  key={member.id}
-                  type="button"
-                  className="block w-full rounded-md border p-3 text-left hover:bg-muted/40"
-                  onClick={() => onOpenResource(resource.id)}
-                >
-                  {body}
-                </button>
-              ) : (
-                <div key={member.id} className="rounded-md border p-3">
-                  {body}
+              return (
+                <div key={member.id} className="flex items-start gap-2 rounded-md border p-3">
+                  {onOpenResource && resource ? (
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left hover:text-primary"
+                      onClick={() => onOpenResource(resource.id)}
+                    >
+                      {body}
+                    </button>
+                  ) : (
+                    <div className="min-w-0 flex-1">{body}</div>
+                  )}
+                  {onRemoveMember ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void handleRemoveMember(member)}
+                      disabled={memberMutationId === member.id}
+                    >
+                      {memberMutationId === member.id ? (
+                        <Loader2
+                          data-icon="inline-start"
+                          className="animate-spin"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Trash2 data-icon="inline-start" aria-hidden="true" />
+                      )}
+                      {page.pool.removeMember}
+                    </Button>
+                  ) : null}
                 </div>
               )
             })
@@ -240,6 +338,7 @@ export function ResourcePoolDetailPage({
                     ? formatResourceSlotLabel(slotsById.get(assignment.slotId)!, {
                         template: m.common.slotLabel,
                         formatDate: i18n.formatDate,
+                        products,
                       })
                     : assignment.slotId
                 }

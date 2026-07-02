@@ -112,6 +112,7 @@ export function ResourcesDialogs({
         pools={pools}
         resources={resources}
         bookings={bookings}
+        products={products}
         onSuccess={() => {
           setAssignmentDialogOpen(false)
           void refreshAll()

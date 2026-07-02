@@ -18,6 +18,7 @@ import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatResourceSlotLabel, RESOURCE_KIND_VALUES } from "../i18n/utils.js"
 import type {
   BookingOption,
+  ProductOption,
   ResourceCloseoutRow,
   ResourceRow,
   ResourceSlotAssignmentRow,
@@ -27,6 +28,7 @@ import { labelById } from "../index.js"
 
 export function ResourcesOverview({
   bookings,
+  products = [],
   slots,
   closeouts,
   filteredResources,
@@ -45,6 +47,7 @@ export function ResourcesOverview({
   showFilters = true,
 }: {
   bookings: BookingOption[]
+  products?: ProductOption[]
   slots: SlotOption[]
   closeouts: ResourceCloseoutRow[]
   filteredResources: ResourceRow[]
@@ -132,6 +135,7 @@ export function ResourcesOverview({
                       {
                         template: m.common.slotLabel,
                         formatDate: i18n.formatDate,
+                        products,
                       },
                     )}
                   </div>

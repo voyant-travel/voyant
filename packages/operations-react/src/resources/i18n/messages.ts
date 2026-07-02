@@ -19,6 +19,7 @@ type BulkActionMessages = {
 
 export type ResourcesUiMessages = {
   common: {
+    edit: string
     open: string
     view: string
     cancel: string
@@ -222,6 +223,7 @@ export type ResourcesUiMessages = {
       code: string
       created: string
       delete: string
+      edit: string
       noBooking: string
       noPool: string
       noResource: string
@@ -258,6 +260,7 @@ export type ResourcesUiMessages = {
       notFound: string
       poolMembershipsEmpty: string
       poolMembershipsTitle: string
+      removePoolMember: string
       released: string
     }
     pool: {
@@ -271,6 +274,10 @@ export type ResourcesUiMessages = {
       loadFailed: string
       membersEmpty: string
       membersTitle: string
+      addMember: string
+      addMemberPlaceholder: string
+      memberAlreadyAssigned: string
+      removeMember: string
       noResource: string
       notFound: string
       sharedCapacity: string

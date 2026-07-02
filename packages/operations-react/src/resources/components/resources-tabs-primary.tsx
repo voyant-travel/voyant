@@ -10,7 +10,7 @@ import {
 import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { DataTableColumnHeader } from "@voyant-travel/ui/components/data-table-column-header"
 import { TabsContent } from "@voyant-travel/ui/components/tabs"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, Pencil } from "lucide-react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatSelectionLabel, formatSelectionSummary } from "../i18n/utils.js"
 import {
@@ -47,6 +47,7 @@ const resourceColumns = (
   i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   suppliers: SupplierOption[],
   onView: (resourceId: string) => void,
+  onEdit: (resource: ResourceRow) => void,
 ): ColumnDef<ResourceRow>[] => [
   {
     accessorKey: "name",
@@ -108,17 +109,30 @@ const resourceColumns = (
     id: "view",
     header: i18n.messages.tabsPrimary.columns.resources.view,
     cell: ({ row }) => (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(event) => {
-          event.stopPropagation()
-          onView(row.original.id)
-        }}
-      >
-        <ExternalLink className="mr-2 h-4 w-4" />
-        {i18n.messages.common.open}
-      </Button>
+      <div className="flex flex-wrap items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onView(row.original.id)
+          }}
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          {i18n.messages.common.open}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit(row.original)
+          }}
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          {i18n.messages.common.edit}
+        </Button>
+      </div>
     ),
   },
 ]
@@ -127,6 +141,7 @@ const poolColumns = (
   i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   products: ProductOption[],
   onView: (poolId: string) => void,
+  onEdit: (pool: ResourcePoolRow) => void,
 ): ColumnDef<ResourcePoolRow>[] => [
   {
     accessorKey: "name",
@@ -168,17 +183,30 @@ const poolColumns = (
     id: "view",
     header: i18n.messages.tabsPrimary.columns.pools.view,
     cell: ({ row }) => (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(event) => {
-          event.stopPropagation()
-          onView(row.original.id)
-        }}
-      >
-        <ExternalLink className="mr-2 h-4 w-4" />
-        {i18n.messages.common.open}
-      </Button>
+      <div className="flex flex-wrap items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onView(row.original.id)
+          }}
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          {i18n.messages.common.open}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit(row.original)
+          }}
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          {i18n.messages.common.edit}
+        </Button>
+      </div>
     ),
   },
 ]
@@ -188,6 +216,7 @@ const allocationColumns = (
   pools: ResourcePoolRow[],
   products: ProductOption[],
   onView: (allocationId: string) => void,
+  onEdit: (allocation: ResourceAllocationRow) => void,
 ): ColumnDef<ResourceAllocationRow>[] => [
   {
     accessorKey: "poolId",
@@ -247,17 +276,30 @@ const allocationColumns = (
     id: "view",
     header: i18n.messages.tabsPrimary.columns.allocations.view,
     cell: ({ row }) => (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(event) => {
-          event.stopPropagation()
-          onView(row.original.id)
-        }}
-      >
-        <ExternalLink className="mr-2 h-4 w-4" />
-        {i18n.messages.common.open}
-      </Button>
+      <div className="flex flex-wrap items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onView(row.original.id)
+          }}
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          {i18n.messages.common.open}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit(row.original)
+          }}
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          {i18n.messages.common.edit}
+        </Button>
+      </div>
     ),
   },
 ]
@@ -288,7 +330,7 @@ export function ResourcesTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={resourceColumns(i18n, props.suppliers, props.onOpenRoute)}
+        columns={resourceColumns(i18n, props.suppliers, props.onOpenRoute, props.onEdit)}
         data={props.filteredResources}
         emptyMessage={section.emptyMessage}
         enableRowSelection
@@ -417,7 +459,7 @@ export function PoolsTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={poolColumns(i18n, props.products, props.onOpenRoute)}
+        columns={poolColumns(i18n, props.products, props.onOpenRoute, props.onEdit)}
         data={props.filteredPools}
         emptyMessage={section.emptyMessage}
         enableRowSelection
@@ -546,7 +588,13 @@ export function AllocationsTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={allocationColumns(i18n, props.pools, props.products, props.onOpenRoute)}
+        columns={allocationColumns(
+          i18n,
+          props.pools,
+          props.products,
+          props.onOpenRoute,
+          props.onEdit,
+        )}
         data={props.filteredAllocations}
         emptyMessage={section.emptyMessage}
         enableRowSelection

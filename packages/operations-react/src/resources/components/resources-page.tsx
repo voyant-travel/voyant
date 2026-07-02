@@ -14,7 +14,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
 import { ListFilter, Search, X } from "lucide-react"
 import type { ReactNode } from "react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatResourceSlotLabel, RESOURCE_KIND_VALUES } from "../i18n/utils.js"
 import {
@@ -139,6 +139,28 @@ export interface ResourcesPageProps {
 const noop = () => undefined
 const noopId = (_id: string) => undefined
 const noopRow = (_row: unknown) => undefined
+const RESOURCE_PAGE_STATE_KEY = "voyant.resources.pageState"
+
+type PersistedResourcesPageState = {
+  activeTab?: ResourcesPageTab
+  search?: string
+  kindFilter?: string
+  activeFilter?: ResourcesPageActiveFilter
+  supplierFilter?: string | null
+  productFilter?: string | null
+  assignmentStatusFilter?: string
+}
+
+function loadPersistedPageState(): PersistedResourcesPageState {
+  if (typeof window === "undefined") return {}
+
+  try {
+    const raw = window.sessionStorage.getItem(RESOURCE_PAGE_STATE_KEY)
+    return raw ? (JSON.parse(raw) as PersistedResourcesPageState) : {}
+  } catch {
+    return {}
+  }
+}
 
 export function ResourcesPage({
   className,
@@ -167,16 +189,27 @@ export function ResourcesPage({
   const i18n = useResourcesUiI18nOrDefault()
   const m = i18n.messages
   const page = m.resourcesPage
-  const [search, setSearch] = useState("")
-  const [kindFilter, setKindFilter] = useState("all")
-  const [activeTab, setActiveTab] = useState<ResourcesPageTab>(defaultTab)
+  const [persistedPageState] = useState(loadPersistedPageState)
+  const [search, setSearch] = useState(persistedPageState.search ?? "")
+  const [kindFilter, setKindFilter] = useState(persistedPageState.kindFilter ?? "all")
+  const [activeTab, setActiveTab] = useState<ResourcesPageTab>(
+    persistedPageState.activeTab ?? defaultTab,
+  )
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
-  const [supplierFilter, setSupplierFilter] = useState<string | null>(null)
+  const [supplierFilter, setSupplierFilter] = useState<string | null>(
+    persistedPageState.supplierFilter ?? null,
+  )
   const [selectedSupplierOption, setSelectedSupplierOption] = useState<SupplierOption | null>(null)
-  const [productFilter, setProductFilter] = useState<string | null>(null)
+  const [productFilter, setProductFilter] = useState<string | null>(
+    persistedPageState.productFilter ?? null,
+  )
   const [selectedProductOption, setSelectedProductOption] = useState<ProductOption | null>(null)
-  const [activeFilter, setActiveFilter] = useState<ResourcesPageActiveFilter>("all")
-  const [assignmentStatusFilter, setAssignmentStatusFilter] = useState<string>("all")
+  const [activeFilter, setActiveFilter] = useState<ResourcesPageActiveFilter>(
+    persistedPageState.activeFilter ?? "all",
+  )
+  const [assignmentStatusFilter, setAssignmentStatusFilter] = useState<string>(
+    persistedPageState.assignmentStatusFilter ?? "all",
+  )
   const [resourceSelection, setResourceSelectionState] = useState<RowSelectionState>({})
   const [poolSelection, setPoolSelectionState] = useState<RowSelectionState>({})
   const [allocationSelection, setAllocationSelectionState] = useState<RowSelectionState>({})
@@ -206,6 +239,29 @@ export function ResourcesPage({
   const allocations = allocationsQuery.data?.data ?? []
   const assignments = assignmentsQuery.data?.data ?? []
   const closeouts = closeoutsQuery.data?.data ?? []
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const nextState: PersistedResourcesPageState = {
+      activeTab,
+      search,
+      kindFilter,
+      activeFilter,
+      supplierFilter,
+      productFilter,
+      assignmentStatusFilter,
+    }
+    window.sessionStorage.setItem(RESOURCE_PAGE_STATE_KEY, JSON.stringify(nextState))
+  }, [
+    activeFilter,
+    activeTab,
+    assignmentStatusFilter,
+    kindFilter,
+    productFilter,
+    search,
+    supplierFilter,
+  ])
 
   const kindOptions = useMemo(
     () =>
@@ -286,6 +342,7 @@ export function ResourcesPage({
           {
             template: m.common.slotLabel,
             formatDate: i18n.formatDate,
+            products,
           },
         ),
       )
@@ -441,6 +498,7 @@ export function ResourcesPage({
         <>
           <ResourcesOverview
             bookings={bookings}
+            products={products}
             slots={slotsData}
             closeouts={closeouts}
             filteredResources={filteredResources}
@@ -510,6 +568,7 @@ export function ResourcesPage({
             />
             <AssignmentsTab
               slots={slotsData}
+              products={products}
               resources={resources}
               bookings={bookings}
               filteredAssignments={filteredAssignments}
