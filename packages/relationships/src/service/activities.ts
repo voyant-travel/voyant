@@ -2,7 +2,13 @@ import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { activities, activityLinks, activityParticipants } from "../schema.js"
+import {
+  activities,
+  activityLinks,
+  activityParticipants,
+  organizations,
+  people,
+} from "../schema.js"
 import type {
   activityListQuerySchema,
   insertActivityLinkSchema,
@@ -17,6 +23,61 @@ type CreateActivityInput = z.infer<typeof insertActivitySchema>
 type UpdateActivityInput = z.infer<typeof updateActivitySchema>
 type CreateActivityLinkInput = z.infer<typeof insertActivityLinkSchema>
 type CreateActivityParticipantInput = z.infer<typeof insertActivityParticipantSchema>
+
+function firstExecuteRow<T>(result: unknown): T | undefined {
+  if (Array.isArray(result)) return result[0] as T | undefined
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows?: unknown[] }).rows
+    return rows?.[0] as T | undefined
+  }
+  return undefined
+}
+
+async function quoteExists(db: PostgresJsDatabase, quoteId: string) {
+  const tableResult = await db.execute(
+    sql<{ exists: boolean }[]>`select (to_regclass('public.quotes') is not null) as exists`,
+  )
+  const tableRow = firstExecuteRow<{ exists: boolean }>(tableResult)
+  if (!tableRow?.exists) return false
+
+  const quoteResult = await db.execute(
+    sql<{ exists: boolean }[]>`
+      select exists(select 1 from public.quotes where id = ${quoteId}) as exists
+    `,
+  )
+  return !!firstExecuteRow<{ exists: boolean }>(quoteResult)?.exists
+}
+
+async function linkedEntityExists(db: PostgresJsDatabase, data: CreateActivityLinkInput) {
+  switch (data.entityType) {
+    case "organization": {
+      const [row] = await db
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.id, data.entityId))
+        .limit(1)
+      return !!row
+    }
+    case "person": {
+      const [row] = await db
+        .select({ id: people.id })
+        .from(people)
+        .where(eq(people.id, data.entityId))
+        .limit(1)
+      return !!row
+    }
+    case "activity": {
+      const [row] = await db
+        .select({ id: activities.id })
+        .from(activities)
+        .where(eq(activities.id, data.entityId))
+        .limit(1)
+      return !!row
+    }
+    case "quote":
+      return quoteExists(db, data.entityId)
+  }
+}
 
 export const activitiesService = {
   async listActivities(db: PostgresJsDatabase, query: ActivityListQuery) {
@@ -118,6 +179,8 @@ export const activitiesService = {
     activityId: string,
     data: CreateActivityLinkInput,
   ) {
+    if (!(await linkedEntityExists(db, data))) return null
+
     const [row] = await db
       .insert(activityLinks)
       .values({ ...data, activityId })

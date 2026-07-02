@@ -12956,6 +12956,24 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Linked entity not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         },
         "operationId": "postAdminRelationshipsActivitiesByIdLinks",

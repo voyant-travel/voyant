@@ -129,6 +129,7 @@ const createActivityLinkRoute = createRoute({
       ...jsonContent(z.object({ data: activityLinkSchema })),
     },
     400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Linked entity not found", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -216,7 +217,7 @@ activityRoutes.openapi(createActivityLinkRoute, async (c) => {
     c.req.valid("param").id,
     c.req.valid("json"),
   )
-  return c.json({ data: row! }, 201)
+  return row ? c.json({ data: row }, 201) : c.json({ error: "Linked entity not found" }, 404)
 })
 activityRoutes.openapi(deleteActivityLinkRoute, async (c) => {
   const row = await relationshipsService.deleteActivityLink(c.get("db"), c.req.valid("param").id)
