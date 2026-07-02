@@ -7,21 +7,30 @@ server, mounted as a Hono route group inside the operator deployment at
 
 External MCP clients (Claude, ChatGPT, …) connect to that endpoint over the wire.
 
-## Spike findings (Sub-issue 0)
+## API
 
-Validated wiring that the transport adapter (Sub-issue 3) is built on:
+`createMcpHonoApp({ registry, buildContext, serverInfo? })` → a Hono sub-app. Mount it
+at `/v1/admin/mcp` (the `"operator/mcp"` composition entry):
+
+- `POST /` — MCP JSON-RPC (`initialize` / `tools/list` / `tools/call`).
+- `GET /manifest` — the contract-versioned tool discovery manifest for remote agents.
+
+`buildContext(c)` maps the request's `c.var` (db lease / actor / audience / scope) into
+a `@voyant-travel/tools` `ToolContext`.
+
+## How it works
 
 - **Transport:** `@hono/mcp`'s `StreamableHTTPTransport` (web-standard `Request`/
   `Response`) connected to `@modelcontextprotocol/sdk`'s `McpServer`. The SDK's own
-  `StreamableHTTPServerTransport` is Node-`http`-oriented and is **not** used.
-- **Stateless, per request:** create a fresh `McpServer` + transport per request,
-  with `{ sessionIdGenerator: undefined, enableJsonResponse: true }`, then
-  `await server.connect(transport); return transport.handleRequest(c)`. No session
-  store, no Durable Object — fits the operator's single-worker `nodejs_compat`
-  runtime, and survives the lazy-route `c.var` re-hydration at `/v1/admin/mcp`.
-- **No init handshake required per request:** in stateless mode `tools/list` and
-  `tools/call` are each handled independently (verified in `tests/spike.test.ts`).
-- **Client `Accept` header** must include `application/json, text/event-stream`.
-
-`src/spike.ts` is a throwaway proof — it is replaced by `createMcpHonoApp(...)` over
-the `@voyant-travel/tools` registry once that lands.
+  Node-`http` transport is **not** used.
+- **Stateless, per request:** a fresh `McpServer` + transport per request with
+  `{ sessionIdGenerator: undefined, enableJsonResponse: true }`, then
+  `server.connect(transport)` → `transport.handleRequest(c)`. No session store, no
+  Durable Object — fits the operator's single-worker `nodejs_compat` runtime and
+  survives the lazy-route `c.var` re-hydration. Clients must send
+  `Accept: application/json, text/event-stream`.
+- **Authorization (D2):** each tool's `requiredScopes` are checked against the caller's
+  granted scopes with **AND** semantics (`hasApiKeyPermission`). Unauthorized tools are
+  neither listed nor registered on the per-request server, so they cannot be called.
+- **Headless boundary:** the registry returns typed pure data; this adapter wraps it in
+  the MCP `CallToolResult` envelope only at the transport edge.
