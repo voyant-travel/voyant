@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildCommitParty,
+  buildCommitPaymentIntent,
   canAdvanceFromStep,
   defaultMinimalShape,
 } from "../../src/journey/components/booking-journey-rules.js"
@@ -99,6 +100,17 @@ describe("booking-journey-rules", () => {
         },
       },
     })
+  })
+
+  it("builds only supported in-process commit payment intents", () => {
+    expect(buildCommitPaymentIntent(emptyDraft(ENTITY))).toEqual({ type: "hold" })
+
+    expect(() =>
+      buildCommitPaymentIntent({
+        ...emptyDraft(ENTITY),
+        payment: { intent: "card" },
+      }),
+    ).toThrow("Unsupported booking payment intent: card")
   })
 
   it("blocks payment advancement when an already-paid row has no payment date", () => {

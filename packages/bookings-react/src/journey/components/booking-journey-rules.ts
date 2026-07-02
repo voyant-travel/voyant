@@ -60,6 +60,17 @@ export function resolveInitialStatus(draft: Draft): "draft" | "confirmed" | "awa
   return fullyPaid ? "confirmed" : "awaiting_payment"
 }
 
+/**
+ * The packaged admin journey's in-process commit route can only create a held
+ * booking. Other payment intents need a dedicated checkout/provider flow
+ * because the route contract requires fields the generic draft does not carry
+ * (`tokenizedCard`, `agencyAccount`, bank-transfer instructions, etc.).
+ */
+export function buildCommitPaymentIntent(draft: Draft): { type: "hold" } {
+  if (draft.payment.intent === "hold") return { type: "hold" }
+  throw new Error(`Unsupported booking payment intent: ${draft.payment.intent}`)
+}
+
 export function isStepVisible(step: JourneyStep, shape: BookingDraftShape): boolean {
   const subSteps = shape.configureSubSteps ?? []
   switch (step) {
