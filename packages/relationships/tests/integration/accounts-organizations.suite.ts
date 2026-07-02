@@ -124,6 +124,33 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
       expect(body.data.name).toBe("New Name")
     })
 
+    it("patches only fields explicitly sent by the caller", async () => {
+      const createRes = await getApp().request("/organizations", {
+        method: "POST",
+        ...json({
+          name: "Partial Update Org",
+          legalName: "Partial Update Org SRL",
+          status: "inactive",
+          tags: ["preferred", "agency"],
+        }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/organizations/${created.id}`, {
+        method: "PATCH",
+        ...json({ name: "Renamed Partial Update Org" }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        name: "Renamed Partial Update Org",
+        legalName: "Partial Update Org SRL",
+        status: "inactive",
+        tags: ["preferred", "agency"],
+      })
+    })
+
     it("merges duplicate organizations and repoints people and booking references", async () => {
       const { createTestDb } = await import("@voyant-travel/db/test-utils")
       const db = createTestDb()
