@@ -45,6 +45,25 @@ const echoTool = defineTool({
   },
 })
 
+const sendNotificationTool = defineTool({
+  name: "send_notification",
+  description: "Send a templated notification.",
+  inputSchema: z.object({ templateSlug: z.string(), to: z.string() }),
+  outputSchema: z.object({ ok: z.boolean() }),
+  requiredScopes: ["notifications:send"],
+  tier: "destructive",
+  riskPolicy: {
+    destructive: true,
+    reversible: false,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["email"],
+  },
+  async handler() {
+    return { ok: true }
+  },
+})
+
 function buildContext(): ToolContext {
   return {
     db: {},
@@ -59,6 +78,7 @@ function buildContext(): ToolContext {
 function appWithScopes(scopes: string[]): Hono {
   const registry = createToolRegistry()
   registry.register(echoTool)
+  registry.register(sendNotificationTool)
   const mcp = createMcpHonoApp({ registry, buildContext })
 
   const outer = new Hono()
@@ -117,5 +137,20 @@ describe("createMcpHonoApp", () => {
     const denied = await appWithScopes([]).request("/manifest")
     const deniedBody = (await denied.json()) as { tools: Array<{ name: string }> }
     expect(deniedBody.tools.map((t) => t.name)).not.toContain("echo")
+  })
+
+  it("requires an exact notifications:send grant for destructive notification tools", async () => {
+    for (const scopes of [["*"], ["notifications:*"], ["*:send"]]) {
+      const listed = await readRpc(await appWithScopes(scopes).request("/", rpc("tools/list", {})))
+      const tools = (listed.result as { tools?: Array<{ name: string }> } | undefined)?.tools ?? []
+      expect(tools.map((t) => t.name)).not.toContain("send_notification")
+    }
+
+    const authorized = await readRpc(
+      await appWithScopes(["notifications:send"]).request("/", rpc("tools/list", {})),
+    )
+    const tools =
+      (authorized.result as { tools?: Array<{ name: string }> } | undefined)?.tools ?? []
+    expect(tools.map((t) => t.name)).toContain("send_notification")
   })
 })

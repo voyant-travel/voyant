@@ -49,6 +49,20 @@ describe("PII resources are excluded from wildcard grants", () => {
   })
 })
 
+describe("explicit-only API key permissions", () => {
+  it("requires an exact notifications:send grant", () => {
+    expect(hasApiKeyPermission({ "*": ["*"] }, "notifications", "send")).toBe(false)
+    expect(hasApiKeyPermission({ "*": ["send"] }, "notifications", "send")).toBe(false)
+    expect(hasApiKeyPermission({ notifications: ["*"] }, "notifications", "send")).toBe(false)
+    expect(hasApiKeyPermission({ notifications: ["send"] }, "notifications", "send")).toBe(true)
+  })
+
+  it("still grants lower-risk notification reads through wildcards", () => {
+    expect(hasApiKeyPermission({ "*": ["read"] }, "notifications", "read")).toBe(true)
+    expect(hasApiKeyPermission({ notifications: ["*"] }, "notifications", "read")).toBe(true)
+  })
+})
+
 describe("assertKnownPermissions", () => {
   it("accepts known resources, actions, and wildcards", () => {
     expect(() =>
