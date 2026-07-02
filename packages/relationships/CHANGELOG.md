@@ -1,5 +1,18 @@
 # @voyant-travel/crm
 
+## 0.121.14
+
+### Patch Changes
+
+- 5e6a2ff: Expose person payment methods and communication logs on the person detail UI, add React hooks for those person-scoped resources, and enforce kind-specific payment method validation for cards versus bank transfers.
+- 92bac99: Validate person document issue/expiry date ranges and expose add and primary actions in the person detail documents tab.
+- 5fa49b1: Keep person relationship auto-inverse pairs synchronized when either side is updated or deleted.
+- c7bd13f: Reject reversed person relationship date ranges and return stable conflicts for duplicate creates.
+- Updated dependencies [5e6a2ff]
+- Updated dependencies [92bac99]
+- Updated dependencies [c7bd13f]
+  - @voyant-travel/relationships-contracts@0.108.10
+
 ## 0.121.13
 
 ### Patch Changes
