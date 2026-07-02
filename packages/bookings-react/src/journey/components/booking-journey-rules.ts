@@ -21,19 +21,25 @@ import type { JourneyStep } from "../types.js"
  */
 export function buildCommitParty(draft: Draft): Record<string, unknown> {
   const c = draft.billing.contact
+  const companyName = draft.billing.company?.name?.trim()
+  const contactFirstName =
+    draft.billing.buyerType === "B2B" && companyName ? companyName : c.firstName
+  const contactLastName =
+    draft.billing.buyerType === "B2B" && contactFirstName === companyName ? "" : c.lastName
+  const personId = draft.billing.buyerType === "B2B" ? undefined : c.personId
   const organizationId =
     draft.billing.buyerType === "B2B" ? draft.billing.organizationId : undefined
   return {
-    personId: c.personId,
+    personId,
     organizationId,
     billing: {
-      personId: c.personId,
+      personId,
       organizationId,
       contact: {
-        firstName: c.firstName,
-        lastName: c.lastName,
-        email: c.email,
-        phone: c.phone,
+        firstName: contactFirstName,
+        lastName: contactLastName,
+        email: draft.billing.buyerType === "B2B" && companyName ? "" : c.email,
+        phone: draft.billing.buyerType === "B2B" && companyName ? undefined : c.phone,
       },
     },
     travelerParty: {

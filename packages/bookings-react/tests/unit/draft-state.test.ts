@@ -92,6 +92,28 @@ describe("draft-state", () => {
     expect(next.billing.contact).toEqual(draft.billing.contact)
   })
 
+  it("setBillingBuyerType clears person contact state when switching to B2B", () => {
+    const draft = patchBilling(emptyDraft(ENTITY, { buyerType: "B2C" }), {
+      contact: {
+        firstName: "Ana",
+        lastName: "Pop",
+        email: "ana@example.com",
+        phone: "+40700111222",
+        personId: "person_1",
+      },
+    })
+
+    const next = setBillingBuyerType(draft, "B2B")
+
+    expect(next.billing.buyerType).toBe("B2B")
+    expect(next.billing.contact).toEqual({
+      firstName: "",
+      lastName: "",
+      email: "",
+    })
+    expect(canCopyBillingContactToTraveler(next.billing.contact)).toBe(false)
+  })
+
   it("allows copying billing contact when any traveler contact field is present", () => {
     expect(
       canCopyBillingContactToTraveler({

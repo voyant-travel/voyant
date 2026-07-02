@@ -67,6 +67,40 @@ describe("booking-journey-rules", () => {
     })
   })
 
+  it("allows B2B organization-only billing and commits the company as the contact display name", () => {
+    const shape = defaultMinimalShape()
+    const draft = patchConfigure(
+      patchBilling(emptyDraft(ENTITY, { buyerType: "B2B" }), {
+        organizationId: "org_1",
+        company: { name: "Acme Travel SRL", vatId: "RO123456" },
+        contact: {
+          firstName: "Stale",
+          lastName: "Person",
+          email: "stale@example.com",
+          phone: "+40700111222",
+          personId: "person_stale",
+        },
+      }),
+      { departureSlotId: "slot_1" },
+    )
+
+    expect(canAdvanceFromStep("billing", draft, shape, true)).toBe(true)
+    expect(buildCommitParty(draft)).toMatchObject({
+      personId: undefined,
+      organizationId: "org_1",
+      billing: {
+        personId: undefined,
+        organizationId: "org_1",
+        contact: {
+          firstName: "Acme Travel SRL",
+          lastName: "",
+          email: "",
+          phone: undefined,
+        },
+      },
+    })
+  })
+
   it("blocks payment advancement when an already-paid row has no payment date", () => {
     const shape = defaultMinimalShape()
     const draft = {

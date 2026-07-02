@@ -326,9 +326,10 @@ function CrmLeadPicker({
     const org = orgQuery.data
     if (!org || appliedOrgId.current === org.id) return
     appliedOrgId.current = org.id
+    const companyName = org.legalName ?? org.name
     apply({
       organizationId: org.id,
-      companyName: org.legalName ?? org.name,
+      companyName,
       taxId: org.taxId ?? undefined,
     })
   }, [orgQuery.data])

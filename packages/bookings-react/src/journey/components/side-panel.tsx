@@ -239,7 +239,9 @@ export function stepHeadline(
     case "billing": {
       const c = draft.billing.contact
       const name = [c.firstName, c.lastName].filter(Boolean).join(" ").trim()
-      return name || c.email || messages.bookingJourney.values.notSet
+      const companyName =
+        draft.billing.buyerType === "B2B" ? draft.billing.company?.name?.trim() : undefined
+      return companyName || name || c.email || messages.bookingJourney.values.notSet
     }
     case "travelers": {
       const filled = draft.travelers.filter((t) => t.firstName && t.lastName).length
@@ -374,14 +376,14 @@ function BillingDetails({
   const c = draft.billing.contact
   const a = draft.billing.address
   const addressLine = [a.line1, a.line2, a.city, a.postal, a.country].filter(Boolean).join(", ")
+  const contactName =
+    (draft.billing.buyerType === "B2B" ? draft.billing.company?.name : undefined) ||
+    [c.firstName, c.lastName].filter(Boolean).join(" ")
   return (
     <dl className="space-y-1 text-xs">
       <Row
         label={messages.bookingJourney.sidePanel.name}
-        value={
-          [c.firstName, c.lastName].filter(Boolean).join(" ") ||
-          messages.bookingJourney.values.noValue
-        }
+        value={contactName || messages.bookingJourney.values.noValue}
       />
       <Row
         label={messages.bookingJourney.sidePanel.email}
