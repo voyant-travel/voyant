@@ -69,10 +69,14 @@ export function buildCatalogContext(c: Context): OperatorCatalogContext {
     catalog: {
       embeddings,
       indexer,
-      async resolveEntity(vertical, entityId): Promise<OperatorCatalogResolvedEntity | null> {
+      async resolveEntity(
+        vertical,
+        entityId,
+        scope,
+      ): Promise<OperatorCatalogResolvedEntity | null> {
         const ctx = {
           sellerOperatorId,
-          scope: { locale, audience, market: "default", actor },
+          scope,
         }
         let view: Awaited<ReturnType<typeof getResolvedProductById>> | null = null
         if (vertical === "products") view = await getResolvedProductById(db, entityId, ctx)

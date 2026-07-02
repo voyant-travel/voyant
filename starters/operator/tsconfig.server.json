@@ -448,6 +448,7 @@
       "@voyant-travel/catalog/snapshot/schema": [
         "../../packages/catalog/dist/snapshot/schema.d.ts"
       ],
+      "@voyant-travel/catalog/tools": ["../../packages/catalog/dist/tools.d.ts"],
       "@voyant-travel/charters": ["../../packages/charters/dist/index.d.ts"],
       "@voyant-travel/charters-contracts": ["../../packages/charters-contracts/dist/index.d.ts"],
       "@voyant-travel/charters-contracts/content-shape": [

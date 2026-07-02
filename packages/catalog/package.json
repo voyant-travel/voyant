@@ -9,6 +9,7 @@
     "./schema-sourced-entries": "./src/schema-sourced-entries.ts",
     "./contract": "./src/contract.ts",
     "./provenance": "./src/provenance.ts",
+    "./tools": "./src/tools.ts",
     "./overlay/schema": "./src/overlay/schema.ts",
     "./overlay/resolver": "./src/overlay/resolver.ts",
     "./snapshot/schema": "./src/snapshot/schema.ts",
@@ -85,6 +86,11 @@
         "types": "./dist/provenance.d.ts",
         "import": "./dist/provenance.js",
         "default": "./dist/provenance.js"
+      },
+      "./tools": {
+        "types": "./dist/tools.d.ts",
+        "import": "./dist/tools.js",
+        "default": "./dist/tools.js"
       },
       "./overlay/schema": {
         "types": "./dist/overlay/schema.d.ts",
@@ -236,6 +242,7 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

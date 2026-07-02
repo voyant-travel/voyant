@@ -336,3 +336,15 @@ export {
   readPricingBasis,
   type SelectBookingCatalogSnapshot,
 } from "./snapshot/schema.js"
+export {
+  type CatalogEntryResult,
+  type CatalogEntryServiceInput,
+  type CatalogSearchArgs,
+  type CatalogSearchServiceInput,
+  type CatalogToolContext,
+  type CatalogToolServices,
+  catalogTools,
+  type GetCatalogEntryArgs,
+  getCatalogEntryTool,
+  searchCatalogTool,
+} from "./tools.js"
