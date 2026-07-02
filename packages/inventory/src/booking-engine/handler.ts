@@ -7,8 +7,8 @@
  *
  *   - The products vertical's existing pricing primitives
  *     (`products.sellAmountCents` / `sellCurrency`) for pricing
- *     basis. Per-pax / per-band pricing layered in Phase C+ via
- *     `product_pax_pricing_tiers`.
+ *     basis, with option/unit-specific pax tiers from
+ *     `product_pax_pricing_tiers` when the draft selects units.
  *   - `getProductContent` + `buildProductDraftShape` for the journey
  *     wizard's step descriptor.
  *   - An injected `createBooking` function for the commit path
@@ -16,8 +16,8 @@
  *     `@voyant-travel/finance` (no workspace cycle).
  *
  * Phase A scope (deliberately narrow):
- *   - Price = product.sellAmountCents × pax_count, no taxes / addons /
- *     accommodation / vouchers.
+ *   - Price = product.sellAmountCents × pax_count unless option/unit
+ *     pricing, taxes, addons, or vouchers are present.
  *   - Commit goes through the bridge into `bookingsCreate`'s input
  *     shape — products-only, no extras / accommodations / cruises / encrypted
  *     travel details / snapshot graph.
@@ -374,6 +374,11 @@ export interface ResolvedOptionPrice {
   unitPrices: ReadonlyArray<ResolvedUnitPrice>
 }
 
+/** Option/unit-specific pax-tier price from `product_pax_pricing_tiers`. */
+export interface ResolvedPaxPricingTier {
+  pricePerPaxCents: number
+}
+
 /** A resolved tax-rate decision — resolved from `tax_classes` ×
  *  `tax_regimes` × buyer country at quote time. */
 export interface ResolvedTaxRate {
@@ -485,6 +490,22 @@ export interface OwnedProductsShapeLoaders {
       catalogId?: string
     },
   ) => Promise<ResolvedOptionPrice | null>
+
+  /**
+   * Resolve Inventory-owned pax pricing for a selected option unit.
+   * Defaults to `product_pax_pricing_tiers`, with the selected unit's
+   * tier winning over product-level tiers.
+   */
+  loadPaxPricingTier?: (
+    ctx: OwnedHandlerContext,
+    args: {
+      productId: string
+      optionUnitId: string
+      tierPax: number
+      /** ISO yyyy-mm-dd when the quote is tied to a departure. */
+      date?: string | null
+    },
+  ) => Promise<ResolvedPaxPricingTier | null>
 
   /**
    * Look up the local date of a departure slot (`availability_slots`).
@@ -676,6 +697,7 @@ export function createProductsBookingHandler(
                 productOptions: productOptionCatalog ?? [],
                 selections: optionSelections,
                 slotDate,
+                effectivePax,
               })
             : priceQuote({
                 product,
