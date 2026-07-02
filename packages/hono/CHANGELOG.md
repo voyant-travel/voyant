@@ -1,5 +1,34 @@
 # @voyant-travel/hono
 
+## 0.120.1
+
+### Patch Changes
+
+- ffe7787: Fix a latent duplicate-operationId hole in `stampModuleMetadata`.
+
+  Declared operationIds were only added to the uniqueness set as the path loop
+  reached them, so a route hand-authoring an operationId that matched a string an
+  _earlier_ path had already derived would leave two operations sharing that id
+  (breaking client generators). All route-declared ids are now pre-seeded before
+  any id is derived, so derived ids always yield to declared ones. No generated
+  spec changes today (no route declares an operationId yet) — this hardens the
+  non-destructive override path.
+
+- 13148ad: Add `servers`, `operationId`, and `summary` to generated OpenAPI specs (#2729).
+
+  Completes the metadata Redocly/Swagger tooling expects:
+
+  - **`servers`** — a relative `[{ url: "/" }]` entry so "try it out" targets the
+    origin the deployment serves the contract from (overridable per deployment).
+  - **`operationId`** — a stable camelCase id derived from method + path
+    (`GET /v1/admin/bookings/{id}` → `getAdminBookingsById`), unique per document,
+    so generated clients get readable, deterministic method names.
+  - **`summary`** — the method + path signature on every operation, so viewers
+    and linters have a title for each.
+
+  All three are stamped by `stampModuleMetadata` and are non-destructive — a value
+  a route already declares (e.g. a hand-authored `summary`) is never overwritten.
+
 ## 0.120.0
 
 ### Minor Changes
