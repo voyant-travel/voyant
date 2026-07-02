@@ -371,8 +371,38 @@ export const bookingGroupDetailSchema = bookingGroupRecordSchema.extend({
 
 export type BookingGroupDetailRecord = z.infer<typeof bookingGroupDetailSchema>
 
+// The admin booking detail read (`GET /v1/admin/bookings/:id`) hydrates the
+// bookings-owned child collections inline (items, travelers, documents) — see
+// the server's `bookingDetailSchema`. The flat `bookingRecordSchema` used for
+// the list carries only an optional summary `items` and no travelers/documents,
+// so parsing the detail with it silently strips the hydrated collections. The
+// detail parser therefore extends the record with the full child shapes:
+//  - `items` use the full `bookingItemRecordSchema` (same shape as `/items`).
+//  - `travelers` follow the same reveal/redaction gate as `/travelers`; the row
+//    is always the plain traveler shape (PII masked or not), but we accept the
+//    reveal variant too so an inline `travelDetails` is preserved rather than
+//    stripped if the server ever hydrates it.
+//  - `documents` reuse `bookingTravelerDocumentRecordSchema`, which already
+//    mirrors the server's booking-level `bookingDocumentSchema` (the shape the
+//    `/documents` endpoint returns).
+export const bookingDetailSchema = bookingRecordSchema.extend({
+  items: z.array(bookingItemRecordSchema),
+  travelers: z.array(z.union([bookingTravelerRevealRecordSchema, bookingTravelerRecordSchema])),
+  documents: z.array(bookingTravelerDocumentRecordSchema),
+})
+
+export type BookingDetailRecord = z.infer<typeof bookingDetailSchema>
+
 export const bookingListResponse = paginatedEnvelope(bookingRecordSchema)
+// `bookingSingleResponse` stays on the flat record schema: it is shared by the
+// mutation hooks (create/update/convert/status/cancel), and the server returns
+// a flat `bookingSchema` (no hydrated child collections) for those endpoints.
+// Only the detail read (`GET /:id`) hydrates the collections — it uses
+// `bookingDetailResponse` below. The `.extend({ data })` mutation hooks that
+// build on `bookingSingleResponse` replace `data` wholesale, so the base shape
+// here does not affect them.
 export const bookingSingleResponse = singleEnvelope(bookingRecordSchema)
+export const bookingDetailResponse = singleEnvelope(bookingDetailSchema)
 export const bookingItemsResponse = arrayEnvelope(bookingItemRecordSchema)
 export const bookingItemTravelersResponse = arrayEnvelope(bookingItemTravelerRecordSchema)
 export const bookingTravelerDocumentsResponse = arrayEnvelope(bookingTravelerDocumentRecordSchema)
