@@ -658,6 +658,9 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils

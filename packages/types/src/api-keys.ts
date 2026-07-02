@@ -1,14 +1,45 @@
 // agent-quality: file-size exception -- owner: types; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 
-export const API_KEY_ACTIONS = ["read", "write", "delete", "trigger", "relay", "search"] as const
+export const API_KEY_ACTIONS = [
+  "read",
+  "write",
+  "delete",
+  "trigger",
+  "relay",
+  "search",
+  // Fine-grained agent operations that used to collapse to `write`/`trigger`.
+  "cancel",
+  "refund",
+  "void",
+  "publish",
+  "send",
+] as const
 
 export type ApiKeyAction = (typeof API_KEY_ACTIONS)[number]
+
+/**
+ * Audiences a grant can represent. Mirrors the `Actor`/`Visibility` unions in
+ * `@voyant-travel/core` / `@voyant-travel/catalog-contracts`, duplicated here so
+ * the low-level `types` package stays dependency-free. Carried on the key grant
+ * and resolved into the catalog `ResolverScope` at request time (never inferred
+ * from the scope set).
+ */
+export const API_KEY_AUDIENCES = ["staff", "customer", "partner", "supplier"] as const
+
+export type ApiKeyAudience = (typeof API_KEY_AUDIENCES)[number]
 
 export const API_KEY_RESOURCES = [
   "availability",
   "bookings",
+  // PII-sensitive booking fields. Split from `bookings` so it can be granted (or
+  // withheld) independently; never covered by the `*` wildcard (see
+  // `PII_API_KEY_RESOURCES` / `hasApiKeyPermission`).
+  "bookings-pii",
   "catalog",
+  "content",
+  "dashboard",
+  "media",
   "crm",
   "cruises",
   "departures",
@@ -33,6 +64,14 @@ export const API_KEY_RESOURCES = [
 ] as const
 
 export type ApiKeyResource = (typeof API_KEY_RESOURCES)[number]
+
+/**
+ * Resources that hold personally-identifiable information. These are **never**
+ * granted through the `*` resource wildcard (not even by a full-access `*:*`
+ * key) — a caller must name the resource explicitly (e.g. `bookings-pii:read`).
+ * Keeps broad read/full grants from silently leaking PII.
+ */
+export const PII_API_KEY_RESOURCES = new Set<string>(["bookings-pii"])
 
 export type ApiKeyPermissions = Record<string, string[]>
 export type ApiKeyPermissionString =
@@ -165,6 +204,25 @@ export const API_KEY_PERMISSION_GROUPS = [
         "delete",
         "Delete bookings",
         "Delete booking-owned records where supported.",
+      ),
+      permission(
+        "bookings",
+        "cancel",
+        "Cancel bookings",
+        "Cancel bookings and trigger cancellation workflows.",
+      ),
+    ],
+  },
+  {
+    resource: "bookings-pii",
+    label: "Booking PII",
+    description: "Personally-identifiable traveller data on bookings. Grant explicitly.",
+    permissions: [
+      permission(
+        "bookings-pii",
+        "read",
+        "Read booking PII",
+        "Read personally-identifiable traveller fields on bookings. Never granted by a wildcard.",
       ),
     ],
   },
@@ -338,6 +396,88 @@ export const API_KEY_PERMISSION_GROUPS = [
       ),
     ],
   },
+  {
+    resource: "finance",
+    label: "Finance",
+    description: "Read and manage invoices, payments, refunds, and voids.",
+    permissions: [
+      permission(
+        "finance",
+        "read",
+        "Read finance",
+        "Read invoices, payments, and settlement state.",
+      ),
+      permission(
+        "finance",
+        "write",
+        "Write finance",
+        "Create or update invoices and payment records.",
+      ),
+      permission(
+        "finance",
+        "refund",
+        "Refund payments",
+        "Issue refunds against captured payments.",
+      ),
+      permission(
+        "finance",
+        "void",
+        "Void documents",
+        "Void invoices or cancel uncaptured payments.",
+      ),
+    ],
+  },
+  {
+    resource: "content",
+    label: "Content",
+    description: "Read, write, and publish editorial content.",
+    permissions: [
+      permission("content", "read", "Read content", "Read editorial content and drafts."),
+      permission("content", "write", "Write content", "Create or update editorial content."),
+      permission("content", "publish", "Publish content", "Publish content to live surfaces."),
+    ],
+  },
+  {
+    resource: "media",
+    label: "Media",
+    description: "Read and manage media assets.",
+    permissions: [
+      permission("media", "read", "Read media", "Read media assets and metadata."),
+      permission("media", "write", "Write media", "Upload or update media assets."),
+    ],
+  },
+  {
+    resource: "notifications",
+    label: "Notifications",
+    description: "Read and send notifications.",
+    permissions: [
+      permission(
+        "notifications",
+        "read",
+        "Read notifications",
+        "Read notification records and status.",
+      ),
+      permission(
+        "notifications",
+        "send",
+        "Send notifications",
+        "Send email/SMS/push notifications.",
+      ),
+    ],
+  },
+  {
+    resource: "dashboard",
+    label: "Dashboard",
+    description: "Read analytics and dashboard data.",
+    permissions: [
+      permission(
+        "dashboard",
+        "read",
+        "Read dashboard",
+        "Read analytics, metrics, and dashboard data.",
+      ),
+    ],
+  },
 ] as const satisfies readonly ApiKeyPermissionGroup[]
 
 export const API_KEY_PERMISSION_PRESETS = {
@@ -390,6 +530,107 @@ export const API_KEY_PERMISSION_PRESETS = {
 >
 
 export type ApiKeyPermissionPresetKey = keyof typeof API_KEY_PERMISSION_PRESETS
+
+/**
+ * Grant presets bundle a scope subset **and** an audience — unlike
+ * `API_KEY_PERMISSION_PRESETS` (permissions only), because audience is a grant
+ * attribute that cannot be inferred from scopes (a `catalog:read` key may be a
+ * `customer` public reader or an internal `staff` tool). Used at key-mint time.
+ */
+export const API_KEY_GRANT_PRESETS = {
+  "agent-customer": {
+    label: "Agent (customer)",
+    description: "Customer-facing agent: read/search catalog + compose trips.",
+    audience: "customer",
+    permissions: {
+      catalog: ["read", "search"],
+      products: ["read"],
+      trips: ["read", "write"],
+    },
+  },
+  "agent-staff": {
+    label: "Agent (staff)",
+    description: "Staff-facing agent: catalog, trips, bookings, quotes.",
+    audience: "staff",
+    permissions: {
+      catalog: ["read", "search"],
+      products: ["read"],
+      trips: ["read", "write"],
+      bookings: ["read", "write"],
+      quotes: ["read", "write"],
+    },
+  },
+  "public-catalog-reader": {
+    label: "Public catalog reader",
+    description: "Read-only, customer-audience catalog access for public surfaces.",
+    audience: "customer",
+    permissions: {
+      catalog: ["read", "search"],
+      products: ["read"],
+    },
+  },
+} as const satisfies Record<
+  string,
+  { label: string; description: string; audience: ApiKeyAudience; permissions: ApiKeyPermissions }
+>
+
+export type ApiKeyGrantPresetKey = keyof typeof API_KEY_GRANT_PRESETS
+
+/** Thrown by `assertKnownPermissions` when a permission names an unknown resource or action. */
+export class UnknownApiKeyPermissionError extends Error {
+  constructor(
+    message: string,
+    public readonly resource?: string,
+    public readonly action?: string,
+  ) {
+    super(message)
+    this.name = "UnknownApiKeyPermissionError"
+  }
+}
+
+const KNOWN_API_KEY_RESOURCES = new Set<string>(API_KEY_RESOURCES)
+const KNOWN_API_KEY_ACTIONS = new Set<string>(API_KEY_ACTIONS)
+
+/**
+ * Validate that every permission names a known resource + action (or a `*`
+ * wildcard). Used at key-mint time so a typo'd scope is rejected instead of
+ * silently accepted (and then never matching anything). Throws
+ * `UnknownApiKeyPermissionError` on the first unknown token.
+ */
+export function assertKnownPermissions(
+  permissions: string | ApiKeyPermissions | null | undefined,
+): void {
+  const normalized = normalizeApiKeyPermissions(permissions)
+  for (const [resource, actions] of Object.entries(normalized)) {
+    if (resource !== "*" && !KNOWN_API_KEY_RESOURCES.has(resource)) {
+      throw new UnknownApiKeyPermissionError(
+        `Unknown API key resource "${resource}". Known resources: ${API_KEY_RESOURCES.join(", ")}.`,
+        resource,
+      )
+    }
+    for (const action of actions) {
+      if (action !== "*" && !KNOWN_API_KEY_ACTIONS.has(action)) {
+        throw new UnknownApiKeyPermissionError(
+          `Unknown API key action "${action}" for resource "${resource}". Known actions: ${API_KEY_ACTIONS.join(", ")}.`,
+          resource,
+          action,
+        )
+      }
+    }
+  }
+}
+
+/** Non-throwing variant of {@link assertKnownPermissions}. */
+export function areKnownPermissions(
+  permissions: string | ApiKeyPermissions | null | undefined,
+): boolean {
+  try {
+    assertKnownPermissions(permissions)
+    return true
+  } catch {
+    return false
+  }
+}
 
 const permissionNamePattern = /^(\*|[a-z][a-z0-9-]*)$/
 const permissionStringPattern = /^(\*|[a-z][a-z0-9-]*):(\*|[a-z][a-z0-9-]*)$/
@@ -492,6 +733,15 @@ export function hasApiKeyPermission(
   const normalized = normalizeApiKeyPermissions(permissions)
   const resourceKey = resource.trim().toLowerCase()
   const actionKey = action.trim().toLowerCase()
+
+  // PII-sensitive resources are never satisfied by the `*` resource wildcard;
+  // only an explicit grant on the resource itself counts.
+  if (PII_API_KEY_RESOURCES.has(resourceKey)) {
+    return (
+      normalized[resourceKey]?.includes("*") === true ||
+      normalized[resourceKey]?.includes(actionKey) === true
+    )
+  }
 
   return (
     normalized["*"]?.includes("*") === true ||
