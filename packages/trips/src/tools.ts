@@ -13,6 +13,7 @@ import {
   requireService,
   type ToolContext,
   ToolError,
+  type Visibility,
 } from "@voyant-travel/tools"
 import { z } from "zod"
 
@@ -40,6 +41,15 @@ export type TripsToolContext = ToolContext & { trips?: TripsToolServices }
 
 function trips(ctx: TripsToolContext): TripsToolServices {
   return requireService(ctx.trips, "trips")
+}
+
+function assertToolAudience(ctx: TripsToolContext, audience: Visibility): void {
+  if (ctx.actor === "staff" || audience === ctx.audience) return
+  throw new ToolError(
+    `Actor "${ctx.actor}" is not authorized to query audience "${audience}". Non-staff tools may only use their grant audience.`,
+    "AUTHORIZATION_DENIED",
+    { actor: ctx.actor, grantAudience: ctx.audience, requestedAudience: audience },
+  )
 }
 
 const createTripArgs = createTripEnvelopeSchema.extend({
@@ -141,6 +151,7 @@ export const priceTripTool = defineTool<PriceTripArgs, PriceTripResult, TripsToo
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(args, ctx) {
+    assertToolAudience(ctx, args.scope.audience)
     return trips(ctx).priceTrip(args)
   },
 })
@@ -164,6 +175,7 @@ export const reserveTripTool = defineTool<ReserveTripArgs, ReserveTripResult, Tr
     sideEffects: ["external-booking", "payment"],
   },
   async handler(args, ctx) {
+    if (args.refreshScope) assertToolAudience(ctx, args.refreshScope.audience)
     return trips(ctx).reserveTrip(args)
   },
 })

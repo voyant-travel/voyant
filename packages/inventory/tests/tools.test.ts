@@ -5,13 +5,23 @@ import { type InventoryToolServices, inventoryTools } from "../src/tools.js"
 
 function ctxWith(
   services?: Partial<InventoryToolServices>,
+  overrides: Partial<ToolContext> = {},
 ): ToolContext & { inventory?: InventoryToolServices } {
+  const actor = overrides.actor ?? "customer"
+  const audience = overrides.audience ?? actor
   return {
     db: {},
-    actor: "customer",
-    audience: "customer",
+    actor,
+    audience,
     tenantId: "default",
-    resolverScope: { locale: "en-GB", audience: "customer", market: "default", actor: "customer" },
+    resolverScope: {
+      locale: "en-GB",
+      audience,
+      market: "default",
+      actor,
+      ...overrides.resolverScope,
+    },
+    ...overrides,
     inventory: services as InventoryToolServices | undefined,
   }
 }
@@ -51,6 +61,47 @@ describe("inventory tools", () => {
     expect(result.total).toBe(2)
   })
 
+  it("forces public active filters for non-staff product lists", async () => {
+    const registry = makeRegistry()
+    let forwarded: unknown
+    await registry.dispatch(
+      "list_products",
+      { status: "draft", visibility: "hidden", activated: "false", limit: 10 },
+      ctxWith({
+        async listProducts(query) {
+          forwarded = query
+          return { data: [], total: 0, limit: query.limit, offset: query.offset }
+        },
+        async getProductById() {
+          return null
+        },
+      }),
+    )
+    expect(forwarded).toMatchObject({ status: "active", visibility: "public", activated: true })
+  })
+
+  it("allows staff product lists to keep explicit filters", async () => {
+    const registry = makeRegistry()
+    let forwarded: unknown
+    await registry.dispatch(
+      "list_products",
+      { status: "draft", visibility: "hidden", activated: "false", limit: 10 },
+      ctxWith(
+        {
+          async listProducts(query) {
+            forwarded = query
+            return { data: [], total: 0, limit: query.limit, offset: query.offset }
+          },
+          async getProductById() {
+            return null
+          },
+        },
+        { actor: "staff", audience: "staff" },
+      ),
+    )
+    expect(forwarded).toMatchObject({ status: "draft", visibility: "hidden", activated: false })
+  })
+
   it("reads a single product and normalizes not-found to null", async () => {
     const registry = makeRegistry()
     const result = await registry.dispatch<{ product: unknown }>(
@@ -62,6 +113,23 @@ describe("inventory tools", () => {
         },
         async getProductById() {
           return null
+        },
+      }),
+    )
+    expect(result.product).toBeNull()
+  })
+
+  it("hides non-public products by id for non-staff actors", async () => {
+    const registry = makeRegistry()
+    const result = await registry.dispatch<{ product: unknown }>(
+      "get_product",
+      { id: "prod_draft" },
+      ctxWith({
+        async listProducts() {
+          return { data: [], total: 0, limit: 24, offset: 0 }
+        },
+        async getProductById() {
+          return { id: "prod_draft", status: "draft", visibility: "private", activated: false }
         },
       }),
     )

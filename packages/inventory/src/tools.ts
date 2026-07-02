@@ -12,6 +12,8 @@ import { z } from "zod"
 
 import { productListQuerySchema } from "./validation.js"
 
+type ProductListQuery = z.infer<typeof productListQuerySchema>
+
 /** A paginated product list result (the shape the products service returns). */
 export interface ProductListResult {
   data: unknown[]
@@ -33,6 +35,18 @@ function inventory(ctx: InventoryToolContext): InventoryToolServices {
   return requireService(ctx.inventory, "inventory")
 }
 
+function constrainProductListQuery(query: ProductListQuery, ctx: ToolContext): ProductListQuery {
+  if (ctx.actor === "staff") return query
+  return { ...query, status: "active", visibility: "public", activated: true }
+}
+
+function isVisibleProduct(product: unknown, ctx: ToolContext): boolean {
+  if (ctx.actor === "staff") return true
+  if (!product || typeof product !== "object") return false
+  const row = product as { status?: unknown; visibility?: unknown; activated?: unknown }
+  return row.status === "active" && row.visibility === "public" && row.activated === true
+}
+
 export const listProductsTool = defineTool<
   z.infer<typeof productListQuerySchema>,
   ProductListResult,
@@ -49,7 +63,7 @@ export const listProductsTool = defineTool<
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(query, ctx) {
-    return inventory(ctx).listProducts(query)
+    return inventory(ctx).listProducts(constrainProductListQuery(query, ctx))
   },
 })
 
@@ -70,7 +84,7 @@ export const getProductTool = defineTool<
   riskPolicy: READ_ONLY_RISK,
   async handler({ id }, ctx) {
     const product = await inventory(ctx).getProductById(id)
-    return { product: product ?? null }
+    return { product: product && isVisibleProduct(product, ctx) ? product : null }
   },
 })
 

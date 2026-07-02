@@ -38,13 +38,23 @@ function baseDraft(): Trip {
 
 function ctxWith(
   services?: Partial<TripsToolServices>,
+  overrides: Partial<ToolContext> = {},
 ): ToolContext & { trips?: TripsToolServices } {
+  const actor = overrides.actor ?? "staff"
+  const audience = overrides.audience ?? actor
   return {
     db: {},
-    actor: "staff",
-    audience: "staff",
+    actor,
+    audience,
     tenantId: "default",
-    resolverScope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" },
+    resolverScope: {
+      locale: "en-GB",
+      audience,
+      market: "default",
+      actor,
+      ...overrides.resolverScope,
+    },
+    ...overrides,
     trips: services as TripsToolServices | undefined,
   }
 }
@@ -121,6 +131,66 @@ describe("trips tools", () => {
         ctxWith(undefined),
       ),
     ).rejects.toMatchObject({ code: "MISSING_SERVICE" })
+  })
+
+  it("rejects non-staff price requests for a different audience", async () => {
+    const registry = makeRegistry()
+    await expect(
+      registry.dispatch(
+        "price_trip",
+        {
+          envelopeId: "trip_123",
+          scope: { locale: "en-GB", audience: "staff", market: "default", currency: "EUR" },
+        },
+        ctxWith(
+          {
+            async createTrip() {
+              return baseDraft()
+            },
+            async addComponent() {
+              throw new Error("not used")
+            },
+            async priceTrip() {
+              throw new Error("not used")
+            },
+            async reserveTrip() {
+              throw new Error("not used")
+            },
+          },
+          { actor: "customer", audience: "customer" },
+        ),
+      ),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
+  })
+
+  it("rejects non-staff reserve refresh scopes for a different audience", async () => {
+    const registry = makeRegistry()
+    await expect(
+      registry.dispatch(
+        "reserve_trip",
+        {
+          envelopeId: "trip_123",
+          refreshScope: { locale: "en-GB", audience: "staff", market: "default" },
+        },
+        ctxWith(
+          {
+            async createTrip() {
+              return baseDraft()
+            },
+            async addComponent() {
+              throw new Error("not used")
+            },
+            async priceTrip() {
+              throw new Error("not used")
+            },
+            async reserveTrip() {
+              throw new Error("not used")
+            },
+          },
+          { actor: "customer", audience: "customer" },
+        ),
+      ),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
   })
 
   it("exposes tool handlers directly for unit reuse", () => {
