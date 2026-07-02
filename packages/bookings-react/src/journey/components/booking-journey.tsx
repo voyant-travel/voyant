@@ -456,7 +456,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         props.renderBillingExtras?.({
           buyerType: draft.billing.buyerType,
           personId: draft.billing.contact.personId,
-          organizationId: draft.billing.organizationId,
+          organizationId:
+            draft.billing.buyerType === "B2B" ? draft.billing.organizationId : undefined,
           productId: props.entityId,
           departureSlotId: draft.configure.departureSlotId,
           departureDate: draft.configure.departureDate,

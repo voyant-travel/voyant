@@ -6,7 +6,7 @@ import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
 import { Label } from "@voyant-travel/ui/components/label"
 import { RadioGroup, RadioGroupItem } from "@voyant-travel/ui/components/radio-group"
 import { useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
-import { patchBilling } from "../../lib/draft-state.js"
+import { patchBilling, setBillingBuyerType } from "../../lib/draft-state.js"
 import type { LeadContactPickerProps } from "../../types.js"
 import { Field, JourneyWarnings, PhoneField, type StepCommonProps } from "./shared.js"
 
@@ -72,7 +72,7 @@ export function BillingStep({
           <Label>{messages.bookingJourney.billing.buyerType}</Label>
           <RadioGroup
             value={billing.buyerType}
-            onValueChange={(v) => setDraft(patchBilling(draft, { buyerType: v as "B2C" | "B2B" }))}
+            onValueChange={(v) => setDraft(setBillingBuyerType(draft, v as "B2C" | "B2B"))}
             className="flex gap-4"
           >
             {/* RadioGroupItem from radix wires its own internal label association — biome can't see it */}
