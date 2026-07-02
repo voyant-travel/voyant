@@ -1,4 +1,5 @@
 import {
+  supplierAvailability,
   supplierContracts,
   supplierRates,
   supplierServices,
@@ -83,6 +84,72 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.data).toBeInstanceOf(Array)
+  })
+
+  it("rejects invalid supplier availability dates before writing", async () => {
+    const supplier = await createSupplier("Invalid Availability Supplier")
+
+    const res = await app.request(`/${supplier.id}/availability`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: "not-a-date", available: true }),
+    })
+
+    expect(res.status).toBe(400)
+
+    const rows = await db
+      .select()
+      .from(supplierAvailability)
+      .where(eq(supplierAvailability.supplierId, supplier.id))
+    expect(rows).toHaveLength(0)
+  })
+
+  it("upserts duplicate supplier availability dates with the latest values", async () => {
+    const supplier = await createSupplier("Upsert Availability Supplier")
+
+    const createRes = await app.request(`/${supplier.id}/availability`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([
+        { date: "2026-07-02", available: true, notes: "first state" },
+        { date: "2026-07-02", available: false, notes: "latest state" },
+      ]),
+    })
+
+    expect(createRes.status).toBe(201)
+    const created = await createRes.json()
+    expect(created.data).toHaveLength(1)
+    expect(created.data[0]).toMatchObject({
+      date: "2026-07-02",
+      available: false,
+      notes: "latest state",
+    })
+
+    const updateRes = await app.request(`/${supplier.id}/availability`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: "2026-07-02", available: true, notes: "replacement state" }),
+    })
+
+    expect(updateRes.status).toBe(201)
+    const updated = await updateRes.json()
+    expect(updated.data).toHaveLength(1)
+    expect(updated.data[0]).toMatchObject({
+      date: "2026-07-02",
+      available: true,
+      notes: "replacement state",
+    })
+
+    const listRes = await app.request(`/${supplier.id}/availability`, { method: "GET" })
+
+    expect(listRes.status).toBe(200)
+    const listed = await listRes.json()
+    expect(listed.data).toHaveLength(1)
+    expect(listed.data[0]).toMatchObject({
+      date: "2026-07-02",
+      available: true,
+      notes: "replacement state",
+    })
   })
 
   it("searches suppliers through the supplier directory projection", async () => {

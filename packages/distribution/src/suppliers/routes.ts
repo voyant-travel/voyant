@@ -1118,7 +1118,7 @@ const createAvailabilityRoute = createRoute({
   },
   responses: {
     201: {
-      description: "The created availability entries",
+      description: "The upserted availability entries",
       content: { "application/json": { schema: z.object({ data: z.array(availabilitySchema) }) } },
     },
     400: {

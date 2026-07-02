@@ -3785,7 +3785,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "date"
             },
             "required": false,
             "name": "from",
@@ -3793,7 +3794,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "date"
             },
             "required": false,
             "name": "to",
@@ -3887,7 +3889,7 @@
                       "properties": {
                         "date": {
                           "type": "string",
-                          "minLength": 1
+                          "format": "date"
                         },
                         "available": {
                           "type": "boolean",
@@ -3910,7 +3912,7 @@
                     "properties": {
                       "date": {
                         "type": "string",
-                        "minLength": 1
+                        "format": "date"
                       },
                       "available": {
                         "type": "boolean",
@@ -3934,7 +3936,7 @@
         },
         "responses": {
           "201": {
-            "description": "The created availability entries",
+            "description": "The upserted availability entries",
             "content": {
               "application/json": {
                 "schema": {
