@@ -1,4 +1,4 @@
-import { and, asc, eq, or } from "drizzle-orm"
+import { and, asc, eq, isNull, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
@@ -130,6 +130,18 @@ export const personRelationshipsService = {
               personRelationships.kind,
             ],
           })
+
+        await tx
+          .update(personRelationships)
+          .set({ inverseKind: rest.kind, updatedAt: new Date() })
+          .where(
+            and(
+              eq(personRelationships.fromPersonId, toPersonId),
+              eq(personRelationships.toPersonId, fromPersonId),
+              eq(personRelationships.kind, inverseKind),
+              isNull(personRelationships.inverseKind),
+            ),
+          )
       }
 
       return primary
@@ -141,19 +153,97 @@ export const personRelationshipsService = {
     id: string,
     data: UpdatePersonRelationshipInput,
   ) {
-    const [row] = await db
-      .update(personRelationships)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(personRelationships.id, id))
-      .returning()
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(personRelationships)
+        .where(eq(personRelationships.id, id))
+        .for("update")
+        .limit(1)
+      if (!existing) return null
+
+      const updatedAt = new Date()
+      const [row] = await tx
+        .update(personRelationships)
+        .set({ ...data, updatedAt })
+        .where(eq(personRelationships.id, id))
+        .returning()
+
+      if (existing.inverseKind) {
+        const [inverse] = await tx
+          .select()
+          .from(personRelationships)
+          .where(
+            and(
+              eq(personRelationships.fromPersonId, existing.toPersonId),
+              eq(personRelationships.toPersonId, existing.fromPersonId),
+              eq(personRelationships.kind, existing.inverseKind),
+              eq(personRelationships.inverseKind, existing.kind),
+            ),
+          )
+          .for("update")
+          .limit(1)
+
+        const inverseUpdates = Object.fromEntries(
+          Object.entries({
+            kind: data.inverseKind ?? undefined,
+            inverseKind: data.kind,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            isPrimary: data.isPrimary,
+            notes: data.notes,
+            metadata: data.metadata,
+            updatedAt,
+          }).filter(([, value]) => value !== undefined),
+        )
+
+        if (inverse && Object.keys(inverseUpdates).length > 1) {
+          await tx
+            .update(personRelationships)
+            .set(inverseUpdates)
+            .where(eq(personRelationships.id, inverse.id))
+        }
+      }
+
+      return row ?? null
+    })
   },
 
   async deletePersonRelationship(db: PostgresJsDatabase, id: string) {
-    const [row] = await db
-      .delete(personRelationships)
-      .where(eq(personRelationships.id, id))
-      .returning({ id: personRelationships.id })
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(personRelationships)
+        .where(eq(personRelationships.id, id))
+        .for("update")
+        .limit(1)
+      if (!existing) return null
+
+      if (existing.inverseKind) {
+        const [inverse] = await tx
+          .select({ id: personRelationships.id })
+          .from(personRelationships)
+          .where(
+            and(
+              eq(personRelationships.fromPersonId, existing.toPersonId),
+              eq(personRelationships.toPersonId, existing.fromPersonId),
+              eq(personRelationships.kind, existing.inverseKind),
+              eq(personRelationships.inverseKind, existing.kind),
+            ),
+          )
+          .for("update")
+          .limit(1)
+
+        if (inverse) {
+          await tx.delete(personRelationships).where(eq(personRelationships.id, inverse.id))
+        }
+      }
+
+      const [row] = await tx
+        .delete(personRelationships)
+        .where(eq(personRelationships.id, id))
+        .returning({ id: personRelationships.id })
+      return row ?? null
+    })
   },
 }
