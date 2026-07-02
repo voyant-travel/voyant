@@ -895,15 +895,18 @@ const serviceRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook 
     return row ? c.json({ data: row }, 201) : c.json({ error: "Supplier not found" }, 404)
   })
   .openapi(updateServiceRoute, async (c) => {
+    const params = c.req.valid("param")
     const row = await suppliersService.updateService(
       c.get("db"),
-      c.req.valid("param").serviceId,
+      params.id,
+      params.serviceId,
       c.req.valid("json"),
     )
     return row ? c.json({ data: row }, 200) : c.json({ error: "Service not found" }, 404)
   })
   .openapi(deleteServiceRoute, async (c) => {
-    const row = await suppliersService.deleteService(c.get("db"), c.req.valid("param").serviceId)
+    const params = c.req.valid("param")
+    const row = await suppliersService.deleteService(c.get("db"), params.id, params.serviceId)
     return row ? c.json({ success: true }, 200) : c.json({ error: "Service not found" }, 404)
   })
 
@@ -986,30 +989,42 @@ const deleteRateRoute = createRoute({
 })
 
 const rateRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-  .openapi(listRatesRoute, async (c) =>
-    c.json(
-      { data: await suppliersService.listRates(c.get("db"), c.req.valid("param").serviceId) },
+  .openapi(listRatesRoute, async (c) => {
+    const params = c.req.valid("param")
+    return c.json(
+      { data: await suppliersService.listRates(c.get("db"), params.id, params.serviceId) },
       200,
-    ),
-  )
+    )
+  })
   .openapi(createRateRoute, async (c) => {
+    const params = c.req.valid("param")
     const row = await suppliersService.createRate(
       c.get("db"),
-      c.req.valid("param").serviceId,
+      params.id,
+      params.serviceId,
       c.req.valid("json"),
     )
     return row ? c.json({ data: row }, 201) : c.json({ error: "Service not found" }, 404)
   })
   .openapi(updateRateRoute, async (c) => {
+    const params = c.req.valid("param")
     const row = await suppliersService.updateRate(
       c.get("db"),
-      c.req.valid("param").rateId,
+      params.id,
+      params.serviceId,
+      params.rateId,
       c.req.valid("json"),
     )
     return row ? c.json({ data: row }, 200) : c.json({ error: "Rate not found" }, 404)
   })
   .openapi(deleteRateRoute, async (c) => {
-    const row = await suppliersService.deleteRate(c.get("db"), c.req.valid("param").rateId)
+    const params = c.req.valid("param")
+    const row = await suppliersService.deleteRate(
+      c.get("db"),
+      params.id,
+      params.serviceId,
+      params.rateId,
+    )
     return row ? c.json({ success: true }, 200) : c.json({ error: "Rate not found" }, 404)
   })
 
@@ -1235,15 +1250,18 @@ const contractRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook
     return row ? c.json({ data: row }, 201) : c.json({ error: "Supplier not found" }, 404)
   })
   .openapi(updateContractRoute, async (c) => {
+    const params = c.req.valid("param")
     const row = await suppliersService.updateContract(
       c.get("db"),
-      c.req.valid("param").contractId,
+      params.id,
+      params.contractId,
       c.req.valid("json"),
     )
     return row ? c.json({ data: row }, 200) : c.json({ error: "Contract not found" }, 404)
   })
   .openapi(deleteContractRoute, async (c) => {
-    const row = await suppliersService.deleteContract(c.get("db"), c.req.valid("param").contractId)
+    const params = c.req.valid("param")
+    const row = await suppliersService.deleteContract(c.get("db"), params.id, params.contractId)
     return row ? c.json({ success: true }, 200) : c.json({ error: "Contract not found" }, 404)
   })
 
