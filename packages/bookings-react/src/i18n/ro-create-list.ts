@@ -66,6 +66,8 @@ export const bookingsUiRoCreateList = {
         "Optiunile rezervarii nu sunt sincronizate. Verifica randurile de calator si optiune selectate.",
       payloadResolverMismatchLine:
         "{label}: trimis {submittedQuantity}, asteptat {resolvedQuantity}",
+      paidPaymentDateRequired:
+        "Data platii este obligatorie cand plata este marcata ca deja achitata.",
     },
     actions: {
       createDraftBooking: "Creeaza rezervare draft",

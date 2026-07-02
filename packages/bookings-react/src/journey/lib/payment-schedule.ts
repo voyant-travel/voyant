@@ -73,6 +73,18 @@ export function paymentScheduleValueToRows(
   return rows
 }
 
+export function findPaidScheduleRowsMissingPaymentDate(
+  rows: PaymentScheduleRow[] | undefined,
+): number | null {
+  if (!rows) return null
+  const index = rows.findIndex((row) => {
+    const meta = parsePaidNotes(row.notes)
+    if (row.status !== "paid" && meta?.alreadyPaid !== true) return false
+    return !hasExplicitPaymentDate(meta)
+  })
+  return index >= 0 ? index : null
+}
+
 /** Draft rows → editor value (re-init on step remount; preserves paid metadata). */
 export function rowsToPaymentScheduleValue(
   rows: PaymentScheduleRow[] | undefined,
@@ -84,18 +96,12 @@ export function rowsToPaymentScheduleValue(
     let paymentDate: string | null = null
     let paymentMethod = "bank_transfer"
     let paymentReference = ""
-    if (row.notes) {
-      try {
-        const meta = JSON.parse(row.notes) as Partial<PaidNotesPayload>
-        if (meta.alreadyPaid) {
-          alreadyPaid = true
-          paymentDate = meta.paymentDate ?? null
-          paymentMethod = meta.paymentMethod ?? "bank_transfer"
-          paymentReference = meta.paymentReference ?? ""
-        }
-      } catch {
-        // `notes` wasn't our JSON payload (e.g. a free-text note) — ignore.
-      }
+    const meta = parsePaidNotes(row.notes)
+    if (meta?.alreadyPaid) {
+      alreadyPaid = true
+      paymentDate = meta.paymentDate ?? null
+      paymentMethod = meta.paymentMethod ?? "bank_transfer"
+      paymentReference = meta.paymentReference ?? ""
     }
     return createInstallment({
       amountCents: row.amountCents,
@@ -107,4 +113,19 @@ export function rowsToPaymentScheduleValue(
     })
   })
   return { mode: rows.length > 1 ? "split" : "full", installments }
+}
+
+function parsePaidNotes(notes: string | null | undefined): Partial<PaidNotesPayload> | null {
+  if (!notes) return null
+  try {
+    const parsed = JSON.parse(notes) as Partial<PaidNotesPayload>
+    return parsed && typeof parsed === "object" ? parsed : null
+  } catch {
+    // `notes` wasn't our JSON payload (e.g. a free-text note) — ignore.
+    return null
+  }
+}
+
+function hasExplicitPaymentDate(meta: Partial<PaidNotesPayload> | null): boolean {
+  return typeof meta?.paymentDate === "string" && meta.paymentDate.trim().length > 0
 }

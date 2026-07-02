@@ -51,6 +51,7 @@ import {
   VoyantApiError,
 } from "../index.js"
 import {
+  findAlreadyPaidInstallmentMissingPaymentDate,
   formatPayloadResolverMismatchError,
   generateBookingNumber,
   hasAnyPaidPayment,
@@ -757,6 +758,11 @@ export function BookingCreateForm({
 
       if (pricing?.requiresReason) {
         setError(messages.bookingCreateDialog.labels.breakdownOverrideReasonRequired)
+        return
+      }
+
+      if (findAlreadyPaidInstallmentMissingPaymentDate(paymentSchedule) !== null) {
+        setError(messages.bookingCreateDialog.validation.paidPaymentDateRequired)
         return
       }
 

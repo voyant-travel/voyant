@@ -597,6 +597,10 @@ function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
   return schedule.status === "paid" || metadata?.alreadyPaid === true
 }
 
+function hasExplicitPaymentDate(metadata: AlreadyPaidScheduleMetadata | null): boolean {
+  return typeof metadata?.paymentDate === "string" && metadata.paymentDate.trim().length > 0
+}
+
 function duplicateBookingGuardKey(input: BookingCreateInput) {
   if (!input.slotId) return null
   if (input.personId) return `booking-create:person:${input.personId}:slot:${input.slotId}`
@@ -1038,6 +1042,16 @@ function validatePaymentSchedules(
         path: ["paymentSchedules", index, "currency"],
         message: `paymentSchedules[${index}].currency must equal the booking's sellCurrency (${expectedCurrency}); got ${schedule.currency}`,
       })
+    }
+
+    if (isAlreadyPaidSchedule(schedule)) {
+      const metadata = parseAlreadyPaidScheduleMetadata(schedule.notes)
+      if (!hasExplicitPaymentDate(metadata)) {
+        issues.push({
+          path: ["paymentSchedules", index, "notes", "paymentDate"],
+          message: `paymentSchedules[${index}] marked paid requires notes.paymentDate`,
+        })
+      }
     }
   })
 
