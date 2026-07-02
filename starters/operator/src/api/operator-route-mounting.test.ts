@@ -10,12 +10,15 @@
  */
 
 import type { Actor } from "@voyant-travel/core"
+import { createVoyantApp } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
 import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
 
 import {
   buildOperatorProviders,
+  deploymentLocalExtensions,
+  deploymentLocalModules,
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
@@ -32,7 +35,7 @@ function build() {
   return mountApp({
     // Stub db — enough to be leased + bridged; handlers may 5xx using it, which
     // still proves the route is mounted and the context reached the sub-app.
-    // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test.
+    // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test -- owner: operator API tests.
     db: () => ({}) as any,
     modules,
     extensions,
@@ -54,7 +57,7 @@ function buildWithSessionActor(actor: Actor) {
     buildOperatorProviders(),
   )
   return mountApp({
-    // biome-ignore lint/suspicious/noExplicitAny: stub db for auth-surface regression.
+    // biome-ignore lint/suspicious/noExplicitAny: stub db for auth-surface regression -- owner: operator API tests.
     db: () => ({}) as any,
     modules,
     extensions,
@@ -64,9 +67,28 @@ function buildWithSessionActor(actor: Actor) {
   })
 }
 
+function buildWithLiveFrontDoor() {
+  return createVoyantApp({
+    providers: buildOperatorProviders(),
+    modules: deploymentLocalModules,
+    extensions: deploymentLocalExtensions,
+    // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test -- owner: operator API tests.
+    db: () => ({}) as any,
+    auth: {
+      resolve: () => ({ userId: "u1", actor: "staff" }),
+    },
+  })
+}
+
 async function status(path: string, method = "GET"): Promise<number> {
   const app = build()
   const res = await app.request(path, { method }, TEST_ENV, TEST_CTX)
+  return res.status
+}
+
+async function liveFrontDoorStatus(path: string, init: RequestInit = {}): Promise<number> {
+  const app = buildWithLiveFrontDoor()
+  const res = await app.request(path, init, TEST_ENV, TEST_CTX)
   return res.status
 }
 
@@ -82,6 +104,20 @@ async function responseWithSessionActor(
 describe("operator composed route mounting (smoke)", () => {
   it("returns 404 for an unmounted admin path (control)", async () => {
     expect(await status("/v1/admin/definitely-not-mounted/x")).toBe(404)
+  })
+
+  it("mounts MICE booking details routes through the live starter front door", async () => {
+    const bookingPath = "/v1/admin/bookings/book_123/mice-details"
+
+    expect(await liveFrontDoorStatus(bookingPath)).not.toBe(404)
+    expect(
+      await liveFrontDoorStatus(bookingPath, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ programId: "mice_program_123", delegateId: "mice_delegate_123" }),
+      }),
+    ).not.toBe(404)
+    expect(await liveFrontDoorStatus(bookingPath, { method: "DELETE" })).not.toBe(404)
   })
 
   it("mounts lazyAdminRoutes modules (flights, mcp)", async () => {

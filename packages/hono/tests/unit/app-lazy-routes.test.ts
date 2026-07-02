@@ -2,7 +2,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { mountApp } from "../../src/app.js"
-import type { HonoModule } from "../../src/module.js"
+import type { HonoExtension, HonoModule } from "../../src/module.js"
 import type { VoyantBindings } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -67,6 +67,38 @@ describe("mountApp lazy route mounting", () => {
     // Context bridged: the lazy route saw the db the mountApp middleware leased.
     expect(body.db).toBe("leased-db")
     expect(load).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not let a lazy extension wildcard shadow a later eager extension route", async () => {
+    const loadMaintenance = vi.fn(async () =>
+      new Hono().post("/:id/rebuild-tax-lines", (c) => c.json({ maintenance: true })),
+    )
+    const lazyExtension: HonoExtension = {
+      extension: { name: "booking-maintenance", module: "bookings" },
+      lazyAdminRoutes: loadMaintenance,
+    }
+    const eagerExtension: HonoExtension = {
+      extension: { name: "mice-booking", module: "bookings" },
+      adminRoutes: new Hono().get("/:id/mice-details", (c) => c.json({ mounted: true })),
+    }
+
+    const app = mountApp({
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
+      db: () => ({}) as any,
+      modules: [{ module: { name: "bookings" } }],
+      extensions: [lazyExtension, eagerExtension],
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    const res = await app.request(
+      "/v1/admin/bookings/book_123/mice-details",
+      {},
+      TEST_ENV,
+      TEST_CTX,
+    )
+    expect(res.status).toBe(200)
+    expect((await res.json()) as { mounted: boolean }).toEqual({ mounted: true })
+    expect(loadMaintenance).not.toHaveBeenCalled()
   })
 
   it("caches the loaded sub-app across requests (load once per isolate)", async () => {

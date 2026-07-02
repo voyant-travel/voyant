@@ -103,7 +103,7 @@ export interface ModuleMount {
   moduleName: string
   /** Absolute surface mount prefix, or `"/"` for absolute `lazyRoutes`. */
   prefix: string
-  // biome-ignore lint/suspicious/noExplicitAny: accepts any composed sub-app regardless of its Env/Schema/BasePath, matching LazyRoutesLoader's AnyHono.
+  // biome-ignore lint/suspicious/noExplicitAny: accepts any composed sub-app regardless of its Env/Schema/BasePath, matching LazyRoutesLoader's AnyHono -- owner: hono runtime.
   load: () => Hono<any, any, any> | Promise<Hono<any, any, any>>
 }
 
@@ -588,6 +588,27 @@ export function mountApp<TBindings extends VoyantBindings>(
   // uniform across eager + lazy. Webhook routes are intentionally excluded — the
   // per-module docs cover the admin/storefront surfaces only.
   const moduleMounts: ModuleMount[] = []
+  const deferredLazyRouteMounts: Array<() => void> = []
+
+  function deferLazyRoutesAt(moduleName: string, prefix: string, load: LazyRoutesLoader) {
+    lazyMounts.push({ prefix, load })
+    moduleMounts.push({ moduleName, prefix, load })
+    deferredLazyRouteMounts.push(() => {
+      mountLazyRoutesAt(app, prefix, load)
+    })
+  }
+
+  function deferLazyRoutePaths(
+    moduleName: string,
+    paths: readonly string[],
+    load: LazyRoutesLoader,
+  ) {
+    lazyMounts.push({ prefix: "/", load })
+    moduleMounts.push({ moduleName, prefix: "/", load })
+    deferredLazyRouteMounts.push(() => {
+      mountLazyRoutePaths(app, paths, load)
+    })
+  }
 
   // Mount module routes
   for (const mod of allModules) {
@@ -605,19 +626,13 @@ export function mountApp<TBindings extends VoyantBindings>(
       moduleMounts.push({ moduleName, prefix: publicPrefix, load: () => publicRoutes })
     }
     if (mod.lazyAdminRoutes) {
-      mountLazyRoutesAt(app, adminPrefix, mod.lazyAdminRoutes)
-      lazyMounts.push({ prefix: adminPrefix, load: mod.lazyAdminRoutes })
-      moduleMounts.push({ moduleName, prefix: adminPrefix, load: mod.lazyAdminRoutes })
+      deferLazyRoutesAt(moduleName, adminPrefix, mod.lazyAdminRoutes)
     }
     if (mod.lazyPublicRoutes) {
-      mountLazyRoutesAt(app, publicPrefix, mod.lazyPublicRoutes)
-      lazyMounts.push({ prefix: publicPrefix, load: mod.lazyPublicRoutes })
-      moduleMounts.push({ moduleName, prefix: publicPrefix, load: mod.lazyPublicRoutes })
+      deferLazyRoutesAt(moduleName, publicPrefix, mod.lazyPublicRoutes)
     }
     if (mod.lazyRoutes) {
-      mountLazyRoutePaths(app, mod.lazyRoutes.paths, mod.lazyRoutes.load)
-      lazyMounts.push({ prefix: "/", load: mod.lazyRoutes.load })
-      moduleMounts.push({ moduleName, prefix: "/", load: mod.lazyRoutes.load })
+      deferLazyRoutePaths(moduleName, mod.lazyRoutes.paths, mod.lazyRoutes.load)
     }
     if (mod.webhookRoutes) {
       app.route(`/v1/${moduleName}`, mod.webhookRoutes)
@@ -640,23 +655,21 @@ export function mountApp<TBindings extends VoyantBindings>(
       moduleMounts.push({ moduleName, prefix: publicPrefix, load: () => publicRoutes })
     }
     if (ext.lazyAdminRoutes) {
-      mountLazyRoutesAt(app, adminPrefix, ext.lazyAdminRoutes)
-      lazyMounts.push({ prefix: adminPrefix, load: ext.lazyAdminRoutes })
-      moduleMounts.push({ moduleName, prefix: adminPrefix, load: ext.lazyAdminRoutes })
+      deferLazyRoutesAt(moduleName, adminPrefix, ext.lazyAdminRoutes)
     }
     if (ext.lazyPublicRoutes) {
-      mountLazyRoutesAt(app, publicPrefix, ext.lazyPublicRoutes)
-      lazyMounts.push({ prefix: publicPrefix, load: ext.lazyPublicRoutes })
-      moduleMounts.push({ moduleName, prefix: publicPrefix, load: ext.lazyPublicRoutes })
+      deferLazyRoutesAt(moduleName, publicPrefix, ext.lazyPublicRoutes)
     }
     if (ext.lazyRoutes) {
-      mountLazyRoutePaths(app, ext.lazyRoutes.paths, ext.lazyRoutes.load)
-      lazyMounts.push({ prefix: "/", load: ext.lazyRoutes.load })
-      moduleMounts.push({ moduleName, prefix: "/", load: ext.lazyRoutes.load })
+      deferLazyRoutePaths(moduleName, ext.lazyRoutes.paths, ext.lazyRoutes.load)
     }
     if (ext.webhookRoutes) {
       app.route(`/v1/${moduleName}`, ext.webhookRoutes)
     }
+  }
+
+  for (const mountLazyRoutes of deferredLazyRouteMounts) {
+    mountLazyRoutes()
   }
 
   // Additional routes
