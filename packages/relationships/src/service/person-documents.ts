@@ -1,3 +1,4 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import type { KeyRef, KmsProvider } from "@voyant-travel/utils"
 import { decryptOptionalJsonEnvelope } from "@voyant-travel/utils"
 import { and, asc, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm"
@@ -55,6 +56,14 @@ async function personExists(db: PostgresJsDatabase, personId: string) {
     .where(eq(people.id, personId))
     .limit(1)
   return Boolean(row)
+}
+
+function assertValidDocumentDateRange(issueDate?: string | null, expiryDate?: string | null) {
+  if (issueDate && expiryDate && expiryDate < issueDate) {
+    throw new RequestValidationError("expiryDate must be on or after issueDate", {
+      fields: { expiryDate: ["expiryDate must be on or after issueDate"] },
+    })
+  }
 }
 
 async function clearPrimaryForType(
@@ -159,6 +168,7 @@ export const personDocumentsService = {
     data: CreatePersonDocumentInput,
   ) {
     if (!(await personExists(db, personId))) return null
+    assertValidDocumentDateRange(data.issueDate, data.expiryDate)
 
     return db.transaction(async (tx) => {
       if (data.isPrimary) {
@@ -184,6 +194,11 @@ export const personDocumentsService = {
         .where(eq(personDocuments.id, documentId))
         .limit(1)
       if (!existing) return null
+
+      assertValidDocumentDateRange(
+        data.issueDate !== undefined ? data.issueDate : existing.issueDate,
+        data.expiryDate !== undefined ? data.expiryDate : existing.expiryDate,
+      )
 
       // Clear prior primary of the *target* type whenever the row
       // will end up primary after this update — including the case

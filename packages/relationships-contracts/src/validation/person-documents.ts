@@ -13,6 +13,19 @@ export const personDocumentTypeSchema = z.enum([
   "other",
 ])
 
+function validateDocumentDateRange(
+  data: { issueDate?: string | null; expiryDate?: string | null },
+  ctx: z.RefinementCtx,
+) {
+  if (data.issueDate && data.expiryDate && data.expiryDate < data.issueDate) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["expiryDate"],
+      message: "expiryDate must be on or after issueDate",
+    })
+  }
+}
+
 export const personDocumentCoreSchema = z.object({
   type: personDocumentTypeSchema,
   // `z.lazy` for cross-package init-cycle protection — see #501.
@@ -27,8 +40,11 @@ export const personDocumentCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 
-export const insertPersonDocumentSchema = personDocumentCoreSchema
-export const updatePersonDocumentSchema = personDocumentCoreSchema.partial()
+export const insertPersonDocumentSchema =
+  personDocumentCoreSchema.superRefine(validateDocumentDateRange)
+export const updatePersonDocumentSchema = personDocumentCoreSchema
+  .partial()
+  .superRefine(validateDocumentDateRange)
 export const personDocumentListQuerySchema = paginationSchema.extend({
   type: personDocumentTypeSchema.optional(),
   expiringBefore: z.string().date().optional(),
@@ -53,8 +69,11 @@ const personDocumentPlaintextCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 
-export const insertPersonDocumentFromPlaintextSchema = personDocumentPlaintextCoreSchema
-export const updatePersonDocumentFromPlaintextSchema = personDocumentPlaintextCoreSchema.partial()
+export const insertPersonDocumentFromPlaintextSchema =
+  personDocumentPlaintextCoreSchema.superRefine(validateDocumentDateRange)
+export const updatePersonDocumentFromPlaintextSchema = personDocumentPlaintextCoreSchema
+  .partial()
+  .superRefine(validateDocumentDateRange)
 
 /**
  * Plaintext input shape for the four free-text PII slots on

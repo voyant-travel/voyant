@@ -714,40 +714,53 @@ export function PersonDocumentsPanel({
 }: PersonDocumentsPanelProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
+  const [createOpen, setCreateOpen] = useState(false)
+  const canEdit = Boolean(personId)
 
   if (documentsPending) {
     return <LoadingRow />
   }
 
-  if (documents.length === 0) {
-    return <EmptyRow>{messages.personDetail.empty.noDocuments}</EmptyRow>
-  }
-
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <FileText className="size-3.5" aria-hidden="true" />
-        <span>
-          {primaryCount} {messages.personDetail.sections.primary}
-        </span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <FileText className="size-3.5" aria-hidden="true" />
+          <span>
+            {primaryCount} {messages.personDetail.sections.primary}
+          </span>
+        </div>
+        {canEdit ? (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-1 size-3.5" aria-hidden="true" />
+            {messages.personDocument.row.addButton}
+          </Button>
+        ) : null}
       </div>
-      <ul className="divide-y">
-        {documents.map((document) => (
-          <PersonDocumentRow
-            key={document.id}
-            document={document}
-            personId={personId}
-            typeLabel={
-              messages.personDetail.documentTypeLabels[
-                document.type as keyof typeof messages.personDetail.documentTypeLabels
-              ] ?? document.type
-            }
-            formattedExpiry={formatCrmDate(i18n, document.expiryDate)}
-            noneLabel={messages.common.none}
-            primaryLabel={messages.personDetail.sections.primary}
-          />
-        ))}
-      </ul>
+      {documents.length === 0 ? (
+        <EmptyRow>{messages.personDetail.empty.noDocuments}</EmptyRow>
+      ) : (
+        <ul className="divide-y">
+          {documents.map((document) => (
+            <PersonDocumentRow
+              key={document.id}
+              document={document}
+              personId={personId}
+              typeLabel={
+                messages.personDetail.documentTypeLabels[
+                  document.type as keyof typeof messages.personDetail.documentTypeLabels
+                ] ?? document.type
+              }
+              formattedExpiry={formatCrmDate(i18n, document.expiryDate)}
+              noneLabel={messages.common.none}
+              primaryLabel={messages.personDetail.sections.primary}
+            />
+          ))}
+        </ul>
+      )}
+      {canEdit && personId ? (
+        <PersonDocumentDialog open={createOpen} onOpenChange={setCreateOpen} personId={personId} />
+      ) : null}
     </div>
   )
 }
@@ -822,6 +835,18 @@ function PersonDocumentRow({
             >
               <Pencil className="size-3.5" />
             </button>
+          ) : null}
+          {editable && !document.isPrimary ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={mutation.setPrimary.isPending}
+              onClick={() => mutation.setPrimary.mutateAsync(document.id)}
+            >
+              {docMessages.row.makePrimary}
+            </Button>
           ) : null}
           {editable ? (
             <ConfirmActionButton
