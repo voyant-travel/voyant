@@ -370,6 +370,35 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       expect(body.data.firstName).toBe("New")
     })
 
+    it("preserves person status and tags on an empty patch", async () => {
+      const createRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({
+          firstName: "Patch",
+          lastName: "Defaults",
+          relation: "client",
+          status: "inactive",
+          tags: ["qa", "people", "alpha"],
+        }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/people/${created.id}`, {
+        method: "PATCH",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        firstName: "Patch",
+        lastName: "Defaults",
+        relation: "client",
+        status: "inactive",
+        tags: ["qa", "people", "alpha"],
+      })
+    })
+
     it("preserves contact points on a partial update that omits them (#1971)", async () => {
       const createRes = await getApp().request("/people", {
         method: "POST",

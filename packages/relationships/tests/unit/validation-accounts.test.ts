@@ -245,6 +245,12 @@ describe("Person schemas", () => {
       const result = updatePersonSchema.parse({ firstName: "Jane" })
       expect(result.firstName).toBe("Jane")
       expect(result.lastName).toBeUndefined()
+      expect(result.status).toBeUndefined()
+      expect(result.tags).toBeUndefined()
+    })
+
+    it("does not apply create defaults to empty updates", () => {
+      expect(updatePersonSchema.parse({})).toEqual({})
     })
 
     it("allows updating identity fields independently", () => {
