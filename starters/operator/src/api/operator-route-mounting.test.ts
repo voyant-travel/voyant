@@ -86,7 +86,9 @@ describe("operator composed route mounting (smoke)", () => {
 
   it("mounts lazyAdminRoutes modules (flights, mcp)", async () => {
     expect(await status("/v1/admin/flights/reference/airports")).not.toBe(404)
-    expect(await status("/v1/admin/mcp/tools/create-trip", "POST")).not.toBe(404)
+    // MCP is now a real MCP server: JSON-RPC at the mount root + a discovery manifest.
+    expect(await status("/v1/admin/mcp", "POST")).not.toBe(404)
+    expect(await status("/v1/admin/mcp/manifest")).not.toBe(404)
   })
 
   it("mounts lazy module admin + public surfaces (invitations)", async () => {

@@ -2,6 +2,7 @@ import type { getDb } from "@voyant-travel/db"
 import { authMember, authSession, authUser } from "@voyant-travel/db/schema/iam"
 import { and, asc, eq } from "drizzle-orm"
 
+import { ApiTokenValidationError, buildApiTokenCreateBody, pickFields } from "./api-token-create.js"
 import {
   type ApiTokenRotationOptions,
   type ApiTokenRotationStore,
@@ -104,17 +105,6 @@ const API_TOKEN_QUERY_FIELDS = [
   "offset",
   "sortBy",
   "sortDirection",
-] as const
-
-const API_TOKEN_CREATE_FIELDS = [
-  "configId",
-  "name",
-  "expiresIn",
-  "remaining",
-  "prefix",
-  "organizationId",
-  "metadata",
-  "permissions",
 ] as const
 
 const API_TOKEN_UPDATE_FIELDS = [
@@ -248,17 +238,6 @@ async function readOptionalJson(request: Request): Promise<Record<string, unknow
   return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
     ? (parsed as Record<string, unknown>)
     : {}
-}
-
-function pickFields(
-  body: Record<string, unknown>,
-  fields: readonly string[],
-): Record<string, unknown> {
-  const next: Record<string, unknown> = {}
-  for (const field of fields) {
-    if (body[field] !== undefined) next[field] = body[field]
-  }
-  return next
 }
 
 async function requireApiTokenSession(auth: BetterAuthApiTokenManagement, headers: Headers) {
@@ -473,9 +452,18 @@ export async function handleApiTokenManagementRequest(
       if (request.method === "POST") {
         const body = await readOptionalJson(request)
         const session = await requireApiTokenSession({ api }, request.headers)
+        let createBody: Record<string, unknown>
+        try {
+          createBody = buildApiTokenCreateBody(body)
+        } catch (error) {
+          if (error instanceof ApiTokenValidationError) {
+            return jsonResponse({ error: error.message }, 400)
+          }
+          throw error
+        }
         const result = await api.createApiKey({
           body: {
-            ...pickFields(body, API_TOKEN_CREATE_FIELDS),
+            ...createBody,
             userId: session.user.id,
           },
         })

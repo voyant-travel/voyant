@@ -193,6 +193,23 @@ For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version
 
 ---
 
+## Agent tooling & MCP
+
+See [agent tool library](docs/architecture/agent-tool-library.md) and
+[ADR-0011](docs/adr/0011-agent-tool-library-and-mcp.md).
+
+| Term               | Definition                                                                                                                            | Aliases to avoid            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **Tool**           | An authored-once, headless, scope-gated capability an agent can invoke; validates input + output and returns typed **pure data**.       | *command, action, function* |
+| **Tool Registry**  | The in-deployment collection of registered Tools; dispatches by name and emits the discovery manifest. Holds no authorization logic.    | *tool list*                 |
+| **Tool Manifest**  | The contract-versioned, pure-data description of available Tools (name, JSON-Schema input, `requiredScopes`, risk) for remote agents.   | *tool catalog, schema dump* |
+| **MCP Server**     | The in-deployment Model Context Protocol adapter (`/v1/admin/mcp`) exposing the Tool Registry to external agent clients. Not an agent.  | *agent, bot, tool worker*   |
+| **Risk Tier**      | A Tool's coarse risk class: `read`, `write`, `sensitive`, or `destructive`. Paired with a declarative **Risk Policy**.                  | *permission level*          |
+| **Required Scopes**| The `resource:action` scopes a caller must hold (AND) to invoke a Tool — the finer-grained gate above the coarse route guard.           | *tool permission*           |
+| **Audience grant** | The `staff`/`customer`/`partner`/`supplier` value carried on an API-key grant (not inferred from scopes), resolved into a resolver scope.| *role, actor (overloaded)*  |
+
+---
+
 ## Lifecycle verbs (canonical actions)
 
 | Verb           | Meaning                                                                                          | Used on                                  |

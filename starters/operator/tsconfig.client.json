@@ -1178,6 +1178,7 @@
         "../../packages/inventory/dist/service-content-synthesizer.d.ts"
       ],
       "@voyant-travel/inventory/tasks": ["../../packages/inventory/dist/tasks.d.ts"],
+      "@voyant-travel/inventory/tools": ["../../packages/inventory/dist/tools.d.ts"],
       "@voyant-travel/inventory/validation": ["../../packages/inventory/dist/validation.d.ts"],
       "@voyant-travel/legal": ["../../packages/legal/dist/index.d.ts"],
       "@voyant-travel/legal-contracts": ["../../packages/legal-contracts/dist/index.d.ts"],
@@ -1245,6 +1246,7 @@
       "@voyant-travel/legal/terms/routes": ["../../packages/legal/dist/terms/routes.d.ts"],
       "@voyant-travel/legal/terms/service": ["../../packages/legal/dist/terms/service.d.ts"],
       "@voyant-travel/legal/terms/validation": ["../../packages/legal/dist/terms/validation.d.ts"],
+      "@voyant-travel/mcp": ["../../packages/mcp/dist/index.d.ts"],
       "@voyant-travel/mice": ["../../packages/mice/dist/index.d.ts"],
       "@voyant-travel/mice-react": ["../../packages/mice-react/dist/index.d.ts"],
       "@voyant-travel/mice-react/admin": ["../../packages/mice-react/dist/admin/index.d.ts"],
@@ -1741,6 +1743,7 @@
       "@voyant-travel/templating/template-renderer": [
         "../../packages/templating/dist/template-renderer.d.ts"
       ],
+      "@voyant-travel/tools": ["../../packages/tools/dist/index.d.ts"],
       "@voyant-travel/trips": ["../../packages/trips/dist/index.d.ts"],
       "@voyant-travel/trips-react": ["../../packages/trips-react/dist/index.d.ts"],
       "@voyant-travel/trips-react/admin": ["../../packages/trips-react/dist/admin/index.d.ts"],
@@ -1754,11 +1757,10 @@
       "@voyant-travel/trips/checkout": ["../../packages/trips/dist/checkout/index.d.ts"],
       "@voyant-travel/trips/cruise-extension": ["../../packages/trips/dist/cruise-extension.d.ts"],
       "@voyant-travel/trips/flight-component": ["../../packages/trips/dist/flight-component.d.ts"],
-      "@voyant-travel/trips/mcp": ["../../packages/trips/dist/mcp-routes.d.ts"],
-      "@voyant-travel/trips/mcp-tools": ["../../packages/trips/dist/mcp-tools.d.ts"],
       "@voyant-travel/trips/routes": ["../../packages/trips/dist/routes.d.ts"],
       "@voyant-travel/trips/schema": ["../../packages/trips/dist/schema.d.ts"],
       "@voyant-travel/trips/service": ["../../packages/trips/dist/service.d.ts"],
+      "@voyant-travel/trips/tools": ["../../packages/trips/dist/tools.d.ts"],
       "@voyant-travel/trips/validation": ["../../packages/trips/dist/validation.d.ts"],
       "@voyant-travel/types": ["../../packages/types/dist/index.d.ts"],
       "@voyant-travel/types/api-keys": ["../../packages/types/dist/api-keys.d.ts"],
