@@ -87,7 +87,7 @@
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "lucide-react": "^0.475.0",
+    "lucide-react": "^1.22.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.80.0",
