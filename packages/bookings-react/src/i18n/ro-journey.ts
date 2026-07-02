@@ -113,7 +113,7 @@ export const bookingsUiRoJourney = {
       decrease: "Scade {label}",
       increase: "Adauga {label}",
       empty: "Alege numarul de calatori in pasul Configurare pentru a adauga detalii.",
-      addTraveler: "Adauga calator",
+      addTraveler: "Adauga inca un calator",
       travelerType: "Tip calator",
       travelerNumber: "Calator {number}",
       ageLabel: "varsta {age}",

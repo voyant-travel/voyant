@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildCommitParty,
   canAdvanceFromStep,
   defaultMinimalShape,
 } from "../../src/journey/components/booking-journey-rules.js"
@@ -43,5 +44,26 @@ describe("booking-journey-rules", () => {
     })
 
     expect(canAdvanceFromStep("billing", draft, shape, true)).toBe(false)
+  })
+
+  it("does not commit a stale organization id for an individual buyer", () => {
+    const draft = patchBilling(emptyDraft(ENTITY, { buyerType: "B2C" }), {
+      organizationId: "org_stale",
+      contact: {
+        firstName: "Test",
+        lastName: "Traveler",
+        email: "test@example.com",
+        personId: "person_1",
+      },
+    })
+
+    expect(buildCommitParty(draft)).toMatchObject({
+      personId: "person_1",
+      organizationId: undefined,
+      billing: {
+        personId: "person_1",
+        organizationId: undefined,
+      },
+    })
   })
 })

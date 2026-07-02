@@ -396,10 +396,10 @@ function BillingDetails({
             : messages.bookingJourney.sidePanel.individual
         }
       />
-      {draft.billing.company?.name ? (
+      {draft.billing.buyerType === "B2B" && draft.billing.company?.name ? (
         <Row label={messages.bookingJourney.sidePanel.company} value={draft.billing.company.name} />
       ) : null}
-      {draft.billing.company?.vatId ? (
+      {draft.billing.buyerType === "B2B" && draft.billing.company?.vatId ? (
         <Row label={messages.bookingJourney.sidePanel.vat} value={draft.billing.company.vatId} />
       ) : null}
       {addressLine ? (

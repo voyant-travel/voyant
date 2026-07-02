@@ -112,7 +112,7 @@ export function BookingJourneyHost({
     | "onCancelled"
   > = {
     renderLeadContactPicker({ apply, buyerType }) {
-      return <CrmLeadPicker apply={apply} buyerType={buyerType} />
+      return <CrmLeadPicker key={buyerType} apply={apply} buyerType={buyerType} />
     },
     renderBillingExtras(ctx) {
       // Warn if the picked lead already booked this departure.

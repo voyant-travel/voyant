@@ -7,6 +7,7 @@ import {
   patchConfigure,
   patchPaxCount,
   setAddons,
+  setBillingBuyerType,
   setPayment,
   setTravelers,
   totalPax,
@@ -60,6 +61,35 @@ describe("draft-state", () => {
     const next = patchBilling(draft, { buyerType: "B2B" })
     expect(next.billing.buyerType).toBe("B2B")
     expect(next.billing.contact).toBe(draft.billing.contact)
+  })
+
+  it("setBillingBuyerType clears B2B-only billing state when switching to B2C", () => {
+    const draft = patchBilling(emptyDraft(ENTITY, { buyerType: "B2B" }), {
+      organizationId: "org_1",
+      company: {
+        name: "Acme Travel",
+        vatId: "RO123",
+      },
+      address: {
+        line1: "1 Company Way",
+        city: "Bucharest",
+        country: "RO",
+      },
+      contact: {
+        firstName: "Ana",
+        lastName: "Pop",
+        email: "ana@example.com",
+        personId: "person_1",
+      },
+    })
+
+    const next = setBillingBuyerType(draft, "B2C")
+
+    expect(next.billing.buyerType).toBe("B2C")
+    expect(next.billing.organizationId).toBeUndefined()
+    expect(next.billing.company).toBeUndefined()
+    expect(next.billing.address).toEqual({})
+    expect(next.billing.contact).toEqual(draft.billing.contact)
   })
 
   it("allows copying billing contact when any traveler contact field is present", () => {

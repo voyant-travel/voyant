@@ -50,6 +50,22 @@ export function patchBilling(draft: Draft, patch: Partial<Draft["billing"]>): Dr
   return { ...draft, billing: { ...draft.billing, ...patch } }
 }
 
+export function setBillingBuyerType(draft: Draft, buyerType: "B2C" | "B2B"): Draft {
+  if (buyerType === "B2C") {
+    const { organizationId: _organizationId, company: _company, ...billing } = draft.billing
+    return {
+      ...draft,
+      billing: {
+        ...billing,
+        buyerType,
+        address: {},
+      },
+    }
+  }
+
+  return patchBilling(draft, { buyerType })
+}
+
 export function canCopyBillingContactToTraveler(contact: Draft["billing"]["contact"]): boolean {
   return Boolean(contact.firstName || contact.lastName || contact.email || contact.phone)
 }
