@@ -1,6 +1,6 @@
-import type { VoyantAuthContext } from "@voyant-travel/core"
+import type { Actor, VoyantAuthContext } from "@voyant-travel/core"
 import { apikeyTable, type SelectApikey } from "@voyant-travel/db/schema/iam"
-import { permissionsToStrings } from "@voyant-travel/types/api-keys"
+import { API_KEY_AUDIENCES, permissionsToStrings } from "@voyant-travel/types/api-keys"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { and, eq, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
@@ -105,6 +105,26 @@ async function writeCachedApiKey(kv: KVStore, keyHash: string, row: SelectApikey
   }
 }
 
+const API_KEY_AUDIENCE_SET = new Set<string>(API_KEY_AUDIENCES)
+
+/**
+ * Extract the grant audience from an API key's `metadata` JSON. Malformed or
+ * absent metadata falls back to `"staff"` (legacy server-to-server default).
+ */
+function resolveApiKeyAudience(metadata: string | null | undefined): Actor {
+  if (!metadata) return "staff"
+  try {
+    const parsed = JSON.parse(metadata) as { audience?: unknown }
+    const value = parsed?.audience
+    if (typeof value === "string" && API_KEY_AUDIENCE_SET.has(value)) {
+      return value as Actor
+    }
+  } catch {
+    // Ignore malformed metadata — fall back to the staff default.
+  }
+  return "staff"
+}
+
 function applyAuthContext(
   c: {
     set: <K extends keyof VoyantVariables>(key: K, value: VoyantVariables[K]) => void
@@ -116,6 +136,7 @@ function applyAuthContext(
   if (auth.organizationId !== undefined) c.set("organizationId", auth.organizationId ?? undefined)
   if (auth.callerType) c.set("callerType", auth.callerType)
   if (auth.actor) c.set("actor", auth.actor)
+  if (auth.audience) c.set("audience", auth.audience)
   if (auth.scopes !== undefined) c.set("scopes", auth.scopes)
   if (auth.isInternalRequest !== undefined) c.set("isInternalRequest", auth.isInternalRequest)
   if (auth.apiTokenId) c.set("apiTokenId", auth.apiTokenId)
@@ -243,6 +264,12 @@ export function requireAuth<TBindings extends VoyantBindings>(
         tryGetExecutionCtx(c)?.waitUntil(counterUpdate)
 
         const scopes = permissionsToStrings(row.permissions)
+        // Audience is a grant attribute carried on the key's `metadata`, not
+        // inferred from scopes (D3). Legacy keys with no audience default to
+        // `staff`, preserving prior server-to-server behaviour. The actor
+        // follows the audience so a non-staff key resolves to its own
+        // visibility pool instead of silently gaining operator privileges.
+        const audience = resolveApiKeyAudience(row.metadata)
 
         applyAuthContext(c, {
           organizationId: row.referenceId,
@@ -250,10 +277,8 @@ export function requireAuth<TBindings extends VoyantBindings>(
           callerType: "api_key",
           apiTokenId: row.id,
           apiKeyId: row.id,
-          // Core-owned API keys (`voy_` prefix) are server-to-server credentials
-          // issued to operator staff. The actor stays explicit here so that
-          // `requireActor` doesn't have to default unset callers to "staff".
-          actor: "staff",
+          actor: audience,
+          audience,
         })
 
         // `await` is load-bearing: with a bare `return next()` the

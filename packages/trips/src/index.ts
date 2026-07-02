@@ -70,36 +70,6 @@ export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
   return honoModule
 }
 
-export type {
-  McpToolContent,
-  McpToolContext,
-  McpToolDefinition,
-  McpToolErrorCode,
-  McpToolHandler,
-  McpToolResult,
-} from "./mcp-contract.js"
-export { McpToolError } from "./mcp-contract.js"
-export {
-  type CreateMcpToolRegistryOptions,
-  createMcpToolRegistry,
-  enforceAudienceAuthorization,
-  type McpToolListEntry,
-  type McpToolRegistry,
-  requireService,
-} from "./mcp-registry.js"
-export { createTripMcpRoutes, type TripMcpRoutesOptions } from "./mcp-routes.js"
-export {
-  type CreateTripArgs,
-  createTripTool,
-  type PriceTripArgs,
-  priceTripTool,
-  type ReserveTripArgs,
-  type ReviseTripArgs,
-  reserveTripTool,
-  reviseTripTool,
-  type TripsMcpServices,
-  tripsMcpTools,
-} from "./mcp-tools.js"
 export { tripsRoutes } from "./routes.js"
 export type {
   NewTripCandidate,
@@ -217,6 +187,21 @@ export {
   taxLinesFromBreakdown,
   tripsService,
 } from "./service.js"
+export {
+  type CreateTripArgs,
+  type CreateTripResult,
+  createTripTool,
+  type PriceTripArgs,
+  priceTripTool,
+  type ReserveTripArgs,
+  type ReviseTripArgs,
+  type ReviseTripResult,
+  reserveTripTool,
+  reviseTripTool,
+  type TripsToolContext,
+  type TripsToolServices,
+  tripsTools,
+} from "./tools.js"
 export {
   assertTripTravelerPartyComplete,
   validateTripTravelerParty,

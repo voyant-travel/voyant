@@ -15,6 +15,13 @@ export interface VoyantAuthContext {
   organizationId?: string | null
   callerType?: VoyantCallerType
   actor?: Actor
+  /**
+   * The audience this grant represents (`staff`/`customer`/`partner`/`supplier`).
+   * Carried on the api-key grant / token claims, not inferred from scopes, and
+   * resolved into the catalog `ResolverScope` at request time. When unset,
+   * middleware falls back to `actor`.
+   */
+  audience?: Actor
   scopes?: string[] | null
   isInternalRequest?: boolean
   apiTokenId?: string

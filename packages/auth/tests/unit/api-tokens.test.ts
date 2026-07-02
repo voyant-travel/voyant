@@ -270,6 +270,60 @@ describe("handleApiTokenManagementRequest", () => {
     expect(auth.api.createApiKey).not.toHaveBeenCalled()
   })
 
+  it("rejects an unknown permission at mint time with 400", async () => {
+    const auth = createAuthMock()
+    const response = await handleApiTokenManagementRequest(
+      new Request("https://example.com/auth/api-tokens", {
+        method: "POST",
+        body: JSON.stringify({ name: "typo", permissions: { bananas: ["read"] } }),
+      }),
+      auth,
+    )
+
+    expect(response?.status).toBe(400)
+    expect(await responseJson(response)).toMatchObject({
+      error: expect.stringContaining("bananas"),
+    })
+    expect(auth.api.createApiKey).not.toHaveBeenCalled()
+  })
+
+  it("rejects an invalid audience at mint time with 400", async () => {
+    const auth = createAuthMock()
+    const response = await handleApiTokenManagementRequest(
+      new Request("https://example.com/auth/api-tokens", {
+        method: "POST",
+        body: JSON.stringify({ name: "bad-aud", metadata: { audience: "robot" } }),
+      }),
+      auth,
+    )
+
+    expect(response?.status).toBe(400)
+    expect(auth.api.createApiKey).not.toHaveBeenCalled()
+  })
+
+  it("resolves a grant preset into permissions + audience metadata", async () => {
+    const auth = createAuthMock()
+    const response = await handleApiTokenManagementRequest(
+      new Request("https://example.com/auth/api-tokens", {
+        method: "POST",
+        body: JSON.stringify({ name: "public reader", grantPreset: "public-catalog-reader" }),
+      }),
+      auth,
+    )
+
+    expect(response?.status).toBe(201)
+    const call = vi.mocked(auth.api.createApiKey).mock.calls[0]?.[0] as {
+      body: {
+        permissions: Record<string, string[]>
+        metadata: { audience: string }
+        userId: string
+      }
+    }
+    expect(call.body.permissions).toMatchObject({ catalog: ["read", "search"], products: ["read"] })
+    expect(call.body.metadata.audience).toBe("customer")
+    expect(call.body.userId).toBe("user_123")
+  })
+
   it("returns 405 for facade paths with unsupported methods", async () => {
     const auth = createAuthMock()
     const response = await handleApiTokenManagementRequest(

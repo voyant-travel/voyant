@@ -1,0 +1,51 @@
+{
+  "name": "@voyant-travel/mcp",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@hono/mcp": "^0.3.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@voyant-travel/tools": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
+    "hono": "catalog:",
+    "hono-rate-limiter": "^0.5.3",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/mcp"
+  }
+}
