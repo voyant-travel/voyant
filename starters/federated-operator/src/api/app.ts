@@ -2,6 +2,7 @@ import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
 import { mountApp } from "@voyant-travel/hono/app"
 import { identityHonoModule } from "@voyant-travel/identity"
 import { createRelationshipsHonoModule } from "@voyant-travel/relationships"
+import { sourceConnectionsHonoModule } from "@voyant-travel/source-connections"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 
 import { FEDERATED_OPERATOR_APP_NAME, federatedOperatorReporter } from "@/lib/observability"
@@ -11,12 +12,16 @@ import authHandler, {
   validateApiTokenAccess,
 } from "./auth/handler"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { sourceConnectionRoutes } from "./routes/source-connections"
 
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
 export const app = mountApp<CloudflareBindings>({
-  modules: [actionLedgerHonoModule, createRelationshipsHonoModule(), identityHonoModule],
+  modules: [
+    actionLedgerHonoModule,
+    createRelationshipsHonoModule(),
+    identityHonoModule,
+    sourceConnectionsHonoModule,
+  ],
   appName: FEDERATED_OPERATOR_APP_NAME,
   reporter: federatedOperatorReporter,
   db: (env) =>
@@ -42,6 +47,5 @@ export const app = mountApp<CloudflareBindings>({
         return typeof userId === "string" ? userId : null
       },
     })
-    hono.route("/", sourceConnectionRoutes)
   },
 })

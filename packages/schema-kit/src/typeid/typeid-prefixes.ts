@@ -32,6 +32,7 @@ export const PREFIXES = {
   action_mutation_details: "almd",
   action_sensitive_read_details: "alsr",
   action_approvals: "alap",
+  source_connections: "srce",
 
   // --- VOYANT MODULES ---
   communication_log: "clog",
