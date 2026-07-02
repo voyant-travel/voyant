@@ -30,7 +30,7 @@ import { useState } from "react"
 
 import { useProgramSessions } from "../hooks/use-mice-lists.js"
 import { useSessionMutation } from "../hooks/use-session-mutation.js"
-import type { SessionRecord } from "../schemas.js"
+import { formatSessionTimeLabel } from "./program-session-labels.js"
 
 /** The session types the MICE backend accepts (`createSessionSchema`). */
 const SESSION_TYPES = [
@@ -52,14 +52,6 @@ export interface ProgramSessionsSectionProps {
 // `sessionListQuerySchema` max). When an agenda hits it the section says so
 // rather than silently dropping sessions (matching the delegates/RFP surfaces).
 const SESSIONS_PAGE_LIMIT = 200
-
-function timeLabel(session: SessionRecord): string {
-  if (session.startsAt) {
-    const time = session.startsAt.slice(11, 16)
-    return time || session.startsAt
-  }
-  return session.dayDate ?? "—"
-}
 
 /**
  * Agenda sessions for a program (RFC voyant#1489 Phase 2). Lists the program's
@@ -114,7 +106,9 @@ export function ProgramSessionsSection({ programId }: ProgramSessionsSectionProp
                   <TableCell className="text-muted-foreground text-sm">
                     {s.dayDate ?? "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{timeLabel(s)}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatSessionTimeLabel(s.startsAt)}
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{s.track ?? "—"}</TableCell>
                   <TableCell className="text-right tabular-nums">{s.capacity ?? "—"}</TableCell>
                 </TableRow>
