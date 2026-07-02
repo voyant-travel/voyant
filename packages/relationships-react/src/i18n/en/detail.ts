@@ -236,6 +236,8 @@ export const crmUiEnDetailMessages = {
   },
   personDocument: {
     row: {
+      addButton: "Add document",
+      makePrimary: "Make primary",
       decrypting: "Decrypting…",
       noNumberOnFile: "(no number on file)",
       revealFailed: "Failed to reveal.",
@@ -249,8 +251,11 @@ export const crmUiEnDetailMessages = {
     },
     dialog: {
       title: "Edit document",
+      addTitle: "Add document",
       description:
         "Update document details. Numbers are encrypted at rest and audit-logged on reveal.",
+      addDescription:
+        "Add document details. Numbers are encrypted at rest and audit-logged on reveal.",
       revealFailed: "Failed to reveal document.",
       fields: {
         type: "Type",

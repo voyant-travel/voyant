@@ -143,6 +143,31 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
     expect(refreshed?.isPrimary).toBe(false)
   })
 
+  it("rejects reversed document date ranges on create and merged update", async () => {
+    const person = await seedPerson()
+
+    await expect(
+      personDocumentsService.createPersonDocument(db, person.id, {
+        type: "visa",
+        issueDate: "2031-01-01",
+        expiryDate: "2026-01-01",
+      }),
+    ).rejects.toThrow("expiryDate must be on or after issueDate")
+
+    const created = await personDocumentsService.createPersonDocument(db, person.id, {
+      type: "passport",
+      issueDate: "2026-01-01",
+      expiryDate: "2031-01-01",
+    })
+    if (!created) throw new Error("expected document")
+
+    await expect(
+      personDocumentsService.updatePersonDocument(db, created.id, {
+        issueDate: "2032-01-01",
+      }),
+    ).rejects.toThrow("expiryDate must be on or after issueDate")
+  })
+
   it("getPrimaryPersonDocument returns the matching primary or null", async () => {
     const person = await seedPerson()
     expect(

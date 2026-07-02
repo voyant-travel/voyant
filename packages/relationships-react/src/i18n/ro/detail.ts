@@ -236,6 +236,8 @@ export const crmUiRoDetailMessages = {
   },
   personDocument: {
     row: {
+      addButton: "Adauga document",
+      makePrimary: "Marcheaza principal",
       decrypting: "Se decripteaza…",
       noNumberOnFile: "(niciun numar inregistrat)",
       revealFailed: "Afisarea a esuat.",
@@ -249,8 +251,11 @@ export const crmUiRoDetailMessages = {
     },
     dialog: {
       title: "Editeaza documentul",
+      addTitle: "Adauga document",
       description:
         "Actualizeaza detaliile documentului. Numerele sunt criptate si fiecare dezvaluire este auditata.",
+      addDescription:
+        "Adauga detaliile documentului. Numerele sunt criptate si fiecare dezvaluire este auditata.",
       revealFailed: "Dezvaluirea documentului a esuat.",
       fields: {
         type: "Tip",

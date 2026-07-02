@@ -538,6 +538,8 @@ export type CrmUiMessages = {
   personDocument: {
     /** Row-level inline reveal panel + per-row action icons. */
     row: {
+      addButton: string
+      makePrimary: string
       decrypting: string
       noNumberOnFile: string
       revealFailed: string
@@ -552,7 +554,9 @@ export type CrmUiMessages = {
     /** Edit dialog (opens when the operator clicks the pencil). */
     dialog: {
       title: string
+      addTitle: string
       description: string
+      addDescription: string
       revealFailed: string
       fields: {
         type: string

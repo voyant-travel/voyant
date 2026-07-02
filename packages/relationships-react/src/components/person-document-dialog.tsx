@@ -53,7 +53,7 @@ export interface PersonDocumentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   personId: string
-  document: PersonDocumentDialogDocument
+  document?: PersonDocumentDialogDocument
 }
 
 interface FormState {
@@ -68,18 +68,18 @@ interface FormState {
 }
 
 function buildInitialState(
-  document: PersonDocumentDialogDocument,
+  document: PersonDocumentDialogDocument | undefined,
   revealedNumber: string | null,
 ): FormState {
   return {
-    type: document.type,
+    type: document?.type ?? "passport",
     number: revealedNumber ?? "",
-    issuingCountry: document.issuingCountry ?? "",
-    issuingAuthority: document.issuingAuthority ?? "",
-    issueDate: document.issueDate ?? "",
-    expiryDate: document.expiryDate ?? "",
-    isPrimary: document.isPrimary,
-    notes: document.notes ?? "",
+    issuingCountry: document?.issuingCountry ?? "",
+    issuingAuthority: document?.issuingAuthority ?? "",
+    issueDate: document?.issueDate ?? "",
+    expiryDate: document?.expiryDate ?? "",
+    isPrimary: document?.isPrimary ?? false,
+    notes: document?.notes ?? "",
   }
 }
 
@@ -89,12 +89,13 @@ export function PersonDocumentDialog({
   personId,
   document,
 }: PersonDocumentDialogProps) {
-  const revealQuery = useRevealPersonDocument(document.id, { enabled: open })
+  const revealQuery = useRevealPersonDocument(document?.id, { enabled: open && Boolean(document) })
   const revealedNumber = revealQuery.data?.data.number ?? null
-  const { updateFromPlaintext } = usePersonDocumentMutation(personId)
+  const { createFromPlaintext, updateFromPlaintext } = usePersonDocumentMutation(personId)
   const messages = useCrmUiMessagesOrDefault()
   const dialog = messages.personDocument.dialog
   const typeLabels = messages.personDetail.documentTypeLabels
+  const isEditing = Boolean(document)
 
   const [state, setState] = React.useState<FormState>(() => buildInitialState(document, null))
   const initializedRef = React.useRef(false)
@@ -115,32 +116,36 @@ export function PersonDocumentDialog({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    await updateFromPlaintext.mutateAsync({
-      id: document.id,
-      input: {
-        type: state.type,
-        number: state.number.trim() === "" ? null : state.number.trim(),
-        issuingCountry: state.issuingCountry.trim() === "" ? null : state.issuingCountry.trim(),
-        issuingAuthority:
-          state.issuingAuthority.trim() === "" ? null : state.issuingAuthority.trim(),
-        issueDate: state.issueDate === "" ? null : state.issueDate,
-        expiryDate: state.expiryDate === "" ? null : state.expiryDate,
-        isPrimary: state.isPrimary,
-        notes: state.notes.trim() === "" ? null : state.notes.trim(),
-      },
-    })
+    const input = {
+      type: state.type,
+      number: state.number.trim() === "" ? null : state.number.trim(),
+      issuingCountry: state.issuingCountry.trim() === "" ? null : state.issuingCountry.trim(),
+      issuingAuthority: state.issuingAuthority.trim() === "" ? null : state.issuingAuthority.trim(),
+      issueDate: state.issueDate === "" ? null : state.issueDate,
+      expiryDate: state.expiryDate === "" ? null : state.expiryDate,
+      isPrimary: state.isPrimary,
+      notes: state.notes.trim() === "" ? null : state.notes.trim(),
+    }
+    if (document) {
+      await updateFromPlaintext.mutateAsync({ id: document.id, input })
+    } else {
+      await createFromPlaintext.mutateAsync(input)
+    }
     onOpenChange(false)
   }
 
   const revealError = revealQuery.error
-  const updateError = updateFromPlaintext.error
+  const saveMutation = isEditing ? updateFromPlaintext : createFromPlaintext
+  const saveError = saveMutation.error
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>{dialog.title}</DialogTitle>
-          <DialogDescription>{dialog.description}</DialogDescription>
+          <DialogTitle>{isEditing ? dialog.title : dialog.addTitle}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? dialog.description : dialog.addDescription}
+          </DialogDescription>
         </DialogHeader>
         {revealQuery.isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">{dialog.loading}</p>
@@ -233,17 +238,17 @@ export function PersonDocumentDialog({
               />
             </div>
           </DialogBody>
-          {updateError ? (
+          {saveError ? (
             <p className="text-sm text-destructive">
-              {updateError instanceof Error ? updateError.message : dialog.saveFailed}
+              {saveError instanceof Error ? saveError.message : dialog.saveFailed}
             </p>
           ) : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {dialog.cancel}
             </Button>
-            <Button type="submit" disabled={updateFromPlaintext.isPending}>
-              {updateFromPlaintext.isPending ? dialog.saving : dialog.save}
+            <Button type="submit" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? dialog.saving : dialog.save}
             </Button>
           </DialogFooter>
         </form>
