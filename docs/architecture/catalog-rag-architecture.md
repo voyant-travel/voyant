@@ -4,7 +4,9 @@ Status: superseded by the v1 package-structure cleanup.
 
 This document used to define `@voyant-travel/catalog-rag` and
 `@voyant-travel/catalog-mcp` as sibling catalog packages. That package split is no
-longer the target architecture.
+longer the target architecture. The agent tool + MCP surface is now framework-level
+and in-deployment — see [agent tool library](./agent-tool-library.md) and
+[ADR-0011](../adr/0011-agent-tool-library-and-mcp.md).
 
 Current rules:
 
