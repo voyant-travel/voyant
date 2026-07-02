@@ -95,6 +95,10 @@ describe("operator runtime composition", () => {
 
     expect(byName("catalog-offers")?.extension.module).toBe("catalog")
     expect(byName("catalog-checkout")?.extension.module).toBe("catalog")
+
+    const miceBooking = byName("mice-booking")
+    expect(miceBooking?.extension.module).toBe("bookings")
+    expect(miceBooking?.adminRoutes).toBeDefined()
   })
 
   it("composes deployment-local route modules as lazy modules", () => {
