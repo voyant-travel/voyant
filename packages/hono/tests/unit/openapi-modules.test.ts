@@ -203,6 +203,27 @@ describe("stampModuleMetadata", () => {
     expect(op["x-voyant-module"]).toBe("legal")
   })
 
+  it("keeps operationIds unique when a later route declares one an earlier op derives", () => {
+    // `/v1/admin/items` GET derives `getAdminItems`; a later route hand-authors
+    // that same id. Pre-seeding declared ids must push the derived one to a
+    // suffix so the document has no duplicate operationIds.
+    const collide = {
+      openapi: "3.1.0",
+      info: INFO,
+      paths: {
+        "/v1/admin/items": { get: { responses: {} } },
+        "/v1/admin/things": { get: { operationId: "getAdminItems", responses: {} } },
+      },
+    } as unknown as OpenApiDocument
+    const stamped = stampModuleMetadata(collide, new Map())
+    const get = (path: string) =>
+      (stamped.paths as Record<string, Record<string, Record<string, unknown>>>)[path].get
+    // Declared id wins; the earlier derived one yields to a suffix.
+    expect(get("/v1/admin/things").operationId).toBe("getAdminItems")
+    expect(get("/v1/admin/items").operationId).toBe("getAdminItems_2")
+    expect(get("/v1/admin/items").operationId).not.toBe(get("/v1/admin/things").operationId)
+  })
+
   it("does not mutate the input document", () => {
     const before = JSON.stringify(doc)
     stampModuleMetadata(doc, owner)

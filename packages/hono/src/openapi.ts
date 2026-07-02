@@ -443,9 +443,21 @@ export function stampModuleMetadata(
   owner: ReadonlyMap<string, string>,
 ): OpenApiDocument {
   const paths: Record<string, unknown> = {}
-  // operationId must be unique across the document; track what we've assigned
-  // (including route-declared ids) so a derived id never collides.
+  // operationId must be unique across the document; track what we've assigned so
+  // a derived id never collides. Pre-seed EVERY route-declared id up front —
+  // otherwise a hand-authored id appearing later in iteration order than an
+  // earlier op that derived the same string would slip through un-suffixed,
+  // leaving duplicate ids in the output (declared ids always win; derived yield).
   const usedOperationIds = new Set<string>()
+  for (const item of Object.values(doc.paths ?? {})) {
+    if (!item || typeof item !== "object") continue
+    for (const method of HTTP_METHODS) {
+      const op = (item as Record<string, unknown>)[method]
+      const declared =
+        op && typeof op === "object" ? (op as Record<string, unknown>).operationId : null
+      if (typeof declared === "string" && declared.length > 0) usedOperationIds.add(declared)
+    }
+  }
   for (const [path, item] of Object.entries(doc.paths ?? {})) {
     if (!item || typeof item !== "object") {
       paths[path] = item
