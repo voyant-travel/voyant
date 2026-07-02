@@ -30,6 +30,10 @@ import { SUPPLIER_STATUSES, SUPPLIER_TYPES, type Supplier, useSupplierMutation }
 
 function getSupplierSchema(messages: ReturnType<typeof useSuppliersUiMessagesOrDefault>) {
   const dialog = messages.dialogs.supplier
+  const currencyCodeSchema = z
+    .string()
+    .length(3, dialog.validationIsoCurrency)
+    .regex(/^[A-Z]{3}$/, dialog.validationIsoCurrency)
   return z.object({
     name: z.string().min(1, dialog.validationNameRequired),
     type: z.enum(["hotel", "transfer", "guide", "experience", "airline", "restaurant", "other"]),
@@ -41,7 +45,10 @@ function getSupplierSchema(messages: ReturnType<typeof useSuppliersUiMessagesOrD
     address: z.string().optional().nullable(),
     city: z.string().optional().nullable(),
     country: z.string().optional().nullable(),
-    defaultCurrency: z.string().max(3, dialog.validationIsoCurrency).optional().nullable(),
+    defaultCurrency: z
+      .union([z.literal(""), currencyCodeSchema])
+      .optional()
+      .nullable(),
     reservationTimeoutMinutes: z
       .union([z.literal(""), z.coerce.number().int().min(0, dialog.validationReservationTimeout)])
       .optional()
@@ -121,7 +128,7 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
       address: values.address || null,
       city: values.city || null,
       country: values.country || null,
-      defaultCurrency: values.defaultCurrency || null,
+      defaultCurrency: values.defaultCurrency ? values.defaultCurrency.toUpperCase() : null,
       reservationTimeoutMinutes:
         values.reservationTimeoutMinutes === "" ||
         values.reservationTimeoutMinutes === null ||
