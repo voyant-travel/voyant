@@ -1,5 +1,11 @@
 # @voyant-travel/inventory
 
+## 0.5.18
+
+### Patch Changes
+
+- ae115de: Use owned product option-unit pax pricing tiers when booking journey quotes include explicit unit selections.
+
 ## 0.5.17
 
 ### Patch Changes

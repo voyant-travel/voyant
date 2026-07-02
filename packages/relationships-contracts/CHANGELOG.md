@@ -1,5 +1,11 @@
 # @voyant-travel/relationships-contracts
 
+## 0.108.8
+
+### Patch Changes
+
+- 1fec6bd: Validate organization default currency codes and cap payment terms.
+
 ## 0.108.7
 
 ### Patch Changes
