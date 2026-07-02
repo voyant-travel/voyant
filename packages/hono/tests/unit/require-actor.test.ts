@@ -43,6 +43,18 @@ describe("requireActor", () => {
     expect(res.status).toBe(200)
   })
 
+  it("lets any authenticated API key reach /v1/admin/mcp (per-tool scopes gate inside)", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["catalog:read"]) // no mcp or wildcard scope
+    })
+    app.use("*", requireActor("staff"))
+    app.post("/v1/admin/mcp", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/admin/mcp", { method: "POST" })
+    expect(res.status).toBe(200)
+  })
+
   it("still enforces module scopes for an API key on non-_meta admin routes", async () => {
     const app = makeApp((c) => {
       c.set("callerType", "api_key")

@@ -18,6 +18,24 @@ at `/v1/admin/mcp` (the `"operator/mcp"` composition entry):
 `buildContext(c)` maps the request's `c.var` (db lease / actor / audience / scope) into
 a `@voyant-travel/tools` `ToolContext`.
 
+## Authentication (external MCP clients)
+
+External MCP clients (Claude Desktop, ChatGPT, …) authenticate with a **Bearer
+scoped API key** — the operator's existing `voy_` key pipeline — sent as
+`Authorization: <key>`. No separate OAuth/runner is introduced (voyant#2801): the
+request auth middleware resolves the key into `scopes` + `audience` on `c.var`, and
+this server gates every tool by its `requiredScopes`.
+
+Because authorization is per-tool, the `/v1/admin/mcp` surface is exempt from the
+coarse method+path permission guard (`require-actor`, like `_meta`): any
+authenticated key reaches the endpoint, and a key with no relevant scopes simply
+sees an empty `tools/list`. Mint keys with a grant preset (e.g. `agent-customer`)
+to bundle a scope subset with an `audience`.
+
+The reserved `apps/agent-runner` / `apps/agent-control-plane` stubs are intentionally
+**not** built out — Voyant ships the tool primitives + this ready-to-use MCP, not an
+agent.
+
 ## How it works
 
 - **Transport:** `@hono/mcp`'s `StreamableHTTPTransport` (web-standard `Request`/
