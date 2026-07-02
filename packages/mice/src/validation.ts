@@ -19,14 +19,14 @@ export const programStatusSchema = z.enum([
   "cancelled",
 ])
 
-export const createProgramSchema = z.object({
+const programMutationSchema = z.object({
   name: z.string().min(1),
   organizationId: z.string().min(1).optional(),
   primaryContactPersonId: z.string().min(1).optional(),
   accountManagerId: z.string().min(1).optional(),
   code: z.string().optional(),
-  type: programTypeSchema.default("conference"),
-  status: programStatusSchema.default("lead"),
+  type: programTypeSchema,
+  status: programStatusSchema,
   destination: z.string().optional(),
   startDate: isoDate.optional(),
   endDate: isoDate.optional(),
@@ -36,11 +36,16 @@ export const createProgramSchema = z.object({
   budgetAmountCents: z.number().int().min(0).optional(),
 })
 
+export const createProgramSchema = programMutationSchema.extend({
+  type: programTypeSchema.default("conference"),
+  status: programStatusSchema.default("lead"),
+})
+
 // Update accepts `null` on the optional fields so a PATCH can CLEAR them (the
 // columns are nullable and `updateProgram` spreads the body into `.set()`).
 // `.partial()` alone only allows omitting a key, which leaves the prior value
 // in place — operators could set an optional field but never clear it.
-export const updateProgramSchema = createProgramSchema.partial().extend({
+export const updateProgramSchema = programMutationSchema.partial().extend({
   organizationId: z.string().min(1).nullish(),
   primaryContactPersonId: z.string().min(1).nullish(),
   accountManagerId: z.string().min(1).nullish(),

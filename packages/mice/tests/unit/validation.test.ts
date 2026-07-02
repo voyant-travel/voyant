@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest"
-
-import { createProgramSchema, programListQuerySchema } from "../../src/validation.js"
-import { createSessionSchema, sessionListQuerySchema } from "../../src/validation-sessions.js"
+import {
+  createProgramSchema,
+  programListQuerySchema,
+  updateProgramSchema,
+} from "../../src/validation.js"
+import { createDelegateSchema, updateDelegateSchema } from "../../src/validation-delegates.js"
+import {
+  createBidSchema,
+  createRfpSchema,
+  updateBidSchema,
+  updateRfpSchema,
+} from "../../src/validation-rfp.js"
+import {
+  createSessionSchema,
+  sessionListQuerySchema,
+  updateSessionSchema,
+} from "../../src/validation-sessions.js"
 
 describe("mice validation", () => {
   it("applies defaults on create", () => {
@@ -25,6 +39,38 @@ describe("mice validation", () => {
     const parsed = createSessionSchema.parse({ programId: "prog_1", title: "Keynote" })
     expect(parsed.sessionType).toBe("breakout")
     expect(parsed.requiresRegistration).toBeUndefined()
+  })
+
+  it("applies defaults on related resource create schemas", () => {
+    expect(createDelegateSchema.parse({ programId: "prog_1", personId: "person_1" })).toMatchObject(
+      {
+        role: "attendee",
+        status: "invited",
+      },
+    )
+    expect(createRfpSchema.parse({ programId: "prog_1", title: "Venue RFP" }).status).toBe("draft")
+    expect(createBidSchema.parse({ supplierId: "sup_1" }).status).toBe("draft")
+  })
+
+  it("does not apply create-time enum defaults to empty patch payloads", () => {
+    expect(updateProgramSchema.parse({})).not.toHaveProperty("status")
+    expect(updateProgramSchema.parse({})).not.toHaveProperty("type")
+    expect(updateSessionSchema.parse({})).not.toHaveProperty("sessionType")
+    expect(updateDelegateSchema.parse({})).not.toHaveProperty("role")
+    expect(updateDelegateSchema.parse({})).not.toHaveProperty("status")
+    expect(updateRfpSchema.parse({})).not.toHaveProperty("status")
+    expect(updateBidSchema.parse({})).not.toHaveProperty("status")
+  })
+
+  it("still accepts explicit lifecycle enum changes on patch", () => {
+    expect(updateProgramSchema.parse({ status: "operating" }).status).toBe("operating")
+    expect(updateSessionSchema.parse({ sessionType: "gala" }).sessionType).toBe("gala")
+    expect(updateDelegateSchema.parse({ role: "vip", status: "confirmed" })).toMatchObject({
+      role: "vip",
+      status: "confirmed",
+    })
+    expect(updateRfpSchema.parse({ status: "issued" }).status).toBe("issued")
+    expect(updateBidSchema.parse({ status: "under_review" }).status).toBe("under_review")
   })
 
   it("requires programId on session list", () => {

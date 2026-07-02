@@ -14,10 +14,10 @@ export const sessionTypeSchema = z.enum([
 
 export const sessionInclusionKindSchema = z.enum(["fnb", "av", "materials", "signage", "other"])
 
-export const createSessionSchema = z.object({
+const sessionMutationSchema = z.object({
   programId: z.string().min(1),
   title: z.string().min(1),
-  sessionType: sessionTypeSchema.default("breakout"),
+  sessionType: sessionTypeSchema,
   functionSpaceId: z.string().min(1).optional(),
   dayDate: isoDate.optional(),
   startsAt: z.string().datetime().optional(),
@@ -28,7 +28,11 @@ export const createSessionSchema = z.object({
   notes: z.string().optional(),
 })
 
-export const updateSessionSchema = createSessionSchema.partial().omit({ programId: true })
+export const createSessionSchema = sessionMutationSchema.extend({
+  sessionType: sessionTypeSchema.default("breakout"),
+})
+
+export const updateSessionSchema = sessionMutationSchema.partial().omit({ programId: true })
 
 export const sessionListQuerySchema = z.object({
   programId: z.string().min(1),
