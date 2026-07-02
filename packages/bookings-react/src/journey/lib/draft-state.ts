@@ -63,7 +63,10 @@ export function setBillingBuyerType(draft: Draft, buyerType: "B2C" | "B2B"): Dra
     }
   }
 
-  return patchBilling(draft, { buyerType })
+  return patchBilling(draft, {
+    buyerType,
+    contact: { firstName: "", lastName: "", email: "" },
+  })
 }
 
 export function canCopyBillingContactToTraveler(contact: Draft["billing"]["contact"]): boolean {

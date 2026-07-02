@@ -1,5 +1,11 @@
 # @voyant-travel/relationships-contracts
 
+## 0.108.9
+
+### Patch Changes
+
+- e002da8: Preserve existing person fields when PATCH requests omit create-defaulted status and tags.
+
 ## 0.108.8
 
 ### Patch Changes

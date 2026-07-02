@@ -47,6 +47,11 @@ export function ReviewStep({
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const isPublic = surface === "public"
+  const leadName =
+    (draft.billing.buyerType === "B2B" ? draft.billing.company?.name : undefined) ||
+    [draft.billing.contact.firstName, draft.billing.contact.lastName].filter(Boolean).join(" ") ||
+    messages.bookingJourney.values.noValue
+  const leadEmail = draft.billing.contact.email || messages.bookingJourney.values.noValue
   return (
     <Card>
       <CardHeader>
@@ -57,8 +62,7 @@ export function ReviewStep({
         <div>
           <div className="font-medium">{messages.bookingJourney.review.leadContact}</div>
           <div className="text-muted-foreground text-sm">
-            {draft.billing.contact.firstName} {draft.billing.contact.lastName} ·{" "}
-            {draft.billing.contact.email}
+            {leadName} · {leadEmail}
           </div>
         </div>
         <div>

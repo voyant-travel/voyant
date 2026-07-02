@@ -1,6 +1,8 @@
 import { identityService } from "@voyant-travel/identity/service"
 import type {
+  insertAddressForEntitySchema,
   insertAddressSchema,
+  insertContactPointForEntitySchema,
   insertContactPointSchema,
   updateAddressSchema,
   updateContactPointSchema,
@@ -31,8 +33,10 @@ export type PersonListQuery = z.infer<typeof personListQuerySchema>
 export type CreatePersonInput = z.infer<typeof insertPersonSchema>
 export type UpdatePersonInput = z.infer<typeof updatePersonSchema>
 export type CreateContactPointInput = z.infer<typeof insertContactPointSchema>
+export type CreateContactPointForEntityInput = z.infer<typeof insertContactPointForEntitySchema>
 export type UpdateContactPointInput = z.infer<typeof updateContactPointSchema>
 export type CreateAddressInput = z.infer<typeof insertAddressSchema>
+export type CreateAddressForEntityInput = z.infer<typeof insertAddressForEntitySchema>
 export type UpdateAddressInput = z.infer<typeof updateAddressSchema>
 export type CreatePersonNoteInput = z.infer<typeof insertPersonNoteSchema>
 export type CreateOrganizationNoteInput = z.infer<typeof insertOrganizationNoteSchema>

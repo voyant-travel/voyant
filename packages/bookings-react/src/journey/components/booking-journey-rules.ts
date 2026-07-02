@@ -21,19 +21,25 @@ import type { JourneyStep } from "../types.js"
  */
 export function buildCommitParty(draft: Draft): Record<string, unknown> {
   const c = draft.billing.contact
+  const companyName = draft.billing.company?.name?.trim()
+  const contactFirstName =
+    draft.billing.buyerType === "B2B" && companyName ? companyName : c.firstName
+  const contactLastName =
+    draft.billing.buyerType === "B2B" && contactFirstName === companyName ? "" : c.lastName
+  const personId = draft.billing.buyerType === "B2B" ? undefined : c.personId
   const organizationId =
     draft.billing.buyerType === "B2B" ? draft.billing.organizationId : undefined
   return {
-    personId: c.personId,
+    personId,
     organizationId,
     billing: {
-      personId: c.personId,
+      personId,
       organizationId,
       contact: {
-        firstName: c.firstName,
-        lastName: c.lastName,
-        email: c.email,
-        phone: c.phone,
+        firstName: contactFirstName,
+        lastName: contactLastName,
+        email: draft.billing.buyerType === "B2B" && companyName ? "" : c.email,
+        phone: draft.billing.buyerType === "B2B" && companyName ? undefined : c.phone,
       },
     },
     travelerParty: {
@@ -52,6 +58,17 @@ export function resolveInitialStatus(draft: Draft): "draft" | "confirmed" | "awa
   const schedules = draft.paymentSchedules ?? []
   const fullyPaid = schedules.length > 0 && schedules.every((s) => s.status === "paid")
   return fullyPaid ? "confirmed" : "awaiting_payment"
+}
+
+/**
+ * The packaged admin journey's in-process commit route can only create a held
+ * booking. Other payment intents need a dedicated checkout/provider flow
+ * because the route contract requires fields the generic draft does not carry
+ * (`tokenizedCard`, `agencyAccount`, bank-transfer instructions, etc.).
+ */
+export function buildCommitPaymentIntent(draft: Draft): { type: "hold" } {
+  if (draft.payment.intent === "hold") return { type: "hold" }
+  throw new Error(`Unsupported booking payment intent: ${draft.payment.intent}`)
 }
 
 export function isStepVisible(step: JourneyStep, shape: BookingDraftShape): boolean {

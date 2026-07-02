@@ -1370,6 +1370,24 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Organization has linked people",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         },
         "operationId": "deleteAdminRelationshipsOrganizationsById",
@@ -1742,16 +1760,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "entityType": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "entityId": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
                   "kind": {
                     "type": "string",
                     "enum": [
@@ -1804,8 +1812,6 @@
                   }
                 },
                 "required": [
-                  "entityType",
-                  "entityId",
                   "kind",
                   "value"
                 ]
@@ -1899,6 +1905,24 @@
           },
           "400": {
             "description": "invalid_request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -2103,16 +2127,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "entityType": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "entityId": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
                   "label": {
                     "type": "string",
                     "enum": [
@@ -2205,11 +2219,7 @@
                     ],
                     "additionalProperties": {}
                   }
-                },
-                "required": [
-                  "entityType",
-                  "entityId"
-                ]
+                }
               }
             }
           }
@@ -2352,6 +2362,24 @@
           },
           "400": {
             "description": "invalid_request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -3823,8 +3851,7 @@
                       "active",
                       "inactive",
                       "archived"
-                    ],
-                    "default": "active"
+                    ]
                   },
                   "source": {
                     "type": [
@@ -3842,8 +3869,7 @@
                     "type": "array",
                     "items": {
                       "type": "string"
-                    },
-                    "default": []
+                    }
                   },
                   "customFields": {
                     "type": "object",

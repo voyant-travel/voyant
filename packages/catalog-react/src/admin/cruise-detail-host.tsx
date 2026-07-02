@@ -9,6 +9,7 @@ import {
 import { useState } from "react"
 
 import { CruiseDetailPage } from "../components/cruise-detail-page.js"
+import { bookingJourneyProvenanceSearchParams } from "./booking-journey-provenance.js"
 
 export interface CruiseDetailHostProps {
   id: string
@@ -41,13 +42,10 @@ export function CruiseDetailHost({ id, locale }: CruiseDetailHostProps) {
       // when the content route exposed it; otherwise let the journey APIs
       // resolve provenance server-side from (entityModule, entityId).
       onBook={(cruiseId, opts) => {
-        const sourceKind = opts.sourceKind?.trim()
         return navigateTo("bookingJourney.start", {
           entityModule: "cruises",
           entityId: cruiseId,
-          ...(sourceKind ? { sourceKind } : {}),
-          ...(opts.sourceConnectionId ? { sourceConnectionId: opts.sourceConnectionId } : {}),
-          ...(opts.sourceRef ? { sourceRef: opts.sourceRef } : {}),
+          ...bookingJourneyProvenanceSearchParams(opts),
           ...(opts.departureId ? { departureId: opts.departureId } : {}),
           ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
           ...(opts.optionId ? { optionId: opts.optionId } : {}),

@@ -139,8 +139,8 @@ export function PersonRelationshipsSection({ personId }: PersonRelationshipsSect
     outgoing?: PersonRelationshipRecord
     incoming?: PersonRelationshipRecord
   }) => {
-    const ids = [entry.outgoing?.id, entry.incoming?.id].filter((id): id is string => Boolean(id))
-    for (const id of ids) mutation.remove.mutate(id)
+    const id = entry.outgoing?.id ?? entry.incoming?.id
+    if (id) mutation.remove.mutate(id)
   }
 
   const handleSubmit = async (draft: DraftState) => {

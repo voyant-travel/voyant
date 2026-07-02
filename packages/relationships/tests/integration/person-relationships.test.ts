@@ -136,6 +136,16 @@ describe.skipIf(!DB_AVAILABLE)("personRelationshipsService", () => {
 
     const all = await personRelationshipsService.listPersonRelationships(db, parent.id)
     expect(all).toHaveLength(2)
+    expect(all).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fromPersonId: child.id,
+          toPersonId: parent.id,
+          kind: "child",
+          inverseKind: "parent",
+        }),
+      ]),
+    )
   })
 
   it("autoInverse: false skips the symmetric edge", async () => {
@@ -150,6 +160,39 @@ describe.skipIf(!DB_AVAILABLE)("personRelationshipsService", () => {
     const all = await personRelationshipsService.listPersonRelationships(db, parent.id)
     expect(all).toHaveLength(1)
     expect(all[0]?.kind).toBe("parent")
+  })
+
+  it("does not treat autoInverse opt-out reverse edges as a synced pair", async () => {
+    const parent = await seedPerson("Parent")
+    const child = await seedPerson("Child")
+    const reverse = await personRelationshipsService.createPersonRelationship(db, child.id, {
+      toPersonId: parent.id,
+      kind: "child",
+    })
+    const primary = await personRelationshipsService.createPersonRelationship(db, parent.id, {
+      toPersonId: child.id,
+      kind: "parent",
+      inverseKind: "child",
+      autoInverse: false,
+    })
+    if (!primary || !reverse) throw new Error("seed failure")
+
+    await personRelationshipsService.updatePersonRelationship(db, primary.id, {
+      kind: "guardian",
+      inverseKind: "ward",
+    })
+
+    expect(await personRelationshipsService.getPersonRelationship(db, reverse.id)).toMatchObject({
+      id: reverse.id,
+      kind: "child",
+      inverseKind: null,
+    })
+
+    await personRelationshipsService.deletePersonRelationship(db, primary.id)
+    expect(await personRelationshipsService.getPersonRelationship(db, reverse.id)).toMatchObject({
+      id: reverse.id,
+      kind: "child",
+    })
   })
 
   it("listPersonRelationships filters by direction", async () => {
@@ -177,6 +220,141 @@ describe.skipIf(!DB_AVAILABLE)("personRelationshipsService", () => {
       direction: "to",
     })
     expect(incoming.map((row) => row.fromPersonId)).toEqual([c.id])
+  })
+
+  it("keeps auto-inverse pairs in sync when either edge is updated", async () => {
+    const parent = await seedPerson("Parent")
+    const child = await seedPerson("Child")
+    const created = await personRelationshipsService.createPersonRelationship(db, parent.id, {
+      toPersonId: child.id,
+      kind: "parent",
+      inverseKind: "child",
+      startDate: "2026-06-01",
+    })
+    if (!created) throw new Error("seed failure")
+
+    const updated = await personRelationshipsService.updatePersonRelationship(db, created.id, {
+      kind: "sibling",
+      inverseKind: "sibling",
+      startDate: "2026-07-01",
+      notes: "Updated pair",
+    })
+    expect(updated?.kind).toBe("sibling")
+
+    const parentRelationships = await personRelationshipsService.listPersonRelationships(
+      db,
+      parent.id,
+    )
+    expect(parentRelationships).toHaveLength(2)
+    expect(
+      parentRelationships.map((row) => ({
+        from: row.fromPersonId,
+        to: row.toPersonId,
+        kind: row.kind,
+        inverseKind: row.inverseKind,
+        startDate: row.startDate,
+        notes: row.notes,
+      })),
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          from: parent.id,
+          to: child.id,
+          kind: "sibling",
+          inverseKind: "sibling",
+          startDate: "2026-07-01",
+          notes: "Updated pair",
+        },
+        {
+          from: child.id,
+          to: parent.id,
+          kind: "sibling",
+          inverseKind: "sibling",
+          startDate: "2026-07-01",
+          notes: "Updated pair",
+        },
+      ]),
+    )
+
+    const inverse = parentRelationships.find((row) => row.fromPersonId === child.id)
+    if (!inverse) throw new Error("expected inverse relationship")
+
+    await personRelationshipsService.updatePersonRelationship(db, inverse.id, {
+      kind: "friend",
+      inverseKind: "friend",
+      notes: "Updated from inverse",
+    })
+
+    const afterInverseUpdate = await personRelationshipsService.listPersonRelationships(
+      db,
+      parent.id,
+    )
+    expect(
+      afterInverseUpdate.map((row) => ({
+        from: row.fromPersonId,
+        to: row.toPersonId,
+        kind: row.kind,
+        inverseKind: row.inverseKind,
+        notes: row.notes,
+      })),
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          from: parent.id,
+          to: child.id,
+          kind: "friend",
+          inverseKind: "friend",
+          notes: "Updated from inverse",
+        },
+        {
+          from: child.id,
+          to: parent.id,
+          kind: "friend",
+          inverseKind: "friend",
+          notes: "Updated from inverse",
+        },
+      ]),
+    )
+  })
+
+  it("deletes an auto-inverse pair when either edge is deleted", async () => {
+    const parent = await seedPerson("Parent")
+    const child = await seedPerson("Child")
+    const created = await personRelationshipsService.createPersonRelationship(db, parent.id, {
+      toPersonId: child.id,
+      kind: "parent",
+      inverseKind: "child",
+    })
+    if (!created) throw new Error("seed failure")
+
+    const deleted = await personRelationshipsService.deletePersonRelationship(db, created.id)
+    expect(deleted?.id).toBe(created.id)
+
+    expect(await personRelationshipsService.listPersonRelationships(db, parent.id)).toHaveLength(0)
+    expect(await personRelationshipsService.listPersonRelationships(db, child.id)).toHaveLength(0)
+
+    const createdFromChild = await personRelationshipsService.createPersonRelationship(
+      db,
+      parent.id,
+      {
+        toPersonId: child.id,
+        kind: "parent",
+        inverseKind: "child",
+      },
+    )
+    if (!createdFromChild) throw new Error("seed failure")
+    const childRelationships = await personRelationshipsService.listPersonRelationships(
+      db,
+      child.id,
+    )
+    const inverse = childRelationships.find((row) => row.fromPersonId === child.id)
+    if (!inverse) throw new Error("expected inverse relationship")
+
+    const deletedInverse = await personRelationshipsService.deletePersonRelationship(db, inverse.id)
+    expect(deletedInverse?.id).toBe(inverse.id)
+
+    expect(await personRelationshipsService.listPersonRelationships(db, parent.id)).toHaveLength(0)
+    expect(await personRelationshipsService.listPersonRelationships(db, child.id)).toHaveLength(0)
   })
 
   it("update + delete operate on a single edge", async () => {

@@ -24,6 +24,7 @@ import {
   useVoyantCatalogContext,
   type VoyantFetcher,
 } from "../index.js"
+import { bookingJourneyProvenanceSearchParams } from "./booking-journey-provenance.js"
 
 type CatalogBrowserMessages = ReturnType<
   typeof useOperatorAdminMessages
@@ -538,9 +539,7 @@ function goToBookingPage(
   navigateTo("bookingJourney.start", {
     entityModule,
     entityId: hit.id,
-    sourceKind,
-    ...(sourceConnectionId ? { sourceConnectionId } : {}),
-    ...(sourceRef ? { sourceRef } : {}),
+    ...bookingJourneyProvenanceSearchParams({ sourceKind, sourceConnectionId, sourceRef }),
     ...(departure
       ? isSourced
         ? { departureDate: departure.startsAt.slice(0, 10) }

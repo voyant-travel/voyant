@@ -22,8 +22,10 @@ import type {
 } from "../validation.js"
 import {
   type CommunicationListQuery,
+  type CreateAddressForEntityInput,
   type CreateAddressInput,
   type CreateCommunicationLogInput,
+  type CreateContactPointForEntityInput,
   type CreateContactPointInput,
   type CreateOrganizationNoteInput,
   type CreatePersonInput,
@@ -45,6 +47,15 @@ import { paginate } from "./helpers.js"
 function unaccentedIlike(column: AnyColumn, term: string): SQL {
   // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   return sql`unaccent(coalesce(${column}, '')) ILIKE unaccent(${term})`
+}
+
+async function organizationExists(db: PostgresJsDatabase, organizationId: string) {
+  const [row] = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1)
+  return Boolean(row)
 }
 
 function buildPersonSearchCondition(
@@ -204,10 +215,13 @@ export const peopleAccountsService = {
   async updatePerson(db: PostgresJsDatabase, id: string, data: UpdatePersonInput) {
     const existing = await this.getPersonById(db, id)
     if (!existing) return null
+    const updates = Object.fromEntries(
+      Object.entries(personBaseFields(data)).filter(([, value]) => value !== undefined),
+    )
 
     await db
       .update(people)
-      .set({ ...personBaseFields(data), updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(people.id, id))
 
     // Pass the request fields through verbatim: syncPersonIdentity leaves
@@ -246,8 +260,12 @@ export const peopleAccountsService = {
     db: PostgresJsDatabase,
     entityType: "organization" | "person",
     entityId: string,
-    data: CreateContactPointInput,
+    data: CreateContactPointInput | CreateContactPointForEntityInput,
   ) {
+    if (entityType === "organization" && !(await organizationExists(db, entityId))) {
+      return null
+    }
+
     return identityService.createContactPoint(db, {
       ...data,
       entityType: entityType === "organization" ? organizationEntityType : personEntityType,
@@ -275,8 +293,12 @@ export const peopleAccountsService = {
     db: PostgresJsDatabase,
     entityType: "organization" | "person",
     entityId: string,
-    data: CreateAddressInput,
+    data: CreateAddressInput | CreateAddressForEntityInput,
   ) {
+    if (entityType === "organization" && !(await organizationExists(db, entityId))) {
+      return null
+    }
+
     return identityService.createAddress(db, {
       ...data,
       entityType: entityType === "organization" ? organizationEntityType : personEntityType,

@@ -291,11 +291,134 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
       expect(body.success).toBe(true)
     })
 
+    it("rejects deleting an organization while people are linked", async () => {
+      const createRes = await getApp().request("/organizations", {
+        method: "POST",
+        ...json({ name: "Linked People Org" }),
+      })
+      const { data: organization } = await createRes.json()
+
+      const personRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({
+          firstName: "Linked",
+          lastName: "Person",
+          organizationId: organization.id,
+        }),
+      })
+      expect(personRes.status).toBe(201)
+      const { data: person } = await personRes.json()
+
+      const res = await getApp().request(`/organizations/${organization.id}`, { method: "DELETE" })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toBe("Organization has linked people")
+
+      const personAfterDelete = await getApp().request(`/people/${person.id}`, { method: "GET" })
+      expect(personAfterDelete.status).toBe(200)
+      expect((await personAfterDelete.json()).data.organizationId).toBe(organization.id)
+    })
+
     it("returns 404 for non-existent organization", async () => {
       const res = await getApp().request("/organizations/crm_org_00000000000000000000000000", {
         method: "GET",
       })
       expect(res.status).toBe(404)
+    })
+
+    it("creates nested contact methods from the organization path", async () => {
+      const createRes = await getApp().request("/organizations", {
+        method: "POST",
+        ...json({ name: "Contact Method Org" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/organizations/${created.id}/contact-methods`, {
+        method: "POST",
+        ...json({
+          entityType: "person",
+          entityId: "pers_wrong_000000000000000000000",
+          kind: "email",
+          value: "ops@example.com",
+          isPrimary: true,
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        entityType: "organization",
+        entityId: created.id,
+        kind: "email",
+        value: "ops@example.com",
+      })
+    })
+
+    it("creates nested addresses from natural organization payloads", async () => {
+      const createRes = await getApp().request("/organizations", {
+        method: "POST",
+        ...json({ name: "Address Org" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/organizations/${created.id}/addresses`, {
+        method: "POST",
+        ...json({
+          label: "billing",
+          line1: "10 Main Street",
+          city: "Bucharest",
+          country: "RO",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        entityType: "organization",
+        entityId: created.id,
+        label: "billing",
+        line1: "10 Main Street",
+      })
+    })
+
+    it("rejects nested identity rows for missing organizations", async () => {
+      const { createTestDb } = await import("@voyant-travel/db/test-utils")
+      const db = createTestDb()
+      const missingOrganizationId = "crm_org_missing_nested_identity_0001"
+
+      const contactRes = await getApp().request(
+        `/organizations/${missingOrganizationId}/contact-methods`,
+        {
+          method: "POST",
+          ...json({ kind: "email", value: "missing@example.com" }),
+        },
+      )
+      const addressRes = await getApp().request(
+        `/organizations/${missingOrganizationId}/addresses`,
+        {
+          method: "POST",
+          ...json({ label: "billing", line1: "Missing Street" }),
+        },
+      )
+
+      expect(contactRes.status).toBe(404)
+      expect(addressRes.status).toBe(404)
+
+      const contactRows = await db.execute<{ count: number }>(sql`
+          SELECT count(*)::int
+          FROM identity_contact_points
+          WHERE entity_type = 'organization'
+            AND entity_id = ${missingOrganizationId}
+        `)
+      const addressRows = await db.execute<{ count: number }>(sql`
+          SELECT count(*)::int
+          FROM identity_addresses
+          WHERE entity_type = 'organization'
+            AND entity_id = ${missingOrganizationId}
+        `)
+      expect(contactRows[0]?.count).toBe(0)
+      expect(addressRows[0]?.count).toBe(0)
     })
 
     it("creates an organization note", async () => {

@@ -38,6 +38,7 @@ import {
 } from "../types.js"
 import {
   buildCommitParty,
+  buildCommitPaymentIntent,
   canAdvanceFromStep,
   defaultMinimalShape,
   isStepVisible,
@@ -255,6 +256,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     (quote.data.available === false ||
       (quote.data.invalidReason != null && quote.data.invalidReason !== ""))
   const quoteBlocked = hasQuoteError || quoteUnpriceable
+  const quoteReady = Boolean(quote.data?.quoteId)
   // Step navigation only hard-blocks on a thrown quote error (a transient fetch
   // failure that a retry fixes). An un-priceable quote (e.g. `rates_missing`
   // from a preselected room) is *corrected by navigating* — often the room/rate
@@ -276,8 +278,10 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   )
   const canCommit = useMemo(
     () =>
-      stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)) && !quoteBlocked,
-    [stackedSteps, draft, shape, available, quoteBlocked],
+      stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)) &&
+      quoteReady &&
+      !quoteBlocked,
+    [stackedSteps, draft, shape, available, quoteReady, quoteBlocked],
   )
   const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
   const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
@@ -372,7 +376,14 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   }, [contractConfig, draft, quote.data?.pricing])
 
   const commitDraft = async () => {
-    if (!quote.data?.quoteId) return
+    if (!quote.data?.quoteId || quoteBlocked) {
+      setConfirmError(
+        quoteUnpriceable
+          ? messages.bookingJourney.validation.pricingUnavailable
+          : messages.bookingJourney.validation.quoteUnavailable,
+      )
+      return
+    }
     await commit.mutateAsync({
       draft: { ...draft, quoteId: quote.data.quoteId },
       quoteId: quote.data.quoteId,
@@ -380,7 +391,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       // draft — without this the create rejects with "no billing person/org".
       party: buildCommitParty(draft),
       initialStatus: resolveInitialStatus(draft),
-      paymentIntent: { type: draft.payment.intent === "card" ? "card" : "hold" } as never,
+      paymentIntent: buildCommitPaymentIntent(draft),
     })
   }
 
@@ -740,7 +751,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               // Disable Confirm when the live quote can't be priced (error or
               // rates_missing) so contract acceptance / commit never fires
               // against an unpriced booking (#2638).
-              canConfirm={!quoteBlocked}
+              canConfirm={quoteReady && !quoteBlocked}
               renderExtras={props.renderReviewExtras}
               surface={surface}
               pricing={quote.data?.pricing ?? null}
