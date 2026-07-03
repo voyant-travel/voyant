@@ -13,7 +13,7 @@ import { openApiValidationHook } from "@voyant-travel/hono"
 import { apiErrorSchema, listResponseSchema } from "@voyant-travel/types"
 
 import { type Env, notFound } from "./routes-shared.js"
-import { promotionsService } from "./service.js"
+import { type OfferMutationRuntime, promotionsService } from "./service.js"
 import {
   insertPromotionalOfferSchema,
   promotionalOfferListQuerySchema,
@@ -24,6 +24,12 @@ import {
 const errorResponseSchema = z.object({ error: z.string() })
 const offerResponseSchema = z.object({ data: promotionalOfferSchema })
 const idParamSchema = z.object({ id: z.string() })
+
+export type PromotionsMutationRuntimeOptions = Omit<OfferMutationRuntime, "eventBus" | "source">
+
+export interface PromotionsRoutesOptions {
+  mutationRuntime?: PromotionsMutationRuntimeOptions
+}
 
 const listPromotionsRoute = createRoute({
   method: "get",
@@ -59,6 +65,10 @@ const createPromotionRoute = createRoute({
     201: {
       description: "The created promotional offer",
       content: { "application/json": { schema: offerResponseSchema } },
+    },
+    400: {
+      description: "invalid_reference: product-scoped offer references unknown product ids",
+      content: { "application/json": { schema: apiErrorSchema } },
     },
     409: {
       description: "Active promotional offer slug or code already exists",
@@ -109,6 +119,10 @@ const updatePromotionRoute = createRoute({
       description: "Promotional offer not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    400: {
+      description: "invalid_reference: product-scoped offer references unknown product ids",
+      content: { "application/json": { schema: apiErrorSchema } },
+    },
     409: {
       description: "Active promotional offer slug or code already exists",
       content: { "application/json": { schema: apiErrorSchema } },
@@ -152,53 +166,62 @@ const deletePromotionRoute = createRoute({
   },
 })
 
-export const promotionsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-  .openapi(listPromotionsRoute, async (c) =>
-    c.json(await promotionsService.listOffers(c.get("db"), c.req.valid("query"))),
-  )
-  .openapi(createPromotionRoute, async (c) =>
-    c.json(
-      {
-        data: await promotionsService.createOffer(c.get("db"), c.req.valid("json"), {
-          eventBus: c.get("eventBus"),
-        }),
-      },
-      201,
-    ),
-  )
-  .openapi(getPromotionRoute, async (c) => {
-    const offer = await promotionsService.getOfferById(c.get("db"), c.req.valid("param").id)
-    return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
-  })
-  .openapi(updatePromotionRoute, async (c) => {
-    const offer = await promotionsService.updateOffer(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-      { eventBus: c.get("eventBus") },
+export function createPromotionsRoutes(options: PromotionsRoutesOptions = {}) {
+  const mutationRuntime = options.mutationRuntime ?? {}
+
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listPromotionsRoute, async (c) =>
+      c.json(await promotionsService.listOffers(c.get("db"), c.req.valid("query"))),
     )
-    return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
-  })
-  .openapi(archivePromotionRoute, async (c) => {
-    const offer = await promotionsService.archiveOffer(c.get("db"), c.req.valid("param").id, {
-      eventBus: c.get("eventBus"),
+    .openapi(createPromotionRoute, async (c) =>
+      c.json(
+        {
+          data: await promotionsService.createOffer(c.get("db"), c.req.valid("json"), {
+            ...mutationRuntime,
+            eventBus: c.get("eventBus"),
+          }),
+        },
+        201,
+      ),
+    )
+    .openapi(getPromotionRoute, async (c) => {
+      const offer = await promotionsService.getOfferById(c.get("db"), c.req.valid("param").id)
+      return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
     })
-    return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
-  })
-  .openapi(deletePromotionRoute, async (c) => {
-    try {
-      const result = await promotionsService.deleteOffer(c.get("db"), c.req.valid("param").id, {
+    .openapi(updatePromotionRoute, async (c) => {
+      const offer = await promotionsService.updateOffer(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        { ...mutationRuntime, eventBus: c.get("eventBus") },
+      )
+      return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
+    })
+    .openapi(archivePromotionRoute, async (c) => {
+      const offer = await promotionsService.archiveOffer(c.get("db"), c.req.valid("param").id, {
+        ...mutationRuntime,
         eventBus: c.get("eventBus"),
       })
-      return result ? c.json({ data: result }, 200) : notFound(c, "Promotional offer not found")
-    } catch (err) {
-      // `deleteOffer` throws when redemptions exist (the FK RESTRICT
-      // would otherwise surface a less helpful error). Translate to 409.
-      if (err instanceof Error && err.message.includes("redemption(s) exist")) {
-        return c.json({ error: err.message }, 409)
+      return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
+    })
+    .openapi(deletePromotionRoute, async (c) => {
+      try {
+        const result = await promotionsService.deleteOffer(c.get("db"), c.req.valid("param").id, {
+          ...mutationRuntime,
+          eventBus: c.get("eventBus"),
+        })
+        return result ? c.json({ data: result }, 200) : notFound(c, "Promotional offer not found")
+      } catch (err) {
+        // `deleteOffer` throws when redemptions exist (the FK RESTRICT
+        // would otherwise surface a less helpful error). Translate to 409.
+        if (err instanceof Error && err.message.includes("redemption(s) exist")) {
+          return c.json({ error: err.message }, 409)
+        }
+        throw err
       }
-      throw err
-    }
-  })
+    })
+}
+
+export const promotionsRoutes = createPromotionsRoutes()
 
 export type PromotionsRoutes = typeof promotionsRoutes

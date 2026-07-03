@@ -1,4 +1,6 @@
 /**
+ * agent-quality: file-size exception -- owner: promotions; existing promotions service keeps CRUD, link materialization, and event emission co-located until promotion services are split by responsibility.
+ *
  * Promotions service — CRUD over `promotional_offers` plus link-table
  * materialization for product-shaped scopes.
  *
@@ -18,6 +20,7 @@
  */
 
 import type { EventBus } from "@voyant-travel/core"
+import { ApiHttpError } from "@voyant-travel/hono"
 import { and, count, desc, eq, gte, ilike, isNotNull, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { mapPromotionalOfferWriteError } from "./errors.js"
@@ -62,11 +65,25 @@ export interface OfferMutationRuntime {
    * schemas.
    */
   resolveScopeProductIds?: ResolvePromotionalOfferScopeProductIds
+  /**
+   * Optional resolver for Product-owned product id existence checks.
+   * Promotions validates explicit product scopes before writing so the
+   * denormalized `promotional_offer_products` table cannot materialize
+   * dangling product links. The default resolver uses parameter-bound raw SQL
+   * against the Product-owned `products` table to keep this package decoupled
+   * from Inventory schemas.
+   */
+  resolveExistingProductIds?: ResolveExistingPromotionalOfferProductIds
 }
 
 export type ResolvePromotionalOfferScopeProductIds = (
   db: PostgresJsDatabase,
   scope: Extract<PromotionalOfferScope, { kind: "categories" | "destinations" }>,
+) => Promise<string[]>
+
+export type ResolveExistingPromotionalOfferProductIds = (
+  db: PostgresJsDatabase,
+  productIds: string[],
 ) => Promise<string[]>
 
 /** Fields whose change does NOT affect projection or evaluation — safe to skip emit. */
@@ -125,6 +142,88 @@ function readProductIdRows(result: unknown): string[] {
   return rows
     .map((row) => (row as { product_id?: unknown }).product_id)
     .filter((productId): productId is string => typeof productId === "string")
+}
+
+function readIdRows(result: unknown): string[] {
+  const rows = Array.isArray(result)
+    ? result
+    : Array.isArray((result as { rows?: unknown[] } | null)?.rows)
+      ? (result as { rows: unknown[] }).rows
+      : []
+  return rows
+    .map((row) => (row as { id?: unknown }).id)
+    .filter((id): id is string => typeof id === "string")
+}
+
+function isMissingProductsTableError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const record = error as { code?: unknown; message?: unknown }
+  return (
+    record.code === "42P01" ||
+    (typeof record.message === "string" &&
+      record.message.includes('relation "products" does not exist'))
+  )
+}
+
+async function loadExistingProductIds(
+  db: PostgresJsDatabase,
+  productIds: string[],
+): Promise<string[]> {
+  if (productIds.length === 0) return []
+  const dbAny = db as { execute(query: unknown): Promise<unknown> }
+  const ids = sql.join(
+    productIds.map((productId) => sql`${productId}`),
+    sql`, `,
+  )
+  let result: unknown
+  try {
+    result = await dbAny.execute(
+      // agent-quality: raw-sql reviewed -- owner: promotions; Product owns this table, and ids are parameter-bound through Drizzle.
+      sql`SELECT id FROM products WHERE id IN (${ids})`,
+    )
+  } catch (error) {
+    if (isMissingProductsTableError(error)) return []
+    throw error
+  }
+  return readIdRows(result)
+}
+
+async function resolveExistingProductIds(
+  db: PostgresJsDatabase,
+  productIds: string[],
+  runtime: OfferMutationRuntime,
+): Promise<string[]> {
+  const uniqueIds = [...new Set(productIds)]
+  return runtime.resolveExistingProductIds
+    ? runtime.resolveExistingProductIds(db, uniqueIds)
+    : loadExistingProductIds(db, uniqueIds)
+}
+
+async function validatePromotionalOfferScopeReferences(
+  db: PostgresJsDatabase,
+  scope: PromotionalOfferScope,
+  runtime: OfferMutationRuntime,
+): Promise<void> {
+  if (scope.kind !== "products") return
+  const productIds = [...new Set(scope.productIds)]
+  const existingIds = new Set(await resolveExistingProductIds(db, productIds, runtime))
+  const missingProductIds = productIds.filter((productId) => !existingIds.has(productId))
+  if (missingProductIds.length === 0) return
+
+  throw new ApiHttpError("Promotional offer references unknown product ids", {
+    status: 400,
+    code: "invalid_reference",
+    details: {
+      resource: "promotional_offer",
+      field: "scope.productIds",
+      missingProductIds,
+      issues: missingProductIds.map((productId) => ({
+        code: "unknown_product_id",
+        path: ["scope", "productIds"],
+        message: `Unknown product id: ${productId}`,
+      })),
+    },
+  })
 }
 
 async function loadProductIdsForCategoryScope(
@@ -355,6 +454,8 @@ async function createOffer(
   input: InsertPromotionalOffer,
   runtime: OfferMutationRuntime = {},
 ): Promise<PromotionalOffer> {
+  await validatePromotionalOfferScopeReferences(db, input.scope, runtime)
+
   let row: PromotionalOffer | undefined
   try {
     const [inserted] = await db.insert(promotionalOffers).values(toRowValues(input)).returning()
@@ -387,6 +488,9 @@ async function updateOffer(
       ? (await getOfferById(db, id))?.scope
       : null
   if (patch.scope !== undefined && previousScope === undefined) return null
+  if (patch.scope !== undefined) {
+    await validatePromotionalOfferScopeReferences(db, patch.scope, runtime)
+  }
 
   let row: PromotionalOffer | undefined
   try {
@@ -503,6 +607,7 @@ export const promotionsService = {
   deleteOffer,
   recomputeOfferLinks,
   resolveScopeProductIds,
+  validatePromotionalOfferScopeReferences,
 }
 
 export type PromotionsService = typeof promotionsService
