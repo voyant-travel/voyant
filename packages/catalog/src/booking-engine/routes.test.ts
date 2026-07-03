@@ -298,8 +298,12 @@ describe("createCatalogBookingRoutes", () => {
   it("books draft-first, forwards draft parameters, and reports draft consume races", async () => {
     vi.mocked(getBookingDraft).mockResolvedValue({
       id: "draft_1",
+      source_kind: "demo",
+      source_connection_id: "conn_demo",
+      source_ref: "upstream_1",
       current_quote_id: "quote_1",
       draft_payload: {
+        entity: { module: "products", id: "prod_1" },
         configure: {
           departureSlotId: "slot_1",
           pax: { adult: 2 },
@@ -353,7 +357,7 @@ describe("createCatalogBookingRoutes", () => {
           ratePlanId: "HOTEL:DZL1:BB",
           board: "BB",
         }),
-        adapterContext: { connection_id: "engine", correlation_id: "req_2" },
+        adapterContext: { connection_id: "conn_demo", correlation_id: "req_2" },
       }),
     )
     expect(onDraftConsumedError).toHaveBeenCalledWith(
@@ -411,6 +415,106 @@ describe("createCatalogBookingRoutes", () => {
     expect(releaseHold).toHaveBeenCalledWith(
       { db, adapterContext: { connection_id: "engine", correlation_id: "req_3" } },
       "hold_1",
+    )
+  })
+
+  it("maps sourced Connect package drafts to package confirm parameters", async () => {
+    vi.mocked(getBookingDraft).mockResolvedValue({
+      id: "draft_pkg",
+      source_kind: "voyant-connect",
+      source_connection_id: "conn_tui",
+      source_ref: "pkg_1",
+      current_quote_id: "quote_pkg",
+      draft_payload: {
+        entity: { module: "products", id: "pkg_1" },
+        configure: {
+          pax: { adult: 2 },
+          roomTypeId: "LCA20072:DZL1",
+          ratePlanId: "LCA20072:DZL1:AI",
+          board: "AI",
+        },
+        billing: {
+          contact: {
+            firstName: "Ada",
+            lastName: "Lovelace",
+            email: "ada@example.com",
+            phone: "+40 700 000 000",
+          },
+        },
+        travelers: [
+          {
+            firstName: "Ada",
+            lastName: "Lovelace",
+            band: "adult",
+            dateOfBirth: "1980-01-02",
+            email: "ada@example.com",
+            documents: { sex: "female", nationality: "RO" },
+            isPrimary: true,
+          },
+          {
+            firstName: "Grace",
+            lastName: "Hopper",
+            band: "adult",
+            dateOfBirth: "1981-03-04",
+            documents: { gender: "f" },
+          },
+        ],
+      },
+    } as never)
+    vi.mocked(bookEntity).mockResolvedValue({
+      bookingId: "booking_pkg",
+      orderRef: "package:book_1",
+      status: "held",
+      snapshotId: "snap_pkg",
+      pricing,
+    })
+    const { app } = createTestApp({ resolveCorrelationId: () => "req_pkg" })
+
+    const response = await app.request("/v1/public/catalog/book", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ draftId: "draft_pkg", idempotencyKey: "idem_package_1" }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(bookEntity).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ registry }),
+      expect.objectContaining({
+        quoteId: "quote_pkg",
+        adapterContext: { connection_id: "conn_tui", correlation_id: "req_pkg" },
+        parameters: expect.objectContaining({
+          connectRoute: "packages",
+          roomTypeId: "LCA20072:DZL1",
+          ratePlanId: "LCA20072:DZL1:AI",
+          board: "AI",
+          contact: {
+            email: "ada@example.com",
+            phone: "+40 700 000 000",
+          },
+          leadTraveler: expect.objectContaining({
+            firstName: "Ada",
+            lastName: "Lovelace",
+            category: "adult",
+            dateOfBirth: "1980-01-02",
+            sex: "female",
+            nationality: "RO",
+            isPrimary: true,
+          }),
+          travelers: [
+            expect.objectContaining({
+              firstName: "Ada",
+              lastName: "Lovelace",
+              sex: "female",
+            }),
+            expect.objectContaining({
+              firstName: "Grace",
+              lastName: "Hopper",
+              sex: "female",
+            }),
+          ],
+        }),
+      }),
     )
   })
 })

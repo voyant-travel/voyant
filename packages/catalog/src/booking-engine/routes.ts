@@ -20,6 +20,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { handleApiError, openApiValidationHook, RequestValidationError } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import { eq } from "drizzle-orm"
 import type { Context } from "hono"
 
 import type { SourceAdapterContext } from "../adapter/contract.js"
@@ -70,6 +71,7 @@ import {
   holdReleaseBodySchema,
   quoteBodySchema,
 } from "./routes-contracts.js"
+import { catalogQuotesTable, type SelectCatalogQuote } from "./schema.js"
 
 const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
 
@@ -339,6 +341,7 @@ export type {
   CatalogBookingHoldPlaceBody,
   CatalogBookingHoldReleaseBody,
   CatalogBookingHoldTtlInput,
+  CatalogBookingPrepareBookParametersInput,
   CatalogBookingProvenance,
   CatalogBookingProvenanceInput,
   CatalogBookingQuoteBody,
@@ -438,7 +441,11 @@ async function handleQuote(
           market: body.scope?.market ?? "default",
           currency: body.scope?.currency,
         },
-        parameters: engineParametersFromDraft(body.parameters, body.draft),
+        parameters: engineParametersFromDraft(body.parameters, body.draft, {
+          entityModule: body.entityModule,
+          sourceKind: provenance.sourceKind,
+          sourceProvider: provenance.sourceProvider,
+        }),
         ttlMs: body.ttlMs,
         adapterContext,
       },
@@ -461,6 +468,7 @@ async function handleBook(
 
   let quoteId = body.quoteId
   let draftPayload: Record<string, unknown> | undefined
+  let draftProvenance: CatalogBookingProvenance | undefined
   // Load the draft whenever a draftId is present — even when the caller pins an
   // explicit `quoteId` — so its payload (selected departure/room/pax/travelers)
   // still feeds `engineParametersFromDraft`. An explicit `quoteId` only overrides
@@ -470,6 +478,11 @@ async function handleBook(
     const draft = await getBookingDraft(db, body.draftId)
     if (draft) {
       draftPayload = draft.draft_payload
+      draftProvenance = {
+        sourceKind: draft.source_kind,
+        sourceConnectionId: draft.source_connection_id ?? undefined,
+        sourceRef: draft.source_ref ?? undefined,
+      }
       if (!quoteId) {
         if (!draft.current_quote_id) {
           return c.json({ error: "draft has no current quote - call /quote first" }, 409)
@@ -486,10 +499,17 @@ async function handleBook(
   }
 
   try {
+    const quoteForBook =
+      options.prepareBookParameters || !draftProvenance
+        ? await loadQuoteForBook(db, quoteId)
+        : undefined
+    const provenance = draftProvenance ??
+      quoteToBookProvenance(quoteForBook) ?? { sourceKind: "engine" }
     const adapterContext = resolveAdapterContext(c, options, {
       db,
       operation: "book",
-      sourceKind: "engine",
+      sourceKind: provenance.sourceKind,
+      sourceConnectionId: provenance.sourceConnectionId,
       correlationId,
     })
     const result = await bookEntity(
@@ -504,10 +524,14 @@ async function handleBook(
         bookingId: body.bookingId,
         party: body.party,
         paymentIntent: body.paymentIntent,
-        parameters: engineParametersFromDraft(
-          body.parameters,
-          draftPayload ?? body.parameters?.draft,
-        ),
+        parameters: await prepareBookParameters(c, options, {
+          db,
+          body,
+          quoteId,
+          quote: quoteForBook,
+          draftPayload,
+          provenance,
+        }),
         idempotencyKey: body.idempotencyKey,
         adapterContext,
         contentScope: options.resolveContentScope?.({ c, db, body, draftPayload }),
@@ -534,6 +558,70 @@ async function handleBook(
     return c.json(serializeBookResult(transformed))
   } catch (err) {
     return bookingEngineErrorResponse(c, err)
+  }
+}
+
+async function prepareBookParameters(
+  c: Context,
+  options: CatalogBookingRoutesOptions,
+  input: {
+    db: AnyDrizzleDb
+    body: CatalogBookingBookBody
+    quoteId: string
+    quote?: SelectCatalogQuote
+    draftPayload?: Record<string, unknown>
+    provenance: CatalogBookingProvenance
+  },
+): Promise<Record<string, unknown>> {
+  const parameters = engineParametersFromDraft(
+    input.body.parameters,
+    input.draftPayload ?? input.body.parameters?.draft,
+    {
+      entityModule: input.draftPayload
+        ? (stringValue(asRecord(input.draftPayload)?.entity_module) ??
+          stringValue(asRecord(asRecord(input.draftPayload)?.entity)?.module) ??
+          undefined)
+        : undefined,
+      sourceKind: input.provenance.sourceKind,
+      sourceProvider: input.provenance.sourceProvider,
+    },
+  )
+
+  return (
+    (await options.prepareBookParameters?.({
+      c,
+      db: input.db,
+      request: input.body,
+      quoteId: input.quoteId,
+      quote: input.quote,
+      draftPayload: input.draftPayload,
+      provenance: input.provenance,
+      parameters,
+    })) ?? parameters
+  )
+}
+
+async function loadQuoteForBook(
+  db: AnyDrizzleDb,
+  quoteId: string,
+): Promise<SelectCatalogQuote | undefined> {
+  const rows = (await db
+    .select()
+    .from(catalogQuotesTable)
+    .where(eq(catalogQuotesTable.id, quoteId))
+    .limit(1)) as SelectCatalogQuote[]
+  return rows[0]
+}
+
+function quoteToBookProvenance(
+  quote: SelectCatalogQuote | undefined,
+): CatalogBookingProvenance | undefined {
+  if (!quote) return undefined
+  return {
+    sourceKind: quote.source_kind,
+    sourceProvider: quote.source_provider ?? undefined,
+    sourceConnectionId: quote.source_connection_id ?? undefined,
+    sourceRef: quote.source_ref ?? undefined,
   }
 }
 
@@ -729,6 +817,11 @@ function defaultAudienceForPath(c: Context): "staff" | "customer" {
 function engineParametersFromDraft(
   parameters: Record<string, unknown> | undefined,
   draftPayload: unknown,
+  context: {
+    entityModule?: string
+    sourceKind?: string
+    sourceProvider?: string
+  } = {},
 ): Record<string, unknown> {
   const draft = asRecord(draftPayload)
   const configure = asRecord(draft?.configure)
@@ -759,8 +852,130 @@ function engineParametersFromDraft(
   if (promotionCode && next.promotionCode == null) {
     next.promotionCode = promotionCode
   }
+  applyConnectPackageConfirmParameters(next, draft, context)
 
   return next
+}
+
+function applyConnectPackageConfirmParameters(
+  parameters: Record<string, unknown>,
+  draft: Record<string, unknown> | undefined,
+  context: { entityModule?: string; sourceKind?: string },
+): void {
+  if (!draft || !isConnectPackageCandidate(parameters, draft, context)) return
+
+  if (parameters.connectRoute == null) parameters.connectRoute = "packages"
+
+  const billing = asRecord(draft.billing)
+  const contact = asRecord(billing?.contact)
+  const mappedContact = mapPackageContact(contact)
+  if (mappedContact && parameters.contact == null) parameters.contact = mappedContact
+
+  const travelers = mapPackageTravelers(draft.travelers, contact)
+  if (travelers.length === 0) return
+  if (parameters.travelers == null) parameters.travelers = travelers
+  if (parameters.leadTraveler == null) {
+    parameters.leadTraveler =
+      travelers.find((traveler) => traveler.isPrimary === true) ?? travelers[0]
+  }
+}
+
+function isConnectPackageCandidate(
+  parameters: Record<string, unknown>,
+  draft: Record<string, unknown>,
+  context: { entityModule?: string; sourceKind?: string },
+): boolean {
+  if (parameters.connectRoute === "packages") return true
+  if (context.sourceKind !== "voyant-connect") return false
+  const entityModule = context.entityModule ?? stringValue(asRecord(draft.entity)?.module)
+  if (entityModule !== "products") return false
+  const configure = asRecord(draft.configure)
+  return Boolean(
+    stringValue(configure?.roomTypeId) ||
+      stringValue(configure?.ratePlanId) ||
+      stringValue(configure?.board),
+  )
+}
+
+function mapPackageContact(
+  contact: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  const email = stringValue(contact?.email)
+  const phone = stringValue(contact?.phone)
+  if (!email && !phone) return undefined
+  return {
+    ...(email ? { email } : {}),
+    ...(phone ? { phone } : {}),
+  }
+}
+
+function mapPackageTravelers(
+  travelersValue: unknown,
+  fallbackContact: Record<string, unknown> | undefined,
+): Array<Record<string, unknown>> {
+  const travelers = Array.isArray(travelersValue) ? travelersValue : []
+  const mapped = travelers
+    .map((value, index) => mapPackageTraveler(asRecord(value), index))
+    .filter((value): value is Record<string, unknown> => value !== undefined)
+  if (mapped.length > 0) return mapped
+
+  const firstName = stringValue(fallbackContact?.firstName)
+  const lastName = stringValue(fallbackContact?.lastName)
+  if (!firstName || !lastName) return []
+  return [
+    {
+      category: "adult",
+      firstName,
+      lastName,
+      ...(stringValue(fallbackContact?.email)
+        ? { email: stringValue(fallbackContact?.email) }
+        : {}),
+      ...(stringValue(fallbackContact?.phone)
+        ? { phone: stringValue(fallbackContact?.phone) }
+        : {}),
+      isPrimary: true,
+    },
+  ]
+}
+
+function mapPackageTraveler(
+  traveler: Record<string, unknown> | undefined,
+  index: number,
+): Record<string, unknown> | undefined {
+  const firstName = stringValue(traveler?.firstName)
+  const lastName = stringValue(traveler?.lastName)
+  if (!firstName || !lastName) return undefined
+  const documents = asRecord(traveler?.documents)
+  return {
+    category: packageTravelerCategory(stringValue(traveler?.band)),
+    firstName,
+    lastName,
+    ...(stringValue(traveler?.dateOfBirth)
+      ? { dateOfBirth: stringValue(traveler?.dateOfBirth) }
+      : {}),
+    ...(packageTravelerSex(stringValue(documents?.sex) ?? stringValue(documents?.gender))
+      ? { sex: packageTravelerSex(stringValue(documents?.sex) ?? stringValue(documents?.gender)) }
+      : {}),
+    ...(stringValue(documents?.title) ? { title: stringValue(documents?.title) } : {}),
+    ...(stringValue(documents?.nationality)
+      ? { nationality: stringValue(documents?.nationality) }
+      : {}),
+    ...(stringValue(traveler?.email) ? { email: stringValue(traveler?.email) } : {}),
+    ...(stringValue(traveler?.phone) ? { phone: stringValue(traveler?.phone) } : {}),
+    isPrimary: traveler?.isPrimary === true || index === 0,
+  }
+}
+
+function packageTravelerCategory(value: string | null): "adult" | "child" | "infant" | "senior" {
+  if (value === "child" || value === "infant" || value === "senior") return value
+  return "adult"
+}
+
+function packageTravelerSex(value: string | null): "male" | "female" | "unspecified" | undefined {
+  if (value === "male" || value === "female" || value === "unspecified") return value
+  if (value === "m") return "male"
+  if (value === "f") return "female"
+  return undefined
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {

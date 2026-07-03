@@ -4,6 +4,7 @@ import {
   type CatalogBookingBookBody,
   type CatalogBookingCommittedEvent,
   type CatalogBookingMountTarget,
+  type CatalogBookingPrepareBookParametersInput,
   type CatalogBookingRouteModuleOptions,
   type CatalogBookingRoutesOptions,
   catalogQuotesTable,
@@ -14,6 +15,7 @@ import {
   type SlotRow,
 } from "@voyant-travel/catalog/booking-engine"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
+import { createVoyantConnectClient, type PackageOffer } from "@voyant-travel/connect-sdk"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { suppliers } from "@voyant-travel/distribution"
@@ -22,6 +24,7 @@ import { products, productsService } from "@voyant-travel/inventory"
 import { getProductContent } from "@voyant-travel/inventory/service-content"
 import { availabilitySlots } from "@voyant-travel/operations"
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
+import { resolveVoyantConnectEnv } from "@voyant-travel/plugin-voyant-connect"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -71,6 +74,7 @@ function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOption
         },
       })
     },
+    prepareBookParameters: prepareConnectPackageBookParameters,
     onCommitted: materializeSourcedBookingForCatalogCommit,
     onDraftConsumedError: ({ error }) => {
       console.warn("[catalog-booking] markDraftConsumed failed:", error)
@@ -205,6 +209,66 @@ export function buildSourcedBookingRows({
       },
     },
   }
+}
+
+async function prepareConnectPackageBookParameters({
+  c,
+  parameters,
+  provenance,
+  quote,
+}: CatalogBookingPrepareBookParametersInput): Promise<Record<string, unknown>> {
+  if (parameters.connectRoute !== "packages") return parameters
+  if (stringValue(parameters.holdId)) return parameters
+  if (provenance.sourceKind !== "voyant-connect" || !provenance.sourceConnectionId) {
+    return parameters
+  }
+
+  const offer = readPackageOffer(quote?.upstream_payload)
+  if (!offer) return parameters
+
+  const config = resolveVoyantConnectEnv(c.env as Record<string, string | undefined>, {
+    warn: (message) => console.warn(`[catalog-booking] ${message}`),
+  })
+  if (!config) return parameters
+
+  const client = createVoyantConnectClient({
+    apiKey: config.apiKey,
+    operatorId: config.operatorId,
+    baseUrl: config.baseUrl,
+  })
+  const hold = await client.packages.lock(provenance.sourceConnectionId, offer)
+  return {
+    ...parameters,
+    holdId: hold.id,
+  }
+}
+
+function readPackageOffer(value: unknown): PackageOffer | undefined {
+  const payload = asRecord(value)
+  const offer = asRecord(payload?.offer) ?? payload
+  return isPackageOffer(offer) ? offer : undefined
+}
+
+function isPackageOffer(value: unknown): value is PackageOffer {
+  const offer = asRecord(value)
+  if (!offer) return false
+  if (
+    !stringValue(offer.id) ||
+    !stringValue(offer.connectionId) ||
+    !stringValue(offer.supplierId)
+  ) {
+    return false
+  }
+  if (!asRecord(offer.productRef) || !asRecord(offer.stay) || !Array.isArray(offer.flights)) {
+    return false
+  }
+  if (!asRecord(offer.pricing) || !asRecord(offer.cancellationPolicy)) {
+    return false
+  }
+  if (!stringValue(offer.expiresAt)) {
+    return false
+  }
+  return true
 }
 
 function bookingStatusForSourcedResult(

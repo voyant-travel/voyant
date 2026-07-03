@@ -8,6 +8,7 @@ import type { BookEntityResult } from "./book.js"
 import type { OwnedBookingHandlerRegistry } from "./owned-handler.js"
 import type { QuoteEntityDeps, QuoteEntityResult } from "./quote.js"
 import type { SourceAdapterRegistry } from "./registry.js"
+import type { SelectCatalogQuote } from "./schema.js"
 import type { SnapshotContentCapturer } from "./snapshot-content.js"
 
 const recordSchema = z.record(z.string(), z.unknown())
@@ -139,6 +140,17 @@ export interface CatalogBookingBookTransformInput {
   result: BookEntityResult
 }
 
+export interface CatalogBookingPrepareBookParametersInput {
+  c: Context
+  db: AnyDrizzleDb
+  request: CatalogBookingBookBody
+  quoteId: string
+  quote?: SelectCatalogQuote
+  draftPayload?: Record<string, unknown>
+  provenance: CatalogBookingProvenance
+  parameters: Record<string, unknown>
+}
+
 export interface CatalogBookingDraftConsumedError {
   c: Context
   db: AnyDrizzleDb
@@ -184,6 +196,9 @@ export interface CatalogBookingRoutesOptions {
     db: AnyDrizzleDb
   }): QuoteEntityDeps["evaluatePromotions"]
   captureSnapshotContent?: SnapshotContentCapturer
+  prepareBookParameters?(
+    input: CatalogBookingPrepareBookParametersInput,
+  ): Promise<Record<string, unknown>> | Record<string, unknown>
   transformQuoteResult?(input: CatalogBookingQuoteTransformInput): Promise<QuoteEntityResult>
   transformBookResult?(input: CatalogBookingBookTransformInput): Promise<BookEntityResult>
   onDraftConsumedError?(event: CatalogBookingDraftConsumedError): void
