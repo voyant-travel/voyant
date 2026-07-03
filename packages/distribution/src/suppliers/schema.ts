@@ -233,7 +233,7 @@ export const supplierAvailability = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("idx_supplier_availability_supplier_date").on(table.supplierId, table.date),
+    uniqueIndex("uidx_supplier_availability_supplier_date").on(table.supplierId, table.date),
     index("idx_supplier_availability_date").on(table.date),
   ],
 )

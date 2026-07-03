@@ -318,16 +318,32 @@ export async function createAvailability(
     return null
   }
 
+  if (entries.length === 0) {
+    return []
+  }
+
+  const latestEntriesByDate = new Map<string, CreateAvailabilityInput>()
+  for (const entry of entries) {
+    latestEntriesByDate.set(entry.date, entry)
+  }
+
   return db
     .insert(supplierAvailability)
     .values(
-      entries.map((entry) => ({
+      [...latestEntriesByDate.values()].map((entry) => ({
         supplierId,
         date: entry.date,
         available: entry.available,
         notes: entry.notes ?? null,
       })),
     )
+    .onConflictDoUpdate({
+      target: [supplierAvailability.supplierId, supplierAvailability.date],
+      set: {
+        available: sql`excluded.available`,
+        notes: sql`excluded.notes`,
+      },
+    })
     .returning()
 }
 

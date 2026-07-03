@@ -159,15 +159,17 @@ export const insertSupplierNoteSchema = z.object({
 
 // ---------- availability ----------
 
+const isoDateSchema = z.string().date()
+
 export const insertAvailabilitySchema = z.object({
-  date: z.string().min(1),
+  date: isoDateSchema,
   available: z.boolean().default(true),
   notes: z.string().optional().nullable(),
 })
 
 export const availabilityQuerySchema = z.object({
-  from: z.string().optional(),
-  to: z.string().optional(),
+  from: isoDateSchema.optional(),
+  to: isoDateSchema.optional(),
 })
 
 // ---------- contracts ----------
