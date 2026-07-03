@@ -1,6 +1,6 @@
 /**
- * Cruise content service — `getCruiseContent` with locale-resolved
- * cache reads, SWR refresh, and synthesizer fallback.
+ * Cruise content service — `getCruiseContent` with owned-vs-sourced
+ * dispatch, locale-resolved cache reads, SWR refresh, and synthesizer fallback.
  *
  * Mirrors `service-content.ts` in the products package but cruise-
  * shaped. The cruise content aggregate (§3.2 / §E) is `{ cruise, ship,
@@ -47,6 +47,7 @@ import {
   cruisesSourcedContentTable,
   type SelectCruisesSourcedContent,
 } from "./schema-sourced-content.js"
+import { buildOwnedCruiseContent } from "./service-content-owned.js"
 import {
   type SynthesizedCruiseContent,
   synthesizeCruiseContent,
@@ -71,7 +72,7 @@ export interface ResolvedCruiseContent {
   content: CruiseContent
   resolution: ContentLocaleResolution<{ locale: string; payload: CruiseContent }>
   provenance: ResolvedCruiseContentProvenance
-  source: "sourced-cache" | "sourced-fresh" | "synthesized"
+  source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
   served_stale: boolean
   synthesized: boolean
   machine_translated: boolean
@@ -91,7 +92,39 @@ export async function getCruiseContent(
   options: GetCruiseContentOptions,
 ): Promise<ResolvedCruiseContent | null> {
   const sourcedEntry = await readSourcedEntry(db, "cruises", entityId)
-  if (!sourcedEntry) return null
+  if (!sourcedEntry) {
+    const owned = await buildOwnedCruiseContent(db, entityId, {
+      preferredLocales: scope.preferredLocales,
+    })
+    if (!owned) return null
+    const overlays = await fetchOverlaysForEntity(db, "cruises", entityId)
+    const merged = mergeOverlaysIntoCruiseContent(
+      owned.content,
+      overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
+      {
+        onOverlayError: options.onOverlayError
+          ? (e) =>
+              options.onOverlayError!({
+                field_path: e.overlay.field_path,
+                reason: e.reason,
+              })
+          : undefined,
+      },
+    )
+    return {
+      content: merged,
+      resolution: {
+        candidate: { locale: owned.servedLocale, payload: merged },
+        served_locale: owned.servedLocale,
+        match_kind: owned.matchKind,
+      },
+      provenance: { source_kind: "owned" },
+      source: "owned",
+      served_stale: false,
+      synthesized: false,
+      machine_translated: false,
+    }
+  }
 
   const provenance: Extract<ProvenanceReadResult, { kind: "sourced" }> = {
     kind: "sourced",

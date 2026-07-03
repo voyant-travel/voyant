@@ -67,9 +67,9 @@ describe("createCruiseContentRoutes — GET /:key/content", () => {
     expect(body.error).toBe("invalid_key")
   })
 
-  it("returns 404 for owned (local) keys by default — owned uses GET /:key", async () => {
+  it("returns 404 for owned (local) keys by default unless owned keys are enabled", async () => {
     const { app } = buildApp()
-    const res = await app.request("/crus_abc/content")
+    const res = await app.request("/cru_abc/content")
     expect(res.status).toBe(404)
     const body = await res.json()
     expect(body.error).toBe("owned_not_supported")
@@ -150,11 +150,42 @@ describe("createCruiseContentRoutes — GET /:key/content", () => {
   it("dispatches owned keys when allowOwnedKeys: true", async () => {
     mockedGetCruiseContent.mockResolvedValueOnce(null)
     const { app } = buildApp({ allowOwnedKeys: true })
-    const res = await app.request("/crus_abc/content")
+    const res = await app.request("/cru_abc/content")
     expect(mockedGetCruiseContent).toHaveBeenCalledTimes(1)
     expect(res.status).toBe(404)
     const callArgs = mockedGetCruiseContent.mock.calls[0]
-    expect(callArgs?.[1]).toBe("crus_abc")
+    expect(callArgs?.[1]).toBe("cru_abc")
+  })
+
+  it("returns owned CruiseContent when the service resolves an owned cruise", async () => {
+    const fakeContent = {
+      cruise: { id: "cru_abc", name: "Owned Greek Isles" },
+      ship: null,
+      sailings: [],
+      cabin_categories: [],
+      itinerary_stops: [],
+      policies: [],
+    }
+    mockedGetCruiseContent.mockResolvedValueOnce({
+      content: fakeContent as never,
+      resolution: {
+        candidate: { locale: "und", payload: fakeContent as never },
+        served_locale: "und",
+        match_kind: "any",
+      },
+      provenance: { source_kind: "owned" },
+      source: "owned",
+      served_stale: false,
+      synthesized: false,
+      machine_translated: false,
+    })
+    const { app } = buildApp({ allowOwnedKeys: true })
+    const res = await app.request("/cru_abc/content?locale=en-GB")
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.data.content.cruise.name).toBe("Owned Greek Isles")
+    expect(body.data.source).toBe("owned")
+    expect(body.data.provenance).toEqual({ source_kind: "owned" })
   })
 
   it("threads market + currency from query params", async () => {

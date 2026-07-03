@@ -3,15 +3,17 @@
  *
  *   GET /:key/content
  *
- * Returns the full `CruiseContent` payload for a sourced cruise:
+ * Returns the full `CruiseContent` payload for sourced cruises:
  * cache hit → cached row + overlay merge; cache miss with rich adapter
  * → adapter fetch + write-through; cache miss with thin adapter →
- * synthesizer fallback (sourced-content §3.3, §3.4, §3.6).
+ * synthesizer fallback (sourced-content §3.3, §3.4, §3.6). When
+ * `allowOwnedKeys` is enabled, owned `cru_*` ids are projected from the
+ * cruises module's own tables.
  *
  * The cruise vertical's unified key parser (`<provider>:<ref>` for
  * external, plain TypeID for owned) is reused; this route accepts
- * either form. Owned cruises return 404 — they have no sourced-entry
- * row. Owned-cruise detail uses the existing `/:key` route.
+ * either form. Plain owned TypeIDs require `allowOwnedKeys` so existing
+ * sourced-only mounts can keep their previous contract.
  *
  * The catalog SourceAdapterRegistry is starter-owned and resolved via
  * the `resolveRegistry` callback. For cruise adapters wrapped via
@@ -51,11 +53,10 @@ export interface CreateCruiseContentRoutesOptions {
   onOverlayError?: (event: { field_path: string; reason: string }) => void
   defaultAcceptMachineTranslated?: boolean
   /**
-   * When the unified key resolves to a cruise typeid (`crus_*` —
+   * When the unified key resolves to a cruise typeid (`cru_*` —
    * owned cruise), the route returns 404 by default. Set this to
    * `true` to also dispatch through `getCruiseContent` for owned ids
-   * (useful when an owned cruise also has a sourced-entry row, e.g.
-   * after a detach + re-import workflow).
+   * and let the service project content from owned cruise tables.
    */
   allowOwnedKeys?: boolean
 }
@@ -80,14 +81,13 @@ export function createCruiseContentRoutes(
 
       // A catalog sourced entity id (`crus_sr_<base64>`) is inherently sourced,
       // so it dispatches regardless of `allowOwnedKeys`. Only plain owned TypeIDs
-      // (`crus_<base32>`) need the opt-in.
+      // (`cru_<base32>`) need the opt-in.
       const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
       if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
         return c.json(
           {
             error: "owned_not_supported",
-            detail:
-              "GET /:key/content serves sourced cruises only. Owned cruises use GET /:key. Set allowOwnedKeys: true on the route factory to opt into owned dispatch.",
+            detail: "GET /:key/content requires allowOwnedKeys to serve owned cruise content.",
           },
           404,
         )
@@ -110,7 +110,7 @@ export function createCruiseContentRoutes(
         return c.json(
           {
             error: "not_found",
-            detail: `Cruise ${rawKey} (entity ${entityId}) has no sourced-content row. Either no adapter is registered for this provider, or discovery hasn't run yet.`,
+            detail: `Cruise ${rawKey} (entity ${entityId}) has no public content. For sourced cruises, either no adapter is registered for this provider or discovery hasn't run yet. For owned cruises, no matching cruise row was found.`,
           },
           404,
         )
