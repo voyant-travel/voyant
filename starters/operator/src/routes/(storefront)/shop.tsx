@@ -26,13 +26,11 @@ import { useStorefrontScope } from "@/lib/storefront-scope"
  *
  * Search only offers verticals that have a working customer detail + booking
  * page. Charters and flights have no storefront `/content` endpoint or booking
- * flow yet (voyant#2640), and cruises render only SOURCED content publicly —
- * owned/demo cruises produced dead result cards and a broken detail page
- * (voyant#2639) — so all three are omitted from
+ * flow yet (voyant#2640), so they remain outside
  * `storefrontCustomerBookableProductVerticals`. Deriving the accepted verticals
  * from that list keeps search in sync automatically as new verticals gain
  * detail pages, and `.catch(undefined)` gracefully drops any stale/crafted
- * `?vertical=cruises` URL back to the default vertical instead of erroring.
+ * unsupported vertical URL back to the default vertical instead of erroring.
  */
 export const shopSearchSchema = z.object({
   q: z.string().optional(),

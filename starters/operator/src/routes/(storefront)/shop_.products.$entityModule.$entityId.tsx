@@ -1,7 +1,7 @@
 "use client"
 
 import { createFileRoute, useParams } from "@tanstack/react-router"
-import { isStorefrontCustomerBookableProductVertical } from "@voyant-travel/storefront-react"
+import { getStorefrontCustomerProductDetailRoute } from "@voyant-travel/storefront-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import type React from "react"
 
@@ -19,7 +19,7 @@ function DetailPage(): React.ReactElement {
   })
   const t = useStorefrontMessagesOrDefault().shop
 
-  if (!isStorefrontCustomerBookableProductVertical(entityModule)) {
+  if (!getStorefrontCustomerProductDetailRoute(entityModule, entityId)) {
     return (
       <Card>
         <CardHeader>
