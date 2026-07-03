@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.139.1
+
+### Patch Changes
+
+- a69f820: Snapshot accepted bank-transfer checkout payment terms into booking activity and show pre-payment checkout lifecycle rows in the admin activity timeline.
+  - @voyant-travel/bookings@0.139.1
+
 ## 0.139.0
 
 ### Patch Changes
