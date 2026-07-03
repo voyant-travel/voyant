@@ -22,6 +22,7 @@ import {
   type BookingJourneyCheckoutContext,
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
+  type Draft,
 } from "@voyant-travel/bookings-react/journey"
 import {
   computePaymentSchedule,
@@ -190,6 +191,7 @@ export function StorefrontBookingJourney({
         body: JSON.stringify({
           draftId,
           quoteId: context.quoteId,
+          party: buildStorefrontCommitParty(context.draft),
           paymentIntent: { type: "hold" },
           idempotencyKey,
         }),
@@ -419,6 +421,40 @@ function checkoutIntentFromDraft(
 ): "card" | "bank_transfer" | "hold" | "inquiry" {
   if (intent === "card" || intent === "bank_transfer" || intent === "inquiry") return intent
   return "hold"
+}
+
+export function buildStorefrontCommitParty(draft: Draft): Record<string, unknown> {
+  const contact = draft.billing.contact
+  const personId = draft.billing.buyerType === "B2C" ? contact.personId : undefined
+  const organizationId =
+    draft.billing.buyerType === "B2B" ? draft.billing.organizationId : undefined
+  return {
+    personId,
+    organizationId,
+    billing: {
+      personId,
+      organizationId,
+      contact: {
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email,
+        phone: contact.phone,
+      },
+    },
+    travelerParty: {
+      travelers: draft.travelers.map((traveler) => ({
+        personId: traveler.personId,
+        firstName: traveler.firstName,
+        lastName: traveler.lastName,
+        email: traveler.email,
+        phone: traveler.phone,
+        dateOfBirth: traveler.dateOfBirth,
+        band: traveler.band,
+        documents: traveler.documents,
+        isPrimary: traveler.isPrimary,
+      })),
+    },
+  }
 }
 
 /**

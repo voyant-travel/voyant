@@ -201,6 +201,7 @@ export {
   type CatalogBookingHoldPlaceBody,
   type CatalogBookingHoldReleaseBody,
   type CatalogBookingHoldTtlInput,
+  type CatalogBookingPrepareBookParametersInput,
   type CatalogBookingProvenance,
   type CatalogBookingProvenanceInput,
   type CatalogBookingQuoteBody,
