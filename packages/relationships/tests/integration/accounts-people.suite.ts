@@ -532,8 +532,6 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       const res = await getApp().request(`/people/${created.id}/contact-methods`, {
         method: "POST",
         ...json({
-          entityType: "organization",
-          entityId: "crm_org_wrong_000000000000000000",
           kind: "email",
           value: "nested.person@example.com",
           isPrimary: true,
@@ -547,6 +545,33 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
         entityId: created.id,
         kind: "email",
         value: "nested.person@example.com",
+      })
+    })
+
+    it("derives nested contact method ownership from the person path", async () => {
+      const createRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({ firstName: "Nested", lastName: "Owner" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/people/${created.id}/contact-methods`, {
+        method: "POST",
+        ...json({
+          entityType: "organization",
+          entityId: "crm_org_wrong_000000000000000000",
+          kind: "email",
+          value: "nested.owner@example.com",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        entityType: "person",
+        entityId: created.id,
+        kind: "email",
+        value: "nested.owner@example.com",
       })
     })
 
