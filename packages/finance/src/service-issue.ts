@@ -582,7 +582,12 @@ export async function convertProformaToInvoice(
           bookingId: lockedProforma.bookingId,
           personId: lockedProforma.personId,
           organizationId: lockedProforma.organizationId,
-          status: "issued",
+          status:
+            lockedProforma.paidCents >= lockedProforma.totalCents
+              ? "paid"
+              : lockedProforma.paidCents > 0
+                ? "partially_paid"
+                : "issued",
           currency: lockedProforma.currency,
           baseCurrency: lockedProforma.baseCurrency,
           fxRateSetId: lockedProforma.fxRateSetId,

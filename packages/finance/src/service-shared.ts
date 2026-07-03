@@ -65,7 +65,7 @@ import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { renderStructuredTemplate } from "@voyant-travel/utils/template-renderer"
-import { and, desc, eq, gt, ne, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gt, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import { resolveFxMoneyBaseAmount } from "./fx-money.js"
@@ -1595,4 +1595,52 @@ export async function assertBookingPaymentScheduleHasPaymentCoverage(
       },
     )
   }
+}
+
+export async function settleCoveredBookingPaymentSchedules(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<Array<typeof bookingPaymentSchedules.$inferSelect>> {
+  return db.transaction(async (tx) => {
+    const schedules = await tx
+      .select()
+      .from(bookingPaymentSchedules)
+      .where(
+        and(
+          eq(bookingPaymentSchedules.bookingId, bookingId),
+          or(
+            eq(bookingPaymentSchedules.status, "pending"),
+            eq(bookingPaymentSchedules.status, "due"),
+          ),
+        ),
+      )
+      .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
+
+    const paidSchedules: Array<typeof bookingPaymentSchedules.$inferSelect> = []
+    for (const schedule of schedules) {
+      try {
+        await assertBookingPaymentScheduleHasPaymentCoverage(tx, schedule)
+      } catch (error) {
+        if (error instanceof PaymentValidationError) break
+        throw error
+      }
+
+      const [paidSchedule] = await tx
+        .update(bookingPaymentSchedules)
+        .set({ status: "paid", updatedAt: new Date() })
+        .where(
+          and(
+            eq(bookingPaymentSchedules.id, schedule.id),
+            or(
+              eq(bookingPaymentSchedules.status, "pending"),
+              eq(bookingPaymentSchedules.status, "due"),
+            ),
+          ),
+        )
+        .returning()
+      if (paidSchedule) paidSchedules.push(paidSchedule)
+    }
+
+    return paidSchedules
+  })
 }

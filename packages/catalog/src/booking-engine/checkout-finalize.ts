@@ -75,12 +75,10 @@ export interface CheckoutFinalizeDeps {
    */
   findProformaForBooking?: (bookingId: string) => Promise<{ invoiceId: string } | null>
   /**
-   * Generate (or fetch existing) the contract PDF for the booking.
-   * The implementation is expected to be **idempotent** — if a
-   * contract document already exists for this booking, return its
-   * id without re-rendering. This keeps the explicit workflow step
-   * compatible with the legal package's `booking.confirmed`
-   * subscriber, which races with the step in storefront flows.
+   * Generate the contract PDF for the booking. Checkout finalization
+   * passes `force: true` so this step can overwrite any earlier
+   * `booking.confirmed` subscriber render with final payment state.
+   * Implementations should still be safe to retry.
    *
    * Returning `null` is treated as "no contract template wired" and
    * skipped silently — the operator may not have configured one,
@@ -92,6 +90,7 @@ export interface CheckoutFinalizeDeps {
    */
   generateContractPdf?: (input: {
     bookingId: string
+    force?: boolean
   }) => Promise<{ contractId: string; attachmentId: string } | null>
   /**
    * Reconcile paid `payment_sessions` for the booking against the
@@ -200,7 +199,7 @@ export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
     // as an explicit step rather than a fire-and-forget subscriber.
     if (!deps.generateContractPdf) return null
     return runStep("generate_contract_pdf", deps.recorder, () =>
-      deps.generateContractPdf!({ bookingId: input.bookingId }),
+      deps.generateContractPdf!({ bookingId: input.bookingId, force: true }),
     )
   }),
 ])

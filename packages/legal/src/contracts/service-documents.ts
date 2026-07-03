@@ -13,6 +13,7 @@ import { contractAttachments, contracts, contractTemplateVersions } from "./sche
 import { contractRecordsService } from "./service-contracts.js"
 import type { CreateContractAttachmentInput } from "./service-shared.js"
 import {
+  allocateContractNumber,
   isContractTemplateSyntaxError,
   mergeContractNumberIntoVariables,
   renderTemplate,
@@ -405,6 +406,24 @@ async function ensureRenderedContract(
     }
     contract = issued.contract
     lifecycleEvent = issued.event ?? null
+  }
+
+  if (contract.status !== "draft" && !contract.contractNumber && contract.seriesId) {
+    const allocated = await allocateContractNumber(db, contract.seriesId)
+    if (allocated) {
+      const baseVariables = (contract.variables as Record<string, unknown> | null) ?? {}
+      const variables = mergeContractNumberIntoVariables(baseVariables, allocated.number)
+      const [updated] = await db
+        .update(contracts)
+        .set({
+          contractNumber: allocated.number,
+          variables,
+          updatedAt: new Date(),
+        })
+        .where(eq(contracts.id, contractId))
+        .returning()
+      contract = updated ?? contract
+    }
   }
 
   const templateVersion = await loadTemplateVersion(db, contract.templateVersionId ?? null)

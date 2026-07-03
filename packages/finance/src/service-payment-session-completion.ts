@@ -24,6 +24,7 @@ import {
   paymentSessions,
   payments,
   resolveInvoiceForPaymentSession,
+  settleCoveredBookingPaymentSchedules,
   sql,
   toTimestamp,
 } from "./service-shared.js"
@@ -320,6 +321,9 @@ export const financePaymentSessionCompletionService = {
     })
 
     if (txResult.recordedPayment) {
+      if (txResult.recordedPayment.bookingId) {
+        await settleCoveredBookingPaymentSchedules(db, txResult.recordedPayment.bookingId)
+      }
       await runtime.eventBus?.emit("invoice.payment.recorded", txResult.recordedPayment, {
         category: "domain",
         source: "service",
