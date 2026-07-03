@@ -358,6 +358,12 @@ export function buildCollectionSchema(
       vec_dist: "cosine",
       optional: true,
     })
+    fields.push({
+      name: "embedding_model_id",
+      type: "string",
+      facet: true,
+      optional: true,
+    })
   }
 
   return {

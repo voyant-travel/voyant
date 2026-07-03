@@ -154,6 +154,21 @@ describe("Typesense catalog indexer", () => {
     })
   })
 
+  it("declares embedding metadata when vector indexing is enabled", () => {
+    const schema = buildCollectionSchema(slice, registry, { vectorDimensions: 768 })
+
+    expect(schema.fields.find((field) => field.name === "text_embedding")).toMatchObject({
+      type: "float[]",
+      num_dim: 768,
+      optional: true,
+    })
+    expect(schema.fields.find((field) => field.name === "embedding_model_id")).toMatchObject({
+      type: "string",
+      facet: true,
+      optional: true,
+    })
+  })
+
   it("derives default Typesense query fields from policy-visible searchable text", () => {
     expect(buildDefaultTypesenseSearchFields(registry, slice)).toEqual(["name", "categorySlugs"])
     expect(buildDefaultTypesenseQueryBy(registry, slice)).toBe("name,categorySlugs")
@@ -207,6 +222,25 @@ describe("Typesense catalog indexer", () => {
     expect(query.facet_by).toBe("categorySlugs")
     expect(query.filter_by).toBe(
       'categorySlugs:["cruises","sailing"] && departureMonths:="2026-06"',
+    )
+  })
+
+  it("filters vector searches by embedding model id", () => {
+    const query = buildSearchQuery(
+      {
+        query: "retreat",
+        mode: "hybrid",
+        query_embedding: [0.1, 0.2, 0.3],
+        query_embedding_model_id: "gemini/text-embedding-004",
+        filters: [{ kind: "eq", field: "categorySlugs[]", value: "london" }],
+      },
+      registry,
+      slice,
+    )
+
+    expect(query.vector_query).toContain("text_embedding")
+    expect(query.filter_by).toBe(
+      'categorySlugs:="london" && embedding_model_id:="gemini/text-embedding-004"',
     )
   })
 
@@ -362,6 +396,59 @@ describe("Typesense catalog indexer", () => {
       latitude: 45.76,
       hasOffer: true,
     })
+  })
+
+  it("upserts embedded documents without undeclared schema fields", async () => {
+    let fieldNames = new Set<string>()
+    const client: TypesenseClient = {
+      collections: () => ({
+        create: async (schema) => {
+          fieldNames = new Set(["id", ...schema.fields.map((field) => field.name)])
+        },
+        update: async () => undefined,
+        delete: async () => undefined,
+        retrieve: async () => ({ name: "unused", fields: [] }),
+        documents: () => ({
+          import: async (documents: unknown[]) => {
+            const unknownFields = documents.flatMap((rawDocument) =>
+              Object.keys(rawDocument as Record<string, unknown>).filter(
+                (key) => !fieldNames.has(key),
+              ),
+            )
+            if (unknownFields.length > 0) {
+              return unknownFields
+                .map((field) =>
+                  JSON.stringify({
+                    success: false,
+                    error: `Field \`${field}\` is not declared in the collection schema`,
+                  }),
+                )
+                .join("\n")
+            }
+            return documents.map(() => JSON.stringify({ success: true })).join("\n")
+          },
+          delete: async () => undefined,
+          search: async () => ({ hits: [], found: 0 }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({
+      client,
+      vectorDimensions: 3,
+      collectionUpdateRetryDelaysMs: [],
+    })
+
+    await indexer.ensureCollection(slice, registry)
+    await expect(
+      indexer.upsert(slice, [
+        {
+          id: "prod_abc",
+          fields: { name: "London 3-Day Essentials" },
+          embeddings: { text_embedding: [0.1, 0.2, 0.3] },
+          embedding_model_id: "gemini/text-embedding-004",
+        },
+      ]),
+    ).resolves.toBeUndefined()
   })
 
   it("deletes documents through Typesense's reserved id field filter", async () => {

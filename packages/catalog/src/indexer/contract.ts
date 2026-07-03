@@ -86,6 +86,8 @@ export interface SearchRequest {
   query: string
   /** Optional caller-supplied query embedding (BYO vector). */
   query_embedding?: number[]
+  /** Embedding model id for `query_embedding`; adapters use this to avoid mixed-model vector comparisons. */
+  query_embedding_model_id?: string
   mode: SearchMode
   sort?: SearchSortOption
   filters?: SearchFilter[]

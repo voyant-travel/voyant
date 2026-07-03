@@ -87,6 +87,7 @@ describe("executeSemanticSearch", () => {
     expect(embeddings.embedSpy).toHaveBeenCalledWith(["wellness"])
     const [, request] = adapter.searchSpy.mock.calls[0]!
     expect(request.query_embedding).toEqual([0.1, 0.2, 0.3])
+    expect(request.query_embedding_model_id).toBe("test/v1")
   })
 
   it("hybrid mode embeds the query when caller didn't supply one", async () => {
@@ -122,6 +123,28 @@ describe("executeSemanticSearch", () => {
     expect(embeddings.embedSpy).not.toHaveBeenCalled()
     const [, request] = adapter.searchSpy.mock.calls[0]!
     expect(request.query_embedding).toBe(caller_vector)
+    expect(request.query_embedding_model_id).toBe("test/v1")
+  })
+
+  it("preserves an explicit query embedding model id", async () => {
+    const adapter = makeAdapter()
+    const embeddings = makeEmbeddings()
+    const caller_vector = [0.9, 0.8, 0.7]
+
+    await executeSemanticSearch({
+      adapter,
+      embeddings,
+      slice,
+      request: {
+        query: "wellness",
+        mode: "semantic",
+        query_embedding: caller_vector,
+        query_embedding_model_id: "external/model/v2",
+      },
+    })
+
+    const [, request] = adapter.searchSpy.mock.calls[0]!
+    expect(request.query_embedding_model_id).toBe("external/model/v2")
   })
 
   it("throws when semantic mode is requested but adapter doesn't support vectors", async () => {
