@@ -3,6 +3,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
   applyMigrations,
+  compatibilityPreflightStatementsForMigration,
+  type MigrationClient,
   MigrationImmutabilityError,
   type MigrationSource,
   planMigrations,
@@ -34,6 +36,66 @@ describe("planMigrations", () => {
     const [b] = planMigrations([{ name: "x", priority: 0, migrations: [{ tag: "t", sql: "B" }] }])
     expect(a?.contentHash).toBeTypeOf("string")
     expect(a?.contentHash).not.toBe(b?.contentHash)
+  })
+})
+
+describe("compatibility preflight migrations", () => {
+  it("only targets the inventory product-days uniqueness migration", () => {
+    expect(
+      compatibilityPreflightStatementsForMigration({
+        source: "inventory",
+        tag: "0002_inventory_baseline",
+        sql: `CREATE UNIQUE INDEX "uidx_product_days_itinerary_day_number" ON "product_days" USING btree ("itinerary_id","day_number");`,
+      }),
+    ).toHaveLength(1)
+
+    expect(
+      compatibilityPreflightStatementsForMigration({
+        source: "inventory",
+        tag: "0001_inventory_baseline",
+        sql: `SELECT 1`,
+      }),
+    ).toEqual([])
+    expect(
+      compatibilityPreflightStatementsForMigration({
+        source: "catalog",
+        tag: "0002_inventory_baseline",
+        sql: `CREATE UNIQUE INDEX "uidx_product_days_itinerary_day_number" ON "product_days" USING btree ("itinerary_id","day_number");`,
+      }),
+    ).toEqual([])
+  })
+
+  it("runs the product-days duplicate cleanup before the unchanged unique index SQL", async () => {
+    const queries: string[] = []
+    const client: MigrationClient = {
+      async query(sql: string) {
+        queries.push(sql)
+        if (sql.includes(`SELECT "content_hash"`)) return { rows: [] }
+        return { rows: [] }
+      },
+    }
+    const uniqueIndexSql = `CREATE UNIQUE INDEX "uidx_product_days_itinerary_day_number" ON "product_days" USING btree ("itinerary_id","day_number");`
+
+    const result = await applyMigrations(
+      client,
+      [
+        {
+          name: "inventory",
+          priority: 0,
+          migrations: [{ tag: "0002_inventory_baseline", sql: uniqueIndexSql }],
+        },
+      ],
+      ledgerOpts,
+    )
+
+    expect(result.executed).toEqual(["inventory/0002_inventory_baseline"])
+    const cleanupIndex = queries.findIndex((sql) => sql.includes("WITH ranked_days AS"))
+    const uniqueIndex = queries.findIndex((sql) =>
+      sql.includes(`CREATE UNIQUE INDEX "uidx_product_days_itinerary_day_number"`),
+    )
+    expect(cleanupIndex).toBeGreaterThan(-1)
+    expect(uniqueIndex).toBeGreaterThan(cleanupIndex)
+    expect(queries[uniqueIndex]).toBe(uniqueIndexSql)
   })
 })
 

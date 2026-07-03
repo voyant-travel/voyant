@@ -98,6 +98,54 @@ function splitStatements(sql: string): string[] {
     .filter(Boolean)
 }
 
+export function compatibilityPreflightStatementsForMigration(
+  migration: Pick<PlannedMigration, "source" | "tag" | "sql">,
+): string[] {
+  if (
+    migration.source !== "inventory" ||
+    migration.tag !== "0002_inventory_baseline" ||
+    !migration.sql.includes("uidx_product_days_itinerary_day_number")
+  ) {
+    return []
+  }
+
+  return [
+    `WITH ranked_days AS (
+       SELECT
+         "id",
+         "itinerary_id",
+         "day_number",
+         row_number() OVER (
+           PARTITION BY "itinerary_id", "day_number"
+           ORDER BY "created_at", "id"
+         ) AS duplicate_rank
+       FROM "product_days"
+     ),
+     duplicate_days AS (
+       SELECT
+         "id",
+         "itinerary_id",
+         row_number() OVER (
+           PARTITION BY "itinerary_id"
+           ORDER BY "day_number", duplicate_rank, "id"
+         ) AS duplicate_offset
+       FROM ranked_days
+       WHERE duplicate_rank > 1
+     ),
+     max_days AS (
+       SELECT "itinerary_id", max("day_number") AS max_day_number
+       FROM "product_days"
+       GROUP BY "itinerary_id"
+     )
+     UPDATE "product_days"
+        SET "day_number" = max_days.max_day_number + duplicate_days.duplicate_offset,
+            "updated_at" = now()
+       FROM duplicate_days
+       JOIN max_days ON max_days."itinerary_id" = duplicate_days."itinerary_id"
+      WHERE "product_days"."id" = duplicate_days."id"`,
+  ]
+}
+
 /**
  * Deterministic apply order across sources: `(source.priority, in-source index)`.
  * Mutating a source's `migrations` order is significant — keep them append-only.
@@ -205,6 +253,9 @@ export async function applyMigrations(
     // commit atomically).
     await client.query("BEGIN")
     try {
+      for (const statement of compatibilityPreflightStatementsForMigration(m)) {
+        await client.query(statement)
+      }
       for (const statement of splitStatements(m.sql)) {
         await client.query(statement)
       }
