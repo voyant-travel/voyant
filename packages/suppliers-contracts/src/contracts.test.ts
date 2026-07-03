@@ -31,6 +31,16 @@ describe("suppliers-contracts", () => {
     expect(updateSupplierSchema.safeParse({ defaultCurrency: "usd" }).success).toBe(false)
   })
 
+  it("does not apply insert defaults to supplier update payloads", () => {
+    const parsed = updateSupplierSchema.parse({})
+    expect(parsed).not.toHaveProperty("status")
+    expect(parsed).not.toHaveProperty("tags")
+    expect(updateSupplierSchema.parse({ status: "pending", tags: ["preferred"] })).toMatchObject({
+      status: "pending",
+      tags: ["preferred"],
+    })
+  })
+
   it("accepts a valid rate and rejects a non-3-char currency", () => {
     const parsed = insertRateSchema.parse({
       name: "Standard",

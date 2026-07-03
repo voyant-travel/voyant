@@ -73,7 +73,10 @@ const supplierCoreSchema = z.object({
 })
 
 export const insertSupplierSchema = supplierCoreSchema
-export const updateSupplierSchema = supplierCoreSchema.partial()
+export const updateSupplierSchema = supplierCoreSchema.partial().extend({
+  status: supplierStatusSchema.optional(),
+  tags: z.array(z.string()).optional(),
+})
 export const selectSupplierSchema = supplierCoreSchema.extend({
   id: typeIdSchema("suppliers"),
   createdAt: z.coerce.date(),

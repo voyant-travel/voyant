@@ -5663,8 +5663,7 @@
                       "active",
                       "inactive",
                       "pending"
-                    ],
-                    "default": "active"
+                    ]
                   },
                   "description": {
                     "type": [
@@ -5814,8 +5813,7 @@
                     "type": "array",
                     "items": {
                       "type": "string"
-                    },
-                    "default": []
+                    }
                   }
                 }
               }
