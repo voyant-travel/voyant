@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog; existing booking-engine route surface stays co-located to preserve mount order and OpenAPI output until a dedicated route split preserves behavior and tests.
 /**
  * Catalog booking-engine route module — the full admin + public booking
  * surface, owned by `@voyant-travel/catalog`.
@@ -84,9 +85,18 @@ export interface CatalogResolvedProductContent {
   content: { departures?: ReadonlyArray<CatalogResolvedDeparture> }
 }
 
-/** Locale scope passed to the injected `getProductContent` reader. */
+/** Selected storefront/public scope for slot resolution. */
+export interface CatalogAvailabilitySlotsScope {
+  market?: string
+  locale?: string
+  currency?: string
+}
+
+/** Locale/market scope passed to the injected `getProductContent` reader. */
 export interface CatalogProductContentScope {
   preferredLocales: ReadonlyArray<string>
+  market?: string
+  currency?: string
 }
 
 /** Adapter/runtime context passed to the injected `getProductContent` reader. */
@@ -141,7 +151,12 @@ export interface CatalogBookingRouteModuleOptions {
    * The deployment owns the drizzle query against
    * `@voyant-travel/operations`; this returns the already-mapped rows.
    */
-  listAvailabilitySlots(db: AnyDrizzleDb, productId: string, todayIso: string): Promise<SlotRow[]>
+  listAvailabilitySlots(
+    db: AnyDrizzleDb,
+    productId: string,
+    todayIso: string,
+    scope: CatalogAvailabilitySlotsScope,
+  ): Promise<SlotRow[]>
   /**
    * Read an owned product by id for the snapshot fallback. Structural mirror
    * of inventory `productsService.getProductById`; returns `{ name,
@@ -253,6 +268,9 @@ const ordersListQuerySchema = z.object({
 const slotsQuerySchema = z.object({
   entityModule: z.string().optional(),
   entityId: z.string().optional(),
+  market: z.string().optional(),
+  locale: z.string().optional(),
+  currency: z.string().optional(),
 })
 
 const ordersListRoute = createRoute({
@@ -525,6 +543,11 @@ async function handleListSlots(
   const url = new URL(c.req.url)
   const entityModule = url.searchParams.get("entityModule")
   const entityId = url.searchParams.get("entityId")
+  const scope: CatalogAvailabilitySlotsScope = {
+    market: optionalQueryValue(url.searchParams.get("market")),
+    locale: optionalQueryValue(url.searchParams.get("locale")),
+    currency: optionalQueryValue(url.searchParams.get("currency")),
+  }
   if (!entityModule || !entityId) {
     return c.json({ error: "entityModule and entityId are required" }, 400)
   }
@@ -541,19 +564,25 @@ async function handleListSlots(
   // payload — the upstream's `getContent` is the source of truth, not
   // any owned `availability_slots` row. Owned products keep using the
   // owned table since `buildOwnedProductContent` doesn't project
-  // availability_slots into ProductContent.departures.
+  // availability_slots into scoped rows. Owned availability_slots are not
+  // market-keyed today, so the injected reader owns the raw table projection.
   const sourcedEntry = await readSourcedEntry(db, "products", entityId)
   if (sourcedEntry) {
     const registry = options.resolveRegistry(c)
     const acceptHeader = c.req.header("accept-language") ?? ""
-    const preferredLocales = acceptHeader
+    const acceptLocales = acceptHeader
       .split(",")
       .map((s) => s.split(";")[0]?.trim())
       .filter((s): s is string => Boolean(s))
+    const preferredLocales = uniqueStrings([scope.locale, ...acceptLocales])
     const resolved = await options.getProductContent(
       db,
       entityId,
-      { preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"] },
+      {
+        preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"],
+        market: scope.market,
+        currency: scope.currency,
+      },
       { registry, forceFresh: true },
     )
     const today = new Date().toISOString().slice(0, 10)
@@ -580,9 +609,25 @@ async function handleListSlots(
   }
 
   const today = new Date().toISOString().slice(0, 10)
-  const rows = await options.listAvailabilitySlots(db, entityId, today)
+  const rows = await options.listAvailabilitySlots(db, entityId, today, scope)
 
   return c.json({ rows })
+}
+
+function optionalQueryValue(value: string | null): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
+
+function uniqueStrings(values: ReadonlyArray<string | undefined>): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const value of values) {
+    if (!value || seen.has(value)) continue
+    seen.add(value)
+    result.push(value)
+  }
+  return result
 }
 
 /**

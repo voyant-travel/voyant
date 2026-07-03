@@ -25,6 +25,11 @@ import {
   HeroImage,
   PaxBlock,
 } from "./shop-product-detail-shared"
+import {
+  buildPublicCatalogSlotsUrl,
+  publicCatalogSlotsQueryKey,
+  resolveSelectedCatalogSlotId,
+} from "./shop-product-detail-slots"
 
 export function ProductDetailPageProducts({
   entityModule,
@@ -37,10 +42,18 @@ export function ProductDetailPageProducts({
   const scope = useStorefrontScope()
 
   const slots = useQuery({
-    queryKey: ["public-catalog-slots", entityModule, entityId],
+    queryKey: publicCatalogSlotsQueryKey(entityModule, entityId, {
+      market: scope.marketId,
+      locale: scope.locale,
+      currency: scope.currency,
+    }),
     queryFn: async (): Promise<{ rows: AvailabilitySlot[] }> => {
       const res = await fetch(
-        `${getApiUrl()}/v1/public/catalog/slots?entityModule=${encodeURIComponent(entityModule)}&entityId=${encodeURIComponent(entityId)}`,
+        buildPublicCatalogSlotsUrl(getApiUrl(), entityModule, entityId, {
+          market: scope.marketId,
+          locale: scope.locale,
+          currency: scope.currency,
+        }),
         { credentials: "include" },
       )
       if (!res.ok) throw new Error(`Slots request failed: ${res.status}`)
@@ -71,10 +84,14 @@ export function ProductDetailPageProducts({
   const [childCount, setChildCount] = useState(0)
   const [infantCount, setInfantCount] = useState(0)
 
-  const firstOpenId = slots.data?.rows[0]?.id
+  const slotRows = slots.data?.rows
   useEffect(() => {
-    if (firstOpenId && !selectedSlotId) setSelectedSlotId(firstOpenId)
-  }, [firstOpenId, selectedSlotId])
+    if (!slotRows) return
+    const nextSelectedSlotId = resolveSelectedCatalogSlotId(slotRows, selectedSlotId)
+    if (nextSelectedSlotId !== selectedSlotId) {
+      setSelectedSlotId(nextSelectedSlotId)
+    }
+  }, [slotRows, selectedSlotId])
 
   const probeDraft = useMemo<BookingDraftV1 | null>(() => {
     if (!selectedSlotId) return null
@@ -133,7 +150,7 @@ export function ProductDetailPageProducts({
           }}
         >
           <DepartureSelect
-            slots={slots.data?.rows ?? []}
+            slots={slotRows ?? []}
             isLoading={slots.isLoading}
             isError={slots.isError}
             value={selectedSlotId}
