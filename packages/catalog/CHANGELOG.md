@@ -1,5 +1,11 @@
 # @voyant-travel/catalog
 
+## 0.137.1
+
+### Patch Changes
+
+- 79447ce: Thread storefront market, locale, and currency scope through public catalog slots resolution so sourced product departures match the selected market.
+
 ## 0.137.0
 
 ### Patch Changes

@@ -1,5 +1,7 @@
 # @voyant-travel/catalog-react
 
+## 0.137.1
+
 ## 0.137.0
 
 ### Patch Changes
