@@ -2843,7 +2843,14 @@ export const bookingsService = {
           if (item.productId && item.productId !== slot.product_id) {
             throw new BookingServiceError("slot_product_mismatch")
           }
-          if (item.optionId && item.optionId !== slot.option_id) {
+          // A slot with `option_id = NULL` is not option-scoped — it applies
+          // to any option of its product, so an item carrying an option id is
+          // still valid against it. Only reject when the slot pins a *specific*
+          // option and the item names a different one. Without the NULL guard,
+          // option-less slots are permanently unbookable through paths (e.g.
+          // storefront compat bootstrap) that derive and stamp an option id
+          // onto the item (#2833).
+          if (item.optionId && slot.option_id !== null && item.optionId !== slot.option_id) {
             throw new BookingServiceError("slot_option_mismatch")
           }
           if (capacity.slotChange) slotChanges.push(capacity.slotChange)

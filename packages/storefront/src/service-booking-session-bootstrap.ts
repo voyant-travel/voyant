@@ -317,6 +317,18 @@ export const STOREFRONT_BOOTSTRAP_ERROR_CODES: Record<string, StorefrontBootstra
       retryable: false,
       message: "Departure does not belong to the requested product",
     },
+    slot_product_mismatch: {
+      code: "SLOT_PRODUCT_MISMATCH",
+      httpStatus: 409,
+      retryable: false,
+      message: "Availability slot does not belong to the requested product",
+    },
+    slot_option_mismatch: {
+      code: "SLOT_OPTION_MISMATCH",
+      httpStatus: 409,
+      retryable: false,
+      message: "Availability slot does not match the requested option",
+    },
     invalid_slot: {
       code: "SLOT_DEPARTURE_MISMATCH",
       httpStatus: 400,

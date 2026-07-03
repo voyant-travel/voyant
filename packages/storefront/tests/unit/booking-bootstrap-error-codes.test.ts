@@ -24,6 +24,19 @@ describe("storefront booking bootstrap error contract (issue voyant#1984)", () =
       code: "SLOT_DEPARTURE_MISMATCH",
       httpStatus: 400,
     })
+    // Reserve-time slot/item mismatches surfaced by the compat bootstrap path
+    // (#2833) must map to their own codes instead of collapsing into the
+    // generic BOOTSTRAP_FAILED fallback.
+    expect(describeStorefrontBootstrapError("slot_product_mismatch")).toMatchObject({
+      code: "SLOT_PRODUCT_MISMATCH",
+      httpStatus: 409,
+      retryable: false,
+    })
+    expect(describeStorefrontBootstrapError("slot_option_mismatch")).toMatchObject({
+      code: "SLOT_OPTION_MISMATCH",
+      httpStatus: 409,
+      retryable: false,
+    })
     // The one expected, retryable rejection — the caller re-quotes and retries.
     expect(describeStorefrontBootstrapError("stale_quote")).toMatchObject({
       code: "QUOTE_STALE",
@@ -46,6 +59,8 @@ describe("storefront booking bootstrap error contract (issue voyant#1984)", () =
       "DEPARTURE_NOT_FOUND",
       "SLOT_NOT_FOUND",
       "PRODUCT_MISMATCH",
+      "SLOT_PRODUCT_MISMATCH",
+      "SLOT_OPTION_MISMATCH",
       "SLOT_DEPARTURE_MISMATCH",
       "PRICING_UNAVAILABLE",
       "QUOTE_STALE",

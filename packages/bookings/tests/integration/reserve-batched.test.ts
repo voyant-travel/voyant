@@ -271,6 +271,45 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
     expect(refreshed?.remainingPax).toBe(10)
   })
 
+  it("reserves an item carrying an option id against an option-less slot", async () => {
+    // A slot with option_id = NULL is not option-scoped: it applies to any
+    // option of its product. Paths like the storefront compat bootstrap derive
+    // and stamp an option id onto the item, so reserving must accept it rather
+    // than fail slot_option_mismatch — which made such slots permanently
+    // unbookable through the storefront (#2833).
+    const product = await seedProduct("Option-less departure")
+    const slot = await seedSlot(product.id, "2026-09-01", 10)
+
+    const result = await bookingsService.reserveBooking(db, {
+      bookingNumber: nextBookingNumber(),
+      sellCurrency: "EUR",
+      sourceType: "manual" as const,
+      holdMinutes: 30,
+      items: [
+        {
+          title: "Derived option seat",
+          itemType: "unit" as const,
+          quantity: 1,
+          sellCurrency: "EUR",
+          allocationType: "unit" as const,
+          availabilitySlotId: slot.id,
+          productId: product.id,
+          optionId: "popt_derived_option",
+        },
+      ],
+    })
+
+    expect(result.status).toBe("ok")
+    if (result.status !== "ok") return
+
+    // The item keeps its derived option id even though the slot is option-less.
+    const [item] = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, result.booking.id))
+    expect(item.optionId).toBe("popt_derived_option")
+  })
+
   it("still reports slot_not_found for an unknown slot id", async () => {
     const result = await bookingsService.reserveBooking(db, {
       bookingNumber: nextBookingNumber(),
