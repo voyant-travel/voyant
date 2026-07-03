@@ -1,10 +1,10 @@
 import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
-import { promotionsRoutes } from "./routes.js"
+import { createPromotionsRoutes, type PromotionsRoutesOptions, promotionsRoutes } from "./routes.js"
 import { bulkReindexProductsWorkflow, promotionAffectedAllFilter } from "./workflow-bulk-reindex.js"
 
-export type { PromotionsRoutes } from "./routes.js"
+export type { PromotionsRoutes, PromotionsRoutesOptions } from "./routes.js"
 
 export const promotionsModule: Module = {
   name: "promotions",
@@ -15,6 +15,13 @@ export const promotionsModule: Module = {
 export const promotionsHonoModule: HonoModule = {
   module: promotionsModule,
   adminRoutes: promotionsRoutes,
+}
+
+export function createPromotionsHonoModule(options?: PromotionsRoutesOptions): HonoModule {
+  return {
+    module: promotionsModule,
+    adminRoutes: createPromotionsRoutes(options),
+  }
 }
 
 export {
@@ -41,6 +48,7 @@ export {
   type OfferMutationRuntime,
   type PromotionsService,
   promotionsService,
+  type ResolveExistingPromotionalOfferProductIds,
   recomputeOfferLinks,
   resolveScopeProductIds,
 } from "./service.js"

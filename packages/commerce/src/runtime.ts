@@ -1,7 +1,11 @@
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { marketsHonoModule } from "./markets/index.js"
 import { pricingHonoModule } from "./pricing/index.js"
-import { promotionsHonoModule } from "./promotions/index.js"
+import {
+  createPromotionsHonoModule,
+  type PromotionsRoutesOptions,
+  promotionsHonoModule,
+} from "./promotions/index.js"
 import { createPromotionsStorefrontResolvers } from "./promotions/service-storefront.js"
 import {
   createSellabilityHonoModule,
@@ -19,6 +23,7 @@ export const commerceRuntimeModuleNames = [
 export type CommerceRuntimeModuleName = (typeof commerceRuntimeModuleNames)[number]
 
 export interface CommerceHonoModulesOptions {
+  promotions?: PromotionsRoutesOptions
   sellability?: SellabilityRoutesOptions
 }
 
@@ -34,7 +39,7 @@ export function createCommerceHonoModules(options: CommerceHonoModulesOptions = 
     pricingHonoModule,
     marketsHonoModule,
     options.sellability ? createSellabilityHonoModule(options.sellability) : sellabilityHonoModule,
-    promotionsHonoModule,
+    options.promotions ? createPromotionsHonoModule(options.promotions) : promotionsHonoModule,
   ]
 }
 
