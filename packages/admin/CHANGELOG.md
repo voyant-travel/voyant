@@ -1,5 +1,12 @@
 # @voyant-travel/admin
 
+## 0.115.4
+
+### Patch Changes
+
+- Updated dependencies [c9a356f]
+  - @voyant-travel/types@0.107.0
+
 ## 0.115.3
 
 ### Patch Changes

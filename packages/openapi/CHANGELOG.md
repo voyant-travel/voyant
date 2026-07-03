@@ -1,5 +1,16 @@
 # @voyant-travel/openapi
 
+## 0.4.2
+
+### Patch Changes
+
+- bf2d4a5: Reject invalid communication `sentAt` values during request validation instead of failing during persistence.
+- 92e170a: Validate supplier availability date strings before persistence and upsert supplier
+  availability by supplier/date instead of appending duplicate rows.
+- f3b8bef: Reject supplier default currency values unless they are exactly three uppercase letters.
+- 9f29b74: Fix supplier PATCH validation so insert defaults are not applied during partial
+  updates, and allow explicit nulls to clear nullable supplier contact fields.
+
 ## 0.4.1
 
 ### Patch Changes

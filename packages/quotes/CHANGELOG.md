@@ -1,5 +1,50 @@
 # @voyant-travel/crm
 
+## 0.124.0
+
+### Minor Changes
+
+- fc71db1: Add read-only agent tools (`./tools`) for four more domains, following the
+  module-owned-tools pattern over each package's existing service:
+
+  - `@voyant-travel/bookings`: `list_bookings` + `get_booking` (non-PII, `bookings:read`).
+  - `@voyant-travel/finance`: `list_invoices` + `get_invoice` (`finance:read`).
+  - `@voyant-travel/quotes`: `list_quotes` + `get_quote` (`quotes:read`).
+  - `@voyant-travel/relationships`: `list_people` / `get_person` / `list_organizations` /
+    `get_organization` (`crm:read`).
+
+  The operator registers them on the in-deployment MCP server, so `/v1/admin/mcp` now
+  serves trips, products, bookings, finance, quotes, and CRM tools, each gated per-tool
+  by scope + audience.
+
+- fc71db1: Add write/action + notification agent tools:
+
+  - `@voyant-travel/quotes`: `accept_quote_version` (write, `quotes:write`,
+    confirmation-required).
+  - `@voyant-travel/finance`: `void_invoice` (destructive, `finance:void`,
+    confirmation-required) — the void is a self-contained status transition.
+  - `@voyant-travel/notifications`: `list_notification_deliveries` +
+    `get_notification_delivery` (read, `notifications:read`).
+
+  The operator registers them on the in-deployment MCP server. A `send_notification`
+  tool is deliberately withheld (customer-facing dispatch is an abuse vector and needs
+  the provider runtime + rate limiting); booking `cancel` / finance `refund` similarly
+  need route-level runtime wiring and will follow as a separate increment.
+
+### Patch Changes
+
+- Updated dependencies [c9a356f]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [1655995]
+- Updated dependencies [ca14f6f]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/tools@0.1.0
+  - @voyant-travel/trips@0.130.0
+  - @voyant-travel/db@0.109.5
+
 ## 0.123.14
 
 ### Patch Changes

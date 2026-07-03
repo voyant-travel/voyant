@@ -1,5 +1,11 @@
 # @voyant-travel/relationships-contracts
 
+## 0.108.11
+
+### Patch Changes
+
+- bf2d4a5: Reject invalid communication `sentAt` values during request validation instead of failing during persistence.
+
 ## 0.108.10
 
 ### Patch Changes

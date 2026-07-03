@@ -1,5 +1,42 @@
 # @voyant-travel/trips
 
+## 0.130.0
+
+### Minor Changes
+
+- ca14f6f: Migrate the trips agent surface onto the framework tool contract
+  (`@voyant-travel/tools`). The `create_trip` / `revise_trip` / `price_trip` /
+  `reserve_trip` tools are now headless `defineTool`s returning typed pure data
+  (`@voyant-travel/trips/tools`), each with `requiredScopes`, a risk tier, and a
+  declarative risk policy.
+
+  **Breaking:** the bespoke MCP surface is removed — the `./mcp` and `./mcp-tools`
+  subpath exports (and `createTripMcpRoutes`, `createMcpToolRegistry`,
+  `McpTool*` types, `tripsMcpTools`, `TripsMcpServices`) no longer exist. Deployments
+  mount the trips tools through the in-deployment MCP server
+  (`@voyant-travel/mcp` `createMcpHonoApp`) instead; use `tripsTools` +
+  `TripsToolServices` from `@voyant-travel/trips/tools`.
+
+### Patch Changes
+
+- Updated dependencies [c9a356f]
+- Updated dependencies [689a289]
+- Updated dependencies [fc71db1]
+- Updated dependencies [fc71db1]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [1655995]
+- Updated dependencies [22f0457]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/catalog@0.137.0
+  - @voyant-travel/bookings@0.139.0
+  - @voyant-travel/finance@0.139.0
+  - @voyant-travel/tools@0.1.0
+  - @voyant-travel/db@0.109.5
+  - @voyant-travel/flights@0.139.0
+
 ## 0.129.2
 
 ### Patch Changes

@@ -1,5 +1,38 @@
 # @voyant-travel/hono
 
+## 0.121.0
+
+### Minor Changes
+
+- c9a356f: Extend the api-key permission grammar for fine-grained agent operations and carry
+  an audience on the key grant.
+
+  - `@voyant-travel/types`: add `cancel`/`refund`/`void`/`publish`/`send` actions and
+    `dashboard`/`content`/`media`/`bookings-pii` resources (with descriptor groups);
+    PII resources are never satisfied by the `*` wildcard; add `assertKnownPermissions`
+    and `API_KEY_GRANT_PRESETS` (a scope subset bundled with an audience).
+  - `@voyant-travel/core`: add `audience` to `VoyantAuthContext`.
+  - `@voyant-travel/hono`: derive an API key's audience from its grant metadata and let
+    the request actor follow it (replacing the hardcoded staff default).
+  - `@voyant-travel/auth`: validate permission strings and audience at key-mint time and
+    resolve grant presets.
+
+### Patch Changes
+
+- 6474f42: Exempt the `/v1/admin/mcp` surface from the coarse `require-actor` method+path
+  permission guard (alongside `_meta`). The in-deployment MCP server authorizes at a
+  finer grain — each tool is gated by its own `requiredScopes` — so any authenticated
+  API key or staff session reaches the endpoint and simply sees a scope-filtered tool
+  list. This lets external MCP clients authenticate with a Bearer scoped key
+  (voyant#2801) without needing a wildcard grant.
+- 5786f63: Mount eager module and extension routes before lazy wildcard route stubs so concrete booking extensions, including MICE booking details, are reachable under shared admin surfaces.
+- Updated dependencies [c9a356f]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/utils@0.105.6
+  - @voyant-travel/db@0.109.5
+  - @voyant-travel/workflows@0.111.15
+
 ## 0.120.1
 
 ### Patch Changes

@@ -1,5 +1,39 @@
 # @voyant-travel/distribution
 
+## 0.129.0
+
+### Patch Changes
+
+- 92e170a: Validate supplier availability date strings before persistence and upsert supplier
+  availability by supplier/date instead of appending duplicate rows.
+- f3b8bef: Reject supplier default currency values unless they are exactly three uppercase letters.
+- 13f21a1: Enforce supplier parent IDs for nested supplier service, rate, and contract mutations.
+- 9f29b74: Fix supplier PATCH validation so insert defaults are not applied during partial
+  updates, and allow explicit nulls to clear nullable supplier contact fields.
+- fcad28b: Reject reversed supplier rate and contract ranges. Rate date and pax bounds must be ordered, contract end dates must not precede start dates, and renewal dates must stay within bounded contract terms.
+
+  Supplier UI forms now block those invalid ranges and persisted invalid rate rows are flagged in the rate table.
+
+- Updated dependencies [c9a356f]
+- Updated dependencies [689a289]
+- Updated dependencies [fc71db1]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [22f0457]
+- Updated dependencies [92e170a]
+- Updated dependencies [f3b8bef]
+- Updated dependencies [9f29b74]
+- Updated dependencies [fcad28b]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/catalog@0.137.0
+  - @voyant-travel/bookings@0.139.0
+  - @voyant-travel/suppliers-contracts@0.104.10
+  - @voyant-travel/identity@0.139.0
+  - @voyant-travel/db@0.109.5
+  - @voyant-travel/workflows@0.111.15
+
 ## 0.128.4
 
 ### Patch Changes

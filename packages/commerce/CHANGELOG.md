@@ -1,5 +1,35 @@
 # @voyant-travel/commerce
 
+## 0.21.0
+
+### Patch Changes
+
+- 0c75844: Validate promotion product scopes against real products before creating or updating offers, preventing dangling `promotional_offer_products` rows for unknown product ids.
+- Updated dependencies [c9a356f]
+- Updated dependencies [689a289]
+- Updated dependencies [fc71db1]
+- Updated dependencies [fc71db1]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [22f0457]
+- Updated dependencies [92e170a]
+- Updated dependencies [f3b8bef]
+- Updated dependencies [13f21a1]
+- Updated dependencies [9f29b74]
+- Updated dependencies [fcad28b]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/catalog@0.137.0
+  - @voyant-travel/bookings@0.139.0
+  - @voyant-travel/finance@0.139.0
+  - @voyant-travel/quotes@0.124.0
+  - @voyant-travel/distribution@0.129.0
+  - @voyant-travel/legal@0.139.0
+  - @voyant-travel/workflow-runs@0.111.15
+  - @voyant-travel/db@0.109.5
+  - @voyant-travel/workflows@0.111.15
+
 ## 0.20.5
 
 ### Patch Changes

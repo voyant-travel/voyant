@@ -1,5 +1,20 @@
 # @voyant-travel/catalog
 
+## 0.137.0
+
+### Patch Changes
+
+- 689a289: Add catalog MCP tools for search and resolved entry reads.
+- 22f0457: Thread sourced package booking drafts into Connect package quote/book parameters, including route, contact, and traveler details.
+- Updated dependencies [c9a356f]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [1655995]
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/tools@0.1.0
+  - @voyant-travel/db@0.109.5
+
 ## 0.136.4
 
 ## 0.136.3

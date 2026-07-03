@@ -1,5 +1,36 @@
 # @voyant-travel/inventory
 
+## 0.6.0
+
+### Minor Changes
+
+- 77f139b: Add read-only agent tools for the products domain at
+  `@voyant-travel/inventory/tools`: `list_products` and `get_product`, exposed as
+  headless `defineTool`s over the existing products service (`products:read` scope,
+  read tier). The operator registers them on the in-deployment MCP server alongside
+  the trips tools — establishing the module-owned-tools pattern for the remaining
+  domains.
+
+### Patch Changes
+
+- Updated dependencies [c9a356f]
+- Updated dependencies [689a289]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [0c75844]
+- Updated dependencies [1655995]
+- Updated dependencies [22f0457]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/catalog@0.137.0
+  - @voyant-travel/commerce@0.21.0
+  - @voyant-travel/tools@0.1.0
+  - @voyant-travel/operations@0.5.10
+  - @voyant-travel/utils@0.105.6
+  - @voyant-travel/action-ledger@0.105.12
+  - @voyant-travel/db@0.109.5
+
 ## 0.5.18
 
 ### Patch Changes

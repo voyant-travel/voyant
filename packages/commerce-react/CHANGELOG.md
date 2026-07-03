@@ -1,5 +1,23 @@
 # @voyant-travel/commerce-react
 
+## 0.21.0
+
+### Patch Changes
+
+- 7d4a405: Add safer promotions admin management with product/category scope pickers, archive/activate/delete row actions, and field-specific validation guidance.
+- Updated dependencies [c9a356f]
+- Updated dependencies [0c75844]
+- Updated dependencies [2613dfb]
+- Updated dependencies [a45a0d3]
+- Updated dependencies [f3b8bef]
+- Updated dependencies [fcad28b]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/commerce@0.21.0
+  - @voyant-travel/distribution-react@0.129.0
+  - @voyant-travel/admin@0.115.4
+  - @voyant-travel/inventory-react@0.21.0
+  - @voyant-travel/utils@0.105.6
+
 ## 0.20.0
 
 ### Patch Changes
