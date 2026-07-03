@@ -58,14 +58,24 @@ function mapHintToKeys(hint: RealtimeInvalidationHint): ReadonlyArray<QueryKey> 
   return ENTITY_INVALIDATIONS[hint.entity] ?? []
 }
 
+export function hasAdminRealtimeSession(session: unknown): boolean {
+  if (!session || typeof session !== "object") return false
+  const record = session as {
+    user?: { id?: unknown } | null
+    session?: { userId?: unknown } | null
+  }
+  return Boolean(
+    (typeof record.user?.id === "string" && record.user.id.trim()) ||
+      (typeof record.session?.userId === "string" && record.session.userId.trim()),
+  )
+}
+
 function AdminLiveRegion() {
-  // Only staff surfaces have an admin session; anonymous storefront pages share
-  // this root provider but must not mint an admin realtime token (the
-  // `/v1/admin/realtime/token` route 401s without a session, spamming the
-  // console). Gate the subscription on a live session so no token is fetched
-  // until someone is signed in.
+  // Only staff surfaces should mint an admin realtime token. Keep the
+  // subscription gated on a concrete session shape so a truthy anonymous wrapper
+  // cannot POST `/v1/admin/realtime/token`.
   const { data: session } = authClient.useSession()
-  useLiveQueries(ADMIN_CHANNELS, mapHintToKeys, { enabled: Boolean(session) })
+  useLiveQueries(ADMIN_CHANNELS, mapHintToKeys, { enabled: hasAdminRealtimeSession(session) })
   return null
 }
 

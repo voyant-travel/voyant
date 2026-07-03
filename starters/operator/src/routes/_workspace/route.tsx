@@ -6,6 +6,7 @@ import {
   createAdminWorkspaceBeforeLoad,
 } from "@voyant-travel/admin/app/workspace"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
+import { RealtimeLiveProvider } from "@/components/realtime-live"
 import { operatorAdminDestinations } from "@/lib/admin-destinations"
 import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
 import { useSignOut } from "@/lib/auth"
@@ -31,12 +32,14 @@ export const Route = createFileRoute("/_workspace")({
   component: WorkspaceLayout,
 })
 
-function WorkspaceLayout() {
+export function WorkspaceLayout() {
   const { user } = Route.useLoaderData()
 
   return (
     <UserProvider initialUser={user}>
-      <WorkspaceContent />
+      <RealtimeLiveProvider>
+        <WorkspaceContent />
+      </RealtimeLiveProvider>
     </UserProvider>
   )
 }
