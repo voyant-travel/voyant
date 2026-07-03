@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: relationships; existing people route coverage stays co-located until account route suites are split by child resource.
 import { sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -519,6 +520,94 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
         method: "GET",
       })
       expect(res.status).toBe(404)
+    })
+
+    it("creates nested contact methods from the person path", async () => {
+      const createRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({ firstName: "Nested", lastName: "Contact" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/people/${created.id}/contact-methods`, {
+        method: "POST",
+        ...json({
+          entityType: "organization",
+          entityId: "crm_org_wrong_000000000000000000",
+          kind: "email",
+          value: "nested.person@example.com",
+          isPrimary: true,
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        entityType: "person",
+        entityId: created.id,
+        kind: "email",
+        value: "nested.person@example.com",
+      })
+    })
+
+    it("creates nested addresses from natural person payloads", async () => {
+      const createRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({ firstName: "Nested", lastName: "Address" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/people/${created.id}/addresses`, {
+        method: "POST",
+        ...json({
+          label: "billing",
+          line1: "20 Main Street",
+          city: "Cluj-Napoca",
+          country: "RO",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        entityType: "person",
+        entityId: created.id,
+        label: "billing",
+        line1: "20 Main Street",
+      })
+    })
+
+    it("rejects nested identity rows for missing people", async () => {
+      const { createTestDb } = await import("@voyant-travel/db/test-utils")
+      const db = createTestDb()
+      const missingPersonId = "pers_missing_nested_identity_0001"
+
+      const contactRes = await getApp().request(`/people/${missingPersonId}/contact-methods`, {
+        method: "POST",
+        ...json({ kind: "email", value: "missing.person@example.com" }),
+      })
+      const addressRes = await getApp().request(`/people/${missingPersonId}/addresses`, {
+        method: "POST",
+        ...json({ label: "billing", line1: "Missing Person Street" }),
+      })
+
+      expect(contactRes.status).toBe(404)
+      expect(addressRes.status).toBe(404)
+
+      const contactRows = await db.execute<{ count: number }>(sql`
+          SELECT count(*)::int
+          FROM identity_contact_points
+          WHERE entity_type = 'person'
+            AND entity_id = ${missingPersonId}
+        `)
+      const addressRows = await db.execute<{ count: number }>(sql`
+          SELECT count(*)::int
+          FROM identity_addresses
+          WHERE entity_type = 'person'
+            AND entity_id = ${missingPersonId}
+        `)
+      expect(contactRows[0]?.count).toBe(0)
+      expect(addressRows[0]?.count).toBe(0)
     })
 
     it("creates a person note", async () => {

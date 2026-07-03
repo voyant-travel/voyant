@@ -1,4 +1,6 @@
 /**
+ * agent-quality: file-size exception -- owner: relationships; existing accounts route surface stays co-located until route groups are split without changing mount order or OpenAPI output.
+ *
  * Relationships "accounts" admin routes — organizations, people, their notes,
  * contact methods, addresses, payment methods, communications, segments, and
  * the people CSV import/export. Migrated to `@hono/zod-openapi` for the OpenAPI
@@ -34,9 +36,7 @@ import {
 } from "@voyant-travel/hono"
 import {
   insertAddressForEntitySchema,
-  insertAddressSchema,
   insertContactPointForEntitySchema,
-  insertContactPointSchema,
   updateAddressSchema,
   updateContactPointSchema,
 } from "@voyant-travel/identity/validation"
@@ -99,9 +99,6 @@ type Env = {
 const organizationEntity = "organization" as const
 const personEntity = "person" as const
 
-/** The hydrated person read surface (base row + identity email/phone/website). */
-type HydratedPerson = z.infer<typeof personSchema>
-
 const jsonContent = <T extends z.ZodTypeAny>(schema: T) => ({
   content: { "application/json": { schema } },
 })
@@ -115,6 +112,11 @@ function mergeErrorResponse(c: Context<Env>, error: unknown) {
     return c.json({ error: error.message }, error.status)
   }
   throw error
+}
+
+function optionalHydratedPersonField(row: object, field: "email" | "phone" | "website") {
+  const value = Reflect.get(row, field)
+  return typeof value === "string" ? value : null
 }
 
 /**
@@ -586,13 +588,14 @@ const listPersonContactMethodsRoute = createRoute({
 const createPersonContactMethodRoute = createRoute({
   method: "post",
   path: "/people/{id}/contact-methods",
-  request: { params: idParamSchema, ...requiredJsonBody(insertContactPointSchema) },
+  request: { params: idParamSchema, ...requiredJsonBody(insertContactPointForEntitySchema) },
   responses: {
     201: {
       description: "The created contact method",
       ...jsonContent(z.object({ data: contactMethodSchema })),
     },
     400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Person not found", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -611,13 +614,14 @@ const listPersonAddressesRoute = createRoute({
 const createPersonAddressRoute = createRoute({
   method: "post",
   path: "/people/{id}/addresses",
-  request: { params: idParamSchema, ...requiredJsonBody(insertAddressSchema) },
+  request: { params: idParamSchema, ...requiredJsonBody(insertAddressForEntitySchema) },
   responses: {
     201: {
       description: "The created address",
       ...jsonContent(z.object({ data: addressSchema })),
     },
     400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Person not found", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -788,7 +792,13 @@ peopleRoutes
       )
       // The service always returns the hydrated survivor (email/phone/website);
       // the `?? row` fallback in the service only widens the static type.
-      return c.json({ data: row as unknown as HydratedPerson }, 200)
+      const data = {
+        ...row,
+        email: optionalHydratedPersonField(row, "email"),
+        phone: optionalHydratedPersonField(row, "phone"),
+        website: optionalHydratedPersonField(row, "website"),
+      }
+      return c.json({ data }, 200)
     } catch (error) {
       return mergeErrorResponse(c, error)
     }
@@ -819,7 +829,7 @@ peopleRoutes
       c.req.valid("param").id,
       c.req.valid("json"),
     )
-    return c.json({ data: row! }, 201)
+    return row ? c.json({ data: row }, 201) : c.json({ error: "Person not found" }, 404)
   })
   .openapi(listPersonAddressesRoute, async (c) =>
     c.json(
@@ -840,7 +850,7 @@ peopleRoutes
       c.req.valid("param").id,
       c.req.valid("json"),
     )
-    return c.json({ data: row! }, 201)
+    return row ? c.json({ data: row }, 201) : c.json({ error: "Person not found" }, 404)
   })
   .openapi(listPersonNotesRoute, async (c) =>
     c.json(
