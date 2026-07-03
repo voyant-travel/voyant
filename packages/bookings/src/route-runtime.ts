@@ -80,6 +80,24 @@ export type ClosePaymentSchedulesForBooking = (
   status: Extract<BookingStatus, "cancelled" | "expired">,
 ) => Promise<void> | void
 
+export type RecordCancellationFinancialSettlement = (
+  db: PostgresJsDatabase,
+  input: {
+    bookingId: string
+    bookingNumber: string
+    previousStatus: Extract<
+      BookingStatus,
+      "draft" | "on_hold" | "awaiting_payment" | "confirmed" | "in_progress"
+    >
+    reason: string | null
+    actorId: string
+  },
+) =>
+  | Promise<Record<string, unknown> | null | undefined>
+  | Record<string, unknown>
+  | null
+  | undefined
+
 export interface BookingRouteRuntime {
   getKmsProvider(): Promise<KmsProvider>
   resolveTravelSnapshot?: ResolveBookingTravelSnapshot
@@ -88,6 +106,7 @@ export interface BookingRouteRuntime {
   resolveBillingPersonById?: ResolveBookingBillingPersonById
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
   closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
+  recordCancellationFinancialSettlement?: RecordCancellationFinancialSettlement
   /** Deployment custom-field registry — validates `customFields` on write. */
   customFields?: CustomFieldRegistryResolver
 }
@@ -111,6 +130,7 @@ export interface BookingRouteRuntimeOptions {
   resolveBillingPersonById?: ResolveBookingBillingPersonById
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
   closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
+  recordCancellationFinancialSettlement?: RecordCancellationFinancialSettlement
   customFields?: CustomFieldRegistryResolver
 }
 
@@ -147,6 +167,7 @@ export function buildBookingRouteRuntime(
     resolveBillingPersonById: options.resolveBillingPersonById,
     resolveBillingOrganizationById: options.resolveBillingOrganizationById,
     closePaymentSchedulesForBooking: options.closePaymentSchedulesForBooking,
+    recordCancellationFinancialSettlement: options.recordCancellationFinancialSettlement,
     customFields: options.customFields,
   }
 }

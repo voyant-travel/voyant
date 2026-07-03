@@ -135,6 +135,7 @@ export type {
   BookingRouteRuntime,
   BookingRouteRuntimeOptions,
   ClosePaymentSchedulesForBooking,
+  RecordCancellationFinancialSettlement,
   ResolveBookingBillingOrganizationById,
   ResolveBookingBillingPerson,
   ResolveBookingBillingPersonById,

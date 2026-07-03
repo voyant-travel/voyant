@@ -917,6 +917,7 @@ function bookingStatusMutationRuntime(
   return {
     eventBus: c.get("eventBus"),
     closePaymentSchedulesForBooking: getRouteRuntime(c).closePaymentSchedulesForBooking,
+    recordCancellationFinancialSettlement: getRouteRuntime(c).recordCancellationFinancialSettlement,
     actionLedgerContext: getActionLedgerRequestContext(c),
     actionLedgerAuthorizationSource: auth.access.authorizationSource,
     actionLedgerCausationActionId: approvedExecution?.causationActionId ?? null,

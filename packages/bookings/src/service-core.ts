@@ -341,6 +341,20 @@ export interface BookingServiceRuntime {
     bookingId: string,
     status: Extract<BookingStatus, "cancelled" | "expired">,
   ) => Promise<void> | void
+  recordCancellationFinancialSettlement?: (
+    db: PostgresJsDatabase,
+    input: {
+      bookingId: string
+      bookingNumber: string
+      previousStatus: BookingCancelledEvent["previousStatus"]
+      reason: string | null
+      actorId: string
+    },
+  ) =>
+    | Promise<Record<string, unknown> | null | undefined>
+    | Record<string, unknown>
+    | null
+    | undefined
 }
 
 type BookingStatusActionName =
@@ -461,7 +475,8 @@ export interface BookingConfirmedEvent {
 export interface BookingCancelledEvent {
   bookingId: string
   bookingNumber: string
-  previousStatus: "draft" | "on_hold" | "confirmed" | "in_progress"
+  previousStatus: "draft" | "on_hold" | "awaiting_payment" | "confirmed" | "in_progress"
+  reason?: string | null
   actorId: string | null
 }
 
@@ -3654,12 +3669,14 @@ export const bookingsService = {
     try {
       const result = await db.transaction(async (tx) => {
         const rows = await tx.execute(
-          sql`SELECT id, status
+          sql`SELECT id, status, booking_number
               FROM ${bookings}
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = toRows<{ id: string; status: BookingStatus }>(rows)[0]
+        const booking = toRows<{ id: string; status: BookingStatus; booking_number: string }>(
+          rows,
+        )[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3670,6 +3687,7 @@ export const bookingsService = {
 
         const patch = transitionBooking(booking.status, "cancelled")
         const previousStatus = booking.status as BookingCancelledEvent["previousStatus"]
+        const cancellationReason = data.note?.trim() || null
 
         const allocations = await tx
           .select()
@@ -3727,20 +3745,45 @@ export const bookingsService = {
           .returning()
 
         await runtime.closePaymentSchedulesForBooking?.(tx as PostgresJsDatabase, id, "cancelled")
+        const financialSettlement = await runtime.recordCancellationFinancialSettlement?.(
+          tx as PostgresJsDatabase,
+          {
+            bookingId: id,
+            bookingNumber: booking.booking_number,
+            previousStatus,
+            reason: cancellationReason,
+            actorId: userId ?? "system",
+          },
+        )
+        const financialSettlementMessage =
+          typeof financialSettlement?.message === "string" ? financialSettlement.message : null
+        const cancellationDescription = [
+          cancellationReason
+            ? `Booking cancelled from ${booking.status}: ${cancellationReason}`
+            : `Booking cancelled from ${booking.status}`,
+          financialSettlementMessage,
+        ]
+          .filter(Boolean)
+          .join(" ")
 
         await tx.insert(bookingActivityLog).values({
           bookingId: id,
           actorId: userId ?? "system",
           activityType: "status_change",
-          description: `Booking cancelled from ${booking.status}`,
-          metadata: { oldStatus: booking.status, newStatus: "cancelled" },
+          description: cancellationDescription,
+          metadata: {
+            oldStatus: booking.status,
+            newStatus: "cancelled",
+            reason: cancellationReason,
+            ...(financialSettlement ? { financialSettlement } : {}),
+          },
         })
 
-        if (data.note) {
+        if (cancellationReason) {
           await tx.insert(bookingNotes).values({
             bookingId: id,
             authorId: userId ?? "system",
-            content: data.note,
+            content: cancellationReason,
           })
         }
 
@@ -3767,6 +3810,7 @@ export const bookingsService = {
             bookingId: result.booking.id,
             bookingNumber: result.booking.bookingNumber,
             previousStatus: result.previousStatus,
+            reason: data.note?.trim() || null,
             actorId: userId ?? null,
           } satisfies BookingCancelledEvent,
           { category: "domain", source: "service" },

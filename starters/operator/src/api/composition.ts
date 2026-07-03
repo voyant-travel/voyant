@@ -66,6 +66,7 @@ import {
 } from "./runtime/payment-config"
 import { createRelationshipsStorefrontIntakePersistence } from "./runtime/storefront-intake-runtime"
 import { createOperatorTripsRoutesOptions } from "./runtime/trips-runtime"
+import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
 /**
@@ -91,6 +92,7 @@ export interface OperatorCapabilities extends FrameworkProviders {
   resolveBankTransferDetails: typeof resolveBankTransferDetails
   relationshipsService: typeof relationshipsService
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
+  recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
   createTripsRoutesOptions: typeof createOperatorTripsRoutesOptions
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
 }
@@ -116,6 +118,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
     resolveBankTransferDetails,
     relationshipsService,
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
+    recordCancellationFinancialSettlement: recordPaidBookingCancellationSettlement,
     // Adapt the deployment's catalog context into the package's search runtime
     // shape (the framework catalog factory consumes this directly).
     resolveCatalogRuntime: (c) => {
