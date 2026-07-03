@@ -1,6 +1,8 @@
 "use client"
 
+// agent-quality: file-size exception -- owner: relationships-react; existing detail panels stay co-located pending a dedicated split because this release fix only replaces a native datetime input.
 import { Badge, Button, Card, CardContent, ConfirmActionButton } from "@voyant-travel/ui/components"
+import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
 import { Input } from "@voyant-travel/ui/components/input"
 import { Label } from "@voyant-travel/ui/components/label"
 import {
@@ -639,11 +641,9 @@ export function PersonCommunicationsPanel({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="communication-sent-at">{labels.fields.sentAt}</Label>
-            <Input
-              id="communication-sent-at"
-              type="datetime-local"
+            <DateTimePicker
               value={form.sentAt}
-              onChange={(event) => set("sentAt", event.target.value)}
+              onChange={(nextValue) => set("sentAt", nextValue ?? "")}
             />
           </div>
           <div className="flex flex-col gap-1.5 sm:col-span-2">
