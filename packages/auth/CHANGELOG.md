@@ -1,5 +1,11 @@
 # @voyant-travel/auth
 
+## 0.119.1
+
+### Patch Changes
+
+- 56dfb00: Allow customer-scoped email/password self-signups to bypass the admin bootstrap signup block and skip workspace profile provisioning when the signup is explicitly marked as a customer surface.
+
 ## 0.119.0
 
 ### Minor Changes
