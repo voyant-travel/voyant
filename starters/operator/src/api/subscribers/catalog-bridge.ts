@@ -170,11 +170,24 @@ export const catalogBridgeBundle: HonoBundle = {
       return { service, builder }
     }
 
+    let ensureProductCollectionsTail: Promise<void> = Promise.resolve()
+
+    async function ensureProductCollections(
+      ctx: NonNullable<Awaited<ReturnType<typeof buildIndexerContext>>>,
+    ) {
+      // Typesense rejects concurrent collection PATCHes. Serialize schema setup
+      // across event bursts while still re-checking on later events so newly
+      // configured catalog slices can be materialized without an isolate restart.
+      const run = ensureProductCollectionsTail.then(() => ctx.service.ensureCollections())
+      ensureProductCollectionsTail = run.catch(() => {})
+      await run
+    }
+
     eventBus.subscribe<ProductEventPayload>("product.created", async ({ data }) => {
       await withDbFromEnv(env, async (db) => {
         const ctx = await buildIndexerContext(db)
         if (!ctx) return
-        await ctx.service.ensureCollections()
+        await ensureProductCollections(ctx)
         await ctx.service.reindexEntity("products", data.id, ctx.builder)
       })
     })
@@ -183,7 +196,7 @@ export const catalogBridgeBundle: HonoBundle = {
       await withDbFromEnv(env, async (db) => {
         const ctx = await buildIndexerContext(db)
         if (!ctx) return
-        await ctx.service.ensureCollections()
+        await ensureProductCollections(ctx)
         await ctx.service.reindexEntity("products", data.id, ctx.builder)
       })
     })
@@ -206,7 +219,7 @@ export const catalogBridgeBundle: HonoBundle = {
         await withDbFromEnv(env, async (db) => {
           const ctx = await buildIndexerContext(db)
           if (!ctx) return
-          await ctx.service.ensureCollections()
+          await ensureProductCollections(ctx)
           await ctx.service.reindexEntity("products", data.id, ctx.builder)
         })
       },
@@ -227,7 +240,7 @@ export const catalogBridgeBundle: HonoBundle = {
         await withDbFromEnv(env, async (db) => {
           const ctx = await buildIndexerContext(db)
           if (!ctx) return
-          await ctx.service.ensureCollections()
+          await ensureProductCollections(ctx)
           await ctx.service.reindexEntity("products", productId, ctx.builder)
         })
       },
@@ -244,7 +257,7 @@ export const catalogBridgeBundle: HonoBundle = {
       await withDbFromEnv(env, async (db) => {
         const ctx = await buildIndexerContext(db)
         if (!ctx) return
-        await ctx.service.ensureCollections()
+        await ensureProductCollections(ctx)
         await ctx.service.reindexEntity("products", productId, ctx.builder)
       })
     })
@@ -265,7 +278,7 @@ export const catalogBridgeBundle: HonoBundle = {
         await withDbFromEnv(env, async (db) => {
           const ctx = await buildIndexerContext(db)
           if (!ctx) return
-          await ctx.service.ensureCollections()
+          await ensureProductCollections(ctx)
           await ctx.service.reindexEntity("products", productId, ctx.builder)
         })
       },
@@ -290,7 +303,7 @@ export const catalogBridgeBundle: HonoBundle = {
       await withDbFromEnv(env, async (db) => {
         const ctx = await buildIndexerContext(db)
         if (!ctx) return
-        await ctx.service.ensureCollections()
+        await ensureProductCollections(ctx)
         for (const productId of productIds) {
           await ctx.service.reindexEntity("products", productId, ctx.builder)
         }
