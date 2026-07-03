@@ -1,5 +1,14 @@
 # @voyant-travel/storefront-react
 
+## 0.141.1
+
+### Patch Changes
+
+- 1a3bd68: Serve owned cruise rows through the public cruise content service and re-enable
+  cruises in storefront customer product routing.
+- Updated dependencies [ecff8cf]
+  - @voyant-travel/storefront@0.141.1
+
 ## 0.141.0
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @voyant-travel/cruises
 
+## 0.138.1
+
+### Patch Changes
+
+- 1a3bd68: Serve owned cruise rows through the public cruise content service and re-enable
+  cruises in storefront customer product routing.
+- Updated dependencies [ecff8cf]
+  - @voyant-travel/bookings@0.139.2
+
 ## 0.138.0
 
 ### Patch Changes
