@@ -1253,6 +1253,34 @@
               }
             }
           },
+          "400": {
+            "description": "invalid_reference: product-scoped offer references unknown product ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
           "409": {
             "description": "Active promotional offer slug or code already exists",
             "content": {
@@ -2273,6 +2301,34 @@
                   },
                   "required": [
                     "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_reference: product-scoped offer references unknown product ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
                   ]
                 }
               }
