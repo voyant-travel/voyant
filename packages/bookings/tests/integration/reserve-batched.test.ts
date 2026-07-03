@@ -64,6 +64,18 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
       )
     `)
     await db.execute(sql`
+      create table if not exists product_options (
+        id text primary key,
+        product_id text not null,
+        name text not null,
+        status text not null default 'active',
+        is_default boolean not null default false,
+        sort_order integer not null default 0,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now()
+      )
+    `)
+    await db.execute(sql`
       create table if not exists availability_slots (
         id text primary key,
         product_id text not null,
@@ -106,6 +118,17 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
       .returning()
     if (!product) throw new Error("seedProduct: insert returned no rows")
     return product
+  }
+
+  let optionSeq = 0
+  async function seedOption(productId: string, name: string) {
+    optionSeq += 1
+    const id = `popt_${String(optionSeq).padStart(8, "0")}`
+    await db.execute(sql`
+      insert into product_options (id, product_id, name, status, is_default)
+      values (${id}, ${productId}, ${name}, 'active', true)
+    `)
+    return id
   }
 
   async function seedSlot(productId: string, dateLocal: string, remainingPax = 10) {
@@ -271,13 +294,14 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
     expect(refreshed?.remainingPax).toBe(10)
   })
 
-  it("reserves an item carrying an option id against an option-less slot", async () => {
+  it("reserves an item carrying its product's option against an option-less slot", async () => {
     // A slot with option_id = NULL is not option-scoped: it applies to any
     // option of its product. Paths like the storefront compat bootstrap derive
     // and stamp an option id onto the item, so reserving must accept it rather
     // than fail slot_option_mismatch — which made such slots permanently
     // unbookable through the storefront (#2833).
     const product = await seedProduct("Option-less departure")
+    const optionId = await seedOption(product.id, "Standard")
     const slot = await seedSlot(product.id, "2026-09-01", 10)
 
     const result = await bookingsService.reserveBooking(db, {
@@ -294,7 +318,7 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
           allocationType: "unit" as const,
           availabilitySlotId: slot.id,
           productId: product.id,
-          optionId: "popt_derived_option",
+          optionId,
         },
       ],
     })
@@ -307,7 +331,47 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
       .select()
       .from(bookingItems)
       .where(eq(bookingItems.bookingId, result.booking.id))
-    expect(item.optionId).toBe("popt_derived_option")
+    expect(item.optionId).toBe(optionId)
+  })
+
+  it("rejects an option from a different product against an option-less slot", async () => {
+    // Tolerating a NULL slot option must NOT let a product-level slot record an
+    // option that belongs to another product (#2833 review). The option's
+    // product ownership is still validated against the slot's product.
+    const product = await seedProduct("Option-less departure")
+    const otherProduct = await seedProduct("Unrelated product")
+    const foreignOptionId = await seedOption(otherProduct.id, "Foreign option")
+    const slot = await seedSlot(product.id, "2026-09-02", 10)
+
+    const result = await bookingsService.reserveBooking(db, {
+      bookingNumber: nextBookingNumber(),
+      sellCurrency: "EUR",
+      sourceType: "manual" as const,
+      holdMinutes: 30,
+      items: [
+        {
+          title: "Cross-product option seat",
+          itemType: "unit" as const,
+          quantity: 1,
+          sellCurrency: "EUR",
+          allocationType: "unit" as const,
+          availabilitySlotId: slot.id,
+          productId: product.id,
+          optionId: foreignOptionId,
+        },
+      ],
+    })
+
+    expect(result.status).toBe("slot_option_mismatch")
+
+    const allBookings = await db.select().from(bookings)
+    expect(allBookings).toHaveLength(0)
+    // The slot's capacity adjustment must have been rolled back with the reserve.
+    const [refreshed] = await db
+      .select({ remainingPax: availabilitySlotsRef.remainingPax })
+      .from(availabilitySlotsRef)
+      .where(eq(availabilitySlotsRef.id, slot.id))
+    expect(refreshed?.remainingPax).toBe(10)
   })
 
   it("still reports slot_not_found for an unknown slot id", async () => {
