@@ -1,5 +1,10 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
+import { buttonVariants } from "@voyant-travel/ui/components/button"
+import { cn } from "@voyant-travel/ui/lib/utils"
+import { CircleUserRound, LogIn } from "lucide-react"
 
+import { authClient } from "@/lib/auth"
+import { CustomerAccountProvider } from "@/lib/customer-account"
 import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
 import { StorefrontScopeProvider } from "@/lib/storefront-scope"
 import { StorefrontMarketSelector } from "./storefront-market-selector"
@@ -20,7 +25,9 @@ function StorefrontLayout(): React.ReactElement {
   return (
     <StorefrontMessagesProvider>
       <StorefrontScopeProvider>
-        <StorefrontChrome />
+        <CustomerAccountProvider>
+          <StorefrontChrome />
+        </CustomerAccountProvider>
       </StorefrontScopeProvider>
     </StorefrontMessagesProvider>
   )
@@ -28,6 +35,7 @@ function StorefrontLayout(): React.ReactElement {
 
 function StorefrontChrome(): React.ReactElement {
   const t = useStorefrontMessages().layout
+  const { data: session, isPending } = authClient.useSession()
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,18 +44,24 @@ function StorefrontChrome(): React.ReactElement {
           <Link to="/shop" className="font-medium">
             {t.brand}
           </Link>
-          {/*
-           * No customer "Sign in" link in the storefront chrome on purpose.
-           * Customer accounts don't exist yet (#2621), and the operator
-           * `/sign-in` surface is the workspace/admin auth path — presenting it
-           * in customer chrome implied an account system while actually dropping
-           * customers into operator auth. The trip composer
-           * (`shop_.composer.tsx`) keeps its own intentional operator-session
-           * sign-in prompt for the simulated storefront (#2642); that gate is a
-           * separate operator affordance, not a customer account entry point.
-           */}
           <nav className="flex items-center gap-2">
             <StorefrontMarketSelector />
+            <Link
+              to={session ? "/shop/account" : "/shop/account/sign-in"}
+              search={session ? undefined : { next: "/shop/account" }}
+              aria-disabled={isPending}
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                isPending && "pointer-events-none opacity-50",
+              )}
+            >
+              {session ? (
+                <CircleUserRound className="size-4" aria-hidden="true" />
+              ) : (
+                <LogIn className="size-4" aria-hidden="true" />
+              )}
+              {session ? "Account" : "Sign in"}
+            </Link>
           </nav>
         </div>
       </header>

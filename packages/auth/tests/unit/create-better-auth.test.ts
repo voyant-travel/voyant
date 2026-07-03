@@ -13,15 +13,19 @@ type BetterAuthConfig = {
           user?: Record<string, unknown>,
           context?: { path?: string } | null,
         ) => Promise<undefined | { data: Record<string, unknown> }>
+        after: (user: Record<string, unknown>, context?: { path?: string } | null) => Promise<void>
       }
     }
   }
 }
 
-const { betterAuthMock, drizzleAdapterMock } = vi.hoisted(() => ({
-  betterAuthMock: vi.fn((config: Record<string, unknown>) => ({ config })),
-  drizzleAdapterMock: vi.fn(() => ({ adapter: "drizzle" })),
-}))
+const { betterAuthMock, drizzleAdapterMock, isFirstAuthUserMock, provisionCurrentUserProfileMock } =
+  vi.hoisted(() => ({
+    betterAuthMock: vi.fn((config: Record<string, unknown>) => ({ config })),
+    drizzleAdapterMock: vi.fn(() => ({ adapter: "drizzle" })),
+    isFirstAuthUserMock: vi.fn(async () => false),
+    provisionCurrentUserProfileMock: vi.fn(async () => undefined),
+  }))
 
 vi.mock("@better-auth/api-key", () => ({
   apiKey: vi.fn((options: Record<string, unknown>) => ({ id: "apiKey", options })),
@@ -50,6 +54,11 @@ vi.mock("better-auth/adapters/drizzle", () => ({
 
 vi.mock("better-auth/plugins", () => ({
   emailOTP: vi.fn((options: Record<string, unknown>) => ({ id: "emailOTP", options })),
+}))
+
+vi.mock("../../src/workspace.js", () => ({
+  isFirstAuthUser: isFirstAuthUserMock,
+  provisionCurrentUserProfile: provisionCurrentUserProfileMock,
 }))
 
 describe("createBetterAuth", () => {
@@ -340,6 +349,34 @@ describe("createBetterAuth", () => {
     expect(select).not.toHaveBeenCalled()
   })
 
+  it("stamps configured customer surfaces on email/password self-signups before the signup block", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db, select } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      customerSignupSurfaces: ["customer"],
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before(
+        {
+          email: "ana@example.com",
+          surfaces: ["admin"],
+        },
+        { path: "/auth/sign-up/email" },
+      ),
+    ).resolves.toEqual({
+      data: {
+        email: "ana@example.com",
+        surfaces: ["customer"],
+      },
+    })
+    expect(select).not.toHaveBeenCalled()
+  })
+
   it("does not stamp customer surfaces on non-customer signup endpoints", async () => {
     const { createBetterAuth } = await import("../../src/server.js")
     const { db } = createDbWithUserCount(1)
@@ -356,9 +393,52 @@ describe("createBetterAuth", () => {
         {
           surfaces: ["admin"],
         },
-        { path: "/sign-up/email" },
+        { path: "/auth/sign-in/email" },
       ),
     ).rejects.toThrow("Sign-up is disabled. Ask an admin to invite you.")
+  })
+
+  it("does not provision workspace profiles for customer self-signups", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      customerSignupSurfaces: ["customer"],
+    })
+
+    await latestBetterAuthConfig().databaseHooks.user.create.after(
+      { id: "user_1", name: "Ana Customer", image: null },
+      { path: "/auth/sign-up/email" },
+    )
+
+    expect(isFirstAuthUserMock).not.toHaveBeenCalled()
+    expect(provisionCurrentUserProfileMock).not.toHaveBeenCalled()
+  })
+
+  it("still provisions workspace profiles for admin signups", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+    })
+
+    await latestBetterAuthConfig().databaseHooks.user.create.after(
+      { id: "user_1", name: "Ana Admin", image: null },
+      { path: "/auth/sign-up/email" },
+    )
+
+    expect(isFirstAuthUserMock).toHaveBeenCalled()
+    expect(provisionCurrentUserProfileMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        userId: "user_1",
+        name: "Ana Admin",
+      }),
+    )
   })
 
   it("treats blank surface array entries as missing surfaces for the signup block", async () => {

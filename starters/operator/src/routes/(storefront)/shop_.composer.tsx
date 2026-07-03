@@ -14,8 +14,8 @@ import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
  * (create → price → reserve → checkout). Those routes are deliberately NOT on
  * the anonymous allow-list — `listTrips`/`getTrip` have no per-customer scoping,
  * so opening the mount anonymously would leak every tenant trip (see #2642).
- * Until a real customer session exists (#2621), we gate the composer behind a
- * session so anonymous visitors get a clear sign-in prompt instead of a raw 401.
+ * The composer now uses the storefront customer account entry point so
+ * anonymous visitors get a customer-scoped session before creating drafts.
  */
 export const Route = createFileRoute("/(storefront)/shop_/composer")({
   component: ComposerRoute,
@@ -44,7 +44,11 @@ function ComposerSignInGate(): React.ReactElement {
         <CardContent className="space-y-4">
           <p className="text-muted-foreground text-sm">{t.gateBody}</p>
           <div className="flex flex-wrap gap-2">
-            <Link to="/sign-in" search={{ next: "/shop/composer" }} className={buttonVariants()}>
+            <Link
+              to="/shop/account/sign-in"
+              search={{ next: "/shop/composer" }}
+              className={buttonVariants()}
+            >
               <LogIn className="size-4" aria-hidden="true" />
               {t.gateSignIn}
             </Link>

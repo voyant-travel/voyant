@@ -259,7 +259,15 @@ function betterAuthSecondaryStorage(env: CloudflareBindings) {
  * behalf of a different request"). The auth instance is therefore not
  * cached either.
  */
-function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEnvForApp>["db"]) {
+interface BuildBetterAuthOptions {
+  customerSignup?: boolean
+}
+
+function buildBetterAuth(
+  env: CloudflareBindings,
+  db: ReturnType<typeof dbFromEnvForApp>["db"],
+  options: BuildBetterAuthOptions = {},
+) {
   const cloud = tryGetCloudClient(env)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
   const emailReplyTo = resolveEmailReplyTo(env)
@@ -280,6 +288,7 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
     secondaryStorage: betterAuthSecondaryStorage(env),
+    customerSignupSurfaces: options.customerSignup ? ["customer"] : undefined,
     plugins: cloudAuthExchange
       ? [
           createVoyantCloudAdminAuthPlugin({
@@ -328,6 +337,12 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
       })
     },
   })
+}
+
+function rewriteCustomerAuthRequest(request: Request): Request {
+  const url = new URL(request.url)
+  url.pathname = url.pathname.replace("/auth/customer", "/auth")
+  return new Request(url, request)
 }
 
 const FULL_ACCESS_SCOPES = ["*"]
@@ -760,6 +775,34 @@ auth.all("/auth/api-tokens", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId/rotate", handleApiTokensFacade)
 auth.get("/auth/organization/list-members", handleOrganizationMembersFacade)
+
+auth.get("/auth/customer/status", async (c) => {
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db, { customerSignup: true })
+    const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+    return c.json({ authenticated: Boolean(session) })
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+})
+
+auth.all("/auth/customer/*", async (c) => {
+  if (
+    isVoyantCloudAuthMode(c.env) &&
+    !isCloudAllowedBetterAuthRoute(rewriteCustomerAuthRequest(c.req.raw))
+  ) {
+    return localAuthDisabledResponse(c)
+  }
+
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db, { customerSignup: true })
+    return await betterAuth.handler(rewriteCustomerAuthRequest(c.req.raw))
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+})
 
 /**
  * Catch-all: delegate to Better Auth handler.

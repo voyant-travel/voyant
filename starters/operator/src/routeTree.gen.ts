@@ -27,7 +27,11 @@ import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-p
 import { Route as authAcceptInviteRouteImport } from './routes/(auth)/accept-invite'
 import { Route as authAcceptInvitationRouteImport } from './routes/(auth)/accept-invitation'
 import { Route as storefrontShopComposerRouteImport } from './routes/(storefront)/shop_.composer'
+import { Route as storefrontShopAccountRouteImport } from './routes/(storefront)/shop_.account'
 import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
+import { Route as storefrontShopAccountVerifyEmailRouteImport } from './routes/(storefront)/shop_.account.verify-email'
+import { Route as storefrontShopAccountSignUpRouteImport } from './routes/(storefront)/shop_.account.sign-up'
+import { Route as storefrontShopAccountSignInRouteImport } from './routes/(storefront)/shop_.account.sign-in'
 import { Route as storefrontShopProductsEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.products.$entityModule.$entityId'
 import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.book.$entityModule.$entityId'
 
@@ -118,11 +122,34 @@ const storefrontShopComposerRoute = storefrontShopComposerRouteImport.update({
   path: '/shop/composer',
   getParentRoute: () => storefrontRouteRoute,
 } as any)
+const storefrontShopAccountRoute = storefrontShopAccountRouteImport.update({
+  id: '/shop_/account',
+  path: '/shop/account',
+  getParentRoute: () => storefrontRouteRoute,
+} as any)
 const storefrontShopConfirmationBookingIdRoute =
   storefrontShopConfirmationBookingIdRouteImport.update({
     id: '/shop_/confirmation/$bookingId',
     path: '/shop/confirmation/$bookingId',
     getParentRoute: () => storefrontRouteRoute,
+  } as any)
+const storefrontShopAccountVerifyEmailRoute =
+  storefrontShopAccountVerifyEmailRouteImport.update({
+    id: '/verify-email',
+    path: '/verify-email',
+    getParentRoute: () => storefrontShopAccountRoute,
+  } as any)
+const storefrontShopAccountSignUpRoute =
+  storefrontShopAccountSignUpRouteImport.update({
+    id: '/sign-up',
+    path: '/sign-up',
+    getParentRoute: () => storefrontShopAccountRoute,
+  } as any)
+const storefrontShopAccountSignInRoute =
+  storefrontShopAccountSignInRouteImport.update({
+    id: '/sign-in',
+    path: '/sign-in',
+    getParentRoute: () => storefrontShopAccountRoute,
   } as any)
 const storefrontShopProductsEntityModuleEntityIdRoute =
   storefrontShopProductsEntityModuleEntityIdRouteImport.update({
@@ -153,7 +180,11 @@ export interface FileRoutesByFullPath {
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
+  '/shop/account': typeof storefrontShopAccountRouteWithChildren
   '/shop/composer': typeof storefrontShopComposerRoute
+  '/shop/account/sign-in': typeof storefrontShopAccountSignInRoute
+  '/shop/account/sign-up': typeof storefrontShopAccountSignUpRoute
+  '/shop/account/verify-email': typeof storefrontShopAccountVerifyEmailRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
@@ -174,7 +205,11 @@ export interface FileRoutesByTo {
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
+  '/shop/account': typeof storefrontShopAccountRouteWithChildren
   '/shop/composer': typeof storefrontShopComposerRoute
+  '/shop/account/sign-in': typeof storefrontShopAccountSignInRoute
+  '/shop/account/sign-up': typeof storefrontShopAccountSignUpRoute
+  '/shop/account/verify-email': typeof storefrontShopAccountVerifyEmailRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
@@ -198,7 +233,11 @@ export interface FileRoutesById {
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
+  '/(storefront)/shop_/account': typeof storefrontShopAccountRouteWithChildren
   '/(storefront)/shop_/composer': typeof storefrontShopComposerRoute
+  '/(storefront)/shop_/account/sign-in': typeof storefrontShopAccountSignInRoute
+  '/(storefront)/shop_/account/sign-up': typeof storefrontShopAccountSignUpRoute
+  '/(storefront)/shop_/account/verify-email': typeof storefrontShopAccountVerifyEmailRoute
   '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/(storefront)/shop_/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
@@ -221,7 +260,11 @@ export interface FileRouteTypes {
     | '/accountant/$token'
     | '/pay/$sessionId'
     | '/proposal/$quoteVersionId'
+    | '/shop/account'
     | '/shop/composer'
+    | '/shop/account/sign-in'
+    | '/shop/account/sign-up'
+    | '/shop/account/verify-email'
     | '/shop/confirmation/$bookingId'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
@@ -242,7 +285,11 @@ export interface FileRouteTypes {
     | '/accountant/$token'
     | '/pay/$sessionId'
     | '/proposal/$quoteVersionId'
+    | '/shop/account'
     | '/shop/composer'
+    | '/shop/account/sign-in'
+    | '/shop/account/sign-up'
+    | '/shop/account/verify-email'
     | '/shop/confirmation/$bookingId'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
@@ -265,7 +312,11 @@ export interface FileRouteTypes {
     | '/accountant/$token'
     | '/pay_/$sessionId'
     | '/proposal/$quoteVersionId'
+    | '/(storefront)/shop_/account'
     | '/(storefront)/shop_/composer'
+    | '/(storefront)/shop_/account/sign-in'
+    | '/(storefront)/shop_/account/sign-up'
+    | '/(storefront)/shop_/account/verify-email'
     | '/(storefront)/shop_/confirmation/$bookingId'
     | '/(storefront)/shop_/book/$entityModule/$entityId'
     | '/(storefront)/shop_/products/$entityModule/$entityId'
@@ -410,12 +461,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof storefrontShopComposerRouteImport
       parentRoute: typeof storefrontRouteRoute
     }
+    '/(storefront)/shop_/account': {
+      id: '/(storefront)/shop_/account'
+      path: '/shop/account'
+      fullPath: '/shop/account'
+      preLoaderRoute: typeof storefrontShopAccountRouteImport
+      parentRoute: typeof storefrontRouteRoute
+    }
     '/(storefront)/shop_/confirmation/$bookingId': {
       id: '/(storefront)/shop_/confirmation/$bookingId'
       path: '/shop/confirmation/$bookingId'
       fullPath: '/shop/confirmation/$bookingId'
       preLoaderRoute: typeof storefrontShopConfirmationBookingIdRouteImport
       parentRoute: typeof storefrontRouteRoute
+    }
+    '/(storefront)/shop_/account/verify-email': {
+      id: '/(storefront)/shop_/account/verify-email'
+      path: '/verify-email'
+      fullPath: '/shop/account/verify-email'
+      preLoaderRoute: typeof storefrontShopAccountVerifyEmailRouteImport
+      parentRoute: typeof storefrontShopAccountRoute
+    }
+    '/(storefront)/shop_/account/sign-up': {
+      id: '/(storefront)/shop_/account/sign-up'
+      path: '/sign-up'
+      fullPath: '/shop/account/sign-up'
+      preLoaderRoute: typeof storefrontShopAccountSignUpRouteImport
+      parentRoute: typeof storefrontShopAccountRoute
+    }
+    '/(storefront)/shop_/account/sign-in': {
+      id: '/(storefront)/shop_/account/sign-in'
+      path: '/sign-in'
+      fullPath: '/shop/account/sign-in'
+      preLoaderRoute: typeof storefrontShopAccountSignInRouteImport
+      parentRoute: typeof storefrontShopAccountRoute
     }
     '/(storefront)/shop_/products/$entityModule/$entityId': {
       id: '/(storefront)/shop_/products/$entityModule/$entityId'
@@ -460,8 +539,26 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
   authRouteRouteChildren,
 )
 
+interface storefrontShopAccountRouteChildren {
+  storefrontShopAccountSignInRoute: typeof storefrontShopAccountSignInRoute
+  storefrontShopAccountSignUpRoute: typeof storefrontShopAccountSignUpRoute
+  storefrontShopAccountVerifyEmailRoute: typeof storefrontShopAccountVerifyEmailRoute
+}
+
+const storefrontShopAccountRouteChildren: storefrontShopAccountRouteChildren = {
+  storefrontShopAccountSignInRoute: storefrontShopAccountSignInRoute,
+  storefrontShopAccountSignUpRoute: storefrontShopAccountSignUpRoute,
+  storefrontShopAccountVerifyEmailRoute: storefrontShopAccountVerifyEmailRoute,
+}
+
+const storefrontShopAccountRouteWithChildren =
+  storefrontShopAccountRoute._addFileChildren(
+    storefrontShopAccountRouteChildren,
+  )
+
 interface storefrontRouteRouteChildren {
   storefrontShopRoute: typeof storefrontShopRoute
+  storefrontShopAccountRoute: typeof storefrontShopAccountRouteWithChildren
   storefrontShopComposerRoute: typeof storefrontShopComposerRoute
   storefrontShopConfirmationBookingIdRoute: typeof storefrontShopConfirmationBookingIdRoute
   storefrontShopBookEntityModuleEntityIdRoute: typeof storefrontShopBookEntityModuleEntityIdRoute
@@ -470,6 +567,7 @@ interface storefrontRouteRouteChildren {
 
 const storefrontRouteRouteChildren: storefrontRouteRouteChildren = {
   storefrontShopRoute: storefrontShopRoute,
+  storefrontShopAccountRoute: storefrontShopAccountRouteWithChildren,
   storefrontShopComposerRoute: storefrontShopComposerRoute,
   storefrontShopConfirmationBookingIdRoute:
     storefrontShopConfirmationBookingIdRoute,
@@ -498,11 +596,15 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
+
 import type { startInstance } from './start.ts'
+
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
+
     router: Awaited<ReturnType<typeof getRouter>>
+
     config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
