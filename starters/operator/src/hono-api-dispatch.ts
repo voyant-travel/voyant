@@ -52,6 +52,9 @@ const loadOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>(async 
 export const operatorApiDispatch = createApiDispatch<CloudflareBindings, ExecutionContext>({
   loadApiApp: loadOperatorApiApp,
   loadAuthApp: loadOperatorAuthApp,
+  // Cloud isolates are frequently evicted; auth/JWKS traffic must not kick off
+  // the full framework module graph while answering the lean auth response.
+  warmApiOnAuth: false,
   rewriteAppPath: (pathname) =>
     pathname.startsWith("/v1/media/")
       ? pathname.replace("/v1/media/", "/v1/admin/media/")

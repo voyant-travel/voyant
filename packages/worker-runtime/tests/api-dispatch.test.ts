@@ -111,7 +111,7 @@ describe("createApiDispatch", () => {
     expect(forwardedCtx).toBe(ctx)
   })
 
-  it("dispatches auth requests through the lean auth app and warms the full app", async () => {
+  it("dispatches auth requests through the lean auth app without warming the full app by default", async () => {
     const env: Env = { APP_URL: "https://example.test" }
     const ctx = makeCtx()
     const fullFetch = vi.fn(async () => Response.json({ full: true }))
@@ -129,12 +129,12 @@ describe("createApiDispatch", () => {
     await expect(response.json()).resolves.toEqual({ user: true })
     expect(loadAuthApp).toHaveBeenCalledOnce()
     expect(authFetch).toHaveBeenCalledOnce()
-    expect(loadApiApp).toHaveBeenCalledOnce()
-    expect(ctx.waitUntil).toHaveBeenCalledOnce()
+    expect(loadApiApp).not.toHaveBeenCalled()
+    expect(ctx.waitUntil).not.toHaveBeenCalled()
     expect(fullFetch).not.toHaveBeenCalled()
   })
 
-  it("does not wait for the full app warm-up before returning auth responses", async () => {
+  it("warms the full app on auth requests when enabled", async () => {
     const env: Env = { APP_URL: "https://example.test" }
     const ctx = makeCtx()
     const authFetch = vi.fn(async () => Response.json({ ok: true }))
@@ -142,6 +142,7 @@ describe("createApiDispatch", () => {
     const dispatch = createApiDispatch<Env>({
       loadApiApp,
       loadAuthApp: async () => ({ fetch: authFetch }),
+      warmApiOnAuth: true,
     })
 
     const response = await dispatch.dispatch(
@@ -166,6 +167,7 @@ describe("createApiDispatch", () => {
     const dispatch = createApiDispatch<Env>({
       loadApiApp,
       loadAuthApp: async () => ({ fetch: async () => new Response(null, { status: 204 }) }),
+      warmApiOnAuth: true,
     })
 
     const response = await dispatch.dispatch(
@@ -194,6 +196,7 @@ describe("createApiDispatch", () => {
         throw warmFailure
       },
       loadAuthApp: async () => ({ fetch: async () => Response.json({ ok: true }) }),
+      warmApiOnAuth: true,
       onWarmError,
     })
 
