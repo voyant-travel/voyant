@@ -1,5 +1,11 @@
 # @voyant-travel/finance
 
+## 0.139.1
+
+### Patch Changes
+
+- bbc2334: Expose booking tax settings through the finance admin route mount so local starters can reach `/v1/admin/finance/tax-settings` without the bookings detail route capturing the request.
+
 ## 0.139.0
 
 ### Minor Changes
