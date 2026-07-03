@@ -59,6 +59,41 @@ export const noDepositPolicy: PaymentPolicy = {
   balanceDueMinDaysFromNow: 0,
 }
 
+export function normalizePaymentPolicy(value: unknown): PaymentPolicy | null {
+  if (value == null) return null
+  if (isPaymentPolicy(value)) return value
+  if (!value || typeof value !== "object") return null
+
+  const legacy = value as {
+    type?: unknown
+    depositPercent?: unknown
+    balanceDueDays?: unknown
+    balanceDueDaysBeforeDeparture?: unknown
+    minDaysBeforeDepartureForDeposit?: unknown
+    balanceDueMinDaysFromNow?: unknown
+  }
+
+  if (legacy.type === "full" || legacy.type === "none") {
+    return noDepositPolicy
+  }
+
+  if (legacy.type !== "deposit") return null
+
+  const percent = readPercent(legacy.depositPercent)
+  if (percent === null) return null
+
+  return {
+    deposit: { kind: "percent", percent },
+    minDaysBeforeDepartureForDeposit:
+      readNonNegativeInteger(legacy.minDaysBeforeDepartureForDeposit) ?? 0,
+    balanceDueDaysBeforeDeparture:
+      readNonNegativeInteger(legacy.balanceDueDaysBeforeDeparture) ??
+      readNonNegativeInteger(legacy.balanceDueDays) ??
+      0,
+    balanceDueMinDaysFromNow: readNonNegativeInteger(legacy.balanceDueMinDaysFromNow) ?? 0,
+  }
+}
+
 export function isPaymentPolicy(value: unknown): value is PaymentPolicy {
   if (!value || typeof value !== "object") return false
   const policy = value as Partial<PaymentPolicy>
@@ -85,6 +120,14 @@ function isDepositRule(value: unknown): value is DepositRule {
 
 function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
+}
+
+function readNonNegativeInteger(value: unknown): number | null {
+  return isNonNegativeInteger(value) ? value : null
+}
+
+function readPercent(value: unknown): number | null {
+  return typeof value === "number" && value >= 0 && value <= 100 ? value : null
 }
 
 export type PaymentScheduleEntryType = "deposit" | "balance" | "full"
@@ -117,7 +160,7 @@ export function computePaymentSchedule(
   input: ComputeScheduleInput,
   policy: PaymentPolicy,
 ): ComputedScheduleEntry[] {
-  const effectivePolicy = isPaymentPolicy(policy) ? policy : noDepositPolicy
+  const effectivePolicy = normalizePaymentPolicy(policy) ?? noDepositPolicy
   const total = Math.max(0, Math.round(input.totalCents))
   const today = input.today ?? new Date()
   const todayIso = isoDate(today)
@@ -194,17 +237,18 @@ function computeDepositCents(total: number, rule: DepositRule): number {
 
 /** True when this policy is empty / "inherit from parent". */
 export function isPaymentPolicyEmpty(policy: PaymentPolicy | null | undefined): boolean {
-  if (!isPaymentPolicy(policy)) return true
-  if (policy.deposit.kind === "none") return true
+  const effectivePolicy = normalizePaymentPolicy(policy)
+  if (!effectivePolicy) return true
+  if (effectivePolicy.deposit.kind === "none") return true
   if (
-    policy.deposit.kind === "percent" &&
-    (policy.deposit.percent === undefined || policy.deposit.percent === 0)
+    effectivePolicy.deposit.kind === "percent" &&
+    (effectivePolicy.deposit.percent === undefined || effectivePolicy.deposit.percent === 0)
   ) {
     return true
   }
   if (
-    policy.deposit.kind === "fixed_cents" &&
-    (policy.deposit.amountCents === undefined || policy.deposit.amountCents === 0)
+    effectivePolicy.deposit.kind === "fixed_cents" &&
+    (effectivePolicy.deposit.amountCents === undefined || effectivePolicy.deposit.amountCents === 0)
   ) {
     return true
   }
@@ -250,18 +294,16 @@ export interface ResolvedPaymentPolicy {
 export function resolveEffectivePaymentPolicy(
   layers: PaymentPolicyCascadeLayers,
 ): ResolvedPaymentPolicy {
-  if (isPaymentPolicy(layers.bookingPolicy))
-    return { policy: layers.bookingPolicy, source: "booking" }
-  if (isPaymentPolicy(layers.listingPolicy))
-    return { policy: layers.listingPolicy, source: "listing" }
-  if (isPaymentPolicy(layers.categoryPolicy)) {
-    return { policy: layers.categoryPolicy, source: "category" }
-  }
-  if (isPaymentPolicy(layers.supplierPolicy)) {
-    return { policy: layers.supplierPolicy, source: "supplier" }
-  }
+  const bookingPolicy = normalizePaymentPolicy(layers.bookingPolicy)
+  if (bookingPolicy) return { policy: bookingPolicy, source: "booking" }
+  const listingPolicy = normalizePaymentPolicy(layers.listingPolicy)
+  if (listingPolicy) return { policy: listingPolicy, source: "listing" }
+  const categoryPolicy = normalizePaymentPolicy(layers.categoryPolicy)
+  if (categoryPolicy) return { policy: categoryPolicy, source: "category" }
+  const supplierPolicy = normalizePaymentPolicy(layers.supplierPolicy)
+  if (supplierPolicy) return { policy: supplierPolicy, source: "supplier" }
   return {
-    policy: isPaymentPolicy(layers.operatorDefault) ? layers.operatorDefault : noDepositPolicy,
+    policy: normalizePaymentPolicy(layers.operatorDefault) ?? noDepositPolicy,
     source: "operator_default",
   }
 }
@@ -276,7 +318,7 @@ export function policyShouldRequireFullPayment(
   departureDate: string | null | undefined,
   today: Date = new Date(),
 ): boolean {
-  const effectivePolicy = isPaymentPolicy(policy) ? policy : noDepositPolicy
+  const effectivePolicy = normalizePaymentPolicy(policy) ?? noDepositPolicy
   if (effectivePolicy.deposit.kind === "none") return true
   const departure = parseIsoDate(departureDate)
   if (!departure) return true

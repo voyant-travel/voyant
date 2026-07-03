@@ -4,6 +4,7 @@ import {
   computePaymentSchedule,
   isPaymentPolicyEmpty,
   noDepositPolicy,
+  normalizePaymentPolicy,
   type PaymentPolicy,
   policyShouldRequireFullPayment,
   resolveEffectivePaymentPolicy,
@@ -17,6 +18,32 @@ const fiftyFifty: PaymentPolicy = {
   balanceDueDaysBeforeDeparture: 30,
   balanceDueMinDaysFromNow: 7,
 }
+
+const legacyDepositPolicy = {
+  type: "deposit",
+  depositPercent: 30,
+  balanceDueDays: 30,
+}
+
+describe("normalizePaymentPolicy", () => {
+  it("maps the legacy operator default shape to the current payment policy shape", () => {
+    expect(normalizePaymentPolicy(legacyDepositPolicy)).toEqual({
+      deposit: { kind: "percent", percent: 30 },
+      minDaysBeforeDepartureForDeposit: 0,
+      balanceDueDaysBeforeDeparture: 30,
+      balanceDueMinDaysFromNow: 0,
+    })
+  })
+
+  it("preserves current payment policy objects", () => {
+    expect(normalizePaymentPolicy(fiftyFifty)).toBe(fiftyFifty)
+  })
+
+  it("returns null for malformed values", () => {
+    expect(normalizePaymentPolicy({ type: "deposit", depositPercent: 120 })).toBeNull()
+    expect(normalizePaymentPolicy({})).toBeNull()
+  })
+})
 
 describe("computePaymentSchedule", () => {
   it("emits a single full-payment row for a no-deposit policy", () => {
@@ -154,6 +181,23 @@ describe("computePaymentSchedule", () => {
       { scheduleType: "full", amountCents: 100_000, currency: "EUR", dueDate: "2026-01-01" },
     ])
   })
+
+  it("computes schedules from the legacy operator default shape", () => {
+    const rows = computePaymentSchedule(
+      { totalCents: 100_000, currency: "EUR", departureDate: "2026-06-15", today: fixedToday },
+      legacyDepositPolicy as PaymentPolicy,
+    )
+
+    expect(rows[0]).toMatchObject({
+      scheduleType: "deposit",
+      amountCents: 30_000,
+    })
+    expect(rows[1]).toMatchObject({
+      scheduleType: "balance",
+      amountCents: 70_000,
+      dueDate: "2026-05-16",
+    })
+  })
 })
 
 describe("resolveEffectivePaymentPolicy", () => {
@@ -221,6 +265,20 @@ describe("resolveEffectivePaymentPolicy", () => {
     })
     expect(result.source).toBe("operator_default")
     expect(result.policy).toEqual(noDepositPolicy)
+  })
+
+  it("normalizes a legacy operator default policy", () => {
+    const result = resolveEffectivePaymentPolicy({
+      operatorDefault: legacyDepositPolicy as PaymentPolicy,
+    })
+
+    expect(result.source).toBe("operator_default")
+    expect(result.policy).toEqual({
+      deposit: { kind: "percent", percent: 30 },
+      minDaysBeforeDepartureForDeposit: 0,
+      balanceDueDaysBeforeDeparture: 30,
+      balanceDueMinDaysFromNow: 0,
+    })
   })
 })
 

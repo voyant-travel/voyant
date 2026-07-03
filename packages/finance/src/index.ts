@@ -253,6 +253,7 @@ export {
   computePaymentSchedule,
   isPaymentPolicyEmpty,
   noDepositPolicy,
+  normalizePaymentPolicy,
   policyShouldRequireFullPayment,
   resolveEffectivePaymentPolicy,
 } from "./payment-policy.js"
