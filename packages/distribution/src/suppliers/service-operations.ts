@@ -1,3 +1,4 @@
+import { RequestValidationError } from "@voyant-travel/hono"
 import { and, asc, desc, eq, exists, gte, lte, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -20,6 +21,49 @@ import type {
   UpdateServiceInput,
 } from "./service-shared.js"
 import { ensureSupplierExists } from "./service-shared.js"
+
+function assertRateRange(data: {
+  validFrom?: string | null
+  validTo?: string | null
+  minPax?: number | null
+  maxPax?: number | null
+}) {
+  if (data.validFrom && data.validTo && data.validFrom > data.validTo) {
+    throw new RequestValidationError("validTo must be on or after validFrom", {
+      field: "validTo",
+    })
+  }
+
+  if (data.minPax != null && data.maxPax != null && data.minPax > data.maxPax) {
+    throw new RequestValidationError("maxPax must be greater than or equal to minPax", {
+      field: "maxPax",
+    })
+  }
+}
+
+function assertContractTerm(data: {
+  startDate?: string | null
+  endDate?: string | null
+  renewalDate?: string | null
+}) {
+  if (data.startDate && data.endDate && data.startDate > data.endDate) {
+    throw new RequestValidationError("endDate must be on or after startDate", {
+      field: "endDate",
+    })
+  }
+
+  if (data.renewalDate && data.startDate && data.renewalDate < data.startDate) {
+    throw new RequestValidationError("renewalDate must be on or after startDate", {
+      field: "renewalDate",
+    })
+  }
+
+  if (data.renewalDate && data.endDate && data.renewalDate > data.endDate) {
+    throw new RequestValidationError("renewalDate must be on or before endDate", {
+      field: "renewalDate",
+    })
+  }
+}
 
 export function listServices(db: PostgresJsDatabase, supplierId: string) {
   return db
@@ -174,6 +218,8 @@ export async function createRate(
     return null
   }
 
+  assertRateRange(data)
+
   const [row] = await db
     .insert(supplierRates)
     .values({ ...data, serviceId })
@@ -206,19 +252,22 @@ export async function updateRate(
   const data = typeof serviceOrData === "string" ? maybeData : serviceOrData
   if (!resolvedRateId || !data) throw new Error("updateRate requires rate id and update data")
 
-  const [row] = await db
-    .update(supplierRates)
-    .set(data)
-    .where(
-      supplierId && serviceId
-        ? and(
-            eq(supplierRates.id, resolvedRateId),
-            eq(supplierRates.serviceId, serviceId),
-            serviceBelongsToSupplier(db, supplierId, serviceId),
-          )
-        : eq(supplierRates.id, resolvedRateId),
-    )
-    .returning()
+  const where =
+    supplierId && serviceId
+      ? and(
+          eq(supplierRates.id, resolvedRateId),
+          eq(supplierRates.serviceId, serviceId),
+          serviceBelongsToSupplier(db, supplierId, serviceId),
+        )
+      : eq(supplierRates.id, resolvedRateId)
+  const [existing] = await db.select().from(supplierRates).where(where).limit(1)
+  if (!existing) {
+    return null
+  }
+
+  assertRateRange({ ...existing, ...data })
+
+  const [row] = await db.update(supplierRates).set(data).where(where).returning()
   return row ?? null
 }
 
@@ -365,6 +414,8 @@ export async function createContract(
     return null
   }
 
+  assertContractTerm(data)
+
   const [row] = await db
     .insert(supplierContracts)
     .values({ ...data, supplierId })
@@ -394,14 +445,20 @@ export async function updateContract(
   const data = typeof contractOrData === "string" ? maybeData : contractOrData
   if (!data) throw new Error("updateContract requires update data")
 
+  const where = supplierId
+    ? and(eq(supplierContracts.id, contractId), eq(supplierContracts.supplierId, supplierId))
+    : eq(supplierContracts.id, contractId)
+  const [existing] = await db.select().from(supplierContracts).where(where).limit(1)
+  if (!existing) {
+    return null
+  }
+
+  assertContractTerm({ ...existing, ...data })
+
   const [row] = await db
     .update(supplierContracts)
     .set({ ...data, updatedAt: new Date() })
-    .where(
-      supplierId
-        ? and(eq(supplierContracts.id, contractId), eq(supplierContracts.supplierId, supplierId))
-        : eq(supplierContracts.id, contractId),
-    )
+    .where(where)
     .returning()
   return row ?? null
 }

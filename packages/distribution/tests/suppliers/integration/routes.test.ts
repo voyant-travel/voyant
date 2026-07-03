@@ -5,6 +5,7 @@ import {
   supplierServices,
   suppliersHonoModule,
 } from "@voyant-travel/distribution"
+import { handleApiError } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -22,6 +23,7 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     await cleanupTestDb(db)
 
     app = new Hono()
+    app.onError(handleApiError)
     app.use("*", async (c, next) => {
       c.set("db" as never, db)
       c.set("userId" as never, "test-user-id")
@@ -329,6 +331,82 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     expect(body.data[0]?.contactEmail).toBe("contact@projection.example")
   })
 
+  it("rejects partial rate updates that would reverse existing ranges", async () => {
+    const supplier = await createSupplier("Partial Rate Range Supplier")
+    const service = await createService(supplier.id, "Partial rate service")
+    const rate = await createRate(supplier.id, service.id, "Partial range rate", {
+      validFrom: "2026-09-01",
+      validTo: "2026-09-10",
+      minPax: 2,
+      maxPax: 8,
+    })
+
+    const invalidDateRes = await app.request(
+      `/${supplier.id}/services/${service.id}/rates/${rate.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ validTo: "2026-08-31" }),
+      },
+    )
+
+    expect(invalidDateRes.status).toBe(400)
+
+    const invalidPaxRes = await app.request(
+      `/${supplier.id}/services/${service.id}/rates/${rate.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ minPax: 9 }),
+      },
+    )
+
+    expect(invalidPaxRes.status).toBe(400)
+
+    const [row] = await db.select().from(supplierRates).where(eq(supplierRates.id, rate.id))
+    expect(row).toMatchObject({
+      validFrom: "2026-09-01",
+      validTo: "2026-09-10",
+      minPax: 2,
+      maxPax: 8,
+    })
+  })
+
+  it("rejects partial contract updates that would reverse existing terms", async () => {
+    const supplier = await createSupplier("Partial Contract Range Supplier")
+    const contract = await createContract(supplier.id, "AGR-PARTIAL", {
+      startDate: "2026-07-01",
+      endDate: "2026-12-31",
+      renewalDate: "2026-10-01",
+    })
+
+    const invalidEndRes = await app.request(`/${supplier.id}/contracts/${contract.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endDate: "2026-06-30" }),
+    })
+
+    expect(invalidEndRes.status).toBe(400)
+
+    const invalidRenewalRes = await app.request(`/${supplier.id}/contracts/${contract.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ renewalDate: "2027-01-01" }),
+    })
+
+    expect(invalidRenewalRes.status).toBe(400)
+
+    const [row] = await db
+      .select()
+      .from(supplierContracts)
+      .where(eq(supplierContracts.id, contract.id))
+    expect(row).toMatchObject({
+      startDate: "2026-07-01",
+      endDate: "2026-12-31",
+      renewalDate: "2026-10-01",
+    })
+  })
+
   it("rejects service mutations through the wrong supplier path without changing the service", async () => {
     const supplierA = await createSupplier("Service Supplier A")
     const supplierB = await createSupplier("Service Supplier B")
@@ -477,7 +555,12 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     return (await res.json()).data as { id: string }
   }
 
-  async function createRate(supplierId: string, serviceId: string, name: string) {
+  async function createRate(
+    supplierId: string,
+    serviceId: string,
+    name: string,
+    overrides: Record<string, unknown> = {},
+  ) {
     const res = await app.request(`/${supplierId}/services/${serviceId}/rates`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -486,6 +569,7 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
         currency: "EUR",
         amountCents: 4500,
         unit: "per_person",
+        ...overrides,
       }),
     })
 
@@ -493,7 +577,11 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     return (await res.json()).data as { id: string }
   }
 
-  async function createContract(supplierId: string, agreementNumber: string) {
+  async function createContract(
+    supplierId: string,
+    agreementNumber: string,
+    overrides: Record<string, unknown> = {},
+  ) {
     const res = await app.request(`/${supplierId}/contracts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -501,6 +589,7 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
         agreementNumber,
         startDate: "2026-01-01",
         status: "active",
+        ...overrides,
       }),
     })
 

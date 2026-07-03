@@ -13,9 +13,11 @@ function withProviders(children: ReactNode) {
   )
 }
 
+import { getContractSchema, getRateSchema } from "./components/supplier-form-validation.js"
 import { SupplierNestedResources } from "./components/supplier-nested-resources.js"
 import { SupplierServiceRow } from "./components/supplier-service-row.js"
 import { SuppliersPage } from "./components/suppliers-page.js"
+import { suppliersUiEn } from "./i18n/en.js"
 import {
   getSuppliersUiI18n,
   resolveSuppliersUiMessages,
@@ -49,6 +51,23 @@ const rates: SupplierRate[] = [
     validTo: "2026-09-30",
     minPax: 1,
     maxPax: 8,
+    notes: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+]
+
+const invalidRates: SupplierRate[] = [
+  {
+    id: "rate-invalid",
+    serviceId: "service-1",
+    name: "Invalid",
+    currency: "EUR",
+    amountCents: 12500,
+    unit: "per_person",
+    validFrom: "2026-09-10",
+    validTo: "2026-09-01",
+    minPax: 8,
+    maxPax: 2,
     notes: null,
     createdAt: "2026-01-01T00:00:00.000Z",
   },
@@ -114,6 +133,56 @@ describe("suppliers-ui i18n", () => {
     expect(html).toContain("Contracts")
     expect(html).toContain("Guide")
     expect(html).toContain("Per person")
+  })
+
+  it("flags invalid persisted rate ranges", () => {
+    const html = renderToStaticMarkup(
+      withProviders(
+        <SupplierServiceRow
+          service={service}
+          rates={invalidRates}
+          expanded
+          onToggle={() => {}}
+          onEdit={() => {}}
+          onDelete={() => {}}
+          onAddRate={() => {}}
+          onEditRate={() => {}}
+          onDeleteRate={() => {}}
+        />,
+      ),
+    )
+
+    expect(html).toContain("Invalid date range")
+    expect(html).toContain("Invalid pax range")
+  })
+
+  it("rejects invalid supplier rate and contract form ranges", () => {
+    const rateSchema = getRateSchema(suppliersUiEn)
+    expect(
+      rateSchema.safeParse({
+        name: "Bad range",
+        currency: "EUR",
+        amount: 100,
+        unit: "per_group",
+        validFrom: "2026-09-10",
+        validTo: "2026-09-01",
+        minPax: 8,
+        maxPax: 2,
+        notes: "",
+      }).success,
+    ).toBe(false)
+
+    const contractSchema = getContractSchema(suppliersUiEn)
+    expect(
+      contractSchema.safeParse({
+        agreementNumber: "AGR-BAD",
+        startDate: "2026-07-01",
+        endDate: "2026-12-31",
+        renewalDate: "2027-01-01",
+        status: "active",
+        terms: "",
+      }).success,
+    ).toBe(false)
   })
 
   it("renders Romanian copy with the package provider", () => {

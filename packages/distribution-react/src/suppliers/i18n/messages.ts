@@ -170,6 +170,8 @@ export type SuppliersUiMessages = {
       pax: string
     }
     validFallback: string
+    invalidDateRange: string
+    invalidPaxRange: string
   }
 }
 
@@ -254,6 +256,8 @@ export type ContractFormMessages = {
   termsLabel: string
   termsPlaceholder: string
   validationStartDateRequired: string
+  validationEndDateRange: string
+  validationRenewalDateRange: string
 }
 
 export type SupplierFormMessages = {
@@ -329,4 +333,6 @@ export type RateFormMessages = {
   validationNameRequired: string
   validationIsoCurrency: string
   validationNonNegative: string
+  validationDateRange: string
+  validationPaxRange: string
 }

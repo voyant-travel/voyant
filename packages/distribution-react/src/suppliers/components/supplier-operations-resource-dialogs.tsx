@@ -20,6 +20,7 @@ import {
   useSupplierAvailabilityMutation,
   useSupplierContractMutation,
 } from "../index.js"
+import { getContractSchema } from "./supplier-form-validation.js"
 import {
   DialogActions,
   Field,
@@ -119,18 +120,7 @@ export function ContractDialog({
   const messages = useSuppliersUiMessagesOrDefault()
   const dialog = messages.dialogs.contract
   const mutation = useSupplierContractMutation(supplierId)
-  const schema = React.useMemo(
-    () =>
-      z.object({
-        agreementNumber: z.string().optional().nullable(),
-        startDate: z.string().min(1, dialog.validationStartDateRequired),
-        endDate: z.string().optional().nullable(),
-        renewalDate: z.string().optional().nullable(),
-        status: z.enum(["active", "expired", "pending", "terminated"]),
-        terms: z.string().optional().nullable(),
-      }),
-    [dialog.validationStartDateRequired],
-  )
+  const schema = React.useMemo(() => getContractSchema(messages), [messages])
   const isEditing = !!contract
   const form = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -194,10 +184,13 @@ export function ContractDialog({
               <Field label={dialog.startDateLabel} error={form.formState.errors.startDate?.message}>
                 <Input {...form.register("startDate")} type="date" />
               </Field>
-              <Field label={dialog.endDateLabel}>
+              <Field label={dialog.endDateLabel} error={form.formState.errors.endDate?.message}>
                 <Input {...form.register("endDate")} type="date" />
               </Field>
-              <Field label={dialog.renewalDateLabel}>
+              <Field
+                label={dialog.renewalDateLabel}
+                error={form.formState.errors.renewalDate?.message}
+              >
                 <Input {...form.register("renewalDate")} type="date" />
               </Field>
             </div>
