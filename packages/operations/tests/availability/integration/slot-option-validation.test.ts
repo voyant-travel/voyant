@@ -64,6 +64,37 @@ describe.skipIf(!DB_AVAILABLE)("availability slot option validation", () => {
     expect(slot?.optionId).toBeNull()
   })
 
+  it("seeds remaining pax to initial pax for a bounded slot when omitted", async () => {
+    // A bounded slot created without an explicit remainingPax must start at
+    // full capacity. Otherwise remaining_pax lands NULL and the booking
+    // engine's `remaining_pax ?? 0` treats it as sold out from birth (#2833).
+    const productId = await seedProduct("Bounded trip")
+
+    const slot = await createSlot(db, slotInput(productId, { initialPax: 50, unlimited: false }))
+
+    expect(slot?.initialPax).toBe(50)
+    expect(slot?.remainingPax).toBe(50)
+  })
+
+  it("honors an explicit remaining pax below initial pax", async () => {
+    const productId = await seedProduct("Partially sold trip")
+
+    const slot = await createSlot(
+      db,
+      slotInput(productId, { initialPax: 50, remainingPax: 20, unlimited: false }),
+    )
+
+    expect(slot?.remainingPax).toBe(20)
+  })
+
+  it("leaves remaining pax null for an unlimited slot", async () => {
+    const productId = await seedProduct("Unlimited trip")
+
+    const slot = await createSlot(db, slotInput(productId, { initialPax: 50, unlimited: true }))
+
+    expect(slot?.remainingPax).toBeNull()
+  })
+
   it("persists an explicit option that belongs to the slot product", async () => {
     const productId = await seedProduct("Priced trip")
     const optionId = await seedOption(productId, "Standard")

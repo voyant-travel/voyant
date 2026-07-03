@@ -2758,6 +2758,37 @@ export const bookingsService = {
         if (!isUndefinedTableError(error)) throw error
       }
 
+      // Unlocked pre-read of caller-supplied option -> product ownership. An
+      // option-less slot (`option_id = NULL`) is not option-scoped and accepts
+      // any option *of its own product*, but must still reject an option that
+      // belongs to a different product (#2833 review). `product_options.product_id`
+      // is immutable for this operation, so reading it outside the slot lock is
+      // safe. `optionCatalogAvailable` stays false for catalog-less deployments
+      // (missing table), where options are not a concept and the check is skipped.
+      const requestedOptionIds = [
+        ...new Set(
+          data.items
+            .map((item) => item.optionId)
+            .filter((optionId): optionId is string => Boolean(optionId)),
+        ),
+      ]
+      const optionProduct = new Map<string, string>()
+      let optionCatalogAvailable = false
+      if (requestedOptionIds.length) {
+        try {
+          const optionRows = await db
+            .select({ id: productOptionsRef.id, productId: productOptionsRef.productId })
+            .from(productOptionsRef)
+            .where(inArray(productOptionsRef.id, requestedOptionIds))
+          optionCatalogAvailable = true
+          for (const row of optionRows) {
+            optionProduct.set(row.id, row.productId)
+          }
+        } catch (error) {
+          if (!isUndefinedTableError(error)) throw error
+        }
+      }
+
       const itemSnapshots = await Promise.all(
         data.items.map((item) => {
           const preSlot = slotInfo.get(item.availabilitySlotId)
@@ -2843,7 +2874,27 @@ export const bookingsService = {
           if (item.productId && item.productId !== slot.product_id) {
             throw new BookingServiceError("slot_product_mismatch")
           }
-          if (item.optionId && item.optionId !== slot.option_id) {
+          // A slot with `option_id = NULL` is not option-scoped — it applies
+          // to any option of its product, so an item carrying an option id is
+          // still valid against it. Only reject when the slot pins a *specific*
+          // option and the item names a different one. Without the NULL guard,
+          // option-less slots are permanently unbookable through paths (e.g.
+          // storefront compat bootstrap) that derive and stamp an option id
+          // onto the item (#2833).
+          if (item.optionId && slot.option_id !== null && item.optionId !== slot.option_id) {
+            throw new BookingServiceError("slot_option_mismatch")
+          }
+          // For a product-level slot the pinned-option check above can't run,
+          // so guard product integrity here: a derived/supplied option must
+          // still belong to the slot's product. When the catalog is present,
+          // an option that names a different product (or does not exist) is
+          // rejected rather than silently recorded (#2833 review).
+          if (
+            item.optionId &&
+            slot.option_id === null &&
+            optionCatalogAvailable &&
+            optionProduct.get(item.optionId) !== slot.product_id
+          ) {
             throw new BookingServiceError("slot_option_mismatch")
           }
           if (capacity.slotChange) slotChanges.push(capacity.slotChange)

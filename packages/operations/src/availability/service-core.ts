@@ -332,10 +332,24 @@ export async function createSlot(
     })
   }
 
+  // Seed `remaining_pax` for a bounded slot when the caller omits it.
+  // `remainingPax` is optional in the input schema, so a slot created with
+  // `{ initialPax, unlimited: false }` and no `remainingPax` would otherwise
+  // land with `remaining_pax = NULL`. The booking engine's capacity
+  // reservation reads `remaining_pax ?? 0`, so such a slot is sold out from
+  // birth — every reservation 409s while the admin UI shows full capacity
+  // (#2833). A finite slot with no explicit remainder starts at full
+  // `initialPax`; the update path already rebalances on capacity changes.
+  const remainingPax =
+    !data.unlimited && data.remainingPax == null && data.initialPax != null
+      ? data.initialPax
+      : data.remainingPax
+
   const [row] = await db
     .insert(availabilitySlots)
     .values({
       ...data,
+      remainingPax,
       startsAt: new Date(data.startsAt),
       endsAt: toDateOrNull(data.endsAt),
     })
