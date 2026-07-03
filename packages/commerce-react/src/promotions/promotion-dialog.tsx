@@ -4,15 +4,16 @@
 /**
  * Create / edit dialog for a promotional offer.
  *
- * The discriminated-union scope picker is the trickiest piece here:
- * a `kind` dropdown plus per-kind sub-fields rendered conditionally.
- * Comma-separated text input for ID lists (productIds, marketIds, etc.)
- * keeps the v1 UX simple — a future PR can swap in proper combobox-with-
- * search components per scope kind.
+ * The discriminated-union scope picker renders first-class product/category
+ * pickers where the inventory package can resolve records, and falls back to
+ * validated reference entry for the remaining scope kinds.
  */
 
 import { formatMessage } from "@voyant-travel/i18n"
+import { useProduct, useProductCategory } from "@voyant-travel/inventory-react"
+import { ProductCategoryCombobox, ProductCombobox } from "@voyant-travel/inventory-react/ui"
 import {
+  Badge,
   Button,
   Dialog,
   DialogBody,
@@ -34,18 +35,27 @@ import {
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
 import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
 import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
-import { useEffect, useState } from "react"
+import { X } from "lucide-react"
+import { type ReactNode, useEffect, useState } from "react"
 import type { PromotionsUiMessages } from "./i18n/messages.js"
 import { usePromotionsUiMessagesOrDefault } from "./i18n/provider.js"
 import {
   type PromotionalOfferRecord,
-  type PromotionalOfferScope,
   type PromotionalOfferScopeKind,
-  type PromotionInsertInput,
-  promotionalOfferScopeSchema,
   useCreatePromotion,
   useUpdatePromotion,
 } from "./index.js"
+import {
+  AUDIENCE_OPTIONS,
+  buildPromotionPayload,
+  emptyPromotionForm,
+  offerToPromotionForm,
+  type PromotionFormState,
+  parseScopeIds,
+  SCOPE_KINDS,
+  type ScopeKind,
+  scopeIdsToFormValue,
+} from "./promotion-dialog-model.js"
 
 export interface PromotionDialogProps {
   open: boolean
@@ -54,190 +64,10 @@ export interface PromotionDialogProps {
   offer?: PromotionalOfferRecord
 }
 
-type ScopeKind = PromotionalOfferScope["kind"]
-
-const SCOPE_KINDS: ScopeKind[] = [
-  "global",
-  "products",
-  "categories",
-  "destinations",
-  "markets",
-  "audiences",
-  "fare_codes",
-  "cabin_grades",
-]
-
-const AUDIENCE_OPTIONS: Array<"staff" | "customer" | "partner" | "supplier"> = [
-  "staff",
-  "customer",
-  "partner",
-  "supplier",
-]
-
-interface FormState {
-  name: string
-  slug: string
-  description: string
-  discountType: "percentage" | "fixed_amount"
-  discountPercent: string
-  discountAmountCents: number | null
-  currency: string
-  scopeKind: ScopeKind
-  scopeIds: string // comma-separated for ID/code scopes
-  scopeAudiences: Array<"staff" | "customer" | "partner" | "supplier">
-  minPax: string
-  validFrom: string
-  validUntil: string
-  code: string
-  stackable: boolean
-  active: boolean
-}
-
-function emptyForm(): FormState {
-  return {
-    name: "",
-    slug: "",
-    description: "",
-    discountType: "percentage",
-    discountPercent: "",
-    discountAmountCents: null,
-    currency: "USD",
-    scopeKind: "global",
-    scopeIds: "",
-    scopeAudiences: ["customer"],
-    minPax: "",
-    validFrom: "",
-    validUntil: "",
-    code: "",
-    stackable: false,
-    active: true,
-  }
-}
-
-function offerToForm(offer: PromotionalOfferRecord): FormState {
-  const base = emptyForm()
-  base.name = offer.name
-  base.slug = offer.slug
-  base.description = offer.description ?? ""
-  base.discountType = offer.discountType
-  base.discountPercent = offer.discountPercent ?? ""
-  base.discountAmountCents = offer.discountAmountCents ?? null
-  base.currency = offer.currency ?? "USD"
-  base.scopeKind = offer.scope.kind
-  base.scopeIds = scopeIdsToString(offer.scope)
-  base.scopeAudiences = offer.scope.kind === "audiences" ? [...offer.scope.audiences] : ["customer"]
-  base.minPax = offer.conditions.minPax != null ? String(offer.conditions.minPax) : ""
-  base.validFrom = offer.validFrom ? toDateTimePickerValue(offer.validFrom) : ""
-  base.validUntil = offer.validUntil ? toDateTimePickerValue(offer.validUntil) : ""
-  base.code = offer.code ?? ""
-  base.stackable = offer.stackable
-  base.active = offer.active
-  return base
-}
-
-function scopeIdsToString(scope: PromotionalOfferScope): string {
-  switch (scope.kind) {
-    case "products":
-      return scope.productIds.join(", ")
-    case "categories":
-      return scope.categoryIds.join(", ")
-    case "destinations":
-      return scope.destinationIds.join(", ")
-    case "markets":
-      return scope.marketIds.join(", ")
-    case "fare_codes":
-      return scope.fareCodes.join(", ")
-    case "cabin_grades":
-      return scope.cabinGradeCodes.join(", ")
-    default:
-      return ""
-  }
-}
-
-function toDateTimePickerValue(iso: string): string {
-  // DateTimePicker values use `YYYY-MM-DDTHH:mm` with no timezone.
-  return iso.slice(0, 16)
-}
-
-function buildScope(state: FormState): PromotionalOfferScope {
-  switch (state.scopeKind) {
-    case "global":
-      return { kind: "global" }
-    case "products":
-      return { kind: "products", productIds: parseIds(state.scopeIds) }
-    case "categories":
-      return { kind: "categories", categoryIds: parseIds(state.scopeIds) }
-    case "destinations":
-      return { kind: "destinations", destinationIds: parseIds(state.scopeIds) }
-    case "markets":
-      return { kind: "markets", marketIds: parseIds(state.scopeIds) }
-    case "audiences":
-      return { kind: "audiences", audiences: state.scopeAudiences }
-    case "fare_codes":
-      return { kind: "fare_codes", fareCodes: parseIds(state.scopeIds) }
-    case "cabin_grades":
-      return { kind: "cabin_grades", cabinGradeCodes: parseIds(state.scopeIds) }
-  }
-}
-
-function parseIds(raw: string): string[] {
-  return raw
-    .split(/[,\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-}
-
-function buildPayload(
-  state: FormState,
-  messages: PromotionsUiMessages["promotionDialog"],
-): PromotionInsertInput | { error: string } {
-  if (!state.name.trim()) return { error: messages.validation.nameRequired }
-  if (!state.slug.trim()) return { error: messages.validation.slugRequired }
-  if (state.discountType === "percentage" && !state.discountPercent) {
-    return { error: messages.validation.discountPercentRequired }
-  }
-  if (state.discountType === "fixed_amount") {
-    if (state.discountAmountCents == null || state.discountAmountCents <= 0) {
-      return { error: messages.validation.discountAmountRequired }
-    }
-    if (!state.currency.trim()) return { error: messages.validation.currencyRequired }
-  }
-
-  // Validate scope shape via Zod so the user gets clear errors when (e.g.)
-  // a products scope has an empty ID list.
-  const scope = buildScope(state)
-  const scopeResult = promotionalOfferScopeSchema.safeParse(scope)
-  if (!scopeResult.success) {
-    return {
-      error: formatMessage(messages.validation.scopeInvalidPrefix, {
-        message: scopeResult.error.issues[0]?.message ?? messages.validation.scopeInvalid,
-      }),
-    }
-  }
-
-  const payload: PromotionInsertInput = {
-    name: state.name.trim(),
-    slug: state.slug.trim(),
-    description: state.description.trim() || null,
-    discountType: state.discountType,
-    discountPercent: state.discountType === "percentage" ? Number(state.discountPercent) : null,
-    discountAmountCents: state.discountType === "fixed_amount" ? state.discountAmountCents : null,
-    currency: state.discountType === "fixed_amount" ? state.currency.trim().toUpperCase() : null,
-    scope,
-    conditions: state.minPax ? { minPax: Number(state.minPax) } : {},
-    validFrom: state.validFrom ? new Date(state.validFrom).toISOString() : null,
-    validUntil: state.validUntil ? new Date(state.validUntil).toISOString() : null,
-    code: state.code.trim() || null,
-    stackable: state.stackable,
-    active: state.active,
-  }
-  return payload
-}
-
 export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogProps) {
   const messages = usePromotionsUiMessagesOrDefault()
   const dialogMessages = messages.promotionDialog
-  const [state, setState] = useState<FormState>(emptyForm())
+  const [state, setState] = useState<PromotionFormState>(emptyPromotionForm())
   const [error, setError] = useState<string | null>(null)
   const createMutation = useCreatePromotion()
   const updateMutation = useUpdatePromotion()
@@ -248,16 +78,20 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
   useEffect(() => {
     if (!open) return
     setError(null)
-    setState(offer ? offerToForm(offer) : emptyForm())
+    setState(offer ? offerToPromotionForm(offer) : emptyPromotionForm())
   }, [open, offer])
 
-  function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
+  function setField<K extends keyof PromotionFormState>(key: K, value: PromotionFormState[K]) {
     setState((prev) => ({ ...prev, [key]: value }))
   }
 
   async function handleSave() {
     setError(null)
-    const result = buildPayload(state, dialogMessages)
+    const result = buildPromotionPayload(
+      state,
+      dialogMessages,
+      scopeIdsLabel(state.scopeKind, messages.common.scopeKindLabels),
+    )
     if ("error" in result) {
       setError(result.error)
       return
@@ -405,9 +239,23 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
               <p className="text-sm text-muted-foreground">{dialogMessages.hints.globalScope}</p>
             ) : null}
 
-            {(state.scopeKind === "products" ||
-              state.scopeKind === "categories" ||
-              state.scopeKind === "destinations" ||
+            {state.scopeKind === "products" ? (
+              <ProductScopePicker
+                ids={parseScopeIds(state.scopeIds)}
+                onIdsChange={(ids) => setField("scopeIds", scopeIdsToFormValue(ids))}
+                messages={dialogMessages}
+              />
+            ) : null}
+
+            {state.scopeKind === "categories" ? (
+              <CategoryScopePicker
+                ids={parseScopeIds(state.scopeIds)}
+                onIdsChange={(ids) => setField("scopeIds", scopeIdsToFormValue(ids))}
+                messages={dialogMessages}
+              />
+            ) : null}
+
+            {(state.scopeKind === "destinations" ||
               state.scopeKind === "markets" ||
               state.scopeKind === "fare_codes" ||
               state.scopeKind === "cabin_grades") && (
@@ -536,7 +384,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
 }
 
 function scopeIdsLabel(
-  kind: "products" | "categories" | "destinations" | "markets" | "fare_codes" | "cabin_grades",
+  kind: PromotionalOfferScopeKind,
   labels: Record<PromotionalOfferScopeKind, string>,
 ): string {
   return labels[kind]
@@ -560,4 +408,112 @@ function scopeIdsPlaceholder(
     case "cabin_grades":
       return placeholders.cabinGradeCodes
   }
+}
+
+function ProductScopePicker({
+  ids,
+  onIdsChange,
+  messages,
+}: {
+  ids: string[]
+  onIdsChange: (ids: string[]) => void
+  messages: PromotionsUiMessages["promotionDialog"]
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label>{messages.fields.products}</Label>
+      <ProductCombobox
+        value={null}
+        onChange={(id) => {
+          if (id && !ids.includes(id)) onIdsChange([...ids, id])
+        }}
+        placeholder={messages.placeholders.productPicker}
+      />
+      <SelectedScopeBadges
+        ids={ids}
+        renderLabel={(id) => <SelectedProductLabel id={id} />}
+        onRemove={(id) => onIdsChange(ids.filter((candidate) => candidate !== id))}
+        emptyText={messages.hints.noProductsSelected}
+        removeLabel={messages.actions.removeScopeId}
+      />
+    </div>
+  )
+}
+
+function CategoryScopePicker({
+  ids,
+  onIdsChange,
+  messages,
+}: {
+  ids: string[]
+  onIdsChange: (ids: string[]) => void
+  messages: PromotionsUiMessages["promotionDialog"]
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label>{messages.fields.categories}</Label>
+      <ProductCategoryCombobox
+        value={null}
+        onChange={(id) => {
+          if (id && !ids.includes(id)) onIdsChange([...ids, id])
+        }}
+        placeholder={messages.placeholders.categoryPicker}
+      />
+      <SelectedScopeBadges
+        ids={ids}
+        renderLabel={(id) => <SelectedCategoryLabel id={id} />}
+        onRemove={(id) => onIdsChange(ids.filter((candidate) => candidate !== id))}
+        emptyText={messages.hints.noCategoriesSelected}
+        removeLabel={messages.actions.removeScopeId}
+      />
+    </div>
+  )
+}
+
+function SelectedScopeBadges({
+  ids,
+  renderLabel,
+  onRemove,
+  emptyText,
+  removeLabel,
+}: {
+  ids: string[]
+  renderLabel: (id: string) => ReactNode
+  onRemove: (id: string) => void
+  emptyText: string
+  removeLabel: string
+}) {
+  if (ids.length === 0) {
+    return <p className="text-sm text-muted-foreground">{emptyText}</p>
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {ids.map((id) => (
+        <Badge key={id} variant="secondary" className="gap-1 pr-1">
+          <span className="max-w-56 truncate">{renderLabel(id)}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-5 rounded-full"
+            onClick={() => onRemove(id)}
+            aria-label={formatMessage(removeLabel, { id })}
+          >
+            <X className="size-3" aria-hidden="true" />
+          </Button>
+        </Badge>
+      ))}
+    </div>
+  )
+}
+
+function SelectedProductLabel({ id }: { id: string }) {
+  const query = useProduct(id, { enabled: Boolean(id) })
+  return <>{query.data?.name ?? id}</>
+}
+
+function SelectedCategoryLabel({ id }: { id: string }) {
+  const query = useProductCategory(id, { enabled: Boolean(id) })
+  return <>{query.data?.name ?? id}</>
 }

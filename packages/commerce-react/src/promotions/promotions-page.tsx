@@ -46,9 +46,13 @@ import {
   type PromotionalOfferScopeKind,
   type PromotionsClientOptions,
   type PromotionsListQuery,
+  useArchivePromotion,
+  useDeletePromotion,
   usePromotionsList,
+  useUpdatePromotion,
 } from "./index.js"
 import { PromotionDialog } from "./promotion-dialog.js"
+import { formatPromotionActionError, PromotionRowActions } from "./promotions-page-actions.js"
 import {
   ALL,
   applicationModes,
@@ -112,6 +116,10 @@ export function PromotionsPage({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingOffer, setEditingOffer] = useState<PromotionalOfferRecord | undefined>()
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const archiveMutation = useArchivePromotion()
+  const updateMutation = useUpdatePromotion()
+  const deleteMutation = useDeletePromotion()
 
   const query: PromotionsListQuery = {
     search: search || undefined,
@@ -132,6 +140,8 @@ export function PromotionsPage({
   const page = pageIndex + 1
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
   const showSkeleton = isPending || (isFetching && offers.length === 0)
+  const actionPending =
+    archiveMutation.isPending || updateMutation.isPending || deleteMutation.isPending
   const activeFilterCount =
     (applicationMode !== ALL ? 1 : 0) +
     (status !== ALL ? 1 : 0) +
@@ -142,11 +152,13 @@ export function PromotionsPage({
   const resetPage = () => setPageIndex(0)
 
   function openCreate() {
+    setActionError(null)
     setEditingOffer(undefined)
     setDialogOpen(true)
   }
 
   function openEdit(offer: PromotionalOfferRecord) {
+    setActionError(null)
     setEditingOffer(offer)
     setDialogOpen(true)
   }
@@ -166,6 +178,37 @@ export function PromotionsPage({
     setScopeKind(ALL)
     setValidityRange(null)
     resetPage()
+  }
+
+  async function runPromotionAction(action: string, callback: () => Promise<unknown>) {
+    setActionError(null)
+    try {
+      await callback()
+      resetPage()
+    } catch (err) {
+      setActionError(formatPromotionActionError(err, action, pageMessages))
+    }
+  }
+
+  async function archiveOffer(offer: PromotionalOfferRecord) {
+    if (!confirm(pageMessages.actions.archiveConfirm)) return
+    await runPromotionAction(pageMessages.actions.archive, () =>
+      archiveMutation.mutateAsync(offer.id),
+    )
+  }
+
+  async function activateOffer(offer: PromotionalOfferRecord) {
+    if (!confirm(pageMessages.actions.activateConfirm)) return
+    await runPromotionAction(pageMessages.actions.activate, () =>
+      updateMutation.mutateAsync({ id: offer.id, patch: { active: true } }),
+    )
+  }
+
+  async function deleteOffer(offer: PromotionalOfferRecord) {
+    if (!confirm(pageMessages.actions.deleteConfirm)) return
+    await runPromotionAction(pageMessages.actions.delete, () =>
+      deleteMutation.mutateAsync(offer.id),
+    )
   }
 
   const dialog = renderPromotionDialog ? (
@@ -350,6 +393,21 @@ export function PromotionsPage({
         </div>
       </div>
 
+      {actionError ? (
+        <div className="flex items-start justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <p>{actionError}</p>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6 shrink-0 text-destructive"
+            onClick={() => setActionError(null)}
+            aria-label={pageMessages.actions.dismissError}
+          >
+            <X className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
+      ) : null}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -361,6 +419,7 @@ export function PromotionsPage({
               <TableHead>{pageMessages.columns.validity}</TableHead>
               <TableHead>{pageMessages.columns.code}</TableHead>
               <TableHead>{pageMessages.columns.status}</TableHead>
+              <TableHead className="w-12 text-right">{pageMessages.columns.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -421,6 +480,17 @@ export function PromotionsPage({
                         <Badge variant="secondary">{pageMessages.badges.stackable}</Badge>
                       ) : null}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-right" onClick={(event) => event.stopPropagation()}>
+                    <PromotionRowActions
+                      offer={offer}
+                      disabled={actionPending}
+                      onEdit={openEdit}
+                      onArchive={archiveOffer}
+                      onActivate={activateOffer}
+                      onDelete={deleteOffer}
+                      messages={pageMessages.actions}
+                    />
                   </TableCell>
                 </TableRow>
               ))
