@@ -23,9 +23,14 @@ import {
   productsRef,
   productTicketSettingsRef,
 } from "../../src/products-ref.js"
+import {
+  BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
+  buildBookingRouteRuntime,
+} from "../../src/route-runtime.js"
 import { bookingRoutes } from "../../src/routes.js"
 import { bookingTravelerTravelDetails } from "../../src/schema/travel-details.js"
 import {
+  bookingActivityLog,
   bookingAllocations,
   bookingDocuments,
   bookingFulfillments,
@@ -2232,6 +2237,85 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         .from(availabilitySlotsRef)
         .where(eq(availabilitySlotsRef.id, slot.id))
       expect(updatedSlot?.remainingPax).toBe(3)
+    })
+
+    it("records cancellation reason and financial settlement metadata", async () => {
+      const slot = await seedSlot({ initialPax: 3, remainingPax: 3 })
+      const reserveRes = await app.request("/reserve", {
+        method: "POST",
+        ...json({
+          bookingNumber: nextBookingNumber(),
+          sellCurrency: "USD",
+          items: [{ title: "Adult ticket", availabilitySlotId: slot.id, quantity: 1 }],
+        }),
+      })
+      const { data: booking } = await reserveRes.json()
+      await app.request(`/${booking.id}/confirm`, { method: "POST", ...json({}) })
+
+      const settlementCalls: Array<Record<string, unknown>> = []
+      const runtime = buildBookingRouteRuntime(
+        {},
+        {
+          recordCancellationFinancialSettlement: async (_db, input) => {
+            settlementCalls.push(input)
+            return {
+              status: "action_required",
+              invoiceNumbers: ["INV-PAID-1"],
+              message: "Paid booking cancelled; review settlement.",
+            }
+          },
+        },
+      )
+
+      const scopedApp = new Hono()
+      scopedApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("userId" as never, "test-user-id")
+        c.set("actor" as never, "staff")
+        c.set("container" as never, {
+          resolve(key: string) {
+            if (key === BOOKING_ROUTE_RUNTIME_CONTAINER_KEY) return runtime
+            return undefined
+          },
+        })
+        await next()
+      })
+      scopedApp.route("/", bookingRoutes)
+
+      const cancelRes = await scopedApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        ...json({ note: "Client requested" }),
+      })
+
+      expect(cancelRes.status).toBe(200)
+      expect(settlementCalls).toEqual([
+        expect.objectContaining({
+          bookingId: booking.id,
+          bookingNumber: booking.bookingNumber,
+          previousStatus: "confirmed",
+          reason: "Client requested",
+          actorId: "test-user-id",
+        }),
+      ])
+
+      const rows = await db
+        .select()
+        .from(bookingActivityLog)
+        .where(eq(bookingActivityLog.bookingId, booking.id))
+      const statusChange = rows.find((row) => row.activityType === "status_change")
+      expect(statusChange?.description).toBe(
+        "Booking cancelled from confirmed: Client requested Paid booking cancelled; review settlement.",
+      )
+      expect(statusChange?.metadata).toMatchObject({
+        oldStatus: "confirmed",
+        newStatus: "cancelled",
+        reason: "Client requested",
+        financialSettlement: {
+          status: "action_required",
+          invoiceNumbers: ["INV-PAID-1"],
+        },
+      })
     })
 
     it("emits booking.cancelled with previousStatus after cancel", async () => {

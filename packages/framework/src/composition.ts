@@ -288,6 +288,8 @@ export interface FrameworkProviders {
   closePaymentSchedulesForBooking: NonNullable<
     BookingsHonoModuleOptions["closePaymentSchedulesForBooking"]
   >
+  /** Records cancellation settlement guidance for paid bookings. */
+  recordCancellationFinancialSettlement?: BookingsHonoModuleOptions["recordCancellationFinancialSettlement"]
   /**
    * Deployment custom-field registry (see `@voyant-travel/core/custom-fields`),
    * injected into entities that validate `customFields` on write. Optional — a
@@ -573,6 +575,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
             (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) !=
             null,
           closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
+          recordCancellationFinancialSettlement: capabilities.recordCancellationFinancialSettlement,
           customFields: capabilities.customFields,
         }),
         true,
