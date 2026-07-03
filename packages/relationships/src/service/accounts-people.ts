@@ -88,6 +88,15 @@ async function organizationExists(db: PostgresJsDatabase, organizationId: string
   return Boolean(row)
 }
 
+async function personExists(db: PostgresJsDatabase, personId: string) {
+  const [row] = await db
+    .select({ id: people.id })
+    .from(people)
+    .where(eq(people.id, personId))
+    .limit(1)
+  return Boolean(row)
+}
+
 function buildPersonSearchCondition(
   db: PostgresJsDatabase,
   search: string,
@@ -295,6 +304,9 @@ export const peopleAccountsService = {
     if (entityType === "organization" && !(await organizationExists(db, entityId))) {
       return null
     }
+    if (entityType === "person" && !(await personExists(db, entityId))) {
+      return null
+    }
 
     return identityService.createContactPoint(db, {
       ...data,
@@ -326,6 +338,9 @@ export const peopleAccountsService = {
     data: CreateAddressInput | CreateAddressForEntityInput,
   ) {
     if (entityType === "organization" && !(await organizationExists(db, entityId))) {
+      return null
+    }
+    if (entityType === "person" && !(await personExists(db, entityId))) {
       return null
     }
 
