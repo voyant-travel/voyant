@@ -9,6 +9,7 @@ import {
   Input,
   Textarea,
 } from "@voyant-travel/ui/components"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import * as React from "react"
 import { useForm } from "react-hook-form"
@@ -82,7 +83,15 @@ export function AvailabilityDialog({
         >
           <DialogBody className="grid gap-4">
             <Field label={dialog.dateLabel} error={form.formState.errors.date?.message}>
-              <Input {...form.register("date")} type="date" />
+              <DatePicker
+                value={form.watch("date") || null}
+                onChange={(nextValue) =>
+                  form.setValue("date", nextValue ?? "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              />
             </Field>
             <SwitchField
               label={dialog.availableLabel}
@@ -182,16 +191,40 @@ export function ContractDialog({
             </Field>
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label={dialog.startDateLabel} error={form.formState.errors.startDate?.message}>
-                <Input {...form.register("startDate")} type="date" />
+                <DatePicker
+                  value={form.watch("startDate") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("startDate", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </Field>
               <Field label={dialog.endDateLabel} error={form.formState.errors.endDate?.message}>
-                <Input {...form.register("endDate")} type="date" />
+                <DatePicker
+                  value={form.watch("endDate") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("endDate", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </Field>
               <Field
                 label={dialog.renewalDateLabel}
                 error={form.formState.errors.renewalDate?.message}
               >
-                <Input {...form.register("renewalDate")} type="date" />
+                <DatePicker
+                  value={form.watch("renewalDate") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("renewalDate", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </Field>
             </div>
             <SelectField
