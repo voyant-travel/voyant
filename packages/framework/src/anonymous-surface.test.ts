@@ -55,6 +55,7 @@ describe("standard anonymous surface (ADR-0008)", () => {
       "/v1/public/legal",
       "/v1/public/markets",
       "/v1/public/newsletter",
+      "/v1/public/offers",
       "/v1/public/proposals",
       "/v1/public/storefront-verification",
     ])

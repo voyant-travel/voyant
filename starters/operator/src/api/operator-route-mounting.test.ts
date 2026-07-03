@@ -171,4 +171,35 @@ describe("operator composed route mounting (smoke)", () => {
     expect(res.status).not.toBe(403)
     expect(res.status).not.toBe(404)
   })
+
+  it("lets storefront offer detail, apply, and redeem pass the public actor gate", async () => {
+    const offerPayload = {
+      productId: "prod_123",
+      pax: 2,
+      basePriceCents: 100_00,
+      currency: "EUR",
+    }
+
+    const detail = await liveFrontDoorStatus("/v1/public/offers/summer-sale")
+    const apply = await liveFrontDoorStatus("/v1/public/offers/summer-sale/apply", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(offerPayload),
+    })
+    const redeem = await liveFrontDoorStatus("/v1/public/offers/redeem", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...offerPayload, code: "SAVE10" }),
+    })
+
+    expect(detail).not.toBe(401)
+    expect(detail).not.toBe(403)
+    expect(detail).not.toBe(404)
+    expect(apply).not.toBe(401)
+    expect(apply).not.toBe(403)
+    expect(apply).not.toBe(404)
+    expect(redeem).not.toBe(401)
+    expect(redeem).not.toBe(403)
+    expect(redeem).not.toBe(404)
+  })
 })
