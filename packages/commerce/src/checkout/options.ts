@@ -19,7 +19,7 @@
  *     payment-instruction rows for the bank-transfer checkout path.
  */
 
-import type { BookingTaxSettings } from "@voyant-travel/finance"
+import type { BookingTaxSettings, PaymentPolicy, PaymentPolicySource } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
@@ -31,6 +31,11 @@ export interface CheckoutBankTransferInstructions {
   beneficiary: string
   iban: string
   bankName: string
+}
+
+export interface CheckoutAcceptedPaymentPolicy {
+  policy: PaymentPolicy
+  source: PaymentPolicySource
 }
 
 /**
@@ -72,6 +77,22 @@ export interface CheckoutStartOptions extends CheckoutModuleOptions {
     db: PostgresJsDatabase,
     env: Record<string, string | undefined>,
   ): Promise<CheckoutBankTransferInstructions>
+  /**
+   * Resolve the payment terms the customer accepted during checkout. The
+   * checkout service snapshots the resolved policy + computed schedule into
+   * the activity log for audit, without creating official
+   * `booking_payment_schedules` rows before payment confirmation.
+   */
+  resolveAcceptedPaymentPolicy?(params: {
+    db: PostgresJsDatabase
+    booking: {
+      id: string
+      sellAmountCents: number | null
+      sellCurrency: string
+      startDate: string | null
+      customerPaymentPolicy: PaymentPolicy | null
+    }
+  }): Promise<CheckoutAcceptedPaymentPolicy | null>
   /**
    * Start the card-payment provider session for the `card` checkout intent.
    * INJECTED so commerce never imports a specific payment provider (which

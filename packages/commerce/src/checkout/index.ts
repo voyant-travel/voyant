@@ -43,6 +43,7 @@ export {
 } from "./materialization-support.js"
 export { materializeBookingItemTaxLine } from "./materialization-tax.js"
 export type {
+  CheckoutAcceptedPaymentPolicy,
   CheckoutBankTransferInstructions,
   CheckoutModuleOptions,
   CheckoutStartOptions,
