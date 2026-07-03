@@ -54,6 +54,7 @@ export type CatalogCheckoutContractPdfGenerator = (input: {
   db: PostgresJsDatabase
   eventBus: EventBus
   bookingId: string
+  force?: boolean
 }) => Promise<{ contractId: string; attachmentId: string } | null>
 
 type DispatchParams = Omit<DispatchCheckoutFinalizeParams, "generateContractPdf"> & {
@@ -69,7 +70,8 @@ type DispatchParams = Omit<DispatchCheckoutFinalizeParams, "generateContractPdf"
 function dispatchCheckoutFinalize(params: DispatchParams): Promise<{ runId: string }> {
   const { env, generateContractPdf, ...rest } = params
   const packageGenerator: PackageContractPdfGenerator | undefined = generateContractPdf
-    ? ({ db, eventBus, bookingId }) => generateContractPdf({ env, db, eventBus, bookingId })
+    ? ({ db, eventBus, bookingId, force }) =>
+        generateContractPdf({ env, db, eventBus, bookingId, force })
     : undefined
   return packageDispatchCheckoutFinalize({
     ...rest,

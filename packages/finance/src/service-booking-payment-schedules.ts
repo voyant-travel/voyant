@@ -26,9 +26,14 @@ import {
   or,
   PaymentValidationError,
   parseDateString,
+  settleCoveredBookingPaymentSchedules,
   startOfUtcDay,
   toDateString,
 } from "./service-shared.js"
+
+export interface SettleBookingPaymentSchedulesResult {
+  paidSchedules: Array<typeof bookingPaymentSchedules.$inferSelect>
+}
 
 export const financeBookingPaymentScheduleService = {
   listBookingPaymentSchedules(db: PostgresJsDatabase, bookingId: string) {
@@ -572,5 +577,12 @@ export const financeBookingPaymentScheduleService = {
       },
       runtime,
     )
+  },
+
+  async settleCoveredBookingPaymentSchedules(
+    db: PostgresJsDatabase,
+    bookingId: string,
+  ): Promise<SettleBookingPaymentSchedulesResult> {
+    return { paidSchedules: await settleCoveredBookingPaymentSchedules(db, bookingId) }
   },
 }

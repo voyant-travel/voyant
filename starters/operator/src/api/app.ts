@@ -114,8 +114,8 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
     catalogBridgeBundle,
     createCatalogCheckoutBundle({
       workflowRunnerRegistry,
-      generateContractPdf: ({ env, db, eventBus, bookingId }) =>
-        generateContractPdfForBooking(env, db, eventBus, bookingId),
+      generateContractPdf: ({ env, db, eventBus, bookingId, force }) =>
+        generateContractPdfForBooking(env, db, eventBus, bookingId, { force }),
     }),
     tripsPaymentBundle,
     smartbillOperatorBundle,

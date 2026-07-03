@@ -9,9 +9,9 @@ import {
   runCheckoutFinalize,
 } from "@voyant-travel/catalog/booking-engine"
 import type { EventBus } from "@voyant-travel/core"
-import { issueInvoiceFromBooking } from "@voyant-travel/finance"
+import { convertProformaToInvoice, issueInvoiceFromBooking } from "@voyant-travel/finance"
 import { beginWorkflowRun, type WorkflowRunRecorder } from "@voyant-travel/workflow-runs"
-import { and, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
@@ -25,6 +25,7 @@ export type CatalogCheckoutContractPdfGenerator = (input: {
   db: PostgresJsDatabase
   eventBus: EventBus
   bookingId: string
+  force?: boolean
 }) => Promise<{ contractId: string; attachmentId: string } | null>
 
 function buildCheckoutFinalizeDeps(
@@ -68,6 +69,15 @@ function buildCheckoutFinalizeDeps(
       throw new Error(`checkout-finalize: booking confirmation failed (${result.status})`)
     },
     issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
+      if (convertedFromInvoiceId) {
+        const result = await convertProformaToInvoice(db, convertedFromInvoiceId, {}, { eventBus })
+        if (result.status === "ok") return { invoiceId: result.invoice.id }
+        if (result.status === "already_converted" && result.invoice) {
+          return { invoiceId: result.invoice.id }
+        }
+        throw new Error(`checkout-finalize: proforma conversion failed (${result.status})`)
+      }
+
       const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
       if (!booking) return null
 
@@ -122,12 +132,19 @@ function buildCheckoutFinalizeDeps(
       const [proforma] = await db
         .select({ id: invoices.id })
         .from(invoices)
-        .where(eq(invoices.bookingId, bookingId))
+        .where(
+          and(
+            eq(invoices.bookingId, bookingId),
+            eq(invoices.invoiceType, "proforma"),
+            eq(invoices.status, "paid"),
+          ),
+        )
+        .orderBy(desc(invoices.createdAt))
         .limit(1)
       return proforma ? { invoiceId: proforma.id } : null
     },
     generateContractPdf: generateContractPdf
-      ? async ({ bookingId }) => generateContractPdf({ db, eventBus, bookingId })
+      ? async ({ bookingId, force }) => generateContractPdf({ db, eventBus, bookingId, force })
       : undefined,
     linkPaymentToInvoice: async ({ bookingId, invoiceId, paymentSessionId }) => {
       const { paymentSessions } = await import("@voyant-travel/finance/schema")
@@ -182,6 +199,8 @@ function buildCheckoutFinalizeDeps(
         }
         sessionsLinked++
       }
+
+      await financeService.settleCoveredBookingPaymentSchedules(db, bookingId)
 
       return { paymentId: firstPaymentId, sessionsLinked }
     },

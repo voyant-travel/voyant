@@ -3195,7 +3195,9 @@ export const bookingsService = {
         await tx
           .update(bookingItems)
           .set({ status: "confirmed", updatedAt: new Date() })
-          .where(and(eq(bookingItems.bookingId, id), eq(bookingItems.status, "on_hold")))
+          .where(
+            and(eq(bookingItems.bookingId, id), inArray(bookingItems.status, ["draft", "on_hold"])),
+          )
 
         const [row] = await tx
           .update(bookings)
@@ -3346,7 +3348,7 @@ export const bookingsService = {
           .where(
             and(
               eq(bookingItems.bookingId, id),
-              inArray(bookingItems.status, ["on_hold", "expired"]),
+              inArray(bookingItems.status, ["draft", "on_hold", "expired"]),
             ),
           )
 

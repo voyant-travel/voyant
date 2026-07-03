@@ -2444,6 +2444,41 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       )
     })
 
+    it("marks covered booking payment schedules paid when recording invoice payments", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 50000, balanceDueCents: 50000 })
+      const deposit = await seedBookingPaymentSchedule(booking.id, {
+        amountCents: 20000,
+        scheduleType: "deposit",
+        dueDate: "2025-06-01",
+      })
+      const balance = await seedBookingPaymentSchedule(booking.id, {
+        amountCents: 30000,
+        scheduleType: "balance",
+        dueDate: "2025-07-01",
+      })
+
+      const res = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 50000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2025-06-15",
+          status: "completed",
+        }),
+      })
+      expect(res.status).toBe(201)
+
+      const rows = await db
+        .select()
+        .from(bookingPaymentSchedules)
+        .where(eq(bookingPaymentSchedules.bookingId, booking.id))
+      const statuses = new Map(rows.map((row) => [row.id, row.status]))
+      expect(statuses.get(deposit.id)).toBe("paid")
+      expect(statuses.get(balance.id)).toBe("paid")
+    })
+
     it("replays duplicate payment records with derived idempotency", async () => {
       const booking = await seedBooking()
       const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })

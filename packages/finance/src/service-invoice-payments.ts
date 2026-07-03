@@ -27,6 +27,7 @@ import {
   payments,
   recomputeInvoiceTotalsAfterPaymentChange,
   resolveFxMoneyBaseAmount,
+  settleCoveredBookingPaymentSchedules,
   shouldNormalizeBaseAmount,
   sql,
   toRows,
@@ -436,6 +437,10 @@ export const financeInvoicePaymentService = {
 
       return payment
     })
+
+    if (payment?.status === "completed" && invoice.bookingId) {
+      await settleCoveredBookingPaymentSchedules(db, invoice.bookingId)
+    }
 
     if (recordedPaymentEvent) {
       await runtime.eventBus?.emit("invoice.payment.recorded", recordedPaymentEvent, {

@@ -459,6 +459,7 @@ export type {
 } from "./service-issue.js"
 export {
   buildInvoiceIssuedEvent,
+  convertProformaToInvoice,
   issueInvoiceFromBooking,
   issueProformaFromBooking,
 } from "./service-issue.js"

@@ -24,6 +24,7 @@ import {
   type BookingScheduleRoutesOptions,
   createBookingScheduleAdminRoutes,
   createPaymentPolicyPublicRoutes,
+  financeService,
   generatePaymentScheduleForBooking,
 } from "@voyant-travel/finance"
 import type { HonoExtension } from "@voyant-travel/hono/module"
@@ -42,6 +43,7 @@ import {
   resolveSupplierPolicyForEntity,
   stampPolicySourceOnBooking,
 } from "../runtime/booking-payment-policy-runtime"
+import { operatorPostgresDb } from "../runtime/operator-runtime-adapter"
 
 interface BookingConfirmedPayload {
   bookingId: string
@@ -77,12 +79,10 @@ export const bookingScheduleBundle: HonoBundle = {
     const options = createBookingScheduleRoutesOptions()
     eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
       try {
-        await withDbFromEnv(env, async (db) => {
-          await generatePaymentScheduleForBooking(
-            db as unknown as PostgresJsDatabase,
-            data.bookingId,
-            options,
-          )
+        await withDbFromEnv(env, async (rawDb) => {
+          const db = operatorPostgresDb(rawDb)
+          await generatePaymentScheduleForBooking(db, data.bookingId, options)
+          await financeService.settleCoveredBookingPaymentSchedules(db, data.bookingId)
         })
       } catch (err) {
         console.error("[booking-schedule] failed to generate schedule", {
