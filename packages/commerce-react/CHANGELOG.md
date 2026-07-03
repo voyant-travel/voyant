@@ -1,5 +1,11 @@
 # @voyant-travel/commerce-react
 
+## 0.21.1
+
+### Patch Changes
+
+- 2c7341a: Settings pricing category and price catalog queries now target the mounted admin pricing routes.
+
 ## 0.21.0
 
 ### Patch Changes
