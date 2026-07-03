@@ -390,18 +390,31 @@ export async function seedCruises(db: Db, ctx: CatalogSeedContext): Promise<stri
     },
   ]
 
-  const inserted = await db.insert(cruises).values(rows).returning({ id: cruises.id })
+  const inserted = await db.insert(cruises).values(rows).returning({
+    id: cruises.id,
+    nights: cruises.nights,
+    embarkPortFacilityId: cruises.embarkPortFacilityId,
+    disembarkPortFacilityId: cruises.disembarkPortFacilityId,
+    lowestPriceCached: cruises.lowestPriceCached,
+    lowestPriceCurrencyCached: cruises.lowestPriceCurrencyCached,
+  })
   await seedCruiseBookingInventory(db, inserted, ctx)
   return inserted.map((r) => r.id)
 }
 
 async function seedCruiseBookingInventory(
   db: Db,
-  insertedCruises: Array<{ id: string }>,
+  insertedCruises: Array<{
+    id: string
+    nights: number
+    embarkPortFacilityId: string | null
+    disembarkPortFacilityId: string | null
+    lowestPriceCached: string | null
+    lowestPriceCurrencyCached: string | null
+  }>,
   ctx: CatalogSeedContext,
 ): Promise<void> {
-  const cruise = insertedCruises[0]
-  if (!cruise) return
+  if (insertedCruises.length === 0) return
 
   const shipId = newId("cruise_ships")
   await db.insert(cruiseShips).values({
@@ -420,21 +433,6 @@ async function seedCruiseBookingInventory(
     gallery: [HERO_IMAGES.cruiseShip],
   })
 
-  await db.update(cruises).set({ defaultShipId: shipId }).where(eq(cruises.id, cruise.id))
-
-  const sailingId = newId("cruise_sailings")
-  await db.insert(cruiseSailings).values({
-    id: sailingId,
-    cruiseId: cruise.id,
-    shipId,
-    departureDate: "2026-07-12",
-    returnDate: "2026-07-19",
-    embarkPortFacilityId: pickFacility(ctx.facilityIds, 0),
-    disembarkPortFacilityId: pickFacility(ctx.facilityIds, 0),
-    salesStatus: "open" as const,
-    availabilityNote: "Demo sailing seeded for owned catalog booking.",
-  })
-
   const cabinCategoryId = newId("cruise_cabin_categories")
   await db.insert(cruiseCabinCategories).values({
     id: cabinCategoryId,
@@ -444,41 +442,67 @@ async function seedCruiseBookingInventory(
     roomType: "balcony" as const,
     description: "Private balcony stateroom with queen bed, sofa and compact desk.",
     minOccupancy: 1,
-    maxOccupancy: 2,
+    maxOccupancy: 4,
     squareFeet: "210.00",
     amenities: ["private balcony", "ensuite shower", "mini fridge"],
     viewType: "balcony",
     images: [HERO_IMAGES.cruiseShip],
   })
 
-  await db.insert(cruisePrices).values([
-    {
-      id: newId("cruise_prices"),
-      sailingId,
-      cabinCategoryId,
-      occupancy: 1,
-      fareCode: "OWNED-DEMO",
-      fareCodeName: "Owned demo fare",
-      fareVariant: "cruise_only" as const,
-      currency: "EUR",
-      pricePerPerson: "1299.00",
-      availability: "available" as const,
-      availabilityCount: 8,
-    },
-    {
-      id: newId("cruise_prices"),
-      sailingId,
-      cabinCategoryId,
-      occupancy: 2,
-      fareCode: "OWNED-DEMO",
-      fareCodeName: "Owned demo fare",
-      fareVariant: "cruise_only" as const,
-      currency: "EUR",
-      pricePerPerson: "1099.00",
-      availability: "available" as const,
-      availabilityCount: 8,
-    },
-  ])
+  const today = seedDateAnchor()
+  const sailingRows = insertedCruises.map((cruise, index) => {
+    const departureDate = isoDateOffset(today, 45 + index * 21)
+    return {
+      id: newId("cruise_sailings"),
+      cruiseId: cruise.id,
+      shipId,
+      departureDate,
+      returnDate: isoDateOffset(departureDate, cruise.nights),
+      embarkPortFacilityId: cruise.embarkPortFacilityId ?? pickFacility(ctx.facilityIds, index),
+      disembarkPortFacilityId:
+        cruise.disembarkPortFacilityId ?? pickFacility(ctx.facilityIds, index),
+      salesStatus: "open" as const,
+      availabilityNote: "Demo sailing seeded for owned catalog booking.",
+    }
+  })
+
+  for (const [index, cruise] of insertedCruises.entries()) {
+    const sailing = sailingRows[index]
+    if (!sailing) continue
+    await db
+      .update(cruises)
+      .set({
+        defaultShipId: shipId,
+        earliestDepartureCached: sailing.departureDate,
+        latestDepartureCached: sailing.departureDate,
+      })
+      .where(eq(cruises.id, cruise.id))
+  }
+
+  await db.insert(cruiseSailings).values(sailingRows)
+
+  await db.insert(cruisePrices).values(
+    sailingRows.flatMap((sailing, index) => {
+      const cruise = insertedCruises[index]
+      const currency = cruise?.lowestPriceCurrencyCached ?? "EUR"
+      const basePrice = priceMajor(cruise?.lowestPriceCached, 1099)
+      return [1, 2, 3, 4].map((occupancy) => ({
+        id: newId("cruise_prices"),
+        sailingId: sailing.id,
+        cabinCategoryId,
+        occupancy,
+        fareCode: "OWNED-DEMO",
+        fareCodeName: "Owned demo fare",
+        fareVariant: "cruise_only" as const,
+        currency,
+        pricePerPerson: priceString(
+          occupancy === 1 ? basePrice * 1.2 : occupancy >= 3 ? basePrice * 0.95 : basePrice,
+        ),
+        availability: "available" as const,
+        availabilityCount: 8,
+      }))
+    }),
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -911,7 +935,8 @@ async function seedAccommodationBookingInventory(
     })
   }
 
-  const stayDates = Array.from({ length: 180 }, (_, index) => isoDateOffset("2026-01-01", index))
+  const today = seedDateAnchor()
+  const stayDates = Array.from({ length: 365 }, (_, index) => isoDateOffset(today, index))
   const mappings = []
   const rates = []
   const inventory = []
@@ -965,4 +990,17 @@ function isoDateOffset(start: string, offset: number): string {
   const date = new Date(`${start}T00:00:00.000Z`)
   date.setUTCDate(date.getUTCDate() + offset)
   return date.toISOString().slice(0, 10)
+}
+
+function seedDateAnchor(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function priceMajor(value: string | null | undefined, fallback: number): number {
+  const parsed = Number.parseFloat(value ?? "")
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function priceString(value: number): string {
+  return value.toFixed(2)
 }
