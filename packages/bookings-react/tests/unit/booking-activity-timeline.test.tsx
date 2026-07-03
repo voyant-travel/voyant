@@ -93,4 +93,22 @@ describe("BookingActivityTimeline", () => {
 
     expect(html).toContain("Note updated")
   })
+
+  it("uses system-action descriptions as visible lifecycle text", () => {
+    bookingHooks.activity = [
+      {
+        id: "act_bank_transfer",
+        bookingId: "book_123",
+        actorId: "system",
+        activityType: "system_action",
+        description: "Proforma/payment instructions issued; awaiting bank transfer",
+        metadata: { kind: "storefront_bank_transfer_awaiting_payment" },
+        createdAt: "2026-07-03T12:00:00.000Z",
+      },
+    ]
+
+    const html = renderToStaticMarkup(<BookingActivityTimeline bookingId="book_123" />)
+
+    expect(html).toContain("Proforma/payment instructions issued; awaiting bank transfer")
+  })
 })

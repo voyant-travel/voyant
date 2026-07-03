@@ -1,7 +1,8 @@
+import * as financeModule from "@voyant-travel/finance"
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
-import { describe, expect, it, vi } from "vitest"
-import type { CheckoutStartOptions } from "./options.js"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import type { CheckoutAcceptedPaymentPolicy, CheckoutStartOptions } from "./options.js"
 import { createCatalogCheckoutRoutes } from "./routes.js"
 import { CatalogCheckoutStartError, startCatalogCheckout } from "./start-service.js"
 
@@ -71,6 +72,10 @@ function queuedDb(selectRows: unknown[][]) {
 }
 
 describe("startCatalogCheckout", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it("places a hold for an existing booking", async () => {
     const booking = { id: "bk_1", status: "on_hold", holdExpiresAt: null }
     const result = await startCatalogCheckout(
@@ -128,6 +133,155 @@ describe("startCatalogCheckout", () => {
       status: 422,
     })
     expect(calls.updates).toBe(0)
+  })
+
+  it("records bank-transfer checkout activity with accepted payment terms before confirmation", async () => {
+    vi.spyOn(financeModule.financeService, "resolveDefaultInvoiceNumberSeries").mockResolvedValue({
+      id: "series_proforma",
+    } as never)
+    vi.spyOn(financeModule.financeService, "createPaymentSession").mockResolvedValue({
+      id: "ps_bank_transfer",
+    } as never)
+    vi.spyOn(financeModule, "issueProformaFromBooking").mockResolvedValue({
+      id: "inv_proforma",
+      invoiceNumber: "PF-1001",
+    } as never)
+
+    const booking = {
+      id: "bk_bank",
+      bookingNumber: "BK-1001",
+      status: "on_hold",
+      holdExpiresAt: null,
+      personId: null,
+      organizationId: null,
+      sellAmountCents: 100000,
+      sellCurrency: "EUR",
+      baseCurrency: null,
+      baseSellAmountCents: null,
+      startDate: "2026-09-01",
+    }
+    const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = []
+    const updates: Record<string, unknown>[] = []
+    const selectRows = [[booking], [], []]
+    const nextRows = () => selectRows.shift() ?? []
+    let selectCalls = 0
+    type SelectChain = {
+      from: () => SelectChain
+      where: () => SelectChain
+      limit: () => Promise<unknown[]>
+    }
+    const selectChain: SelectChain = {
+      from: () => selectChain,
+      where: () => selectChain,
+      limit: async () => nextRows(),
+    }
+    const db = {
+      select: () => {
+        selectCalls += 1
+        if (selectCalls === 3) {
+          return {
+            from: () => ({
+              where: async () => nextRows(),
+            }),
+          }
+        }
+        return selectChain
+      },
+      insert: (table: unknown) => ({
+        values: (values: Record<string, unknown>) => {
+          inserts.push({ table, values })
+          return {
+            onConflictDoNothing: () => ({ returning: async () => [] }),
+            returning: async () => [],
+          }
+        },
+      }),
+      update: () => ({
+        set: (values: Record<string, unknown>) => {
+          updates.push(values)
+          return { where: async () => undefined }
+        },
+      }),
+    } as never
+    const acceptedPaymentPolicy = {
+      source: "operator_default",
+      policy: {
+        deposit: { kind: "percent", percent: 30 },
+        minDaysBeforeDepartureForDeposit: 0,
+        balanceDueDaysBeforeDeparture: 21,
+        balanceDueMinDaysFromNow: 7,
+      },
+    } satisfies CheckoutAcceptedPaymentPolicy
+
+    const result = await startCatalogCheckout(
+      {
+        db,
+        env: {},
+        options: stubOptions({
+          resolveAcceptedPaymentPolicy: vi.fn(async () => acceptedPaymentPolicy),
+        }),
+        requestMeta: {
+          clientIp: "203.0.113.10",
+          userAgent: "Test Browser",
+        },
+      },
+      {
+        bookingId: "bk_bank",
+        paymentIntent: "bank_transfer",
+        payerEmail: "ada@example.com",
+        contractAcceptance: {
+          templateId: "tmpl_1",
+          templateSlug: "terms",
+          acceptedTerms: true,
+          acceptedMarketing: false,
+          acceptedAt: "2026-07-03T12:00:00.000Z",
+          renderedHtml: "<p>Accepted terms</p>",
+        },
+      },
+    )
+
+    expect(result).toMatchObject({
+      kind: "bank_transfer_instructions",
+      bookingId: "bk_bank",
+      proformaId: "inv_proforma",
+      proformaNumber: "PF-1001",
+      paymentSessionId: "ps_bank_transfer",
+    })
+    expect(updates).toHaveLength(1)
+    const activityRows = inserts.map((insert) => insert.values)
+    expect(activityRows).toHaveLength(3)
+    expect(activityRows.map((row) => row.description)).toEqual([
+      "Storefront bank-transfer checkout started",
+      "Draft storefront terms accepted before payment",
+      "Proforma/payment instructions issued; awaiting bank transfer",
+    ])
+    expect(activityRows.every((row) => row.activityType === "system_action")).toBe(true)
+    expect(activityRows[1]?.metadata).toMatchObject({
+      kind: "storefront_draft_terms_accepted",
+      officialContractNumber: null,
+      acceptance: {
+        templateId: "tmpl_1",
+        templateSlug: "terms",
+        acceptedAt: "2026-07-03T12:00:00.000Z",
+      },
+      paymentTerms: {
+        kind: "accepted_payment_terms",
+        policySource: "operator_default",
+        totalCents: 100000,
+        currency: "EUR",
+        entries: [
+          { scheduleType: "deposit", amountCents: 30000, currency: "EUR" },
+          { scheduleType: "balance", amountCents: 70000, currency: "EUR" },
+        ],
+      },
+    })
+    expect(activityRows[2]?.metadata).toMatchObject({
+      kind: "storefront_bank_transfer_awaiting_payment",
+      proformaId: "inv_proforma",
+      proformaNumber: "PF-1001",
+      paymentSessionId: "ps_bank_transfer",
+      reference: "BOOK-BK-1001",
+    })
   })
 })
 

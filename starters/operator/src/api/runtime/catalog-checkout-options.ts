@@ -13,15 +13,26 @@
  *   - `resolveBankTransferInstructions` — operator profile / payment-instruction
  *     rows + env fallbacks for the bank-transfer checkout path.
  */
-import type { CheckoutModuleOptions, CheckoutStartOptions } from "@voyant-travel/commerce/checkout"
+import type {
+  CheckoutAcceptedPaymentPolicy,
+  CheckoutModuleOptions,
+  CheckoutStartOptions,
+} from "@voyant-travel/commerce/checkout"
+import { noDepositPolicy, resolveEffectivePaymentPolicy } from "@voyant-travel/finance"
 import { productsService } from "@voyant-travel/inventory"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
   resolveBookingTaxSettings,
+  resolveOperatorDefaultPaymentPolicy,
 } from "@voyant-travel/operator-settings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
+import {
+  resolveCategoryPolicy,
+  resolveListingPolicy,
+  resolveSupplierPolicy,
+} from "./booking-payment-policy-runtime"
 import { cardPaymentStarter } from "./card-payment"
 
 /** Resolve an owned product's display name (cycle-avoiding inventory read). */
@@ -99,6 +110,25 @@ function createStartCardPayment(c: Context): CheckoutStartOptions["startCardPaym
     })
 }
 
+const resolveAcceptedPaymentPolicy: NonNullable<
+  CheckoutStartOptions["resolveAcceptedPaymentPolicy"]
+> = async ({ db, booking }): Promise<CheckoutAcceptedPaymentPolicy | null> => {
+  const [operatorDefault, supplierPolicy, categoryPolicy, listingPolicy] = await Promise.all([
+    resolveOperatorDefaultPaymentPolicy(db),
+    resolveSupplierPolicy(db, booking.id),
+    resolveCategoryPolicy(db, booking.id),
+    resolveListingPolicy(db, booking.id),
+  ])
+
+  return resolveEffectivePaymentPolicy({
+    bookingPolicy: booking.customerPaymentPolicy,
+    listingPolicy,
+    categoryPolicy,
+    supplierPolicy,
+    operatorDefault: operatorDefault ?? noDepositPolicy,
+  })
+}
+
 /**
  * Checkout-start options — module options + bank-transfer reader + card-payment
  * starter. Pass the request `Context` to wire the Netopia card-payment start
@@ -109,6 +139,7 @@ export function createOperatorCheckoutStartOptions(c?: Context): CheckoutStartOp
   return {
     ...createOperatorCheckoutModuleOptions(),
     resolveBankTransferInstructions,
+    resolveAcceptedPaymentPolicy,
     startCardPayment: c ? createStartCardPayment(c) : undefined,
   }
 }

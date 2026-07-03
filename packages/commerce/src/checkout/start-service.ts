@@ -2,13 +2,16 @@
 // service (card / bank-transfer / inquiry / hold intents) is one cohesive
 // entry point; splitting it would scatter a single request lifecycle.
 import { bookingsService, canTransitionBooking, transitionBooking } from "@voyant-travel/bookings"
-import { bookings } from "@voyant-travel/bookings/schema"
+import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
 import {
   type CreateInvoiceFromBookingInput,
+  computePaymentSchedule,
   financeService,
   InvoiceNumberAllocationError,
   issueProformaFromBooking,
+  type PaymentPolicy,
+  type PaymentPolicySource,
 } from "@voyant-travel/finance"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -106,6 +109,17 @@ interface CheckoutAcceptanceMetadata {
   renderedHtmlLength: number
 }
 
+interface AcceptedPaymentTermsSnapshot {
+  kind: "accepted_payment_terms"
+  policySource: PaymentPolicySource
+  policy: PaymentPolicy
+  entries: ReturnType<typeof computePaymentSchedule>
+  totalCents: number
+  currency: string
+  departureDate: string | null
+  resolvedAt: string
+}
+
 export async function startCatalogCheckout(
   context: CatalogCheckoutStartContext,
   body: CheckoutStartInput,
@@ -178,7 +192,7 @@ export async function startCatalogCheckout(
     case "card":
       return startCardCheckout(context, booking, body)
     case "bank_transfer":
-      return startBankTransferCheckout(context, booking)
+      return startBankTransferCheckout(context, booking, body)
     case "inquiry":
       return startInquiryCheckout(context, booking)
     case "hold":
@@ -399,9 +413,34 @@ async function startCardCheckout(
 async function startBankTransferCheckout(
   context: CatalogCheckoutStartContext,
   booking: typeof bookings.$inferSelect,
+  body: CheckoutStartInput,
 ): Promise<CatalogCheckoutStartResult> {
   const db = context.db
   await ensureBankTransferProformaPrerequisites(db)
+  const paymentTerms = await snapshotAcceptedPaymentTerms(context, booking)
+
+  await recordCheckoutActivity(db, booking.id, "Storefront bank-transfer checkout started", {
+    kind: "storefront_bank_transfer_checkout_started",
+    paymentIntent: "bank_transfer",
+    paymentTerms,
+  })
+
+  if (body.contractAcceptance) {
+    await recordCheckoutActivity(db, booking.id, "Draft storefront terms accepted before payment", {
+      kind: "storefront_draft_terms_accepted",
+      acceptance: {
+        templateId: body.contractAcceptance.templateId,
+        templateSlug: body.contractAcceptance.templateSlug,
+        acceptedAt: body.contractAcceptance.acceptedAt,
+        acceptedMarketing: body.contractAcceptance.acceptedMarketing,
+        renderedHtmlLength: body.contractAcceptance.renderedHtml.length,
+        clientIp: context.requestMeta?.clientIp ?? "",
+        userAgent: context.requestMeta?.userAgent ?? "",
+      },
+      officialContractNumber: null,
+      paymentTerms,
+    })
+  }
 
   // Issue a proforma synchronously so the customer leaves with a
   // document reference. SmartBill (subscribing to
@@ -482,6 +521,22 @@ async function startBankTransferCheckout(
   } as never)
 
   const bankTransfer = await context.options.resolveBankTransferInstructions(db, context.env)
+  await recordCheckoutActivity(
+    db,
+    booking.id,
+    "Proforma/payment instructions issued; awaiting bank transfer",
+    {
+      kind: "storefront_bank_transfer_awaiting_payment",
+      proformaId: proforma?.id ?? null,
+      proformaNumber: proforma?.invoiceNumber ?? null,
+      paymentSessionId: paymentSession?.id ?? null,
+      amountCents: booking.sellAmountCents ?? 0,
+      currency: booking.sellCurrency ?? "EUR",
+      dueAt: dueDate,
+      reference: `BOOK-${booking.bookingNumber}`,
+      paymentTerms,
+    },
+  )
   return {
     kind: "bank_transfer_instructions",
     bookingId: booking.id,
@@ -498,6 +553,61 @@ async function startBankTransferCheckout(
       dueAt: dueDate,
     },
   }
+}
+
+async function snapshotAcceptedPaymentTerms(
+  context: CatalogCheckoutStartContext,
+  booking: typeof bookings.$inferSelect,
+): Promise<AcceptedPaymentTermsSnapshot | null> {
+  const resolved = await context.options.resolveAcceptedPaymentPolicy?.({
+    db: context.db,
+    booking: {
+      id: booking.id,
+      sellAmountCents: booking.sellAmountCents,
+      sellCurrency: booking.sellCurrency,
+      startDate: booking.startDate,
+      customerPaymentPolicy:
+        (booking.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
+    },
+  })
+  if (!resolved) return null
+
+  const resolvedAt = new Date().toISOString()
+  const totalCents = booking.sellAmountCents ?? 0
+  const currency = booking.sellCurrency ?? "EUR"
+  return {
+    kind: "accepted_payment_terms",
+    policySource: resolved.source,
+    policy: resolved.policy,
+    entries: computePaymentSchedule(
+      {
+        totalCents,
+        currency,
+        departureDate: booking.startDate,
+        today: new Date(resolvedAt),
+      },
+      resolved.policy,
+    ),
+    totalCents,
+    currency,
+    departureDate: booking.startDate ?? null,
+    resolvedAt,
+  }
+}
+
+async function recordCheckoutActivity(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  description: string,
+  metadata: Record<string, unknown>,
+): Promise<void> {
+  await db.insert(bookingActivityLog).values({
+    bookingId,
+    actorId: "system",
+    activityType: "system_action",
+    description,
+    metadata,
+  })
 }
 
 async function ensureBankTransferProformaPrerequisites(db: PostgresJsDatabase): Promise<void> {

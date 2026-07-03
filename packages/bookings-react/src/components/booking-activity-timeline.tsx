@@ -81,6 +81,7 @@ const activityIcons: Record<string, LucideIcon> = {
   supplier_update: RefreshCw,
   traveler_update: UserPlus,
   note_added: Pencil,
+  system_action: Clock,
 }
 
 const sourceVariant: Record<TimelineSource, "default" | "secondary" | "outline"> = {
