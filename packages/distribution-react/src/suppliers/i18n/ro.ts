@@ -263,6 +263,8 @@ export const suppliersUiRo = {
       validationNameRequired: "Numele tarifului este obligatoriu.",
       validationIsoCurrency: "Foloseste un cod monetar de 3 litere.",
       validationNonNegative: "Suma trebuie sa fie zero sau mai mare.",
+      validationDateRange: "Data de final trebuie sa fie dupa sau in aceeasi zi cu data de start.",
+      validationPaxRange: "Pax maxim trebuie sa fie mai mare sau egal cu pax minim.",
     },
     contactPoint: {
       newTitle: "Punct de contact nou",
@@ -341,6 +343,9 @@ export const suppliersUiRo = {
       termsLabel: "Termeni",
       termsPlaceholder: "Termeni contractuali si note operationale",
       validationStartDateRequired: "Data de start este obligatorie.",
+      validationEndDateRange:
+        "Data de sfarsit trebuie sa fie dupa sau in aceeasi zi cu data de start.",
+      validationRenewalDateRange: "Data de reinnoire trebuie sa fie in intervalul contractului.",
     },
   },
   supplierServiceRow: {
@@ -355,5 +360,7 @@ export const suppliersUiRo = {
       pax: "Pax",
     },
     validFallback: "...",
+    invalidDateRange: "Interval de date invalid",
+    invalidPaxRange: "Interval pax invalid",
   },
 } satisfies SuppliersUiMessages

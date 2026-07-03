@@ -148,8 +148,34 @@ const rateCoreSchema = z.object({
   notes: z.string().optional().nullable(),
 })
 
-export const insertRateSchema = rateCoreSchema
-export const updateRateSchema = rateCoreSchema.partial()
+function validateRateRange(
+  data: {
+    validFrom?: string | null
+    validTo?: string | null
+    minPax?: number | null
+    maxPax?: number | null
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (data.validFrom && data.validTo && data.validFrom > data.validTo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["validTo"],
+      message: "validTo must be on or after validFrom",
+    })
+  }
+
+  if (data.minPax != null && data.maxPax != null && data.minPax > data.maxPax) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["maxPax"],
+      message: "maxPax must be greater than or equal to minPax",
+    })
+  }
+}
+
+export const insertRateSchema = rateCoreSchema.superRefine(validateRateRange)
+export const updateRateSchema = rateCoreSchema.partial().superRefine(validateRateRange)
 
 export type InsertRate = z.infer<typeof insertRateSchema>
 export type UpdateRate = z.infer<typeof updateRateSchema>
@@ -188,5 +214,38 @@ const contractCoreSchema = z.object({
   status: supplierContractStatusSchema.default("active"),
 })
 
-export const insertContractSchema = contractCoreSchema
-export const updateContractSchema = contractCoreSchema.partial()
+function validateContractTerm(
+  data: {
+    startDate?: string
+    endDate?: string | null
+    renewalDate?: string | null
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (data.endDate && data.startDate && data.startDate > data.endDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endDate"],
+      message: "endDate must be on or after startDate",
+    })
+  }
+
+  if (data.renewalDate && data.startDate && data.renewalDate < data.startDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["renewalDate"],
+      message: "renewalDate must be on or after startDate",
+    })
+  }
+
+  if (data.renewalDate && data.endDate && data.renewalDate > data.endDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["renewalDate"],
+      message: "renewalDate must be on or before endDate",
+    })
+  }
+}
+
+export const insertContractSchema = contractCoreSchema.superRefine(validateContractTerm)
+export const updateContractSchema = contractCoreSchema.partial().superRefine(validateContractTerm)

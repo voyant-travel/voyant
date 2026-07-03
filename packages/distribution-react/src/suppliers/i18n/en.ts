@@ -263,6 +263,8 @@ export const suppliersUiEn = {
       validationNameRequired: "Rate name is required.",
       validationIsoCurrency: "Use a 3-letter currency code.",
       validationNonNegative: "Amount must be zero or greater.",
+      validationDateRange: "Valid to must be on or after valid from.",
+      validationPaxRange: "Maximum pax must be greater than or equal to minimum pax.",
     },
     contactPoint: {
       newTitle: "New contact point",
@@ -341,6 +343,8 @@ export const suppliersUiEn = {
       termsLabel: "Terms",
       termsPlaceholder: "Contract terms and operating notes",
       validationStartDateRequired: "Start date is required.",
+      validationEndDateRange: "End date must be on or after start date.",
+      validationRenewalDateRange: "Renewal date must fall within the contract term.",
     },
   },
   supplierServiceRow: {
@@ -355,5 +359,7 @@ export const suppliersUiEn = {
       pax: "Pax",
     },
     validFallback: "...",
+    invalidDateRange: "Invalid date range",
+    invalidPaxRange: "Invalid pax range",
   },
 } satisfies SuppliersUiMessages

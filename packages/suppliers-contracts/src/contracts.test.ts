@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { insertRateSchema, insertSupplierSchema, updateSupplierSchema } from "./index.js"
+import {
+  insertContractSchema,
+  insertRateSchema,
+  insertSupplierSchema,
+  updateContractSchema,
+  updateRateSchema,
+  updateSupplierSchema,
+} from "./index.js"
 
 describe("suppliers-contracts", () => {
   it("accepts a valid supplier and rejects an unknown type", () => {
@@ -55,6 +62,61 @@ describe("suppliers-contracts", () => {
         currency: "EURO",
         amountCents: 1000,
         unit: "per_person",
+      }).success,
+    ).toBe(false)
+  })
+
+  it("rejects reversed supplier rate date and pax ranges", () => {
+    const baseRate = {
+      name: "Standard",
+      currency: "EUR",
+      amountCents: 1000,
+      unit: "per_person",
+    } as const
+
+    expect(
+      insertRateSchema.safeParse({
+        ...baseRate,
+        validFrom: "2026-09-10",
+        validTo: "2026-09-01",
+      }).success,
+    ).toBe(false)
+    expect(
+      updateRateSchema.safeParse({ validFrom: "2026-09-10", validTo: "2026-09-01" }).success,
+    ).toBe(false)
+    expect(
+      insertRateSchema.safeParse({
+        ...baseRate,
+        minPax: 8,
+        maxPax: 2,
+      }).success,
+    ).toBe(false)
+    expect(updateRateSchema.safeParse({ minPax: 8, maxPax: 2 }).success).toBe(false)
+  })
+
+  it("rejects supplier contract term ranges and renewal dates outside the term", () => {
+    expect(
+      insertContractSchema.safeParse({
+        startDate: "2027-06-30",
+        endDate: "2026-07-01",
+      }).success,
+    ).toBe(false)
+    expect(
+      updateContractSchema.safeParse({ startDate: "2027-06-30", endDate: "2026-07-01" }),
+    ).toMatchObject({ success: false })
+
+    expect(
+      insertContractSchema.safeParse({
+        startDate: "2026-07-01",
+        endDate: "2026-12-31",
+        renewalDate: "2027-01-01",
+      }).success,
+    ).toBe(false)
+    expect(
+      insertContractSchema.safeParse({
+        startDate: "2026-07-01",
+        endDate: "2026-12-31",
+        renewalDate: "2026-06-30",
       }).success,
     ).toBe(false)
   })

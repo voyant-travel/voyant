@@ -1,6 +1,7 @@
 import { Badge, Button } from "@voyant-travel/ui/components"
-import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
+import { AlertTriangle, ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSuppliersUiI18nOrDefault } from "../i18n/index.js"
+import type { SuppliersUiMessages } from "../i18n/messages.js"
 import { type SupplierRate, type SupplierService, useSupplierServiceRates } from "../index.js"
 
 export function SupplierServiceRow({
@@ -135,49 +136,14 @@ export function SupplierServiceRow({
                 </thead>
                 <tbody>
                   {resolvedRates.map((rate) => (
-                    <tr key={rate.id} className="border-b last:border-b-0">
-                      <td className="p-2">{rate.name}</td>
-                      <td className="p-2 font-mono">
-                        {i18n.formatCurrency(rate.amountCents / 100, rate.currency)}
-                      </td>
-                      <td className="p-2">{messages.common.rateUnitLabels[rate.unit]}</td>
-                      <td className="p-2">
-                        {rate.validFrom || rate.validTo
-                          ? `${rate.validFrom ?? messages.supplierServiceRow.validFallback} — ${
-                              rate.validTo ?? messages.supplierServiceRow.validFallback
-                            }`
-                          : messages.common.none}
-                      </td>
-                      <td className="p-2">
-                        {rate.minPax || rate.maxPax
-                          ? `${rate.minPax ?? messages.common.unknown}-${
-                              rate.maxPax ?? messages.common.unknown
-                            }`
-                          : messages.common.none}
-                      </td>
-                      <td className="p-2">
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onEditRate(rate)}
-                            aria-label={messages.common.edit}
-                            title={messages.common.edit}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onDeleteRate(rate.id)}
-                            aria-label={messages.common.delete}
-                            title={messages.common.delete}
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <RateRow
+                      key={rate.id}
+                      rate={rate}
+                      messages={messages}
+                      formatCurrency={i18n.formatCurrency}
+                      onEditRate={onEditRate}
+                      onDeleteRate={onDeleteRate}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -186,5 +152,81 @@ export function SupplierServiceRow({
         </div>
       ) : null}
     </div>
+  )
+}
+
+function RateRow({
+  rate,
+  messages,
+  formatCurrency,
+  onEditRate,
+  onDeleteRate,
+}: {
+  rate: SupplierRate
+  messages: SuppliersUiMessages
+  formatCurrency: (amount: number, currency: string) => string
+  onEditRate: (rate: SupplierRate) => void
+  onDeleteRate: (rateId: string) => void
+}) {
+  const invalidDateRange = Boolean(rate.validFrom && rate.validTo && rate.validFrom > rate.validTo)
+  const invalidPaxRange = Boolean(
+    rate.minPax != null && rate.maxPax != null && rate.minPax > rate.maxPax,
+  )
+
+  return (
+    <tr className="border-b last:border-b-0">
+      <td className="p-2">{rate.name}</td>
+      <td className="p-2 font-mono">{formatCurrency(rate.amountCents / 100, rate.currency)}</td>
+      <td className="p-2">{messages.common.rateUnitLabels[rate.unit]}</td>
+      <td className="p-2">
+        {rate.validFrom || rate.validTo
+          ? `${rate.validFrom ?? messages.supplierServiceRow.validFallback} - ${
+              rate.validTo ?? messages.supplierServiceRow.validFallback
+            }`
+          : messages.common.none}
+        {invalidDateRange ? (
+          <InvalidRangeMessage>{messages.supplierServiceRow.invalidDateRange}</InvalidRangeMessage>
+        ) : null}
+      </td>
+      <td className="p-2">
+        {rate.minPax || rate.maxPax
+          ? `${rate.minPax ?? messages.common.unknown}-${rate.maxPax ?? messages.common.unknown}`
+          : messages.common.none}
+        {invalidPaxRange ? (
+          <InvalidRangeMessage>{messages.supplierServiceRow.invalidPaxRange}</InvalidRangeMessage>
+        ) : null}
+      </td>
+      <td className="p-2">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onEditRate(rate)}
+            aria-label={messages.common.edit}
+            title={messages.common.edit}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDeleteRate(rate.id)}
+            aria-label={messages.common.delete}
+            title={messages.common.delete}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  )
+}
+
+function InvalidRangeMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="mt-1 flex items-center gap-1 text-[11px] text-destructive">
+      <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+      {children}
+    </span>
   )
 }

@@ -23,24 +23,10 @@ import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
+import type { z } from "zod/v4"
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
 import { RATE_UNITS, type SupplierRate, useSupplierRateMutation } from "../index.js"
-
-function getRateSchema(messages: ReturnType<typeof useSuppliersUiMessagesOrDefault>) {
-  const dialog = messages.dialogs.rate
-  return z.object({
-    name: z.string().min(1, dialog.validationNameRequired),
-    currency: z.string().min(3, dialog.validationIsoCurrency).max(3, dialog.validationIsoCurrency),
-    amount: z.coerce.number().min(0, dialog.validationNonNegative),
-    unit: z.enum(["per_person", "per_group", "per_night", "per_vehicle", "flat"]),
-    validFrom: z.string().optional().nullable(),
-    validTo: z.string().optional().nullable(),
-    minPax: z.coerce.number().int().positive().optional().or(z.literal("")).nullable(),
-    maxPax: z.coerce.number().int().positive().optional().or(z.literal("")).nullable(),
-    notes: z.string().optional().nullable(),
-  })
-}
+import { getRateSchema } from "./supplier-form-validation.js"
 
 export type RateDialogProps = {
   open: boolean
@@ -173,7 +159,7 @@ export function RateDialog({
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={dialog.validFromLabel}>
+              <Field label={dialog.validFromLabel} error={form.formState.errors.validFrom?.message}>
                 <DatePicker
                   value={form.watch("validFrom") || null}
                   onChange={(nextValue) =>
@@ -184,7 +170,7 @@ export function RateDialog({
                   }
                 />
               </Field>
-              <Field label={dialog.validToLabel}>
+              <Field label={dialog.validToLabel} error={form.formState.errors.validTo?.message}>
                 <DatePicker
                   value={form.watch("validTo") || null}
                   onChange={(nextValue) =>
@@ -197,7 +183,7 @@ export function RateDialog({
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={dialog.minPaxLabel}>
+              <Field label={dialog.minPaxLabel} error={form.formState.errors.minPax?.message}>
                 <Input
                   {...form.register("minPax")}
                   type="number"
@@ -205,7 +191,7 @@ export function RateDialog({
                   placeholder={dialog.minPaxPlaceholder}
                 />
               </Field>
-              <Field label={dialog.maxPaxLabel}>
+              <Field label={dialog.maxPaxLabel} error={form.formState.errors.maxPax?.message}>
                 <Input
                   {...form.register("maxPax")}
                   type="number"
