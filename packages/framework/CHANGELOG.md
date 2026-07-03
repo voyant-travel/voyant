@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.12.6
+
+### Patch Changes
+
+- 386595a: Expose a booking cancellation settlement runtime hook and persist cancellation reasons plus settlement metadata on booking activity entries.
+- Updated dependencies [386595a]
+  - @voyant-travel/bookings@0.139.3
+
 ## 0.12.5
 
 ### Patch Changes
