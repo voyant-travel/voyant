@@ -1,6 +1,7 @@
 import { bookingActivityLog, bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import {
   type BookEntityResult,
+  type CatalogAvailabilitySlotsScope,
   type CatalogBookingBookBody,
   type CatalogBookingCommittedEvent,
   type CatalogBookingMountTarget,
@@ -340,6 +341,7 @@ async function listAvailabilitySlots(
   db: AnyDrizzleDb,
   productId: string,
   todayIso: string,
+  _scope: CatalogAvailabilitySlotsScope,
 ): Promise<SlotRow[]> {
   return (db as PostgresJsDatabase)
     .select({

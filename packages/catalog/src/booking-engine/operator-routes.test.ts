@@ -255,7 +255,7 @@ describe("GET /catalog/slots", () => {
     expect(await res.json()).toEqual({ rows: [] })
   })
 
-  it("maps sourced product departures via getProductContent", async () => {
+  it("maps sourced product departures via market-scoped getProductContent", async () => {
     vi.mocked(readSourcedEntry).mockResolvedValue({ entity_id: "prod_1" } as never)
     const getProductContent = vi.fn(async () => ({
       content: {
@@ -278,7 +278,10 @@ describe("GET /catalog/slots", () => {
     const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions({ getProductContent }))
 
-    const res = await app.request("/v1/admin/catalog/slots?entityModule=products&entityId=prod_1")
+    const res = await app.request(
+      "/v1/admin/catalog/slots?entityModule=products&entityId=prod_1&market=mkt_ro&locale=ro-RO&currency=RON",
+      { headers: { "accept-language": "ro-RO,en-GB;q=0.8" } },
+    )
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
@@ -301,7 +304,7 @@ describe("GET /catalog/slots", () => {
     expect(getProductContent).toHaveBeenCalledWith(
       expect.anything(),
       "prod_1",
-      { preferredLocales: ["en-GB"] },
+      { preferredLocales: ["ro-RO", "en-GB"], market: "mkt_ro", currency: "RON" },
       expect.objectContaining({ forceFresh: true }),
     )
   })
@@ -321,6 +324,26 @@ describe("GET /catalog/slots", () => {
       expect.anything(),
       "prod_1",
       expect.any(String),
+      { market: undefined, locale: undefined, currency: undefined },
+    )
+  })
+
+  it("passes storefront scope to owned availability slot readers", async () => {
+    vi.mocked(readSourcedEntry).mockResolvedValue(null)
+    const listAvailabilitySlots = vi.fn(async () => [] as never)
+    const app = new OpenAPIHono()
+    mountCatalogBookingRoutes(app, makeOptions({ listAvailabilitySlots }))
+
+    const res = await app.request(
+      "/v1/public/catalog/slots?entityModule=products&entityId=prod_1&market=mkt_gb&locale=en-GB&currency=GBP",
+    )
+
+    expect(res.status).toBe(200)
+    expect(listAvailabilitySlots).toHaveBeenCalledWith(
+      expect.anything(),
+      "prod_1",
+      expect.any(String),
+      { market: "mkt_gb", locale: "en-GB", currency: "GBP" },
     )
   })
 })
