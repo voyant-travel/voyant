@@ -69,7 +69,11 @@ type ResolvedBetterAuthPlugins<Plugins extends BetterAuthPlugin[] | undefined> =
     : VoyantBetterAuthPlugins
 
 const DEFAULT_SIGNUP_BLOCK_SURFACES = ["admin"] as const
-const CUSTOMER_SIGNUP_ENDPOINT_SUFFIXES = ["/phone-number/verify", "/sign-in/email-otp"] as const
+const CUSTOMER_SIGNUP_ENDPOINT_SUFFIXES = [
+  "/sign-up/email",
+  "/phone-number/verify",
+  "/sign-in/email-otp",
+] as const
 
 export interface DisableSignupWhenUsersExistOptions {
   /**
@@ -398,7 +402,14 @@ export function createBetterAuth<
               return { data: normalizedUser as Record<string, unknown> }
             }
           },
-          after: async (user) => {
+          after: async (user, context) => {
+            if (
+              customerSignupSurfaces.length > 0 &&
+              isCustomerSignupCreate(context as BetterAuthHookContext | null)
+            ) {
+              return
+            }
+
             // Single-tenant bootstrap: the very first user to register becomes
             // the super-admin. Runs atomically after the `user` row is
             // inserted, so a simple COUNT(*) = 1 check identifies them.
