@@ -1,5 +1,13 @@
 # @voyant-travel/finance-react
 
+## 0.139.2
+
+### Patch Changes
+
+- 79cc498: Normalize legacy customer payment policy JSON so operator settings and payment policy forms do not crash on existing rows.
+- Updated dependencies [79cc498]
+  - @voyant-travel/finance@0.139.2
+
 ## 0.139.1
 
 ### Patch Changes
