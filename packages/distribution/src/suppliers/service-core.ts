@@ -179,6 +179,34 @@ export async function updateSupplier(
     contactPhone,
     ...supplierValues
   } = data
+  const hasIdentityField = (
+    [
+      "email",
+      "phone",
+      "website",
+      "address",
+      "city",
+      "country",
+      "contactName",
+      "contactEmail",
+      "contactPhone",
+    ] as const
+  ).some((key) => Object.hasOwn(data, key))
+  const identityValues = {
+    email: Object.hasOwn(data, "email") ? (email ?? null) : existing.email,
+    phone: Object.hasOwn(data, "phone") ? (phone ?? null) : existing.phone,
+    website: Object.hasOwn(data, "website") ? (website ?? null) : existing.website,
+    address: Object.hasOwn(data, "address") ? (address ?? null) : existing.address,
+    city: Object.hasOwn(data, "city") ? (city ?? null) : existing.city,
+    country: Object.hasOwn(data, "country") ? (country ?? null) : existing.country,
+    contactName: Object.hasOwn(data, "contactName") ? (contactName ?? null) : existing.contactName,
+    contactEmail: Object.hasOwn(data, "contactEmail")
+      ? (contactEmail ?? null)
+      : existing.contactEmail,
+    contactPhone: Object.hasOwn(data, "contactPhone")
+      ? (contactPhone ?? null)
+      : existing.contactPhone,
+  }
 
   const [row] = await db
     .update(suppliers)
@@ -189,29 +217,13 @@ export async function updateSupplier(
     return null
   }
 
-  await syncSupplierIdentity(db, id, {
-    email: email ?? existing.email,
-    phone: phone ?? existing.phone,
-    website: website ?? existing.website,
-    address: address ?? existing.address,
-    city: city ?? existing.city,
-    country: country ?? existing.country,
-    contactName: contactName ?? existing.contactName,
-    contactEmail: contactEmail ?? existing.contactEmail,
-    contactPhone: contactPhone ?? existing.contactPhone,
-  })
+  if (hasIdentityField) {
+    await syncSupplierIdentity(db, id, identityValues)
+  }
 
   return {
     ...row,
-    email: email ?? existing.email,
-    phone: phone ?? existing.phone,
-    website: website ?? existing.website,
-    address: address ?? existing.address,
-    city: city ?? existing.city,
-    country: country ?? existing.country,
-    contactName: contactName ?? existing.contactName,
-    contactEmail: contactEmail ?? existing.contactEmail,
-    contactPhone: contactPhone ?? existing.contactPhone,
+    ...identityValues,
   }
 }
 

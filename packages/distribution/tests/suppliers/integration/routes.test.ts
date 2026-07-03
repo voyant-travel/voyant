@@ -78,6 +78,145 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     expect(updated.data.reservationTimeoutMinutes).toBe(0)
   })
 
+  it("does not apply insert defaults on empty supplier patches", async () => {
+    const createRes = await app.request("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Pending Tagged Supplier",
+        type: "experience",
+        status: "pending",
+        tags: ["preferred"],
+      }),
+    })
+
+    expect(createRes.status).toBe(201)
+    const created = await createRes.json()
+
+    const updateRes = await app.request(`/${created.data.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    })
+
+    expect(updateRes.status).toBe(200)
+    const updated = await updateRes.json()
+    expect(updated.data.status).toBe("pending")
+    expect(updated.data.tags).toEqual(["preferred"])
+  })
+
+  it("clears supplier identity projection fields with explicit nulls", async () => {
+    const createRes = await app.request("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Clearable Supplier",
+        type: "experience",
+        status: "active",
+        email: "ops@clearable.example",
+        phone: "+40700000000",
+        website: "https://clearable.example",
+        address: "Projection Street 1",
+        city: "Cluj-Napoca",
+        country: "RO",
+        contactName: "Projection Ops",
+        contactEmail: "contact@clearable.example",
+        contactPhone: "+40700000001",
+      }),
+    })
+
+    expect(createRes.status).toBe(201)
+    const created = await createRes.json()
+
+    const updateRes = await app.request(`/${created.data.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: null,
+        phone: null,
+        website: null,
+        address: null,
+        city: null,
+        country: null,
+        contactName: null,
+        contactEmail: null,
+        contactPhone: null,
+      }),
+    })
+
+    expect(updateRes.status).toBe(200)
+    const updated = await updateRes.json()
+    expect(updated.data).toMatchObject({
+      email: null,
+      phone: null,
+      website: null,
+      address: null,
+      city: null,
+      country: null,
+      contactName: null,
+      contactEmail: null,
+      contactPhone: null,
+    })
+
+    const getRes = await app.request(`/${created.data.id}`, { method: "GET" })
+
+    expect(getRes.status).toBe(200)
+    const retrieved = await getRes.json()
+    expect(retrieved.data).toMatchObject({
+      email: null,
+      phone: null,
+      website: null,
+      address: null,
+      city: null,
+      country: null,
+      contactName: null,
+      contactEmail: null,
+      contactPhone: null,
+    })
+  })
+
+  it("does not delete unmanaged contact points when clearing top-level supplier fields", async () => {
+    const supplier = await createSupplier("Unmanaged Contact Supplier")
+
+    const createContactPointRes = await app.request(`/${supplier.id}/contact-points`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "email",
+        label: "primary",
+        value: "unmanaged@example.test",
+        normalizedValue: "unmanaged@example.test",
+        isPrimary: true,
+        metadata: { source: "manual" },
+      }),
+    })
+
+    expect(createContactPointRes.status).toBe(201)
+    const createdContactPoint = await createContactPointRes.json()
+
+    const updateRes = await app.request(`/${supplier.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: null }),
+    })
+
+    expect(updateRes.status).toBe(200)
+
+    const listContactPointsRes = await app.request(`/${supplier.id}/contact-points`, {
+      method: "GET",
+    })
+
+    expect(listContactPointsRes.status).toBe(200)
+    const contactPoints = await listContactPointsRes.json()
+    expect(contactPoints.data).toEqual([
+      expect.objectContaining({
+        id: createdContactPoint.data.id,
+        value: "unmanaged@example.test",
+        metadata: { source: "manual" },
+      }),
+    ])
+  })
+
   it("lists suppliers", async () => {
     const res = await app.request("/", { method: "GET" })
 
