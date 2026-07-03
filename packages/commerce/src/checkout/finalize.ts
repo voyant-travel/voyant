@@ -75,9 +75,6 @@ function buildCheckoutFinalizeDeps(
         if (result.status === "already_converted" && result.invoice) {
           return { invoiceId: result.invoice.id }
         }
-        if (result.status === "duplicate_fiscal_invoice") {
-          return { invoiceId: result.invoice.id }
-        }
         throw new Error(`checkout-finalize: proforma conversion failed (${result.status})`)
       }
 
