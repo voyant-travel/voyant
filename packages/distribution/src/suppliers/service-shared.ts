@@ -348,16 +348,18 @@ export async function syncSupplierIdentity(
     website: data.website,
   }) as Array<["email" | "phone" | "website", string | null | undefined]>) {
     const value = toNullableTrimmed(rawValue)
-    const existing =
-      managedContactPoints.find((point) => point.kind === kind) ??
-      existingContactPoints.find((point) => point.kind === kind && point.isPrimary)
+    const managedContactPoint = managedContactPoints.find((point) => point.kind === kind)
 
     if (!value) {
-      if (existing) {
-        await identityService.deleteContactPoint(db, existing.id)
+      if (managedContactPoint) {
+        await identityService.deleteContactPoint(db, managedContactPoint.id)
       }
       continue
     }
+
+    const existing =
+      managedContactPoint ??
+      existingContactPoints.find((point) => point.kind === kind && point.isPrimary)
 
     const payload = {
       entityType: supplierEntityType,

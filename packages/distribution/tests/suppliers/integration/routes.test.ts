@@ -175,6 +175,48 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
     })
   })
 
+  it("does not delete unmanaged contact points when clearing top-level supplier fields", async () => {
+    const supplier = await createSupplier("Unmanaged Contact Supplier")
+
+    const createContactPointRes = await app.request(`/${supplier.id}/contact-points`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "email",
+        label: "primary",
+        value: "unmanaged@example.test",
+        normalizedValue: "unmanaged@example.test",
+        isPrimary: true,
+        metadata: { source: "manual" },
+      }),
+    })
+
+    expect(createContactPointRes.status).toBe(201)
+    const createdContactPoint = await createContactPointRes.json()
+
+    const updateRes = await app.request(`/${supplier.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: null }),
+    })
+
+    expect(updateRes.status).toBe(200)
+
+    const listContactPointsRes = await app.request(`/${supplier.id}/contact-points`, {
+      method: "GET",
+    })
+
+    expect(listContactPointsRes.status).toBe(200)
+    const contactPoints = await listContactPointsRes.json()
+    expect(contactPoints.data).toEqual([
+      expect.objectContaining({
+        id: createdContactPoint.data.id,
+        value: "unmanaged@example.test",
+        metadata: { source: "manual" },
+      }),
+    ])
+  })
+
   it("lists suppliers", async () => {
     const res = await app.request("/", { method: "GET" })
 
