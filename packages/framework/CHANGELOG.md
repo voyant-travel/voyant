@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.12.5
+
+### Patch Changes
+
+- Updated dependencies [79447ce]
+  - @voyant-travel/catalog@0.137.1
+
 ## 0.12.4
 
 ### Patch Changes
