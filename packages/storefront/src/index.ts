@@ -201,6 +201,8 @@ export const storefrontModule: Module = {
   name: "storefront",
 }
 
+export const storefrontAnonymousPublicPaths = ["/leads", "/newsletter", "/offers"] as const
+
 export function createStorefrontHonoModule(
   options?: Parameters<typeof createStorefrontPublicRoutes>[0],
 ): HonoModule {
@@ -229,6 +231,7 @@ export function createStorefrontHonoModule(
     adminRoutes: createStorefrontAdminRoutes(options),
     publicPath: "/",
     publicRoutes: createStorefrontPublicRoutes(options),
+    anonymous: storefrontAnonymousPublicPaths,
   }
 }
 export {

@@ -241,6 +241,55 @@ describe("mountApp surface mounting", () => {
     expect(((await res.json()) as { surface: string }).surface).toBe("public")
   })
 
+  it("treats module-declared public offers paths as anonymous while protecting other surfaces", async () => {
+    const publicRoutes = new Hono()
+      .get("/offers/:slug", (c) => c.json({ route: "detail", actor: c.get("actor") }))
+      .post("/offers/:slug/apply", (c) => c.json({ route: "apply", actor: c.get("actor") }))
+      .post("/offers/redeem", (c) => c.json({ route: "redeem", actor: c.get("actor") }))
+      .get("/account", (c) => c.json({ route: "account", actor: c.get("actor") }))
+    const adminRoutes = new Hono().get("/offers", (c) =>
+      c.json({ route: "admin-offers", actor: c.get("actor") }),
+    )
+    const app = mountApp({
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
+      db: () => ({}) as any,
+      modules: [
+        {
+          module: { name: "storefront" },
+          adminRoutes,
+          publicPath: "/",
+          publicRoutes,
+          anonymous: ["/offers"],
+        },
+      ],
+    })
+
+    const detail = await app.request("/v1/public/offers/summer-sale", {}, TEST_ENV, TEST_CTX)
+    const apply = await app.request(
+      "/v1/public/offers/summer-sale/apply",
+      { method: "POST" },
+      TEST_ENV,
+      TEST_CTX,
+    )
+    const redeem = await app.request(
+      "/v1/public/offers/redeem",
+      { method: "POST" },
+      TEST_ENV,
+      TEST_CTX,
+    )
+    const privatePublic = await app.request("/v1/public/account", {}, TEST_ENV, TEST_CTX)
+    const admin = await app.request("/v1/admin/storefront/offers", {}, TEST_ENV, TEST_CTX)
+
+    expect(detail.status).toBe(200)
+    expect(await detail.json()).toEqual({ route: "detail", actor: "customer" })
+    expect(apply.status).toBe(200)
+    expect(await apply.json()).toEqual({ route: "apply", actor: "customer" })
+    expect(redeem.status).toBe(200)
+    expect(await redeem.json()).toEqual({ route: "redeem", actor: "customer" })
+    expect(privatePublic.status).toBe(401)
+    expect(admin.status).toBe(401)
+  })
+
   it("exposes /health publicly without auth", async () => {
     const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
