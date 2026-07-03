@@ -97,6 +97,7 @@ export async function executeSemanticSearch(
   return adapter.search(slice, {
     ...request,
     query_embedding: queryEmbedding,
+    query_embedding_model_id: request.query_embedding_model_id ?? embeddings?.capabilities.modelId,
   })
 }
 

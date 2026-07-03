@@ -225,6 +225,25 @@ describe("Typesense catalog indexer", () => {
     )
   })
 
+  it("filters vector searches by embedding model id", () => {
+    const query = buildSearchQuery(
+      {
+        query: "retreat",
+        mode: "hybrid",
+        query_embedding: [0.1, 0.2, 0.3],
+        query_embedding_model_id: "gemini/text-embedding-004",
+        filters: [{ kind: "eq", field: "categorySlugs[]", value: "london" }],
+      },
+      registry,
+      slice,
+    )
+
+    expect(query.vector_query).toContain("text_embedding")
+    expect(query.filter_by).toBe(
+      'categorySlugs:="london" && embedding_model_id:="gemini/text-embedding-004"',
+    )
+  })
+
   it("does not sort public slices by staff-only newest fields", () => {
     const query = buildSearchQuery({ query: "", mode: "keyword", sort: "newest" }, registry, slice)
 

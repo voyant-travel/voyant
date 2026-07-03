@@ -41,8 +41,9 @@ export function buildSearchQuery(
     exclude_fields: "text_embedding,embedding_model_id",
   }
 
+  const filters: string[] = []
   if (request.filters && request.filters.length > 0) {
-    query.filter_by = serializeFilters(request.filters)
+    filters.push(serializeFilters(request.filters))
   }
 
   if (request.facets && request.facets.length > 0) {
@@ -68,6 +69,13 @@ export function buildSearchQuery(
       vectorOpts.push(`distance_threshold:${request.distance_threshold}`)
     }
     query.vector_query = `text_embedding:([${request.query_embedding.join(",")}], ${vectorOpts.join(", ")})`
+    if (request.query_embedding_model_id) {
+      filters.push(`embedding_model_id:=${quoteString(request.query_embedding_model_id)}`)
+    }
+  }
+
+  if (filters.length > 0) {
+    query.filter_by = filters.filter(Boolean).join(" && ")
   }
 
   // For multi-token hybrid queries, the docs warn that the default
@@ -166,9 +174,9 @@ function serializeFilters(filters: SearchFilter[]): string {
 function serializeFilter(filter: SearchFilter): string {
   switch (filter.kind) {
     case "eq":
-      return `${normalizeTypesenseField(filter.field)}:=${typeof filter.value === "string" ? `"${filter.value}"` : filter.value}`
+      return `${normalizeTypesenseField(filter.field)}:=${typeof filter.value === "string" ? quoteString(filter.value) : filter.value}`
     case "in":
-      return `${normalizeTypesenseField(filter.field)}:[${filter.values.map((v) => (typeof v === "string" ? `"${v}"` : v)).join(",")}]`
+      return `${normalizeTypesenseField(filter.field)}:[${filter.values.map((v) => (typeof v === "string" ? quoteString(v) : v)).join(",")}]`
     case "range": {
       const parts: string[] = []
       const field = normalizeTypesenseField(filter.field)
@@ -181,6 +189,10 @@ function serializeFilter(filter: SearchFilter): string {
     case "or":
       return `(${filter.clauses.map(serializeFilter).join(" || ")})`
   }
+}
+
+function quoteString(value: string): string {
+  return JSON.stringify(value)
 }
 
 function normalizeTypesenseField(field: string): string {

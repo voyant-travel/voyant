@@ -176,7 +176,12 @@ function createCatalogToolServices(c: Context): CatalogToolServices {
           request,
         })
       } catch {
-        const keywordRequest = { ...request, mode: "keyword" as const, query_embedding: undefined }
+        const keywordRequest = {
+          ...request,
+          mode: "keyword" as const,
+          query_embedding: undefined,
+          query_embedding_model_id: undefined,
+        }
         return indexer.search(slice, keywordRequest)
       }
     },
