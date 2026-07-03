@@ -64,7 +64,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.42.4",
+    "@cloudflare/vite-plugin": "^1.43.0",
     "@cloudflare/workers-types": "catalog:",
     "@tailwindcss/vite": "^4.3.2",
     "@tanstack/devtools-vite": "^0.8.1",
@@ -83,6 +83,6 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.106.0"
+    "wrangler": "^4.107.0"
   }
 }
