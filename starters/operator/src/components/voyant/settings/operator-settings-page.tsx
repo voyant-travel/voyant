@@ -9,7 +9,11 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { noDepositPolicy, type PaymentPolicy } from "@voyant-travel/finance/payment-policy"
+import {
+  noDepositPolicy,
+  normalizePaymentPolicy,
+  type PaymentPolicy,
+} from "@voyant-travel/finance/payment-policy"
 import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyant-travel/finance-react/ui"
 import {
   Button,
@@ -60,7 +64,9 @@ type OperatorPaymentInstructionsRecord = Pick<
   OperatorProfileForm,
   "bankTransferBeneficiary" | "iban" | "bank" | "notes"
 >
-type OperatorPaymentDefaultsRecord = Pick<OperatorProfileForm, "customerPaymentPolicy">
+interface OperatorPaymentDefaultsRecord {
+  customerPaymentPolicy?: unknown
+}
 type OperatorCheckoutLinksRecord = Pick<
   OperatorProfileForm,
   "bookingCheckoutUrlTemplate" | "invoicePayUrlTemplate"
@@ -124,7 +130,8 @@ function OperatorProfilePage() {
         ...EMPTY_FORM,
         ...(profileJson.data ?? {}),
         ...(instructionsJson.data ?? {}),
-        customerPaymentPolicy: defaultsJson.data?.customerPaymentPolicy ?? null,
+        customerPaymentPolicy:
+          normalizePaymentPolicy(defaultsJson.data?.customerPaymentPolicy) ?? noDepositPolicy,
         bookingCheckoutUrlTemplate: defaultsJson.data?.bookingCheckoutUrlTemplate ?? "",
         invoicePayUrlTemplate: defaultsJson.data?.invoicePayUrlTemplate ?? "",
       }

@@ -4,6 +4,7 @@ import {
   type ComputedScheduleEntry,
   computePaymentSchedule,
   noDepositPolicy,
+  normalizePaymentPolicy,
   type PaymentPolicy,
 } from "@voyant-travel/finance/payment-policy"
 import { formatMessage } from "@voyant-travel/i18n"
@@ -80,11 +81,12 @@ export function PaymentPolicyForm({
   className,
 }: PaymentPolicyFormProps): React.ReactElement {
   const messages = useFinanceUiI18nOrDefault().messages.paymentPolicy.form
-  const isInheriting = value === null
-  const policy = value ?? noDepositPolicy
+  const normalizedValue = React.useMemo(() => normalizePaymentPolicy(value), [value])
+  const isInheriting = inheritable && normalizedValue === null
+  const policy = normalizedValue ?? noDepositPolicy
 
   const setPolicyField = <K extends keyof PaymentPolicy>(key: K, next: PaymentPolicy[K]) => {
-    onChange({ ...(value ?? DEFAULT_POLICY), [key]: next })
+    onChange({ ...(normalizedValue ?? DEFAULT_POLICY), [key]: next })
   }
   const setDepositKind = (kind: DepositKind) => {
     if (kind === "none") {
@@ -122,7 +124,9 @@ export function PaymentPolicyForm({
             <Switch
               id="payment-policy-inherit"
               checked={isInheriting}
-              onCheckedChange={(checked) => onChange(checked ? null : (value ?? DEFAULT_POLICY))}
+              onCheckedChange={(checked) =>
+                onChange(checked ? null : (normalizedValue ?? DEFAULT_POLICY))
+              }
               disabled={disabled}
             />
           </div>
