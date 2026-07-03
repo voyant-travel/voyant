@@ -1,4 +1,6 @@
 /**
+ * agent-quality: file-size exception -- owner: promotions; existing promotions service keeps CRUD, link materialization, and event emission co-located until promotion services are split by responsibility.
+ *
  * Promotions service — CRUD over `promotional_offers` plus link-table
  * materialization for product-shaped scopes.
  *
@@ -153,6 +155,16 @@ function readIdRows(result: unknown): string[] {
     .filter((id): id is string => typeof id === "string")
 }
 
+function isMissingProductsTableError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const record = error as { code?: unknown; message?: unknown }
+  return (
+    record.code === "42P01" ||
+    (typeof record.message === "string" &&
+      record.message.includes('relation "products" does not exist'))
+  )
+}
+
 async function loadExistingProductIds(
   db: PostgresJsDatabase,
   productIds: string[],
@@ -163,10 +175,16 @@ async function loadExistingProductIds(
     productIds.map((productId) => sql`${productId}`),
     sql`, `,
   )
-  const result = await dbAny.execute(
-    // agent-quality: raw-sql reviewed -- owner: promotions; Product owns this table, and ids are parameter-bound through Drizzle.
-    sql`SELECT id FROM products WHERE id IN (${ids})`,
-  )
+  let result: unknown
+  try {
+    result = await dbAny.execute(
+      // agent-quality: raw-sql reviewed -- owner: promotions; Product owns this table, and ids are parameter-bound through Drizzle.
+      sql`SELECT id FROM products WHERE id IN (${ids})`,
+    )
+  } catch (error) {
+    if (isMissingProductsTableError(error)) return []
+    throw error
+  }
   return readIdRows(result)
 }
 

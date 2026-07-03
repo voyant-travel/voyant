@@ -50,6 +50,7 @@ interface FakeDbCalls {
 
 function createPromotionDb(options: {
   existingProductIds: string[]
+  executeError?: unknown
   selectedOffer?: PromotionalOffer | null
 }) {
   const calls: FakeDbCalls = {
@@ -60,7 +61,10 @@ function createPromotionDb(options: {
   }
 
   const db = Object.assign(Object.create(null) as PostgresJsDatabase, {
-    execute: async () => options.existingProductIds.map((id) => ({ id })),
+    execute: async () => {
+      if (options.executeError) throw options.executeError
+      return options.existingProductIds.map((id) => ({ id }))
+    },
     insert: (table: unknown) => ({
       values: (values: unknown) => {
         if (table === promotionalOffers) {
@@ -123,6 +127,29 @@ describe("promotionsService product scope validation", () => {
       details: {
         field: "scope.productIds",
         missingProductIds: ["prod_missing"],
+      },
+    } satisfies Partial<ApiHttpError>)
+
+    expect(calls.offerInserts).toHaveLength(0)
+    expect(calls.linkDeletes).toBe(0)
+    expect(calls.linkInserts).toHaveLength(0)
+  })
+
+  it("returns invalid_reference instead of leaking missing Inventory schema errors", async () => {
+    const { db, calls } = createPromotionDb({
+      existingProductIds: [],
+      executeError: Object.assign(new Error('relation "products" does not exist'), {
+        code: "42P01",
+      }),
+    })
+
+    await expect(
+      promotionsService.createOffer(db, productOffer(["prod_valid"])),
+    ).rejects.toMatchObject({
+      status: 400,
+      code: "invalid_reference",
+      details: {
+        missingProductIds: ["prod_valid"],
       },
     } satisfies Partial<ApiHttpError>)
 
