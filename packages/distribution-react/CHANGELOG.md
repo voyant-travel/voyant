@@ -1,5 +1,31 @@
 # @voyant-travel/distribution-react
 
+## 0.129.0
+
+### Minor Changes
+
+- a45a0d3: Add supplier detail management for API-backed contact points, named contacts, addresses, availability, and contracts.
+
+### Patch Changes
+
+- 2613dfb: Replace native date inputs with shared date picker components in supplier and relationship UI.
+- f3b8bef: Reject supplier default currency values unless they are exactly three uppercase letters.
+- fcad28b: Reject reversed supplier rate and contract ranges. Rate date and pax bounds must be ordered, contract end dates must not precede start dates, and renewal dates must stay within bounded contract terms.
+
+  Supplier UI forms now block those invalid ranges and persisted invalid rate rows are flagged in the rate table.
+
+- Updated dependencies [2613dfb]
+- Updated dependencies [92e170a]
+- Updated dependencies [f3b8bef]
+- Updated dependencies [13f21a1]
+- Updated dependencies [9f29b74]
+- Updated dependencies [fcad28b]
+  - @voyant-travel/relationships-react@0.139.0
+  - @voyant-travel/distribution@0.129.0
+  - @voyant-travel/admin@0.115.4
+  - @voyant-travel/bookings-react@0.139.0
+  - @voyant-travel/inventory-react@0.21.0
+
 ## 0.128.4
 
 ### Patch Changes

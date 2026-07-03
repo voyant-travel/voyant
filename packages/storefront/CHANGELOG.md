@@ -1,5 +1,30 @@
 # @voyant-travel/storefront
 
+## 0.141.0
+
+### Patch Changes
+
+- 52c52fc: Declare storefront public offer detail, apply, and redeem routes as anonymous surfaces so standard hosts admit them without hand-maintained `publicPaths` entries.
+- Updated dependencies [c9a356f]
+- Updated dependencies [bf2d4a5]
+- Updated dependencies [fc71db1]
+- Updated dependencies [fc71db1]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [e1290d9]
+- Updated dependencies [0c75844]
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/relationships-contracts@0.108.11
+  - @voyant-travel/relationships@0.122.0
+  - @voyant-travel/bookings@0.139.0
+  - @voyant-travel/finance@0.139.0
+  - @voyant-travel/commerce@0.21.0
+  - @voyant-travel/identity@0.139.0
+  - @voyant-travel/legal@0.139.0
+  - @voyant-travel/utils@0.105.6
+  - @voyant-travel/db@0.109.5
+
 ## 0.140.2
 
 ### Patch Changes

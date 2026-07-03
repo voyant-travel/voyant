@@ -1,5 +1,20 @@
 # @voyant-travel/crm-react
 
+## 0.139.0
+
+### Patch Changes
+
+- 2613dfb: Replace native date inputs with shared date picker components in supplier and relationship UI.
+- Updated dependencies [c9a356f]
+- Updated dependencies [bf2d4a5]
+- Updated dependencies [fc71db1]
+- Updated dependencies [e1290d9]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/relationships@0.122.0
+  - @voyant-travel/admin@0.115.4
+  - @voyant-travel/identity-react@0.139.0
+  - @voyant-travel/utils@0.105.6
+
 ## 0.138.2
 
 ### Patch Changes

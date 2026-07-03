@@ -1,5 +1,41 @@
 # @voyant-travel/crm
 
+## 0.122.0
+
+### Minor Changes
+
+- fc71db1: Add read-only agent tools (`./tools`) for four more domains, following the
+  module-owned-tools pattern over each package's existing service:
+
+  - `@voyant-travel/bookings`: `list_bookings` + `get_booking` (non-PII, `bookings:read`).
+  - `@voyant-travel/finance`: `list_invoices` + `get_invoice` (`finance:read`).
+  - `@voyant-travel/quotes`: `list_quotes` + `get_quote` (`quotes:read`).
+  - `@voyant-travel/relationships`: `list_people` / `get_person` / `list_organizations` /
+    `get_organization` (`crm:read`).
+
+  The operator registers them on the in-deployment MCP server, so `/v1/admin/mcp` now
+  serves trips, products, bookings, finance, quotes, and CRM tools, each gated per-tool
+  by scope + audience.
+
+### Patch Changes
+
+- bf2d4a5: Reject invalid communication `sentAt` values during request validation instead of failing during persistence.
+- e1290d9: Allow People nested contact method and address creates to derive identity ownership from the route path, and reject creates for missing people.
+- Updated dependencies [c9a356f]
+- Updated dependencies [bf2d4a5]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [1655995]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/relationships-contracts@0.108.11
+  - @voyant-travel/tools@0.1.0
+  - @voyant-travel/identity@0.139.0
+  - @voyant-travel/utils@0.105.6
+  - @voyant-travel/action-ledger@0.105.12
+  - @voyant-travel/db@0.109.5
+
 ## 0.121.14
 
 ### Patch Changes

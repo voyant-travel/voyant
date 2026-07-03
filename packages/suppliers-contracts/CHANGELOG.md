@@ -1,5 +1,18 @@
 # @voyant-travel/suppliers-contracts
 
+## 0.104.10
+
+### Patch Changes
+
+- 92e170a: Validate supplier availability date strings before persistence and upsert supplier
+  availability by supplier/date instead of appending duplicate rows.
+- f3b8bef: Reject supplier default currency values unless they are exactly three uppercase letters.
+- 9f29b74: Fix supplier PATCH validation so insert defaults are not applied during partial
+  updates, and allow explicit nulls to clear nullable supplier contact fields.
+- fcad28b: Reject reversed supplier rate and contract ranges. Rate date and pax bounds must be ordered, contract end dates must not precede start dates, and renewal dates must stay within bounded contract terms.
+
+  Supplier UI forms now block those invalid ranges and persisted invalid rate rows are flagged in the rate table.
+
 ## 0.104.9
 
 ### Patch Changes

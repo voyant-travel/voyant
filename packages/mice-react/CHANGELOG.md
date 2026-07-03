@@ -1,5 +1,24 @@
 # @voyant-travel/mice-react
 
+## 0.7.0
+
+### Patch Changes
+
+- 53a90b1: Render an em dash in the MICE agenda Time column when a session has no start time instead of repeating the day date.
+- 2453207: Use the relationships person combobox when adding MICE delegates instead of asking admins for raw person IDs.
+- 0ecded6: Expose MICE rooming assignment and booking linkage workflows on the program detail UI.
+- Updated dependencies [c9a356f]
+- Updated dependencies [2453207]
+- Updated dependencies [922d0fd]
+- Updated dependencies [f000bb3]
+- Updated dependencies [28c59ea]
+- Updated dependencies [2613dfb]
+  - @voyant-travel/types@0.107.0
+  - @voyant-travel/mice@0.6.5
+  - @voyant-travel/relationships-react@0.139.0
+  - @voyant-travel/admin@0.115.4
+  - @voyant-travel/utils@0.105.6
+
 ## 0.6.0
 
 ### Minor Changes

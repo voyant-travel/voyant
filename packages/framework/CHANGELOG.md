@@ -1,5 +1,54 @@
 # @voyant-travel/framework
 
+## 0.12.0
+
+### Patch Changes
+
+- 52c52fc: Declare storefront public offer detail, apply, and redeem routes as anonymous surfaces so standard hosts admit them without hand-maintained `publicPaths` entries.
+- Updated dependencies [c9a356f]
+- Updated dependencies [689a289]
+- Updated dependencies [bf2d4a5]
+- Updated dependencies [fc71db1]
+- Updated dependencies [fc71db1]
+- Updated dependencies [77f139b]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+- Updated dependencies [2453207]
+- Updated dependencies [922d0fd]
+- Updated dependencies [f000bb3]
+- Updated dependencies [28c59ea]
+- Updated dependencies [05961f1]
+- Updated dependencies [e1290d9]
+- Updated dependencies [0c75844]
+- Updated dependencies [22f0457]
+- Updated dependencies [52c52fc]
+- Updated dependencies [92e170a]
+- Updated dependencies [f3b8bef]
+- Updated dependencies [13f21a1]
+- Updated dependencies [9f29b74]
+- Updated dependencies [fcad28b]
+- Updated dependencies [ca14f6f]
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/catalog@0.137.0
+  - @voyant-travel/relationships@0.122.0
+  - @voyant-travel/bookings@0.139.0
+  - @voyant-travel/finance@0.139.0
+  - @voyant-travel/quotes@0.124.0
+  - @voyant-travel/notifications@0.117.0
+  - @voyant-travel/inventory@0.6.0
+  - @voyant-travel/mice@0.6.5
+  - @voyant-travel/commerce@0.21.0
+  - @voyant-travel/storefront@0.141.0
+  - @voyant-travel/distribution@0.129.0
+  - @voyant-travel/trips@0.130.0
+  - @voyant-travel/identity@0.139.0
+  - @voyant-travel/legal@0.139.0
+  - @voyant-travel/operations@0.5.10
+  - @voyant-travel/accommodations@0.109.5
+  - @voyant-travel/action-ledger@0.105.12
+  - @voyant-travel/flights@0.139.0
+  - @voyant-travel/operator-settings@0.2.23
+
 ## 0.11.5
 
 ### Patch Changes

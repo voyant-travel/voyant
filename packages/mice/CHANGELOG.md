@@ -1,5 +1,22 @@
 # @voyant-travel/mice
 
+## 0.6.5
+
+### Patch Changes
+
+- 2453207: Validate configured MICE delegate person references during create and update, while allowing omitted or cleared person links.
+- 922d0fd: Preserve omitted enum fields on MICE update payloads instead of applying create-time defaults.
+- f000bb3: Reject MICE program create and update payloads whose end date is before the start date.
+- 28c59ea: Emit a `mice.rfp.awarded` domain event after a MICE RFP award succeeds, and clarify that downstream booking, room-block, and contract artifact creation belongs to deployment-level subscribers.
+- Updated dependencies [c9a356f]
+- Updated dependencies [6474f42]
+- Updated dependencies [5786f63]
+  - @voyant-travel/core@0.112.0
+  - @voyant-travel/hono@0.121.0
+  - @voyant-travel/operations@0.5.10
+  - @voyant-travel/accommodations@0.109.5
+  - @voyant-travel/db@0.109.5
+
 ## 0.6.4
 
 ### Patch Changes
