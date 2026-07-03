@@ -1,10 +1,11 @@
 /**
- * catalog-bridge — `product.publication.changed` reindex trigger.
+ * catalog-bridge — catalog reindex event triggers.
  *
  * Verifies the bridge subscribes to the distribution publication event and
- * reindexes the affected product's customer-facing slices. The catalog
- * runtime + db helpers are mocked so the test exercises only the subscriber
- * wiring (no Typesense / Postgres required).
+ * promotion event, then reindexes affected products without racing Typesense
+ * collection setup across event bursts. The catalog runtime + db helpers are
+ * mocked so the test exercises only subscriber wiring (no Typesense / Postgres
+ * required).
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -43,7 +44,7 @@ vi.mock("../lib/db", () => ({
   withDbFromEnv: async (_env: unknown, fn: (db: unknown) => Promise<void>) => fn({}),
 }))
 
-// eslint-disable-next-line import/first -- the vi.mock calls above must be hoisted before the SUT import
+// eslint-disable-next-line import/first -- owner: operator-catalog-bridge; vi.mock calls above must be hoisted before the SUT import.
 import { catalogBridgeBundle } from "./catalog-bridge"
 
 type Handler = (envelope: { data: unknown }) => Promise<void> | void
@@ -66,10 +67,11 @@ function createTestBus() {
   return { bus, handlers }
 }
 
-describe("catalog-bridge product.publication.changed", () => {
+describe("catalog-bridge catalog reindex events", () => {
   beforeEach(() => {
     reindexEntity.mockClear()
-    ensureCollections.mockClear()
+    ensureCollections.mockReset()
+    ensureCollections.mockResolvedValue(undefined)
   })
 
   it("reindexes the product when a publication event fires", async () => {
@@ -92,6 +94,55 @@ describe("catalog-bridge product.publication.changed", () => {
     expect(reindexEntity).toHaveBeenCalledWith("products", "prod_123", expect.anything())
   })
 
+  it("serializes collection setup across concurrent promotion.changed product reindex events", async () => {
+    let activeEnsures = 0
+    let maxActiveEnsures = 0
+    const firstEnsureStarted = createDeferred<void>()
+    const releaseFirstEnsure = createDeferred<void>()
+    ensureCollections.mockImplementation(async () => {
+      activeEnsures += 1
+      maxActiveEnsures = Math.max(maxActiveEnsures, activeEnsures)
+      if (ensureCollections.mock.calls.length === 1) {
+        firstEnsureStarted.resolve()
+        await releaseFirstEnsure.promise
+      }
+      activeEnsures -= 1
+    })
+
+    const { bus, handlers } = createTestBus()
+    catalogBridgeBundle.bootstrap!({
+      bindings: { TYPESENSE_HOST: "http://localhost:8108" } as never,
+      container: {} as never,
+      eventBus: bus as never,
+    })
+
+    expect(handlers.has("promotion.changed")).toBe(true)
+
+    const first = bus.emit("promotion.changed", {
+      offerId: "pofr_1",
+      source: "updated",
+      affected: { kind: "products", productIds: ["prod_1", "prod_2"] },
+    })
+    await firstEnsureStarted.promise
+    const second = bus.emit("promotion.changed", {
+      offerId: "pofr_2",
+      source: "deleted",
+      affected: { kind: "products", productIds: ["prod_3"] },
+    })
+    await Promise.resolve()
+
+    expect(ensureCollections).toHaveBeenCalledTimes(1)
+    releaseFirstEnsure.resolve()
+    await Promise.all([first, second])
+
+    expect(ensureCollections).toHaveBeenCalledTimes(2)
+    expect(maxActiveEnsures).toBe(1)
+    expect(reindexEntity).toHaveBeenCalledTimes(3)
+    expect(reindexEntity).toHaveBeenNthCalledWith(1, "products", "prod_1", expect.anything())
+    expect(reindexEntity).toHaveBeenNthCalledWith(2, "products", "prod_2", expect.anything())
+    expect(reindexEntity).toHaveBeenNthCalledWith(3, "products", "prod_3", expect.anything())
+  })
+
   it("ignores a payload with no productId", async () => {
     const { bus } = createTestBus()
     catalogBridgeBundle.bootstrap!({
@@ -109,3 +160,13 @@ describe("catalog-bridge product.publication.changed", () => {
     expect(reindexEntity).not.toHaveBeenCalled()
   })
 })
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
