@@ -11,6 +11,10 @@ export type PromotionsUiMessages = {
     saveChanges: string
     saving: string
     active: string
+    edit: string
+    archive: string
+    activate: string
+    delete: string
     discountTypeLabels: Record<"percentage" | "fixed_amount", string>
     applicationModeLabels: Record<PromotionalOfferApplicationMode, string>
     statusLabels: Record<PromotionalOfferListStatus, string>
@@ -43,6 +47,19 @@ export type PromotionsUiMessages = {
       validity: string
       code: string
       status: string
+      actions: string
+    }
+    actions: {
+      edit: string
+      archive: string
+      activate: string
+      delete: string
+      archiveConfirm: string
+      activateConfirm: string
+      deleteConfirm: string
+      deleteConflict: string
+      actionFailedPrefix: string
+      dismissError: string
     }
     badges: {
       auto: string
@@ -100,6 +117,8 @@ export type PromotionsUiMessages = {
       currency: string
       scope: string
       scopeIds: string
+      products: string
+      categories: string
       audiences: string
       validFrom: string
       validUntil: string
@@ -118,7 +137,9 @@ export type PromotionsUiMessages = {
       code: string
       minPax: string
       productIds: string
+      productPicker: string
       categoryIds: string
+      categoryPicker: string
       destinationIds: string
       marketIds: string
       fareCodes: string
@@ -127,15 +148,28 @@ export type PromotionsUiMessages = {
     hints: {
       globalScope: string
       commaSeparatedIds: string
+      noProductsSelected: string
+      noCategoriesSelected: string
+    }
+    actions: {
+      removeScopeId: string
     }
     validation: {
       nameRequired: string
       slugRequired: string
+      slugInvalid: string
+      codeInvalid: string
       discountPercentRequired: string
+      discountPercentInvalid: string
       discountAmountRequired: string
       currencyRequired: string
+      minPaxInvalid: string
+      validFromInvalid: string
+      validUntilInvalid: string
+      validRangeInvalid: string
       scopeInvalid: string
       scopeInvalidPrefix: string
+      scopeIdsRequired: string
     }
   }
 }

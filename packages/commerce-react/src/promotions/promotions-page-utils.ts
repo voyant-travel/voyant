@@ -11,7 +11,7 @@ import type {
 
 export const DEFAULT_PAGE_SIZE = 25
 export const ALL = "__all__"
-export const TABLE_COLUMN_COUNT = 7
+export const TABLE_COLUMN_COUNT = 8
 
 export const scopeKinds: PromotionalOfferScopeKind[] = [
   "global",
