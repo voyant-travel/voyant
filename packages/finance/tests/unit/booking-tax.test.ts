@@ -7,6 +7,7 @@ import {
   createBookingTaxRoutes,
   matchesTaxPolicyCondition,
 } from "../../src/booking-tax.js"
+import { createFinanceHonoModule } from "../../src/index.js"
 
 describe("booking tax helpers", () => {
   it("computes exclusive tax lines", () => {
@@ -193,6 +194,33 @@ describe("booking tax helpers", () => {
     await expect(patchResponse.json()).resolves.toEqual({
       data: {
         taxPriceMode: "exclusive",
+        taxPolicyProfileId: "profile_1",
+      },
+    })
+  })
+
+  it("serves booking tax settings through the finance admin mount without hitting booking detail", async () => {
+    const db = {} as PostgresJsDatabase
+    const finance = createFinanceHonoModule({
+      resolveBookingTaxSettings: () => ({
+        taxPriceMode: "inclusive",
+        taxPolicyProfileId: "profile_1",
+      }),
+    })
+    const app = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db", db)
+        await next()
+      })
+      .get("/v1/admin/bookings/:id", (c) => c.json({ error: "Booking not found" }, 404))
+      .route("/v1/admin/finance", finance.adminRoutes!)
+
+    const response = await app.request("/v1/admin/finance/tax-settings")
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        taxPriceMode: "inclusive",
         taxPolicyProfileId: "profile_1",
       },
     })

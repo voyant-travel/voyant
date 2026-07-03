@@ -3,6 +3,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { type BookingTaxRouteOptions, createBookingTaxRoutes } from "./booking-tax.js"
 import {
   buildFinanceCheckoutRouteRuntime,
   type CheckoutRoutesOptions,
@@ -134,7 +135,8 @@ export const financeModule: Module = {
 export interface FinanceHonoModuleOptions
   extends FinanceRuntimeOptions,
     PublicFinanceRouteOptions,
-    CheckoutRoutesOptions {}
+    CheckoutRoutesOptions,
+    BookingTaxRouteOptions {}
 
 export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}): HonoModule {
   const adminRoutes = new OpenAPIHono()
@@ -145,6 +147,7 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
     .route("/", createInvoiceFxRoutes(options))
     .route("/", createFinanceAdminDocumentRoutes(options))
     .route("/", createFinanceAdminSettlementRoutes(options))
+    .route("/", createBookingTaxRoutes(options))
 
   const module: Module = {
     ...financeModule,

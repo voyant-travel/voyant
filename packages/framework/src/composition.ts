@@ -516,6 +516,8 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
           policy: capabilities.financeCheckoutPolicy,
           paymentScheduleLineDescriptionFormat:
             capabilities.financePaymentScheduleLineDescriptionFormat,
+          resolveBookingTaxSettings,
+          updateBookingTaxSettings,
           resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
           resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
           listBookingReminderRuns: async (db, bookingId, query) => {

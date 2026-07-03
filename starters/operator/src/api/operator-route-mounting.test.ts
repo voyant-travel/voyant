@@ -22,6 +22,7 @@ import {
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
+import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never
@@ -72,6 +73,7 @@ function buildWithLiveFrontDoor() {
     providers: buildOperatorProviders(),
     modules: deploymentLocalModules,
     extensions: deploymentLocalExtensions,
+    publicPaths: [...OPERATOR_PUBLIC_PATHS],
     // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test -- owner: operator API tests.
     db: () => ({}) as any,
     auth: {
@@ -149,7 +151,9 @@ describe("operator composed route mounting (smoke)", () => {
   it("mounts multi-prefix lazyRoutes families (catalog-booking, media, settings, payment-link)", async () => {
     expect(await status("/v1/admin/catalog/orders")).not.toBe(404)
     expect(await status("/v1/admin/media/anything")).not.toBe(404)
+    expect(await liveFrontDoorStatus("/v1/admin/finance/tax-settings")).not.toBe(404)
     expect(await status("/v1/public/operator-profile")).not.toBe(404)
+    expect(await status("/v1/public/settings/operator")).not.toBe(404)
     expect(await status("/v1/public/payment-link-config")).not.toBe(404)
   })
 
@@ -201,5 +205,13 @@ describe("operator composed route mounting (smoke)", () => {
     expect(redeem).not.toBe(401)
     expect(redeem).not.toBe(403)
     expect(redeem).not.toBe(404)
+  })
+
+  it("lets public operator settings pass the starter public actor gate", async () => {
+    const settings = await liveFrontDoorStatus("/v1/public/settings/operator")
+
+    expect(settings).not.toBe(401)
+    expect(settings).not.toBe(403)
+    expect(settings).not.toBe(404)
   })
 })

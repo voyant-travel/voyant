@@ -15,6 +15,7 @@ import {
 } from "./composition"
 import { createBulkReindexProductsService } from "./lib/bulk-reindex-service"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
+import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
 import { channelPushBundle } from "./routes/channel-push"
 import {
@@ -93,16 +94,9 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
   //     declaration.
   //   - products / accommodations: storefront detail surfaces whose owning
   //     module isn't yet annotated.
-  //   - operator-profile / payment-policy: sanitized storefront-preview reads;
+  //   - operator-profile / settings/operator / payment-policy: sanitized storefront-preview reads;
   //     owning module not yet annotated.
-  publicPaths: [
-    "/v1/public/payment-link-config",
-    "/v1/public/payment-link",
-    "/v1/public/products",
-    "/v1/public/accommodations",
-    "/v1/public/operator-profile",
-    "/v1/public/payment-policy",
-  ],
+  publicPaths: [...OPERATOR_PUBLIC_PATHS],
   plugins: [
     {
       name: "operator-promotions-runtime",
