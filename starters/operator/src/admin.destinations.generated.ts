@@ -43,7 +43,9 @@ export const generatedAdminDestinations = {
   "contractTemplate.detail": ({ templateId }) =>
     `/legal/templates/${encodeURIComponent(templateId)}`,
   "contractTemplate.list": () => "/legal/templates",
+  "flight.orders": () => "/flights/orders",
   "flight.search": () => "/flights",
+  "flightOrder.detail": ({ orderId }) => `/flights/orders/${encodeURIComponent(orderId)}`,
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
   "invoice.list": () => "/finance/invoices",
   "mice.program.detail": ({ programId }) => `/mice/${encodeURIComponent(programId)}`,

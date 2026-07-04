@@ -14,6 +14,7 @@ export type OperatorAdminNavMessages = {
   catalogAccommodations: string
   catalogOrders: string
   flights: string
+  flightsSearch: string
   flightOrders: string
   products: string
   categories: string
@@ -68,6 +69,7 @@ export const operatorAdminNavMessages = {
       catalogAccommodations: "Accommodations",
       catalogOrders: "Orders",
       flights: "Flights",
+      flightsSearch: "Search",
       flightOrders: "Orders",
       products: "Products",
       categories: "Categories",
@@ -121,6 +123,7 @@ export const operatorAdminNavMessages = {
       catalogAccommodations: "Cazari",
       catalogOrders: "Comenzi",
       flights: "Zboruri",
+      flightsSearch: "Căutare",
       flightOrders: "Comenzi",
       products: "Produse",
       categories: "Categorii",

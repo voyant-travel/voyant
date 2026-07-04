@@ -16,6 +16,13 @@ export interface FlightOrderConfirmationProps {
   /** Optional cancel button — pass when the order is still cancellable. */
   onCancel?: (order: FlightOrder) => void
   cancelLoading?: boolean
+  /**
+   * Optional "Issue tickets" button — pass to let the operator promote a held
+   * order to ticketed before its deadline. Only rendered while the order is
+   * `confirmed` (held).
+   */
+  onTicket?: (order: FlightOrder) => void
+  ticketLoading?: boolean
   /** IATA → human-readable resolvers, forwarded to the embedded offer detail. */
   carrierName?: (iataCode: string) => string | undefined
   airportName?: (iataCode: string) => string | undefined
@@ -37,6 +44,8 @@ export function FlightOrderConfirmation({
   order,
   onCancel,
   cancelLoading,
+  onTicket,
+  ticketLoading,
   carrierName,
   airportName,
   aircraftName,
@@ -46,6 +55,7 @@ export function FlightOrderConfirmation({
   const status = STATUS_VARIANTS[order.status]
   const isCancellable =
     onCancel != null && (order.status === "confirmed" || order.status === "ticketed")
+  const isTicketable = onTicket != null && order.status === "confirmed"
 
   return (
     <div className="flex flex-col gap-6">
@@ -153,16 +163,30 @@ export function FlightOrderConfirmation({
         />
       </Section>
 
-      {/* Cancel CTA */}
-      {isCancellable && (
+      {/* Action CTAs — issue tickets (held orders) + cancel */}
+      {(isTicketable || isCancellable) && (
         <>
           <Separator />
-          <div className="flex justify-end">
-            <Button variant="destructive" onClick={() => onCancel(order)} disabled={cancelLoading}>
-              {cancelLoading
-                ? messages.flightOrderConfirmation.cancelling
-                : messages.flightOrderConfirmation.cancelBooking}
-            </Button>
+          <div className="flex justify-end gap-2">
+            {isTicketable && (
+              <Button onClick={() => onTicket(order)} disabled={ticketLoading}>
+                <Ticket className="mr-1.5 h-4 w-4" />
+                {ticketLoading
+                  ? messages.flightOrderConfirmation.issuingTickets
+                  : messages.flightOrderConfirmation.issueTickets}
+              </Button>
+            )}
+            {isCancellable && (
+              <Button
+                variant="destructive"
+                onClick={() => onCancel(order)}
+                disabled={cancelLoading}
+              >
+                {cancelLoading
+                  ? messages.flightOrderConfirmation.cancelling
+                  : messages.flightOrderConfirmation.cancelBooking}
+              </Button>
+            )}
           </div>
         </>
       )}

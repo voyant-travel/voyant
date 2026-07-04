@@ -65,3 +65,28 @@ export function useFlightOrderCancel() {
     },
   })
 }
+
+/**
+ * POST `/v1/admin/flights/orders/:orderId/ticket` — promote a held order to
+ * ticketed before its `paymentDeadline`. Capability-gated: connectors without
+ * hold support 501. Updates the cached order on success so the detail page
+ * reflects the new "ticketed" status without a refetch, and invalidates the
+ * order list so the deadline / status column refreshes.
+ */
+export function useFlightOrderTicket() {
+  const client = useVoyantFlightsContext()
+  const qc = useQueryClient()
+  return useMutation<FlightGetOrderResponseDto, Error, string>({
+    mutationFn: (orderId) =>
+      fetchWithValidation(
+        `/v1/admin/flights/orders/${encodeURIComponent(orderId)}/ticket`,
+        flightGetOrderResponseSchema,
+        client,
+        { method: "POST", body: JSON.stringify({}) },
+      ),
+    onSuccess: (data) => {
+      qc.setQueryData(flightsQueryKeys.orderDetail(data.order.orderId), { order: data.order })
+      qc.invalidateQueries({ queryKey: flightsQueryKeys.order() })
+    },
+  })
+}

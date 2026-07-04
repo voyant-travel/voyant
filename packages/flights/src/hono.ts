@@ -12,6 +12,7 @@
  *   POST   /book                     — adapter.bookFlight (+ optional payment session on hold)
  *   GET    /orders                   — adapter.listOrders (+ optional payment status)
  *   GET    /orders/:orderId          — adapter.getOrder (+ optional payment status)
+ *   POST   /orders/:orderId/ticket   — adapter.ticketOrder (capability-gated)
  *   POST   /orders/:orderId/cancel   — adapter.cancelOrder
  *   GET    /reference/airports?q=&limit=
  *   GET    /reference/airlines
@@ -328,6 +329,25 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
         const summary = sessionByOrderId.get(response.order.orderId) ?? null
         response.order = attachPaymentSession(response.order, summary)
       }
+      return c.json(response)
+    } catch (err) {
+      const { message, status } = adapterErrorDetails(err)
+      return c.json({ error: message }, status)
+    }
+  })
+
+  // ── Issue tickets ─────────────────────────────────────────────────────────
+  // Promote a held order to ticketed. Capability-gated: connectors that don't
+  // support holds omit `ticketOrder` and this returns 501.
+  hono.post("/orders/:orderId/ticket", async (c) => {
+    const orderId = c.req.param("orderId")
+    if (!orderId) return c.json({ error: "orderId is required" }, 400)
+    const adapter = resolveAdapter(c)
+    if (!adapter.ticketOrder) {
+      return c.json({ error: "Adapter does not support ticketing" }, 501)
+    }
+    try {
+      const response = await adapter.ticketOrder(buildContext(c), orderId)
       return c.json(response)
     } catch (err) {
       const { message, status } = adapterErrorDetails(err)

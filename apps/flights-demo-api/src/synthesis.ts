@@ -6,5 +6,5 @@
 
 export { synthesizeAncillaryCatalog } from "./synthesis-ancillaries.js"
 export { applySearchFilters, parsePageCursor, synthesizeOffers } from "./synthesis-offers.js"
-export { synthesizeOrder } from "./synthesis-orders.js"
+export { synthesizeOrder, ticketHeldOrder } from "./synthesis-orders.js"
 export { findSegmentInOffer, synthesizeSeatMap } from "./synthesis-seat-maps.js"

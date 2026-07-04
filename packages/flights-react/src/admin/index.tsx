@@ -34,6 +34,14 @@ declare module "@voyant-travel/admin" {
     }
     /** The CRM people list page (the wizard's "add passenger contact" jump). */
     "person.list": Record<string, never>
+    /** The flights orders list page (holds awaiting ticketing + booked orders). */
+    "flight.orders": Record<string, never>
+    /**
+     * A single flight order detail page. Route-backed: resolves by pure path
+     * interpolation of the `$orderId` segment, so the host's resolver is
+     * generated.
+     */
+    "flightOrder.detail": { orderId: string }
   }
 }
 
@@ -105,6 +113,18 @@ export const flightsBookSearchSchema = z.object({
 
 export type FlightsBookSearchParams = z.infer<typeof flightsBookSearchSchema>
 
+/**
+ * Search contract for the flights orders list. Filters are URL-backed so the
+ * list is shareable and reload-stable; the pagination cursor is component-
+ * internal (it resets on filter change) and deliberately not in the URL.
+ */
+export const flightsOrdersSearchSchema = z.object({
+  q: z.string().optional(),
+  status: z.enum(["pending", "confirmed", "ticketed", "cancelled", "failed"]).optional(),
+})
+
+export type FlightsOrdersSearchParams = z.infer<typeof flightsOrdersSearchSchema>
+
 export interface CreateFlightsAdminExtensionOptions {
   /** Mount path of the flights pages inside the admin workspace. Default `/flights`. */
   basePath?: string
@@ -171,6 +191,23 @@ export function createFlightsAdminExtension(
         title: flights,
         validateSearch: (search) => flightsBookSearchSchema.parse(search),
         page: () => import("./pages/flight-book-page.js"),
+      },
+      {
+        id: "flights-orders",
+        path: `${basePath}/orders`,
+        title: flights,
+        // Route-backed destination — no params, resolves to this route's path.
+        destination: "flight.orders",
+        validateSearch: (search) => flightsOrdersSearchSchema.parse(search),
+        page: () => import("./pages/flight-orders-page.js"),
+      },
+      {
+        id: "flights-order-detail",
+        path: `${basePath}/orders/$orderId`,
+        title: flights,
+        // Route-backed destination — `$orderId` resolves by path interpolation.
+        destination: "flightOrder.detail",
+        page: () => import("./pages/flight-order-detail-page.js"),
       },
     ],
   })
