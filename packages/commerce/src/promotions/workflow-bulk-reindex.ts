@@ -18,20 +18,15 @@
  * the codebase for cross-module behavior (workflow → ctx.services.resolve).
  */
 
-import { trigger, workflow } from "@voyant-travel/workflows"
+import { workflow } from "@voyant-travel/workflows"
 
-import { PROMOTION_CHANGED_EVENT, type PromotionChangedSource } from "./events.js"
+import {
+  type BulkReindexProductsInput,
+  type BulkReindexProductsOutput,
+  bulkReindexProductsWorkflowManifest,
+  promotionAffectedAllFilter,
+} from "./workflow-bulk-reindex-manifest.js"
 import { BULK_REINDEX_SERVICE_KEY, type BulkReindexProductsService } from "./workflow-runtime.js"
-
-export interface BulkReindexProductsInput {
-  /** The offer that triggered the reindex (for logging / correlation). */
-  offerId: string
-  source: PromotionChangedSource
-}
-
-export interface BulkReindexProductsOutput {
-  reindexed: number
-}
 
 /** Cap on concurrent per-product reindex steps to avoid hammering the index. */
 const REINDEX_CONCURRENCY = 8
@@ -40,8 +35,8 @@ export const bulkReindexProductsWorkflow = workflow<
   BulkReindexProductsInput,
   BulkReindexProductsOutput
 >({
-  id: "promotions.reindex-all-products",
-  defaultRuntime: "node",
+  ...bulkReindexProductsWorkflowManifest.config,
+  id: bulkReindexProductsWorkflowManifest.id,
   async run(_input, ctx) {
     const svc = ctx.services.resolve<BulkReindexProductsService>(BULK_REINDEX_SERVICE_KEY)
 
@@ -61,21 +56,9 @@ export const bulkReindexProductsWorkflow = workflow<
   },
 })
 
-/**
- * Routes `promotion.changed` envelopes whose `affected.kind === "all"` into
- * the workflow above. Other shapes (`{ kind: "products", productIds }`) fall
- * through to the in-process catalog-bridge subscriber.
- */
-export const promotionAffectedAllFilter = trigger.on<BulkReindexProductsInput>(
-  PROMOTION_CHANGED_EVENT,
-  {
-    target: bulkReindexProductsWorkflow,
-    where: { eq: [{ path: "data.affected.kind" }, { lit: "all" }] },
-    input: {
-      object: {
-        offerId: { path: "data.offerId" },
-        source: { path: "data.source" },
-      },
-    },
-  },
-)
+export {
+  type BulkReindexProductsInput,
+  type BulkReindexProductsOutput,
+  bulkReindexProductsWorkflowManifest,
+  promotionAffectedAllFilter,
+}

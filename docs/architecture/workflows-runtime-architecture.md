@@ -138,6 +138,14 @@ Self-host Node deployments do this in-process against Postgres. Managed Cloud
 deployments forward the same logical calls to the Cloud control plane, which
 then schedules execution on Node runners.
 
+Request-serving apps should keep module workflow metadata manifest-only when
+workflow bodies execute in a detached bundle. `Module.workflows` accepts
+`{ id, config }` descriptors, and `Module.eventFilters` accepts entries carrying
+`{ id, eventType, manifest }`, so the API app can register workflow ids,
+schedules, concurrency, and event routing without statically importing
+run-bearing workflow modules. Workflow bundle entrypoints still import the full
+`workflow({ id, run })` definitions so the Node runner can execute them.
+
 ## Migration Rules
 
 - Do not add new `edge` runtime types, options, docs, or tests.

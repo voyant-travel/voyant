@@ -1,9 +1,12 @@
 import type { Module } from "@voyant-travel/core"
 
-import { bulkReindexProductsWorkflow, promotionAffectedAllFilter } from "./workflow-bulk-reindex.js"
+import {
+  bulkReindexProductsWorkflowManifest,
+  promotionAffectedAllFilter,
+} from "./workflow-bulk-reindex-manifest.js"
 
 export const promotionsModule: Module = {
   name: "promotions",
-  workflows: [bulkReindexProductsWorkflow],
+  workflows: [bulkReindexProductsWorkflowManifest],
   eventFilters: [promotionAffectedAllFilter],
 }

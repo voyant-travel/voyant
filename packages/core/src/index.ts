@@ -78,9 +78,13 @@ export type {
   BootstrapContext,
   BootstrapHandler,
   EventFilterDescriptor,
+  EventFilterManifestDescriptor,
   Extension,
   Module,
+  WorkflowConcurrencyDescriptor,
   WorkflowDescriptor,
+  WorkflowManifestConfigDescriptor,
+  WorkflowScheduleDescriptor,
 } from "./module.js"
 export type { JobOptions, JobRunner } from "./orchestration.js"
 export type {

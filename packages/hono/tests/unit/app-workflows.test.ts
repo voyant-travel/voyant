@@ -160,6 +160,112 @@ describe("mountApp workflows wiring", () => {
     ])
   })
 
+  test("registers manifest-only workflow config without a run-bearing definition", async () => {
+    const moduleSpec: Module = {
+      name: "manifest-only-workflows",
+      workflows: [
+        {
+          id: "test-manifest-only-scheduled-report",
+          config: {
+            description: "Manifest-only scheduled report",
+            defaultRuntime: "node",
+            schedule: {
+              every: "15m",
+              timezone: "UTC",
+              input: { source: "manifest-only" },
+              overlap: "skip",
+              environments: ["production"],
+              name: "every-fifteen-minutes",
+            },
+          },
+        } satisfies WorkflowDescriptor,
+      ],
+    }
+    const factory = createInMemoryDriver()
+    let driverHandle: ReturnType<typeof factory> | undefined
+
+    const app = mountApp({
+      db: () => null as never,
+      modules: [{ module: moduleSpec }],
+      workflows: {
+        driver: () => (deps) => {
+          driverHandle = factory(deps)
+          return driverHandle
+        },
+        environment: "production",
+      },
+    })
+
+    await app.ready()
+
+    const manifest = await driverHandle?.getManifest({ environment: "production" })
+    expect(manifest?.workflows).toEqual([
+      expect.objectContaining({
+        id: "test-manifest-only-scheduled-report",
+        description: "Manifest-only scheduled report",
+        schedules: [
+          {
+            every: "15m",
+            timezone: "UTC",
+            input: { source: "manifest-only" },
+            overlap: "skip",
+            environments: ["production"],
+            name: "every-fifteen-minutes",
+          },
+        ],
+      }),
+    ])
+  })
+
+  test("registers manifest-only event filters without runtime declarations", async () => {
+    const moduleSpec: Module = {
+      name: "manifest-only-filters",
+      workflows: [{ id: "test-filter-target" } satisfies WorkflowDescriptor],
+      eventFilters: [
+        {
+          id: "ef_manifest_only",
+          eventType: "test.manifest-only",
+          manifest: {
+            id: "ef_manifest_only",
+            eventType: "test.manifest-only",
+            payloadHash: "manifest_only",
+            targetWorkflowId: "test-filter-target",
+            where: { eq: [{ path: "data.kind" }, { lit: "all" }] },
+            input: { object: { kind: { path: "data.kind" } } },
+          },
+        } satisfies EventFilterDescriptor,
+      ],
+    }
+    const factory = createInMemoryDriver()
+    let driverHandle: ReturnType<typeof factory> | undefined
+
+    const app = mountApp({
+      db: () => null as never,
+      modules: [{ module: moduleSpec }],
+      workflows: {
+        driver: () => (deps) => {
+          driverHandle = factory(deps)
+          return driverHandle
+        },
+        environment: "production",
+      },
+    })
+
+    await app.ready()
+
+    const manifest = await driverHandle?.getManifest({ environment: "production" })
+    expect(manifest?.eventFilters).toEqual([
+      {
+        id: "ef_manifest_only",
+        eventType: "test.manifest-only",
+        payloadHash: "manifest_only",
+        targetWorkflowId: "test-filter-target",
+        where: { eq: [{ path: "data.kind" }, { lit: "all" }] },
+        input: { object: { kind: { path: "data.kind" } } },
+      },
+    ])
+  })
+
   test("registers workflow concurrency config in the runtime manifest", async () => {
     const queued = workflow<{ tenantId: string }, { ok: true }>({
       id: "test-queued-workflow",

@@ -67,6 +67,7 @@ export {
   type BulkReindexProductsInput,
   type BulkReindexProductsOutput,
   bulkReindexProductsWorkflow,
+  bulkReindexProductsWorkflowManifest,
   promotionAffectedAllFilter,
 } from "./workflow-bulk-reindex.js"
 export {

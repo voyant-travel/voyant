@@ -107,7 +107,8 @@ const temporaryOwnerExports = new Map<string, string[]>([
       ./promotions/service-catalog-evaluator ./promotions/service-catalog-plane-promotions
       ./promotions/service-evaluator ./promotions/service-storefront ./promotions/service
       ./promotions/validation ./promotions/workflow-bulk-reindex
-      ./promotions/workflow-runtime ./sellability ./sellability/routes ./sellability/schema
+      ./promotions/workflow-bulk-reindex-manifest ./promotions/workflow-runtime
+      ./sellability ./sellability/routes ./sellability/schema
       ./sellability/service-records ./sellability/service-resolve ./sellability/service-shared
       ./sellability/service-snapshots ./sellability/service ./sellability/validation
       ./pricing/public-routes ./pricing/public-validation

@@ -9,6 +9,7 @@
     "./checkout": "./src/checkout/index.ts",
     "./markets/validation": "./src/markets/validation.ts",
     "./promotions/validation": "./src/promotions/validation.ts",
+    "./promotions/workflow-bulk-reindex-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
     "./promotions/workflow-bulk-reindex": "./src/promotions/workflow-bulk-reindex.ts",
     "./sellability/validation": "./src/sellability/validation.ts"
   },
@@ -91,6 +92,11 @@
         "types": "./dist/promotions/validation.d.ts",
         "import": "./dist/promotions/validation.js",
         "default": "./dist/promotions/validation.js"
+      },
+      "./promotions/workflow-bulk-reindex-manifest": {
+        "types": "./dist/promotions/workflow-bulk-reindex-manifest.d.ts",
+        "import": "./dist/promotions/workflow-bulk-reindex-manifest.js",
+        "default": "./dist/promotions/workflow-bulk-reindex-manifest.js"
       },
       "./promotions/workflow-bulk-reindex": {
         "types": "./dist/promotions/workflow-bulk-reindex.d.ts",

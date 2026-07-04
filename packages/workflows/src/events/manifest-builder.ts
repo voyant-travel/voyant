@@ -20,7 +20,6 @@ import type {
 } from "../protocol/index.js"
 import type { ConcurrencyPolicy, ScheduleDeclaration } from "../workflow.js"
 import { canonicalJson, shortHash } from "./payload-hash.js"
-import type { EventFilterRuntimeEntry } from "./registry.js"
 
 export interface BuildManifestArgs {
   /** Project / tenant identifier. Single-tenant runtimes pass `"default"`. */
@@ -38,11 +37,11 @@ export interface BuildManifestArgs {
       concurrency?: ConcurrencyPolicy<unknown>
       retry?: unknown
       timeout?: unknown
-      schedule?: ScheduleDeclaration | ScheduleDeclaration[]
+      schedule?: ScheduleDeclaration | readonly ScheduleDeclaration[]
     }
   }>
-  /** Event-filter entries from `getEventFilterRegistry()`. */
-  eventFilters: ReadonlyArray<EventFilterRuntimeEntry>
+  /** Event-filter entries from `trigger.on(...)` or manifest-only module metadata. */
+  eventFilters: ReadonlyArray<{ readonly manifest: EventFilterManifestEntry }>
   /** Wall-clock build time, ms-since-epoch. Defaults to `Date.now()`. */
   builtAt?: number
   /** Source-code version of the manifest builder. */
@@ -347,7 +346,7 @@ function serializeConcurrency(
 }
 
 function serializeSchedules(
-  schedule: ScheduleDeclaration | ScheduleDeclaration[] | undefined,
+  schedule: ScheduleDeclaration | readonly ScheduleDeclaration[] | undefined,
 ): ManifestSchedule[] {
   if (!schedule) return []
   const schedules = Array.isArray(schedule) ? schedule : [schedule]
