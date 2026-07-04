@@ -17,6 +17,7 @@ import { Hono } from "hono"
 import {
   invalidateProductReadModel,
   productDocKey,
+  productDocQueryFromVariant,
   productDocVariant,
   readThroughProductDoc,
   readThroughSlugMapping,
@@ -100,6 +101,40 @@ describe("read-model primitives", () => {
   it("variant key incorporates the locale", () => {
     expect(productDocVariant({})).toBe("default")
     expect(productDocVariant({ languageTag: "de-DE" })).toBe("lang=de-DE")
+  })
+
+  it("variant key encodes the itinerary opt-in and round-trips", () => {
+    expect(productDocVariant({ includeItinerary: true })).toBe("default+itinerary")
+    expect(productDocVariant({ languageTag: "de-DE", includeItinerary: true })).toBe(
+      "lang=de-DE+itinerary",
+    )
+
+    expect(productDocQueryFromVariant("default")).toEqual({})
+    expect(productDocQueryFromVariant("lang=de-DE")).toEqual({ languageTag: "de-DE" })
+    expect(productDocQueryFromVariant("default+itinerary")).toEqual({ includeItinerary: true })
+    expect(productDocQueryFromVariant("lang=de-DE+itinerary")).toEqual({
+      languageTag: "de-DE",
+      includeItinerary: true,
+    })
+  })
+
+  it("warmProductReadModel recomputes an itinerary variant with the folded flag", async () => {
+    const kv = fakeKv()
+    kv.store.set(productDocKey(PRODUCT.id, "default+itinerary"), JSON.stringify({ stale: true }))
+    mockedService.getCatalogProductById.mockImplementation(async (_db, _id, query) => ({
+      ...PRODUCT,
+      includeItinerary: query.includeItinerary ?? false,
+    }))
+
+    const result = await warmProductReadModel({ db: {} as never, kv, productId: PRODUCT.id })
+
+    expect(result.warmed).toEqual(["default+itinerary"])
+    expect(
+      JSON.parse(kv.store.get(productDocKey(PRODUCT.id, "default+itinerary")) ?? "null"),
+    ).toEqual({ ...PRODUCT, includeItinerary: true })
+    expect(mockedService.getCatalogProductById).toHaveBeenCalledWith({}, PRODUCT.id, {
+      includeItinerary: true,
+    })
   })
 
   it("readThroughSlugMapping caches the matched product and locale", async () => {
@@ -214,6 +249,36 @@ describe("public detail routes — KV document plane", () => {
     await publicProductRoutes.request(`/${PRODUCT.id}?languageTag=de-DE`, {}, env)
 
     expect(mockedService.getCatalogProductById).toHaveBeenCalledTimes(2)
+  })
+
+  it("GET /:id?include=itinerary folds the itinerary and caches its own variant", async () => {
+    const kv = fakeKv()
+    const env = { CACHE: kv }
+    mockedService.getCatalogProductById.mockImplementation(async (_db, _id, query) => ({
+      ...PRODUCT,
+      ...(query.includeItinerary ? { itinerary: { id: "piti_1", name: "Default", days: [] } } : {}),
+    }))
+
+    const withItinerary = await publicProductRoutes.request(
+      `/${PRODUCT.id}?include=itinerary`,
+      {},
+      env,
+    )
+    const body = (await withItinerary.json()) as { data: { itinerary?: unknown } }
+
+    expect(withItinerary.status).toBe(200)
+    expect(body.data.itinerary).toEqual({ id: "piti_1", name: "Default", days: [] })
+    // The itinerary variant is keyed separately from the plain document.
+    expect(kv.store.has(productDocKey(PRODUCT.id, "default+itinerary"))).toBe(true)
+    expect(kv.store.has(productDocKey(PRODUCT.id, "default"))).toBe(false)
+    expect(mockedService.getCatalogProductById).toHaveBeenCalledWith(undefined, PRODUCT.id, {
+      languageTag: undefined,
+      includeItinerary: true,
+    })
+
+    // Second read is served from the itinerary variant without recomputing.
+    await publicProductRoutes.request(`/${PRODUCT.id}?include=itinerary`, {}, env)
+    expect(mockedService.getCatalogProductById).toHaveBeenCalledOnce()
   })
 
   it("works without a CACHE binding (live path)", async () => {

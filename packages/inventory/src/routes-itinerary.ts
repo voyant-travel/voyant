@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: inventory; the itinerary admin route groups (itineraries, days, day-services, translations, versions, notes) stay co-located until a dedicated split preserves the OpenAPI operation chain and tests.
 /**
  * Admin product itinerary routes — itineraries, itinerary days, product days,
  * day services, day translations, version snapshots, and notes. Mounted by the
@@ -34,6 +35,7 @@ import { listResponseSchema } from "@voyant-travel/types"
 
 import { appendProductMutationLedgerEntry, changedMutationFields } from "./action-ledger.js"
 import { emitProductContentChanged } from "./events.js"
+import { scheduleReadModelInvalidation } from "./read-model.js"
 import type { Env } from "./route-env.js"
 import { productsService } from "./service.js"
 import * as validation from "./validation.js"
@@ -297,6 +299,10 @@ const itineraryRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
       routeOrToolName: "products.itinerary.update",
     })
     await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "itinerary" })
+    // This path is keyed on the itinerary id, so the product-id path regex in
+    // the read-model middleware can't see the product — recompute explicitly so
+    // the folded default itinerary stays fresh (issue voyant#2910).
+    await scheduleReadModelInvalidation(c, row.productId)
     return c.json({ data: row }, 200)
   })
   .openapi(deleteItineraryRoute, async (c) => {
@@ -321,6 +327,8 @@ const itineraryRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
       routeOrToolName: "products.itinerary.delete",
     })
     await emitProductContentChanged(c.get("eventBus"), { id: before.productId, axis: "itinerary" })
+    // Itinerary-id-keyed path — recompute explicitly (issue voyant#2910).
+    await scheduleReadModelInvalidation(c, before.productId)
     return c.json({ success: true }, 200)
   })
   .openapi(duplicateItineraryRoute, async (c) => {
@@ -349,6 +357,8 @@ const itineraryRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
       id: source.productId,
       axis: "itinerary",
     })
+    // Itinerary-id-keyed path — recompute explicitly (issue voyant#2910).
+    await scheduleReadModelInvalidation(c, source.productId)
     return c.json({ data: row }, 201)
   })
 

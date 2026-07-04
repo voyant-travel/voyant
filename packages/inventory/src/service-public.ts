@@ -139,10 +139,11 @@ async function listProductIdsForLocationType(
 async function hydrateCatalogProducts(
   db: PostgresJsDatabase,
   productRows: PublicCatalogProductRow[],
-  options?: { includeContent?: boolean; languageTag?: string | null },
+  options?: { includeContent?: boolean; includeItinerary?: boolean; languageTag?: string | null },
 ) {
   return catalogProductsService.hydrateProducts(db, productRows, {
     includeContent: options?.includeContent,
+    includeItinerary: options?.includeItinerary,
     languageTag: options?.languageTag,
     fallbackLanguageTags: options?.languageTag ? [options.languageTag] : [],
   })
@@ -293,7 +294,7 @@ export const publicProductsService = {
   async getCatalogProductById(
     db: PostgresJsDatabase,
     id: string,
-    query: { languageTag?: string | null } = {},
+    query: { languageTag?: string | null; includeItinerary?: boolean } = {},
   ) {
     const [row] = await db
       .select()
@@ -314,6 +315,7 @@ export const publicProductsService = {
 
     const [product] = await hydrateCatalogProducts(db, [row], {
       includeContent: true,
+      includeItinerary: query.includeItinerary === true,
       languageTag: normalizeLanguageTag(query.languageTag),
     })
     return product ?? null

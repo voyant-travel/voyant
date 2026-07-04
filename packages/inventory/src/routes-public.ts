@@ -16,6 +16,7 @@ import { publicProductsService } from "./service-public.js"
 import {
   publicCatalogCategoryListQuerySchema,
   publicCatalogDestinationListQuerySchema,
+  publicCatalogItinerarySchema,
   publicCatalogProductListQuerySchema,
   publicCatalogProductLookupBySlugQuerySchema,
   publicCatalogTagListQuerySchema,
@@ -36,6 +37,24 @@ type Env = {
 /** The KV binding is optional — deployments without it serve live. */
 function readModelKv(c: Context<Env>): KVStore | undefined {
   return c.env?.CACHE
+}
+
+/**
+ * Parse the `?include=itinerary` opt-in (comma-separated, forward-compatible)
+ * into the read-model query flag that folds the default itinerary into the
+ * document (issue voyant#2910).
+ */
+function readModelQuery(query: { languageTag?: string | null; include?: string | null }) {
+  const includeItinerary = (query.include ?? "")
+    .split(",")
+    .map((token) => token.trim())
+    .includes("itinerary")
+  // Only carry the flag when opted in, so the default document query keeps its
+  // existing `{ languageTag }` shape (and variant key) unchanged.
+  return {
+    languageTag: query.languageTag ?? undefined,
+    ...(includeItinerary ? { includeItinerary: true } : {}),
+  }
 }
 
 /**
@@ -254,6 +273,8 @@ export const publicCatalogProductSchema = z.object({
   brochure: publicCatalogMediaSchema.nullable().optional(),
   features: z.array(publicCatalogFeatureSchema).optional(),
   faqs: z.array(publicCatalogFaqSchema).optional(),
+  // Present only when requested via `?include=itinerary` (voyant#2910).
+  itinerary: publicCatalogItinerarySchema.nullable().optional(),
 })
 
 const errorResponseSchema = z.object({ error: z.string() })
@@ -364,10 +385,12 @@ export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVa
     const query = c.req.valid("query")
     const kv = readModelKv(c)
     const slug = c.req.valid("param").slug
+    const docQuery = readModelQuery(query)
 
-    // Resolve slug → id through the short-lived KV mapping so both detail
-    // routes share one id-keyed document per variant.
-    const requestedVariant = productDocVariant(query)
+    // Resolve slug → id through the short-lived KV mapping. The mapping only
+    // depends on the locale (not itinerary inclusion), so key it by the
+    // locale-only variant and let both `?include` variants share it.
+    const requestedVariant = productDocVariant({ languageTag: docQuery.languageTag })
     const resolution = await readThroughSlugMapping(kv, slug, requestedVariant, async () => {
       const row = await publicProductsService.getCatalogProductBySlug(c.get("db"), slug, query)
       const productId = row ? ((row as { id?: string }).id ?? null) : null
@@ -384,9 +407,10 @@ export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVa
       return c.json({ error: "Catalog product not found" }, 404)
     }
 
-    const detailQuery = resolution.languageTag
-      ? { ...query, languageTag: resolution.languageTag }
-      : query
+    const detailQuery = {
+      ...docQuery,
+      languageTag: resolution.languageTag ?? docQuery.languageTag,
+    }
 
     const { data } = await readThroughProductDoc(
       kv,
@@ -401,12 +425,12 @@ export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVa
     return c.json({ data }, 200)
   })
   .openapi(productByIdRoute, async (c) => {
-    const query = c.req.valid("query")
+    const docQuery = readModelQuery(c.req.valid("query"))
     const productId = c.req.valid("param").id
     const { data } = await readThroughProductDoc(
       readModelKv(c),
-      productDocKey(productId, productDocVariant(query)),
-      () => buildProductReadModelDoc(c.get("db"), productId, query),
+      productDocKey(productId, productDocVariant(docQuery)),
+      () => buildProductReadModelDoc(c.get("db"), productId, docQuery),
     )
 
     if (!data) {

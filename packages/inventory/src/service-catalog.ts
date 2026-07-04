@@ -8,9 +8,15 @@ import {
   productCapabilities,
   productCategories,
   productCategoryProducts,
+  productDayServices,
+  productDayServiceTranslations,
+  productDays,
+  productDayTranslations,
   productDestinations,
   productFaqs,
   productFeatures,
+  productItineraries,
+  productItineraryTranslations,
   productLocations,
   productMedia,
   products,
@@ -30,8 +36,46 @@ type CatalogProductRow = typeof products.$inferSelect
 
 type HydrateCatalogProductOptions = {
   includeContent?: boolean
+  /**
+   * Fold each product's default itinerary (days + day-services, localized)
+   * into the detail payload. Opt-in — the day/service joins only run for
+   * callers that render the day-by-day plan (issue voyant#2910). Implies
+   * `includeContent` semantics: the itinerary only rides the detail shape.
+   */
+  includeItinerary?: boolean
   languageTag?: string | null
   fallbackLanguageTags?: string[]
+}
+
+/** Localized day-service line within a folded itinerary. */
+export type CatalogItineraryDayService = {
+  id: string
+  serviceType: string
+  name: string
+  description: string | null
+  sortOrder: number | null
+}
+
+/** Localized day within a folded itinerary. */
+export type CatalogItineraryDay = {
+  id: string
+  dayNumber: number
+  title: string | null
+  description: string | null
+  location: string | null
+  thumbnailUrl: string | null
+  services: CatalogItineraryDayService[]
+}
+
+/**
+ * The product's default itinerary, folded into the read-model document.
+ * Departure-specific overrides stay on `getStorefrontDepartureItinerary`;
+ * this is the product-level default only (issue voyant#2910).
+ */
+export type CatalogItinerary = {
+  id: string
+  name: string
+  days: CatalogItineraryDay[]
 }
 
 export const DEFAULT_CATALOG_SEARCH_FALLBACK_LANGUAGE_TAGS = ["en", "ro"] as const
@@ -86,6 +130,236 @@ function normalizeLanguageTagList(values: Array<string | null | undefined>) {
 function resolveFallbackLanguageTags(languageTag?: string | null, fallbackLanguageTags?: string[]) {
   const normalizedPrimary = normalizeLanguageTag(languageTag)
   return normalizeLanguageTagList([normalizedPrimary, ...(fallbackLanguageTags ?? [])])
+}
+
+/**
+ * Pick the first translation row matching the ordered fallback language
+ * tags, mirroring the product-level selection in `loadCatalogHydrationData`.
+ * Returns `null` when no candidate locales are configured (so callers fall
+ * back to the base row's own columns).
+ */
+function pickTranslationByFallback<T extends { languageTag: string }>(
+  rows: T[],
+  fallbackLanguageTags: string[],
+): T | null {
+  if (fallbackLanguageTags.length === 0) return null
+  return (
+    fallbackLanguageTags
+      .map((languageTag) =>
+        rows.find((row) => normalizeLanguageTag(row.languageTag) === languageTag),
+      )
+      .find(Boolean) ?? null
+  )
+}
+
+function groupBy<T, K>(rows: T[], keyOf: (row: T) => K): Map<K, T[]> {
+  const map = new Map<K, T[]>()
+  for (const row of rows) {
+    const key = keyOf(row)
+    const existing = map.get(key) ?? []
+    existing.push(row)
+    map.set(key, existing)
+  }
+  return map
+}
+
+/**
+ * Load each product's default itinerary — days + day-services with their
+ * `product_day_translations` / `product_day_service_translations` resolved
+ * by the same fallback-locale chain the rest of the document uses — and the
+ * first per-day media as a thumbnail. All inventory-owned tables. Only the
+ * product default (`is_default = true`) is folded here; departure overrides
+ * stay on `getStorefrontDepartureItinerary` (issue voyant#2910).
+ */
+async function loadDefaultItineraries(
+  db: PostgresJsDatabase,
+  productIds: string[],
+  fallbackLanguageTags: string[],
+): Promise<Map<string, CatalogItinerary>> {
+  const byProduct = new Map<string, CatalogItinerary>()
+  if (productIds.length === 0) return byProduct
+
+  const itineraryRows = await db
+    .select({
+      id: productItineraries.id,
+      productId: productItineraries.productId,
+      name: productItineraries.name,
+    })
+    .from(productItineraries)
+    .where(
+      and(
+        inArray(productItineraries.productId, productIds),
+        eq(productItineraries.isDefault, true),
+      ),
+    )
+    .orderBy(asc(productItineraries.sortOrder), asc(productItineraries.createdAt))
+
+  // One default per product (the partial unique index enforces this, but keep
+  // the first deterministically in case older data drifted).
+  const itineraryByProduct = new Map<string, (typeof itineraryRows)[number]>()
+  for (const row of itineraryRows) {
+    if (!itineraryByProduct.has(row.productId)) itineraryByProduct.set(row.productId, row)
+  }
+  const itineraryIds = [...itineraryByProduct.values()].map((row) => row.id)
+  if (itineraryIds.length === 0) return byProduct
+
+  const [itineraryTranslationRows, dayRows] = await Promise.all([
+    fallbackLanguageTags.length > 0
+      ? db
+          .select({
+            itineraryId: productItineraryTranslations.itineraryId,
+            languageTag: productItineraryTranslations.languageTag,
+            name: productItineraryTranslations.name,
+          })
+          .from(productItineraryTranslations)
+          .where(
+            and(
+              inArray(productItineraryTranslations.itineraryId, itineraryIds),
+              inArray(productItineraryTranslations.languageTag, fallbackLanguageTags),
+            ),
+          )
+      : Promise.resolve([]),
+    db
+      .select({
+        id: productDays.id,
+        itineraryId: productDays.itineraryId,
+        dayNumber: productDays.dayNumber,
+        title: productDays.title,
+        description: productDays.description,
+        location: productDays.location,
+      })
+      .from(productDays)
+      .where(inArray(productDays.itineraryId, itineraryIds))
+      .orderBy(asc(productDays.dayNumber)),
+  ])
+
+  const dayIds = dayRows.map((row) => row.id)
+
+  const [dayTranslationRows, serviceRows, dayMediaRows] =
+    dayIds.length > 0
+      ? await Promise.all([
+          fallbackLanguageTags.length > 0
+            ? db
+                .select({
+                  dayId: productDayTranslations.dayId,
+                  languageTag: productDayTranslations.languageTag,
+                  title: productDayTranslations.title,
+                  description: productDayTranslations.description,
+                  location: productDayTranslations.location,
+                })
+                .from(productDayTranslations)
+                .where(
+                  and(
+                    inArray(productDayTranslations.dayId, dayIds),
+                    inArray(productDayTranslations.languageTag, fallbackLanguageTags),
+                  ),
+                )
+            : Promise.resolve([]),
+          db
+            .select({
+              id: productDayServices.id,
+              dayId: productDayServices.dayId,
+              serviceType: productDayServices.serviceType,
+              name: productDayServices.name,
+              description: productDayServices.description,
+              sortOrder: productDayServices.sortOrder,
+            })
+            .from(productDayServices)
+            .where(inArray(productDayServices.dayId, dayIds))
+            .orderBy(asc(productDayServices.sortOrder), asc(productDayServices.createdAt)),
+          db
+            .select({
+              dayId: productMedia.dayId,
+              url: productMedia.url,
+              isCover: productMedia.isCover,
+              sortOrder: productMedia.sortOrder,
+            })
+            .from(productMedia)
+            .where(
+              and(inArray(productMedia.productId, productIds), inArray(productMedia.dayId, dayIds)),
+            )
+            .orderBy(
+              desc(productMedia.isCover),
+              asc(productMedia.sortOrder),
+              asc(productMedia.createdAt),
+            ),
+        ])
+      : [[], [], []]
+
+  const serviceIds = serviceRows.map((row) => row.id)
+  const serviceTranslationRows =
+    serviceIds.length > 0 && fallbackLanguageTags.length > 0
+      ? await db
+          .select({
+            serviceId: productDayServiceTranslations.serviceId,
+            languageTag: productDayServiceTranslations.languageTag,
+            name: productDayServiceTranslations.name,
+            description: productDayServiceTranslations.description,
+          })
+          .from(productDayServiceTranslations)
+          .where(
+            and(
+              inArray(productDayServiceTranslations.serviceId, serviceIds),
+              inArray(productDayServiceTranslations.languageTag, fallbackLanguageTags),
+            ),
+          )
+      : []
+
+  const itineraryTranslationsById = groupBy(itineraryTranslationRows, (row) => row.itineraryId)
+  const daysByItinerary = groupBy(dayRows, (row) => row.itineraryId)
+  const dayTranslationsByDay = groupBy(dayTranslationRows, (row) => row.dayId)
+  const servicesByDay = groupBy(serviceRows, (row) => row.dayId)
+  const serviceTranslationsByService = groupBy(serviceTranslationRows, (row) => row.serviceId)
+
+  const thumbnailByDay = new Map<string, string>()
+  for (const row of dayMediaRows) {
+    if (row.dayId && !thumbnailByDay.has(row.dayId)) thumbnailByDay.set(row.dayId, row.url)
+  }
+
+  for (const [productId, itinerary] of itineraryByProduct) {
+    const nameTranslation = pickTranslationByFallback(
+      itineraryTranslationsById.get(itinerary.id) ?? [],
+      fallbackLanguageTags,
+    )
+    const days = (daysByItinerary.get(itinerary.id) ?? []).map<CatalogItineraryDay>((day) => {
+      const dayTranslation = pickTranslationByFallback(
+        dayTranslationsByDay.get(day.id) ?? [],
+        fallbackLanguageTags,
+      )
+      const services = (servicesByDay.get(day.id) ?? []).map<CatalogItineraryDayService>(
+        (service) => {
+          const serviceTranslation = pickTranslationByFallback(
+            serviceTranslationsByService.get(service.id) ?? [],
+            fallbackLanguageTags,
+          )
+          return {
+            id: service.id,
+            serviceType: service.serviceType,
+            name: serviceTranslation?.name ?? service.name,
+            description: serviceTranslation?.description ?? service.description ?? null,
+            sortOrder: service.sortOrder ?? null,
+          }
+        },
+      )
+      return {
+        id: day.id,
+        dayNumber: day.dayNumber,
+        title: dayTranslation?.title ?? day.title ?? null,
+        description: dayTranslation?.description ?? day.description ?? null,
+        location: dayTranslation?.location ?? day.location ?? null,
+        thumbnailUrl: thumbnailByDay.get(day.id) ?? null,
+        services,
+      }
+    })
+
+    byProduct.set(productId, {
+      id: itinerary.id,
+      name: nameTranslation?.name ?? itinerary.name,
+      days,
+    })
+  }
+
+  return byProduct
 }
 
 async function loadCatalogHydrationData(
@@ -432,6 +706,12 @@ async function loadCatalogHydrationData(
   const typeById = new Map(typeRows.map((row) => [row.id, row] as const))
   const featuredIds = new Set(featuredRows.map((row) => row.productId))
 
+  // Itinerary folding is opt-in (detail-only) — the day/service joins run
+  // only when a caller asks for the day-by-day plan (issue voyant#2910).
+  const itineraryByProduct = options.includeItinerary
+    ? await loadDefaultItineraries(db, productIds, fallbackLanguageTags)
+    : new Map<string, CatalogItinerary>()
+
   const translationByProduct = new Map<string, (typeof translationRows)[number] | null>()
   for (const productId of productIds) {
     const rows = translationsByProduct.get(productId) ?? []
@@ -458,6 +738,7 @@ async function loadCatalogHydrationData(
     locationsByProduct,
     typeById,
     featuredIds,
+    itineraryByProduct,
   }
 }
 
@@ -590,6 +871,11 @@ export const catalogProductsService = {
           answer: row.answer,
           sortOrder: row.sortOrder,
         })),
+        // Only present the key when itinerary folding was requested, so the
+        // default (non-itinerary) document shape is unchanged (voyant#2910).
+        ...(options.includeItinerary
+          ? { itinerary: hydrationData.itineraryByProduct.get(product.id) ?? null }
+          : {}),
       }
     })
   },
