@@ -3,7 +3,18 @@ import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
 import { describe, expect, it } from "vitest"
 
 import { accommodationCatalogPolicy } from "../../src/catalog-policy.js"
-import { roomTypeProvenance, roomTypeRowToProjection } from "../../src/service-catalog-plane.js"
+import {
+  ratePlanDailyRates,
+  ratePlanRoomTypes,
+  ratePlans,
+  roomTypeDailyInventory,
+  roomTypes,
+} from "../../src/schema-inventory.js"
+import {
+  createRoomTypeDocumentBuilder,
+  roomTypeProvenance,
+  roomTypeRowToProjection,
+} from "../../src/service-catalog-plane.js"
 
 const sampleRow = {
   id: "rmtp_abc",
@@ -116,3 +127,169 @@ describe("end-to-end: projection + resolver", () => {
     )
   })
 })
+
+describe("createRoomTypeDocumentBuilder", () => {
+  const customerSlice = {
+    vertical: "accommodations",
+    locale: "en-GB",
+    audience: "customer",
+    market: "default",
+  } as const
+  const staffSlice = { ...customerSlice, audience: "staff" } as const
+
+  it("keeps inactive rooms out of customer slices while preserving staff docs", async () => {
+    const inactiveRow = { ...sampleRow, active: false }
+    const builder = createRoomTypeDocumentBuilder(fakeDb(new Map([[roomTypes, [inactiveRow]]])), {
+      sellerOperatorId: "op_xyz",
+    })
+
+    await expect(builder("rmtp_abc", customerSlice)).resolves.toBeNull()
+    await expect(builder("rmtp_abc", staffSlice)).resolves.not.toBeNull()
+  })
+
+  it("requires active rates, future prices, and open inventory for customer docs", async () => {
+    const builderWithInventoryOnDifferentDate = createRoomTypeDocumentBuilder(
+      fakeDb(
+        new Map<unknown, unknown[]>([
+          [roomTypes, [sampleRow]],
+          [
+            ratePlanRoomTypes,
+            [{ id: "map_1", ratePlanId: "rate_1", roomTypeId: sampleRow.id, active: true }],
+          ],
+          [ratePlans, [{ id: "rate_1", active: true }]],
+          [
+            ratePlanDailyRates,
+            [
+              {
+                id: "rate_day_1",
+                ratePlanId: "rate_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-15",
+                sellAmountCents: 12000,
+              },
+            ],
+          ],
+          [
+            roomTypeDailyInventory,
+            [
+              {
+                id: "inv_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-16",
+                capacity: 3,
+                closed: false,
+              },
+            ],
+          ],
+        ]),
+      ),
+      { sellerOperatorId: "op_xyz" },
+    )
+    await expect(builderWithInventoryOnDifferentDate("rmtp_abc", customerSlice)).resolves.toBeNull()
+
+    const builderWithoutInventory = createRoomTypeDocumentBuilder(
+      fakeDb(
+        new Map<unknown, unknown[]>([
+          [roomTypes, [sampleRow]],
+          [
+            ratePlanRoomTypes,
+            [{ id: "map_1", ratePlanId: "rate_1", roomTypeId: sampleRow.id, active: true }],
+          ],
+          [ratePlans, [{ id: "rate_1", active: true }]],
+          [
+            ratePlanDailyRates,
+            [
+              {
+                id: "rate_day_1",
+                ratePlanId: "rate_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-15",
+                sellAmountCents: 12000,
+              },
+            ],
+          ],
+          [
+            roomTypeDailyInventory,
+            [
+              {
+                id: "inv_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-15",
+                capacity: 0,
+                closed: false,
+              },
+            ],
+          ],
+        ]),
+      ),
+      { sellerOperatorId: "op_xyz" },
+    )
+    await expect(builderWithoutInventory("rmtp_abc", customerSlice)).resolves.toBeNull()
+
+    const builderWithInventory = createRoomTypeDocumentBuilder(
+      fakeDb(
+        new Map<unknown, unknown[]>([
+          [roomTypes, [sampleRow]],
+          [
+            ratePlanRoomTypes,
+            [{ id: "map_1", ratePlanId: "rate_1", roomTypeId: sampleRow.id, active: true }],
+          ],
+          [ratePlans, [{ id: "rate_1", active: true }]],
+          [
+            ratePlanDailyRates,
+            [
+              {
+                id: "rate_day_1",
+                ratePlanId: "rate_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-15",
+                sellAmountCents: 12000,
+              },
+            ],
+          ],
+          [
+            roomTypeDailyInventory,
+            [
+              {
+                id: "inv_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-15",
+                capacity: 3,
+                closed: false,
+              },
+            ],
+          ],
+        ]),
+      ),
+      { sellerOperatorId: "op_xyz" },
+    )
+
+    await expect(builderWithInventory("rmtp_abc", customerSlice)).resolves.not.toBeNull()
+  })
+})
+
+function fakeDb(rowsByTable: Map<unknown, unknown[]>) {
+  return {
+    select: () => ({
+      from: (table: unknown) => selectable(rowsByTable.get(table) ?? []),
+    }),
+  } as never
+}
+
+function selectable(rows: unknown[]) {
+  return {
+    where: () => promiseChain(rows),
+    orderBy: async () => rows,
+    limit: async (limit: number) => rows.slice(0, limit),
+  }
+}
+
+type QueryPromise = Promise<unknown[]> & {
+  limit: (limit: number) => Promise<unknown[]>
+}
+
+function promiseChain(rows: unknown[]): QueryPromise {
+  const promise = Promise.resolve(rows) as QueryPromise
+  promise.limit = async (limit: number) => rows.slice(0, limit)
+  return promise
+}

@@ -46,7 +46,7 @@ import { createDbClient } from "@voyant-travel/db"
 import { createExtraDocumentBuilder, productExtras } from "@voyant-travel/inventory/extras"
 import { products } from "@voyant-travel/inventory/schema"
 import { config } from "dotenv"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import type { PgTable } from "drizzle-orm/pg-core"
 import { Client as TypesenseSdkClient } from "typesense"
 
@@ -232,7 +232,12 @@ for (const cfg of VERTICAL_CONFIGS) {
   const sourcedRows = await db
     .select({ id: catalogSourcedEntriesTable.entity_id })
     .from(catalogSourcedEntriesTable)
-    .where(eq(catalogSourcedEntriesTable.entity_module, cfg.vertical))
+    .where(
+      and(
+        eq(catalogSourcedEntriesTable.entity_module, cfg.vertical),
+        eq(catalogSourcedEntriesTable.status, "active"),
+      ),
+    )
   const liveIds = new Set([...rows.map((r) => r.id), ...sourcedRows.map((r) => r.id)])
   for (const slice of activeSlices.filter((s) => s.vertical === cfg.vertical)) {
     const toDelete = await listStaleDocuments(slice, liveIds, searchDocuments)

@@ -11,6 +11,10 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { asc, eq, inArray } from "drizzle-orm"
 
 import { type CruiseContent, cruiseContentSchema, validateCruiseContent } from "./content-shape.js"
+import {
+  filterCustomerBookableCruiseSailings,
+  isCustomerCruisePriceAvailable,
+} from "./customer-bookability.js"
 import { cruiseCabinCategories, cruiseDecks, cruiseShips } from "./schema-cabins.js"
 import { cruiseInclusions, cruiseMedia } from "./schema-content.js"
 import { cruiseSailings, cruises } from "./schema-core.js"
@@ -34,6 +38,7 @@ export async function buildOwnedCruiseContent(
 ): Promise<BuildOwnedCruiseContentResult | null> {
   const cruiseRow = (await db.select().from(cruises).where(eq(cruises.id, entityId)).limit(1))[0]
   if (!cruiseRow) return null
+  if (cruiseRow.status !== "live") return null
 
   const [sailingRows, mediaRows, inclusionRows, itineraryRows] = await Promise.all([
     db
@@ -93,6 +98,19 @@ export async function buildOwnedCruiseContent(
         ])
       : [[], []]
 
+  const publicSailingRows = filterCustomerBookableCruiseSailings(sailingRows, priceRows)
+  if (publicSailingRows.length === 0) return null
+  const publicSailingIds = new Set(publicSailingRows.map((sailing) => sailing.id))
+  const publicCabinCategoryIds = new Set(
+    priceRows
+      .filter(
+        (price) => publicSailingIds.has(price.sailingId) && isCustomerCruisePriceAvailable(price),
+      )
+      .map((price) => price.cabinCategoryId),
+  )
+  const publicCabinRows = cabinRows.filter((cabin) => publicCabinCategoryIds.has(cabin.id))
+  if (publicCabinRows.length === 0) return null
+
   const coverMedia = mediaRows.find((m) => m.isCover && m.mediaType === "image")
   const firstImage = mediaRows.find((m) => m.mediaType === "image")
   const ship = shipRow[0] ?? null
@@ -137,7 +155,7 @@ export async function buildOwnedCruiseContent(
           gallery: Array.isArray(ship.gallery) ? ship.gallery : [],
         }
       : null,
-    sailings: sailingRows.map((sailing) => {
+    sailings: publicSailingRows.map((sailing) => {
       const lowest = lowestAvailablePrice(pricesBySailing.get(sailing.id) ?? [])
       const itinerary = sailingDaysBySailing.get(sailing.id)
       const stops = itinerary && itinerary.length > 0 ? itinerary : itineraryRows
@@ -163,7 +181,7 @@ export async function buildOwnedCruiseContent(
         currency: lowest?.currency ?? null,
       }
     }),
-    cabin_categories: cabinRows.map((cat) => ({
+    cabin_categories: publicCabinRows.map((cat) => ({
       id: cat.id,
       code: cat.code,
       name: cat.name,
@@ -185,7 +203,7 @@ export async function buildOwnedCruiseContent(
       view_type: cat.viewType ?? null,
     })),
     itinerary_stops: itineraryRows.map((stop) => itineraryStopFrom(stop)),
-    policies: buildPolicies(cruiseRow, sailingRows, cabinRows, inclusionRows),
+    policies: buildPolicies(cruiseRow, publicSailingRows, publicCabinRows, inclusionRows),
   })
 
   const validation = validateCruiseContent(content)
@@ -265,7 +283,7 @@ function lowestAvailablePrice(
 ): { cents: number; currency: string } | null {
   let best: { cents: number; currency: string } | null = null
   for (const row of rows) {
-    if (row.availability !== "available") continue
+    if (!isCustomerCruisePriceAvailable(row)) continue
     const cents = moneyStringToCents(row.pricePerPerson)
     if (cents === null || !row.currency) continue
     if (!best || cents < best.cents) best = { cents, currency: row.currency }

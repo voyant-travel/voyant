@@ -176,6 +176,7 @@ const summary: SyncSourcesSummary = await syncSources({
   indexerService,
   fieldPolicyRegistries,
   db,
+  pruneMissing: true,
   ...(wrapBuilder ? { wrapBuilder } : {}),
   onProgress(event) {
     console.info(

@@ -7,12 +7,23 @@ import {
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
+import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
+import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
 function entryName(entry: string | { resolve: string }): string {
   return typeof entry === "string" ? entry : entry.resolve
 }
 
 describe("operator runtime composition", () => {
+  it("wires booking payment cleanup and paid-cancellation settlement providers", () => {
+    const providers = buildOperatorProviders()
+
+    expect(providers.closePaymentSchedulesForBooking).toBe(closeTerminalBookingPaymentSchedules)
+    expect(providers.recordCancellationFinancialSettlement).toBe(
+      recordPaidBookingCancellationSettlement,
+    )
+  })
+
   it("registry covers the manifest exactly (no missing factories, no orphans)", () => {
     const modules = diffManifestRegistry(
       OPERATOR_RUNTIME_MANIFEST.modules,

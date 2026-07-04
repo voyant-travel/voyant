@@ -1,7 +1,11 @@
 import type { IndexerSlice } from "@voyant-travel/catalog"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { listStaleDocuments } from "./reindex-stale-documents"
+import {
+  createTypesenseDocumentSearch,
+  listStaleDocuments,
+  TypesenseDocumentSearchError,
+} from "./reindex-stale-documents"
 
 const customerProductsSlice: IndexerSlice = {
   vertical: "products",
@@ -11,6 +15,10 @@ const customerProductsSlice: IndexerSlice = {
 }
 
 describe("listStaleDocuments", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it("keeps live owned and sourced documents while pruning stale customer docs", async () => {
     const search = vi.fn().mockResolvedValueOnce({
       hits: [
@@ -53,5 +61,29 @@ describe("listStaleDocuments", () => {
     expect(search).toHaveBeenCalledTimes(2)
     expect((search.mock.calls[0]?.[1] as URLSearchParams).get("page")).toBe("1")
     expect((search.mock.calls[1]?.[1] as URLSearchParams).get("page")).toBe("2")
+  })
+
+  it("treats missing collections as empty during purge", async () => {
+    const search = vi.fn().mockResolvedValueOnce(null)
+
+    await expect(
+      listStaleDocuments(customerProductsSlice, new Set(["live_1"]), search),
+    ).resolves.toEqual([])
+  })
+
+  it("throws on non-404 Typesense search failures instead of silently skipping purge", async () => {
+    const fetchMock = vi.fn(async () => new Response("bad key", { status: 401 }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const search = createTypesenseDocumentSearch("http://typesense.test", "bad")
+    await expect(
+      search("products__en-GB__customer__default", new URLSearchParams()),
+    ).rejects.toBeInstanceOf(TypesenseDocumentSearchError)
+    await expect(
+      search("products__en-GB__customer__default", new URLSearchParams()),
+    ).rejects.toMatchObject({
+      collection: "products__en-GB__customer__default",
+      status: 401,
+    })
   })
 })

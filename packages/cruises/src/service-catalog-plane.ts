@@ -28,6 +28,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 
 import { cruiseCatalogPolicy } from "./catalog-policy.js"
+import { isCustomerCruiseBookable } from "./customer-bookability.js"
 import { cruises } from "./schema-core.js"
 
 let _registry: FieldPolicyRegistry | undefined
@@ -255,6 +256,7 @@ export function createCruiseDocumentBuilder(
     const rows = await db.select().from(cruises).where(eq(cruises.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
+    if (slice.audience === "customer" && !(await isCustomerCruiseBookable(db, row))) return null
     if (extensions.length === 0) return emitter.emit(row, slice)
 
     const baseProjection = cruiseRowToProjection(row, {
