@@ -1,5 +1,14 @@
 # @voyant-travel/worker-runtime
 
+## 0.2.1
+
+### Patch Changes
+
+- 2a9fe00: Keep lean auth dispatch isolated from the full API graph by default. Auth
+  requests no longer background-warm `loadApiApp()` unless a host explicitly sets
+  `warmApiOnAuth: true`, preventing `/api/auth/*` cold requests from triggering
+  the heavy framework module import path.
+
 ## 0.2.0
 
 ### Minor Changes
