@@ -71,6 +71,11 @@ export {
   type FlightOrderConfirmationProps,
 } from "./components/flight-order-confirmation.js"
 export {
+  FlightOrdersPage,
+  type FlightOrdersPageProps,
+  type FlightOrdersPageSearchParams,
+} from "./components/flight-orders-page.js"
+export {
   FlightPassengerForm,
   type FlightPassengerFormProps,
   type PassengerPrefill,

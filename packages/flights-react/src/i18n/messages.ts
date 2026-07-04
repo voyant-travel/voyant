@@ -301,6 +301,35 @@ export type FlightsUiMessages = {
     dob: string
     cancelBooking: string
     cancelling: string
+    issueTickets: string
+    issuingTickets: string
+  }
+  flightOrdersPage: {
+    title: string
+    description: string
+    searchPlaceholder: string
+    statusFilter: string
+    allStatuses: string
+    columns: {
+      reference: string
+      route: string
+      passengers: string
+      status: string
+      ticketingDeadline: string
+      total: string
+    }
+    loading: string
+    empty: string
+    emptyFiltered: string
+    loadFailed: string
+    retry: string
+    previous: string
+    next: string
+    pageSummary: string
+    noDeadline: string
+    deadlinePassed: string
+    backToOrders: string
+    detailTitle: string
   }
   flightPassengerForm: {
     documentsRequiredNotice: string

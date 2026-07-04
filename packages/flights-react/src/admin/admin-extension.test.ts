@@ -4,6 +4,7 @@ import {
   createFlightsAdminExtension,
   flightsBookSearchSchema,
   flightsIndexSearchSchema,
+  flightsOrdersSearchSchema,
 } from "./index.js"
 
 describe("createFlightsAdminExtension", () => {
@@ -14,14 +15,24 @@ describe("createFlightsAdminExtension", () => {
     expect(extension.widgets).toBeUndefined()
   })
 
-  it("describes the search page and the wizard as flat siblings", () => {
+  it("describes the search page, wizard, and orders surfaces as flat siblings", () => {
     // The old file-based tree escaped the wizard out of the /flights section
     // chrome (`flights_.book.$offerId`); the code-assembled tree reproduces
-    // that by mounting both contributions flat under the workspace layout.
+    // that by mounting every contribution flat under the workspace layout.
     const extension = createFlightsAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes.map((route) => route.id)).toEqual(["flights-index", "flights-book"])
-    expect(routes.map((route) => route.path)).toEqual(["/flights", "/flights/book/$offerId"])
+    expect(routes.map((route) => route.id)).toEqual([
+      "flights-index",
+      "flights-book",
+      "flights-orders",
+      "flights-order-detail",
+    ])
+    expect(routes.map((route) => route.path)).toEqual([
+      "/flights",
+      "/flights/book/$offerId",
+      "/flights/orders",
+      "/flights/orders/$orderId",
+    ])
     expect(new Set(routes.map((route) => route.id)).size).toBe(routes.length)
   })
 
@@ -38,16 +49,24 @@ describe("createFlightsAdminExtension", () => {
     expect(book?.title).toBe("Zboruri")
   })
 
-  it("carries the full route implementation on both contributions", () => {
+  it("carries the full route implementation on every contribution", () => {
     // Packaged-admin RFC §4.8 endgame: lazy `page` module loaders + typed
-    // search contracts; no loaders because both pages fetch client-side.
+    // search contracts; no loaders because every page fetches client-side.
     const extension = createFlightsAdminExtension()
-    for (const route of extension.routes ?? []) {
+    const routes = extension.routes ?? []
+    for (const route of routes) {
       expect(typeof route.page, route.id).toBe("function")
-      expect(typeof route.validateSearch, route.id).toBe("function")
       expect(route.loader, route.id).toBeUndefined()
       expect(route.component, route.id).toBeUndefined()
     }
+    // Search-bearing routes carry a validateSearch; the order detail route has
+    // no search params, so it declares none.
+    for (const id of ["flights-index", "flights-book", "flights-orders"]) {
+      expect(typeof routes.find((route) => route.id === id)?.validateSearch, id).toBe("function")
+    }
+    expect(
+      routes.find((route) => route.id === "flights-order-detail")?.validateSearch,
+    ).toBeUndefined()
   })
 
   it("resolves each lazy page to a route page module", async () => {
@@ -58,14 +77,17 @@ describe("createFlightsAdminExtension", () => {
     }
   })
 
-  it("binds only the search page to a route-backed destination", () => {
+  it("binds the route-backed destinations (search, orders, order detail)", () => {
     // `flightBooking.start` constructs search params, which is beyond pure
-    // path interpolation — its resolver stays hand-written in the host map.
+    // path interpolation — its resolver stays hand-written in the host map, so
+    // the wizard route declares no destination. The orders list + detail
+    // routes resolve by path interpolation, so both are route-backed.
     const extension = createFlightsAdminExtension()
-    const index = extension.routes?.find((route) => route.id === "flights-index")
-    expect(index?.destination).toBe("flight.search")
-    const book = extension.routes?.find((route) => route.id === "flights-book")
-    expect(book?.destination).toBeUndefined()
+    const byId = (id: string) => extension.routes?.find((route) => route.id === id)
+    expect(byId("flights-index")?.destination).toBe("flight.search")
+    expect(byId("flights-book")?.destination).toBeUndefined()
+    expect(byId("flights-orders")?.destination).toBe("flight.orders")
+    expect(byId("flights-order-detail")?.destination).toBe("flightOrder.detail")
   })
 
   it("validates and defaults the search contracts", () => {
@@ -94,5 +116,13 @@ describe("createFlightsAdminExtension", () => {
     const bookParsed = flightsBookSearchSchema.parse({ pax_c: "1" })
     expect(bookParsed).toEqual({ pax_a: 1, pax_c: 1, pax_i: 0, cabin: "economy" })
     expect(() => flightsBookSearchSchema.parse({ cabin: "luxury" })).toThrow()
+
+    // Orders list search — filters are optional; unknown statuses rejected.
+    expect(flightsOrdersSearchSchema.parse({})).toEqual({})
+    expect(flightsOrdersSearchSchema.parse({ q: "PNR1", status: "confirmed" })).toEqual({
+      q: "PNR1",
+      status: "confirmed",
+    })
+    expect(() => flightsOrdersSearchSchema.parse({ status: "held" })).toThrow()
   })
 })

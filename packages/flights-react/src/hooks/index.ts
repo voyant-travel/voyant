@@ -13,6 +13,7 @@ export {
   type UseFlightOrderOptions,
   useFlightOrder,
   useFlightOrderCancel,
+  useFlightOrderTicket,
 } from "./use-flight-order.js"
 export { type UseFlightOrdersOptions, useFlightOrders } from "./use-flight-orders.js"
 export { type UseFlightSearchOptions, useFlightSearch } from "./use-flight-search.js"
