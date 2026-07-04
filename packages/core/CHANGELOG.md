@@ -1,5 +1,11 @@
 # @voyant-travel/core
 
+## 0.112.1
+
+### Patch Changes
+
+- 3713e10: Expose a scheduler-scoped event bus to event handlers so inline subscribers can emit nested events without forcing deferrable downstream subscribers onto the caller path.
+
 ## 0.112.0
 
 ### Minor Changes
