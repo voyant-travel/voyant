@@ -22,6 +22,7 @@ import { catalogSearchSchema, productDetailSearchSchema } from "@voyant-travel/c
 import {
   flightsBookSearchSchema,
   flightsIndexSearchSchema,
+  flightsOrdersSearchSchema,
 } from "@voyant-travel/flights-react/admin"
 
 import { adminExtensions } from "@/lib/admin-extensions"
@@ -405,6 +406,19 @@ export const FlightsBookRoute = createRoute({
   ...adminExtensionRouteOptions(flightsExtension, "flights-book", runtime),
 })
 
+export const FlightsOrdersRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/flights/orders",
+  validateSearch: flightsOrdersSearchSchema,
+  ...adminExtensionRouteOptions(flightsExtension, "flights-orders", runtime),
+})
+
+export const FlightsOrderDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/flights/orders/$orderId",
+  ...adminExtensionRouteOptions(flightsExtension, "flights-order-detail", runtime),
+})
+
 // ---------------------------------------------------------------------------
 // inventory
 // ---------------------------------------------------------------------------
@@ -743,6 +757,8 @@ export const adminExtensionRoutes = [
   FinanceProfitabilityRoute,
   FlightsIndexRoute,
   FlightsBookRoute,
+  FlightsOrdersRoute,
+  FlightsOrderDetailRoute,
   ProductsIndexRoute,
   ProductsCategoriesRoute,
   ProductsDetailRoute,
@@ -830,6 +846,8 @@ export interface AdminExtensionRoutesByFullPath {
   "/finance/profitability": typeof FinanceProfitabilityRoute
   "/flights": typeof FlightsIndexRoute
   "/flights/book/$offerId": typeof FlightsBookRoute
+  "/flights/orders": typeof FlightsOrdersRoute
+  "/flights/orders/$orderId": typeof FlightsOrderDetailRoute
   "/products": typeof ProductsIndexRoute
   "/products/categories": typeof ProductsCategoriesRoute
   "/products/$id": typeof ProductsDetailRoute
@@ -916,6 +934,8 @@ export interface AdminExtensionRoutesByTo {
   "/finance/profitability": typeof FinanceProfitabilityRoute
   "/flights": typeof FlightsIndexRoute
   "/flights/book/$offerId": typeof FlightsBookRoute
+  "/flights/orders": typeof FlightsOrdersRoute
+  "/flights/orders/$orderId": typeof FlightsOrderDetailRoute
   "/products": typeof ProductsIndexRoute
   "/products/categories": typeof ProductsCategoriesRoute
   "/products/$id": typeof ProductsDetailRoute
@@ -1003,6 +1023,8 @@ export interface AdminExtensionRoutesById {
   "/_workspace/finance/profitability": typeof FinanceProfitabilityRoute
   "/_workspace/flights": typeof FlightsIndexRoute
   "/_workspace/flights/book/$offerId": typeof FlightsBookRoute
+  "/_workspace/flights/orders": typeof FlightsOrdersRoute
+  "/_workspace/flights/orders/$orderId": typeof FlightsOrderDetailRoute
   "/_workspace/products": typeof ProductsIndexRoute
   "/_workspace/products/categories": typeof ProductsCategoriesRoute
   "/_workspace/products/$id": typeof ProductsDetailRoute

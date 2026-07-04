@@ -118,6 +118,18 @@ export function createOperatorAdminNavigation({
       title: messages.flights,
       url: "/flights",
       icon: icons.flights,
+      items: [
+        {
+          id: "flights-search",
+          title: messages.flightsSearch,
+          url: "/flights",
+        },
+        {
+          id: "flights-orders",
+          title: messages.flightOrders,
+          url: "/flights/orders",
+        },
+      ],
     },
     {
       id: "products",
