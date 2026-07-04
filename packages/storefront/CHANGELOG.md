@@ -1,5 +1,13 @@
 # @voyant-travel/storefront
 
+## 0.141.2
+
+### Patch Changes
+
+- ec207bd: Resolve localized public departure itinerary reads by accepting `languageTag`/`lang`
+  query parameters, applying day and segment translations with base-content fallback,
+  and exposing the query through first-party storefront clients.
+
 ## 0.141.1
 
 ### Patch Changes
