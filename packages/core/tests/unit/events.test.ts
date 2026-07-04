@@ -209,6 +209,31 @@ describe("createEventBus", () => {
       expect(schedule).not.toHaveBeenCalled()
     })
 
+    it("gives inline handlers a scheduler-scoped bus for nested emits", async () => {
+      const bus = createEventBus()
+      const scheduled: Promise<unknown>[] = []
+      let nestedDone = false
+
+      bus.subscribe(
+        "outer",
+        async (_event, context) => {
+          await context?.eventBus.emit("inner", {})
+        },
+        { inline: true },
+      )
+      bus.subscribe("inner", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        nestedDone = true
+      })
+
+      await bus.emit("outer", {}, undefined, { schedule: (p) => scheduled.push(p) })
+
+      expect(nestedDone).toBe(false)
+      expect(scheduled).toHaveLength(1)
+      await Promise.all(scheduled)
+      expect(nestedDone).toBe(true)
+    })
+
     it("scheduled batch never rejects even when a deferred handler throws", async () => {
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
       const bus = createEventBus()

@@ -50,10 +50,19 @@ export interface EventEnvelope<
 /**
  * Event handler callback invoked when a subscribed event is emitted.
  */
+export interface EventHandlerContext {
+  /**
+   * Emits nested events with the current runtime scheduler. Inline handlers
+   * still complete before the nested emit resolves; deferrable handlers stay
+   * on the scheduler supplied by the original emitter.
+   */
+  eventBus: EventBus
+}
+
 export type EventHandler<
   TData = unknown,
   TMetadata extends EventMetadata | undefined = EventMetadata | undefined,
-> = (event: EventEnvelope<TData, TMetadata>) => Promise<void> | void
+> = (event: EventEnvelope<TData, TMetadata>, context?: EventHandlerContext) => Promise<void> | void
 
 /**
  * Subscription handle returned from {@link EventBus.subscribe}.
@@ -241,10 +250,11 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     event: string,
     handler: EventHandler,
     envelope: EventEnvelope,
+    context?: EventHandlerContext,
   ): Promise<string | null> {
     try {
       if (timeoutMs === false) {
-        await handler(envelope)
+        await (context ? handler(envelope, context) : handler(envelope))
         return null
       }
       let timer: ReturnType<typeof setTimeout> | null = null
@@ -253,7 +263,9 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
       })
       try {
         const result = await Promise.race([
-          Promise.resolve(handler(envelope)).then(() => "done" as const),
+          Promise.resolve(context ? handler(envelope, context) : handler(envelope)).then(
+            () => "done" as const,
+          ),
           timedOut,
         ])
         if (result === "timeout") {
@@ -282,8 +294,9 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     event: string,
     batch: EventHandler[],
     envelope: EventEnvelope,
+    context?: EventHandlerContext,
   ): Promise<string[]> {
-    return Promise.all(batch.map((h) => runHandler(event, h, envelope))).then((results) =>
+    return Promise.all(batch.map((h) => runHandler(event, h, envelope, context))).then((results) =>
       results.filter((r): r is string => r !== null),
     )
   }
@@ -319,7 +332,24 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     }
   }
 
-  return {
+  function handlerContext(emitOptions?: EmitOptions): EventHandlerContext | undefined {
+    if (!emitOptions?.schedule) return undefined
+    const nestedOptions: EmitOptions = { schedule: emitOptions.schedule }
+    const scopedBus: EventBus = {
+      emit(event, data, metadata, options) {
+        return bus.emit(event, data, metadata, { ...nestedOptions, ...options })
+      },
+      subscribe(event, handler, options) {
+        return bus.subscribe(event, handler, options)
+      },
+    }
+    if (bus.deliver) {
+      scopedBus.deliver = (envelope) => bus.deliver!(envelope)
+    }
+    return { eventBus: scopedBus }
+  }
+
+  const bus: EventBus = {
     async emit<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
       event: string,
       data: TData,
@@ -342,7 +372,9 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
       }
 
       const { inline, deferrable } = partition(event)
-      const run = (batch: EventHandler[]) => runBatch(event, batch, envelope as EventEnvelope)
+      const context = handlerContext(emitOptions)
+      const run = (batch: EventHandler[]) =>
+        runBatch(event, batch, envelope as EventEnvelope, context)
 
       if (!store) {
         if (emitOptions?.schedule && deferrable.length > 0) {
@@ -413,4 +445,6 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
       }
     },
   }
+
+  return bus
 }

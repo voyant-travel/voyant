@@ -103,36 +103,44 @@ export function createCatalogCheckoutBundle(opts: {
           }
         },
       )
-      eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
-        if (!data.bookingId) return
-        const bookingId = data.bookingId
-        try {
-          await withDbFromEnv(env, async (rawDb) => {
-            await dispatchCheckoutFinalize({
-              env,
-              db: operatorPostgresDb(rawDb),
-              eventBus,
-              input: {
-                bookingId,
-                paymentSessionId: data.paymentSessionId,
-                paymentIntent: data.paymentIntent,
-              },
-              trigger: "payment.completed",
-              correlationId: data.paymentSessionId ?? null,
-              tags: [
-                `bookingId:${bookingId}`,
-                ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
-                ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
-              ],
-              generateContractPdf: opts.generateContractPdf,
+      eventBus.subscribe<PaymentCompletedPayload>(
+        "payment.completed",
+        async ({ data }, context) => {
+          if (!data.bookingId) return
+          const bookingId = data.bookingId
+          const nestedEventBus = context?.eventBus ?? eventBus
+          try {
+            await withDbFromEnv(env, async (rawDb) => {
+              await dispatchCheckoutFinalize({
+                env,
+                db: operatorPostgresDb(rawDb),
+                eventBus: nestedEventBus,
+                input: {
+                  bookingId,
+                  paymentSessionId: data.paymentSessionId,
+                  paymentIntent: data.paymentIntent,
+                },
+                trigger: "payment.completed",
+                correlationId: data.paymentSessionId ?? null,
+                tags: [
+                  `bookingId:${bookingId}`,
+                  ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
+                  ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
+                ],
+                generateContractPdf: opts.generateContractPdf,
+              })
             })
-          })
-        } catch {
-          // dispatchCheckoutFinalize already logged + recorded the
-          // failure; swallow here so the event-bus callback doesn't
-          // bubble to the dispatch caller.
-        }
-      })
+          } catch {
+            // dispatchCheckoutFinalize already logged + recorded the
+            // failure; swallow here so the event-bus callback doesn't
+            // bubble to the dispatch caller.
+          }
+        },
+        // Payment completion must not return before booking confirmation,
+        // invoice linkage, schedule settlement, and forced contract
+        // regeneration are visible to the storefront/admin follow-up reads.
+        { inline: true },
+      )
 
       if (opts.workflowRunnerRegistry) {
         opts.workflowRunnerRegistry.register({
