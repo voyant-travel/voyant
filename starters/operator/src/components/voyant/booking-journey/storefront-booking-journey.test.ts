@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { buildStorefrontBookFailureMessage } from "./storefront-booking-errors"
 import { buildStorefrontCommitParty } from "./storefront-booking-journey"
 
 describe("buildStorefrontCommitParty", () => {
@@ -56,5 +57,68 @@ describe("buildStorefrontCommitParty", () => {
         ],
       },
     })
+  })
+})
+
+describe("buildStorefrontBookFailureMessage", () => {
+  it("includes the API error and request id for failed public booking", () => {
+    expect(
+      buildStorefrontBookFailureMessage(
+        {
+          error: "Select a billing person or organization",
+          code: "invalid_request",
+          requestId: "req_book_1",
+        },
+        "req_header_ignored",
+        "We couldn't complete your booking. Please try again.",
+        "Reference: {requestId}",
+      ),
+    ).toBe(
+      "We couldn't complete your booking. Please try again. Select a billing person or organization. Reference: req_book_1.",
+    )
+  })
+
+  it("falls back to nested field errors and the response header request id", () => {
+    expect(
+      buildStorefrontBookFailureMessage(
+        {
+          code: "invalid_request",
+          details: {
+            fields: {
+              fieldErrors: {
+                personId: ["Select a billing person or organization"],
+              },
+            },
+          },
+        },
+        "req_header_1",
+        "We couldn't complete your booking. Please try again.",
+        "Reference: {requestId}",
+      ),
+    ).toBe(
+      "We couldn't complete your booking. Please try again. Select a billing person or organization. Reference: req_header_1.",
+    )
+  })
+
+  it("uses the generic checkout message when the API body is not actionable", () => {
+    expect(
+      buildStorefrontBookFailureMessage(
+        { error: "" },
+        null,
+        "We couldn't complete your booking. Please try again.",
+        "Reference: {requestId}",
+      ),
+    ).toBe("We couldn't complete your booking. Please try again.")
+  })
+
+  it("keeps parse-failure bodies generic while preserving a request reference", () => {
+    expect(
+      buildStorefrontBookFailureMessage(
+        {},
+        "req_header_1",
+        "We couldn't complete your booking. Please try again.",
+        "Reference: {requestId}",
+      ),
+    ).toBe("We couldn't complete your booking. Please try again. Reference: req_header_1.")
   })
 })

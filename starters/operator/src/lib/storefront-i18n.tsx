@@ -236,6 +236,7 @@ const storefrontMessagesEn = {
     marketingLabel: "Email me occasional updates about new tours and promotions.",
     checkoutFailed:
       "We couldn't complete your booking. Please review your selection or try again in a moment.",
+    requestReference: "Reference: {requestId}",
     reserveFailed:
       "This selection isn't available to book right now. Please adjust your dates or room and try again.",
   },
@@ -462,6 +463,7 @@ const storefrontMessagesRo: StorefrontMessages = {
     marketingLabel: "Trimite-mi ocazional noutati despre tururi noi si promotii.",
     checkoutFailed:
       "Nu am putut finaliza rezervarea. Verifica selectia sau incearca din nou peste putin timp.",
+    requestReference: "Referinta: {requestId}",
     reserveFailed:
       "Aceasta selectie nu poate fi rezervata acum. Ajusteaza datele sau camera si incearca din nou.",
   },

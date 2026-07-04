@@ -39,6 +39,10 @@ import {
   type OperatorInfoVariables,
   resolveContractVariables,
 } from "./resolve-contract-variables"
+import {
+  buildStorefrontBookFailureMessage,
+  type StorefrontBookErrorBody,
+} from "./storefront-booking-errors"
 
 /**
  * Marker for checkout failures we've already turned into a localized,
@@ -197,11 +201,7 @@ export function StorefrontBookingJourney({
         }),
       })
       if (!bookRes.ok) {
-        const errBody = (await bookRes.json().catch(() => ({ error: "book_failed" }))) as {
-          error?: string
-          code?: string
-          context?: { upstreamPayload?: { reason?: string } }
-        }
+        const errBody = (await bookRes.json().catch(() => ({}))) as StorefrontBookErrorBody
         console.error("[storefront] /book failed", errBody)
         // Reserve failures (e.g. 502 RESERVE_FAILED with reason
         // "rates_missing") must reach the customer — throw so the journey
@@ -210,11 +210,19 @@ export function StorefrontBookingJourney({
         // "adjust your selection" copy; everything else the generic message.
         // The engine error serializer nests the upstream payload under
         // `context.upstreamPayload` (ReserveFailedError), not at top level.
-        const reason = errBody.context?.upstreamPayload?.reason
+        const reason =
+          typeof errBody.context?.upstreamPayload?.reason === "string"
+            ? errBody.context.upstreamPayload.reason
+            : undefined
         throw new CheckoutError(
           reason === "rates_missing"
             ? messages.bookingJourney.reserveFailed
-            : messages.bookingJourney.checkoutFailed,
+            : buildStorefrontBookFailureMessage(
+                errBody,
+                bookRes.headers.get("x-request-id"),
+                messages.bookingJourney.checkoutFailed,
+                messages.bookingJourney.requestReference,
+              ),
         )
       }
       const bookJson = (await bookRes.json()) as { bookingId?: string }
