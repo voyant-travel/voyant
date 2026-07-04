@@ -886,6 +886,7 @@
       "@voyant-travel/inventory/linkables": ["../inventory/dist/linkables.d.ts"],
       "@voyant-travel/inventory/public-routes": ["../inventory/dist/public-routes.d.ts"],
       "@voyant-travel/inventory/public-validation": ["../inventory/dist/public-validation.d.ts"],
+      "@voyant-travel/inventory/read-model": ["../inventory/dist/read-model.d.ts"],
       "@voyant-travel/inventory/routes": ["../inventory/dist/routes.d.ts"],
       "@voyant-travel/inventory/routes-brochure": ["../inventory/dist/routes-brochure.d.ts"],
       "@voyant-travel/inventory/routes-content": ["../inventory/dist/routes-content.d.ts"],
@@ -903,6 +904,7 @@
       "@voyant-travel/inventory/service-content-synthesizer": [
         "../inventory/dist/service-content-synthesizer.d.ts"
       ],
+      "@voyant-travel/inventory/service-public": ["../inventory/dist/service-public.d.ts"],
       "@voyant-travel/inventory/tasks": ["../inventory/dist/tasks.d.ts"],
       "@voyant-travel/inventory/tools": ["../inventory/dist/tools.d.ts"],
       "@voyant-travel/inventory/validation": ["../inventory/dist/validation.d.ts"],

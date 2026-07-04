@@ -20,6 +20,7 @@ import {
   productDocVariant,
   readThroughProductDoc,
   readThroughSlugMapping,
+  warmProductReadModel,
 } from "../../src/read-model.js"
 import { productRoutes, readModelInvalidation } from "../../src/routes.js"
 import { publicProductRoutes } from "../../src/routes-public.js"
@@ -111,6 +112,48 @@ describe("read-model primitives", () => {
     expect(first).toEqual({ productId: "prod_1", languageTag: "ro" })
     expect(second).toEqual({ productId: "prod_1", languageTag: "ro" })
     expect(resolve).toHaveBeenCalledOnce()
+  })
+
+  it("warmProductReadModel writes the default product document", async () => {
+    const kv = fakeKv()
+
+    const result = await warmProductReadModel({
+      db: {} as never,
+      kv,
+      productId: PRODUCT.id,
+    })
+
+    expect(result).toEqual({ warmed: ["default"], missing: [] })
+    expect(JSON.parse(kv.store.get(productDocKey(PRODUCT.id, "default")) ?? "null")).toEqual(
+      PRODUCT,
+    )
+    expect(mockedService.getCatalogProductById).toHaveBeenCalledWith({}, PRODUCT.id, {})
+  })
+
+  it("warmProductReadModel recomputes existing locale variants", async () => {
+    const kv = fakeKv()
+    kv.store.set(productDocKey(PRODUCT.id, "default"), JSON.stringify({ stale: true }))
+    kv.store.set(productDocKey(PRODUCT.id, "lang=de"), JSON.stringify({ stale: true }))
+    mockedService.getCatalogProductById.mockImplementation(async (_db, _productId, query) => ({
+      ...PRODUCT,
+      contentLanguageTag: query.languageTag ?? null,
+    }))
+
+    const result = await warmProductReadModel({
+      db: {} as never,
+      kv,
+      productId: PRODUCT.id,
+    })
+
+    expect(result.warmed).toEqual(["default", "lang=de"])
+    expect(JSON.parse(kv.store.get(productDocKey(PRODUCT.id, "default")) ?? "null")).toEqual({
+      ...PRODUCT,
+      contentLanguageTag: null,
+    })
+    expect(JSON.parse(kv.store.get(productDocKey(PRODUCT.id, "lang=de")) ?? "null")).toEqual({
+      ...PRODUCT,
+      contentLanguageTag: "de",
+    })
   })
 })
 
@@ -245,5 +288,21 @@ describe("admin mutation invalidation middleware", () => {
 
     expect(miss.status).toBe(404)
     expect(kv.store.has(productDocKey(PRODUCT.id, "default"))).toBe(true)
+  })
+
+  it("can recompute cached documents after a successful mutation", async () => {
+    const kv = fakeKv()
+    kv.store.set(productDocKey(PRODUCT.id, "default"), JSON.stringify({ stale: true }))
+    const app = new Hono()
+    // biome-ignore lint/suspicious/noExplicitAny: structural middleware shape (same cast as production mounting) -- owner: products; existing suppression is intentional pending typed cleanup.
+    app.use("*", readModelInvalidation({ mode: "recompute" }) as any)
+    app.patch("/:id", (c) => c.json({ ok: true }))
+
+    const res = await app.request(`/${PRODUCT.id}`, { method: "PATCH" }, { CACHE: kv })
+
+    expect(res.status).toBe(200)
+    expect(JSON.parse(kv.store.get(productDocKey(PRODUCT.id, "default")) ?? "null")).toEqual(
+      PRODUCT,
+    )
   })
 })

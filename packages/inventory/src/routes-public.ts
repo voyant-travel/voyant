@@ -6,6 +6,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import {
+  buildProductReadModelDoc,
   productDocKey,
   productDocVariant,
   readThroughProductDoc,
@@ -390,8 +391,7 @@ export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVa
     const { data } = await readThroughProductDoc(
       kv,
       productDocKey(resolution.productId, productDocVariant(detailQuery)),
-      () =>
-        publicProductsService.getCatalogProductById(c.get("db"), resolution.productId, detailQuery),
+      () => buildProductReadModelDoc(c.get("db"), resolution.productId, detailQuery),
     )
     if (!data) {
       return c.json({ error: "Catalog product not found" }, 404)
@@ -406,7 +406,7 @@ export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVa
     const { data } = await readThroughProductDoc(
       readModelKv(c),
       productDocKey(productId, productDocVariant(query)),
-      () => publicProductsService.getCatalogProductById(c.get("db"), productId, query),
+      () => buildProductReadModelDoc(c.get("db"), productId, query),
     )
 
     if (!data) {

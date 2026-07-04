@@ -1,4 +1,7 @@
 import type { KVStore } from "@voyant-travel/utils/cache"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+
+import { publicProductsService } from "./service-public.js"
 
 /**
  * KV-backed read model for the public product detail surface (RFC
@@ -8,9 +11,9 @@ import type { KVStore } from "@voyant-travel/utils/cache"
  * Model: read-through with exact invalidation. The first read of a
  * (product, variant) materializes the render-ready document into KV;
  * repeat reads cost one KV get and ZERO Postgres queries. Admin
- * mutations to a product delete its documents (see
- * `productsReadModelInvalidation` in routes.ts), and a generous TTL
- * bounds staleness for anything invalidation misses.
+ * mutations to a product recompute or delete its documents (see
+ * `readModelInvalidation` in routes.ts), and a generous TTL bounds
+ * staleness for anything invalidation misses.
  *
  * Slug lookups resolve through a short-lived slug→product+locale mapping
  * so the id-keyed document is shared between `/:id` and `/slug/:slug`. The
@@ -25,6 +28,29 @@ const PRODUCT_DOC_TTL_SECONDS = 24 * 60 * 60
 /** Slug→id mappings are refill-cheap; the TTL bounds rename staleness. */
 const SLUG_MAP_TTL_SECONDS = 5 * 60
 
+export interface ProductReadModelQuery {
+  languageTag?: string | null
+}
+
+export interface ProductReadModelVariant {
+  variant: string
+  query?: ProductReadModelQuery
+}
+
+export type ProductReadModelVariantInput = string | ProductReadModelVariant
+
+export interface WarmProductReadModelInput {
+  db: PostgresJsDatabase
+  kv: KVStore
+  productId: string
+  variants?: ProductReadModelVariantInput[]
+}
+
+export interface WarmProductReadModelResult {
+  warmed: string[]
+  missing: string[]
+}
+
 export function productDocKey(productId: string, variant: string): string {
   return `${RM_PREFIX}:${productId}:${variant}`
 }
@@ -36,6 +62,18 @@ export function productSlugMapKey(slug: string, variant: string): string {
 /** Stable variant id from the detail query (currently just the locale). */
 export function productDocVariant(query: { languageTag?: string | null }): string {
   return query.languageTag ? `lang=${query.languageTag}` : "default"
+}
+
+export function productDocQueryFromVariant(variant: string): ProductReadModelQuery {
+  return variant.startsWith("lang=") ? { languageTag: variant.slice("lang=".length) } : {}
+}
+
+export async function buildProductReadModelDoc(
+  db: PostgresJsDatabase,
+  productId: string,
+  query: ProductReadModelQuery = {},
+) {
+  return publicProductsService.getCatalogProductById(db, productId, query)
 }
 
 export interface ProductSlugResolution {
@@ -64,7 +102,7 @@ export async function readThroughProductDoc<T>(
   const data = await compute()
   if (data !== null && kv) {
     try {
-      await kv.put(key, JSON.stringify(data), { expirationTtl: PRODUCT_DOC_TTL_SECONDS })
+      await putProductDoc(kv, key, data)
     } catch {
       // best-effort materialization
     }
@@ -105,11 +143,90 @@ export async function readThroughSlugMapping(
  * it, where the TTL becomes the only freshness bound).
  */
 export async function invalidateProductReadModel(kv: KVStore, productId: string): Promise<void> {
-  if (!kv.list) return
+  const keys = await listProductDocKeys(kv, productId)
+  if (!keys) return
+  await deleteProductDocKeys(kv, keys)
+}
+
+export async function warmProductReadModel(
+  input: WarmProductReadModelInput,
+): Promise<WarmProductReadModelResult> {
+  const explicitVariants = input.variants?.map(normalizeVariantInput)
+  const existingVariants = explicitVariants
+    ? null
+    : await listProductDocVariants(input.kv, input.productId)
+  const variants =
+    explicitVariants && explicitVariants.length > 0
+      ? explicitVariants
+      : existingVariants && existingVariants.length > 0
+        ? existingVariants.map((variant) => ({
+            variant,
+            query: productDocQueryFromVariant(variant),
+          }))
+        : [{ variant: "default", query: {} }]
+
+  const warmed: string[] = []
+  const missing: string[] = []
+
+  for (const { variant, query } of variants) {
+    const key = productDocKey(input.productId, variant)
+    await safeDeleteProductDoc(input.kv, key)
+    const data = await buildProductReadModelDoc(input.db, input.productId, query)
+    if (data === null) {
+      missing.push(variant)
+      continue
+    }
+    try {
+      await putProductDoc(input.kv, key, data)
+      warmed.push(variant)
+    } catch {
+      // best-effort materialization; the next read can still recompute
+    }
+  }
+
+  return { warmed, missing }
+}
+
+async function putProductDoc<T>(kv: KVStore, key: string, data: T) {
+  await kv.put(key, JSON.stringify(data), { expirationTtl: PRODUCT_DOC_TTL_SECONDS })
+}
+
+async function listProductDocKeys(kv: KVStore, productId: string): Promise<string[] | null> {
+  if (!kv.list) return null
   try {
     const { keys } = await kv.list({ prefix: `${RM_PREFIX}:${productId}:` })
-    await Promise.all(keys.map((key) => kv.delete(key.name)))
+    return keys.map((key) => key.name)
+  } catch {
+    // best-effort — the document TTL bounds staleness if this fails
+    return null
+  }
+}
+
+async function listProductDocVariants(kv: KVStore, productId: string): Promise<string[] | null> {
+  const keys = await listProductDocKeys(kv, productId)
+  if (!keys) return null
+  const prefix = `${RM_PREFIX}:${productId}:`
+  return keys.map((key) => key.slice(prefix.length)).filter(Boolean)
+}
+
+async function deleteProductDocKeys(kv: KVStore, keys: string[]) {
+  await Promise.all(keys.map((key) => safeDeleteProductDoc(kv, key)))
+}
+
+async function safeDeleteProductDoc(kv: KVStore, key: string) {
+  try {
+    await kv.delete(key)
   } catch {
     // best-effort — the document TTL bounds staleness if this fails
   }
+}
+
+function normalizeVariantInput(input: ProductReadModelVariantInput): {
+  variant: string
+  query: ProductReadModelQuery
+} {
+  if (typeof input === "string") {
+    return { variant: input, query: productDocQueryFromVariant(input) }
+  }
+  return { variant: input.variant, query: input.query ?? productDocQueryFromVariant(input.variant) }
 }

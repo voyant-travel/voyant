@@ -9,6 +9,7 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./tools": "./src/tools.ts",
+    "./read-model": "./src/read-model.ts",
     "./routes": "./src/routes.ts",
     "./routes-brochure": "./src/routes-brochure.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
@@ -25,6 +26,7 @@
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./service-catalog-plane-destinations": "./src/service-catalog-plane-destinations.ts",
     "./service-catalog-plane-taxonomy": "./src/service-catalog-plane-taxonomy.ts",
+    "./service-public": "./src/service-public.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
@@ -108,6 +110,11 @@
         "import": "./dist/tools.js",
         "default": "./dist/tools.js"
       },
+      "./read-model": {
+        "types": "./dist/read-model.d.ts",
+        "import": "./dist/read-model.js",
+        "default": "./dist/read-model.js"
+      },
       "./routes": {
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
@@ -187,6 +194,11 @@
         "types": "./dist/service-catalog-plane-taxonomy.d.ts",
         "import": "./dist/service-catalog-plane-taxonomy.js",
         "default": "./dist/service-catalog-plane-taxonomy.js"
+      },
+      "./service-public": {
+        "types": "./dist/service-public.d.ts",
+        "import": "./dist/service-public.js",
+        "default": "./dist/service-public.js"
       },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",
