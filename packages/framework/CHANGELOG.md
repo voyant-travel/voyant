@@ -1,5 +1,18 @@
 # @voyant-travel/framework
 
+## 0.12.8
+
+### Patch Changes
+
+- 32d0e1c: Split the framework standard runtime composition into lightweight per-module
+  lazy route loaders, and allow overlapping lazy route mounts to fall through on
+  wrapper route misses so lazy modules/extensions preserve eager route composition
+  semantics without swallowing handler-authored 404 responses.
+- Updated dependencies [32d0e1c]
+  - @voyant-travel/hono@0.121.1
+  - @voyant-travel/commerce@0.21.2
+  - @voyant-travel/finance@0.139.3
+
 ## 0.12.7
 
 ### Patch Changes
