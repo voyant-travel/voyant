@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.12.12
+
+### Patch Changes
+
+- Updated dependencies [98503c9]
+  - @voyant-travel/accommodations@0.109.6
+
 ## 0.12.11
 
 ### Patch Changes
