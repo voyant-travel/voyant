@@ -57,7 +57,12 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
 } from "../src/api/lib/catalog-runtime.js"
-import { createTypesenseDocumentSearch, listStaleDocuments } from "./lib/reindex-stale-documents.js"
+import {
+  createTypesenseCollectionAdmin,
+  createTypesenseDocumentSearch,
+  listObsoleteCatalogCollections,
+  listStaleDocuments,
+} from "./lib/reindex-stale-documents.js"
 import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 
 config({ path: ".env" })
@@ -122,6 +127,7 @@ const indexer = createTypesenseIndexer({
   importFailureMode: bestEffort ? "best-effort" : "throw",
 })
 const searchDocuments = createTypesenseDocumentSearch(typesenseHost, typesenseKey)
+const collectionAdmin = createTypesenseCollectionAdmin(typesenseHost, typesenseKey)
 
 if (bestEffort) {
   console.info("[reindex] best-effort mode — row import failures will be logged, not fatal")
@@ -142,9 +148,6 @@ const service = createIndexerService({
   slices: activeSlices,
   registries,
 })
-
-console.info(`[reindex] ensuring collections for ${activeSlices.length} slice(s)`)
-await service.ensureCollections()
 
 interface VerticalConfig {
   vertical: (typeof VERTICALS)[number]
@@ -187,6 +190,23 @@ const VERTICAL_CONFIGS: VerticalConfig[] = [
     builder: createRoomTypeDocumentBuilder(db, { sellerOperatorId }),
   },
 ]
+
+console.info(`[reindex] ensuring collections for ${activeSlices.length} slice(s)`)
+await service.ensureCollections()
+
+const reindexedVerticals: ReadonlySet<string> = new Set(
+  VERTICAL_CONFIGS.filter((cfg) => !requestedVertical || requestedVertical === cfg.vertical).map(
+    (cfg) => cfg.vertical,
+  ),
+)
+const existingCollections = await collectionAdmin.list()
+const obsoleteCollections = listObsoleteCatalogCollections(activeSlices, existingCollections, {
+  verticals: reindexedVerticals,
+})
+for (const collection of obsoleteCollections) {
+  const deleted = await collectionAdmin.delete(collection)
+  if (deleted) console.info(`[reindex] deleted obsolete catalog collection ${collection}`)
+}
 
 for (const cfg of VERTICAL_CONFIGS) {
   if (requestedVertical && requestedVertical !== cfg.vertical) continue
