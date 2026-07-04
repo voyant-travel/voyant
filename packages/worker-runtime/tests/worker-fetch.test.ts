@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { createApiDispatch } from "../src/api-dispatch.js"
 import type { WaitUntilContext } from "../src/types.js"
-import { createWorkerFetch } from "../src/worker-fetch.js"
+import { createWorkerFetch, lazySsr } from "../src/worker-fetch.js"
 
 type Env = { APP_URL: string }
 
@@ -49,5 +49,37 @@ describe("createWorkerFetch", () => {
     await fetch(request, env, ctx)
 
     expect(ssr).toHaveBeenCalledWith(request, env, ctx)
+  })
+})
+
+describe("lazySsr", () => {
+  it("does not run the loader until a request arrives, then memoizes it", async () => {
+    const handler = vi.fn(async () => new Response("ssr"))
+    const load = vi.fn(async () => handler)
+    const ssr = lazySsr<Env>(load)
+
+    // Constructing the handler must not import the SSR graph.
+    expect(load).not.toHaveBeenCalled()
+
+    const request = new Request("https://example.test/")
+    const a = await ssr(request, env, ctx)
+    const b = await ssr(request, env, ctx)
+
+    await expect(a.text()).resolves.toBe("ssr")
+    await expect(b.text()).resolves.toBe("ssr")
+    expect(load).toHaveBeenCalledOnce()
+    expect(handler).toHaveBeenCalledTimes(2)
+    expect(handler).toHaveBeenLastCalledWith(request, env, ctx)
+  })
+
+  it("loads the SSR handler exactly once even when requests race", async () => {
+    const handler = vi.fn(async () => new Response("ssr"))
+    const load = vi.fn(async () => handler)
+    const ssr = lazySsr<Env>(load)
+    const request = new Request("https://example.test/")
+
+    await Promise.all([ssr(request, env, ctx), ssr(request, env, ctx), ssr(request, env, ctx)])
+
+    expect(load).toHaveBeenCalledOnce()
   })
 })

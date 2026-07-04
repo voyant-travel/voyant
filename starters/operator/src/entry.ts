@@ -1,5 +1,4 @@
-import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { createWorkerFetch, withActiveRouteSsrManifest } from "@voyant-travel/worker-runtime"
+import { createWorkerFetch, lazySsr } from "@voyant-travel/worker-runtime"
 import { operatorApiDispatch } from "./hono-api-dispatch"
 import { reportBackgroundFailure } from "./lib/observability"
 import {
@@ -12,11 +11,12 @@ import {
   PROMOTION_BOUNDARY_SCHEDULER_CRON,
 } from "./scheduled-crons"
 
-const startHandler = createStartHandler(withActiveRouteSsrManifest(defaultStreamHandler))
-
+// SSR is loaded lazily behind the non-API branch: the React + react-dom/server
+// graph (~2.2 MB) stays out of the Worker startup budget, so `/api/*` isolates
+// never parse it. See docs/architecture/cloudflare-worker-entrypoints.md.
 const workerFetch = createWorkerFetch<CloudflareBindings, ExecutionContext>({
   api: operatorApiDispatch,
-  ssr: (request, env) => startHandler(request, { context: { env } } as never),
+  ssr: lazySsr(() => import("./ssr-handler").then((mod) => mod.handleSsrRequest)),
 })
 
 export default {
