@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.12.7
+
+### Patch Changes
+
+- Updated dependencies [9678a59]
+  - @voyant-travel/bookings@0.139.4
+
 ## 0.12.6
 
 ### Patch Changes

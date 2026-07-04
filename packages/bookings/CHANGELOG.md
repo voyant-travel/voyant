@@ -1,5 +1,11 @@
 # @voyant-travel/bookings
 
+## 0.139.4
+
+### Patch Changes
+
+- 9678a59: Import booking PII KMS helpers through the explicit utils KMS subpath so release builds do not depend on the utils root barrel declaration cache.
+
 ## 0.139.3
 
 ### Patch Changes
