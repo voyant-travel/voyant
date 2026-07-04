@@ -110,4 +110,15 @@ describe("buildStorefrontBookFailureMessage", () => {
       ),
     ).toBe("We couldn't complete your booking. Please try again.")
   })
+
+  it("keeps parse-failure bodies generic while preserving a request reference", () => {
+    expect(
+      buildStorefrontBookFailureMessage(
+        {},
+        "req_header_1",
+        "We couldn't complete your booking. Please try again.",
+        "Reference: {requestId}",
+      ),
+    ).toBe("We couldn't complete your booking. Please try again. Reference: req_header_1.")
+  })
 })

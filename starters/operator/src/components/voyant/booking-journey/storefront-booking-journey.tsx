@@ -201,9 +201,7 @@ export function StorefrontBookingJourney({
         }),
       })
       if (!bookRes.ok) {
-        const errBody = (await bookRes
-          .json()
-          .catch(() => ({ error: "book_failed" }))) as StorefrontBookErrorBody
+        const errBody = (await bookRes.json().catch(() => ({}))) as StorefrontBookErrorBody
         console.error("[storefront] /book failed", errBody)
         // Reserve failures (e.g. 502 RESERVE_FAILED with reason
         // "rates_missing") must reach the customer — throw so the journey
