@@ -1,5 +1,12 @@
 # @voyant-travel/admin-contracts
 
+## 0.104.9
+
+### Patch Changes
+
+- Updated dependencies [8405bee]
+  - @voyant-travel/products-contracts@0.106.0
+
 ## 0.104.8
 
 ### Patch Changes
