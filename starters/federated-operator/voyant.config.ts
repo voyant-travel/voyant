@@ -19,6 +19,7 @@ export default defineVoyantConfig({
     "@voyant-travel/action-ledger",
     "@voyant-travel/relationships",
     "@voyant-travel/identity",
+    "@voyant-travel/source-connections",
   ],
   additionalSchemas: ["@voyant-travel/workflow-runs"],
   featureFlags: {
