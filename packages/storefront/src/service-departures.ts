@@ -249,7 +249,7 @@ export async function getStorefrontProductAvailabilitySummary(
 
 export async function getStorefrontDepartureItinerary(
   db: PostgresJsDatabase,
-  input: { departureId: string; productId: string },
+  input: { departureId: string; productId: string; languageTag?: string | null },
 ) {
   const [slot] = await listSlots(db, {
     productId: input.productId,
@@ -263,7 +263,7 @@ export async function getStorefrontDepartureItinerary(
     return null
   }
 
-  const days = await listItineraryDays(db, itineraryId)
+  const days = await listItineraryDays(db, itineraryId, input.languageTag)
 
   if (days.length === 0) {
     return null
@@ -271,7 +271,7 @@ export async function getStorefrontDepartureItinerary(
 
   const dayIds = days.map((day) => day.id)
   const [services, dayMedia] = await Promise.all([
-    listItineraryDayServices(db, dayIds),
+    listItineraryDayServices(db, dayIds, input.languageTag),
     listItineraryDayMedia(db, { productId: input.productId, dayIds }),
   ])
 

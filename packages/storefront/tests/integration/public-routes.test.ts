@@ -15,7 +15,9 @@ import { productExtras } from "@voyant-travel/inventory/extras"
 import {
   optionUnits,
   productDayServices,
+  productDayServiceTranslations,
   productDays,
+  productDayTranslations,
   productItineraries,
   productLocations,
   productMedia,
@@ -1200,6 +1202,20 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       })
       .returning()
 
+    await db.insert(productDayTranslations).values({
+      dayId: dayOne.id,
+      languageTag: "ro",
+      title: "Sosire",
+      description: "Transfer si cina de bun venit.",
+    })
+
+    await db.insert(productDayServiceTranslations).values({
+      serviceId: service.id,
+      languageTag: "ro",
+      name: "Croaziera la apus",
+      description: "Navigare prin port la ora de aur.",
+    })
+
     await db.insert(productMedia).values({
       productId: product.id,
       dayId: dayOne.id,
@@ -1301,6 +1317,34 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
                 id: service.id,
                 title: "Sunset cruise",
                 description: "Harbor sail at golden hour.",
+              },
+            ],
+          },
+        ],
+      },
+    })
+
+    const localizedItineraryRes = await app.request(
+      `/products/${product.id}/departures/dep_compat_123/itinerary?lang=ro`,
+    )
+    expect(localizedItineraryRes.status).toBe(200)
+    expect(await localizedItineraryRes.json()).toEqual({
+      data: {
+        id: "dep_compat_123",
+        itineraryId: defaultItinerary.id,
+        days: [
+          {
+            id: dayOne.id,
+            title: "Sosire",
+            description: "Transfer si cina de bun venit.",
+            thumbnail: {
+              url: "https://cdn.example.com/day-1.jpg",
+            },
+            segments: [
+              {
+                id: service.id,
+                title: "Croaziera la apus",
+                description: "Navigare prin port la ora de aur.",
               },
             ],
           },

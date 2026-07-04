@@ -495,15 +495,23 @@ export async function listOptionUnitFacts(
 export async function listItineraryDays(
   db: PostgresJsDatabase,
   itineraryId: string,
+  languageTag?: string | null,
 ): Promise<StorefrontItineraryDay[]> {
   return executeBoundaryRows<StorefrontItineraryDay>(
     db,
-    // agent-quality: raw-sql reviewed -- owner: storefront; itinerary id is parameter-bound and rows are read-only.
+    // agent-quality: raw-sql reviewed -- owner: storefront; itinerary id and optional language tag are parameter-bound and rows are read-only.
     sql`
-      SELECT id, day_number AS "dayNumber", title, description
-      FROM product_days
-      WHERE itinerary_id = ${itineraryId}
-      ORDER BY day_number ASC
+      SELECT
+        d.id,
+        d.day_number AS "dayNumber",
+        COALESCE(dt.title, d.title) AS title,
+        COALESCE(dt.description, d.description) AS description
+      FROM product_days d
+      LEFT JOIN product_day_translations dt
+        ON dt.day_id = d.id
+       AND dt.language_tag = ${languageTag ?? null}
+      WHERE d.itinerary_id = ${itineraryId}
+      ORDER BY d.day_number ASC
     `,
   )
 }
@@ -511,23 +519,27 @@ export async function listItineraryDays(
 export async function listItineraryDayServices(
   db: PostgresJsDatabase,
   dayIds: string[],
+  languageTag?: string | null,
 ): Promise<StorefrontItineraryDayService[]> {
   const uniqueIds = [...new Set(dayIds)].filter(Boolean)
   if (uniqueIds.length === 0) return []
 
   return executeBoundaryRows<StorefrontItineraryDayService>(
     db,
-    // agent-quality: raw-sql reviewed -- owner: storefront; day ids are parameter-bound and service rows are read-only.
+    // agent-quality: raw-sql reviewed -- owner: storefront; day ids and optional language tag are parameter-bound and service rows are read-only.
     sql`
       SELECT
-        id,
-        day_id AS "dayId",
-        name,
-        description,
-        sort_order AS "sortOrder"
-      FROM product_day_services
-      WHERE day_id IN (${sqlList(uniqueIds)})
-      ORDER BY sort_order ASC, created_at ASC
+        s.id,
+        s.day_id AS "dayId",
+        COALESCE(st.name, s.name) AS name,
+        COALESCE(st.description, s.description) AS description,
+        s.sort_order AS "sortOrder"
+      FROM product_day_services s
+      LEFT JOIN product_day_service_translations st
+        ON st.service_id = s.id
+       AND st.language_tag = ${languageTag ?? null}
+      WHERE s.day_id IN (${sqlList(uniqueIds)})
+      ORDER BY s.sort_order ASC, s.created_at ASC
     `,
   )
 }

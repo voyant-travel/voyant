@@ -2,6 +2,7 @@
 
 import { type FetchWithValidationOptions, fetchWithValidation, withQueryParams } from "./client.js"
 import {
+  type StorefrontDepartureItineraryQuery,
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
   type StorefrontOfferApplyInput,
@@ -9,6 +10,7 @@ import {
   type StorefrontProductExtensionsQuery,
   type StorefrontPromotionalOfferListQuery,
   type StorefrontSettingsPatchInput,
+  storefrontDepartureItineraryQuerySchema,
   storefrontDepartureItineraryResponseSchema,
   storefrontDepartureListResponseSchema,
   storefrontDeparturePricePreviewInputSchema,
@@ -112,9 +114,11 @@ export function getStorefrontDepartureItinerary(
   client: FetchWithValidationOptions,
   productId: string,
   departureId: string,
+  query?: StorefrontDepartureItineraryQuery,
 ) {
+  const parsed = query ? storefrontDepartureItineraryQuerySchema.parse(query) : undefined
   return fetchWithValidation(
-    `/v1/public/products/${productId}/departures/${departureId}/itinerary`,
+    withQueryParams(`/v1/public/products/${productId}/departures/${departureId}/itinerary`, parsed),
     storefrontDepartureItineraryResponseSchema,
     client,
   )

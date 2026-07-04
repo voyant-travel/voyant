@@ -540,6 +540,11 @@ export const storefrontDepartureItinerarySegmentSchema = z.object({
   description: z.string().nullable(),
 })
 
+export const storefrontDepartureItineraryQuerySchema = z.object({
+  languageTag: languageTagSchema.optional(),
+  lang: languageTagSchema.optional(),
+})
+
 export const storefrontDepartureItineraryDaySchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -559,6 +564,9 @@ export const storefrontDepartureItinerarySchema = z.object({
 })
 
 export type StorefrontDepartureListQuery = z.infer<typeof storefrontDepartureListQuerySchema>
+export type StorefrontDepartureItineraryQuery = z.infer<
+  typeof storefrontDepartureItineraryQuerySchema
+>
 export type StorefrontProductAvailabilitySummaryQuery = z.infer<
   typeof storefrontProductAvailabilitySummaryQuerySchema
 >

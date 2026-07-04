@@ -1,4 +1,5 @@
 import {
+  storefrontDepartureItineraryQuerySchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -34,6 +35,7 @@ export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ da
 export const arrayEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: z.array(item) })
 
 export {
+  storefrontDepartureItineraryQuerySchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -120,6 +122,9 @@ export type StorefrontSettingsRecord = z.infer<typeof storefrontSettingsSchema>
 export type StorefrontSettingsInput = z.input<typeof storefrontSettingsInputSchema>
 export type StorefrontSettingsPatchInput = z.input<typeof storefrontSettingsPatchSchema>
 export type StorefrontDepartureRecord = z.infer<typeof storefrontDepartureSchema>
+export type StorefrontDepartureItineraryQuery = z.input<
+  typeof storefrontDepartureItineraryQuerySchema
+>
 export type StorefrontDepartureListQuery = z.input<typeof storefrontDepartureListQuerySchema>
 export type StorefrontDeparturePricePreviewInput = z.input<
   typeof storefrontDeparturePricePreviewInputSchema

@@ -511,7 +511,7 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
     },
     getDepartureItinerary(
       db: PostgresJsDatabase,
-      input: { departureId: string; productId: string },
+      input: { departureId: string; productId: string; languageTag?: string | null },
     ) {
       return getStorefrontDepartureItinerary(db, input)
     },

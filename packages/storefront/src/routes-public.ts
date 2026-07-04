@@ -10,6 +10,7 @@ import {
   idempotencyKey,
   openApiValidationHook,
   parseJsonBody,
+  parseQuery,
   type VoyantBindings,
   type VoyantVariables,
 } from "@voyant-travel/hono"
@@ -31,6 +32,7 @@ import {
   type StorefrontNewsletterSubscribeInput,
   storefrontBookingSessionBootstrapInputSchema,
   storefrontBookingSessionCompatBootstrapInputSchema,
+  storefrontDepartureItineraryQuerySchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -269,6 +271,7 @@ const departureItineraryRoute = createRoute({
   path: "/products/{productId}/departures/{departureId}/itinerary",
   request: {
     params: z.object({ productId: z.string(), departureId: z.string() }),
+    query: storefrontDepartureItineraryQuerySchema,
   },
   responses: {
     200: {
@@ -637,8 +640,10 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     })
     .openapi(departureItineraryRoute, async (c) => {
       const { productId, departureId } = c.req.valid("param")
+      const query = parseQuery(c, storefrontDepartureItineraryQuerySchema)
       const itinerary = await storefrontService.getDepartureItinerary(c.get("db" as never), {
         departureId,
+        languageTag: query.languageTag ?? query.lang,
         productId,
       })
 
