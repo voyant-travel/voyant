@@ -552,6 +552,7 @@ function BookingListPagination({
           <PaginationPrevious
             href="#"
             text={previousLabel}
+            size="default"
             aria-disabled={!canPrev}
             tabIndex={canPrev ? 0 : -1}
             className={canPrev ? undefined : "pointer-events-none opacity-50"}
@@ -573,6 +574,7 @@ function BookingListPagination({
             ) : (
               <PaginationLink
                 href="#"
+                size="icon"
                 isActive={entry === page}
                 onClick={(event) => {
                   event.preventDefault()
@@ -588,6 +590,7 @@ function BookingListPagination({
           <PaginationNext
             href="#"
             text={nextLabel}
+            size="default"
             aria-disabled={!canNext}
             tabIndex={canNext ? 0 : -1}
             className={canNext ? undefined : "pointer-events-none opacity-50"}

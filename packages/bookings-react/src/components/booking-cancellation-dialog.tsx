@@ -39,6 +39,14 @@ export interface BookingCancellationDialogProps {
   onOpenChange: (open: boolean) => void
   booking: BookingRecord
   /**
+   * Amount already paid against the booking, in cents of `booking.sellCurrency`.
+   * When present and greater than zero, the dialog makes the finance settlement
+   * consequence explicit before cancellation.
+   */
+  paidAmountCents?: number | null
+  /** True when the host knows this booking has at least one recorded payment. */
+  hasRecordedPayment?: boolean
+  /**
    * Product ID used to resolve the applicable cancellation policy.
    *
    * Leave unset (or pass `undefined`) to auto-resolve from the booking's items
@@ -54,6 +62,8 @@ export function BookingCancellationDialog({
   open,
   onOpenChange,
   booking,
+  paidAmountCents,
+  hasRecordedPayment,
   productId,
   onSuccess,
 }: BookingCancellationDialogProps) {
@@ -113,6 +123,7 @@ export function BookingCancellationDialog({
   }
 
   const total = booking.sellAmountCents
+  const showPaidSettlementNotice = hasRecordedPayment ?? (paidAmountCents ?? 0) > 0
   const refund = evaluation?.refundCents ?? 0
   const penalty = total != null ? Math.max(0, total - refund) : 0
   const formatAmount = React.useCallback(
@@ -248,6 +259,20 @@ export function BookingCancellationDialog({
                   {messages.bookingCancellationDialog.policy.noTotalAmount}
                 </p>
               ) : null}
+            </div>
+          )}
+
+          {showPaidSettlementNotice && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="space-y-1">
+                  <div className="font-medium">
+                    {messages.bookingCancellationDialog.paidSettlement.title}
+                  </div>
+                  <p>{messages.bookingCancellationDialog.paidSettlement.description}</p>
+                </div>
+              </div>
             </div>
           )}
 
