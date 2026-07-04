@@ -1,5 +1,20 @@
 # @voyant-travel/commerce
 
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [8405bee]
+  - @voyant-travel/products-contracts@0.106.0
+  - @voyant-travel/bookings@0.140.0
+  - @voyant-travel/catalog@0.138.0
+  - @voyant-travel/distribution@0.130.0
+  - @voyant-travel/finance@0.140.0
+  - @voyant-travel/legal@0.140.0
+  - @voyant-travel/workflow-runs@0.111.16
+  - @voyant-travel/workflows@0.111.16
+  - @voyant-travel/quotes@0.124.1
+
 ## 0.21.2
 
 ### Patch Changes
