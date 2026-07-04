@@ -1,5 +1,11 @@
 # @voyant-travel/inventory
 
+## 0.6.1
+
+### Patch Changes
+
+- 4504abb: Export product read-model helpers and the public product read service, and add a write-time warm path for product read-model recomputation after inventory mutations.
+
 ## 0.6.0
 
 ### Minor Changes
