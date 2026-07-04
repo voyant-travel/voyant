@@ -30,6 +30,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq } from "drizzle-orm"
 
 import { accommodationCatalogPolicy } from "./catalog-policy.js"
+import { isCustomerRoomTypeBookable } from "./customer-bookability.js"
 import { roomTypes } from "./schema-inventory.js"
 import {
   ACCOMMODATION_CONTENT_MARKET_ANY,
@@ -217,6 +218,7 @@ export function createRoomTypeDocumentBuilder(
     const rows = await db.select().from(roomTypes).where(eq(roomTypes.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
+    if (slice.audience === "customer" && !(await isCustomerRoomTypeBookable(db, row))) return null
     const projection = new Map(
       roomTypeRowToProjection(row, {
         sellerOperatorId: context.sellerOperatorId,

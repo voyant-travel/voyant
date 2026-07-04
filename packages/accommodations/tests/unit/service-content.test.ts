@@ -9,9 +9,11 @@ import { describe, expect, it } from "vitest"
 
 import {
   mealPlans,
+  ratePlanDailyRates,
   ratePlanRoomTypes,
   ratePlans,
   roomTypeBedConfigs,
+  roomTypeDailyInventory,
   roomTypes,
 } from "../../src/schema-inventory.js"
 import { buildOwnedAccommodationContent } from "../../src/service-content.js"
@@ -263,6 +265,45 @@ describe("buildOwnedAccommodationContent", () => {
             },
           ],
         ],
+        [
+          ratePlanDailyRates,
+          [
+            {
+              id: "rate_day_1",
+              ratePlanId: "rate_flex",
+              roomTypeId: "rmtp_family",
+              date: "2099-07-12",
+              sellCurrency: "EUR",
+              sellAmountCents: 24000,
+              costCurrency: null,
+              costAmountCents: null,
+              taxAmountCents: null,
+              feeAmountCents: null,
+              occupancyBasis: "room",
+              includedAdults: 2,
+              includedChildren: 0,
+              includedInfants: 0,
+              metadata: null,
+              createdAt: new Date("2026-01-01"),
+              updatedAt: new Date("2026-01-01"),
+            },
+          ],
+        ],
+        [
+          roomTypeDailyInventory,
+          [
+            {
+              id: "inv_1",
+              roomTypeId: "rmtp_family",
+              date: "2099-07-12",
+              capacity: 2,
+              closed: false,
+              metadata: null,
+              createdAt: new Date("2026-01-01"),
+              updatedAt: new Date("2026-01-01"),
+            },
+          ],
+        ],
       ]),
     )
 
@@ -294,5 +335,27 @@ describe("buildOwnedAccommodationContent", () => {
       inclusions: ["Breakfast", "Lunch", "Dinner", "Drinks"],
     })
     expect(result?.content.amenities[0]).toMatchObject({ id: "wifi", name: "Wi-Fi" })
+  })
+
+  it("does not serve owned accommodation detail content for inactive rooms", async () => {
+    const db = fakeDb(
+      new Map<unknown, unknown[]>([
+        [
+          roomTypes,
+          [
+            {
+              id: "rmtp_inactive",
+              propertyId: "prop_mitsis",
+              name: "Inactive Room",
+              active: false,
+            },
+          ],
+        ],
+      ]),
+    )
+
+    await expect(
+      buildOwnedAccommodationContent(db, "rmtp_inactive", { preferredLocales: ["en-GB"] }),
+    ).resolves.toBeNull()
   })
 })

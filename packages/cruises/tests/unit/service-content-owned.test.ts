@@ -132,9 +132,11 @@ describe("buildOwnedCruiseContent", () => {
           [
             {
               sailingId: "sail_1",
+              cabinCategoryId: "cab_1",
               pricePerPerson: "1299.00",
               currency: "EUR",
               availability: "available",
+              availabilityCount: null,
             },
           ],
         ],
@@ -225,6 +227,42 @@ describe("buildOwnedCruiseContent", () => {
       ]),
     )
   })
+
+  it("does not serve owned cruise detail content for unbookable storefront rows", async () => {
+    const db = fakeDb(
+      new Map<unknown, unknown[]>([
+        [
+          cruises,
+          [
+            {
+              id: "cru_draft",
+              name: "Draft Cruise",
+              cruiseType: "river",
+              lineSupplierId: null,
+              defaultShipId: null,
+              nights: 4,
+              embarkPortFacilityId: null,
+              embarkPortCanonicalPlaceId: null,
+              disembarkPortFacilityId: null,
+              disembarkPortCanonicalPlaceId: null,
+              description: null,
+              shortDescription: null,
+              highlights: [],
+              inclusionsHtml: null,
+              exclusionsHtml: null,
+              heroImageUrl: null,
+              status: "draft",
+              customerPaymentPolicy: null,
+            },
+          ],
+        ],
+      ]),
+    )
+
+    await expect(
+      buildOwnedCruiseContent(db, "cru_draft", { preferredLocales: ["en-GB"] }),
+    ).resolves.toBeNull()
+  })
 })
 
 describe("getCruiseContent owned dispatch", () => {
@@ -239,7 +277,7 @@ describe("getCruiseContent owned dispatch", () => {
               name: "Owned Cruise",
               cruiseType: "river",
               lineSupplierId: null,
-              defaultShipId: null,
+              defaultShipId: "ship_1",
               nights: 4,
               embarkPortFacilityId: null,
               embarkPortCanonicalPlaceId: null,
@@ -256,10 +294,82 @@ describe("getCruiseContent owned dispatch", () => {
             },
           ],
         ],
-        [cruiseSailings, []],
+        [
+          cruiseSailings,
+          [
+            {
+              id: "sail_1",
+              cruiseId: "cru_1",
+              shipId: "ship_1",
+              departureDate: "2099-07-12",
+              returnDate: "2099-07-16",
+              salesStatus: "open",
+              externalRefs: {},
+              customerPaymentPolicy: null,
+            },
+          ],
+        ],
+        [
+          cruiseShips,
+          [
+            {
+              id: "ship_1",
+              name: "Owned Ship",
+              shipType: "river",
+              description: null,
+              deckPlanUrl: null,
+              capacityGuests: null,
+              deckCount: null,
+              yearBuilt: null,
+              gallery: [],
+            },
+          ],
+        ],
+        [cruiseDecks, []],
+        [
+          cruiseCabinCategories,
+          [
+            {
+              id: "cab_1",
+              shipId: "ship_1",
+              code: "STD",
+              name: "Standard Cabin",
+              roomType: "inside",
+              description: null,
+              minOccupancy: 1,
+              maxOccupancy: 2,
+              squareFeet: null,
+              wheelchairAccessible: false,
+              amenities: [],
+              featureCodes: [],
+              bedConfigurations: [],
+              accessibilityFeatures: [],
+              viewType: null,
+              images: [],
+              floorplanImages: [],
+              gradeCodes: [],
+              customerPaymentPolicy: null,
+            },
+          ],
+        ],
+        [
+          cruisePrices,
+          [
+            {
+              id: "price_1",
+              sailingId: "sail_1",
+              cabinCategoryId: "cab_1",
+              pricePerPerson: "699.00",
+              currency: "EUR",
+              availability: "available",
+              availabilityCount: 4,
+            },
+          ],
+        ],
         [cruiseMedia, []],
         [cruiseInclusions, []],
         [cruiseDays, []],
+        [cruiseSailingDays, []],
       ]),
     )
     const registry = {

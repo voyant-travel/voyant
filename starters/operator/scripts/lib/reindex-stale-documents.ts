@@ -15,6 +15,17 @@ export type TypesenseDocumentSearch = (
   params: URLSearchParams,
 ) => Promise<TypesenseSearchPage | null>
 
+export class TypesenseDocumentSearchError extends Error {
+  constructor(
+    readonly collection: string,
+    readonly status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = "TypesenseDocumentSearchError"
+  }
+}
+
 export function createTypesenseDocumentSearch(
   typesenseHost: string,
   typesenseApiKey: string,
@@ -24,7 +35,15 @@ export function createTypesenseDocumentSearch(
     url.search = params.toString()
 
     const res = await fetch(url, { headers: { "X-TYPESENSE-API-KEY": typesenseApiKey } })
-    if (!res.ok) return null
+    if (res.status === 404) return null
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      throw new TypesenseDocumentSearchError(
+        collection,
+        res.status,
+        body || `Typesense document search failed for ${collection} with HTTP ${res.status}`,
+      )
+    }
     return (await res.json()) as TypesenseSearchPage
   }
 }

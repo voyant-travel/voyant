@@ -13,6 +13,7 @@ import {
   type BoardBasis,
   validateAccommodationContent,
 } from "./content-shape.js"
+import { isCustomerRoomTypeBookable } from "./customer-bookability.js"
 import {
   mealPlans,
   ratePlanRoomTypes,
@@ -41,6 +42,7 @@ export async function buildOwnedAccommodationContent(
     await db.select().from(roomTypes).where(eq(roomTypes.id, entityId)).limit(1)
   )[0]
   if (!roomRow) return null
+  if (!(await isCustomerRoomTypeBookable(db, roomRow))) return null
 
   // biome-ignore lint/suspicious/noExplicitAny: AnyDrizzleDb widens drizzle's row inference. -- owner: accommodations; existing suppression is intentional pending typed cleanup.
   const propertyRow: any = (

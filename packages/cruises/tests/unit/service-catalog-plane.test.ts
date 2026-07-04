@@ -3,7 +3,13 @@ import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
 import { describe, expect, it } from "vitest"
 
 import { cruiseCatalogPolicy } from "../../src/catalog-policy.js"
-import { cruiseProvenance, cruiseRowToProjection } from "../../src/service-catalog-plane.js"
+import { cruiseSailings, cruises } from "../../src/schema-core.js"
+import { cruisePrices } from "../../src/schema-pricing.js"
+import {
+  createCruiseDocumentBuilder,
+  cruiseProvenance,
+  cruiseRowToProjection,
+} from "../../src/service-catalog-plane.js"
 
 const sampleRow = {
   id: "crse_abc",
@@ -122,3 +128,111 @@ describe("end-to-end: projection + resolver", () => {
     expect(view.values.get("name")).toBe("✨ Magical Rhine Voyage")
   })
 })
+
+describe("createCruiseDocumentBuilder", () => {
+  const customerSlice = {
+    vertical: "cruises",
+    locale: "en-GB",
+    audience: "customer",
+    market: "default",
+  } as const
+  const staffSlice = { ...customerSlice, audience: "staff" } as const
+
+  it("keeps non-live cruises out of customer slices while preserving staff docs", async () => {
+    const builder = createCruiseDocumentBuilder(fakeDb(new Map([[cruises, [sampleRow]]])), {
+      sellerOperatorId: "op_xyz",
+    })
+
+    await expect(builder("crse_abc", customerSlice)).resolves.toBeNull()
+    await expect(builder("crse_abc", staffSlice)).resolves.not.toBeNull()
+  })
+
+  it("requires an open future sailing with an available price for customer docs", async () => {
+    const liveRow = { ...sampleRow, status: "live" }
+    const builderWithoutPrice = createCruiseDocumentBuilder(
+      fakeDb(
+        new Map<unknown, unknown[]>([
+          [cruises, [liveRow]],
+          [
+            cruiseSailings,
+            [
+              {
+                id: "sail_1",
+                cruiseId: liveRow.id,
+                shipId: "ship_1",
+                departureDate: "2099-01-15",
+                returnDate: "2099-01-22",
+                salesStatus: "open",
+              },
+            ],
+          ],
+          [cruisePrices, [{ id: "price_1", sailingId: "sail_1", availability: "sold_out" }]],
+        ]),
+      ),
+      { sellerOperatorId: "op_xyz" },
+    )
+    await expect(builderWithoutPrice("crse_abc", customerSlice)).resolves.toBeNull()
+
+    const builderWithPrice = createCruiseDocumentBuilder(
+      fakeDb(
+        new Map<unknown, unknown[]>([
+          [cruises, [liveRow]],
+          [
+            cruiseSailings,
+            [
+              {
+                id: "sail_1",
+                cruiseId: liveRow.id,
+                shipId: "ship_1",
+                departureDate: "2099-01-15",
+                returnDate: "2099-01-22",
+                salesStatus: "open",
+              },
+            ],
+          ],
+          [
+            cruisePrices,
+            [
+              {
+                id: "price_1",
+                sailingId: "sail_1",
+                availability: "available",
+                availabilityCount: 2,
+              },
+            ],
+          ],
+        ]),
+      ),
+      { sellerOperatorId: "op_xyz" },
+    )
+
+    await expect(builderWithPrice("crse_abc", customerSlice)).resolves.not.toBeNull()
+  })
+})
+
+function fakeDb(rowsByTable: Map<unknown, unknown[]>) {
+  return {
+    select: () => ({
+      from: (table: unknown) => selectable(rowsByTable.get(table) ?? []),
+    }),
+  } as never
+}
+
+function selectable(rows: unknown[]) {
+  const chain = {
+    where: () => promiseChain(rows),
+    orderBy: async () => rows,
+    limit: async (limit: number) => rows.slice(0, limit),
+  }
+  return chain
+}
+
+type QueryPromise = Promise<unknown[]> & {
+  limit: (limit: number) => Promise<unknown[]>
+}
+
+function promiseChain(rows: unknown[]): QueryPromise {
+  const promise = Promise.resolve(rows) as QueryPromise
+  promise.limit = async (limit: number) => rows.slice(0, limit)
+  return promise
+}
