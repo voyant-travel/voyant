@@ -1,5 +1,14 @@
 # @voyant-travel/framework
 
+## 0.12.14
+
+### Patch Changes
+
+- 621f989: Allow modules to register workflow and event-filter manifest metadata without importing run-bearing workflow definitions into request-serving apps.
+- Updated dependencies [621f989]
+  - @voyant-travel/commerce@0.22.1
+  - @voyant-travel/hono@0.121.2
+
 ## 0.12.13
 
 ### Patch Changes
