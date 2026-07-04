@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..")
 
-test("operator starter archive includes standalone flights demo API package", () => {
+test("operator starter archive includes bookable catalog seed inventory and standalone flights demo API package", () => {
   const tempDir = mkdtempSync(join(tmpdir(), "voyant-package-starters-test-"))
   const outDir = join(tempDir, "out")
   const extractDir = join(tempDir, "extract")
@@ -33,7 +33,23 @@ test("operator starter archive includes standalone flights demo API package", ()
       existsSync(join(extractDir, "apps", "flights-demo-api", "docker-compose.yml")),
       true,
     )
+    assert.equal(existsSync(join(extractDir, "scripts", "seed-catalog-verticals.ts")), true)
     assert.equal(existsSync(join(extractDir, "pnpm-workspace.yaml")), false)
+
+    const seedScript = readFileSync(join(extractDir, "scripts", "seed.ts"), "utf8")
+    assert.match(seedScript, /seedCruises/)
+    assert.match(seedScript, /seedAccommodationRooms/)
+
+    const verticalSeedScript = readFileSync(
+      join(extractDir, "scripts", "seed-catalog-verticals.ts"),
+      "utf8",
+    )
+    assert.match(verticalSeedScript, /cruiseSailings/)
+    assert.match(verticalSeedScript, /cruiseCabinCategories/)
+    assert.match(verticalSeedScript, /cruisePrices/)
+    assert.match(verticalSeedScript, /ratePlans/)
+    assert.match(verticalSeedScript, /ratePlanDailyRates/)
+    assert.match(verticalSeedScript, /roomTypeDailyInventory/)
 
     const demoPackage = JSON.parse(
       readFileSync(join(extractDir, "apps", "flights-demo-api", "package.json"), "utf8"),
