@@ -148,6 +148,45 @@ describe("createRoomTypeDocumentBuilder", () => {
   })
 
   it("requires active rates, future prices, and open inventory for customer docs", async () => {
+    const builderWithInventoryOnDifferentDate = createRoomTypeDocumentBuilder(
+      fakeDb(
+        new Map<unknown, unknown[]>([
+          [roomTypes, [sampleRow]],
+          [
+            ratePlanRoomTypes,
+            [{ id: "map_1", ratePlanId: "rate_1", roomTypeId: sampleRow.id, active: true }],
+          ],
+          [ratePlans, [{ id: "rate_1", active: true }]],
+          [
+            ratePlanDailyRates,
+            [
+              {
+                id: "rate_day_1",
+                ratePlanId: "rate_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-15",
+                sellAmountCents: 12000,
+              },
+            ],
+          ],
+          [
+            roomTypeDailyInventory,
+            [
+              {
+                id: "inv_1",
+                roomTypeId: sampleRow.id,
+                date: "2099-01-16",
+                capacity: 3,
+                closed: false,
+              },
+            ],
+          ],
+        ]),
+      ),
+      { sellerOperatorId: "op_xyz" },
+    )
+    await expect(builderWithInventoryOnDifferentDate("rmtp_abc", customerSlice)).resolves.toBeNull()
+
     const builderWithoutInventory = createRoomTypeDocumentBuilder(
       fakeDb(
         new Map<unknown, unknown[]>([

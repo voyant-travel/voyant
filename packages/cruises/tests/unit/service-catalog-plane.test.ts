@@ -173,6 +173,42 @@ describe("createCruiseDocumentBuilder", () => {
     )
     await expect(builderWithoutPrice("crse_abc", customerSlice)).resolves.toBeNull()
 
+    const laterSailings = Array.from({ length: 51 }, (_, index) => {
+      const departureDate = new Date(Date.UTC(2099, 0, index + 1)).toISOString().slice(0, 10)
+      const returnDate = new Date(Date.UTC(2099, 0, index + 8)).toISOString().slice(0, 10)
+      return {
+        id: `sail_${index + 1}`,
+        cruiseId: liveRow.id,
+        shipId: "ship_1",
+        departureDate,
+        returnDate,
+        salesStatus: "open",
+      }
+    })
+    const builderWithPriceAfterFiftySailings = createCruiseDocumentBuilder(
+      fakeDb(
+        new Map<unknown, unknown[]>([
+          [cruises, [liveRow]],
+          [cruiseSailings, laterSailings],
+          [
+            cruisePrices,
+            [
+              {
+                id: "price_51",
+                sailingId: "sail_51",
+                availability: "available",
+                availabilityCount: 2,
+              },
+            ],
+          ],
+        ]),
+      ),
+      { sellerOperatorId: "op_xyz" },
+    )
+    await expect(
+      builderWithPriceAfterFiftySailings("crse_abc", customerSlice),
+    ).resolves.not.toBeNull()
+
     const builderWithPrice = createCruiseDocumentBuilder(
       fakeDb(
         new Map<unknown, unknown[]>([

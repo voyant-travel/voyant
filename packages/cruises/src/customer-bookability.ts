@@ -1,5 +1,5 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { and, eq, gt, gte, inArray, isNull, or } from "drizzle-orm"
+import { and, eq, exists, gt, gte, isNull, or, sql } from "drizzle-orm"
 
 import { cruiseSailings, type cruises } from "./schema-core.js"
 import { cruisePrices } from "./schema-pricing.js"
@@ -43,41 +43,30 @@ export async function isCustomerCruiseBookable(
 ): Promise<boolean> {
   if (row.status !== "live") return false
 
-  const sailingRows = await db
-    .select()
-    .from(cruiseSailings)
-    .where(
-      and(
-        eq(cruiseSailings.cruiseId, row.id),
-        eq(cruiseSailings.salesStatus, "open"),
-        gte(cruiseSailings.departureDate, asOfDate),
-      ),
-    )
-    .limit(50)
-  const sailingIds = sailingRows
-    .filter(
-      (sailing) =>
-        sailing.cruiseId === row.id &&
-        sailing.salesStatus === "open" &&
-        dateValue(sailing.departureDate) >= asOfDate,
-    )
-    .map((sailing) => sailing.id)
-  if (sailingIds.length === 0) return false
-
   const priceRows = await db
     .select()
     .from(cruisePrices)
     .where(
       and(
-        inArray(cruisePrices.sailingId, sailingIds),
         eq(cruisePrices.availability, "available"),
         or(isNull(cruisePrices.availabilityCount), gt(cruisePrices.availabilityCount, 0)),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(cruiseSailings)
+            .where(
+              and(
+                eq(cruiseSailings.id, cruisePrices.sailingId),
+                eq(cruiseSailings.cruiseId, row.id),
+                eq(cruiseSailings.salesStatus, "open"),
+                gte(cruiseSailings.departureDate, asOfDate),
+              ),
+            ),
+        ),
       ),
     )
     .limit(1)
-  return priceRows.some(
-    (price) => sailingIds.includes(price.sailingId) && isCustomerCruisePriceAvailable(price),
-  )
+  return priceRows.some((price) => isCustomerCruisePriceAvailable(price))
 }
 
 function dateValue(value: string | Date): string {

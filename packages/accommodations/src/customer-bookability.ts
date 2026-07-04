@@ -1,5 +1,5 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { and, eq, gt, gte, inArray } from "drizzle-orm"
+import { and, eq, exists, gt, gte, inArray, sql } from "drizzle-orm"
 
 import {
   ratePlanDailyRates,
@@ -42,30 +42,6 @@ export async function isCustomerRoomTypeBookable(
     .map((plan) => plan.id)
   if (activeRatePlanIds.length === 0) return false
 
-  const pricedDates = await db
-    .select()
-    .from(ratePlanDailyRates)
-    .where(
-      and(
-        eq(ratePlanDailyRates.roomTypeId, row.id),
-        inArray(ratePlanDailyRates.ratePlanId, activeRatePlanIds),
-        gte(ratePlanDailyRates.date, asOfDate),
-        gt(ratePlanDailyRates.sellAmountCents, 0),
-      ),
-    )
-    .limit(1)
-  if (
-    !pricedDates.some(
-      (rate) =>
-        rate.roomTypeId === row.id &&
-        activeRatePlanIds.includes(rate.ratePlanId) &&
-        rate.date >= asOfDate &&
-        rate.sellAmountCents > 0,
-    )
-  ) {
-    return false
-  }
-
   const openInventory = await db
     .select()
     .from(roomTypeDailyInventory)
@@ -75,14 +51,49 @@ export async function isCustomerRoomTypeBookable(
         gte(roomTypeDailyInventory.date, asOfDate),
         eq(roomTypeDailyInventory.closed, false),
         gt(roomTypeDailyInventory.capacity, 0),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(ratePlanDailyRates)
+            .where(
+              and(
+                eq(ratePlanDailyRates.roomTypeId, row.id),
+                inArray(ratePlanDailyRates.ratePlanId, activeRatePlanIds),
+                eq(ratePlanDailyRates.date, roomTypeDailyInventory.date),
+                gte(ratePlanDailyRates.date, asOfDate),
+                gt(ratePlanDailyRates.sellAmountCents, 0),
+              ),
+            ),
+        ),
       ),
     )
     .limit(1)
-  return openInventory.some(
+  const openInventoryDate = openInventory.find(
     (inventory) =>
       inventory.roomTypeId === row.id &&
       inventory.date >= asOfDate &&
       !inventory.closed &&
       inventory.capacity > 0,
+  )?.date
+  if (!openInventoryDate) return false
+
+  const matchingPricedDates = await db
+    .select()
+    .from(ratePlanDailyRates)
+    .where(
+      and(
+        eq(ratePlanDailyRates.roomTypeId, row.id),
+        inArray(ratePlanDailyRates.ratePlanId, activeRatePlanIds),
+        eq(ratePlanDailyRates.date, openInventoryDate),
+        gt(ratePlanDailyRates.sellAmountCents, 0),
+      ),
+    )
+    .limit(1)
+  return matchingPricedDates.some(
+    (rate) =>
+      rate.roomTypeId === row.id &&
+      activeRatePlanIds.includes(rate.ratePlanId) &&
+      rate.date === openInventoryDate &&
+      rate.sellAmountCents > 0,
   )
 }
