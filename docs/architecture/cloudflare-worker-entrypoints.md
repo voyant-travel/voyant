@@ -7,12 +7,25 @@ budget even when the request is only serving SSR HTML.
 
 ## Rule
 
-Do not statically import the Hono API app, scheduled job modules, or workflow
-definition files from Cloudflare SSR entrypoints.
+Do not statically import the Hono API app, scheduled job modules, workflow
+definition files, or the TanStack Start SSR handler from Cloudflare SSR
+entrypoints.
+
+The SSR handler is the subtle one: `@tanstack/react-start/server`
+(`createStartHandler` / `defaultStreamHandler`) statically pulls React and
+`react-dom/server` — ~2.2 MB — into module global scope. Because that lives in
+the same Worker as the API, Cloudflare parses it on every cold isolate before
+routing, so even a no-op `/api/health` pays the React cold-load. The route
+tree, `recharts`, `@tiptap/*`, and `pdf-lib` are already lazy (dynamic
+`import("#tanstack-router-entry")` plus per-route splits); React itself was the
+last heavy graph still eager, only because the entrypoint constructed the start
+handler at module top level.
 
 Prefer:
 
 - cache a dynamic `import("./api/app")` inside the `/api/*` branch
+- keep the start handler in `./ssr-handler` and load it with `lazySsr(() =>
+  import("./ssr-handler"))` so `react-dom/server` stays off the startup graph
 - cache dynamic workflow/client imports inside the API or scheduled branches
 - import only lightweight constants from leaf files
 - route scheduled events by cron string, then dynamic-import the matching job
@@ -20,6 +33,7 @@ Prefer:
 Avoid:
 
 - `import { app as apiApp } from "./api/app"`
+- `import { createStartHandler } from "@tanstack/react-start/server"` in `entry.ts`
 - `import "./workflows.js"`
 - importing a package root only to read a runtime constant
 

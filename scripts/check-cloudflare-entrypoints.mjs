@@ -24,6 +24,19 @@ const FORBIDDEN_IMPORTS = [
     pattern: /^import\s+(?:.+?\s+from\s+)?["']\.\/workflows(?:\.js)?["']/,
     message: "Lazy-load workflow definitions from the workflow step path.",
   },
+  {
+    id: "eager-ssr-server",
+    pattern: /^import\s+(?:.+?\s+from\s+)?["']@tanstack\/react-start\/server["']/,
+    message:
+      "Statically importing the TanStack Start server handler pulls React + " +
+      "react-dom/server (~2.2 MB) into startup. Wrap it in ./ssr-handler and " +
+      "load it with lazySsr behind the non-API branch.",
+  },
+  {
+    id: "eager-ssr-handler",
+    pattern: /^import\s+(?:.+?\s+from\s+)?["']\.\/ssr-handler(?:\.js)?["']/,
+    message: "Load ./ssr-handler with lazySsr (dynamic import), never statically.",
+  },
 ]
 
 const violations = []
