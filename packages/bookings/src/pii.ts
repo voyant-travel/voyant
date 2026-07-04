@@ -1,5 +1,5 @@
-import type { KeyRef, KmsProvider } from "@voyant-travel/utils"
-import { decryptOptionalJsonEnvelope, encryptOptionalJsonEnvelope } from "@voyant-travel/utils"
+import type { KeyRef, KmsProvider } from "@voyant-travel/utils/kms"
+import { decryptOptionalJsonEnvelope, encryptOptionalJsonEnvelope } from "@voyant-travel/utils/kms"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
