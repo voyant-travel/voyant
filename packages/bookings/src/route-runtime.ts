@@ -1,5 +1,5 @@
 import type { CustomFieldRegistryResolver } from "@voyant-travel/core/custom-fields"
-import { createKmsProviderFromEnv, type KmsProvider } from "@voyant-travel/utils"
+import { createKmsProviderFromEnv, type KmsProvider } from "@voyant-travel/utils/kms"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { BookingTravelerSnapshot } from "./pii.js"
