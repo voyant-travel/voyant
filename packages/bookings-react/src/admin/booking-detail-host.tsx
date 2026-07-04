@@ -10,7 +10,11 @@ import {
   useLocale,
   useOperatorAdminMessages,
 } from "@voyant-travel/admin"
-import { useInvoices, usePaymentMutation } from "@voyant-travel/finance-react"
+import {
+  useAdminBookingPayments,
+  useInvoices,
+  usePaymentMutation,
+} from "@voyant-travel/finance-react"
 import { Sheet, SheetContent } from "@voyant-travel/ui/components/sheet"
 import { type ReactNode, useState } from "react"
 import {
@@ -161,6 +165,7 @@ export function BookingDetailHost({
   // Sum customer payments across this booking's non-credit-note,
   // non-draft invoices.
   const { data: invoicesData } = useInvoices({ bookingId: id, limit: 20 })
+  const { data: adminPaymentsData } = useAdminBookingPayments(id)
   const paidAmountCents = invoicesData?.data
     ? invoicesData.data
         .filter((inv) => {
@@ -169,6 +174,10 @@ export function BookingDetailHost({
         })
         .reduce((sum, inv) => sum + (inv.paidCents ?? 0), 0)
     : null
+  const hasRecordedPayment =
+    adminPaymentsData?.data.payments.some(
+      (payment) => payment.status === "completed" && payment.amountCents > 0,
+    ) ?? false
   const fullyPaidReason =
     booking &&
     booking.sellAmountCents != null &&
@@ -220,6 +229,7 @@ export function BookingDetailHost({
         recordPaymentDisabledReason={fullyPaidReason}
         addScheduleDisabledReason={fullyPaidReason}
         paidAmountCents={paidAmountCents}
+        hasRecordedPayment={hasRecordedPayment}
         onItemResourceOpen={(kind, resourceId) => {
           if (kind === "product") {
             navigateTo("product.detail", { productId: resourceId })

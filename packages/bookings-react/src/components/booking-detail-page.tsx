@@ -145,6 +145,12 @@ export interface BookingDetailPageProps {
    */
   paidAmountCents?: number | null
   /**
+   * True when the host has found at least one recorded customer payment. Kept
+   * separate from `paidAmountCents` because host invoice summaries can be
+   * paginated while the cancellation settlement path checks all paid invoices.
+   */
+  hasRecordedPayment?: boolean
+  /**
    * Open a linked resource referenced by a booking item (product or
    * availability slot) in the host app. When omitted, the item-snapshot
    * sheet renders the names as plain text.
@@ -190,6 +196,7 @@ export function BookingDetailPage({
   recordPaymentDisabledReason,
   addScheduleDisabledReason,
   paidAmountCents,
+  hasRecordedPayment,
   onItemResourceOpen,
   onPersonOpen,
   onOrganizationOpen,
@@ -604,6 +611,8 @@ export function BookingDetailPage({
         open={cancelDialogOpen}
         onOpenChange={setCancelDialogOpen}
         booking={booking}
+        paidAmountCents={paidAmountCents}
+        hasRecordedPayment={hasRecordedPayment}
       />
 
       <AlertDialog

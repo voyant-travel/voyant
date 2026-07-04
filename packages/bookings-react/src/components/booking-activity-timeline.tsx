@@ -276,6 +276,7 @@ function TimelinePagination({
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
+            size="default"
             aria-disabled={!canPrev}
             tabIndex={canPrev ? 0 : -1}
             className={canPrev ? undefined : "pointer-events-none opacity-50"}
@@ -289,6 +290,7 @@ function TimelinePagination({
         {pages.map((idx) => (
           <PaginationItem key={idx}>
             <PaginationLink
+              size="icon"
               isActive={idx === pageIndex}
               onClick={(event) => {
                 event.preventDefault()
@@ -302,6 +304,7 @@ function TimelinePagination({
         ))}
         <PaginationItem>
           <PaginationNext
+            size="default"
             aria-disabled={!canNext}
             tabIndex={canNext ? 0 : -1}
             className={canNext ? undefined : "pointer-events-none opacity-50"}

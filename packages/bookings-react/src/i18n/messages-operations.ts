@@ -210,6 +210,10 @@ export type BookingsUiOperationsMessages = {
       calculating: string
       noTotalAmount: string
     }
+    paidSettlement: {
+      title: string
+      description: string
+    }
     refundTypeLabels: Record<"cash" | "credit" | "cash_or_credit" | "none", string>
     fields: {
       reason: string

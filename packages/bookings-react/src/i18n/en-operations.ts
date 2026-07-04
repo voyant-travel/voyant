@@ -212,9 +212,15 @@ export const bookingsUiEnOperations = {
       rule: "Rule",
       resolving: "Resolving cancellation policy...",
       missing: "No cancellation policy configured for this booking.",
-      missingHint: "Proceeding will cancel without a refund preview.",
+      missingHint:
+        "Proceeding will cancel without a refund preview. Paid bookings will be marked for settlement review.",
       calculating: "Calculating refund...",
       noTotalAmount: "Booking has no total amount. Refund cannot be calculated.",
+    },
+    paidSettlement: {
+      title: "Paid booking settlement required",
+      description:
+        "Cancelling keeps existing invoices and payments intact and records an action-required finance note to review a refund, credit note, or no-refund decision.",
     },
     refundTypeLabels: {
       cash: "Cash refund",

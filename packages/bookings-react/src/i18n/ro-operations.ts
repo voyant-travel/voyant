@@ -211,9 +211,15 @@ export const bookingsUiRoOperations = {
       rule: "Regula",
       resolving: "Se rezolva politica de anulare...",
       missing: "Nu exista o politica de anulare configurata pentru aceasta rezervare.",
-      missingHint: "Continuarea va anula rezervarea fara o previzualizare a rambursarii.",
+      missingHint:
+        "Continuarea va anula rezervarea fara o previzualizare a rambursarii. Rezervarile platite vor fi marcate pentru revizuirea decontarii.",
       calculating: "Se calculeaza rambursarea...",
       noTotalAmount: "Rezervarea nu are o suma totala. Rambursarea nu poate fi calculata.",
+    },
+    paidSettlement: {
+      title: "Decontarea rezervarii platite este necesara",
+      description:
+        "Anularea pastreaza facturile si platile existente si inregistreaza o nota financiara care cere revizuirea rambursarii, notei de credit sau deciziei fara rambursare.",
     },
     refundTypeLabels: {
       cash: "Rambursare cash",
