@@ -19,6 +19,11 @@
  */
 
 import { OpenAPIHono } from "@hono/zod-openapi"
+import type {
+  CatalogSearchRuntime,
+  EmbeddingProvider,
+  IndexerAdapter,
+} from "@voyant-travel/catalog"
 import { chartersModule } from "@voyant-travel/charters"
 import { cruisesModule } from "@voyant-travel/cruises"
 import {
@@ -28,7 +33,7 @@ import {
   frameworkComposition,
   modulesFromGlob,
 } from "@voyant-travel/framework"
-import type { VoyantDb } from "@voyant-travel/hono"
+import { lazyProvider, type VoyantDb } from "@voyant-travel/hono"
 import type {
   CompositionManifest,
   CompositionRegistry,
@@ -37,17 +42,15 @@ import type {
 } from "@voyant-travel/hono/composition"
 import { createMiceHonoModule } from "@voyant-travel/mice"
 import { miceBookingExtension } from "@voyant-travel/mice/booking-extension"
-import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { createRealtimeHonoModule } from "@voyant-travel/realtime"
-import { relationshipsService } from "@voyant-travel/relationships"
+import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import { Hono } from "hono"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
-import { buildCatalogContext } from "./lib/catalog-context"
 import { createChannelPushExtension } from "./routes/channel-push"
-import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-runtime"
+import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
 import {
   createOperatorBookingPiiService,
   createOperatorDocumentStorage,
@@ -62,10 +65,15 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./runtime/payment-config"
-import { createRelationshipsStorefrontIntakePersistence } from "./runtime/storefront-intake-runtime"
 import { createOperatorTripsRoutesOptions } from "./runtime/trips-runtime"
 import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
+
+type AsyncMethodProvider<T extends object> = {
+  [K in keyof T]: T[K] extends (...args: infer Args) => infer Result
+    ? (...args: Args) => Promise<Awaited<Result>>
+    : never
+}
 
 /**
  * The operator deployment's capability container. Every template-specific
@@ -88,7 +96,7 @@ export interface OperatorCapabilities extends FrameworkProviders {
   createBookingPiiService: typeof createOperatorBookingPiiService
   autoGenerateContractOnConfirmed: typeof AUTO_GENERATE_CONTRACT_OPTIONS
   resolveBankTransferDetails: typeof resolveBankTransferDetails
-  relationshipsService: typeof relationshipsService
+  relationshipsService: FrameworkProviders["relationshipsService"]
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
   createTripsRoutesOptions: typeof createOperatorTripsRoutesOptions
@@ -114,23 +122,28 @@ export function buildOperatorProviders(): OperatorCapabilities {
     createBookingPiiService: createOperatorBookingPiiService,
     autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
     resolveBankTransferDetails,
-    relationshipsService,
+    relationshipsService: lazyProvider<FrameworkProviders["relationshipsService"]>(async () =>
+      import("@voyant-travel/relationships").then(
+        (m) =>
+          m.relationshipsService as AsyncMethodProvider<FrameworkProviders["relationshipsService"]>,
+      ),
+    ),
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
     recordCancellationFinancialSettlement: recordPaidBookingCancellationSettlement,
     // Adapt the deployment's catalog context into the package's search runtime
     // shape (the framework catalog factory consumes this directly).
-    resolveCatalogRuntime: (c) => {
-      const ctx = buildCatalogContext(c)
-      return {
-        indexer: ctx.catalog.indexer,
-        embeddings: ctx.catalog.embeddings,
-        defaultScope: ctx.defaultScope,
-      }
-    },
+    resolveCatalogRuntime: createLazyCatalogSearchRuntime,
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
     resolveBookingRequirementsProductSnapshot,
-    storefrontIntakePersistence: createRelationshipsStorefrontIntakePersistence(),
-    netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
+    storefrontIntakePersistence: lazyProvider<StorefrontIntakePersistence>(async () =>
+      import("./runtime/storefront-intake-runtime").then(
+        (m) =>
+          m.createRelationshipsStorefrontIntakePersistence() as AsyncMethodProvider<StorefrontIntakePersistence>,
+      ),
+    ),
+    netopiaCheckoutStarter: lazyProvider(async () =>
+      import("@voyant-travel/plugin-netopia").then((m) => m.createNetopiaCheckoutStarter()),
+    ),
     createChannelPushExtension,
     // Lazy route-bundle loaders for the `operator/*` standard families — each
     // wires this deployment's providers into the package-owned route bundle.
@@ -225,6 +238,116 @@ export function buildOperatorProviders(): OperatorCapabilities {
   }
 }
 
+function createLazyCatalogSearchRuntime(
+  c: Parameters<OperatorCapabilities["resolveCatalogRuntime"]>[0],
+): CatalogSearchRuntime {
+  const env = c.env as CloudflareBindings & {
+    VOYANT_API_KEY?: string
+    VOYANT_CLOUD_API_KEY?: string
+    VOYANT_CLOUD_API_URL?: string
+    TENANT_ID?: string
+    TYPESENSE_HOST?: string
+    TYPESENSE_ADMIN_API_KEY?: string
+    TYPESENSE_API_KEY?: string
+  }
+  const actor = c.var.actor ?? "staff"
+  const audience: CatalogSearchRuntime["defaultScope"]["audience"] =
+    actor === "staff" ? "staff" : actor
+  const embeddings = createLazyCatalogEmbeddingProvider(env)
+
+  return {
+    indexer: createLazyCatalogIndexer(env, embeddings),
+    embeddings,
+    defaultScope: {
+      locale: "en-GB",
+      audience,
+      market: "default",
+    },
+  }
+}
+
+function createLazyCatalogEmbeddingProvider(
+  env: CloudflareBindings & {
+    VOYANT_API_KEY?: string
+    VOYANT_CLOUD_API_KEY?: string
+    VOYANT_CLOUD_API_URL?: string
+  },
+): EmbeddingProvider | undefined {
+  if (!(env.VOYANT_API_KEY ?? env.VOYANT_CLOUD_API_KEY)) return undefined
+  let providerPromise: Promise<EmbeddingProvider | undefined> | undefined
+  return {
+    capabilities: {
+      modelId: "gemini/gemini-embedding-001/v1",
+      dimensions: 3072,
+      maxTokensPerInput: 2048,
+      maxBatchSize: 100,
+      supportedLanguages: null,
+    },
+    async embed(texts) {
+      providerPromise ??= import("./lib/catalog-runtime").then((m) => m.buildEmbeddingProvider(env))
+      const provider = await providerPromise
+      if (!provider) throw new Error("Catalog embedding provider is not configured")
+      return provider.embed(texts)
+    },
+  }
+}
+
+function createLazyCatalogIndexer(
+  env: CloudflareBindings & {
+    TYPESENSE_HOST?: string
+    TYPESENSE_ADMIN_API_KEY?: string
+    TYPESENSE_API_KEY?: string
+  },
+  embeddings: EmbeddingProvider | undefined,
+): IndexerAdapter | undefined {
+  const host = env.TYPESENSE_HOST
+  const apiKey = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
+  if (!host || !apiKey) return undefined
+  try {
+    new URL(host)
+  } catch {
+    return undefined
+  }
+
+  let indexerPromise: Promise<IndexerAdapter | undefined> | undefined
+  const loadIndexer = async () => {
+    indexerPromise ??= import("./lib/catalog-runtime").then((m) =>
+      m.buildTypesenseIndexer(env, embeddings),
+    )
+    const indexer = await indexerPromise
+    if (!indexer) throw new Error("Catalog indexer is not configured")
+    return indexer
+  }
+
+  const vectorDimensions = embeddings?.capabilities.dimensions ?? null
+  return {
+    capabilities: {
+      supportsKeywordSearch: true,
+      supportsHybridSearch: vectorDimensions != null,
+      supportsVectorFields: vectorDimensions != null,
+      vectorDimensions,
+      maxVectorsPerDocument: null,
+      supportsCrossAudienceFederation: true,
+      supportsAdminDenormalization: true,
+    },
+    async ensureCollection(slice, registry) {
+      return (await loadIndexer()).ensureCollection(slice, registry)
+    },
+    async upsert(slice, documents) {
+      return (await loadIndexer()).upsert(slice, documents)
+    },
+    async delete(slice, ids) {
+      return (await loadIndexer()).delete(slice, ids)
+    },
+    async search(slice, request) {
+      return (await loadIndexer()).search(slice, request)
+    },
+    async bulkReindex(slice, stream, options) {
+      return (await loadIndexer()).bulkReindex(slice, stream, options)
+    },
+  }
+}
+
 /**
  * The deployment-local module factories — the only two families that aren't
  * package-owned standard (Better-Auth team invitations + the operator's own
@@ -311,10 +434,10 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
   // MICE group-program spine (voyant#1489). Operator-local (niche) — NOT in the
   // framework standard set. Room blocks (the standard allotment primitive it
   // links to) ship in accommodations via the framework composition.
-  "@voyant-travel/mice": () =>
+  "@voyant-travel/mice": ({ capabilities }) =>
     createMiceHonoModule({
       resolveDelegatePersonById: async (db, personId) =>
-        (await relationshipsService.getPersonById(db, personId)) != null,
+        (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
     }),
 }
 

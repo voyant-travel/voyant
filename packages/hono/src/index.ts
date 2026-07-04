@@ -28,6 +28,7 @@ export {
   encodeStorageKeyPath,
   resolveStoredDocumentDownload,
 } from "./document-download.js"
+export { type AsyncMethodProvider, lazyProvider } from "./lazy-provider.js"
 export {
   createLazyRouteHandler,
   type LazyHonoRoutes,
@@ -71,13 +72,17 @@ export type {
   ExpandedHonoBundles,
   ExpandedHonoPlugins,
   HonoBundle,
+  HonoBundleInput,
   HonoPlugin,
+  LazyHonoBundle,
 } from "./plugin.js"
 export {
   defineHonoBundle,
   defineHonoPlugin,
+  defineLazyHonoBundle,
   expandHonoBundles,
   expandHonoPlugins,
+  isLazyHonoBundle,
 } from "./plugin.js"
 export type {
   CreatePublicCapabilityOptions,

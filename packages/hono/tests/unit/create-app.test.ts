@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest"
 
 import type { CompositionRegistry } from "../../src/composition.js"
 import { createApp } from "../../src/create-app.js"
+import { lazyProvider } from "../../src/lazy-provider.js"
 
 interface Caps {
   greeting: string
@@ -51,5 +52,43 @@ describe("createApp (config-driven front door)", () => {
     const app = build()
     const res = await app.request("/v1/admin/not-mounted/x", {}, {} as never)
     expect(res.status).toBe(404)
+  })
+
+  it("supports memoized lazy provider values", async () => {
+    interface LazyCaps {
+      service: { greet: () => Promise<string> }
+    }
+
+    let loads = 0
+    const lazyRegistry: CompositionRegistry<LazyCaps> = {
+      modules: {
+        "@voyant-travel/lazy-demo": ({ capabilities }) => ({
+          module: { name: "lazy-demo" },
+          adminRoutes: new Hono().get("/ping", async (c) =>
+            c.text(await capabilities.service.greet()),
+          ),
+        }),
+      },
+    }
+
+    const app = createApp<Record<string, never>, LazyCaps>({
+      manifest: { modules: ["@voyant-travel/lazy-demo"] },
+      registry: lazyRegistry,
+      capabilities: {
+        service: lazyProvider(async () => {
+          loads += 1
+          return { greet: async () => "lazy-pong" }
+        }),
+      },
+      db: () => ({}) as never,
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    expect(loads).toBe(0)
+    const first = await app.request("/v1/admin/lazy-demo/ping", {}, {} as never)
+    const second = await app.request("/v1/admin/lazy-demo/ping", {}, {} as never)
+    expect(await first.text()).toBe("lazy-pong")
+    expect(await second.text()).toBe("lazy-pong")
+    expect(loads).toBe(1)
   })
 })

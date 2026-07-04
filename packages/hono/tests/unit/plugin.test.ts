@@ -1,4 +1,5 @@
 import { type Actor, createEventBus } from "@voyant-travel/core"
+import { VOYANT_DB_SUPPORTS_TRANSACTIONS } from "@voyant-travel/db/transaction-capability"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -7,10 +8,12 @@ import type { HonoExtension, HonoModule } from "../../src/module.js"
 import {
   defineHonoBundle,
   defineHonoPlugin,
+  defineLazyHonoBundle,
   expandHonoBundles,
   expandHonoPlugins,
+  type HonoBundleInput,
 } from "../../src/plugin.js"
-import type { VoyantBindings } from "../../src/types.js"
+import type { DbFactory, VoyantBindings, VoyantDb } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
 const TEST_CTX = {
@@ -18,6 +21,13 @@ const TEST_CTX = {
   passThroughOnException: () => {},
   // biome-ignore lint/suspicious/noExplicitAny: mock ExecutionContext for tests -- owner: hono; existing suppression is intentional pending typed cleanup.
 } as any
+
+function fakeDb(supportsTransactions: boolean): VoyantDb {
+  const handle: Record<PropertyKey, unknown> = {
+    [VOYANT_DB_SUPPORTS_TRANSACTIONS]: supportsTransactions,
+  }
+  return handle as VoyantDb
+}
 
 function makeModule(name: string, surface: "admin" | "public"): HonoModule {
   const routes = new Hono().get("/ping", (c) => c.json({ name, surface }))
@@ -77,7 +87,7 @@ describe("expandHonoPlugins", () => {
 })
 
 describe("mountApp with plugins", () => {
-  function build(plugins: ReturnType<typeof defineHonoPlugin>[], actor: Actor = "staff") {
+  function build(plugins: HonoBundleInput[], actor: Actor = "staff") {
     return mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
@@ -128,7 +138,7 @@ describe("mountApp with plugins", () => {
     })
   }
 
-  function buildUnauthenticated(plugins: ReturnType<typeof defineHonoPlugin>[]) {
+  function buildUnauthenticated(plugins: HonoBundleInput[]) {
     return mountApp({
       db: () => ({}) as never,
       plugins,
@@ -206,6 +216,72 @@ describe("mountApp with plugins", () => {
         plugins: [p1, p2],
       }),
     ).toThrow(/Duplicate (plugin|bundle) name/)
+  })
+
+  it("loads lazy plugin bundles on first request instead of app construction", async () => {
+    let loads = 0
+    const app = build([
+      defineLazyHonoBundle({
+        name: "lazy-widgets",
+        routes: ["/v1/admin/lazy-widgets/ping"],
+        load: async () => {
+          loads += 1
+          return defineHonoBundle({
+            name: "lazy-widgets",
+            modules: [makeModule("lazy-widgets", "admin")],
+          })
+        },
+      }),
+    ])
+
+    expect(loads).toBe(0)
+    const first = await app.request("/v1/admin/lazy-widgets/ping", {}, TEST_ENV, TEST_CTX)
+    const second = await app.request("/v1/admin/lazy-widgets/ping", {}, TEST_ENV, TEST_CTX)
+    expect(first.status).toBe(200)
+    expect(second.status).toBe(200)
+    expect(loads).toBe(1)
+  })
+
+  it("routes the first lazy transactional plugin request to dbTransactional", async () => {
+    const defaultFactory = vi.fn<DbFactory>(() => fakeDb(false))
+    const transactionalFactory = vi.fn<DbFactory>(() => fakeDb(true))
+    let loads = 0
+    const app = mountApp({
+      db: defaultFactory,
+      dbTransactional: transactionalFactory,
+      plugins: [
+        defineLazyHonoBundle({
+          name: "lazy-ledger",
+          routes: ["/v1/admin/lazy-ledger/commit"],
+          transactionalModules: ["lazy-ledger"],
+          load: async () => {
+            loads += 1
+            return defineHonoBundle({
+              name: "lazy-ledger",
+              modules: [
+                {
+                  module: { name: "lazy-ledger", requiresTransactionalDb: true },
+                  adminRoutes: new Hono().post("/commit", (c) => c.json({ ok: true })),
+                },
+              ],
+            })
+          },
+        }),
+      ],
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    const res = await app.request(
+      "/v1/admin/lazy-ledger/commit",
+      { method: "POST" },
+      TEST_ENV,
+      TEST_CTX,
+    )
+
+    expect(res.status).toBe(200)
+    expect(loads).toBe(1)
+    expect(transactionalFactory).toHaveBeenCalled()
+    expect(defaultFactory).not.toHaveBeenCalled()
   })
 
   it("wires plugin subscribers to the app event bus", async () => {

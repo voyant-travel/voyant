@@ -221,6 +221,48 @@ surface.
 
 ## Packaging Guidance
 
+### 9a. Keep provider and plugin runtime graphs lazy when they are request-owned
+
+Provider and plugin seams are also performance boundaries. If a provider or
+plugin imports a large service graph but is only used by request handlers,
+webhooks, subscribers, or bootstrap work, register it lazily instead of
+constructing the concrete value in the deployment's app module.
+
+Rules:
+
+- Provider containers may use `lazyProvider(() => import(...))` for service
+  objects or async provider functions whose first real use happens inside a
+  request/event path.
+- `lazyProvider(...)` is only valid for async functions or object surfaces whose
+  consumed members are async methods. Do not use it for plain properties,
+  sync-returning methods, query builders, or mixed service objects; narrow the
+  provider contract first.
+- Hono plugin bundles that would import heavy adapter code may use
+  `defineLazyHonoBundle(...)` with eager metadata (`name`, `anonymous`, and
+  absolute route matchers) plus a lazy `load` factory.
+- Anonymous webhook/callback paths must stay eager metadata on the lazy bundle,
+  so the first inbound unauthenticated request is admitted before the bundle is
+  imported.
+- Transactional lazy bundle surfaces must declare eager
+  `transactionalModules` or `transactionalPaths` metadata. The app selects the
+  request DB before lazy route handlers run, so transaction ownership cannot be
+  discovered from the loaded bundle on the first request.
+- Lazy bundles that must register subscribers, workflow metadata, container
+  services, or bootstrap work before a bundle-owned route is hit must opt into
+  app bootstrap loading with `loadOnBootstrap`.
+
+Rule:
+
+Do not statically import a heavy provider/plugin implementation in the
+deployment app closure when the framework can mount a lazy provider or lazy
+bundle seam with the same runtime behavior.
+
+Verification:
+
+- After building a deployment, measure the static closure of the generated API
+  app chunk with `node scripts/measure-static-import-closure.mjs <dist/server/assets/app-*.js>`.
+  The script walks static imports and stops at dynamic `import(...)` boundaries.
+
 ### 10. Prefer clear names that reveal the package role
 
 Prefer names that reveal whether the package is:
