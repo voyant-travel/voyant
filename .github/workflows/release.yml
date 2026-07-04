@@ -183,6 +183,11 @@ jobs:
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
           createGithubReleases: false
+          # Avoid GitHub's intermittent server-side `commit_refs` failures when
+          # the action force-pushes `changeset-release/main` via the Git CLI.
+          # The API mode creates the same version commit/PR through GitHub's
+          # refs API instead of `git push origin HEAD:changeset-release/main`.
+          commitMode: github-api
           version: pnpm version-packages
           commit: "chore: release packages"
           title: "chore: release packages"
