@@ -116,4 +116,26 @@ describe("useLiveQueries", () => {
     renderHook(() => useLiveQueries(["admin"], () => [], { enabled: false }), { wrapper })
     expect(fake.subscribedChannels()).toEqual([])
   })
+
+  it("routes token failures to onError without subscribing", async () => {
+    const fake = createFakeConnector()
+    const queryClient = new QueryClient()
+    const onError = vi.fn()
+    const tokenError = new Error("Realtime token request failed: 500")
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RealtimeReactProvider
+          connector={fake.connector}
+          fetchToken={async () => Promise.reject(tokenError)}
+        >
+          {children}
+        </RealtimeReactProvider>
+      </QueryClientProvider>
+    )
+
+    renderHook(() => useLiveQueries(["admin"], () => [], { onError }), { wrapper })
+
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(tokenError))
+    expect(fake.subscribedChannels()).toEqual([])
+  })
 })

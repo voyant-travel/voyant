@@ -10,6 +10,8 @@ export interface UseChannelOptions {
   onMessage?: (message: RealtimeClientMessage) => void
   /** Called when the channel's presence set changes. */
   onPresence?: (members: ReadonlyArray<PresenceMember>) => void
+  /** Called when token minting or subscription setup fails. */
+  onError?: (error: unknown) => void
   /** Resume marker for replay-capable vendors. */
   sinceId?: string
   /** Local presence profile announced to the channel. */
@@ -26,28 +28,32 @@ export interface UseChannelOptions {
  */
 export function useChannel(channel: string | null | undefined, options: UseChannelOptions = {}) {
   const { connector, fetchToken } = useRealtimeContext()
-  const { onMessage, onPresence, sinceId, profile, enabled = true } = options
+  const { onMessage, onPresence, onError, sinceId, profile, enabled = true } = options
 
   // Keep the latest callbacks without re-subscribing on every render.
-  const handlers = useRef({ onMessage, onPresence })
-  handlers.current = { onMessage, onPresence }
+  const handlers = useRef({ onMessage, onPresence, onError })
+  handlers.current = { onMessage, onPresence, onError }
 
   useEffect(() => {
     if (!channel || !enabled) return
     let connection: { unsubscribe(): void } | null = null
     let cancelled = false
 
-    void fetchToken().then(({ token }) => {
-      if (cancelled) return
-      connection = connector.subscribe({
-        channel,
-        token,
-        sinceId,
-        profile,
-        onMessage: (message) => handlers.current.onMessage?.(message),
-        onPresence: (members) => handlers.current.onPresence?.(members),
+    void fetchToken()
+      .then(({ token }) => {
+        if (cancelled) return
+        connection = connector.subscribe({
+          channel,
+          token,
+          sinceId,
+          profile,
+          onMessage: (message) => handlers.current.onMessage?.(message),
+          onPresence: (members) => handlers.current.onPresence?.(members),
+        })
       })
-    })
+      .catch((error: unknown) => {
+        if (!cancelled) handlers.current.onError?.(error)
+      })
 
     return () => {
       cancelled = true
