@@ -2,7 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { KVStore } from "@voyant-travel/utils/cache"
 
-import { invalidateProductReadModel, warmProductReadModel } from "./read-model.js"
+import { scheduleReadModelInvalidation } from "./read-model.js"
 import type { Env } from "./route-env.js"
 import { productAssociationRoutes } from "./routes-associations.js"
 import { productCatalogRoutes } from "./routes-catalog.js"
@@ -48,40 +48,12 @@ export function readModelInvalidation(options: ReadModelInvalidationOptions = {}
     await next()
     if (c.req.method === "GET" || c.req.method === "HEAD" || c.req.method === "OPTIONS") return
     if (!c.res || c.res.status >= 400) return
-    const kv = c.env?.CACHE
-    if (!kv) return
+    if (!c.env?.CACHE) return
     const match = PRODUCT_ID_IN_PATH.exec(c.req.path)
     if (!match?.[1]) return
-    const pending = buildReadModelInvalidationTask(c, kv, match[1], options.mode ?? "delete")
-    try {
-      const ctx = c.executionCtx as { waitUntil?: (p: Promise<unknown>) => void } | undefined
-      if (ctx && typeof ctx.waitUntil === "function") {
-        ctx.waitUntil(pending)
-        return
-      }
-    } catch {
-      // Hono throws on executionCtx access outside Workers
-    }
-    await pending
+    const pending = scheduleReadModelInvalidation(c, match[1], options.mode ?? "delete")
+    if (pending) await pending
   }
-}
-
-function buildReadModelInvalidationTask(
-  c: { get?: (key: "db") => Env["Variables"]["db"] },
-  kv: KVStore,
-  productId: string,
-  mode: "delete" | "recompute",
-) {
-  if (mode === "recompute" && typeof c.get === "function") {
-    try {
-      return warmProductReadModel({ db: c.get("db"), kv, productId }).catch(() =>
-        invalidateProductReadModel(kv, productId),
-      )
-    } catch {
-      // fall through to delete-only invalidation
-    }
-  }
-  return invalidateProductReadModel(kv, productId)
 }
 
 // Product route groups stay split by domain area; mount at root to preserve

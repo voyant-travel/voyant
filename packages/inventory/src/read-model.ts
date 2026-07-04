@@ -30,7 +30,17 @@ const SLUG_MAP_TTL_SECONDS = 5 * 60
 
 export interface ProductReadModelQuery {
   languageTag?: string | null
+  /**
+   * Fold the product's default itinerary (days + day-services, localized)
+   * into the document. Opt-in so callers that don't render the day-by-day
+   * plan don't pay the join (issue voyant#2910). Encoded in the variant so
+   * itinerary and non-itinerary documents cache — and warm — independently.
+   */
+  includeItinerary?: boolean
 }
+
+/** Variant suffix marking a document that carries the folded itinerary. */
+const ITINERARY_VARIANT_SUFFIX = "+itinerary"
 
 export interface ProductReadModelVariant {
   variant: string
@@ -59,13 +69,22 @@ export function productSlugMapKey(slug: string, variant: string): string {
   return `rm:v1:product-slug:${variant}:${slug}`
 }
 
-/** Stable variant id from the detail query (currently just the locale). */
-export function productDocVariant(query: { languageTag?: string | null }): string {
-  return query.languageTag ? `lang=${query.languageTag}` : "default"
+/** Stable variant id from the detail query (locale + itinerary inclusion). */
+export function productDocVariant(query: ProductReadModelQuery): string {
+  const base = query.languageTag ? `lang=${query.languageTag}` : "default"
+  return query.includeItinerary ? `${base}${ITINERARY_VARIANT_SUFFIX}` : base
 }
 
 export function productDocQueryFromVariant(variant: string): ProductReadModelQuery {
-  return variant.startsWith("lang=") ? { languageTag: variant.slice("lang=".length) } : {}
+  const includeItinerary = variant.endsWith(ITINERARY_VARIANT_SUFFIX)
+  const rest = includeItinerary
+    ? variant.slice(0, variant.length - ITINERARY_VARIANT_SUFFIX.length)
+    : variant
+  const query: ProductReadModelQuery = rest.startsWith("lang=")
+    ? { languageTag: rest.slice("lang=".length) }
+    : {}
+  if (includeItinerary) query.includeItinerary = true
+  return query
 }
 
 export async function buildProductReadModelDoc(
@@ -185,6 +204,66 @@ export async function warmProductReadModel(
   }
 
   return { warmed, missing }
+}
+
+/**
+ * The slice of a request context read-model invalidation needs: the KV
+ * binding, the (optional) Workers `executionCtx` for background scheduling,
+ * and `db` for the recompute path.
+ */
+export interface ReadModelInvalidationContext {
+  // `unknown` so a Hono `Context` whose `Bindings` don't declare `CACHE` (the
+  // admin route groups) is still assignable; the binding is narrowed at use.
+  env?: unknown
+  executionCtx?: unknown
+  get?: (key: "db") => PostgresJsDatabase
+}
+
+function buildReadModelInvalidationTask(
+  c: Pick<ReadModelInvalidationContext, "get">,
+  kv: KVStore,
+  productId: string,
+  mode: "delete" | "recompute",
+): Promise<unknown> {
+  if (mode === "recompute" && typeof c.get === "function") {
+    try {
+      return warmProductReadModel({ db: c.get("db"), kv, productId }).catch(() =>
+        invalidateProductReadModel(kv, productId),
+      )
+    } catch {
+      // fall through to delete-only invalidation
+    }
+  }
+  return invalidateProductReadModel(kv, productId)
+}
+
+/**
+ * Schedule read-model invalidation/recompute for a product whose id the caller
+ * already knows. Used both by the path-matching admin middleware and directly
+ * by write routes whose path is keyed on a child resource id (e.g. an itinerary
+ * id) rather than the product id, so the middleware's path regex can't see the
+ * product (issue voyant#2910). Runs in the background via `waitUntil` when
+ * available; otherwise returns the pending promise for the caller to await. A
+ * no-op (returns `undefined`) when the CACHE binding is absent.
+ */
+export function scheduleReadModelInvalidation(
+  c: ReadModelInvalidationContext,
+  productId: string,
+  mode: "delete" | "recompute" = "recompute",
+): Promise<unknown> | undefined {
+  const kv = (c.env as { CACHE?: KVStore } | undefined)?.CACHE
+  if (!kv) return undefined
+  const pending = buildReadModelInvalidationTask(c, kv, productId, mode)
+  try {
+    const ctx = c.executionCtx as { waitUntil?: (p: Promise<unknown>) => void } | undefined
+    if (ctx && typeof ctx.waitUntil === "function") {
+      ctx.waitUntil(pending)
+      return undefined
+    }
+  } catch {
+    // Hono throws on executionCtx access outside Workers
+  }
+  return pending
 }
 
 async function putProductDoc<T>(kv: KVStore, key: string, data: T) {

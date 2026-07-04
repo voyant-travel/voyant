@@ -60,6 +60,13 @@ export const publicCatalogDestinationListQuerySchema = z.object({
 
 export const publicCatalogProductLookupBySlugQuerySchema = z.object({
   languageTag: languageTagSchema.optional(),
+  /**
+   * Comma-separated list of extra sections to fold into the detail document.
+   * Currently only `itinerary` — the product's default day-by-day plan
+   * (issue voyant#2910). Opt-in so callers that don't render it don't pay the
+   * join; itinerary and non-itinerary documents cache independently.
+   */
+  include: z.string().optional(),
 })
 
 export const publicCatalogProductCategorySchema = z.object({
@@ -170,11 +177,41 @@ export const publicCatalogProductSummarySchema = z.object({
   isFeatured: z.boolean(),
 })
 
+export const publicCatalogItineraryDayServiceSchema = z.object({
+  id: z.string(),
+  serviceType: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  sortOrder: z.number().int().nullable(),
+})
+
+export const publicCatalogItineraryDaySchema = z.object({
+  id: z.string(),
+  dayNumber: z.number().int(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  location: z.string().nullable(),
+  thumbnailUrl: z.string().nullable(),
+  services: z.array(publicCatalogItineraryDayServiceSchema),
+})
+
+/**
+ * The product's folded default itinerary (issue voyant#2910). Present on the
+ * detail document only when requested via `?include=itinerary`; departure
+ * overrides stay on the departure itinerary endpoint.
+ */
+export const publicCatalogItinerarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  days: z.array(publicCatalogItineraryDaySchema),
+})
+
 export const publicCatalogProductDetailSchema = publicCatalogProductSummarySchema.extend({
   brochure: publicCatalogProductMediaSchema.nullable(),
   media: z.array(publicCatalogProductMediaSchema),
   features: z.array(publicCatalogProductFeatureSchema),
   faqs: z.array(publicCatalogProductFaqSchema),
+  itinerary: publicCatalogItinerarySchema.nullable().optional(),
 })
 
 export const publicCatalogProductListResponseSchema = z.object({
