@@ -138,4 +138,34 @@ describe("useLiveQueries", () => {
     await waitFor(() => expect(onError).toHaveBeenCalledWith(tokenError))
     expect(fake.subscribedChannels()).toEqual([])
   })
+
+  it("unsubscribes earlier channels when a later subscription fails", async () => {
+    const unsubscribe = vi.fn()
+    const subscribeError = new Error("channel rejected")
+    const connector: RealtimeConnector = {
+      subscribe(options) {
+        if (options.channel === "booking:bk_1") return { unsubscribe }
+        throw subscribeError
+      },
+    }
+    const queryClient = new QueryClient()
+    const onError = vi.fn()
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RealtimeReactProvider
+          connector={connector}
+          fetchToken={async () => ({ token: "tok", expiresAt: "2099-01-01T00:00:00Z" })}
+        >
+          {children}
+        </RealtimeReactProvider>
+      </QueryClientProvider>
+    )
+
+    renderHook(() => useLiveQueries(["booking:bk_1", "admin"], () => [], { onError }), {
+      wrapper,
+    })
+
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(subscribeError))
+    expect(unsubscribe).toHaveBeenCalledTimes(1)
+  })
 })

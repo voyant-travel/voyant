@@ -49,6 +49,9 @@ export function useLiveQueries(
     const channelList = latest.current.channels
     const connections: RealtimeConnection[] = []
     let cancelled = false
+    const unsubscribeAll = () => {
+      while (connections.length > 0) connections.pop()?.unsubscribe()
+    }
 
     void fetchToken()
       .then(({ token }) => {
@@ -69,12 +72,13 @@ export function useLiveQueries(
         }
       })
       .catch((error: unknown) => {
+        unsubscribeAll()
         if (!cancelled) latest.current.onError?.(error)
       })
 
     return () => {
       cancelled = true
-      for (const connection of connections) connection.unsubscribe()
+      unsubscribeAll()
     }
     // channelKey captures the channel set; queryClient/connector/fetchToken are stable.
   }, [channelKey, enabled, connector, fetchToken, queryClient])
