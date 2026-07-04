@@ -16,6 +16,23 @@ export {
   type ProductContentChangedEvent,
 } from "./events.js"
 export { productLinkable } from "./linkables.js"
+export {
+  buildProductReadModelDoc,
+  invalidateProductReadModel,
+  type ProductReadModelQuery,
+  type ProductReadModelVariant,
+  type ProductReadModelVariantInput,
+  type ProductSlugResolution,
+  productDocKey,
+  productDocQueryFromVariant,
+  productDocVariant,
+  productSlugMapKey,
+  readThroughProductDoc,
+  readThroughSlugMapping,
+  type WarmProductReadModelInput,
+  type WarmProductReadModelResult,
+  warmProductReadModel,
+} from "./read-model.js"
 export type { ProductRoutes } from "./routes.js"
 export type { PublicProductRoutes } from "./routes-public.js"
 export { publicProductRoutes } from "./routes-public.js"
