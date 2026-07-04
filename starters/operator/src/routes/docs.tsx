@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { lazy, Suspense, useEffect, useMemo, useState } from "react"
+import { getApiUrl } from "../lib/env"
 
 // Scalar is a browser-only widget — lazy-load it (+ its CSS) so the module is
 // never evaluated during SSR, and so each visit code-splits it out of the main
@@ -39,6 +40,21 @@ interface SpecEntry {
   load: () => Promise<{ default: Record<string, unknown> }>
 }
 
+export function withOperatorApiServer(
+  spec: Record<string, unknown>,
+  apiUrl = getApiUrl(),
+): Record<string, unknown> {
+  return {
+    ...spec,
+    servers: [
+      {
+        url: apiUrl.replace(/\/+$/, ""),
+        description: "Operator API via this starter's /api mount",
+      },
+    ],
+  }
+}
+
 function buildEntries(): SpecEntry[] {
   const entries: SpecEntry[] = []
   for (const [path, load] of Object.entries(specLoaders)) {
@@ -75,7 +91,7 @@ function ApiDocsPage(): React.ReactElement {
     if (!entry) return
     let cancelled = false
     entry.load().then((mod) => {
-      if (!cancelled) setSpec(mod.default)
+      if (!cancelled) setSpec(withOperatorApiServer(mod.default))
     })
     return () => {
       cancelled = true
