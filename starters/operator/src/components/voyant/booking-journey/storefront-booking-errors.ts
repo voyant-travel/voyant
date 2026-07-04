@@ -6,6 +6,10 @@ export type StorefrontBookErrorBody = {
   context?: { upstreamPayload?: { reason?: unknown } }
 }
 
+const SPACE = String.fromCharCode(32)
+const PERIOD = String.fromCharCode(46)
+const SENTENCE_SEPARATOR = PERIOD + SPACE
+
 export function buildStorefrontBookFailureMessage(
   body: StorefrontBookErrorBody,
   requestId: string | null,
@@ -24,8 +28,8 @@ function appendSentence(base: string, sentence: string): string {
   const trimmedBase = base.trim()
   const trimmedSentence = sentence.trim()
   if (!trimmedSentence) return trimmedBase
-  const separator = /[.!?]$/.test(trimmedBase) ? " " : ". "
-  const suffix = /[.!?]$/.test(trimmedSentence) ? trimmedSentence : `${trimmedSentence}.`
+  const separator = /[.!?]$/.test(trimmedBase) ? SPACE : SENTENCE_SEPARATOR
+  const suffix = /[.!?]$/.test(trimmedSentence) ? trimmedSentence : trimmedSentence + PERIOD
   return `${trimmedBase}${separator}${suffix}`
 }
 
