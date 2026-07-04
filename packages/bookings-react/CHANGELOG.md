@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.139.5
+
+### Patch Changes
+
+- ebadd97: Show an explicit settlement-review notice when cancelling bookings that already have recorded payments.
+  - @voyant-travel/bookings@0.139.5
+
 ## 0.139.4
 
 ### Patch Changes
