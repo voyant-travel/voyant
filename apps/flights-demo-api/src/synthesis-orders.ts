@@ -75,6 +75,31 @@ export function synthesizeOrder(request: FlightBookRequest): FlightOrder {
 }
 
 /**
+ * Promote a held (`confirmed`) order to `ticketed`: emit fake ticket numbers
+ * per passenger, drop the payment deadline, and stamp `updatedAt`. Mirrors the
+ * ticket path of {@link synthesizeOrder} so the demo connector honors the
+ * `flight/holds` capability it declares.
+ */
+export function ticketHeldOrder(order: FlightOrder): FlightOrder {
+  const rand = mulberry32(hashString(`${order.orderId}|ticket`))
+  const segmentIds = order.offer.itineraries.flatMap((i) => i.segments.map((s) => s.segmentId))
+  const carrier = order.offer.validatingCarrier ?? "XX"
+  const tickets: FlightTicket[] = order.passengers.map((p) => ({
+    ticketNumber: `${carrier}${String(100_000_000 + Math.floor(rand() * 900_000_000))}`,
+    passengerId: p.passengerId,
+    segmentIds,
+    status: "OK",
+  }))
+  return {
+    ...order,
+    status: "ticketed",
+    tickets,
+    paymentDeadline: undefined,
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+/**
  * Compute the additional charge from ancillary picks against an offer. Looks
  * the prices up in the synthesized catalog (deterministic) so the server is
  * authoritative on totals — UI prices can be stale or tampered with.

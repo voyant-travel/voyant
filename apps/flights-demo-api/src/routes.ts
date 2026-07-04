@@ -8,6 +8,7 @@
  *   POST   /book                         bookFlight
  *   GET    /orders                       listOrders
  *   GET    /orders/:orderId              getOrder
+ *   POST   /orders/:orderId/ticket       ticketOrder
  *   POST   /orders/:orderId/cancel       cancelOrder
  *   POST   /ancillaries                  getAncillaries
  *   POST   /seatmap                      getSeatMap
@@ -35,6 +36,7 @@ import {
   synthesizeOffers,
   synthesizeOrder,
   synthesizeSeatMap,
+  ticketHeldOrder,
 } from "./synthesis.js"
 
 interface PriceRequest {
@@ -119,6 +121,24 @@ export function createRoutes(db: DemoFlightsDb): Hono {
     const order = await store.getOrder(db, c.req.param("orderId"))
     if (!order) return c.json({ error: "Order not found" }, 404)
     return c.json({ order })
+  })
+
+  // ── Issue tickets ─────────────────────────────────────────────────────
+  // Promote a held (`confirmed`) order to `ticketed`. Idempotent for orders
+  // that are already ticketed; refuses cancelled orders.
+  app.post("/orders/:orderId/ticket", async (c) => {
+    const orderId = c.req.param("orderId")
+    const existing = await store.getOrder(db, orderId)
+    if (!existing) return c.json({ error: "Order not found" }, 404)
+    if (existing.status === "ticketed") {
+      return c.json({ order: existing })
+    }
+    if (existing.status !== "confirmed") {
+      return c.json({ error: `Cannot ticket an order with status ${existing.status}` }, 409)
+    }
+    const ticketed = ticketHeldOrder(existing)
+    await store.updateOrder(db, orderId, ticketed)
+    return c.json({ order: ticketed })
   })
 
   // ── Cancel order ──────────────────────────────────────────────────────

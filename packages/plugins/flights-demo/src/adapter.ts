@@ -153,6 +153,13 @@ export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): Flig
       })
     },
 
+    async ticketOrder(ctx, orderId): Promise<FlightGetOrderResponse> {
+      requireCapability(CAPABILITIES, "flight/holds", "ticketOrder")
+      return call<FlightGetOrderResponse>(ctx, `/orders/${encodeURIComponent(orderId)}/ticket`, {
+        method: "POST",
+      })
+    },
+
     async listOrders(ctx, query: FlightOrdersListQuery) {
       return call<FlightOrdersListResponse>(ctx, "/orders", {
         query: {
