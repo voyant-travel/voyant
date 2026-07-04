@@ -68,19 +68,19 @@ describe("operator runtime composition", () => {
 
     const bookingTax = byName("booking-tax")
     expect(bookingTax?.extension.module).toBe("bookings")
-    expect(bookingTax?.adminRoutes).toBeDefined()
+    expect(bookingTax?.lazyAdminRoutes).toBeTypeOf("function")
 
     // Booking-schedule owns an admin route on bookings + a public route
     // mounted at /v1/public/payment-policy via the publicPath override.
     const bookingSchedule = byName("booking-schedule")
     expect(bookingSchedule?.extension.module).toBe("bookings")
-    expect(bookingSchedule?.adminRoutes).toBeDefined()
-    expect(bookingSchedule?.publicRoutes).toBeDefined()
+    expect(bookingSchedule?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(bookingSchedule?.lazyPublicRoutes).toBeTypeOf("function")
     expect(bookingSchedule?.publicPath).toBe("payment-policy")
 
     const snapshot = byName("quote-version-snapshot")
     expect(snapshot?.extension.module).toBe("trips")
-    expect(snapshot?.adminRoutes).toBeDefined()
+    expect(snapshot?.lazyAdminRoutes).toBeTypeOf("function")
 
     // Lazy extensions (loaded on demand, context bridged by createApp).
     const actionLedgerHealth = byName("action-ledger-health")

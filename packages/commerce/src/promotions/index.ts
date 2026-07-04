@@ -1,16 +1,10 @@
-import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { promotionsModule } from "./module-metadata.js"
 import { createPromotionsRoutes, type PromotionsRoutesOptions, promotionsRoutes } from "./routes.js"
-import { bulkReindexProductsWorkflow, promotionAffectedAllFilter } from "./workflow-bulk-reindex.js"
 
+export { promotionsModule } from "./module-metadata.js"
 export type { PromotionsRoutes, PromotionsRoutesOptions } from "./routes.js"
-
-export const promotionsModule: Module = {
-  name: "promotions",
-  workflows: [bulkReindexProductsWorkflow],
-  eventFilters: [promotionAffectedAllFilter],
-}
 
 export const promotionsHonoModule: HonoModule = {
   module: promotionsModule,

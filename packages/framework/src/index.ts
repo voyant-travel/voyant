@@ -18,7 +18,7 @@
  * consolidated-deployments RFC.
  */
 
-export { type FrameworkProviders, frameworkComposition } from "./composition.js"
+export { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
 export {
   type CreateVoyantAppConfig,
   createVoyantApp,

@@ -52,6 +52,17 @@ export interface LazyHonoRoutes {
 
 /** Private carrier key for snapshotting `c.var` across the forward. */
 const LAZY_CONTEXT_CARRIER = Symbol.for("voyant.hono.lazyContextCarrier")
+const LAZY_ROUTE_MISS_HEADER = "x-voyant-lazy-route-miss"
+
+function withoutLazyRouteMissHeader(response: Response): Response {
+  const headers = new Headers(response.headers)
+  headers.delete(LAZY_ROUTE_MISS_HEADER)
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
 
 /**
  * Build a cached, context-preserving request handler. `mountPrefix` is where the
@@ -79,6 +90,9 @@ export function createLazyRouteHandler(mountPrefix: string, load: LazyRoutesLoad
           wrapped.onError((err) => {
             throw err
           })
+          wrapped.notFound(
+            () => new Response(null, { status: 404, headers: { [LAZY_ROUTE_MISS_HEADER]: "1" } }),
+          )
           wrapped.use("*", async (cc, next) => {
             const carried = (cc.env as Record<symbol, unknown> | undefined)?.[
               LAZY_CONTEXT_CARRIER
@@ -102,12 +116,20 @@ export function createLazyRouteHandler(mountPrefix: string, load: LazyRoutesLoad
     return cached
   }
 
-  return async (c: Context): Promise<Response> => {
+  return async (c: Context, next?: () => Promise<void>): Promise<Response> => {
     const app = await getApp()
     const snapshot = { ...c.var }
     const env = { ...(c.env as Record<string, unknown>), [LAZY_CONTEXT_CARRIER]: snapshot }
     // biome-ignore lint/suspicious/noExplicitAny: forward the host execution context when present -- owner: hono.
-    return app.fetch(c.req.raw, env, tryGetExecutionCtx(c) as any)
+    const response = await app.fetch(c.req.raw, env, tryGetExecutionCtx(c) as any)
+    const routeMiss = response.headers.get(LAZY_ROUTE_MISS_HEADER) === "1"
+    if (routeMiss && next) {
+      // Match eager `app.route(...)` composition: overlapping lazy mounts under
+      // the same prefix must let later modules/extensions try the request.
+      await next()
+      return c.res
+    }
+    return routeMiss ? withoutLazyRouteMissHeader(response) : response
   }
 }
 

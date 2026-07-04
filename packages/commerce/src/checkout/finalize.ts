@@ -9,7 +9,11 @@ import {
   runCheckoutFinalize,
 } from "@voyant-travel/catalog/booking-engine"
 import type { EventBus } from "@voyant-travel/core"
-import { convertProformaToInvoice, issueInvoiceFromBooking } from "@voyant-travel/finance"
+import {
+  convertProformaToInvoice,
+  issueInvoiceFromBooking,
+  settleCoveredBookingPaymentSchedules,
+} from "@voyant-travel/finance"
 import { beginWorkflowRun, type WorkflowRunRecorder } from "@voyant-travel/workflow-runs"
 import { and, desc, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -200,7 +204,7 @@ function buildCheckoutFinalizeDeps(
         sessionsLinked++
       }
 
-      await financeService.settleCoveredBookingPaymentSchedules(db, bookingId)
+      await settleCoveredBookingPaymentSchedules(db, bookingId)
 
       return { paymentId: firstPaymentId, sessionsLinked }
     },

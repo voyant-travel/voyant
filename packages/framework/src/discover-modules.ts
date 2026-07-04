@@ -39,7 +39,7 @@
 
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
-import type { FrameworkProviders } from "./composition.js"
+import type { FrameworkProviders } from "./composition-lazy.js"
 
 /** A deployment module declaration: a ready unit, or a factory that builds one. */
 export type DeploymentModuleDeclaration<TProviders> =

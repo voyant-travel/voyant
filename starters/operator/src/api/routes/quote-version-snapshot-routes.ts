@@ -10,8 +10,8 @@
  * See docs/architecture/api-route-ownership-and-composition.md.
  */
 
+import type { LazyRoutesLoader } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
-import { createQuoteVersionSnapshotRoutes } from "@voyant-travel/quotes"
 
 import { createQuoteProposalRoutesOptions } from "../runtime/quote-proposal-runtime"
 
@@ -19,6 +19,11 @@ import { createQuoteProposalRoutesOptions } from "../runtime/quote-proposal-runt
 export function createOperatorQuoteVersionSnapshotExtension(): HonoExtension {
   return {
     extension: { name: "quote-version-snapshot", module: "trips" },
-    adminRoutes: createQuoteVersionSnapshotRoutes(createQuoteProposalRoutesOptions()),
+    lazyAdminRoutes: createOperatorQuoteVersionSnapshotRoutes,
   }
+}
+
+export const createOperatorQuoteVersionSnapshotRoutes: LazyRoutesLoader = async () => {
+  const { createQuoteVersionSnapshotRoutes } = await import("@voyant-travel/quotes")
+  return createQuoteVersionSnapshotRoutes(createQuoteProposalRoutesOptions())
 }

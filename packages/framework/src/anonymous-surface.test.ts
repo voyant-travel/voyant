@@ -1,7 +1,7 @@
 import { assembleAnonymousPaths } from "@voyant-travel/hono"
 import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
-import { frameworkComposition } from "./composition.js"
+import { frameworkComposition } from "./composition-lazy.js"
 import { FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
 
 /**
@@ -10,7 +10,7 @@ import { FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
  * factory runs far enough to return its module/extension metadata without real
  * providers wired.
  */
-// biome-ignore lint/suspicious/noExplicitAny: test stub for the typed provider container.
+// biome-ignore lint/suspicious/noExplicitAny: test stub for the typed provider container -- owner: framework composition.
 const deepStub: any = new Proxy(() => deepStub, {
   get: (_t, p) => {
     if (p === Symbol.toPrimitive) return () => "stub"
