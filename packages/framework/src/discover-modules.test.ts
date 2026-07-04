@@ -1,7 +1,7 @@
 import type { CompositionContext } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import { describe, expect, it } from "vitest"
-import type { FrameworkProviders } from "./composition.js"
+import type { FrameworkProviders } from "./composition-lazy.js"
 import {
   defineDeploymentExtension,
   defineDeploymentModule,

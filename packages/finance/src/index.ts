@@ -478,6 +478,7 @@ export type {
   InvoiceSettlementPollerResult,
 } from "./service-settlement.js"
 export { financeSettlementService } from "./service-settlement.js"
+export { settleCoveredBookingPaymentSchedules } from "./service-shared.js"
 export {
   type AllocationCheckEntry,
   type AllocationCheckLine,

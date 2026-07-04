@@ -14,10 +14,11 @@ fixes to this load-bearing code path arrive via a dependency bump.
   requests (`/api/*`) onto the app surface (`/v1/*`, `/auth/*`, `/health`),
   stripping the prefix and preserving method/headers/body/search. When
   `loadAuthApp` is set, `/api/auth/*` dispatches to the lean auth app without
-  instantiating the full API graph (the cold-start outage fix), and non-OPTIONS
-  auth traffic warms the full app in the background via `ctx.waitUntil`. Hosts
-  can pass `rewriteAppPath` for compatibility redirects that must happen after
-  prefix stripping and before the request reaches the app.
+  instantiating the full API graph (the cold-start outage fix). Hosts can opt
+  into `warmApiOnAuth: true` to warm the full app in the background on
+  non-OPTIONS auth traffic, but the default keeps auth requests isolated.
+  Hosts can pass `rewriteAppPath` for compatibility redirects that must happen
+  after prefix stripping and before the request reaches the app.
 - **`createWorkerFetch({ api, ssr })`** — the Worker `fetch` entrypoint:
   API-prefixed requests go to the dispatch, everything else to the SSR handler.
 - **`withActiveRouteSsrManifest(streamHandler)`** — restricts the TanStack

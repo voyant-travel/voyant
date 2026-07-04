@@ -1,9 +1,9 @@
 import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
-import { frameworkComposition } from "./composition.js"
+import { frameworkComposition } from "./composition-lazy.js"
 import { FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
 
-// biome-ignore lint/suspicious/noExplicitAny: coercion-safe provider stub.
+// biome-ignore lint/suspicious/noExplicitAny: coercion-safe provider stub -- owner: framework composition.
 const deepStub: any = new Proxy(() => deepStub, {
   get: (_t, p) => {
     if (p === Symbol.toPrimitive) return () => "stub"

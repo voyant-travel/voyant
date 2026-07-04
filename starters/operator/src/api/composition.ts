@@ -46,9 +46,7 @@ import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
-import { createBookingScheduleExtension } from "./routes/booking-schedule"
 import { createChannelPushExtension } from "./routes/channel-push"
-import { createOperatorQuoteVersionSnapshotExtension } from "./routes/quote-version-snapshot-routes"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-runtime"
 import {
   createOperatorBookingPiiService,
@@ -170,8 +168,18 @@ export function buildOperatorProviders(): OperatorCapabilities {
     loadContractDocumentRoutes: () =>
       import("./runtime/contract-document-runtime").then((m) => m.buildContractDocumentRoutes()),
     // Lazy `operator/*` standard extension builders/loaders.
-    createBookingScheduleExtension,
-    createQuoteVersionSnapshotExtension: createOperatorQuoteVersionSnapshotExtension,
+    loadBookingScheduleAdminRoutes: () =>
+      import("./routes/booking-schedule").then((m) =>
+        m.createBookingScheduleAdminRoutesForOperator(),
+      ),
+    loadPaymentPolicyPublicRoutes: () =>
+      import("./routes/booking-schedule").then((m) =>
+        m.createPaymentPolicyPublicRoutesForOperator(),
+      ),
+    loadQuoteVersionSnapshotRoutes: () =>
+      import("./routes/quote-version-snapshot-routes").then((m) =>
+        m.createOperatorQuoteVersionSnapshotRoutes(),
+      ),
     loadBookingMaintenanceRoutes: async () => {
       const app = new Hono<{ Variables: { db: VoyantDb } }>()
       app.post("/:bookingId/rebuild-tax-lines", async (c) => {

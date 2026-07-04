@@ -101,6 +101,51 @@ describe("mountApp lazy route mounting", () => {
     expect(loadMaintenance).not.toHaveBeenCalled()
   })
 
+  it("falls through only for lazy route misses, not handler-authored 404 responses", async () => {
+    const firstLoad = vi.fn(async () =>
+      new Hono().get("/:id/details", (c) =>
+        c.json({ error: `booking ${c.req.param("id")} not found` }, 404),
+      ),
+    )
+    const secondLoad = vi.fn(async () =>
+      new Hono()
+        .get("/:id/notes", (c) => c.json({ notes: c.req.param("id") }))
+        .get("/:id/details", (c) => c.json({ fallback: true })),
+    )
+    const firstExtension: HonoExtension = {
+      extension: { name: "first", module: "bookings" },
+      lazyAdminRoutes: firstLoad,
+    }
+    const secondExtension: HonoExtension = {
+      extension: { name: "second", module: "bookings" },
+      lazyAdminRoutes: secondLoad,
+    }
+
+    const app = mountApp({
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
+      db: () => ({}) as any,
+      modules: [{ module: { name: "bookings" } }],
+      extensions: [firstExtension, secondExtension],
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    const resource404 = await app.request(
+      "/v1/admin/bookings/book_123/details",
+      {},
+      TEST_ENV,
+      TEST_CTX,
+    )
+    expect(resource404.status).toBe(404)
+    expect(await resource404.json()).toEqual({ error: "booking book_123 not found" })
+    expect(secondLoad).not.toHaveBeenCalled()
+
+    const routeMiss = await app.request("/v1/admin/bookings/book_123/notes", {}, TEST_ENV, TEST_CTX)
+    expect(routeMiss.status).toBe(200)
+    expect(await routeMiss.json()).toEqual({ notes: "book_123" })
+    expect(firstLoad).toHaveBeenCalledTimes(1)
+    expect(secondLoad).toHaveBeenCalledTimes(1)
+  })
+
   it("caches the loaded sub-app across requests (load once per isolate)", async () => {
     const load = vi.fn(async () => new Hono().get("/ping", (c) => c.json({ ok: true })))
     const app = mountApp({

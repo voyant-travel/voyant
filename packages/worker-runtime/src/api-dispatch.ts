@@ -23,8 +23,7 @@ export interface CreateApiDispatchOptions<Env, Ctx extends WaitUntilContext = Wa
    * Optional lean auth app. When set, requests under `authPrefix` dispatch to
    * it WITHOUT loading the full API graph — the fix for the cold-start outage
    * where the first `/api/auth/*` call instantiated the whole API and hung.
-   * Non-OPTIONS auth requests warm the full app in the background via
-   * `ctx.waitUntil` so the next API call is hot.
+   * Set `warmApiOnAuth` to opt into background API warm-up after auth traffic.
    */
   loadAuthApp?: AppLoader<Env, Ctx>
   /** Hosting prefix stripped before dispatch. Default `/api`. */
@@ -36,7 +35,7 @@ export interface CreateApiDispatchOptions<Env, Ctx extends WaitUntilContext = Wa
   rewriteAppPath?: (pathname: string) => string
   /** Auth sub-prefix served by the lean app. Default `${apiPrefix}/auth`. */
   authPrefix?: string
-  /** Background-warm the full app on auth traffic. Default true. */
+  /** Background-warm the full app on auth traffic. Default false. */
   warmApiOnAuth?: boolean
   /** Called when the background warm-up fails. Defaults to `console.error`. */
   onWarmError?: (error: unknown) => void
@@ -64,7 +63,7 @@ export function createApiDispatch<Env, Ctx extends WaitUntilContext = WaitUntilC
 ): ApiDispatch<Env, Ctx> {
   const apiPrefix = options.apiPrefix ?? DEFAULT_API_PREFIX
   const authPrefix = options.authPrefix ?? `${apiPrefix}/auth`
-  const warmApiOnAuth = options.warmApiOnAuth ?? true
+  const warmApiOnAuth = options.warmApiOnAuth ?? false
   const onWarmError =
     options.onWarmError ??
     ((error: unknown) => {

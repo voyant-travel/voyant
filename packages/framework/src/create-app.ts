@@ -41,7 +41,7 @@ import {
   findCapabilityGaps,
   type ModuleFactory,
 } from "@voyant-travel/hono/composition"
-import { type FrameworkProviders, frameworkComposition } from "./composition.js"
+import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
 import { FRAMEWORK_CAPABILITY_GRAPH, FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
 
 /**

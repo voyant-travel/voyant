@@ -1,6 +1,6 @@
 import type { CompositionContext } from "@voyant-travel/hono/composition"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { type FrameworkProviders, frameworkComposition } from "./composition.js"
+import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
 
 const mocks = vi.hoisted(() => ({
   createFinanceHonoModule: vi.fn((options: unknown) => ({
@@ -13,21 +13,20 @@ const mocks = vi.hoisted(() => ({
   })),
 }))
 
-vi.mock("@voyant-travel/finance", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>()
-  return {
-    ...actual,
-    createFinanceHonoModule: mocks.createFinanceHonoModule,
-  }
-})
+vi.mock("@voyant-travel/finance", () => ({
+  createFinanceHonoModule: mocks.createFinanceHonoModule,
+}))
 
-vi.mock("@voyant-travel/notifications", async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>()
-  return {
-    ...actual,
-    createNotificationsHonoModule: mocks.createNotificationsHonoModule,
-  }
-})
+vi.mock("@voyant-travel/notifications", () => ({
+  createDefaultBookingDocumentAttachment: vi.fn(),
+  createNotificationService: vi.fn(),
+  createNotificationsHonoModule: mocks.createNotificationsHonoModule,
+  notificationsService: {
+    listReminderRuns: vi.fn(),
+    sendInvoiceNotification: vi.fn(),
+    sendPaymentSessionNotification: vi.fn(),
+  },
+}))
 
 function compositionContext(
   capabilities: Partial<FrameworkProviders> = {},
@@ -44,59 +43,69 @@ describe("frameworkComposition policy injection", () => {
     mocks.createNotificationsHonoModule.mockClear()
   })
 
-  it("passes injected finance checkout policy to the standard finance module", () => {
+  it("passes injected finance checkout policy to the standard finance module", async () => {
     const policy = { defaultCardCollectionDocumentType: "proforma" } as const
 
-    frameworkComposition.modules["@voyant-travel/finance"]?.(
+    const finance = frameworkComposition.modules["@voyant-travel/finance"]?.(
       compositionContext({ financeCheckoutPolicy: policy }),
     )
+    if (Array.isArray(finance)) throw new Error("expected a single finance module")
+    await finance?.lazyAdminRoutes?.()
 
     expect(mocks.createFinanceHonoModule).toHaveBeenCalledWith(expect.objectContaining({ policy }))
   })
 
-  it("leaves finance checkout policy unset by default", () => {
-    frameworkComposition.modules["@voyant-travel/finance"]?.(compositionContext())
+  it("leaves finance checkout policy unset by default", async () => {
+    const finance = frameworkComposition.modules["@voyant-travel/finance"]?.(compositionContext())
+    if (Array.isArray(finance)) throw new Error("expected a single finance module")
+    await finance?.lazyAdminRoutes?.()
 
     expect(mocks.createFinanceHonoModule).toHaveBeenCalledWith(
       expect.objectContaining({ policy: undefined }),
     )
   })
 
-  it("passes injected finance payment-schedule line format to the standard finance module", () => {
-    frameworkComposition.modules["@voyant-travel/finance"]?.(
+  it("passes injected finance payment-schedule line format to the standard finance module", async () => {
+    const finance = frameworkComposition.modules["@voyant-travel/finance"]?.(
       compositionContext({ financePaymentScheduleLineDescriptionFormat: "product_only" }),
     )
+    if (Array.isArray(finance)) throw new Error("expected a single finance module")
+    await finance?.lazyAdminRoutes?.()
 
     expect(mocks.createFinanceHonoModule).toHaveBeenCalledWith(
       expect.objectContaining({ paymentScheduleLineDescriptionFormat: "product_only" }),
     )
   })
 
-  it("leaves finance payment-schedule line format unset by default", () => {
-    frameworkComposition.modules["@voyant-travel/finance"]?.(compositionContext())
+  it("leaves finance payment-schedule line format unset by default", async () => {
+    const finance = frameworkComposition.modules["@voyant-travel/finance"]?.(compositionContext())
+    if (Array.isArray(finance)) throw new Error("expected a single finance module")
+    await finance?.lazyAdminRoutes?.()
 
     expect(mocks.createFinanceHonoModule).toHaveBeenCalledWith(
       expect.objectContaining({ paymentScheduleLineDescriptionFormat: undefined }),
     )
   })
 
-  it("passes injected notifications auto-dispatch policy to the standard notifications module", () => {
+  it("passes injected notifications auto-dispatch policy to the standard notifications module", async () => {
     const autoConfirmAndDispatch = {
       enabled: false,
       templateSlug: "booking-confirmation",
     } as const
 
-    frameworkComposition.modules["@voyant-travel/notifications"]?.(
+    const notifications = frameworkComposition.modules["@voyant-travel/notifications"]?.(
       compositionContext({ notificationsAutoConfirmAndDispatch: autoConfirmAndDispatch }),
     )
+    if (Array.isArray(notifications)) throw new Error("expected a single notifications module")
+    await notifications?.lazyAdminRoutes?.()
 
     expect(mocks.createNotificationsHonoModule).toHaveBeenCalledWith(
       expect.objectContaining({ autoConfirmAndDispatch }),
     )
   })
 
-  it("merges partial notifications auto-dispatch policy with the standard default", () => {
-    frameworkComposition.modules["@voyant-travel/notifications"]?.(
+  it("merges partial notifications auto-dispatch policy with the standard default", async () => {
+    const notifications = frameworkComposition.modules["@voyant-travel/notifications"]?.(
       compositionContext({
         notificationsAutoConfirmAndDispatch: {
           templateSlug: "custom-booking-confirmation",
@@ -104,6 +113,8 @@ describe("frameworkComposition policy injection", () => {
         },
       }),
     )
+    if (Array.isArray(notifications)) throw new Error("expected a single notifications module")
+    await notifications?.lazyAdminRoutes?.()
 
     expect(mocks.createNotificationsHonoModule).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -116,8 +127,12 @@ describe("frameworkComposition policy injection", () => {
     )
   })
 
-  it("keeps the standard notifications auto-dispatch default", () => {
-    frameworkComposition.modules["@voyant-travel/notifications"]?.(compositionContext())
+  it("keeps the standard notifications auto-dispatch default", async () => {
+    const notifications = frameworkComposition.modules["@voyant-travel/notifications"]?.(
+      compositionContext(),
+    )
+    if (Array.isArray(notifications)) throw new Error("expected a single notifications module")
+    await notifications?.lazyAdminRoutes?.()
 
     expect(mocks.createNotificationsHonoModule).toHaveBeenCalledWith(
       expect.objectContaining({
