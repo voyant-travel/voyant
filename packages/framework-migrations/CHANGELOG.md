@@ -1,5 +1,11 @@
 # @voyant-travel/framework-migrations
 
+## 0.6.2
+
+### Patch Changes
+
+- 6c1d9bc: Run a compatibility preflight before the inventory product-days uniqueness migration so existing duplicate itinerary day numbers are deterministically renumbered before the unique index is created.
+
 ## 0.6.1
 
 ### Patch Changes
