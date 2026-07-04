@@ -1,5 +1,11 @@
 # @voyant-travel/workflows
 
+## 0.111.17
+
+### Patch Changes
+
+- 621f989: Allow modules to register workflow and event-filter manifest metadata without importing run-bearing workflow definitions into request-serving apps.
+
 ## 0.111.16
 
 ## 0.111.15
