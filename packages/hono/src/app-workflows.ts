@@ -1,20 +1,24 @@
 import type {
   EventEnvelope,
   EventFilterDescriptor,
+  EventFilterManifestDescriptor,
   Module,
   ModuleContainer,
   WorkflowDescriptor,
 } from "@voyant-travel/core"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
-import {
-  type BuildManifestArgs,
-  buildManifest,
-  type EventFilterRuntimeEntry,
-} from "@voyant-travel/workflows/events"
+import { type BuildManifestArgs, buildManifest } from "@voyant-travel/workflows/events"
 
 import type { VoyantAppConfig } from "./types.js"
 
 type ManifestWorkflowDescriptor = BuildManifestArgs["workflows"][number]
+type ManifestEventFilterEntry = {
+  readonly id: string
+  readonly eventType: string
+  readonly manifest: EventFilterManifestDescriptor
+  readonly declaration: { readonly target: { readonly id: string } }
+  readonly targetWorkflowId: string
+}
 
 function toManifestWorkflowDescriptor(wf: WorkflowDescriptor): ManifestWorkflowDescriptor {
   const candidate = wf as WorkflowDescriptor & Partial<Pick<ManifestWorkflowDescriptor, "config">>
@@ -43,9 +47,9 @@ export async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promis
   // the manifest builder needs the runtime shape with `.manifest` populated.
   // Validate before casting so a contract-violating plugin fails loudly here
   // instead of crashing on `entry.manifest.id` deep inside the sort.
-  const filterEntries: EventFilterRuntimeEntry[] = []
+  const filterEntries: ManifestEventFilterEntry[] = []
   for (const entry of args.collectedFilters) {
-    const candidate = entry as Partial<EventFilterRuntimeEntry>
+    const candidate = entry as EventFilterDescriptor
     if (!candidate.manifest || typeof candidate.manifest.id !== "string") {
       throw new Error(
         `[voyant] event filter "${entry.id}" (event "${entry.eventType}") is missing the runtime ` +
@@ -54,7 +58,13 @@ export async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promis
           `createApp() needs the manifest payload to register with the driver.`,
       )
     }
-    filterEntries.push(candidate as EventFilterRuntimeEntry)
+    filterEntries.push({
+      id: candidate.manifest.id,
+      eventType: candidate.manifest.eventType,
+      manifest: candidate.manifest,
+      declaration: { target: { id: candidate.manifest.targetWorkflowId } },
+      targetWorkflowId: candidate.manifest.targetWorkflowId,
+    })
   }
 
   const manifest = await buildManifest({
@@ -72,7 +82,7 @@ export async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promis
   // Install one EventBus subscriber per unique eventType. Each subscriber
   // forwards the envelope through `driver.ingestEvent(...)`, which routes
   // through the same predicate/mapper machinery the HTTP ingest path uses.
-  const eventTypes = new Set(filterEntries.map((f) => f.eventType))
+  const eventTypes = new Set(filterEntries.map((f) => f.manifest.eventType))
   for (const eventType of eventTypes) {
     args.eventBus.subscribe(eventType, async (envelope: EventEnvelope) => {
       const stamped = ensureMetadataEventId(envelope)

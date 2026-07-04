@@ -9,9 +9,9 @@ import type {
 } from "@voyant-travel/bookings"
 import type { CatalogSearchRoutesOptions } from "@voyant-travel/catalog"
 import {
-  bulkReindexProductsWorkflow,
+  bulkReindexProductsWorkflowManifest,
   promotionAffectedAllFilter,
-} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex"
+} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 import type { BootstrapHandler } from "@voyant-travel/core"
 import type {
   CheckoutNotificationDelivery,
@@ -379,7 +379,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         sellability: { name: "sellability" },
         promotions: {
           name: "promotions",
-          workflows: [bulkReindexProductsWorkflow],
+          workflows: [bulkReindexProductsWorkflowManifest],
           eventFilters: [promotionAffectedAllFilter],
         },
       } satisfies Record<string, HonoModule["module"]>

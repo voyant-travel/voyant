@@ -130,11 +130,10 @@ describe("mountApp with plugins", () => {
 
   function buildUnauthenticated(plugins: ReturnType<typeof defineHonoPlugin>[]) {
     return mountApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db.
-      db: () => ({}) as any,
+      db: () => ({}) as never,
       plugins,
       // Simulate the processor's credential-less POST: no actor resolved.
-      auth: { resolve: () => ({ userId: "", actor: undefined as unknown as Actor }) },
+      auth: { resolve: () => null },
     })
   }
 
@@ -229,7 +228,7 @@ describe("mountApp with plugins", () => {
     const res = await app.request("/v1/admin/events/emit", { method: "POST" }, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(200)
     expect(handler).toHaveBeenCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(
+    expect(handler.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         name: "booking.created",
         data: { bookingId: "b_123" },
@@ -372,7 +371,7 @@ describe("mountApp with plugins", () => {
     const res = await app.request("/v1/admin/bus/emit", { method: "POST" }, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(200)
     expect(handler).toHaveBeenCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(
+    expect(handler.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         name: "booking.updated",
         data: { bookingId: "b_234" },

@@ -480,6 +480,9 @@
       "@voyant-travel/commerce/promotions/workflow-bulk-reindex": [
         "../commerce/dist/promotions/workflow-bulk-reindex.d.ts"
       ],
+      "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest": [
+        "../commerce/dist/promotions/workflow-bulk-reindex-manifest.d.ts"
+      ],
       "@voyant-travel/commerce/schema": ["../commerce/dist/schema.d.ts"],
       "@voyant-travel/commerce/sellability/validation": [
         "../commerce/dist/sellability/validation.d.ts"

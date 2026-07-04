@@ -16,9 +16,54 @@ import type { LinkableDefinition } from "./links.js"
  * Same pattern Voyant uses for {@link LinkableDefinition} — the structural
  * contract lives in core, concrete types live in their owning packages.
  */
+export type WorkflowScheduleDescriptor = (
+  | { readonly cron: string }
+  | { readonly every: string | number }
+  | { readonly at: string | Date }
+) & {
+  readonly timezone?: string
+  readonly input?: unknown | (() => unknown | Promise<unknown>)
+  readonly enabled?: boolean
+  readonly overlap?: "skip" | "queue" | "allow"
+  readonly environments?: readonly ("production" | "preview" | "development")[]
+  readonly name?: string
+}
+
+export interface WorkflowConcurrencyDescriptor {
+  readonly key?: string | ((input: unknown) => string)
+  readonly limit?: number
+  readonly strategy?: "queue" | "cancel-in-progress" | "cancel-newest" | "round-robin"
+}
+
+export interface WorkflowManifestConfigDescriptor {
+  readonly description?: string
+  readonly input?: unknown
+  readonly output?: unknown
+  readonly defaultRuntime?: "node"
+  readonly concurrency?: WorkflowConcurrencyDescriptor
+  readonly retry?: unknown
+  readonly timeout?: unknown
+  readonly schedule?: WorkflowScheduleDescriptor | readonly WorkflowScheduleDescriptor[]
+}
+
 export interface WorkflowDescriptor {
   /** Stable workflow identifier (e.g. `"promotions.bulk-reindex-products"`). */
   readonly id: string
+  /**
+   * Optional manifest-only workflow metadata. Full workflow definitions from
+   * `@voyant-travel/workflows` also carry this field, with an additional
+   * non-serializable `run` function that the app manifest path ignores.
+   */
+  readonly config?: WorkflowManifestConfigDescriptor
+}
+
+export interface EventFilterManifestDescriptor {
+  readonly id: string
+  readonly eventType: string
+  readonly where?: unknown
+  readonly input?: unknown
+  readonly payloadHash: string
+  readonly targetWorkflowId: string
 }
 
 /**
@@ -34,6 +79,12 @@ export interface EventFilterDescriptor {
   readonly id: string
   /** Event name the filter targets (matches `EventEnvelope.name`). */
   readonly eventType: string
+  /**
+   * Optional manifest-only filter metadata. Runtime entries returned from
+   * `trigger.on(...)` carry this field; module metadata may also provide it
+   * directly when the request app must not import workflow handler bodies.
+   */
+  readonly manifest?: EventFilterManifestDescriptor
 }
 
 export interface BootstrapContext<TBindings = unknown> {
@@ -94,9 +145,12 @@ export interface Module {
    * Workflows owned by this module. Collected at `createApp()` boot and
    * registered with the configured workflow driver.
    *
-   * Concrete entries are produced by `workflow({ id, run })` in
-   * `@voyant-travel/workflows`; the field type here is the structural
-   * {@link WorkflowDescriptor} so core stays workflow-agnostic.
+   * Prefer manifest-only descriptors (`{ id, config }`) in request apps so
+   * module metadata stays importable without pulling workflow handler bodies
+   * into the HTTP Worker bundle. Full entries produced by
+   * `workflow({ id, run })` remain compatible for self-hosted runtimes and
+   * workflow bundle entrypoints. The field type here is structural so core
+   * stays workflow-agnostic.
    */
   workflows?: readonly WorkflowDescriptor[]
 
@@ -106,9 +160,9 @@ export interface Module {
    * `driver.ingestEvent(...)` time.
    *
    * Concrete entries are produced by `trigger.on(eventName, { ... })` in
-   * `@voyant-travel/workflows`; the field type here is the structural
-   * {@link EventFilterDescriptor} for the same cycle-avoidance reason as
-   * {@link workflows} above.
+   * `@voyant-travel/workflows`. Request apps may also provide manifest-only
+   * entries carrying `{ id, eventType, manifest }` so event routing can be
+   * registered without importing workflow handler bodies.
    */
   eventFilters?: readonly EventFilterDescriptor[]
 
