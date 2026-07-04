@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.12.10
+
+### Patch Changes
+
+- Updated dependencies [ec207bd]
+  - @voyant-travel/storefront@0.141.2
+
 ## 0.12.9
 
 ### Patch Changes
