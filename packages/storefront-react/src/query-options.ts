@@ -16,6 +16,7 @@ import {
 } from "./operations.js"
 import {
   type StorefrontDepartureFilters,
+  type StorefrontDepartureItineraryFilters,
   type StorefrontExtensionsFilters,
   type StorefrontOfferFilters,
   storefrontQueryKeys,
@@ -70,10 +71,11 @@ export function getStorefrontDepartureItineraryQueryOptions(
   client: FetchWithValidationOptions,
   productId: string,
   departureId: string,
+  filters: StorefrontDepartureItineraryFilters = {},
 ) {
   return queryOptions({
-    queryKey: storefrontQueryKeys.departureItinerary(productId, departureId),
-    queryFn: () => getStorefrontDepartureItinerary(client, productId, departureId),
+    queryKey: storefrontQueryKeys.departureItinerary(productId, departureId, filters),
+    queryFn: () => getStorefrontDepartureItinerary(client, productId, departureId, filters),
   })
 }
 

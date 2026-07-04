@@ -112,8 +112,11 @@ export function createVoyantStorefrontClient(options: VoyantStorefrontClientOpti
         productId: string,
         query?: Parameters<typeof listStorefrontProductExtensions>[2],
       ) => listStorefrontProductExtensions(client, productId, query),
-      getDepartureItinerary: (productId: string, departureId: string) =>
-        getStorefrontDepartureItinerary(client, productId, departureId),
+      getDepartureItinerary: (
+        productId: string,
+        departureId: string,
+        query?: Parameters<typeof getStorefrontDepartureItinerary>[3],
+      ) => getStorefrontDepartureItinerary(client, productId, departureId, query),
       listProductOffers: (
         productId: string,
         query?: Parameters<typeof listStorefrontProductOffers>[2],

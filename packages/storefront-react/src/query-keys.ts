@@ -1,10 +1,13 @@
 import type {
+  StorefrontDepartureItineraryQuery,
   StorefrontDepartureListQuery,
   StorefrontProductExtensionsQuery,
   StorefrontPromotionalOfferListQuery,
 } from "./schemas.js"
 
 export type StorefrontDepartureFilters = StorefrontDepartureListQuery
+
+export type StorefrontDepartureItineraryFilters = StorefrontDepartureItineraryQuery
 
 export type StorefrontOfferFilters = StorefrontPromotionalOfferListQuery
 
@@ -21,8 +24,11 @@ export const storefrontQueryKeys = {
     [...storefrontQueryKeys.departures(), "detail", departureId] as const,
   productDepartures: (productId: string, filters: StorefrontDepartureFilters) =>
     [...storefrontQueryKeys.departures(), "product-list", productId, filters] as const,
-  departureItinerary: (productId: string, departureId: string) =>
-    [...storefrontQueryKeys.departure(departureId), "itinerary", productId] as const,
+  departureItinerary: (
+    productId: string,
+    departureId: string,
+    filters: StorefrontDepartureItineraryFilters,
+  ) => [...storefrontQueryKeys.departure(departureId), "itinerary", productId, filters] as const,
   departurePricePreview: (departureId: string) =>
     [...storefrontQueryKeys.departure(departureId), "price-preview"] as const,
 

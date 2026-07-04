@@ -22,6 +22,7 @@ import {
 import {
   storefrontBookingSessionBootstrapInputSchema,
   storefrontBookingSessionBootstrapSchema,
+  storefrontDepartureItineraryQuerySchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -78,6 +79,7 @@ export {
   publicUpsertBookingSessionStateSchema,
   storefrontBookingSessionBootstrapInputSchema,
   storefrontBookingSessionBootstrapSchema,
+  storefrontDepartureItineraryQuerySchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -172,6 +174,9 @@ export type StorefrontNewsletterSubscribeRecord = z.infer<
   typeof storefrontNewsletterSubscribeResponseSchema
 >
 export type StorefrontDepartureRecord = z.infer<typeof storefrontDepartureSchema>
+export type StorefrontDepartureItineraryQuery = z.input<
+  typeof storefrontDepartureItineraryQuerySchema
+>
 export type StorefrontDepartureListQuery = z.input<typeof storefrontDepartureListQuerySchema>
 export type StorefrontDeparturePricePreviewInput = z.input<
   typeof storefrontDeparturePricePreviewInputSchema

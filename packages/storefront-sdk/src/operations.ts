@@ -33,6 +33,7 @@ import {
   publicUpdateBookingSessionSchema,
   publicUpsertBookingSessionStateSchema,
   type StorefrontBookingSessionBootstrapInput,
+  type StorefrontDepartureItineraryQuery,
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
   type StorefrontLeadIntakeInput,
@@ -41,6 +42,7 @@ import {
   type StorefrontProductExtensionsQuery,
   type StorefrontPromotionalOfferListQuery,
   storefrontBookingSessionBootstrapInputSchema,
+  storefrontDepartureItineraryQuerySchema,
   storefrontDepartureItineraryResponseSchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -175,11 +177,16 @@ export function getStorefrontDepartureItinerary(
   client: ResolvedClientOptions,
   productId: string,
   departureId: string,
+  query?: StorefrontDepartureItineraryQuery,
 ) {
+  const parsed = query ? storefrontDepartureItineraryQuerySchema.parse(query) : undefined
   return storefrontFetchWithValidation(
-    `/v1/public/products/${encodeURIComponent(productId)}/departures/${encodeURIComponent(
-      departureId,
-    )}/itinerary`,
+    withStorefrontQueryParams(
+      `/v1/public/products/${encodeURIComponent(productId)}/departures/${encodeURIComponent(
+        departureId,
+      )}/itinerary`,
+      parsed,
+    ),
     storefrontDepartureItineraryResponseSchema,
     client,
   ).then((response) => response.data)
