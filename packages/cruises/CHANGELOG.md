@@ -1,5 +1,11 @@
 # @voyant-travel/cruises
 
+## 0.138.2
+
+### Patch Changes
+
+- 98503c9: Gate customer storefront documents and owned detail content to bookable accommodation rooms and cruises so seed/demo rows that are inactive, draft, closed, unpriced, or out of inventory do not appear as bookable cards.
+
 ## 0.138.1
 
 ### Patch Changes
