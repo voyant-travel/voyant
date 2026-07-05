@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.12.17
+
+### Patch Changes
+
+- 1ab266f: Allow trips route options to be provided lazily so deployment-specific booking and payment runtime wiring is not imported into the eager API composition closure.
+- Updated dependencies [1ab266f]
+  - @voyant-travel/trips@0.132.1
+
 ## 0.12.16
 
 ### Patch Changes
