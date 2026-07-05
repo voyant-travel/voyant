@@ -1,5 +1,11 @@
 # @voyant-travel/catalog-contracts
 
+## 0.108.2
+
+### Patch Changes
+
+- aa27c44: Reject malformed booking draft email addresses in contracts and gate the booking journey when billing or traveler emails are syntactically invalid.
+
 ## 0.108.1
 
 ### Patch Changes
