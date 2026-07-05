@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog; existing test module stays co-located until a dedicated split preserves coverage.
 import { describe, expect, it } from "vitest"
 
 import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
@@ -7,6 +8,7 @@ import {
   buildDefaultTypesenseQueryBy,
   buildDefaultTypesenseSearchFields,
   buildSearchQuery,
+  collectionName,
   createTypesenseIndexer,
   type ImportFailureSummary,
   parseTypesenseImportResults,
@@ -138,6 +140,12 @@ const registry = createFieldPolicyRegistry(
 )
 
 describe("Typesense catalog indexer", () => {
+  it("includes channel in collection names when the slice is channel-scoped", () => {
+    expect(collectionName({ ...slice, channel: "chan_website" })).toBe(
+      "products__en-GB__customer__default__chan_website",
+    )
+  })
+
   it("declares known storefront card fields with numeric and boolean types", () => {
     const schema = buildCollectionSchema(slice, registry)
     expect(schema.fields.find((field) => field.name === "priceFromAmountCents")?.type).toBe("int64")

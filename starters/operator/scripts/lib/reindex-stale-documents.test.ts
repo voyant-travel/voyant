@@ -117,6 +117,24 @@ describe("listObsoleteCatalogCollections", () => {
     ])
   })
 
+  it("returns old channel collections that no longer match active slices", () => {
+    const activeWebsiteSlice: IndexerSlice = {
+      ...customerProductsSlice,
+      channel: "chan_website",
+    }
+
+    const obsolete = listObsoleteCatalogCollections(
+      [activeWebsiteSlice],
+      [
+        "products__en-GB__customer__default__chan_website",
+        "products__en-GB__customer__default__chan_b2b",
+      ],
+      { verticals: new Set(["products"]) },
+    )
+
+    expect(obsolete).toEqual(["products__en-GB__customer__default__chan_b2b"])
+  })
+
   it("ignores unrelated and differently-prefixed Typesense collections", () => {
     const obsolete = listObsoleteCatalogCollections(
       [customerProductsSlice],

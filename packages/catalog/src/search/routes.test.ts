@@ -169,6 +169,47 @@ describe("createCatalogSearchRoutes", () => {
     })
   })
 
+  it("uses the public default channel and allows explicit channel overrides", async () => {
+    const executeSearch = vi.fn(
+      async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => emptyResults,
+    )
+    const module = createCatalogSearchHonoModule({
+      resolveRuntime: () => ({
+        indexer: createIndexer(),
+        defaultScope: {
+          locale: "en-GB",
+          audience: "staff",
+          market: "default",
+          channel: "chan_website",
+        },
+      }),
+      executeSearch,
+    })
+    const app = new Hono()
+    app.route("/v1/admin/catalog", module.adminRoutes!)
+    app.route("/v1/public/catalog", module.publicRoutes!)
+
+    await app.request("/v1/admin/catalog/search", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ vertical: "products", mode: "keyword" }),
+    })
+    await app.request("/v1/public/catalog/search", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ vertical: "products", mode: "keyword" }),
+    })
+    await app.request("/v1/public/catalog/search", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ vertical: "products", mode: "keyword", channel: "chan_b2b" }),
+    })
+
+    expect(executeSearch.mock.calls[0]?.[0].slice.channel).toBeUndefined()
+    expect(executeSearch.mock.calls[1]?.[0].slice.channel).toBe("chan_website")
+    expect(executeSearch.mock.calls[2]?.[0].slice.channel).toBe("chan_b2b")
+  })
+
   it("downgrades semantic modes to keyword when embeddings are unavailable", async () => {
     const executeSearch = vi.fn(
       async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => emptyResults,

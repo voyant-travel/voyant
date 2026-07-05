@@ -462,8 +462,8 @@ The search index is the place where cross-entity denormalization happens. Vertic
 Three rules govern the indexer regardless of which engine sits behind it:
 
 1. **The resolver runs in two places.** The read path (API responses) resolves one entity at a time and does not auto-traverse references. The indexer denormalizes referenced entities into the search document. Auto-traversal in the read path is forbidden — it explodes blast radius and makes overlay-merge precedence ambiguous when locales mismatch across entities.
-2. **Search documents are per-(locale, audience, market).** A document indexed for `(en-GB, customer, UK)` is distinct from `(de-DE, partner, default)`. The indexer materializes the resolver's output for each combination the deployment actively serves; for default deployments this is just `(locale × {staff, customer}, market=default)` — two document sets per locale (§5.2.2).
-3. **Reindex is targeted, not bulk.** When an editorial override changes, when a source projection updates a non-overridden field, or when a referenced entity changes (hotel inside a package), the affected document(s) get re-enqueued — scoped per entity, per locale, per audience, per market. A reverse-lookup index (`referenced_by`) supports the cross-entity case.
+2. **Search documents are per-(locale, audience, market, channel).** A document indexed for `(en-GB, customer, UK, website)` is distinct from `(en-GB, customer, UK, b2b)` and from `(de-DE, partner, default, reseller)`. The indexer materializes the resolver's output for each combination the deployment actively serves; for default deployments this is `(locale × {staff, customer}, market=default)` plus channel-scoped customer slices when distribution channels are configured (§5.2.2).
+3. **Reindex is targeted, not bulk.** When an editorial override changes, when a source projection updates a non-overridden field, when channel publication changes, or when a referenced entity changes (hotel inside a package), the affected document(s) get re-enqueued — scoped per entity, per locale, per audience, per market, per channel. A reverse-lookup index (`referenced_by`) supports the cross-entity case.
 
 Volatile-live fields **never** appear in the search index. Volatile-indexed fields appear with a TTL, refreshed via the source's freshness mode.
 
@@ -472,7 +472,7 @@ Volatile-live fields **never** appear in the search index. Volatile-indexed fiel
 Typesense is the default search engine because it fits Voyant's deployment model: open-source (Apache-2.0, aligned with Voyant's licensing posture), self-hostable (aligned with single-tenant-per-deployment), fast, low operational overhead, with first-class support for faceted search, typo tolerance, locale-aware tokenization, and hybrid keyword+vector search. The native Typesense adapter ships as part of `packages/catalog` and provides:
 
 - **Collection schema generation** from the field-policy registry. Fields with `query: "indexed-column"` and the appropriate `class` become Typesense fields with the right type / facet / sort flags. Fields with `query: "blob-only"` are stored but not indexed.
-- **Per-(locale, audience, market) collection management.** A separate Typesense collection (or filterable shard, depending on scale) per combination, with its own schema synthesized from the field policy. For default deployments this is two collections per locale (admin + customer) with `market=default`.
+- **Per-(locale, audience, market, channel) collection management.** A separate Typesense collection (or filterable shard, depending on scale) per combination, with its own schema synthesized from the field policy. Channel is optional only for legacy/default slices; channel-aware storefronts materialize one customer collection per sales surface.
 - **Document upsert / delete on reindex events** with the targeted-reindex semantics from rule 3 above.
 - **Search query construction** for the storefront and admin layers, exposing facet aggregations driven by the registry's structural fields.
 - **Bulk reindex tooling** for cold-starts and major schema changes (e.g. when a vertical's field-policy file gains a new indexed field).
@@ -485,10 +485,10 @@ The indexer surface is an abstract `IndexerAdapter` contract — the same provid
 
 The contract is intentionally narrow:
 
-- `ensureCollection(vertical, locale, audience, market, fieldPolicy)` — set up or migrate the engine-side schema for one variant slice.
+- `ensureCollection(vertical, locale, audience, market, channel, fieldPolicy)` — set up or migrate the engine-side schema for one variant slice.
 - `upsert(documents)` / `delete(ids)` — write paths from the reindex queue.
 - `search(query, filters, facets, pagination)` — read path from storefront and admin.
-- `bulkReindex(vertical, locale, audience, market, stream)` — cold-start and migration path.
+- `bulkReindex(vertical, locale, audience, market, channel, stream)` — cold-start and migration path.
 - `capabilities` — declare what the engine supports (faceting, typo tolerance, vector search, geo, etc.) so consuming code can fail fast on unsupported features rather than producing wrong results silently.
 
 Swap-in implementers can be:
@@ -586,7 +586,7 @@ Those two layers are different by design. The catalog plane supports both — it
 
 Storefront and admin search have different free-text needs, so the catalog plane materializes their index documents differently — even though both ride the same underlying engine.
 
-**Storefront search documents** are audience-scoped (per §5.4 rule 2). A customer searching the storefront hits `(vertical, locale, audience=customer, market=M)` documents and finds matches against marketing-overlayed text. Customer documents do not contain source SKUs, internal aliases, or partner-only copy — those fields are not visible to the customer audience and are not indexed in customer documents at all. Same shape for `partner` and `supplier` audiences when they exist.
+**Storefront search documents** are audience- and channel-scoped (per §5.4 rule 2). A customer searching the website storefront hits `(vertical, locale, audience=customer, market=M, channel=website)` documents and finds matches against marketing-overlayed text for products published to that channel. A B2B storefront hits its own channel slice, so products can be listed on B2B but absent from the website, or vice versa. Customer documents do not contain source SKUs, internal aliases, or partner-only copy — those fields are not visible to the customer audience and are not indexed in customer documents at all. Same shape for `partner` and `supplier` audiences when they exist.
 
 **Admin search documents** are different. Admin users have legitimate cross-audience search needs: ops types a source SKU; marketing types the storefront title; customer service types what the customer said on the phone. A single staff-audience-only index can't satisfy all three. The clean solution is **denormalization at index time**:
 
@@ -668,7 +668,7 @@ The catalog plane has five distinct caching layers, each with its own correctnes
 | **1. Source projection** | Slow-moving fields fed from upstream (title, geography, room types, cancellation rules, ship name, etc.) | Refreshed on the field's `sourceFreshness` mode — `sync` interval, `event` push, `request` on demand, `static` never; drift events flag mid-cycle changes | The vertical module's own table — technically storage, but behaves cache-like relative to the upstream source |
 | **2. Editorial overlay rows** | Override rows in the overlay store, keyed `(entity_module, entity_id, field, locale, audience, market)` | Invalidated on write to that key | DB; optionally short-TTL in-process LRU when measured |
 | **3. Resolved CatalogEntry views** | The merged result of source + overlay per `(locale, audience, market)` | Bust on either source projection update OR overlay write for that entity | Optional — **not added in v1**; per-worker LRU or distributed cache once profiling justifies it |
-| **4. Search index documents** | Per-(locale, audience, market) docs, including referenced entities (hotel inside a package's search doc); admin documents denormalize across audiences (§5.4.4) | Targeted reindex on entity change, overlay change, OR referenced-entity change (via the `referenced_by` index) | Typesense (native default — see §5.4.1); swappable to Algolia / Meilisearch / Postgres FTS / Elasticsearch via the `IndexerAdapter` contract (§5.4.2). The index *is* itself a cache. |
+| **4. Search index documents** | Per-(locale, audience, market, channel) docs, including referenced entities (hotel inside a package's search doc); admin documents denormalize across audiences (§5.4.4) | Targeted reindex on entity change, overlay change, channel publication change, OR referenced-entity change (via the `referenced_by` index) | Typesense (native default — see §5.4.1); swappable to Algolia / Meilisearch / Postgres FTS / Elasticsearch via the `IndexerAdapter` contract (§5.4.2). The index *is* itself a cache. |
 | **5. HTTP / CDN response cache** | Whole `/v1/public/*` responses for browse + product-detail | ETag + `Cache-Control` + stale-while-revalidate; busts on entity-version-token change | CDN edge (Cloudflare / Fastly / equivalent) |
 
 **Volatile-live fields are not cached at any of these layers.** `quote_price`, `inventory_count`, `bookable_now`, `hold_expiry` always go through the source adapter live. If a specific hot path measurably needs short-lived caching (5–30s), that lives **inside the source adapter**, not in the catalog plane — keeps the caching decision local to the source's tolerances rather than baked into the contract. See open question 5.
@@ -853,7 +853,7 @@ The distinction matters: most "the source is gone" events in production turn out
 | Data | Behavior on hard disconnect |
 | --- | --- |
 | Source projection rows | Soft-deleted; hard-deleted after retention window (default 30 days, configurable) |
-| Search index documents | Deleted across all `(locale, audience, market)` combinations |
+| Search index documents | Deleted across all `(locale, audience, market, channel)` combinations |
 | **Embeddings** | **Removed alongside index documents** because vectors live in the same search engine slice. |
 | Editorial overlays | Preserved for retention window (default 90 days, configurable), then GC if no reconnect — keeps marketing work recoverable on reseed |
 | Drift events history | Archived but kept — audit trail |
@@ -871,7 +871,7 @@ A hard disconnect runs as a deliberate, observable, dry-runnable job:
 1. **Initiate.** Admin triggers disconnect on a specific source connection. Requires explicit confirmation; cannot be triggered by automated failure detection.
 2. **Enumerate.** System lists affected entities — every CatalogEntry whose provenance points to this source.
 3. **Dry-run report.** Admin sees: how many entities, which verticals, how many bookings have snapshots referencing them (preserved), how many cross-references would dangle, how many overlays exist on each. Cancel here is a no-op.
-4. **Archive.** Affected entities transition to `archived` status (not deleted). Search index documents are removed across all `(locale, audience, market)` combinations; embeddings disappear with them since they share the engine.
+4. **Archive.** Affected entities transition to `archived` status (not deleted). Search index documents are removed across all `(locale, audience, market, channel)` combinations; embeddings disappear with them since they share the engine.
 5. **Soft-delete projections and overlays.** Source projection rows and editorial overlays are soft-deleted with retention timestamps so they can be restored on reconnect.
 6. **Update reverse-lookup.** `referenced_by` index updated; parents of disconnected entities receive `catalog.entity.reference.missing` events.
 7. **Emit events.** `catalog.entity.archived` per affected entity, plus a single `catalog.source.disconnected` summary event with affected counts. External webhook subscribers receive these per the visibility rules in §5.8.4.

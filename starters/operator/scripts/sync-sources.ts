@@ -38,14 +38,13 @@ import {
   type DocumentBuilder,
   type EmbeddingProvider,
   type IndexerDocument,
-  type IndexerSlice,
 } from "@voyant-travel/catalog"
 import { type SyncSourcesSummary, syncSources } from "@voyant-travel/catalog/booking-engine"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
-import { getFieldPolicyRegistries } from "../src/api/lib/catalog-runtime.js"
+import { getFieldPolicyRegistries, loadCatalogSlices } from "../src/api/lib/catalog-runtime.js"
 import { buildSyncSourceRegistry } from "./lib/build-sync-source-registry.js"
 import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 
@@ -130,11 +129,7 @@ const indexer = createTypesenseIndexer({
 // `nextDepartureAt`).
 const fieldPolicyRegistries = getFieldPolicyRegistries()
 
-const VERTICALS = ["products", "extras", "cruises", "charters", "accommodations"] as const
-const slices: IndexerSlice[] = VERTICALS.flatMap((vertical) => [
-  { vertical, locale: "en-GB", audience: "staff", market: "default" },
-  { vertical, locale: "en-GB", audience: "customer", market: "default" },
-])
+const slices = await loadCatalogSlices(db)
 
 const indexerService = createIndexerService({
   adapter: indexer,

@@ -71,6 +71,7 @@ const catalogSearchBodySchema = z.object({
   query_embedding: z.array(z.number()).optional(),
   market: z.string().min(1).optional(),
   locale: z.string().min(1).optional(),
+  channel: z.string().min(1).optional(),
 })
 
 export type CatalogSearchBody = z.infer<typeof catalogSearchBodySchema>
@@ -261,6 +262,7 @@ export interface CatalogSearchRuntime {
     locale: string
     audience: IndexerSlice["audience"]
     market: string
+    channel?: string
   }
 }
 
@@ -360,6 +362,7 @@ async function handleSearch(
     locale: body.locale ?? runtime.defaultScope.locale,
     audience: resolveAudience(options, runtime),
     market: body.market ?? runtime.defaultScope.market,
+    channel: resolveChannel(options, runtime, body),
   }
   const request = buildSearchRequest(body, mode)
 
@@ -393,6 +396,15 @@ function resolveAudience(
 ): IndexerSlice["audience"] {
   if (options.surface === "public") return options.publicAudience ?? "customer"
   return options.adminAudience ?? runtime.defaultScope.audience
+}
+
+function resolveChannel(
+  options: CatalogSearchRoutesWithSurfaceOptions,
+  runtime: CatalogSearchRuntime,
+  body: CatalogSearchBody,
+): string | undefined {
+  if (body.channel) return body.channel
+  return options.surface === "public" ? runtime.defaultScope.channel : undefined
 }
 
 function buildSearchRequest(body: CatalogSearchBody, mode: SearchMode): SearchRequest {

@@ -23,18 +23,20 @@ import { and, eq } from "drizzle-orm"
 export async function hasActiveSalesChannelMapping(
   db: AnyDrizzleDb,
   productId: string,
+  channelId?: string,
 ): Promise<boolean> {
+  const conditions = [
+    eq(channelProductMappings.productId, productId),
+    eq(channelProductMappings.active, true),
+    eq(channels.status, "active"),
+  ]
+  if (channelId) conditions.push(eq(channelProductMappings.channelId, channelId))
+
   const rows = await db
     .select({ id: channelProductMappings.id })
     .from(channelProductMappings)
     .innerJoin(channels, eq(channels.id, channelProductMappings.channelId))
-    .where(
-      and(
-        eq(channelProductMappings.productId, productId),
-        eq(channelProductMappings.active, true),
-        eq(channels.status, "active"),
-      ),
-    )
+    .where(and(...conditions))
     .limit(1)
 
   return rows.length > 0
@@ -42,6 +44,7 @@ export async function hasActiveSalesChannelMapping(
 
 export type OwnedProductStorefrontListabilityInput = {
   audience: IndexerSlice["audience"]
+  channel?: string
   /** Resolves whether the product is published to an active sales channel. */
   hasActiveChannelMapping: () => boolean | Promise<boolean>
 }
@@ -54,22 +57,18 @@ export type OwnedProductStorefrontListabilityInput = {
  * runs, so the caller only reaches here for an owned product that is otherwise
  * publicly sellable.
  *
- * The `customer` slice is the operator's *own direct storefront*. Owned
- * inventory that is active + public + activated is inherently sellable there —
- * its public detail, quote, and booking already resolve without any channel
- * mapping — so it MUST be listable in customer search without one. Requiring an
- * explicit `channel_product_mappings` row for the direct storefront made owned
- * products bookable-but-invisible (issue #2617).
+ * Legacy customer slices have no `channel`, so they keep the old direct
+ * storefront behavior for backward compatibility. Channel-scoped customer
+ * slices require an active mapping for that exact channel, so a website surface
+ * and a B2B surface can expose different product sets.
  *
- * Channel mappings gate *distribution to external audiences* (partner /
- * supplier slices), not visibility on the operator's own storefront. See
- * docs/architecture/catalog-supply-models.md and federated-operating-mode.md:
- * owned "sellable inventory" is directly bookable/listable; the marketplace /
- * reseller channel graph governs everything downstream of the direct channel.
+ * External audiences (partner / supplier slices) also require channel
+ * mappings. See docs/architecture/catalog-supply-models.md and
+ * federated-operating-mode.md.
  */
 export async function isOwnedProductStorefrontListable(
   input: OwnedProductStorefrontListabilityInput,
 ): Promise<boolean> {
-  if (input.audience === "customer") return true
+  if (input.audience === "customer" && !input.channel) return true
   return input.hasActiveChannelMapping()
 }
