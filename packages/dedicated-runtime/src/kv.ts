@@ -76,9 +76,10 @@ function createLru(options: KvLruOptions) {
       map.set(key, entry)
       return { value: entry.value }
     },
-    set(key: string, value: string | null): void {
+    set(key: string, value: string | null, maxTtlMs?: number): void {
       if (map.has(key)) map.delete(key)
-      map.set(key, { value, expiresAt: Date.now() + options.ttlMs })
+      const ttlMs = maxTtlMs === undefined ? options.ttlMs : Math.min(options.ttlMs, maxTtlMs)
+      map.set(key, { value, expiresAt: Date.now() + ttlMs })
       while (map.size > options.maxEntries) {
         const oldest = map.keys().next().value
         if (oldest === undefined) break
@@ -159,7 +160,13 @@ export function createKvNamespaceShim(options: KvNamespaceShimOptions): KvNamesp
         const text = await response.text().catch(() => "")
         throw new Error(`KV put failed (${response.status}): ${text}`)
       }
-      lru?.set(key, value)
+      // Cap the local entry at the remote expirationTtl so an expiring key
+      // never outlives its Cloudflare-side lifetime in this process.
+      lru?.set(
+        key,
+        value,
+        putOptions?.expirationTtl === undefined ? undefined : putOptions.expirationTtl * 1000,
+      )
     },
     async delete(key: string): Promise<void> {
       const response = await fetchImpl(valueUrl(key), {

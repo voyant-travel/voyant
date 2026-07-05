@@ -111,6 +111,30 @@ describe("createKvNamespaceShim", () => {
       expect(calls.filter((c) => c.init.method === "GET")).toHaveLength(2)
     })
 
+    it("caps a write-through entry at the put's expirationTtl", async () => {
+      vi.useFakeTimers()
+      try {
+        const { fetch, calls } = mockFetch(() => ({ body: "remote" }))
+        const kv = createKvNamespaceShim({
+          ...base,
+          fetchImpl: fetch,
+          lru: { maxEntries: 10, ttlMs: 60_000 },
+        })
+
+        // Remote key expires after 1s; the local entry must not outlive it
+        // even though the LRU's own ttlMs is 60s.
+        await kv.put("session", "local", { expirationTtl: 1 })
+        expect(await kv.get("session")).toBe("local")
+        expect(calls.filter((c) => c.init.method === "GET")).toHaveLength(0)
+
+        vi.advanceTimersByTime(1_500)
+        expect(await kv.get("session")).toBe("remote")
+        expect(calls.filter((c) => c.init.method === "GET")).toHaveLength(1)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
     it("evicts least-recently-used entries past maxEntries", async () => {
       const { fetch, calls } = mockFetch((url) => ({ body: url }))
       const kv = createKvNamespaceShim({
