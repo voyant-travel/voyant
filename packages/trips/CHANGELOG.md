@@ -1,5 +1,11 @@
 # @voyant-travel/trips
 
+## 0.132.1
+
+### Patch Changes
+
+- 1ab266f: Allow trips route options to be provided lazily so deployment-specific booking and payment runtime wiring is not imported into the eager API composition closure.
+
 ## 0.132.0
 
 ### Patch Changes
