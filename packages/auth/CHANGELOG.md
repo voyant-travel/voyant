@@ -1,5 +1,11 @@
 # @voyant-travel/auth
 
+## 0.120.1
+
+### Patch Changes
+
+- c2a0daf: Expose Better Auth advanced options so deployments can configure cross-subdomain session cookies.
+
 ## 0.120.0
 
 ## 0.119.1
