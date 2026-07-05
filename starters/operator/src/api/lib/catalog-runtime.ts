@@ -121,6 +121,14 @@ export async function loadCatalogSlices(db: AnyDrizzleDb): Promise<IndexerSlice[
 
   const activeChannelIds = channelRows.map((channel) => channel.id)
   const customerChannels = [undefined, ...activeChannelIds]
+  const defaultChannelSlices = activeChannelIds.flatMap((channel) =>
+    DEFAULT_SLICES.filter(
+      (slice) => slice.audience === "customer" && slice.market === "default" && !slice.channel,
+    ).map((slice) => ({
+      ...slice,
+      channel,
+    })),
+  )
 
   const marketSlices = marketRows.flatMap((market) => {
     const locales = localesByMarket.get(market.id) ?? new Set([market.defaultLanguageTag])
@@ -138,7 +146,7 @@ export async function loadCatalogSlices(db: AnyDrizzleDb): Promise<IndexerSlice[
     )
   })
 
-  return uniqueSlices([...DEFAULT_SLICES, ...marketSlices])
+  return uniqueSlices([...DEFAULT_SLICES, ...defaultChannelSlices, ...marketSlices])
 }
 
 function uniqueSlices(slices: ReadonlyArray<IndexerSlice>): IndexerSlice[] {

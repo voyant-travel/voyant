@@ -2,7 +2,7 @@ import { marketLocales, markets } from "@voyant-travel/commerce"
 import { channels } from "@voyant-travel/distribution"
 import { describe, expect, it } from "vitest"
 
-import { loadCatalogSlices } from "./catalog-runtime"
+import { CATALOG_VERTICALS, loadCatalogSlices } from "./catalog-runtime"
 
 type TableRows = Map<object, unknown[]>
 
@@ -19,6 +19,31 @@ function createSelectDb(rowsByTable: TableRows) {
 }
 
 describe("loadCatalogSlices", () => {
+  it("materializes channelled default-market customer slices for active channels", async () => {
+    const rowsByTable: TableRows = new Map()
+    rowsByTable.set(markets, [])
+    rowsByTable.set(marketLocales, [])
+    rowsByTable.set(channels, [{ id: "chan_website" }])
+
+    const slices = await loadCatalogSlices(createSelectDb(rowsByTable) as never)
+
+    for (const vertical of CATALOG_VERTICALS) {
+      expect(slices).toContainEqual({
+        vertical,
+        locale: "en-GB",
+        audience: "customer",
+        market: "default",
+      })
+      expect(slices).toContainEqual({
+        vertical,
+        locale: "en-GB",
+        audience: "customer",
+        market: "default",
+        channel: "chan_website",
+      })
+    }
+  })
+
   it("preserves legacy unchannelled customer slices when active channels exist", async () => {
     const rowsByTable: TableRows = new Map()
     rowsByTable.set(markets, [
