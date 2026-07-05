@@ -1,5 +1,11 @@
 # @voyant-travel/accommodations
 
+## 0.109.9
+
+### Patch Changes
+
+- 71adbdd: Return the bridge-created booking id from accommodation booking-engine commits so catalog checkout snapshots point at the real stay booking.
+
 ## 0.109.8
 
 ### Patch Changes
