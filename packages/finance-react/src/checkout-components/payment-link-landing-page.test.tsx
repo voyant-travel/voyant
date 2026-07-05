@@ -5,6 +5,8 @@ import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import type { VoyantFetcher } from "../client.js"
+import { VoyantFinanceProvider } from "../provider.js"
 import { PaymentLinkLandingPage } from "./payment-link-landing-page.js"
 
 ;(
@@ -46,37 +48,39 @@ const baseSession: PublicPaymentSession = {
 describe("PaymentLinkLandingPage", () => {
   let container: HTMLDivElement
   let root: Root
-  let fetchMock: ReturnType<typeof vi.fn>
+  let fetcher: ReturnType<typeof vi.fn<VoyantFetcher>>
 
   beforeEach(() => {
     container = document.createElement("div")
     document.body.appendChild(container)
     root = createRoot(container)
-    fetchMock = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({ data: { redirectUrl: null } }),
-    }))
-    vi.stubGlobal("fetch", fetchMock)
+    fetcher = vi.fn<VoyantFetcher>(async () => Response.json({ data: { redirectUrl: null } }))
   })
 
   afterEach(() => {
     act(() => root.unmount())
     container.remove()
-    vi.unstubAllGlobals()
   })
 
   it("starts active card sessions instead of following a stored redirect", async () => {
     await act(async () => {
-      root.render(<PaymentLinkLandingPage session={baseSession} />)
+      root.render(
+        <VoyantFinanceProvider baseUrl="https://api.example.test/api/" fetcher={fetcher}>
+          <PaymentLinkLandingPage session={baseSession} />
+        </VoyantFinanceProvider>,
+      )
     })
 
     await act(async () => {
       container.querySelector<HTMLButtonElement>("button")?.click()
     })
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/public/payment-link/ps_123/start-card", {
-      method: "POST",
-      headers: { Accept: "application/json" },
-    })
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://api.example.test/api/v1/public/payment-link/ps_123/start-card",
+      {
+        method: "POST",
+        headers: { Accept: "application/json" },
+      },
+    )
   })
 })
