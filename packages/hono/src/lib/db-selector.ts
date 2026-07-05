@@ -25,7 +25,6 @@ export interface PathDbSelectorOptions<TBindings extends VoyantBindings> {
 export function createPathDbSelector<TBindings extends VoyantBindings>(
   options: PathDbSelectorOptions<TBindings>,
 ): DbFactorySelector<TBindings> {
-  const prefixes = [...new Set(options.transactionalPrefixes)]
   const transactional = {
     factory: options.transactionalFactory,
     mustSupportTransactions: true,
@@ -36,6 +35,7 @@ export function createPathDbSelector<TBindings extends VoyantBindings>(
   }
   return {
     select(path: string) {
+      const prefixes = [...new Set(options.transactionalPrefixes)]
       for (const prefix of prefixes) {
         if (path === prefix || path.startsWith(`${prefix}/`)) return transactional
       }

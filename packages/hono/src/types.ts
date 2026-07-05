@@ -20,7 +20,7 @@ import type { Hono } from "hono"
 
 import type { HonoExtension, HonoModule } from "./module.js"
 import type { Reporter } from "./observability/reporter.js"
-import type { HonoBundle } from "./plugin.js"
+import type { HonoBundleInput } from "./plugin.js"
 
 export interface VoyantExecutionContext {
   waitUntil?: (promise: Promise<unknown>) => void
@@ -248,7 +248,7 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   dbTransactionalPaths?: string[]
   modules?: HonoModule[]
   extensions?: HonoExtension[]
-  plugins?: HonoBundle[]
+  plugins?: HonoBundleInput[]
   eventBus?: EventBus
   link?: LinkService
   query?: QueryGraphContext | VoyantQueryRuntime

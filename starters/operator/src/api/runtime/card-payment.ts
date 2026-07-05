@@ -1,5 +1,5 @@
 import type { CardPaymentStarter } from "@voyant-travel/finance/card-payment"
-import { netopiaCardPaymentStarter } from "@voyant-travel/plugin-netopia"
+import { lazyProvider } from "@voyant-travel/hono"
 
 /**
  * The card-payment processor for this deployment. Every checkout surface
@@ -7,4 +7,6 @@ import { netopiaCardPaymentStarter } from "@voyant-travel/plugin-netopia"
  * through this single starter. To use a different processor, replace the
  * right-hand side with that provider's CardPaymentStarter — nothing else changes.
  */
-export const cardPaymentStarter: CardPaymentStarter = netopiaCardPaymentStarter()
+export const cardPaymentStarter: CardPaymentStarter = lazyProvider(async () =>
+  import("@voyant-travel/plugin-netopia").then((m) => m.netopiaCardPaymentStarter()),
+)

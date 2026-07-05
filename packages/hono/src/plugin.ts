@@ -62,11 +62,72 @@ export interface HonoBundle {
 /** @deprecated Prefer {@link HonoBundle}. */
 export type HonoPlugin = HonoBundle
 
+const LAZY_HONO_BUNDLE = Symbol.for("voyant.hono.lazyBundle")
+
+/**
+ * Lazy bundle declaration. The bundle's heavy runtime graph is imported only
+ * when a declared route matcher is hit, unless `loadOnBootstrap` asks the app
+ * to load it during request/headless bootstrap. `name` and `anonymous` remain
+ * eager metadata so duplicate checks and auth allow-lists stay fail-closed.
+ */
+export interface LazyHonoBundle {
+  readonly [LAZY_HONO_BUNDLE]: true
+  /** Unique bundle identifier matching the loaded bundle's `name`. */
+  name: string
+  /** Optional version tag for diagnostics. */
+  version?: string
+  /**
+   * Absolute unauthenticated paths contributed by the eventual bundle. Declare
+   * webhook/callback paths here so the first matching request can pass auth
+   * before the bundle has been imported.
+   */
+  anonymous?: string[]
+  /**
+   * Absolute route matchers the eventual bundle may serve. Required for lazy
+   * bundles that contribute HTTP routes because Hono routes must be registered
+   * before the first request builds the matcher.
+   */
+  routes?: readonly string[]
+  /**
+   * Module names whose lazy-loaded routes must receive a transaction-capable DB
+   * client. This is eager metadata so the first matching request is routed to
+   * `dbTransactional` before the bundle implementation is imported.
+   */
+  transactionalModules?: readonly string[]
+  /**
+   * Absolute API path prefixes whose lazy-loaded routes must receive the
+   * transaction-capable DB client. Use this when only a subset of the lazy
+   * bundle's explicit `routes` require transactions.
+   */
+  transactionalPaths?: readonly string[]
+  /**
+   * Load this bundle during app bootstrap instead of waiting for a declared
+   * route matcher. Set this for lazy bundles that contribute subscribers,
+   * workflow metadata, container services, or bootstraps needed before a
+   * bundle-owned route is hit.
+   */
+  loadOnBootstrap?: boolean
+  /** Loads and constructs the real bundle. Memoized by `mountApp`. */
+  load: () => Promise<HonoBundle>
+}
+
+export type HonoBundleInput = HonoBundle | LazyHonoBundle
+
 /**
  * Identity helper — returns the bundle unchanged, purely for IDE inference.
  */
 export function defineHonoBundle<P extends HonoBundle>(bundle: P): P {
   return bundle
+}
+
+export function defineLazyHonoBundle<P extends Omit<LazyHonoBundle, typeof LAZY_HONO_BUNDLE>>(
+  bundle: P,
+): P & LazyHonoBundle {
+  return { ...bundle, [LAZY_HONO_BUNDLE]: true } as P & LazyHonoBundle
+}
+
+export function isLazyHonoBundle(bundle: HonoBundleInput): bundle is LazyHonoBundle {
+  return (bundle as LazyHonoBundle)[LAZY_HONO_BUNDLE] === true
 }
 
 /** @deprecated Prefer {@link defineHonoBundle}. */

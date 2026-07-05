@@ -47,7 +47,13 @@ import { securityHeaders } from "./middleware/security-headers.js"
 import { resolveSurfaceMountPath } from "./mount-paths.js"
 import { noopReporter, safeCaptureException } from "./observability/reporter.js"
 import { getRequestId } from "./observability/request-context.js"
-import { expandHonoPlugins } from "./plugin.js"
+import {
+  type ExpandedHonoBundles,
+  expandHonoBundles,
+  type HonoBundle,
+  isLazyHonoBundle,
+  type LazyHonoBundle,
+} from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
 
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
@@ -57,6 +63,9 @@ type MountEnv<TBindings extends VoyantBindings> = {
   Bindings: TBindings
   Variables: VoyantVariables
 }
+
+// biome-ignore lint/suspicious/noExplicitAny: route helpers accept composed sub-apps with arbitrary Hono env generics -- owner: hono runtime.
+type AnyHono = Hono<any, any, any>
 
 function resolveConfiguredRateLimitStore<TBindings extends VoyantBindings>(
   config: RateLimitConfig | undefined,
@@ -182,8 +191,22 @@ export function mountApp<TBindings extends VoyantBindings>(
   const appName = config.appName ?? "voyant"
   app.onError((err, c) => handleApiError(err, c, { reporter, appName }))
 
-  // Expand plugins into their constituent modules/extensions before mounting
-  const expanded = config.plugins ? expandHonoPlugins(config.plugins) : null
+  const pluginInputs = config.plugins ?? []
+  const eagerPlugins: HonoBundle[] = []
+  const lazyPlugins: LazyHonoBundle[] = []
+  const pluginNames = new Set<string>()
+  for (const plugin of pluginInputs) {
+    if (pluginNames.has(plugin.name)) {
+      throw new Error(`Duplicate bundle name: "${plugin.name}"`)
+    }
+    pluginNames.add(plugin.name)
+    if (isLazyHonoBundle(plugin)) lazyPlugins.push(plugin)
+    else eagerPlugins.push(plugin)
+  }
+
+  // Expand eager plugins into their constituent modules/extensions before
+  // mounting. Lazy plugins keep only their static metadata in the eager closure.
+  const expanded = eagerPlugins.length > 0 ? expandHonoBundles(eagerPlugins) : null
   const allModules = [...(config.modules ?? []), ...(expanded?.modules ?? [])]
   const allExtensions = [...(config.extensions ?? []), ...(expanded?.extensions ?? [])]
   // Anonymous-access allow-list (ADR-0008): assembled from module/extension
@@ -194,6 +217,7 @@ export function mountApp<TBindings extends VoyantBindings>(
   const anonymousPaths = assembleAnonymousPaths(allModules, allExtensions, [
     ...(config.publicPaths ?? []),
     ...(expanded?.anonymousPaths ?? []),
+    ...lazyPlugins.flatMap((plugin) => plugin.anonymous ?? []),
   ])
   // When the framework owns the bus, route subscriber-dispatch failures
   // (including the workflow forwarder) to the reporter — they're otherwise
@@ -237,18 +261,20 @@ export function mountApp<TBindings extends VoyantBindings>(
   // runtime is fail-closed).
   const collectedWorkflows: WorkflowDescriptor[] = []
   const collectedFilters: EventFilterDescriptor[] = []
-  for (const mod of allModules) {
-    if (mod.module.workflows) collectedWorkflows.push(...mod.module.workflows)
-    if (mod.module.eventFilters) collectedFilters.push(...mod.module.eventFilters)
+  function collectModuleRuntimeDescriptors(modules: readonly (typeof allModules)[number][]) {
+    for (const mod of modules) {
+      if (mod.module.workflows) collectedWorkflows.push(...mod.module.workflows)
+      if (mod.module.eventFilters) collectedFilters.push(...mod.module.eventFilters)
+    }
   }
-  for (const plugin of config.plugins ?? []) {
-    if (plugin.workflows) collectedWorkflows.push(...plugin.workflows)
-    if (plugin.eventFilters) collectedFilters.push(...plugin.eventFilters)
+  function collectPluginRuntimeDescriptors(plugins: readonly HonoBundle[]) {
+    for (const plugin of plugins) {
+      if (plugin.workflows) collectedWorkflows.push(...plugin.workflows)
+      if (plugin.eventFilters) collectedFilters.push(...plugin.eventFilters)
+    }
   }
-  // Validate duplicate workflow ids across modules + plugins. Same id from
-  // re-imports (HMR / shared bundles) is fine because identity is by id —
-  // we only flag genuinely-different definitions sharing an id.
-  if (config.workflows && collectedWorkflows.length > 0) {
+  function assertUniqueWorkflowIds() {
+    if (!config.workflows || collectedWorkflows.length === 0) return
     const seen = new Map<string, WorkflowDescriptor>()
     for (const wf of collectedWorkflows) {
       const existing = seen.get(wf.id)
@@ -263,6 +289,128 @@ export function mountApp<TBindings extends VoyantBindings>(
     }
   }
 
+  collectModuleRuntimeDescriptors(allModules)
+  collectPluginRuntimeDescriptors(eagerPlugins)
+  assertUniqueWorkflowIds()
+
+  const txModuleNames = new Set<string>()
+  const txRequiringModules: string[] = []
+  const txPrefixes: string[] = [...(config.dbTransactionalPaths ?? [])]
+
+  function addTransactionalModuleName(name: string) {
+    if (txModuleNames.has(name)) return
+    txModuleNames.add(name)
+    txRequiringModules.push(name)
+    // `/v1/public/<name>` is added unconditionally (not only when the module
+    // mounts publicRoutes): other modules mounted at the public root can serve
+    // paths under a flagged module's segment.
+    txPrefixes.push(`/v1/admin/${name}`, `/v1/${name}`, `/v1/public/${name}`)
+  }
+
+  function addTransactionalSurfaces(
+    modules: readonly (typeof allModules)[number][],
+    extensions: readonly (typeof allExtensions)[number][],
+  ) {
+    for (const mod of modules) {
+      if (mod.module.requiresTransactionalDb) addTransactionalModuleName(mod.module.name)
+    }
+    for (const ext of extensions) {
+      if (ext.extension.requiresTransactionalDb) addTransactionalModuleName(ext.extension.module)
+    }
+    for (const mod of modules) {
+      if (txModuleNames.has(mod.module.name) && mod.publicRoutes) {
+        txPrefixes.push(resolveSurfaceMountPath("/v1/public", mod.publicPath, mod.module.name))
+      }
+      if (mod.transactionalPaths) txPrefixes.push(...mod.transactionalPaths)
+    }
+    for (const ext of extensions) {
+      if (txModuleNames.has(ext.extension.module) && ext.publicRoutes) {
+        txPrefixes.push(resolveSurfaceMountPath("/v1/public", ext.publicPath, ext.extension.module))
+      }
+      if (ext.transactionalPaths) txPrefixes.push(...ext.transactionalPaths)
+    }
+  }
+
+  addTransactionalSurfaces(allModules, allExtensions)
+  for (const plugin of lazyPlugins) {
+    for (const moduleName of plugin.transactionalModules ?? []) {
+      addTransactionalModuleName(moduleName)
+    }
+    if (plugin.transactionalPaths) txPrefixes.push(...plugin.transactionalPaths)
+  }
+
+  const loadedLazyBundles = new Map<string, HonoBundle>()
+  const lazyBundlePromises = new Map<string, Promise<HonoBundle>>()
+  let lazyPluginExpansionPromise: Promise<void> | undefined
+  const expandedLazyBundleNames = new Set<string>()
+
+  function loadLazyBundle(plugin: LazyHonoBundle): Promise<HonoBundle> {
+    const cached = loadedLazyBundles.get(plugin.name)
+    if (cached) return Promise.resolve(cached)
+    const pending = lazyBundlePromises.get(plugin.name)
+    if (pending) return pending
+
+    const promise = plugin
+      .load()
+      .then((bundle) => {
+        if (bundle.name !== plugin.name) {
+          throw new Error(
+            `Lazy bundle "${plugin.name}" loaded bundle "${bundle.name}". ` +
+              "The metadata name must match the loaded bundle name.",
+          )
+        }
+        loadedLazyBundles.set(plugin.name, bundle)
+        return bundle
+      })
+      .catch((error) => {
+        lazyBundlePromises.delete(plugin.name)
+        throw error
+      })
+    lazyBundlePromises.set(plugin.name, promise)
+    return promise
+  }
+
+  function applyLazyBundleContributions(bundles: readonly HonoBundle[]) {
+    const pending = bundles.filter((bundle) => !expandedLazyBundleNames.has(bundle.name))
+    if (pending.length === 0) return
+    const lazyExpanded = expandHonoBundles(pending)
+    for (const bundle of pending) expandedLazyBundleNames.add(bundle.name)
+    allModules.push(...lazyExpanded.modules)
+    allExtensions.push(...lazyExpanded.extensions)
+    anonymousPaths.push(
+      ...assembleAnonymousPaths(lazyExpanded.modules, lazyExpanded.extensions, [
+        ...lazyExpanded.anonymousPaths,
+      ]),
+    )
+    for (const mod of lazyExpanded.modules) {
+      if (mod.module.service !== undefined) {
+        container.register(mod.module.name, mod.module.service)
+      }
+    }
+    for (const sub of lazyExpanded.subscribers) {
+      eventBus.subscribe(sub.event, sub.handler, { inline: sub.inline ?? false })
+    }
+    collectModuleRuntimeDescriptors(lazyExpanded.modules)
+    collectPluginRuntimeDescriptors(pending)
+    addTransactionalSurfaces(lazyExpanded.modules, lazyExpanded.extensions)
+  }
+
+  async function ensureBootstrapLazyPluginsExpanded() {
+    const bootstrapLazyPlugins = lazyPlugins.filter((plugin) => plugin.loadOnBootstrap)
+    if (bootstrapLazyPlugins.length === 0) return
+    if (!lazyPluginExpansionPromise) {
+      lazyPluginExpansionPromise = Promise.all(bootstrapLazyPlugins.map(loadLazyBundle))
+        .then((bundles) => {
+          applyLazyBundleContributions(bundles)
+        })
+        .catch((error) => {
+          lazyPluginExpansionPromise = undefined
+          throw error
+        })
+    }
+    await lazyPluginExpansionPromise
+  }
+
   // Workflow driver construction is **deferred** to the lazy bootstrap
   // path so callers whose driver options come from `env.*` bindings can
   // pass a function-of-bindings shape. Node / InMemory users usually
@@ -274,6 +422,8 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (!bootstrapPromise) {
       bootstrapPromise = (async () => {
         const ctx = { bindings, container, eventBus }
+        await ensureBootstrapLazyPluginsExpanded()
+        assertUniqueWorkflowIds()
 
         // ---- Workflow runtime FIRST — fail-closed manifest registration
         //      and EventBus forwarder must be in place before any module
@@ -326,7 +476,12 @@ export function mountApp<TBindings extends VoyantBindings>(
           }
         }
 
-        for (const plugin of config.plugins ?? []) {
+        for (const plugin of [
+          ...eagerPlugins,
+          ...lazyPlugins
+            .filter((p) => p.loadOnBootstrap)
+            .map((p) => loadedLazyBundles.get(p.name)!),
+        ]) {
           await runIsolated(`plugin:${plugin.name}`, plugin.bootstrap)
         }
         for (const mod of allModules) {
@@ -482,48 +637,6 @@ export function mountApp<TBindings extends VoyantBindings>(
     mountAuthForwarding(app, authHandler, { reporter, appName })
   }
 
-  // Transactional surface map: a request must be served by a
-  // transaction-capable db client when its path belongs to (a) a module
-  // declaring `requiresTransactionalDb`, (b) a module targeted by an
-  // extension that declares it (extensions mount under the target
-  // module's prefix — e.g. catalog-authoring's compose routes live under
-  // /v1/admin/products), or (c) a template-supplied extra path
-  // (`dbTransactionalPaths` — for additionalRoutes / adapter-wired flows
-  // like the catalog booking engine whose transactionality depends on
-  // starter wiring).
-  const txModuleNames = new Set<string>(
-    allModules.filter((m) => m.module.requiresTransactionalDb).map((m) => m.module.name),
-  )
-  for (const ext of allExtensions) {
-    if (ext.extension.requiresTransactionalDb) txModuleNames.add(ext.extension.module)
-  }
-  const txRequiringModules = [...txModuleNames]
-  const txPrefixes: string[] = [...(config.dbTransactionalPaths ?? [])]
-  for (const name of txModuleNames) {
-    // `/v1/public/<name>` is added unconditionally (not only when the
-    // module mounts publicRoutes): other modules mounted at the public
-    // root can serve paths under a flagged module's segment — e.g.
-    // storefront (publicPath "/") handles
-    // /v1/public/bookings/sessions/bootstrap, which reaches
-    // bookings' transactional reserve flow.
-    txPrefixes.push(`/v1/admin/${name}`, `/v1/${name}`, `/v1/public/${name}`)
-  }
-  for (const mod of allModules) {
-    if (txModuleNames.has(mod.module.name) && mod.publicRoutes) {
-      txPrefixes.push(resolveSurfaceMountPath("/v1/public", mod.publicPath, mod.module.name))
-    }
-    // Absolute transactional prefixes for routes mounted outside the name-based
-    // surface (e.g. a lazy family at `/v1/admin/catalog/quote`), so the
-    // deployment doesn't hand-maintain them in `dbTransactionalPaths` (ADR-0008).
-    if (mod.transactionalPaths) txPrefixes.push(...mod.transactionalPaths)
-  }
-  for (const ext of allExtensions) {
-    if (txModuleNames.has(ext.extension.module) && ext.publicRoutes) {
-      txPrefixes.push(resolveSurfaceMountPath("/v1/public", ext.publicPath, ext.extension.module))
-    }
-    if (ext.transactionalPaths) txPrefixes.push(...ext.transactionalPaths)
-  }
-
   // With a `dbTransactional` factory, requests are routed per surface:
   // transactional prefixes get it, everything else gets the cheap
   // default (typically neon-http — no per-request connection handshake).
@@ -610,6 +723,62 @@ export function mountApp<TBindings extends VoyantBindings>(
     })
   }
 
+  function mountModuleRoutesInto(target: AnyHono, mod: (typeof allModules)[number]) {
+    const moduleName = mod.module.name
+    const adminPrefix = `/v1/admin/${moduleName}`
+    const publicPrefix = resolveSurfaceMountPath("/v1/public", mod.publicPath, moduleName)
+    if (mod.adminRoutes) {
+      target.route(adminPrefix, mod.adminRoutes)
+    }
+    if (mod.publicRoutes) {
+      target.route(publicPrefix, mod.publicRoutes)
+    }
+    if (mod.lazyAdminRoutes) {
+      mountLazyRoutesAt(target, adminPrefix, mod.lazyAdminRoutes)
+    }
+    if (mod.lazyPublicRoutes) {
+      mountLazyRoutesAt(target, publicPrefix, mod.lazyPublicRoutes)
+    }
+    if (mod.lazyRoutes) {
+      mountLazyRoutePaths(target, mod.lazyRoutes.paths, mod.lazyRoutes.load)
+    }
+    if (mod.webhookRoutes) {
+      target.route(`/v1/${moduleName}`, mod.webhookRoutes)
+    }
+  }
+
+  function mountExtensionRoutesInto(target: AnyHono, ext: (typeof allExtensions)[number]) {
+    const moduleName = ext.extension.module
+    const adminPrefix = `/v1/admin/${moduleName}`
+    const publicPrefix = resolveSurfaceMountPath("/v1/public", ext.publicPath, moduleName)
+    if (ext.adminRoutes) {
+      target.route(adminPrefix, ext.adminRoutes)
+    }
+    if (ext.publicRoutes) {
+      target.route(publicPrefix, ext.publicRoutes)
+    }
+    if (ext.lazyAdminRoutes) {
+      mountLazyRoutesAt(target, adminPrefix, ext.lazyAdminRoutes)
+    }
+    if (ext.lazyPublicRoutes) {
+      mountLazyRoutesAt(target, publicPrefix, ext.lazyPublicRoutes)
+    }
+    if (ext.lazyRoutes) {
+      mountLazyRoutePaths(target, ext.lazyRoutes.paths, ext.lazyRoutes.load)
+    }
+    if (ext.webhookRoutes) {
+      target.route(`/v1/${moduleName}`, ext.webhookRoutes)
+    }
+  }
+
+  function buildBundleRouteApp(bundle: HonoBundle): AnyHono {
+    const pluginRoutes = new OpenAPIHono()
+    const bundleExpanded: ExpandedHonoBundles = expandHonoBundles([bundle])
+    for (const mod of bundleExpanded.modules) mountModuleRoutesInto(pluginRoutes, mod)
+    for (const ext of bundleExpanded.extensions) mountExtensionRoutesInto(pluginRoutes, ext)
+    return pluginRoutes
+  }
+
   // Mount module routes
   for (const mod of allModules) {
     const moduleName = mod.module.name
@@ -666,6 +835,15 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (ext.webhookRoutes) {
       app.route(`/v1/${moduleName}`, ext.webhookRoutes)
     }
+  }
+
+  for (const plugin of lazyPlugins) {
+    if (!plugin.routes || plugin.routes.length === 0) continue
+    deferLazyRoutePaths(`plugin:${plugin.name}`, plugin.routes, async () => {
+      const bundle = await loadLazyBundle(plugin)
+      applyLazyBundleContributions([bundle])
+      return buildBundleRouteApp(bundle)
+    })
   }
 
   for (const mountLazyRoutes of deferredLazyRouteMounts) {

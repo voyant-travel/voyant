@@ -1,5 +1,4 @@
-import { buildBookingRouteRuntime, createBookingPiiService } from "@voyant-travel/bookings"
-import { createVoyantDataFxExchangeRateResolver } from "@voyant-travel/finance"
+import type { InvoiceSettlementPoller, ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
 import {
   type CloudWorkflowsClientEnv,
@@ -14,11 +13,7 @@ import {
   readDocumentContentBase64,
   resolveDocumentDownloadUrl,
 } from "../lib/storage"
-import { createSmartbillSettlementPollers } from "../subscribers/smartbill"
-import {
-  generateContractPdfForBooking,
-  resolveContractDocumentGenerator,
-} from "./contract-document-runtime"
+import type { generateContractPdfForBooking as generateContractPdfForBookingImpl } from "./contract-document-runtime"
 
 export function operatorBindings(bindings: unknown): CloudflareBindings {
   return bindings as CloudflareBindings
@@ -51,11 +46,27 @@ export function createOperatorDocumentStorage(bindings: unknown) {
 }
 
 export function resolveOperatorContractDocumentGenerator(bindings: unknown) {
-  return resolveContractDocumentGenerator(operatorBindings(bindings)) ?? undefined
+  const env = operatorBindings(bindings)
+  if (!createDocumentStorage(env)) return undefined
+
+  const generator: NonNullable<
+    ReturnType<typeof import("./contract-document-runtime").resolveContractDocumentGenerator>
+  > = async (context) => {
+    const { resolveContractDocumentGenerator } = await import("./contract-document-runtime")
+    const resolved = resolveContractDocumentGenerator(env)
+    if (!resolved) {
+      throw new Error("Contract document generator is not configured")
+    }
+    return resolved(context)
+  }
+  return generator
 }
 
 export async function createOperatorBookingPiiService(bindings: unknown) {
   const env = operatorBindings(bindings)
+  const { buildBookingRouteRuntime, createBookingPiiService } = await import(
+    "@voyant-travel/bookings"
+  )
   const runtime = buildBookingRouteRuntime(env)
   try {
     return createBookingPiiService({ kms: await runtime.getKmsProvider() })
@@ -68,14 +79,36 @@ export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
   const env = operatorBindings(bindings)
   const apiKey = resolveVoyantDataApiKey(env)
   if (!apiKey) return undefined
-  return createVoyantDataFxExchangeRateResolver({
-    apiKey,
-    baseUrl: env.VOYANT_CLOUD_API_URL,
-  })
+  let resolver: ResolveInvoiceExchangeRate | undefined
+  return async (input: Parameters<ResolveInvoiceExchangeRate>[0]) => {
+    if (!resolver) {
+      const { createVoyantDataFxExchangeRateResolver } = await import("@voyant-travel/finance")
+      resolver = createVoyantDataFxExchangeRateResolver({
+        apiKey,
+        baseUrl: env.VOYANT_CLOUD_API_URL,
+      })
+    }
+    return resolver(input)
+  }
 }
 
 export function createOperatorInvoiceSettlementPollers(bindings: unknown) {
-  return createSmartbillSettlementPollers(operatorBindings(bindings))
+  const env = operatorBindings(bindings)
+  if (!isSmartbillConfigured(env)) return {} as Record<string, InvoiceSettlementPoller>
+
+  let poller: InvoiceSettlementPoller | undefined
+  return {
+    smartbill: async (context: Parameters<InvoiceSettlementPoller>[0]) => {
+      if (!poller) {
+        const { createSmartbillSettlementPollers } = await import("../subscribers/smartbill")
+        poller = createSmartbillSettlementPollers(env).smartbill
+      }
+      if (!poller) {
+        throw new Error("SmartBill settlement poller is not configured")
+      }
+      return poller(context)
+    },
+  }
 }
 
 export function operatorWorkflowCloudEnv(env: CloudflareBindings): CloudWorkflowsClientEnv {
@@ -101,4 +134,23 @@ export function createOperatorWorkflowDriver(bindings: unknown) {
   return createInMemoryDriver()
 }
 
-export { generateContractPdfForBooking }
+export async function generateContractPdfForBooking(
+  ...args: Parameters<typeof generateContractPdfForBookingImpl>
+): ReturnType<typeof generateContractPdfForBookingImpl> {
+  const { generateContractPdfForBooking } = await import("./contract-document-runtime")
+  return generateContractPdfForBooking(...args)
+}
+
+function isSmartbillConfigured(env: CloudflareBindings) {
+  return Boolean(
+    nonEmpty(env.SMARTBILL_USERNAME) &&
+      (nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)) &&
+      nonEmpty(env.SMARTBILL_COMPANY_VAT_CODE) &&
+      (nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME) ?? nonEmpty(env.SMARTBILL_SERIES_NAME)),
+  )
+}
+
+function nonEmpty(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}

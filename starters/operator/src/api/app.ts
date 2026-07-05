@@ -1,6 +1,6 @@
 import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { createVoyantApp } from "@voyant-travel/framework"
-import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
+import { defineLazyHonoBundle } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
@@ -13,7 +13,6 @@ import {
   deploymentLocalExtensions,
   deploymentLocalModules,
 } from "./composition"
-import { createBulkReindexProductsService } from "./lib/bulk-reindex-service"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
@@ -23,9 +22,9 @@ import {
   generateContractPdfForBooking,
 } from "./runtime/operator-runtime-adapter"
 import { tripsPaymentBundle } from "./runtime/trips-runtime"
-import { catalogBridgeBundle } from "./subscribers/catalog-bridge"
+import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
 import { createCatalogCheckoutBundle } from "./subscribers/catalog-checkout-finalize-runtime"
-import { smartbillOperatorBundle } from "./subscribers/smartbill"
+import { smartbillOperatorBundle } from "./subscribers/smartbill-bundle"
 
 /**
  * Process-wide registry of workflow runners. Bundles register their
@@ -100,7 +99,8 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
   plugins: [
     {
       name: "operator-promotions-runtime",
-      bootstrap: ({ bindings, container }) => {
+      bootstrap: async ({ bindings, container }) => {
+        const { createBulkReindexProductsService } = await import("./lib/bulk-reindex-service")
         container.register(
           BULK_REINDEX_SERVICE_KEY,
           createBulkReindexProductsService(bindings as CloudflareBindings),
@@ -120,7 +120,13 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
     tripsPaymentBundle,
     smartbillOperatorBundle,
     channelPushBundle,
-    netopiaHonoBundle(),
+    defineLazyHonoBundle({
+      name: "netopia",
+      routes: ["/v1/admin/finance/providers/netopia/*", "/v1/finance/providers/netopia/callback"],
+      anonymous: ["/v1/finance/providers/netopia/callback"],
+      transactionalModules: ["finance"],
+      load: async () => import("@voyant-travel/plugin-netopia").then((m) => m.netopiaHonoBundle()),
+    }),
   ],
   auth: {
     handler: () => ({

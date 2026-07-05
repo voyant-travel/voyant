@@ -139,6 +139,11 @@ const extrasHonoModule = {
   adminRoutes: extrasCombinedRoutes,
 } satisfies HonoModule
 
+type FrameworkRelationshipsService = Pick<
+  typeof relationshipsService,
+  "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
+>
+
 // Stable absolute route matchers for the lazy `operator/*` standard families
 // (Tier 4). The framework owns the URL contract; the deployment injects only
 // the `load` closure that wires its providers into the route bundle.
@@ -283,7 +288,7 @@ function toCheckoutReminderRun(run: NotificationReminderRunLike): CheckoutRemind
  */
 export interface FrameworkProviders {
   /** Relationships service — bookings reads person/snapshot helpers off it. */
-  relationshipsService: typeof relationshipsService
+  relationshipsService: FrameworkRelationshipsService
   /** Closes a booking's terminal payment schedules (bookings module option). */
   closePaymentSchedulesForBooking: NonNullable<
     BookingsHonoModuleOptions["closePaymentSchedulesForBooking"]

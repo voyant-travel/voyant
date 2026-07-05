@@ -32,8 +32,13 @@ import type { Hono } from "hono"
 // biome-ignore lint/suspicious/noExplicitAny: lazy sub-apps keep route-specific Hono env generics -- owner: framework composition.
 type AnyHono = Hono<any>
 
+type FrameworkRelationshipsService = Pick<
+  typeof relationshipsService,
+  "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
+>
+
 export interface FrameworkProviders {
-  relationshipsService: typeof relationshipsService
+  relationshipsService: FrameworkRelationshipsService
   closePaymentSchedulesForBooking: NonNullable<
     BookingsHonoModuleOptions["closePaymentSchedulesForBooking"]
   >
