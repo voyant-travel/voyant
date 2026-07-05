@@ -88,7 +88,10 @@ export interface TripsRoutesOptions {
   sourceCandidatesDeps?: TripsRouteDeps<SourceRequirementCandidatesDeps>
 }
 
-export type TripsRouteDeps<T> = T | ((c: Context<Env>) => T | undefined)
+export type TripsRouteDeps<T> = T | ((c: Context<Env>) => T | Promise<T | undefined> | undefined)
+export type TripsRoutesOptionsProvider = () => TripsRoutesOptions | Promise<TripsRoutesOptions>
+export type TripsRoutesOptionsInput = TripsRoutesOptions | TripsRoutesOptionsProvider
+type ResolveTripsRoutesOptions = () => Promise<TripsRoutesOptions>
 
 const priceTripBodySchema = priceTripSchema.omit({ envelopeId: true })
 const createTripSnapshotBodySchema = createTripSnapshotSchema.omit({ envelopeId: true })
@@ -318,10 +321,41 @@ function isInternalErrorMessage(message: string): boolean {
   )
 }
 
-function resolveRouteDeps<T>(c: Context<Env>, deps: TripsRouteDeps<T> | undefined) {
+function createTripsRoutesOptionsResolver(
+  options: TripsRoutesOptionsInput = {},
+): ResolveTripsRoutesOptions {
+  if (typeof options !== "function") return () => Promise.resolve(options)
+
+  const provider = options
+  let optionsPromise: Promise<TripsRoutesOptions> | undefined
+  return () => {
+    optionsPromise ??= Promise.resolve()
+      .then(provider)
+      .catch((error) => {
+        optionsPromise = undefined
+        throw error
+      })
+    return optionsPromise
+  }
+}
+
+async function resolveRouteDeps<T>(c: Context<Env>, deps: TripsRouteDeps<T> | undefined) {
   if (typeof deps !== "function") return deps
-  const resolver = deps as (c: Context<Env>) => T | undefined
+  const resolver = deps as (c: Context<Env>) => T | Promise<T | undefined> | undefined
   return resolver(c)
+}
+
+async function isPublicRouteSurface(readOptions: ResolveTripsRoutesOptions): Promise<boolean> {
+  return isPublicSurface(await readOptions())
+}
+
+async function resolveConfiguredRouteDeps<T>(
+  c: Context<Env>,
+  readOptions: ResolveTripsRoutesOptions,
+  select: (options: TripsRoutesOptions) => TripsRouteDeps<T> | undefined,
+) {
+  const options = await readOptions()
+  return resolveRouteDeps(c, select(options))
 }
 
 const envelopeIdParamSchema = z.object({ envelopeId: z.string() })
@@ -1113,7 +1147,7 @@ const cancelComponentsRoute = createRoute({
 // each child's `.openapi()` registry definitions into the parent spec while
 // keeping per-chain type-inference cost bounded. See voyant#2114 / voyant#2208.
 
-function createEnvelopeRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+function createEnvelopeRoutes(readOptions: ResolveTripsRoutesOptions): OpenAPIHono<Env> {
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(listTripsRoute, async (c) =>
       c.json(await tripsService.listTrips(c.get("db"), c.req.valid("query")), 200),
@@ -1133,7 +1167,7 @@ function createEnvelopeRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       return c.json({ data: trip }, 200)
     })
     .openapi(updateTripRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const envelope = await tripsService.updateTrip(
           c.get("db"),
@@ -1148,8 +1182,12 @@ function createEnvelopeRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(reshopTripRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
-      const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
+      const deps = await resolveConfiguredRouteDeps(
+        c,
+        readOptions,
+        (options) => options.sourceCandidatesDeps,
+      )
       if (!deps) {
         return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
       }
@@ -1167,10 +1205,10 @@ function createEnvelopeRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
     })
 }
 
-function createSnapshotRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+function createSnapshotRoutes(readOptions: ResolveTripsRoutesOptions): OpenAPIHono<Env> {
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(listSnapshotsRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       return c.json(
         {
           data: await tripsService.listTripSnapshots(c.get("db"), c.req.valid("param").envelopeId),
@@ -1179,7 +1217,7 @@ function createSnapshotRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       )
     })
     .openapi(createSnapshotRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const snapshot = await tripsService.freezeTripSnapshot(c.get("db"), {
           ...c.req.valid("json"),
@@ -1192,7 +1230,7 @@ function createSnapshotRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(getSnapshotRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       const snapshot = await tripsService.getTripSnapshotById(
         c.get("db"),
         c.req.valid("param").snapshotId,
@@ -1202,7 +1240,7 @@ function createSnapshotRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
     })
 }
 
-function createComponentRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+function createComponentRoutes(readOptions: ResolveTripsRoutesOptions): OpenAPIHono<Env> {
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(addComponentRoute, async (c) => {
       try {
@@ -1217,7 +1255,7 @@ function createComponentRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(reorderComponentsRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const components = await tripsService.reorderComponents(c.get("db"), {
           ...c.req.valid("json"),
@@ -1230,7 +1268,7 @@ function createComponentRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(updateComponentRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const component = await tripsService.updateComponent(
           c.get("db"),
@@ -1245,7 +1283,7 @@ function createComponentRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(updateComponentRefsRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const component = await tripsService.updateComponentRefs(
           c.get("db"),
@@ -1260,7 +1298,7 @@ function createComponentRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(deleteComponentRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const component = await tripsService.removeComponent(
           c.get("db"),
@@ -1275,10 +1313,10 @@ function createComponentRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
     })
 }
 
-function createRequirementRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+function createRequirementRoutes(readOptions: ResolveTripsRoutesOptions): OpenAPIHono<Env> {
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(addRequirementRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const requirement = await tripsService.addRequirement(c.get("db"), {
           ...c.req.valid("json"),
@@ -1291,7 +1329,7 @@ function createRequirementRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> 
       }
     })
     .openapi(listRequirementsRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const data = await tripsService.listEnvelopeRequirements(
           c.get("db"),
@@ -1304,8 +1342,12 @@ function createRequirementRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> 
       }
     })
     .openapi(sourceCandidatesRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
-      const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
+      const deps = await resolveConfiguredRouteDeps(
+        c,
+        readOptions,
+        (options) => options.sourceCandidatesDeps,
+      )
       if (!deps) {
         return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
       }
@@ -1322,7 +1364,7 @@ function createRequirementRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> 
       }
     })
     .openapi(selectCandidateRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
         const result = await tripsService.selectCandidate(c.get("db"), {
           ...c.req.valid("json"),
@@ -1335,8 +1377,12 @@ function createRequirementRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> 
       }
     })
     .openapi(reshopRequirementRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
-      const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
+      const deps = await resolveConfiguredRouteDeps(
+        c,
+        readOptions,
+        (options) => options.sourceCandidatesDeps,
+      )
       if (!deps) {
         return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
       }
@@ -1354,10 +1400,14 @@ function createRequirementRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> 
     })
 }
 
-function createLifecycleRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+function createLifecycleRoutes(readOptions: ResolveTripsRoutesOptions): OpenAPIHono<Env> {
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(priceTripRoute, async (c) => {
-      const deps = resolveRouteDeps(c, options.priceTripDeps)
+      const deps = await resolveConfiguredRouteDeps(
+        c,
+        readOptions,
+        (options) => options.priceTripDeps,
+      )
       if (!deps) {
         return c.json({ error: "Trips price dependencies are not configured" }, 501)
       }
@@ -1374,7 +1424,11 @@ function createLifecycleRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(reserveTripRoute, async (c) => {
-      const deps = resolveRouteDeps(c, options.reserveTripDeps)
+      const deps = await resolveConfiguredRouteDeps(
+        c,
+        readOptions,
+        (options) => options.reserveTripDeps,
+      )
       if (!deps) {
         return c.json({ error: "Trips reserve dependencies are not configured" }, 501)
       }
@@ -1394,7 +1448,11 @@ function createLifecycleRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(checkoutTripRoute, async (c) => {
-      const deps = resolveRouteDeps(c, options.startCheckoutDeps)
+      const deps = await resolveConfiguredRouteDeps(
+        c,
+        readOptions,
+        (options) => options.startCheckoutDeps,
+      )
       if (!deps) {
         return c.json({ error: "Trips checkout dependencies are not configured" }, 501)
       }
@@ -1411,9 +1469,13 @@ function createLifecycleRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(cancellationPreviewRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
-        const deps = resolveRouteDeps(c, options.cancelTripComponentsDeps)
+        const deps = await resolveConfiguredRouteDeps(
+          c,
+          readOptions,
+          (options) => options.cancelTripComponentsDeps,
+        )
         const result = await tripsService.previewCancellation(
           c.get("db"),
           { ...c.req.valid("json"), envelopeId: c.req.valid("param").envelopeId },
@@ -1426,9 +1488,13 @@ function createLifecycleRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
       }
     })
     .openapi(cancelComponentsRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
+      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
       try {
-        const deps = resolveRouteDeps(c, options.cancelTripComponentsDeps)
+        const deps = await resolveConfiguredRouteDeps(
+          c,
+          readOptions,
+          (options) => options.cancelTripComponentsDeps,
+        )
         const result = await tripsService.cancelComponents(
           c.get("db"),
           { ...c.req.valid("json"), envelopeId: c.req.valid("param").envelopeId },
@@ -1448,14 +1514,15 @@ function createHealthRoutes(): OpenAPIHono<Env> {
   )
 }
 
-export function createTripsRoutes(options: TripsRoutesOptions = {}): OpenAPIHono<Env> {
+export function createTripsRoutes(options: TripsRoutesOptionsInput = {}): OpenAPIHono<Env> {
+  const readOptions = createTripsRoutesOptionsResolver(options)
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .route("/", createHealthRoutes())
-    .route("/", createEnvelopeRoutes(options))
-    .route("/", createSnapshotRoutes(options))
-    .route("/", createComponentRoutes(options))
-    .route("/", createRequirementRoutes(options))
-    .route("/", createLifecycleRoutes(options))
+    .route("/", createEnvelopeRoutes(readOptions))
+    .route("/", createSnapshotRoutes(readOptions))
+    .route("/", createComponentRoutes(readOptions))
+    .route("/", createRequirementRoutes(readOptions))
+    .route("/", createLifecycleRoutes(readOptions))
 }
 
 export const tripsRoutes = createTripsRoutes()

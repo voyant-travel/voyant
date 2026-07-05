@@ -112,6 +112,55 @@ describe("trips routes", () => {
     expect(reshop.status).toBe(501)
   })
 
+  it("resolves lazy route options only when an injected dependency is needed", async () => {
+    vi.spyOn(tripsService, "reserveTrip")
+      .mockResolvedValueOnce({
+        envelope: { id: "trip_123", status: "reserved" },
+        components: [],
+        reservationPlanId: "trpl_1",
+        reserved: [],
+        failures: [],
+        compensations: [],
+        warnings: [],
+      } as never)
+      .mockResolvedValueOnce({
+        envelope: { id: "trip_123", status: "reserved" },
+        components: [],
+        reservationPlanId: "trpl_1",
+        reserved: [],
+        failures: [],
+        compensations: [],
+        warnings: [],
+      } as never)
+    const submitReservationPlan = vi.fn()
+    const routeOptions = vi.fn(async () => ({
+      reserveTripDeps: { submitReservationPlan },
+    }))
+    const app = appWithDb(createTripsRoutes(routeOptions))
+
+    expect(routeOptions).not.toHaveBeenCalled()
+
+    const health = await app.request("/health")
+    expect(health.status).toBe(200)
+    expect(routeOptions).not.toHaveBeenCalled()
+
+    const firstReserve = await app.request("/trip_123/reserve", {
+      method: "POST",
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json" },
+    })
+    expect(firstReserve.status).toBe(200)
+    expect(routeOptions).toHaveBeenCalledTimes(1)
+
+    const secondReserve = await app.request("/trip_123/reserve", {
+      method: "POST",
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json" },
+    })
+    expect(secondReserve.status).toBe(200)
+    expect(routeOptions).toHaveBeenCalledTimes(1)
+  })
+
   it("returns a conflict response when reserve produces component failures", async () => {
     vi.spyOn(tripsService, "reserveTrip").mockResolvedValueOnce({
       envelope: { id: "trip_123", status: "failed" },

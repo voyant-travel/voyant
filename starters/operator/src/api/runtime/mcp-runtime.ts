@@ -225,20 +225,23 @@ function createTripsToolServices(c: Context): TripsToolServices {
     createTrip: (input) => tripsService.createTrip(c.var.db, input),
     addComponent: (input) => tripsService.addComponent(c.var.db, input),
     removeComponent: (componentId) => tripsService.removeComponent(c.var.db, componentId),
-    priceTrip: (input) => {
-      const deps = resolveDeps(c, options.priceTripDeps)
+    priceTrip: async (input) => {
+      const deps = await resolveDeps(c, options.priceTripDeps)
       if (!deps) throw new Error("Trips price dependencies are not configured")
       return tripsService.priceTrip(c.var.db, input, deps)
     },
-    reserveTrip: (input) => {
-      const deps = resolveDeps(c, options.reserveTripDeps)
+    reserveTrip: async (input) => {
+      const deps = await resolveDeps(c, options.reserveTripDeps)
       if (!deps) throw new Error("Trips reserve dependencies are not configured")
       return tripsService.reserveTrip(c.var.db, input, deps)
     },
   }
 }
 
-function resolveDeps<T>(c: Context, deps: T | ((c: Context) => T | undefined) | undefined) {
+function resolveDeps<T>(
+  c: Context,
+  deps: T | ((c: Context) => T | Promise<T | undefined> | undefined) | undefined,
+) {
   if (typeof deps !== "function") return deps
-  return (deps as (c: Context) => T | undefined)(c)
+  return (deps as (c: Context) => T | Promise<T | undefined> | undefined)(c)
 }

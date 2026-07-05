@@ -26,7 +26,7 @@ import type { CreateNotificationsHonoModuleOptions } from "@voyant-travel/notifi
 import type { relationshipsService } from "@voyant-travel/relationships"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import type { StorefrontVerificationRoutesOptions } from "@voyant-travel/storefront/verification"
-import type { TripsRoutesOptions } from "@voyant-travel/trips"
+import type { TripsRoutesOptionsProvider } from "@voyant-travel/trips"
 import type { Hono } from "hono"
 
 // biome-ignore lint/suspicious/noExplicitAny: lazy sub-apps keep route-specific Hono env generics -- owner: framework composition.
@@ -46,7 +46,7 @@ export interface FrameworkProviders {
   customFields?: BookingsHonoModuleOptions["customFields"]
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) => Promise<string | null>
   resolveNotificationProviders: NonNullable<StorefrontVerificationRoutesOptions["resolveProviders"]>
-  createTripsRoutesOptions: () => TripsRoutesOptions
+  createTripsRoutesOptions: TripsRoutesOptionsProvider
   resolveDb: NonNullable<CreateLegalHonoModuleOptions["resolveDb"]>
   createOperatorDocumentStorage: NonNullable<CreateLegalHonoModuleOptions["resolveDocumentStorage"]>
   resolveContractDocumentGenerator: NonNullable<
@@ -733,7 +733,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       const unit = createLazyUnit(() =>
         import("@voyant-travel/trips").then((m) => {
           const trips = m.createTripsHonoModule({
-            ...capabilities.createTripsRoutesOptions(),
+            routesOptions: capabilities.createTripsRoutesOptions,
             publicRoutes: true,
           })
           return { ...trips, module: { ...trips.module, requiresTransactionalDb: true } }

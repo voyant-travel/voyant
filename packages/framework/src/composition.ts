@@ -118,7 +118,7 @@ import {
   createStorefrontVerificationHonoModule,
   type StorefrontVerificationRoutesOptions,
 } from "@voyant-travel/storefront/verification"
-import { createTripsHonoModule, type TripsRoutesOptions } from "@voyant-travel/trips"
+import { createTripsHonoModule, type TripsRoutesOptionsProvider } from "@voyant-travel/trips"
 
 /**
  * Combined "extras" surface — inventory + bookings package extras routes mounted
@@ -305,8 +305,8 @@ export interface FrameworkProviders {
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) => Promise<string | null>
   /** Resolves the notification providers for the verification challenge. */
   resolveNotificationProviders: NonNullable<StorefrontVerificationRoutesOptions["resolveProviders"]>
-  /** Deployment-built trips route options (connector, payment wiring, …). */
-  createTripsRoutesOptions: () => TripsRoutesOptions
+  /** Deployment-built trips route options (connector, payment wiring, ...). */
+  createTripsRoutesOptions: TripsRoutesOptionsProvider
   /** Out-of-request db handle for legal's booking.confirmed subscriber. */
   resolveDb: NonNullable<CreateLegalHonoModuleOptions["resolveDb"]>
   /** Per-request document storage backend (legal contract documents). */
@@ -676,7 +676,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       // (admin/public/legacy) needs the transactional client, so the whole
       // module is name-based transactional (ADR-0008); no deployment path list.
       const trips = createTripsHonoModule({
-        ...capabilities.createTripsRoutesOptions(),
+        routesOptions: capabilities.createTripsRoutesOptions,
         publicRoutes: true,
       })
       return { ...trips, module: { ...trips.module, requiresTransactionalDb: true } }
