@@ -1,0 +1,72 @@
+import { describe, expect, it } from "vitest"
+
+import { bookingDraftV1, travelerEntryV1 } from "./draft-contracts.js"
+
+const ENTITY = {
+  module: "products",
+  id: "prod_1",
+  sourceKind: "owned",
+}
+
+describe("booking draft contracts", () => {
+  it("rejects malformed billing contact emails", () => {
+    const parsed = bookingDraftV1.safeParse({
+      entity: ENTITY,
+      billing: {
+        contact: {
+          firstName: "Test",
+          lastName: "Traveler",
+          email: "not-an-email",
+        },
+      },
+    })
+
+    expect(parsed.success).toBe(false)
+  })
+
+  it("accepts empty or syntactically valid draft contact emails", () => {
+    expect(
+      bookingDraftV1.safeParse({
+        entity: ENTITY,
+        billing: {
+          contact: {
+            firstName: "Test",
+            lastName: "Traveler",
+            email: "",
+          },
+        },
+      }).success,
+    ).toBe(true)
+
+    expect(
+      bookingDraftV1.safeParse({
+        entity: ENTITY,
+        billing: {
+          contact: {
+            firstName: "Test",
+            lastName: "Traveler",
+            email: "test@example.com",
+          },
+        },
+      }).success,
+    ).toBe(true)
+  })
+
+  it("accepts empty traveler emails but rejects malformed values", () => {
+    expect(
+      travelerEntryV1.safeParse({
+        firstName: "Test",
+        lastName: "Traveler",
+        email: "",
+      }).success,
+    ).toBe(true)
+
+    expect(
+      travelerEntryV1.safeParse({
+        firstName: "Test",
+        lastName: "Traveler",
+        email: "not-an-email",
+      }).success,
+    ).toBe(false)
+  })
+})

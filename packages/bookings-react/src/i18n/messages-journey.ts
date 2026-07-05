@@ -46,6 +46,7 @@ export type BookingsUiJourneyMessages = {
       dependencyExcludes: string
       dependencyLimitPerMaster: string
       dependencyLimitSum: string
+      invalidEmail: string
     }
     warnings: {
       phoneMissing: string

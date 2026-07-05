@@ -5,6 +5,8 @@ import { z } from "zod"
 export const paxBandCodeSchema = z.enum(["adult", "child", "infant", "senior", "student", "other"])
 export type PaxBandCode = z.infer<typeof paxBandCodeSchema>
 
+const optionalEmailStringV1 = z.union([z.literal(""), z.email()])
+
 export const travelerEntryV1 = z.object({
   /** Stable client-side row id — the wizard uses it to keep
    *  travelers stable across re-renders and to attach passengers
@@ -12,7 +14,7 @@ export const travelerEntryV1 = z.object({
   rowId: z.string().min(1).optional(),
   firstName: z.string().min(1).max(255),
   lastName: z.string().min(1).max(255),
-  email: z.string().email().optional(),
+  email: optionalEmailStringV1.optional(),
   phone: z.string().max(50).optional(),
   /** Linked CRM person, when the traveler was picked from (or copied as)
    *  an existing contact. Lets the picker reflect the selection and the
@@ -342,7 +344,7 @@ export const bookingDraftV1 = z.object({
       contact: z.object({
         firstName: z.string().default(""),
         lastName: z.string().default(""),
-        email: z.string().default(""),
+        email: optionalEmailStringV1.default(""),
         phone: z.string().optional(),
         /** CRM person id when the lead was picked from CRM (vs typed). */
         personId: z.string().optional(),

@@ -49,6 +49,7 @@ export const bookingsUiRoJourney = {
       dependencyExcludes: "{dependent} nu poate fi combinat cu {master}.",
       dependencyLimitPerMaster: "Maximum {limit} {dependent} per {master}.",
       dependencyLimitSum: "Maximum {limit} {dependent} permis.",
+      invalidEmail: "Introdu o adresa de email valida.",
     },
     warnings: {
       phoneMissing: "Numarul de telefon lipseste - util pentru contact furnizor in ultimul moment.",

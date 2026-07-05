@@ -14,6 +14,7 @@ import {
   setTravelers,
   totalPax,
 } from "../../lib/draft-state.js"
+import { isValidOptionalEmail } from "../../lib/email-validation.js"
 import type { TravelerContactPickerProps } from "../../types.js"
 import { PaxDependencyWarnings, PaxValidation } from "./configure-steps.js"
 import {
@@ -21,6 +22,7 @@ import {
   cryptoRowId,
   DateField,
   Field,
+  JourneyErrors,
   JourneyWarnings,
   PhoneField,
   SelectField,
@@ -62,9 +64,11 @@ export function TravelersStep({
   shape,
   renderTravelerContactPicker,
   warnings,
+  errors,
 }: StepCommonProps & {
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => React.ReactNode
   warnings?: ReadonlyArray<string>
+  errors?: ReadonlyArray<string>
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const travelers = draft.travelers
@@ -165,6 +169,7 @@ export function TravelersStep({
 
         <PaxValidation draft={draft} shape={shape} />
         <PaxDependencyWarnings draft={draft} shape={shape} />
+        <JourneyErrors errors={errors} />
         <JourneyWarnings warnings={warnings} />
       </CardContent>
     </Card>
@@ -218,6 +223,9 @@ function TravelerCard({
   // documents) always show.
   const showIdentity = !renderTravelerContactPicker
   const gridHasContent = showIdentity || Boolean(dobField) || dynamicFields.length > 0
+  const emailError = isValidOptionalEmail(traveler.email)
+    ? undefined
+    : messages.bookingJourney.validation.invalidEmail
 
   // Live age from DOB — surfaces in the header so the user gets feedback as
   // they pick a date.
@@ -359,6 +367,7 @@ function TravelerCard({
                   label={messages.bookingJourney.billing.email}
                   type="email"
                   value={traveler.email ?? ""}
+                  error={emailError}
                   onChange={(v) => patchRow({ email: v })}
                 />
               ) : null}
