@@ -233,6 +233,12 @@ export interface CreateBetterAuthOptions<
   /** Better Auth rate-limit config. Defaults to secondary storage when present. */
   rateLimit?: BetterAuthOptions["rateLimit"]
   /**
+   * Additional Better Auth advanced options. Voyant still supplies
+   * `useSecureCookies` by default unless overridden here or via the top-level
+   * `useSecureCookies` compatibility option.
+   */
+  advanced?: BetterAuthOptions["advanced"]
+  /**
    * Controls Better Auth's Secure cookie flag. Defaults to secure except in
    * explicit local development (`NODE_ENV=development`).
    */
@@ -424,7 +430,11 @@ export function createBetterAuth<
       },
     },
     advanced: {
-      useSecureCookies: options.useSecureCookies ?? process.env.NODE_ENV !== "development",
+      ...options.advanced,
+      useSecureCookies:
+        options.useSecureCookies ??
+        options.advanced?.useSecureCookies ??
+        process.env.NODE_ENV !== "development",
     },
   } as ResolvedCreateBetterAuthOptions<UserOptions, Plugins>
 

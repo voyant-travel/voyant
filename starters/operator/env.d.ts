@@ -18,6 +18,11 @@ interface CloudflareBindings {
   INTERNAL_API_KEY: string
   SESSION_CLAIMS_SECRET: string
   BETTER_AUTH_SECRET: string
+  /**
+   * Optional parent domain for Better Auth cookies in split UI/API
+   * deployments, e.g. `.example.com` for `admin.example.com` + `api.example.com`.
+   */
+  AUTH_COOKIE_DOMAIN?: string
   DATABASE_URL: string
   /**
    * Optional comma-separated connection strings of same-region Neon read
