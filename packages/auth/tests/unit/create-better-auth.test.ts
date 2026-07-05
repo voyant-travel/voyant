@@ -4,6 +4,14 @@ import type { CreateBetterAuthOptions } from "../../src/server.js"
 
 type BetterAuthConfig = {
   advanced: {
+    crossSubDomainCookies?: {
+      enabled: boolean
+      domain?: string
+    }
+    defaultCookieAttributes?: {
+      domain?: string
+      sameSite?: string
+    }
     useSecureCookies: boolean
   }
   databaseHooks: {
@@ -103,6 +111,38 @@ describe("createBetterAuth", () => {
     })
 
     expect(latestBetterAuthConfig().advanced.useSecureCookies).toBe(false)
+  })
+
+  it("forwards Better Auth advanced cookie options", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      advanced: {
+        crossSubDomainCookies: {
+          enabled: true,
+          domain: ".example.com",
+        },
+        defaultCookieAttributes: {
+          domain: ".example.com",
+          sameSite: "lax",
+        },
+      },
+    })
+
+    expect(latestBetterAuthConfig().advanced).toMatchObject({
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: ".example.com",
+      },
+      defaultCookieAttributes: {
+        domain: ".example.com",
+        sameSite: "lax",
+      },
+      useSecureCookies: true,
+    })
   })
 
   it("forwards Better Auth user options and keeps Voyant's default change-email setting", async () => {

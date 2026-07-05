@@ -46,6 +46,7 @@ import { resolveEmailReplyTo } from "../../lib/notifications"
 import { OPERATOR_APP_NAME, operatorReporter } from "../../lib/observability"
 import { tryGetCloudClient } from "../../lib/voyant-cloud"
 import { dbFromEnvForApp } from "../lib/db"
+import { buildBetterAuthCookieAdvancedOptions } from "./cookie-domain"
 
 // Type ctx so that `c.get("db")` resolves to the parent app's middleware-
 // set `VoyantDb` (the per-request Pool the `dbFromEnvForApp` factory
@@ -287,6 +288,7 @@ function buildBetterAuth(
     baseURL: getAuthBaseUrl(env),
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
+    advanced: buildBetterAuthCookieAdvancedOptions(env),
     secondaryStorage: betterAuthSecondaryStorage(env),
     customerSignupSurfaces: options.customerSignup ? ["customer"] : undefined,
     plugins: cloudAuthExchange
