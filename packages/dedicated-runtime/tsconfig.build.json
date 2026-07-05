@@ -1,0 +1,4 @@
+{
+  "extends": ["./tsconfig.json", "../typescript-config/dep-paths.json"],
+  "exclude": ["src/**/*.test.ts"]
+}
