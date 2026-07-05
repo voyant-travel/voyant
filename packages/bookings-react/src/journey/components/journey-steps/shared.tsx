@@ -54,6 +54,21 @@ export function JourneyWarnings({
   )
 }
 
+export function JourneyErrors({
+  errors,
+}: {
+  errors?: ReadonlyArray<string>
+}): React.ReactElement | null {
+  if (!errors || errors.length === 0) return null
+  return (
+    <ul className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-destructive text-sm">
+      {errors.map((error) => (
+        <li key={error}>{error}</li>
+      ))}
+    </ul>
+  )
+}
+
 export function Field({
   id,
   label,
@@ -61,6 +76,7 @@ export function Field({
   onChange,
   type,
   placeholder,
+  error,
 }: {
   id: string
   label: string
@@ -68,7 +84,9 @@ export function Field({
   onChange: (v: string) => void
   type?: string
   placeholder?: string
+  error?: string
 }): React.ReactElement {
+  const errorId = `${id}-error`
   return (
     <div className="space-y-1">
       <Label htmlFor={id}>{label}</Label>
@@ -77,8 +95,15 @@ export function Field({
         type={type ?? "text"}
         value={value}
         placeholder={placeholder}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
+      {error ? (
+        <p id={errorId} className="text-destructive text-xs" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }

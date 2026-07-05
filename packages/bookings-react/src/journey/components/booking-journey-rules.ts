@@ -9,6 +9,7 @@ import {
 } from "@voyant-travel/catalog-contracts/booking-engine/draft-shape"
 import { type BookingsUiMessages, formatMessage } from "../../i18n/index.js"
 import { type Draft, totalPax } from "../lib/draft-state.js"
+import { isValidOptionalEmail } from "../lib/email-validation.js"
 import { evaluatePaxBandDependencies } from "../lib/pax-band-dependencies.js"
 import { findPaidScheduleRowsMissingPaymentDate } from "../lib/payment-schedule.js"
 import type { JourneyStep } from "../types.js"
@@ -138,12 +139,15 @@ export function canAdvanceFromStep(
       // collect an individual contact name (and the manual contact inputs are
       // hidden), so requiring one would lock the step with no way to satisfy it.
       if (draft.billing.buyerType === "B2B") {
-        return Boolean(draft.billing.organizationId)
+        return (
+          Boolean(draft.billing.organizationId) && isValidOptionalEmail(draft.billing.contact.email)
+        )
       }
       const c = draft.billing.contact
       return (
         c.firstName.length > 0 &&
         c.lastName.length > 0 &&
+        isValidOptionalEmail(c.email) &&
         (c.email.length > 0 || Boolean(c.phone?.trim()))
       )
     }
@@ -162,13 +166,36 @@ export function canAdvanceFromStep(
       }
       // Hard-reject only on canonical traveler fields (firstName, lastName);
       // other required fields surface as warnings, fillable later.
-      return draft.travelers.every((t) => t.firstName && t.lastName)
+      return draft.travelers.every(
+        (t) => t.firstName && t.lastName && isValidOptionalEmail(t.email),
+      )
     }
     case "payment":
       return findPaidScheduleRowsMissingPaymentDate(draft.paymentSchedules) === null
     default:
       return true
   }
+}
+
+export function validationErrorsForStep(
+  step: JourneyStep,
+  draft: Draft,
+  messages: BookingsUiMessages,
+): ReadonlyArray<string> {
+  const errors: string[] = []
+  switch (step) {
+    case "billing":
+      if (!isValidOptionalEmail(draft.billing.contact.email)) {
+        errors.push(messages.bookingJourney.validation.invalidEmail)
+      }
+      break
+    case "travelers":
+      if (draft.travelers.some((t) => !isValidOptionalEmail(t.email))) {
+        errors.push(messages.bookingJourney.validation.invalidEmail)
+      }
+      break
+  }
+  return errors
 }
 
 /**

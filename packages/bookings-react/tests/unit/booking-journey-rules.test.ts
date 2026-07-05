@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest"
-
+import { bookingsUiEn } from "../../src/i18n/en.js"
 import {
   buildCommitParty,
   buildCommitPaymentIntent,
   canAdvanceFromStep,
   defaultMinimalShape,
+  validationErrorsForStep,
 } from "../../src/journey/components/booking-journey-rules.js"
 import { emptyDraft, patchBilling, patchConfigure } from "../../src/journey/lib/draft-state.js"
 
@@ -45,6 +46,45 @@ describe("booking-journey-rules", () => {
     })
 
     expect(canAdvanceFromStep("billing", draft, shape, true)).toBe(false)
+  })
+
+  it("blocks a malformed B2C billing email even when phone is present", () => {
+    const shape = defaultMinimalShape()
+    const draft = patchBilling(emptyDraft(ENTITY, { buyerType: "B2C" }), {
+      contact: {
+        firstName: "Test",
+        lastName: "Traveler",
+        email: "not-an-email",
+        phone: "+15550100000",
+      },
+    })
+
+    expect(canAdvanceFromStep("billing", draft, shape, true)).toBe(false)
+    expect(validationErrorsForStep("billing", draft, bookingsUiEn)).toContain(
+      "Enter a valid email address.",
+    )
+  })
+
+  it("blocks malformed traveler emails", () => {
+    const shape = defaultMinimalShape()
+    const draft = {
+      ...emptyDraft(ENTITY),
+      configure: { ...emptyDraft(ENTITY).configure, pax: { adult: 1 } },
+      travelers: [
+        {
+          rowId: "row_1",
+          firstName: "Test",
+          lastName: "Traveler",
+          email: "not-an-email",
+          band: "adult" as const,
+        },
+      ],
+    }
+
+    expect(canAdvanceFromStep("travelers", draft, shape, true)).toBe(false)
+    expect(validationErrorsForStep("travelers", draft, bookingsUiEn)).toContain(
+      "Enter a valid email address.",
+    )
   })
 
   it("does not commit a stale organization id for an individual buyer", () => {

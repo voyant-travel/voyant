@@ -45,6 +45,7 @@ import {
   makeHoldSignature,
   resolveInitialStatus,
   stackedStepComplete,
+  validationErrorsForStep,
   warningsForStep,
 } from "./booking-journey-rules.js"
 import { ConfigureStepSkeleton } from "./configure-step-skeleton.js"
@@ -552,6 +553,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             shape={shape}
             renderLeadContactPicker={props.renderLeadContactPicker}
             renderExtras={billingExtrasSlot}
+            errors={validationErrorsForStep("billing", draft, messages)}
             warnings={warningsForStep("billing", draft, shape, messages)}
           />
         )
@@ -562,6 +564,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             setDraft={setDraft}
             shape={shape}
             renderTravelerContactPicker={props.renderTravelerContactPicker}
+            errors={validationErrorsForStep("travelers", draft, messages)}
             warnings={warningsForStep("travelers", draft, shape, messages)}
           />
         )

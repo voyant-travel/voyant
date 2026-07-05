@@ -7,8 +7,15 @@ import { Label } from "@voyant-travel/ui/components/label"
 import { RadioGroup, RadioGroupItem } from "@voyant-travel/ui/components/radio-group"
 import { useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
 import { patchBilling, setBillingBuyerType } from "../../lib/draft-state.js"
+import { isValidOptionalEmail } from "../../lib/email-validation.js"
 import type { LeadContactPickerProps } from "../../types.js"
-import { Field, JourneyWarnings, PhoneField, type StepCommonProps } from "./shared.js"
+import {
+  Field,
+  JourneyErrors,
+  JourneyWarnings,
+  PhoneField,
+  type StepCommonProps,
+} from "./shared.js"
 
 // ─────────────────────────────────────────────────────────────────
 // Billing
@@ -20,13 +27,18 @@ export function BillingStep({
   renderLeadContactPicker,
   renderExtras,
   warnings,
+  errors,
 }: StepCommonProps & {
   renderLeadContactPicker?: (props: LeadContactPickerProps) => React.ReactNode
   renderExtras?: () => React.ReactNode
   warnings?: ReadonlyArray<string>
+  errors?: ReadonlyArray<string>
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const billing = draft.billing
+  const emailError = isValidOptionalEmail(billing.contact.email)
+    ? undefined
+    : messages.bookingJourney.validation.invalidEmail
   // Merge each partial from the picker (person record, org record, address
   // lookup) into the billing draft without clobbering the other slices.
   const apply: LeadContactPickerProps["apply"] = (next) => {
@@ -127,6 +139,7 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.email}
                 type="email"
                 value={billing.contact.email}
+                error={emailError}
                 onChange={(v) =>
                   setDraft(
                     patchBilling(draft, {
@@ -253,6 +266,7 @@ export function BillingStep({
         )}
 
         {renderExtras ? <div>{renderExtras()}</div> : null}
+        <JourneyErrors errors={errors} />
         <JourneyWarnings warnings={warnings} />
       </CardContent>
     </Card>

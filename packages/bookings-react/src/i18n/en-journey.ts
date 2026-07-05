@@ -48,6 +48,7 @@ export const bookingsUiEnJourney = {
       dependencyExcludes: "{dependent} can't be combined with {master}.",
       dependencyLimitPerMaster: "At most {limit} {dependent} per {master}.",
       dependencyLimitSum: "At most {limit} {dependent} allowed.",
+      invalidEmail: "Enter a valid email address.",
     },
     warnings: {
       phoneMissing: "Phone number not set — useful for last-minute supplier contact.",
