@@ -1,7 +1,7 @@
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
 import { invoiceRenditions, invoices } from "@voyant-travel/finance/schema"
-import { contractAttachments, contracts } from "@voyant-travel/legal/contracts"
+import { contractAttachments, contracts } from "@voyant-travel/legal/schema"
 import { and, desc, eq, ne, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

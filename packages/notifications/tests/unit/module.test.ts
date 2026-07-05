@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs"
+import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
@@ -7,6 +10,18 @@ import {
 } from "../../src/index.js"
 
 describe("createNotificationsHonoModule.bootstrap", () => {
+  it("keeps document-related table imports on schema-only package surfaces", () => {
+    const srcDir = fileURLToPath(new URL("../../src", import.meta.url))
+    const files = collectTypeScriptFiles(srcDir)
+    const sources = files.map((file) => [file, readFileSync(file, "utf8")] as const)
+
+    for (const [file, source] of sources) {
+      expect(source, file).not.toContain("@voyant-travel/legal/contracts")
+      expect(source, file).not.toContain('from "@voyant-travel/finance"')
+      expect(source, file).not.toContain("from '@voyant-travel/finance'")
+    }
+  })
+
   it("registers the resolved route runtime once", async () => {
     const resolveProviders = vi.fn(() => [
       {
@@ -43,3 +58,13 @@ describe("createNotificationsHonoModule.bootstrap", () => {
     expect(runtime.eventBus).toBe(eventBus)
   })
 })
+
+function collectTypeScriptFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) {
+      return collectTypeScriptFiles(path)
+    }
+    return entry.isFile() && path.endsWith(".ts") ? [path] : []
+  })
+}
