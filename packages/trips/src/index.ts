@@ -1,7 +1,12 @@
 import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
-import { createTripsRoutes, type TripsRoutesOptions, tripsRoutes } from "./routes.js"
+import {
+  createTripsRoutes,
+  type TripsRoutesOptions,
+  type TripsRoutesOptionsInput,
+  tripsRoutes,
+} from "./routes.js"
 
 export {
   type CatalogAdapterContext,
@@ -41,7 +46,12 @@ export {
   type FlightComponentAdapterOptions,
   previewFlightCancellation,
 } from "./flight-component.js"
-export type { TripsRoutes, TripsRoutesOptions } from "./routes.js"
+export type {
+  TripsRoutes,
+  TripsRoutesOptions,
+  TripsRoutesOptionsInput,
+  TripsRoutesOptionsProvider,
+} from "./routes.js"
 export { createTripsRoutes } from "./routes.js"
 
 export const tripsModule: Module = {
@@ -55,19 +65,46 @@ export const tripsHonoModule: HonoModule = {
 
 export interface TripsHonoModuleOptions extends TripsRoutesOptions {
   publicRoutes?: boolean
+  routesOptions?: TripsRoutesOptionsInput
 }
 
 export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
-  const { publicRoutes = false, ...routeOptions } = options
-  const routes = createTripsRoutes({ ...routeOptions, surface: "admin" })
+  const { publicRoutes = false, routesOptions, ...routeOptions } = options
+  const resolvedRouteOptions = memoizeTripsRouteOptionsInput(routesOptions ?? routeOptions)
+  const routes = createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin"))
   const honoModule: HonoModule = {
     module: tripsModule,
     adminRoutes: routes,
   }
   if (publicRoutes) {
-    honoModule.publicRoutes = createTripsRoutes({ ...routeOptions, surface: "public" })
+    honoModule.publicRoutes = createTripsRoutes(
+      withTripsRouteSurface(resolvedRouteOptions, "public"),
+    )
   }
   return honoModule
+}
+
+function memoizeTripsRouteOptionsInput(options: TripsRoutesOptionsInput): TripsRoutesOptionsInput {
+  if (typeof options !== "function") return options
+
+  let optionsPromise: Promise<TripsRoutesOptions> | undefined
+  return () => {
+    optionsPromise ??= Promise.resolve()
+      .then(options)
+      .catch((error) => {
+        optionsPromise = undefined
+        throw error
+      })
+    return optionsPromise
+  }
+}
+
+function withTripsRouteSurface(
+  options: TripsRoutesOptionsInput,
+  surface: NonNullable<TripsRoutesOptions["surface"]>,
+): TripsRoutesOptionsInput {
+  if (typeof options !== "function") return { ...options, surface }
+  return async () => ({ ...(await options()), surface })
 }
 
 export { tripsRoutes } from "./routes.js"

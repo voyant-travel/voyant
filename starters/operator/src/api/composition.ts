@@ -65,7 +65,6 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./runtime/payment-config"
-import { createOperatorTripsRoutesOptions } from "./runtime/trips-runtime"
 import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
@@ -99,7 +98,7 @@ export interface OperatorCapabilities extends FrameworkProviders {
   relationshipsService: FrameworkProviders["relationshipsService"]
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
-  createTripsRoutesOptions: typeof createOperatorTripsRoutesOptions
+  createTripsRoutesOptions: FrameworkProviders["createTripsRoutesOptions"]
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
 }
 
@@ -133,7 +132,8 @@ export function buildOperatorProviders(): OperatorCapabilities {
     // Adapt the deployment's catalog context into the package's search runtime
     // shape (the framework catalog factory consumes this directly).
     resolveCatalogRuntime: createLazyCatalogSearchRuntime,
-    createTripsRoutesOptions: createOperatorTripsRoutesOptions,
+    createTripsRoutesOptions: () =>
+      import("./runtime/trips-runtime").then((m) => m.createOperatorTripsRoutesOptions()),
     resolveBookingRequirementsProductSnapshot,
     storefrontIntakePersistence: lazyProvider<StorefrontIntakePersistence>(async () =>
       import("./runtime/storefront-intake-runtime").then(
