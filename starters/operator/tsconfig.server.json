@@ -778,6 +778,25 @@
       "@voyant-travel/db/types": ["../../packages/db/dist/types.d.ts"],
       "@voyant-travel/db/utils": ["../../packages/db/dist/utils.d.ts"],
       "@voyant-travel/db/write-intents": ["../../packages/db/dist/write-intents.d.ts"],
+      "@voyant-travel/dedicated-runtime": ["../../packages/dedicated-runtime/dist/index.d.ts"],
+      "@voyant-travel/dedicated-runtime/cache": [
+        "../../packages/dedicated-runtime/dist/cache.d.ts"
+      ],
+      "@voyant-travel/dedicated-runtime/env": ["../../packages/dedicated-runtime/dist/env.d.ts"],
+      "@voyant-travel/dedicated-runtime/kv": ["../../packages/dedicated-runtime/dist/kv.d.ts"],
+      "@voyant-travel/dedicated-runtime/node-server": [
+        "../../packages/dedicated-runtime/dist/node-server.d.ts"
+      ],
+      "@voyant-travel/dedicated-runtime/r2": ["../../packages/dedicated-runtime/dist/r2.d.ts"],
+      "@voyant-travel/dedicated-runtime/trust": [
+        "../../packages/dedicated-runtime/dist/trust.d.ts"
+      ],
+      "@voyant-travel/dedicated-runtime/types": [
+        "../../packages/dedicated-runtime/dist/types.d.ts"
+      ],
+      "@voyant-travel/dedicated-runtime/wait-until": [
+        "../../packages/dedicated-runtime/dist/wait-until.d.ts"
+      ],
       "@voyant-travel/distribution": ["../../packages/distribution/dist/index.d.ts"],
       "@voyant-travel/distribution-react": ["../../packages/distribution-react/dist/index.d.ts"],
       "@voyant-travel/distribution-react/admin": [
