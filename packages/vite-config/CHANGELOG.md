@@ -1,5 +1,11 @@
 # @voyant-travel/vite-config
 
+## 0.1.3
+
+### Patch Changes
+
+- d2d2a44: Anchor the React vendor chunk heuristic to actual `react`, `react-dom`, and `scheduler` package boundaries so third-party package internals such as Better Auth's `dist/client/react/*` subpaths stay out of the eager React chunk.
+
 ## 0.1.2
 
 ### Patch Changes
