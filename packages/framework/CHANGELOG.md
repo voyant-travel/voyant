@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.12.18
+
+### Patch Changes
+
+- Updated dependencies [0811565]
+  - @voyant-travel/notifications@0.118.2
+
 ## 0.12.17
 
 ### Patch Changes
