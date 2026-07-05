@@ -1,5 +1,14 @@
 # @voyant-travel/bookings-react
 
+## 0.141.1
+
+### Patch Changes
+
+- aa27c44: Reject malformed booking draft email addresses in contracts and gate the booking journey when billing or traveler emails are syntactically invalid.
+- Updated dependencies [aa27c44]
+  - @voyant-travel/catalog-contracts@0.108.2
+  - @voyant-travel/bookings@0.141.1
+
 ## 0.141.0
 
 ### Patch Changes
