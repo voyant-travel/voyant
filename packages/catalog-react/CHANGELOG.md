@@ -1,5 +1,17 @@
 # @voyant-travel/catalog-react
 
+## 0.139.0
+
+### Minor Changes
+
+- 6711f4c: Add channel-scoped catalog search slices so storefront and partner surfaces can query separate per-channel index collections.
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.23.0
+- @voyant-travel/distribution-react@0.131.0
+- @voyant-travel/commerce-react@0.23.0
+
 ## 0.138.0
 
 ### Patch Changes

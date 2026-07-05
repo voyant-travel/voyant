@@ -1,5 +1,11 @@
 # @voyant-travel/catalog
 
+## 0.139.0
+
+### Minor Changes
+
+- 6711f4c: Add channel-scoped catalog search slices so storefront and partner surfaces can query separate per-channel index collections.
+
 ## 0.138.0
 
 ## 0.137.1

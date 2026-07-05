@@ -1,5 +1,7 @@
 # @voyant-travel/identity
 
+## 0.141.0
+
 ## 0.140.0
 
 ## 0.139.0
