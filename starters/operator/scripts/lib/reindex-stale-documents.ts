@@ -164,10 +164,10 @@ export function listObsoleteCatalogCollections(
 }
 
 function parseCatalogCollectionName(name: string): IndexerSlice | null {
-  const [vertical, locale, audience, market, ...rest] = name.split("__")
+  const [vertical, locale, audience, market, channel, ...rest] = name.split("__")
   if (!vertical || !locale || !audience || !market || rest.length > 0) return null
   if (!isIndexerAudience(audience)) return null
-  return { vertical, locale, audience, market }
+  return { vertical, locale, audience, market, channel }
 }
 
 function isIndexerAudience(value: string): value is IndexerSlice["audience"] {

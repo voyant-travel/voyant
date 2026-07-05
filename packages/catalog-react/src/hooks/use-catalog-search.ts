@@ -40,6 +40,8 @@ export interface UseCatalogSearchOptions {
   market?: string
   /** Override `defaultScope.locale`. */
   locale?: string
+  /** Override `defaultScope.channel`. */
+  channel?: string
   /**
    * Surface to call against. Operator dashboards pass `"admin"`
    * (default); storefront / partner / embedded surfaces pass
@@ -69,6 +71,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
     query_embedding,
     market,
     locale,
+    channel,
     surface = "admin",
     enabled = true,
     staleTime = 30_000,
@@ -91,6 +94,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
       query_embedding,
       market,
       locale,
+      channel,
     ],
     queryFn: () =>
       fetchWithValidation(
@@ -113,6 +117,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
             query_embedding,
             market,
             locale,
+            channel,
           }),
         },
       ),

@@ -8,8 +8,9 @@
  * contract.
  *
  * Storefront-side documents are scoped per `(vertical, locale, audience,
- * market)`. Admin-side documents denormalize text fields across audiences for
- * keyword matching (see §5.4.4); admin embedding remains audience-scoped.
+ * market, channel)`. Admin-side documents denormalize text fields across
+ * audiences for keyword matching (see §5.4.4); admin embedding remains
+ * audience-scoped.
  *
  * See `docs/architecture/catalog-architecture.md` §5.4 for the full design.
  */
@@ -22,6 +23,12 @@ export interface IndexerSlice {
   locale: string
   audience: Visibility | "staff-admin"
   market: string
+  /**
+   * Sales surface / distribution channel id. Omitted only for legacy/default
+   * slices; channel-aware storefronts should set this explicitly so website,
+   * B2B, OTA, and partner surfaces do not share one customer corpus.
+   */
+  channel?: string
 }
 
 /**

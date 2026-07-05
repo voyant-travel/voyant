@@ -322,7 +322,9 @@ async function retryTransientCollectionUpdate(
  * runs so existing collections survive deployments.
  */
 export function collectionName(slice: IndexerSlice, prefix = ""): string {
-  const base = `${slice.vertical}__${slice.locale}__${slice.audience}__${slice.market}`
+  const base = [slice.vertical, slice.locale, slice.audience, slice.market, slice.channel]
+    .filter((part): part is string => Boolean(part))
+    .join("__")
   return prefix ? `${prefix}__${base}` : base
 }
 

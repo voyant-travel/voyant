@@ -37,6 +37,7 @@ import {
 } from "@voyant-travel/cruises/service-catalog-plane"
 import { createCruiseCabinFacetProjectionExtension } from "@voyant-travel/cruises/service-catalog-plane-cabins"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { channels } from "@voyant-travel/distribution"
 import { productCatalogPolicy } from "@voyant-travel/inventory/catalog-policy"
 import { productDeparturesCatalogPolicy } from "@voyant-travel/inventory/catalog-policy-departures"
 import { productDestinationsCatalogPolicy } from "@voyant-travel/inventory/catalog-policy-destinations"
@@ -65,8 +66,6 @@ export const CATALOG_VERTICALS = [
   "charters",
   "accommodations",
 ] as const
-
-const INDEXED_AUDIENCES = ["staff", "customer"] as const
 
 /**
  * The slice set the operator starter indexes by default — staff (admin
@@ -106,6 +105,11 @@ export async function loadCatalogSlices(db: AnyDrizzleDb): Promise<IndexerSlice[
       .where(eq(marketLocales.active, true))
       .orderBy(asc(marketLocales.sortOrder), asc(marketLocales.languageTag)),
   ])
+  const channelRows = await db
+    .select({ id: channels.id })
+    .from(channels)
+    .where(eq(channels.status, "active"))
+    .orderBy(asc(channels.createdAt))
 
   const localesByMarket = new Map<string, Set<string>>()
   for (const market of marketRows) {
@@ -115,17 +119,22 @@ export async function loadCatalogSlices(db: AnyDrizzleDb): Promise<IndexerSlice[
     localesByMarket.get(locale.marketId)?.add(locale.languageTag)
   }
 
+  const activeChannelIds = channelRows.map((channel) => channel.id)
+  const customerChannels = [undefined, ...activeChannelIds]
+
   const marketSlices = marketRows.flatMap((market) => {
     const locales = localesByMarket.get(market.id) ?? new Set([market.defaultLanguageTag])
     return CATALOG_VERTICALS.flatMap((vertical) =>
-      Array.from(locales).flatMap((locale) =>
-        INDEXED_AUDIENCES.map((audience) => ({
+      Array.from(locales).flatMap((locale) => [
+        { vertical, locale, audience: "staff" as const, market: market.id },
+        ...customerChannels.map((channel) => ({
           vertical,
           locale,
-          audience,
+          audience: "customer" as const,
           market: market.id,
+          channel,
         })),
-      ),
+      ]),
     )
   })
 
@@ -136,7 +145,13 @@ function uniqueSlices(slices: ReadonlyArray<IndexerSlice>): IndexerSlice[] {
   const seen = new Set<string>()
   const out: IndexerSlice[] = []
   for (const slice of slices) {
-    const key = `${slice.vertical}|${slice.locale}|${slice.audience}|${slice.market}`
+    const key = [
+      slice.vertical,
+      slice.locale,
+      slice.audience,
+      slice.market,
+      slice.channel ?? "",
+    ].join("|")
     if (seen.has(key)) continue
     seen.add(key)
     out.push(slice)
@@ -387,7 +402,8 @@ export function createProductsDocumentBuilder(
     isPublicAudienceListable: ({ db, product, slice }) =>
       isOwnedProductStorefrontListable({
         audience: slice.audience,
-        hasActiveChannelMapping: () => hasActiveSalesChannelMapping(db, product.id),
+        channel: slice.channel,
+        hasActiveChannelMapping: () => hasActiveSalesChannelMapping(db, product.id, slice.channel),
       }),
   })
 }

@@ -4,8 +4,8 @@
  * Regression cover for issue #2617: an active + public + activated owned
  * product that is directly bookable must be listable in the *customer*
  * (direct storefront) search slice without an explicit channel mapping.
- * Channel mappings only gate distribution to external audiences
- * (partner / supplier).
+ * Channel mappings gate distribution to external audiences and channel-aware
+ * customer slices, but not legacy unchannelled customer slices.
  */
 
 import { describe, expect, it, vi } from "vitest"
@@ -14,9 +14,9 @@ import { isOwnedProductStorefrontListable } from "./catalog-listability"
 
 describe("isOwnedProductStorefrontListable", () => {
   it("lists an owned product in the customer slice without a channel mapping", async () => {
-    // The customer audience is the operator's own direct storefront: no channel
-    // lookup, always listable (the upstream gate already asserted
-    // active + public + activated).
+    // Legacy customer slices carry no channel. They remain listable for
+    // backwards compatibility; channel-aware storefront slices below are gated
+    // by the requested sales channel.
     const hasActiveChannelMapping = vi.fn(async () => false)
 
     const listable = await isOwnedProductStorefrontListable({
@@ -26,6 +26,22 @@ describe("isOwnedProductStorefrontListable", () => {
 
     expect(listable).toBe(true)
     expect(hasActiveChannelMapping).not.toHaveBeenCalled()
+  })
+
+  it("requires an active channel mapping for channel-scoped customer slices", async () => {
+    const withMapping = await isOwnedProductStorefrontListable({
+      audience: "customer",
+      channel: "chan_website",
+      hasActiveChannelMapping: async () => true,
+    })
+    const withoutMapping = await isOwnedProductStorefrontListable({
+      audience: "customer",
+      channel: "chan_b2b",
+      hasActiveChannelMapping: async () => false,
+    })
+
+    expect(withMapping).toBe(true)
+    expect(withoutMapping).toBe(false)
   })
 
   it("requires an active channel mapping for external (partner) slices", async () => {

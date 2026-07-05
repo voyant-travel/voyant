@@ -249,6 +249,7 @@ function createLazyCatalogSearchRuntime(
     TYPESENSE_HOST?: string
     TYPESENSE_ADMIN_API_KEY?: string
     TYPESENSE_API_KEY?: string
+    VOYANT_STOREFRONT_CHANNEL_ID?: string
   }
   const actor = c.var.actor ?? "staff"
   const audience: CatalogSearchRuntime["defaultScope"]["audience"] =
@@ -262,6 +263,7 @@ function createLazyCatalogSearchRuntime(
       locale: "en-GB",
       audience,
       market: "default",
+      channel: env.VOYANT_STOREFRONT_CHANNEL_ID,
     },
   }
 }
