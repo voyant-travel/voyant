@@ -1,5 +1,5 @@
 import { bookings, bookingTravelers } from "@voyant-travel/bookings/schema"
-import { bookingPaymentSchedules, invoices } from "@voyant-travel/finance"
+import { bookingPaymentSchedules, invoices } from "@voyant-travel/finance/schema"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
