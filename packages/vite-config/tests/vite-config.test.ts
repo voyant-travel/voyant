@@ -38,6 +38,12 @@ describe("voyantVendorChunk", () => {
     expect(voyantVendorChunk("/repo/node_modules/zod/index.js")).toBeUndefined()
     // react-hook-form must NOT match the /react/ pin.
     expect(voyantVendorChunk("/repo/node_modules/react-hook-form/dist/index.js")).toBeUndefined()
+    expect(
+      voyantVendorChunk("/repo/node_modules/better-auth/dist/client/react/index.js"),
+    ).toBeUndefined()
+    expect(
+      voyantVendorChunk("/repo/node_modules/@better-auth/utils/dist/client/react/error-codes.js"),
+    ).toBeUndefined()
   })
 })
 

@@ -13,21 +13,31 @@ import type { PluginOption, UserConfig } from "vite"
  * can hoist the JSX runtime into another vendor chunk, forcing every
  * React-using chunk to import that chunk just to get `jsx`/`jsxs`.
  */
+function isNodeModulePackage(id: string, packageName: string): boolean {
+  return id.includes(`/node_modules/${packageName}/`)
+}
+
 export function voyantVendorChunk(id: string): string | undefined {
-  if (!id.includes("node_modules")) return undefined
+  const normalizedId = id.replaceAll("\\", "/")
+  if (!normalizedId.includes("node_modules")) return undefined
 
   if (
-    id.includes("/react/") ||
-    id.includes("/react-dom/") ||
-    id.includes("/scheduler/") ||
-    id.match(/\/react\/jsx-(dev-)?runtime\b/)
+    isNodeModulePackage(normalizedId, "react") ||
+    isNodeModulePackage(normalizedId, "react-dom") ||
+    isNodeModulePackage(normalizedId, "scheduler")
   ) {
     return "react"
   }
-  if (id.includes("/clsx/") || id.includes("/tailwind-merge/")) return "class-utils"
-  if (id.includes("/@tiptap/") || id.includes("/prosemirror-")) return "tiptap"
-  if (id.includes("/recharts/")) return "recharts"
-  if (id.includes("/pdf-lib/") || id.includes("/@pdf-lib/")) return "pdf-lib"
+  if (normalizedId.includes("/clsx/") || normalizedId.includes("/tailwind-merge/")) {
+    return "class-utils"
+  }
+  if (normalizedId.includes("/@tiptap/") || normalizedId.includes("/prosemirror-")) {
+    return "tiptap"
+  }
+  if (normalizedId.includes("/recharts/")) return "recharts"
+  if (normalizedId.includes("/pdf-lib/") || normalizedId.includes("/@pdf-lib/")) {
+    return "pdf-lib"
+  }
   return undefined
 }
 
