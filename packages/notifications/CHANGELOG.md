@@ -1,5 +1,11 @@
 # @voyant-travel/notifications
 
+## 0.118.2
+
+### Patch Changes
+
+- 0811565: Narrow document-related table imports to schema-only legal and finance package surfaces so notification root imports no longer pull document renderer code into cold-start bundles.
+
 ## 0.118.1
 
 ### Patch Changes
