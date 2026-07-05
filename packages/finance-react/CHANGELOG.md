@@ -1,5 +1,15 @@
 # @voyant-travel/finance-react
 
+## 0.141.1
+
+### Patch Changes
+
+- e6cad60: Route reusable upload and payment-link actions through the Voyant React provider API base and fetcher so split-origin deployments do not fall back to relative `/api` URLs.
+- Updated dependencies [e6cad60]
+  - @voyant-travel/bookings-react@0.141.2
+  - @voyant-travel/inventory-react@0.23.1
+  - @voyant-travel/finance@0.141.1
+
 ## 0.141.0
 
 ### Patch Changes
