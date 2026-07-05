@@ -7,6 +7,7 @@ import {
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
 } from "../i18n/provider.js"
+import { useVoyantBookingsContext } from "../provider.js"
 
 export interface UploadedFile {
   key: string
@@ -17,7 +18,7 @@ export interface UploadedFile {
 }
 
 export interface FileDropzoneProps {
-  /** URL of the upload endpoint (defaults to /api/v1/admin/uploads). */
+  /** URL of the upload endpoint. Defaults to the Voyant provider API base. */
   uploadUrl?: string
   /** MIME types or extensions to accept (same format as <input accept>). */
   accept?: string
@@ -36,7 +37,7 @@ export interface FileDropzoneProps {
 }
 
 export function FileDropzone({
-  uploadUrl = "/api/v1/admin/uploads",
+  uploadUrl,
   accept,
   maxSize,
   onUploaded,
@@ -45,6 +46,7 @@ export function FileDropzone({
   helperText,
   disabled,
 }: FileDropzoneProps) {
+  const client = useVoyantBookingsContext()
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = React.useState(false)
   const [isUploading, setIsUploading] = React.useState(false)
@@ -53,6 +55,7 @@ export function FileDropzone({
   const { formatNumber } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
   const resolvedHelperText = helperText ?? messages.fileDropzone.helperText
+  const resolvedUploadUrl = uploadUrl ?? joinUrl(client.baseUrl, "/v1/admin/uploads")
 
   const formatSize = React.useCallback(
     (bytes: number): string => {
@@ -87,10 +90,9 @@ export function FileDropzone({
     try {
       const formData = new FormData()
       formData.append("file", file)
-      const res = await fetch(uploadUrl, {
+      const res = await client.fetcher(resolvedUploadUrl, {
         method: "POST", // i18n-literal-ok HTTP method
         body: formData,
-        credentials: "include", // i18n-literal-ok fetch credentials mode
       })
       if (!res.ok) {
         const body = await res.text()
@@ -219,4 +221,10 @@ export function FileDropzone({
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
+}
+
+function joinUrl(baseUrl: string, path: string): string {
+  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  const trimmedPath = path.startsWith("/") ? path : `/${path}`
+  return `${trimmedBase}${trimmedPath}`
 }

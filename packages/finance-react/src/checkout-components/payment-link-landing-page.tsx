@@ -21,6 +21,8 @@ import {
   useCheckoutUiI18nOrDefault,
   useCheckoutUiMessagesOrDefault,
 } from "../checkout-i18n/provider.js"
+import type { VoyantFetcher } from "../client.js"
+import { useVoyantFinanceContext } from "../provider.js"
 
 interface StartCardResponse {
   data?: { redirectUrl: string | null }
@@ -118,6 +120,9 @@ export function PaymentLinkLandingPage({
   summary,
   suppressNotes,
 }: PaymentLinkLandingPageProps) {
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
+  const apiClient = { baseUrl, fetcher }
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-4 py-8">
       {brandHeader}
@@ -128,6 +133,7 @@ export function PaymentLinkLandingPage({
         bankTransferInstructions={bankTransferInstructions}
         onPayByCard={onPayByCard}
         onRetry={onRetry}
+        apiClient={apiClient}
       />
       {brandFooter}
     </div>
@@ -181,11 +187,13 @@ function Body({
   bankTransferInstructions,
   onPayByCard,
   onRetry,
+  apiClient,
 }: {
   session: PublicPaymentSession
   bankTransferInstructions?: BankTransferInstructions
   onPayByCard?: () => void
   onRetry?: () => Promise<void> | void
+  apiClient: PaymentLinkApiClient
 }) {
   const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   // Terminal states — short-circuit body to a status panel.
@@ -220,7 +228,7 @@ function Body({
 
   // Single method — render inline without tabs.
   if (cardAvailable && !bankAvailable) {
-    return <CardPanel session={session} onPayByCard={onPayByCard} />
+    return <CardPanel session={session} onPayByCard={onPayByCard} apiClient={apiClient} />
   }
   if (bankAvailable && !cardAvailable && bankTransferInstructions) {
     return <BankTransferPanel session={session} instructions={bankTransferInstructions} />
@@ -240,7 +248,7 @@ function Body({
         </TabsTrigger>
       </TabsList>
       <TabsContent value="card" className="mt-4">
-        <CardPanel session={session} onPayByCard={onPayByCard} />
+        <CardPanel session={session} onPayByCard={onPayByCard} apiClient={apiClient} />
       </TabsContent>
       <TabsContent value="bank" className="mt-4">
         {bankTransferInstructions && (
@@ -254,9 +262,11 @@ function Body({
 function CardPanel({
   session,
   onPayByCard,
+  apiClient,
 }: {
   session: PublicPaymentSession
   onPayByCard?: () => void
+  apiClient: PaymentLinkApiClient
 }) {
   const i18n = useCheckoutUiI18nOrDefault()
   const messages = i18n.messages.paymentLinkLandingPage
@@ -278,10 +288,13 @@ function CardPanel({
     setStarting(true)
     setError(null)
     try {
-      const res = await fetch(`/api/v1/public/payment-link/${session.id}/start-card`, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-      })
+      const res = await apiClient.fetcher(
+        joinUrl(apiClient.baseUrl, `/v1/public/payment-link/${session.id}/start-card`),
+        {
+          method: "POST",
+          headers: { Accept: "application/json" },
+        },
+      )
       const body = (await res.json()) as StartCardResponse
       if (!res.ok || !body.data?.redirectUrl) {
         throw new Error(body.error ?? messages.card.startFailed)
@@ -310,6 +323,17 @@ function CardPanel({
       )}
     </div>
   )
+}
+
+interface PaymentLinkApiClient {
+  baseUrl: string
+  fetcher: VoyantFetcher
+}
+
+function joinUrl(baseUrl: string, path: string): string {
+  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  const trimmedPath = path.startsWith("/") ? path : `/${path}`
+  return `${trimmedBase}${trimmedPath}`
 }
 
 function BankTransferPanel({

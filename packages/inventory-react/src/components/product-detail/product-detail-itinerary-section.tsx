@@ -31,53 +31,19 @@ import {
   useProductItineraryDays,
   useProductItineraryMutation,
 } from "../../index.js"
+import { useVoyantProductsContext } from "../../provider.js"
 import { ProductItineraryDialog } from "../product-itinerary-dialog.js"
-import type { ProductMediaUploadHandler } from "../product-media-section.js"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import { ProductDaySheet } from "./product-day-sheet.js"
 import { ProductDetailDayRow } from "./product-detail-day-row.js"
 import { ActionMenu, EmptyState, Section } from "./product-detail-sections.js"
 import { ServiceDialog } from "./product-service-dialog.js"
-
-/**
- * Storage-only upload handler for the day media tray. The tray does its
- * own DB insert via `useProductMediaMutation.create` after this returns,
- * so this handler must NOT call the products API — only the R2 upload
- * endpoint — otherwise we'd write two media rows per file.
- */
-const uploadDayMediaToStorage: ProductMediaUploadHandler = async (file) => {
-  const formData = new FormData()
-  formData.append("file", file)
-  const res = await fetch("/api/v1/admin/uploads", {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  })
-  if (!res.ok) throw new Error(`Upload failed (${res.status})`)
-  const upload = (await res.json()) as {
-    key: string
-    url: string
-    mimeType: string
-    size: number
-  }
-  const mediaType: "image" | "video" | "document" = upload.mimeType.startsWith("video/")
-    ? "video"
-    : upload.mimeType.startsWith("image/")
-      ? "image"
-      : "document"
-  return {
-    url: upload.url,
-    name: file.name,
-    storageKey: upload.key,
-    mimeType: upload.mimeType,
-    fileSize: upload.size,
-    mediaType,
-  }
-}
+import { createDayMediaUploadHandler } from "./upload-day-media.js"
 
 export function ProductDetailItinerarySection({ productId }: { productId: string }) {
   const messages = useProductDetailMessages()
   const api = useProductDetailApi()
+  const { baseUrl, fetcher } = useVoyantProductsContext()
   const productMessages = messages.products.core
   const queryClient = useQueryClient()
   const itineraryQuery = useProductItineraries(productId)
@@ -98,6 +64,10 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
   const [editingItinerary, setEditingItinerary] = useState<ProductItineraryRecord | undefined>()
   const [deleteItineraryTarget, setDeleteItineraryTarget] = useState<ProductItineraryRecord | null>(
     null,
+  )
+  const uploadDayMediaToStorage = useMemo(
+    () => createDayMediaUploadHandler({ baseUrl, fetcher }),
+    [baseUrl, fetcher],
   )
 
   const itineraries = useMemo(() => itineraryQuery.data?.data ?? [], [itineraryQuery.data?.data])
