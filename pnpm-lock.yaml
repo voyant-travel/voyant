@@ -1937,6 +1937,9 @@ importers:
       '@voyant-travel/commerce':
         specifier: workspace:*
         version: link:../commerce
+      '@voyant-travel/connect-sdk':
+        specifier: 0.9.1
+        version: 0.9.1
       '@voyant-travel/db':
         specifier: workspace:*
         version: link:../db
@@ -1970,6 +1973,9 @@ importers:
       '@voyant-travel/operator-settings':
         specifier: workspace:*
         version: link:../operator-settings
+      '@voyant-travel/plugin-voyant-connect':
+        specifier: ^0.3.2
+        version: 0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@0.140.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9))(@voyant-travel/data-sdk@0.7.1)
       '@voyant-travel/quotes':
         specifier: workspace:*
         version: link:../quotes
@@ -7440,20 +7446,35 @@ packages:
   '@vitest/utils@4.1.9':
     resolution: {integrity: sha512-A51o8ymO5PpqlWNnBP9ZHPXDIpuMtTLlGSjN7la4US+LJzoUMyhwjA5QXlm39JexgwHKW4Xjs8Z2d3dLCXOeuA==}
 
+  '@voyant-travel/action-ledger@0.105.12':
+    resolution: {integrity: sha512-BTpP0ZGz9IfSPaz6S0o3BRY3227cxe6Ud8Kf4RnOILdIMGtRDCQmCgggJQP6YA8okLEMZe1B02yaYqy71EZcSw==}
+
   '@voyant-travel/action-ledger@0.105.9':
     resolution: {integrity: sha512-m27It9F+n4OH6ghMyqxmSzs/goeL/3ZVVy10GEXS7OaTWY1j7dHvQvkveCb3yUqcRkQ+9/woAUJ4bhPPiqRRZw==}
 
   '@voyant-travel/bookings-contracts@0.106.6':
     resolution: {integrity: sha512-fm+WOoKcJCotbrZA+21VQpDLULgC9GfGbkCtZqGa+pEG7DI6f+rrDCyarZYHk+TzXTvDLff+26ZFFeuk6SMQNQ==}
 
+  '@voyant-travel/bookings-contracts@0.106.7':
+    resolution: {integrity: sha512-y+HSm3/lQnmZ9SqGTwfwcbU4dOeAFyvXaEve7hO++8WEzPnd0wRGqZMG5vVQYbZImsegt3Fbec1RlUM898xx3w==}
+
   '@voyant-travel/bookings@0.137.1':
     resolution: {integrity: sha512-MjI2hp2YotxGiH5g6sZTwG/GewBbYbtmON5SdjGZgT4nOefW9CiGGR19hy509/RjxgQO+KcBJtGTDe2jN/xFiA==}
+
+  '@voyant-travel/bookings@0.141.3':
+    resolution: {integrity: sha512-zAae+GWcbnHd2Om+I0rhatfxAHmt7HfKsMqIG4CigoifdicaXzTqbBQuhDBUgNg6JYal1PZxyzMMvtWrFaRYXQ==}
 
   '@voyant-travel/catalog-contracts@0.108.0':
     resolution: {integrity: sha512-YjG4efqgJJS9JmHVogkpjdJO77F1u8zPUZY+4UgK8rGTgojXgSnZOiD4YAtamvGGWKqt59qeBE7sAMRgIwP8Iw==}
 
+  '@voyant-travel/catalog-contracts@0.108.2':
+    resolution: {integrity: sha512-OHzAxhDsTfoIHIu3JMV0pvRxSQwvlVnIeo9BqP9zJv43nwaZ3T3L9rdtXmLfaB3Cic8NMBNIOwHZYNkvoJ41oA==}
+
   '@voyant-travel/catalog@0.135.1':
     resolution: {integrity: sha512-qdbrsYY0iggnVvAjuTDzCwfZlbNxOg+LWPW+ApI+TfL0R4OLLhD9ApLdBTH7C74Ddx6h82L6W+UN4ddDuvk3wQ==}
+
+  '@voyant-travel/catalog@0.139.0':
+    resolution: {integrity: sha512-KVsCHuS4G5iuqELSLuqP7F7jTKtOfmnxl3wJV1I3dcwm4JJnP+1IggKTiBGaKJMVTBLEtM8y0BL5aLKNVFm/YA==}
 
   '@voyant-travel/cli@0.32.2':
     resolution: {integrity: sha512-iJRNlP8OAVciiUAnN34ZF9OaVh+PcQWRBe/FRVqtkSNx840UFHfvGHf3Dt9ODFRLuHaJ1VJDzwtjqkBDleH/qQ==}
@@ -7504,6 +7525,15 @@ packages:
   '@voyant-travel/core@0.111.0':
     resolution: {integrity: sha512-gtP2hk4pBBrO5dLtuZrhT2AIDrhmjH++gtgGDibF6edIeVBtr/19iwJ5JHRF9Rq5bfRElw+0/tSxWNCI4T5cTA==}
 
+  '@voyant-travel/core@0.112.2':
+    resolution: {integrity: sha512-YVKGdhfY9ehzahlO9wHmd5vn91yRVENASEc1PeZJNOQ0YtM2JlmBMsE+5Igc76ozeU2WqCK0tDr4gqBvNkDvug==}
+
+  '@voyant-travel/cruises-contracts@0.105.4':
+    resolution: {integrity: sha512-/wIWvyn5jmBI98c5+VY1IZfoBVPGnMGP8nfna5tnvXWWzUcf4c08wMySq7mmy2g6y2yys1rK/w1QgBzpoSKEpw==}
+
+  '@voyant-travel/cruises@0.140.0':
+    resolution: {integrity: sha512-i1HMXjZHhg73Up8OrZaLW3We8D+PActvCddrPDJ9i4e+W9yfEbWlt9NI5m+3vxLjUoIuEiJonguew/5C4p0pAw==}
+
   '@voyant-travel/data-sdk@0.7.1':
     resolution: {integrity: sha512-sJvDL8cO0en81z9RpjuL7ugyecJGcYygt5QclHCbfW5HLhmL/5Cho+50etvPtNXoH50TyQQcdLucEqH5cpN3Cw==}
     bundledDependencies:
@@ -7511,6 +7541,9 @@ packages:
 
   '@voyant-travel/db@0.109.4':
     resolution: {integrity: sha512-h+CAczy0xMYlrX9WQSuA8yVZ6D4PSqJ24v4xaVboayWVD+Hn6P3CGpOwoxzOTVp62oqDfxm1p/CGvysWVHscUA==}
+
+  '@voyant-travel/db@0.109.5':
+    resolution: {integrity: sha512-65CnQSvTdA57NkHduMXTlYJDXklSYvfKHNRregshU0APowlavvqGSJQ98KA3Wsn9SWbjsSiFw+60+Q/tkQxGyQ==}
 
   '@voyant-travel/distribution@0.127.1':
     resolution: {integrity: sha512-i5BSLtrPy5MPgx1FotVyJFCMN3r40otmKpJ4v4xtd8RIG2HC3KxwvO4Rw1hxvlBdFabz05lwuFIP/mHdXig8SQ==}
@@ -7523,6 +7556,9 @@ packages:
 
   '@voyant-travel/hono@0.118.0':
     resolution: {integrity: sha512-4/vtN2U8ZA8cjlxmY5GzNNltQH/tLfnl3PUQvPDUKaQS+7+cnM/RIUVsEKPYYhTNWNt5rvgDsAlKlmkSf9L/9g==}
+
+  '@voyant-travel/hono@0.121.3':
+    resolution: {integrity: sha512-+CAVEK0qND1koHXDh+VfpW3Mk1FiEaOEnSZBOrOUFOpz0WIao6XvmFKUQIwAMrq9SE7eotQ/JFe0SX+saJPggg==}
 
   '@voyant-travel/identity-contracts@0.104.8':
     resolution: {integrity: sha512-RnHC5QZIF/G0KC56VOHYe1j7uG+m7+iWxwFiRvIbB7nT47T+DLJY3ZKnlqYinHb00xdq3qJ77ys1+met3fbkqA==}
@@ -7584,6 +7620,9 @@ packages:
   '@voyant-travel/schema-kit@0.111.0':
     resolution: {integrity: sha512-77gDuOlP2fr2x10Wwwc+oA6qiQVY8izMQWvFdgRUatJLQr77TJWrUm8ArHDUHOb0xsQqebbrpHcFr4GSPoZLCg==}
 
+  '@voyant-travel/schema-kit@0.111.1':
+    resolution: {integrity: sha512-NfYS+Wb0xPkol07W00tZPN796tDFmE1FF8uLyVd5Sb5A5FjKLIgHC6ZXXVxeGKzmj4n9mY+kYxBp5fJUpcmofQ==}
+
   '@voyant-travel/storage@0.106.0':
     resolution: {integrity: sha512-aBTeXcF+qYR7FfBqMX/maEbstRvfM+uZlJ014b6/IjZAQwpAsKSyHD5GoPcF7ZMD5FYhDZEM3jEdYAShNteNqg==}
     peerDependencies:
@@ -7596,11 +7635,20 @@ packages:
   '@voyant-travel/templating@0.104.1':
     resolution: {integrity: sha512-H4ogSzc4tCo0xtQkAu1hyqOAuHLYaNHKu+1CCacxGtGhqpjiEnTATyPYYJWHmZ4UKWhqFuTCFIJY/YN/dheD1g==}
 
+  '@voyant-travel/tools@0.1.0':
+    resolution: {integrity: sha512-ZL7fWPSpFJcxsaNPCiLYKqQ1TyWgIOWpPiCthZWAh+wqb7li4WpSMLes8c+ao8Zhl2+ctusKK8NhYZWNte0Wog==}
+
   '@voyant-travel/types@0.106.0':
     resolution: {integrity: sha512-1GT6dzHCxEPm6rnLmpSrZ8ZTUPjagVu8NryBiMRa4/09FcMxXnx7LcuifL+FIilkMD6D11SZVGEcQF35Pq2DRw==}
 
+  '@voyant-travel/types@0.107.0':
+    resolution: {integrity: sha512-h5vI6E/Sn4nBIIGgrBGyiIvmHczCUhmEDi0sBBfEiziQZxUpuPt7UAenOBb/nnuhygZGE5SEZWHljuYH/qQ8ng==}
+
   '@voyant-travel/utils@0.105.4':
     resolution: {integrity: sha512-twuhb7Y67CkhakCN4s8cKkcbhK5kPxT77GL8UslZ4pns2LcXbNRlmrpyTNnGUdit0Rv/ovWXZRiXnQWpO14s8A==}
+
+  '@voyant-travel/utils@0.105.6':
+    resolution: {integrity: sha512-Bnc7O7xUze0uZdTJbMt7pSFHUR2eu1G6Pbmew6KnXc38oyU+BtJpU0wE5nXNGgCk3hpncjMj8kqCP0rxP3bdcQ==}
 
   '@voyant-travel/workflows-orchestrator-node@0.107.11':
     resolution: {integrity: sha512-eJUfWq9K+WwSdEUx3EAb357cYvYK4wC1o/cBJY41ZTU+i7Fc9Urau65U++vLFsFmZ3wxzUZUetgnAS0TOFU0fw==}
@@ -7618,6 +7666,14 @@ packages:
 
   '@voyant-travel/workflows@0.111.14':
     resolution: {integrity: sha512-P0J1xzVq6reDXyAAMT8gJfMugDaprfvh9G155wjh5+44ILvIHhHeZXJjmMdXnt4ulAFG4iuvWcqSAlUyttn+Wg==}
+    peerDependencies:
+      zod: ^3.23.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+  '@voyant-travel/workflows@0.111.17':
+    resolution: {integrity: sha512-E5NWPbvHbeD7JT37wRMtKpiNmIhv6n8arwGL09FIt55yVSqkDR1Wgl+JHb02nFdaK8eAPJq/GVB4mIN6a+amVQ==}
     peerDependencies:
       zod: ^3.23.0 || ^4.0.0
     peerDependenciesMeta:
@@ -14556,6 +14612,46 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
+  '@voyant-travel/action-ledger@0.105.12(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
+    dependencies:
+      '@hono/zod-openapi': 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/core': 0.112.2
+      '@voyant-travel/db': 0.109.5(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      '@voyant-travel/hono': 0.121.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono: 4.12.25
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+
   '@voyant-travel/action-ledger@0.105.9(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
     dependencies:
       '@hono/zod-openapi': 1.4.0(hono@4.12.25)(zod@4.4.3)
@@ -14599,6 +14695,11 @@ snapshots:
   '@voyant-travel/bookings-contracts@0.106.6':
     dependencies:
       '@voyant-travel/schema-kit': 0.111.0
+      zod: 4.4.3
+
+  '@voyant-travel/bookings-contracts@0.106.7':
+    dependencies:
+      '@voyant-travel/schema-kit': 0.111.1
       zod: 4.4.3
 
   '@voyant-travel/bookings@0.137.1(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
@@ -14645,7 +14746,56 @@ snapshots:
       - sql.js
       - sqlite3
 
+  '@voyant-travel/bookings@0.141.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
+    dependencies:
+      '@hono/zod-openapi': 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/action-ledger': 0.105.12(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/bookings-contracts': 0.106.7
+      '@voyant-travel/core': 0.112.2
+      '@voyant-travel/db': 0.109.5(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      '@voyant-travel/hono': 0.121.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/tools': 0.1.0
+      '@voyant-travel/types': 0.107.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      '@voyant-travel/utils': 0.105.6(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono: 4.12.25
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+
   '@voyant-travel/catalog-contracts@0.108.0':
+    dependencies:
+      zod: 4.4.3
+
+  '@voyant-travel/catalog-contracts@0.108.2':
     dependencies:
       zod: 4.4.3
 
@@ -14656,6 +14806,48 @@ snapshots:
       '@voyant-travel/core': 0.111.0
       '@voyant-travel/db': 0.109.4(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
       '@voyant-travel/hono': 0.118.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono: 4.12.25
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+
+  '@voyant-travel/catalog@0.139.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
+    dependencies:
+      '@hono/zod-openapi': 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/catalog-contracts': 0.108.2
+      '@voyant-travel/core': 0.112.2
+      '@voyant-travel/db': 0.109.5(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      '@voyant-travel/hono': 0.121.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/tools': 0.1.0
       drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono: 4.12.25
       zod: 4.4.3
@@ -14745,6 +14937,12 @@ snapshots:
       '@voyant-travel/catalog': link:packages/catalog
       '@voyant-travel/connect-sdk': 0.9.1
 
+  '@voyant-travel/connect-cruises@0.6.1(@voyant-travel/cruises@0.140.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9))':
+    dependencies:
+      '@voyant-travel/connect-sdk': 0.9.1
+    optionalDependencies:
+      '@voyant-travel/cruises': 0.140.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+
   '@voyant-travel/connect-cruises@0.6.1(@voyant-travel/cruises@packages+cruises)':
     dependencies:
       '@voyant-travel/connect-sdk': 0.9.1
@@ -14757,6 +14955,57 @@ snapshots:
 
   '@voyant-travel/core@0.111.0': {}
 
+  '@voyant-travel/core@0.112.2': {}
+
+  '@voyant-travel/cruises-contracts@0.105.4':
+    dependencies:
+      '@voyant-travel/catalog-contracts': 0.108.0
+      zod: 4.4.3
+
+  '@voyant-travel/cruises@0.140.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
+    dependencies:
+      '@hono/zod-openapi': 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/bookings': 0.141.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/catalog': 0.139.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/core': 0.112.2
+      '@voyant-travel/cruises-contracts': 0.105.4
+      '@voyant-travel/db': 0.109.5(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      '@voyant-travel/hono': 0.121.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/types': 0.107.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono: 4.12.25
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+
   '@voyant-travel/data-sdk@0.7.1': {}
 
   '@voyant-travel/db@0.109.4(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)':
@@ -14764,6 +15013,44 @@ snapshots:
       '@neondatabase/serverless': 1.1.0
       '@voyant-travel/core': 0.111.0
       '@voyant-travel/schema-kit': 0.111.0
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      postgres: 3.4.9
+      typeid-js: 1.2.0
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - prisma
+      - sql.js
+      - sqlite3
+
+  '@voyant-travel/db@0.109.5(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)':
+    dependencies:
+      '@neondatabase/serverless': 1.1.0
+      '@voyant-travel/core': 0.112.2
+      '@voyant-travel/schema-kit': 0.111.1
       drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       postgres: 3.4.9
       typeid-js: 1.2.0
@@ -14905,6 +15192,49 @@ snapshots:
       '@voyant-travel/types': 0.106.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
       '@voyant-travel/utils': 0.105.4(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       '@voyant-travel/workflows': 0.111.14(zod@4.4.3)
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono: 4.12.25
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+
+  '@voyant-travel/hono@0.121.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
+    dependencies:
+      '@hono/zod-openapi': 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/core': 0.112.2
+      '@voyant-travel/db': 0.109.5(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      '@voyant-travel/storage': 0.106.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/types': 0.107.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      '@voyant-travel/utils': 0.105.6(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/workflows': 0.111.17(zod@4.4.3)
       drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       hono: 4.12.25
       zod: 4.4.3
@@ -15178,6 +15508,16 @@ snapshots:
       - sql.js
       - sqlite3
 
+  '@voyant-travel/plugin-voyant-connect@0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@0.140.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9))(@voyant-travel/data-sdk@0.7.1)':
+    dependencies:
+      '@voyant-travel/connect-adapter': 0.4.0(@voyant-travel/catalog@packages+catalog)
+      '@voyant-travel/connect-cruises': 0.6.1(@voyant-travel/cruises@0.140.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9))
+      '@voyant-travel/connect-sdk': 0.9.1
+      '@voyant-travel/cruises': 0.140.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      '@voyant-travel/data-sdk': 0.7.1
+    optionalDependencies:
+      '@voyant-travel/catalog': link:packages/catalog
+
   '@voyant-travel/plugin-voyant-connect@0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.7.1)':
     dependencies:
       '@voyant-travel/connect-adapter': 0.4.0(@voyant-travel/catalog@packages+catalog)
@@ -15243,6 +15583,11 @@ snapshots:
       typeid-js: 1.2.0
       zod: 4.4.3
 
+  '@voyant-travel/schema-kit@0.111.1':
+    dependencies:
+      typeid-js: 1.2.0
+      zod: 4.4.3
+
   '@voyant-travel/storage@0.106.0(hono@4.12.25)(zod@4.4.3)':
     dependencies:
       hono: 4.12.25
@@ -15257,9 +15602,46 @@ snapshots:
     dependencies:
       liquidjs: 10.27.1
 
+  '@voyant-travel/tools@0.1.0':
+    dependencies:
+      zod: 4.4.3
+
   '@voyant-travel/types@0.106.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)':
     dependencies:
       '@voyant-travel/db': 0.109.4(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - prisma
+      - sql.js
+      - sqlite3
+
+  '@voyant-travel/types@0.107.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)':
+    dependencies:
+      '@voyant-travel/db': 0.109.5(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
       zod: 4.4.3
     transitivePeerDependencies:
       - '@aws-sdk/client-rds-data'
@@ -15296,6 +15678,44 @@ snapshots:
       '@voyant-travel/types': 0.106.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
       drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       liquidjs: 10.27.1
+      pdf-lib: 1.17.1
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+
+  '@voyant-travel/utils@0.105.6(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)':
+    dependencies:
+      '@voyant-travel/templating': 0.104.1
+      '@voyant-travel/types': 0.107.0(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       pdf-lib: 1.17.1
       zod: 4.4.3
     transitivePeerDependencies:
@@ -15378,6 +15798,10 @@ snapshots:
       zod: 4.4.3
 
   '@voyant-travel/workflows@0.111.14(zod@4.4.3)':
+    optionalDependencies:
+      zod: 4.4.3
+
+  '@voyant-travel/workflows@0.111.17(zod@4.4.3)':
     optionalDependencies:
       zod: 4.4.3
 

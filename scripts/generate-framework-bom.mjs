@@ -28,7 +28,9 @@ const EMIT = process.argv.includes("--emit")
 const runtimePackages = JSON.parse(readFileSync(MANIFEST, "utf-8")).runtimePackages
 const frameworkRuntimeEntryDeps = {
   "@voyant-travel/cloud-sdk": "^0.11.0",
+  "@voyant-travel/connect-sdk": "0.9.1",
   "@voyant-travel/db": "workspace:*",
+  "@voyant-travel/plugin-voyant-connect": "^0.3.2",
   "@voyant-travel/runtime": "workspace:*",
   "@voyant-travel/storage": "workspace:*",
   "@voyant-travel/workflows": "workspace:*",

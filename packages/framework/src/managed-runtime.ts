@@ -4,7 +4,15 @@
 import { readFile } from "node:fs/promises"
 
 import { OpenAPIHono } from "@hono/zod-openapi"
+import type {
+  CatalogOffersAirportLabel,
+  CatalogOffersConnectClient,
+  CatalogOffersIndexFields,
+  CatalogOffersRouteModuleOptions,
+  CatalogOffersSearchDestination,
+} from "@voyant-travel/catalog/offers"
 import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
+import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { EventBus } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db"
 import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
@@ -32,6 +40,7 @@ import {
   getOperatorProfile,
   resolveBookingTaxSettings,
 } from "@voyant-travel/operator-settings"
+import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
 import {
   type CreateNodeServerOptions,
   composeNodeEnv,
@@ -83,7 +92,13 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
+  VOYANT_CONNECT_API_KEY?: string
+  VOYANT_CONNECT_OPERATOR_ID?: string
+  VOYANT_CONNECT_API_URL?: string
   VOYANT_DATA_API_KEY?: string
+  TYPESENSE_HOST?: string
+  TYPESENSE_ADMIN_API_KEY?: string
+  TYPESENSE_API_KEY?: string
   VOYANT_ADMIN_AUTH_MODE?: string
   VOYANT_CLOUD_DEPLOYMENT_ID?: string
   VOYANT_CLOUD_ADMIN_AUTH_START_URL?: string
@@ -290,7 +305,7 @@ export function createManagedProfileProviders(
     loadActionLedgerHealthRoutes: createManagedActionLedgerHealthRoutes,
     loadProposalAdminRoutes: emptyRoutes,
     loadProposalPublicRoutes: emptyRoutes,
-    loadCatalogOffersRoutes: emptyRoutes,
+    loadCatalogOffersRoutes: createManagedCatalogOffersRoutes,
     loadCatalogCheckoutRoutes: emptyRoutes,
   }
   return { ...providers, ...overrides }
@@ -630,6 +645,181 @@ function createNoopStorefrontIntakePersistence(): FrameworkProviders["storefront
 
 function dbFromContext(c: Context): PostgresJsDatabase {
   return c.get("db") as PostgresJsDatabase
+}
+
+function managedEnv(c: Context): ManagedProfileRuntimeEnv {
+  return (c.env ?? {}) as ManagedProfileRuntimeEnv
+}
+
+function connectApiKey(env: ManagedProfileRuntimeEnv): string | undefined {
+  return env.VOYANT_API_KEY ?? env.VOYANT_CONNECT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
+}
+
+const CATALOG_OFFERS_INDEX_LOOKUP_BATCH = 80
+type ConnectRequestMethod = "DELETE" | "GET" | "PATCH" | "POST" | "PUT"
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
+  return out
+}
+
+function resolveCatalogOffersConnectClient(c: Context): CatalogOffersConnectClient | null {
+  const env = managedEnv(c)
+  const apiKey = connectApiKey(env)
+  const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
+  if (!apiKey || !operatorId) return null
+
+  const options = {
+    apiKey,
+    operatorId,
+    ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
+  }
+  const client = createVoyantConnectClient(options)
+  return {
+    transport: {
+      request: (path, init) =>
+        client.transport.request<unknown>(path, {
+          method: toConnectRequestMethod(init.method),
+          ...(init.body !== undefined ? { body: toConnectRequestBody(init.body) } : {}),
+          ...(init.unwrapData !== undefined ? { unwrapData: init.unwrapData } : {}),
+        }),
+    },
+    accommodations: {
+      getOnConnection: (connectionId, externalId, options) =>
+        client.accommodations.getOnConnection(connectionId, externalId, options),
+    },
+    cruises: {
+      getOnConnection: (connectionId, externalId) =>
+        client.cruises.getOnConnection(connectionId, externalId),
+      listSailingPricing: (connectionId, sailingRef) =>
+        client.cruises.listSailingPricing(connectionId, sailingRef),
+    },
+  }
+}
+
+function toConnectRequestMethod(method: string): ConnectRequestMethod {
+  const normalized = method.toUpperCase()
+  switch (normalized) {
+    case "DELETE":
+    case "GET":
+    case "PATCH":
+    case "POST":
+    case "PUT":
+      return normalized
+    default:
+      throw new TypeError(`Unsupported Connect request method: ${method}`)
+  }
+}
+
+function toConnectRequestBody(body: unknown): object | BodyInit | null {
+  if (body === null || typeof body === "string") return body
+  if (typeof body === "object") return body
+  throw new TypeError("Catalog offers Connect requests must use object, string, or null bodies")
+}
+
+async function fetchCatalogOffersIndexFields(
+  c: Context,
+  ids: string[],
+): Promise<Map<string, CatalogOffersIndexFields>> {
+  const env = managedEnv(c)
+  const out = new Map<string, CatalogOffersIndexFields>()
+  const host = env.TYPESENSE_HOST
+  const key = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
+  if (!host || !key || ids.length === 0) return out
+
+  const base = host.startsWith("http") ? host.replace(/\/$/, "") : `https://${host}`
+  const distinct = [...new Set(ids)]
+  for (const batch of chunk(distinct, CATALOG_OFFERS_INDEX_LOOKUP_BATCH)) {
+    const filter = `id:=[${batch.map((id) => `\`${id}\``).join(",")}]`
+    const url =
+      `${base}/collections/products__en-GB__staff__default/documents/search` +
+      `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}&per_page=${batch.length}` +
+      `&include_fields=id,name,thumbnailUrl,stars,destinations,countryCodes`
+    try {
+      const res = (await fetch(url, { headers: { "X-TYPESENSE-API-KEY": key } }).then((r) =>
+        r.json(),
+      )) as { hits?: Array<{ document?: CatalogOffersIndexFields & { id?: string } }> }
+      for (const hit of res.hits ?? []) {
+        if (hit.document?.id) out.set(hit.document.id, hit.document)
+      }
+    } catch {
+      // Enrichment is best-effort; cards still render from the offer payload.
+    }
+  }
+  return out
+}
+
+async function resolveCatalogOffersDynamicHotelIds(
+  c: Context,
+  destination: CatalogOffersSearchDestination,
+  limit: number,
+): Promise<string[]> {
+  const env = managedEnv(c)
+  const host = env.TYPESENSE_HOST
+  const key = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
+  if (!host || !key) return []
+
+  const base = host.startsWith("http") ? host.replace(/\/$/, "") : `https://${host}`
+  const filters = ["supplyModel:=dynamic"]
+  if (destination.countryCode) filters.push(`countryCodes:=[\`${destination.countryCode}\`]`)
+  if (destination.city) filters.push(`destinations:=[\`${destination.city}\`]`)
+  const filter = filters.join(" && ")
+  const url =
+    `${base}/collections/products__en-GB__staff__default/documents/search` +
+    `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}` +
+    `&per_page=${Math.min(limit, 250)}&include_fields=id`
+  try {
+    const res = (await fetch(url, { headers: { "X-TYPESENSE-API-KEY": key } }).then((r) =>
+      r.json(),
+    )) as { hits?: Array<{ document?: { id?: string } }> }
+    return (res.hits ?? []).map((hit) => hit.document?.id).filter((id): id is string => Boolean(id))
+  } catch {
+    return []
+  }
+}
+
+async function resolveCatalogOffersAirportLabels(
+  c: Context,
+  codes: string[],
+): Promise<CatalogOffersAirportLabel[]> {
+  const env = managedEnv(c)
+  const sorted = [...new Set(codes)].sort()
+  const apiKey = connectApiKey(env)
+  if (!apiKey || sorted.length === 0) return sorted.map((code) => ({ code, label: code }))
+
+  let resolver: ReturnType<typeof createDestinationNameResolver> | null = null
+  try {
+    resolver = createDestinationNameResolver({ apiKey })
+  } catch {
+    resolver = null
+  }
+
+  return Promise.all(
+    sorted.map(async (code) => {
+      if (!resolver) return { code, label: code }
+      try {
+        const city = await resolver.resolve(code)
+        return { code, label: city && city !== code ? `${city} (${code})` : code }
+      } catch {
+        return { code, label: code }
+      }
+    }),
+  )
+}
+
+function createManagedCatalogOffersRouteOptions(): CatalogOffersRouteModuleOptions {
+  return {
+    resolveConnectClient: resolveCatalogOffersConnectClient,
+    fetchIndexFields: fetchCatalogOffersIndexFields,
+    resolveDynamicHotelIds: resolveCatalogOffersDynamicHotelIds,
+    resolveAirportLabels: resolveCatalogOffersAirportLabels,
+  }
+}
+
+async function createManagedCatalogOffersRoutes() {
+  const { createCatalogOffersAdminRoutes } = await import("@voyant-travel/catalog/offers")
+  return createCatalogOffersAdminRoutes(createManagedCatalogOffersRouteOptions())
 }
 
 async function createManagedActionLedgerHealthRoutes() {
