@@ -89,6 +89,11 @@ export interface QuoteProposalRoutesOptions {
   ): Promise<PublicProposalFeedbackRecord | null>
 }
 
+export interface QuoteVersionSnapshotRoutesOptions {
+  /** Resolve the concrete transactional db for a request. */
+  resolveDb(c: Context): PostgresJsDatabase
+}
+
 type OperatorProposalRouteEnv = {
   Bindings: Record<string, unknown>
   Variables: {
@@ -302,7 +307,7 @@ export function createQuoteProposalPublicRoutes(
 
 /** Build the Trip-snapshot freeze route (relative path; mount at `/v1/admin/trips`). */
 export function createQuoteVersionSnapshotRoutes(
-  options: QuoteProposalRoutesOptions,
+  options: QuoteVersionSnapshotRoutesOptions,
 ): Hono<OperatorQuoteVersionSnapshotRouteEnv> {
   const app = new Hono<OperatorQuoteVersionSnapshotRouteEnv>()
   app.post("/:envelopeId/quote-versions/:quoteVersionId/snapshot", (c) =>
@@ -952,7 +957,7 @@ function canonicalSnapshotValue(value: unknown): unknown {
 
 async function handleFreezeQuoteVersionSnapshot(
   c: Context<OperatorQuoteVersionSnapshotRouteEnv>,
-  options: QuoteProposalRoutesOptions,
+  options: QuoteVersionSnapshotRoutesOptions,
 ) {
   const envelopeId = c.req.param("envelopeId")
   const quoteVersionId = c.req.param("quoteVersionId")

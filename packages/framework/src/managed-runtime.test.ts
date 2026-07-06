@@ -260,6 +260,13 @@ describe("managed profile runtime entry", () => {
     expect(app.routes.length).toBeGreaterThan(0)
   }, 10000)
 
+  it("wires package-owned quote-version snapshot routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadQuoteVersionSnapshotRoutes()
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+  }, 10000)
+
   it("wires package-owned action-ledger health routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()
 

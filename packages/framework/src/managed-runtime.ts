@@ -303,7 +303,7 @@ export function createManagedProfileProviders(
     loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
     loadBookingScheduleAdminRoutes: emptyRoutes,
     loadPaymentPolicyPublicRoutes: emptyRoutes,
-    loadQuoteVersionSnapshotRoutes: emptyRoutes,
+    loadQuoteVersionSnapshotRoutes: createManagedQuoteVersionSnapshotRoutes,
     loadBookingMaintenanceRoutes: createManagedBookingMaintenanceRoutes,
     loadActionLedgerHealthRoutes: createManagedActionLedgerHealthRoutes,
     loadProposalAdminRoutes: emptyRoutes,
@@ -865,6 +865,13 @@ async function createManagedCatalogCheckoutRoutes() {
     resolveBookingTaxSettings,
     getOwnedProductName: getManagedOwnedProductName,
     resolveBankTransferInstructions: resolveManagedCheckoutBankTransferInstructions,
+  })
+}
+
+async function createManagedQuoteVersionSnapshotRoutes() {
+  const { createQuoteVersionSnapshotRoutes } = await import("@voyant-travel/quotes")
+  return createQuoteVersionSnapshotRoutes({
+    resolveDb: dbFromContext,
   })
 }
 
