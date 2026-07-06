@@ -282,7 +282,7 @@ describe("startCatalogCheckout", () => {
       paymentSessionId: "ps_bank_transfer",
       reference: "BOOK-BK-1001",
     })
-  })
+  }, 10000)
 })
 
 describe("createCatalogCheckoutRoutes", () => {

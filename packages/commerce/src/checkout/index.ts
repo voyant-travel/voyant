@@ -48,7 +48,11 @@ export type {
   CheckoutModuleOptions,
   CheckoutStartOptions,
 } from "./options.js"
-export { createCatalogCheckoutRoutes } from "./routes.js"
+export {
+  type BookingMaintenanceRoutesOptions,
+  createBookingMaintenanceRoutes,
+  createCatalogCheckoutRoutes,
+} from "./routes.js"
 export {
   type CatalogCheckoutStartContext,
   CatalogCheckoutStartError,
