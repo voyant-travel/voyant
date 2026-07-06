@@ -92,7 +92,6 @@ export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = [
   "operator/booking-schedule-extension",
   "operator/quote-version-snapshot-extension",
   "operator/proposal-extension",
-  "operator/catalog-checkout-extension",
 ] as const
 
 export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET = new Set<string>(

@@ -116,6 +116,9 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   BANK_TRANSFER_BENEFICIARY?: string
   BANK_TRANSFER_IBAN?: string
   BANK_TRANSFER_NOTES?: string
+  STOREFRONT_BANK_BENEFICIARY?: string
+  STOREFRONT_BANK_IBAN?: string
+  STOREFRONT_BANK_NAME?: string
   ORIGIN_TRUST_SECRET?: string
   PORT?: string
 }
@@ -306,7 +309,7 @@ export function createManagedProfileProviders(
     loadProposalAdminRoutes: emptyRoutes,
     loadProposalPublicRoutes: emptyRoutes,
     loadCatalogOffersRoutes: createManagedCatalogOffersRoutes,
-    loadCatalogCheckoutRoutes: emptyRoutes,
+    loadCatalogCheckoutRoutes: createManagedCatalogCheckoutRoutes,
   }
   return { ...providers, ...overrides }
 }
@@ -820,6 +823,49 @@ function createManagedCatalogOffersRouteOptions(): CatalogOffersRouteModuleOptio
 async function createManagedCatalogOffersRoutes() {
   const { createCatalogOffersAdminRoutes } = await import("@voyant-travel/catalog/offers")
   return createCatalogOffersAdminRoutes(createManagedCatalogOffersRouteOptions())
+}
+
+async function getManagedOwnedProductName(
+  db: PostgresJsDatabase,
+  entityModule: string,
+  entityId: string,
+): Promise<string | null> {
+  if (entityModule !== "products") return null
+  const { productsService } = await import("@voyant-travel/inventory")
+  const product = await productsService.getProductById(db, entityId)
+  return product?.name ?? null
+}
+
+async function resolveManagedCheckoutBankTransferInstructions(
+  db: PostgresJsDatabase,
+  env: Record<string, string | undefined>,
+) {
+  const [operatorProfile, paymentInstructions] = await Promise.all([
+    getOperatorProfile(db),
+    getOperatorPaymentInstructions(db),
+  ])
+
+  return {
+    beneficiary:
+      paymentInstructions?.bankTransferBeneficiary ||
+      operatorProfile?.legalName ||
+      operatorProfile?.name ||
+      env.BANK_TRANSFER_BENEFICIARY ||
+      env.STOREFRONT_BANK_BENEFICIARY ||
+      "-",
+    iban: paymentInstructions?.iban || env.BANK_TRANSFER_IBAN || env.STOREFRONT_BANK_IBAN || "-",
+    bankName:
+      paymentInstructions?.bank || env.BANK_TRANSFER_BANK_NAME || env.STOREFRONT_BANK_NAME || "-",
+  }
+}
+
+async function createManagedCatalogCheckoutRoutes() {
+  const { createCatalogCheckoutRoutes } = await import("@voyant-travel/commerce/checkout")
+  return createCatalogCheckoutRoutes({
+    resolveBookingTaxSettings,
+    getOwnedProductName: getManagedOwnedProductName,
+    resolveBankTransferInstructions: resolveManagedCheckoutBankTransferInstructions,
+  })
 }
 
 async function createManagedActionLedgerHealthRoutes() {
