@@ -218,7 +218,8 @@ export function stepHeadline(
   switch (step) {
     case "departure": {
       const range = draft.configure?.dateRange
-      if (range?.checkIn && range?.checkOut) return `${range.checkIn} → ${range.checkOut}`
+      if (range?.checkIn && range?.checkOut)
+        return `${formatConfigureDate(range.checkIn)} → ${formatConfigureDate(range.checkOut)}`
       // Never surface the raw slot id — show the departure date.
       return draft.configure?.departureDate
         ? formatConfigureDate(draft.configure.departureDate)
@@ -334,10 +335,16 @@ function DepartureDetails({
         />
       ) : null}
       {range?.checkIn ? (
-        <Row label={messages.bookingJourney.sidePanel.checkIn} value={range.checkIn} />
+        <Row
+          label={messages.bookingJourney.sidePanel.checkIn}
+          value={formatConfigureDate(range.checkIn)}
+        />
       ) : null}
       {range?.checkOut ? (
-        <Row label={messages.bookingJourney.sidePanel.checkOut} value={range.checkOut} />
+        <Row
+          label={messages.bookingJourney.sidePanel.checkOut}
+          value={formatConfigureDate(range.checkOut)}
+        />
       ) : null}
     </dl>
   )
@@ -581,9 +588,13 @@ function formatTaxRate(rate: number): string {
 function formatConfigureDate(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
+  // Date-only strings parse as UTC midnight; render them in UTC so the
+  // calendar date is not shifted for viewers in timezones west of UTC.
+  const timeZone = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? "UTC" : undefined
   return new Intl.DateTimeFormat(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone,
   }).format(date)
 }
