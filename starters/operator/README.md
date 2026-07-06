@@ -131,18 +131,15 @@ so the composed graph stays resident. Env/secrets come from the platform (no
 `.env` in the image).
 
 ```bash
-# Build + push (Cloud Build, from the repo root):
-gcloud builds submit --tag REGION-docker.pkg.dev/PROJECT/voyant/operator \
-  --config=/dev/stdin <<'EOF'
-steps:
-  - name: gcr.io/cloud-builders/docker
-    args: ["build","-f","starters/operator/Dockerfile","-t","$_IMAGE","."]
-images: ["$_IMAGE"]
-EOF
+# Build + push, from the repo root (custom Dockerfile path, so build locally and
+# push — or run the same `docker build` inside a Cloud Build `--config` step):
+IMAGE=REGION-docker.pkg.dev/PROJECT/voyant/operator
+docker build -f starters/operator/Dockerfile -t "$IMAGE" .
+docker push "$IMAGE"
 
 # Deploy (secrets via Secret Manager; DATABASE_URL_DIRECT = the pooled Node lane):
 gcloud run deploy operator \
-  --image=REGION-docker.pkg.dev/PROJECT/voyant/operator \
+  --image="$IMAGE" \
   --region=REGION --port=8080 --min-instances=1 --cpu-boost \
   --set-env-vars="APP_URL=https://operator.example/api,DASH_BASE_URL=https://operator.example,VOYANT_ADMIN_AUTH_MODE=local" \
   --set-secrets="DATABASE_URL_DIRECT=operator-db-direct:latest,BETTER_AUTH_SECRET=operator-auth:latest,SESSION_CLAIMS_SECRET=operator-session:latest,INTERNAL_API_KEY=operator-internal-key:latest,ORIGIN_TRUST_SECRET=operator-origin-trust:latest"
