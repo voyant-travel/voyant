@@ -103,16 +103,52 @@ pnpm -F operator db:studio     # open Drizzle Studio
 
 ## Deploy
 
-Build and run the Node process on your host (Cloud Run, a container, a VM):
+The operator is a resident Node process. Run the built server directly on any
+host (a VM, a container, Cloud Run), or use the reference `Dockerfile`.
 
 ```bash
 pnpm -F operator build            # dist/client + dist/server/server.js
 PORT=8080 pnpm -F operator start  # node dist/server/server.js
 ```
 
-Point a load balancer / the platform dispatcher at the process, set
-`ORIGIN_TRUST_SECRET` (the dispatcher stamps `x-voyant-origin-trust`), and wire
-Cloud Scheduler with `pnpm -F operator emit:cloud-scheduler`. See
+### Container image
+
+`Dockerfile` is a multi-stage pnpm-monorepo build. Build it **from the repo
+root** (it needs the workspace source):
+
+```bash
+docker build -f starters/operator/Dockerfile -t voyant-operator .
+docker run --rm -p 8080:8080 --env-file starters/operator/.env voyant-operator
+```
+
+The `@voyant-travel/*` packages are bundled into the server bundle; the runtime
+image ships the operator's production `node_modules` (via `pnpm deploy --prod`).
+
+### Cloud Run
+
+Node is the first-class target — keep the service **warm** (`--min-instances=1`)
+so the composed graph stays resident. Env/secrets come from the platform (no
+`.env` in the image).
+
+```bash
+# Build + push, from the repo root (custom Dockerfile path, so build locally and
+# push — or run the same `docker build` inside a Cloud Build `--config` step):
+IMAGE=REGION-docker.pkg.dev/PROJECT/voyant/operator
+docker build -f starters/operator/Dockerfile -t "$IMAGE" .
+docker push "$IMAGE"
+
+# Deploy (secrets via Secret Manager; DATABASE_URL_DIRECT = the pooled Node lane):
+gcloud run deploy operator \
+  --image="$IMAGE" \
+  --region=REGION --port=8080 --min-instances=1 --cpu-boost \
+  --set-env-vars="APP_URL=https://operator.example/api,DASH_BASE_URL=https://operator.example,VOYANT_ADMIN_AUTH_MODE=local" \
+  --set-secrets="DATABASE_URL_DIRECT=operator-db-direct:latest,BETTER_AUTH_SECRET=operator-auth:latest,SESSION_CLAIMS_SECRET=operator-session:latest,INTERNAL_API_KEY=operator-internal-key:latest,ORIGIN_TRUST_SECRET=operator-origin-trust:latest"
+```
+
+`/healthz` is the container/liveness probe. Set `ORIGIN_TRUST_SECRET` when a
+dispatcher fronts the service (it stamps `x-voyant-origin-trust`; `/healthz` is
+exempt). Crons don't run in-process — wire Cloud Scheduler with
+`pnpm -F operator emit:cloud-scheduler` (POSTs `/__voyant/scheduled?cron=…`). See
 [docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md).
 
 ## Routes

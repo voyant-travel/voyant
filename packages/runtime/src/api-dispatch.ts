@@ -67,7 +67,7 @@ export function createApiDispatch<Env, Ctx extends WaitUntilContext = WaitUntilC
   const onWarmError =
     options.onWarmError ??
     ((error: unknown) => {
-      console.error("[worker-runtime] background API warm failed:", error)
+      console.error("[runtime] background API warm failed:", error)
     })
 
   function toAppRequest(request: Request): Request {
