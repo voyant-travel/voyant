@@ -29,8 +29,9 @@ pnpm -F operator dev          # Vite dev server + SSR (port 3300)
 pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
 
-`.env` is loaded via Node's `--env-file` by `pnpm dev` and `pnpm start` (the
-Node convention — there is no wrangler `.dev.vars` anymore). `pnpm dev` serves
+`.env` is loaded into the process by `pnpm dev` and `pnpm start` (via a Node
+`--require` preload — the Node convention; there is no wrangler `.dev.vars`
+anymore). `pnpm dev` serves
 the SSR dashboard, the `/api/*` routes, and Better Auth with hot-reload — the
 same `src/server.ts` handler runs under Vite's dev server. The first `/api/*`
 request compiles the API module graph on demand (a few seconds), then it's warm.
