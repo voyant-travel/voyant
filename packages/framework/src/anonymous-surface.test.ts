@@ -38,9 +38,9 @@ describe("standard anonymous surface (ADR-0008)", () => {
     const paths = assembleAnonymousPaths(modules, extensions)
 
     // Migrated in ADR-0008 Phase 1. Anything not yet declared (e.g. products,
-    // payment-link, operator-profile, payment-policy) stays in the operator's
-    // explicit `publicPaths` until its follow-up migration — so this snapshot is
-    // the full, reviewable record of the framework-declared anonymous surface.
+    // operator-profile, payment-policy) stays in the operator's explicit
+    // `publicPaths` until its follow-up migration — so this snapshot is the
+    // full, reviewable record of the framework-declared anonymous surface.
     expect(paths).toEqual([
       "/v1/public/bookings",
       "/v1/public/catalog",
@@ -56,6 +56,8 @@ describe("standard anonymous surface (ADR-0008)", () => {
       "/v1/public/markets",
       "/v1/public/newsletter",
       "/v1/public/offers",
+      "/v1/public/payment-link",
+      "/v1/public/payment-link-config",
       "/v1/public/proposals",
       "/v1/public/storefront-verification",
     ])
