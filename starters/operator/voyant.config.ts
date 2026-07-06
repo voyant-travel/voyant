@@ -7,9 +7,15 @@ import { defineVoyantConfig } from "@voyant-travel/core/config"
  * through `createVoyantApp` in `src/api/app.ts`.
  */
 export default defineVoyantConfig({
-  deployment: "cloudflare-worker",
+  // Node (a resident process — Cloud Run) is the first-class production target
+  // for the operator: the composed graph is built once and reused, avoiding the
+  // per-request graph evaluation that makes Cloudflare Workers unsuitable for a
+  // composed operator API (voyant#2966). The Node entry is `src/server.ts`.
+  deployment: "node",
   projectConfig: {
-    database: { urlEnv: "DATABASE_URL", adapter: "serverless" },
+    // On Node the pooled node-postgres lane (`DATABASE_URL_DIRECT`) is the
+    // production default; neon-http/WS remain the fallback adapters.
+    database: { urlEnv: "DATABASE_URL", adapter: "node" },
     cache: { provider: "kv", binding: "CACHE" },
     auth: { provider: "better-auth" },
   },

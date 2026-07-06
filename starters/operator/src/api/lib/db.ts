@@ -35,6 +35,30 @@ function openDb(connectionString: string): {
 }
 
 /**
+ * Resident pooled node-postgres client for the Node runtime (voyant#2966).
+ *
+ * When `DATABASE_URL_DIRECT` is set the operator runs as a long-lived Node
+ * process (Cloud Run), so instead of the serverless neon-http/WS clients we keep
+ * ONE process-wide pooled client (`adapter: "node"` → postgres-js) against the
+ * direct Postgres endpoint. postgres-js supports real transactions, so this
+ * single pool serves both the default and transactional factories. `dispose`
+ * is a no-op — the pool is shared and lives for the process, not per request.
+ *
+ * Cached by connection string so a config change yields a fresh pool.
+ */
+let nodePooledSingleton: { db: NeonDatabase; url: string } | undefined
+function nodePooledDb(url: string): NeonDatabase {
+  if (nodePooledSingleton?.url !== url) {
+    // Drizzle's runtime API is identical across flavors; downstream call sites
+    // are typed against `NeonDatabase` (see `openDb`'s rationale).
+    nodePooledSingleton = { db: createDbClient(url, { adapter: "node" }) as never, url }
+  }
+  return nodePooledSingleton.db
+}
+
+const noopDispose = async (): Promise<void> => {}
+
+/**
  * Per-request Neon Postgres client over WebSocket. Supports real
  * Postgres transactions (drizzle's `db.transaction(...)`).
  *
@@ -46,6 +70,13 @@ function openDb(connectionString: string): {
  * runtime reclaims the isolate.
  */
 export function getDbFromEnv(env: CloudflareBindings): NeonDatabase {
+  // Node runtime: hand back the resident pooled client so callers that ignore
+  // the disposer (framework-injected `resolveDb` for legal/notifications, etc.)
+  // don't leak a per-call pool in the long-lived process. See the direct lane
+  // in `dbFromEnvForApp`.
+  if (env.DATABASE_URL_DIRECT) {
+    return nodePooledDb(env.DATABASE_URL_DIRECT)
+  }
   return openDb(env.DATABASE_URL).db
 }
 
@@ -65,6 +96,9 @@ export function dbFromEnvForApp(env: CloudflareBindings): {
   db: NeonDatabase
   dispose: () => Promise<void>
 } {
+  if (env.DATABASE_URL_DIRECT) {
+    return { db: nodePooledDb(env.DATABASE_URL_DIRECT), dispose: noopDispose }
+  }
   return openDb(env.DATABASE_URL)
 }
 
@@ -111,6 +145,12 @@ export function parseReplicaUrls(raw: string | undefined, primaryUrl: string): s
 export function httpDbFromEnvForApp(
   env: CloudflareBindings,
 ): NeonDatabase | ReturnType<typeof openDb> {
+  // Node runtime: serve every request from the resident pooled node-postgres
+  // client against the direct endpoint (voyant#2966). Takes precedence over the
+  // neon-http lane below, which is the Workers/serverless adapter.
+  if (env.DATABASE_URL_DIRECT) {
+    return nodePooledDb(env.DATABASE_URL_DIRECT)
+  }
   const url = env.DATABASE_URL
   if (isLocalConnection(url)) {
     return openDb(url)
@@ -140,6 +180,10 @@ export async function withDbFromEnv<T>(
   env: CloudflareBindings,
   fn: (db: NeonDatabase) => Promise<T>,
 ): Promise<T> {
+  // Node runtime: reuse the resident pooled client (no per-call open/close).
+  if (env.DATABASE_URL_DIRECT) {
+    return fn(nodePooledDb(env.DATABASE_URL_DIRECT))
+  }
   const { db, dispose } = openDb(env.DATABASE_URL)
   try {
     return await fn(db)

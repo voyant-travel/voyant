@@ -65,55 +65,6 @@ function requireCallCount(relativePath, literal, minimum, reason) {
   }
 }
 
-function stripJsonComments(input) {
-  let output = ""
-  let inString = false
-  let quote = ""
-  let escaped = false
-
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i]
-    const next = input[i + 1]
-
-    if (inString) {
-      output += char
-      if (escaped) {
-        escaped = false
-      } else if (char === "\\") {
-        escaped = true
-      } else if (char === quote) {
-        inString = false
-        quote = ""
-      }
-      continue
-    }
-
-    if (char === '"' || char === "'") {
-      inString = true
-      quote = char
-      output += char
-      continue
-    }
-
-    if (char === "/" && next === "/") {
-      while (i < input.length && input[i] !== "\n") i += 1
-      output += "\n"
-      continue
-    }
-
-    if (char === "/" && next === "*") {
-      i += 2
-      while (i < input.length && !(input[i] === "*" && input[i + 1] === "/")) i += 1
-      i += 1
-      continue
-    }
-
-    output += char
-  }
-
-  return output
-}
-
 function checkPolicyDoc() {
   const relativePath = "docs/architecture/public-route-cache-policy.md"
   if (!existsSync(join(ROOT, relativePath))) {
@@ -140,42 +91,23 @@ function checkPolicyDoc() {
   }
 }
 
-function checkCloudflareKvBindings() {
+function checkKvCacheBindings() {
+  // The operator is Node-only (voyant#2966): the public-cache/rate-limit KV
+  // backend is provided in `src/server.ts` (composeNodeEnv → createMemoryKvNamespace)
+  // rather than a wrangler `kv_namespaces` declaration. The contract we still
+  // enforce is that the cache backend is declared as KV and the binding types
+  // are present on the env interface.
   requireContains(
     "starters/operator/voyant.config.ts",
     'cache: { provider: "kv", binding: "CACHE" }',
-    "Cloudflare starter cache backend declaration",
+    "operator cache backend declaration",
   )
-  requireContains(
-    "starters/operator/env.d.ts",
-    "CACHE: KVNamespace",
-    "Cloudflare starter CACHE binding type",
-  )
+  requireContains("starters/operator/env.d.ts", "CACHE: KVNamespace", "operator CACHE binding type")
   requireContains(
     "starters/operator/env.d.ts",
     "RATE_LIMIT: KVNamespace",
-    "Cloudflare starter RATE_LIMIT binding type",
+    "operator RATE_LIMIT binding type",
   )
-
-  let config
-  try {
-    config = JSON.parse(stripJsonComments(read("starters/operator/wrangler.jsonc")))
-  } catch (err) {
-    addViolation(`starters/operator/wrangler.jsonc: failed to parse JSONC (${err.message})`)
-    return
-  }
-
-  const kvNamespaces = Array.isArray(config.kv_namespaces) ? config.kv_namespaces : []
-  for (const binding of ["CACHE", "RATE_LIMIT"]) {
-    const namespace = kvNamespaces.find((entry) => entry?.binding === binding)
-    if (!namespace) {
-      addViolation(`starters/operator/wrangler.jsonc: missing KV binding ${binding}`)
-      continue
-    }
-    if (typeof namespace.id !== "string" || namespace.id.trim().length === 0) {
-      addViolation(`starters/operator/wrangler.jsonc: KV binding ${binding} must declare an id`)
-    }
-  }
 }
 
 function checkSourceMarkers() {
@@ -311,7 +243,7 @@ function checkSourceMarkers() {
 }
 
 checkPolicyDoc()
-checkCloudflareKvBindings()
+checkKvCacheBindings()
 checkSourceMarkers()
 
 if (violations.length > 0) {

@@ -1,25 +1,50 @@
 # Operator Starter
 
-The Voyant starter for tour operators. A single Cloudflare Worker that serves the `/v1/*` API and SSR dashboard, with Voyant Workflows as the default durable task runtime.
+The Voyant starter for tour operators. A resident **Node** process that serves
+the `/v1/*` API and SSR dashboard, with Voyant Workflows as the default durable
+task runtime.
+
+Node is the first-class production target for the operator: the composed graph is
+built once and reused for the process lifetime, avoiding the per-request graph
+evaluation that makes Cloudflare Workers unsuitable for a composed operator API.
+See [docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md)
+(voyant#2966).
 
 ## Stack
 
-- **Runtime**: Cloudflare Workers (Vite + `@cloudflare/vite-plugin`)
-- **Framework**: TanStack Start + React 19
+- **Runtime**: Node (resident process — e.g. Cloud Run), booted by
+  `src/server.ts` via `createNodeServer` from `@voyant-travel/dedicated-runtime`
+- **Framework**: TanStack Start + React 19 (Vite build, no `@cloudflare/vite-plugin`)
 - **UI**: Shared `@voyant-travel/ui` components and styles + Tailwind CSS v4
-- **DB**: Neon Postgres via the serverless HTTP driver (one secret, `DATABASE_URL`; no Hyperdrive binding required)
+- **DB**: Postgres via pooled node-postgres (`DATABASE_URL_DIRECT`, the Node
+  production default); neon-http/WS remain fallback adapters
 - **Auth**: Better Auth
 - **Jobs**: Voyant Workflows
 
 ## Quick start
 
 ```bash
-pnpm -F operator dev          # Cloudflare Worker + SSR
-pnpm -F operator dev:worker   # Voyant Workflows dev loop
+pnpm -F operator dev          # Vite dev server + SSR (port 3300)
+pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
 
-Dev server runs on port `3300`.
-The local workflows runtime listens on port `3310`.
+`pnpm dev` gives UI/SSR hot-reload. For a full local Node runtime that also serves
+the `/v1/*` API (the composed API graph relies on the Vite build, so it does not
+run under the dev module runner), use the production lane below —
+`pnpm -F operator build && PORT=3300 pnpm -F operator start`. Wiring the dev
+server to proxy `/api/*` through the Hono app is a tracked follow-up.
+
+## Production (Node)
+
+```bash
+pnpm -F operator build        # emits dist/client + dist/server/server.js
+pnpm -F operator start        # node dist/server/server.js (PORT, default 8080)
+```
+
+The server exposes `/healthz` (probe), `/__voyant/scheduled?cron=<expr>` (the
+Cloud Scheduler hook, origin-trust gated), and serves the client build. Generate
+Cloud Scheduler jobs for the crons in `src/scheduled-crons.ts` with
+`pnpm -F operator emit:cloud-scheduler` (see the script header for env).
 
 ## Optional Cloud Services
 
@@ -76,10 +101,17 @@ pnpm -F operator db:studio     # open Drizzle Studio
 
 ## Deploy
 
+Build and run the Node process on your host (Cloud Run, a container, a VM):
+
 ```bash
-pnpm -F operator build
-pnpm -F operator deploy
+pnpm -F operator build            # dist/client + dist/server/server.js
+PORT=8080 pnpm -F operator start  # node dist/server/server.js
 ```
+
+Point a load balancer / the platform dispatcher at the process, set
+`ORIGIN_TRUST_SECRET` (the dispatcher stamps `x-voyant-origin-trust`), and wire
+Cloud Scheduler with `pnpm -F operator emit:cloud-scheduler`. See
+[docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md).
 
 ## Routes
 
@@ -87,6 +119,8 @@ pnpm -F operator deploy
 - `/v1/public/*` — customer/partner/supplier API
 - `/api/auth/*` — Better Auth handler
 - `/*` — TanStack Start SSR dashboard
+- `/healthz` — liveness probe (Node runtime)
+- `/__voyant/scheduled?cron=<expr>` — Cloud Scheduler hook (origin-trust gated)
 
 ## External cruise adapters
 

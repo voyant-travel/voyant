@@ -1,17 +1,26 @@
+// The operator is a Node-only deployment (issue voyant#2966): there is no
+// Cloudflare Workers lane, so the binding-shaped members below are backed by
+// real Node providers from `@voyant-travel/dedicated-runtime` (in-process KV,
+// S3/in-process object store), not Workers bindings. The `CloudflareBindings`
+// name is a historical misnomer kept to avoid churning every consumer in this
+// pass — a rename to `OperatorBindings` is a follow-up. The `KVNamespace` /
+// `R2Bucket` / `ExecutionContext` / `ScheduledController` / `AnalyticsEngineDataset`
+// names below resolve to the Node structural aliases declared at the bottom of
+// this file, not `@cloudflare/workers-types`.
 interface CloudflareBindings {
   /**
-   * Per-request metrics dataset (Workers Analytics Engine). Optional —
-   * the metrics middleware is a no-op without it.
+   * Per-request metrics dataset. Optional — the metrics middleware is a no-op
+   * without it. On Node this is unset (Analytics Engine is Workers-only).
    */
   METRICS?: AnalyticsEngineDataset
 
-  // KV namespaces
+  // KV namespaces (in-process on Node — see `createMemoryKvNamespace`)
   RATE_LIMIT: KVNamespace
   CACHE: KVNamespace
 
-  // R2 (public media storage)
+  // Object storage (public media). S3-backed in prod, in-process in dev.
   MEDIA_BUCKET: R2Bucket
-  // R2 (private document storage)
+  // Object storage (private documents)
   DOCUMENTS_BUCKET: R2Bucket
 
   // Secrets
@@ -24,6 +33,15 @@ interface CloudflareBindings {
    */
   AUTH_COOKIE_DOMAIN?: string
   DATABASE_URL: string
+  /**
+   * Direct (non-pooled-proxy) Postgres connection string for the resident Node
+   * runtime. When set, the operator uses a single process-wide pooled
+   * node-postgres client (`adapter: "node"`) instead of the neon-http/WS
+   * per-request clients — the production default on Node (voyant#2966). Point
+   * it at the primary's direct endpoint (Neon `...pooler`-free host, or any
+   * standard Postgres). Falls back to `DATABASE_URL` when unset.
+   */
+  DATABASE_URL_DIRECT?: string
   /**
    * Optional comma-separated connection strings of same-region Neon read
    * replicas, used by the DEFAULT (neon-http) data plane only — reads
@@ -222,4 +240,52 @@ interface CloudflareBindings {
   BANK_TRANSFER_IBAN?: string
   BANK_TRANSFER_BANK_NAME?: string
   BANK_TRANSFER_NOTES?: string
+
+  // ── Node runtime (dedicated / Cloud Run) ────────────────────────────────
+  /** HTTP listen port. Defaults to 8080. */
+  PORT?: string
+  /**
+   * Per-app shared secret for the `x-voyant-origin-trust` header the platform
+   * dispatcher stamps. When set, `createNodeServer` rejects any request lacking
+   * a constant-time match with 403 (except `/healthz`). Leave unset only behind
+   * a fully private network boundary.
+   */
+  ORIGIN_TRUST_SECRET?: string
+  // R2 (S3-compatible) object storage for prod. When these are set the operator
+  // uses the S3-backed bucket; otherwise it falls back to an in-process store.
+  R2_S3_ENDPOINT?: string
+  R2_BUCKET_MEDIA?: string
+  R2_BUCKET_DOCUMENTS?: string
+  R2_ACCESS_KEY_ID?: string
+  R2_SECRET_ACCESS_KEY?: string
+}
+
+// ── Node structural aliases (replacing @cloudflare/workers-types) ───────────
+// These global aliases keep the binding-typed members above resolving without
+// a dependency on @cloudflare/workers-types. `import(...)` type expressions do
+// NOT turn this ambient declaration file into a module, so the globals stay
+// global. See issue voyant#2966.
+
+/**
+ * Per-request execution context. Aliased to Hono's `ExecutionContext` — the
+ * type `app.fetch(...)` / `c.executionCtx` expect throughout the API graph. On
+ * Node the concrete value comes from the dedicated runtime's waitUntil registry
+ * (real `waitUntil` + graceful drain); it's adapted to this shape at the
+ * `src/server.ts` boundary.
+ */
+type ExecutionContext = import("hono").ExecutionContext
+/** Cron event echoed from the Cloud Scheduler HTTP trigger. */
+type ScheduledController = import("@voyant-travel/dedicated-runtime").ScheduledEventLike
+/** In-process KV store (`@voyant-travel/utils` `KVStore` contract). */
+type KVNamespace = import("@voyant-travel/utils").KVStore
+/** Object-store binding shape consumed by the storage providers. */
+type R2Bucket = import("@voyant-travel/dedicated-runtime").R2BucketShim
+
+/** Minimal Analytics Engine surface — unset on Node, kept for source compat. */
+interface AnalyticsEngineDataset {
+  writeDataPoint(event?: {
+    blobs?: Array<ArrayBuffer | string | null>
+    doubles?: number[]
+    indexes?: Array<ArrayBuffer | string | null>
+  }): void
 }
