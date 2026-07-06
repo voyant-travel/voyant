@@ -1,6 +1,6 @@
 // The operator is a Node-only deployment (issue voyant#2966): there is no
 // Cloudflare Workers lane, so the binding-shaped members below are backed by
-// real Node providers from `@voyant-travel/dedicated-runtime` (in-process KV,
+// real Node providers from `@voyant-travel/runtime` (in-process KV,
 // S3/in-process object store), not Workers bindings. The `CloudflareBindings`
 // name is a historical misnomer kept to avoid churning every consumer in this
 // pass — a rename to `OperatorBindings` is a follow-up. The `KVNamespace` /
@@ -275,11 +275,11 @@ interface CloudflareBindings {
  */
 type ExecutionContext = import("hono").ExecutionContext
 /** Cron event echoed from the Cloud Scheduler HTTP trigger. */
-type ScheduledController = import("@voyant-travel/dedicated-runtime").ScheduledEventLike
+type ScheduledController = import("@voyant-travel/runtime").ScheduledEventLike
 /** In-process KV store (`@voyant-travel/utils` `KVStore` contract). */
 type KVNamespace = import("@voyant-travel/utils").KVStore
 /** Object-store binding shape consumed by the storage providers. */
-type R2Bucket = import("@voyant-travel/dedicated-runtime").R2BucketShim
+type R2Bucket = import("@voyant-travel/runtime").R2BucketShim
 
 /** Minimal Analytics Engine surface — unset on Node, kept for source compat. */
 interface AnalyticsEngineDataset {

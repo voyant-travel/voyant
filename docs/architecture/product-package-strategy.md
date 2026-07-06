@@ -1360,7 +1360,7 @@ stay unchanged.
 | `@voyant-travel/catalog-rag`, `@voyant-travel/catalog-mcp` | Fold Catalog retrieval into `catalog` and remove first-party `catalog-mcp`. | Semantic/vector/hybrid search and compact agent results are Catalog API capabilities; MCP wrappers belong at the application/runtime edge when needed. |
 | `@voyant-travel/ui`, `@voyant-travel/react`, `@voyant-travel/i18n` | Keep separate. | Shared frontend/runtime infrastructure. |
 | `@voyant-travel/schema-kit`, `@voyant-travel/types`, `@voyant-travel/utils`, `@voyant-travel/templating` | Keep separate. | Shared type, TypeID, formatting, templating, and utility infrastructure. |
-| `@voyant-travel/voyant-test-utils`, `@voyant-travel/voyant-typescript-config`, `@voyant-travel/vite-config`, `@voyant-travel/worker-runtime` | Keep separate. | Test/build/runtime support packages. |
+| `@voyant-travel/voyant-test-utils`, `@voyant-travel/voyant-typescript-config`, `@voyant-travel/vite-config`, `@voyant-travel/runtime` | Keep separate. | Test/build/runtime support packages. |
 
 ### 10.8 Contract Packages
 

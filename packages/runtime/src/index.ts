@@ -1,3 +1,7 @@
+// Request dispatch (runtime-neutral): the fetch/API/SSR glue an app entry uses.
+export type { ApiDispatch, CreateApiDispatchOptions } from "./api-dispatch.js"
+export { createApiDispatch, lazyApp } from "./api-dispatch.js"
+// Node runtime: the resident-process server + real providers.
 export type { NodeEnv, NodeEnvBindings } from "./env.js"
 export { composeNodeEnv } from "./env.js"
 export type {
@@ -27,6 +31,8 @@ export type {
   R2ShimObject,
 } from "./r2.js"
 export { createR2BucketShim } from "./r2.js"
+export type { SsrManifest, SsrManifestRouter } from "./ssr-manifest.js"
+export { restrictSsrManifestToActiveRoutes, withActiveRouteSsrManifest } from "./ssr-manifest.js"
 export type { OriginTrustOptions } from "./trust.js"
 export {
   constantTimeEqual,
@@ -34,11 +40,17 @@ export {
   originTrustMiddleware,
   verifyOriginTrust,
 } from "./trust.js"
+// Shared structural types.
 export type {
+  AppLoader,
   ExecutionContextLike,
+  FetchApp,
   FetchHandler,
   ScheduledEventLike,
   ScheduledHandler,
+  WaitUntilContext,
 } from "./types.js"
 export type { WaitUntilRegistry } from "./wait-until.js"
 export { createWaitUntilRegistry } from "./wait-until.js"
+export type { CreateWorkerFetchOptions, SsrHandler, SsrLoader } from "./worker-fetch.js"
+export { createWorkerFetch, lazySsr } from "./worker-fetch.js"

@@ -1,4 +1,4 @@
-import { createWorkerFetch, lazySsr } from "@voyant-travel/worker-runtime"
+import { createWorkerFetch, lazySsr } from "@voyant-travel/runtime"
 import { operatorApiDispatch } from "./hono-api-dispatch"
 import { reportBackgroundFailure } from "./lib/observability"
 import {

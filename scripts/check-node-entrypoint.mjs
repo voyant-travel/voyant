@@ -2,7 +2,7 @@
  * Validates the operator's Node runtime entrypoints (voyant#2966).
  *
  *  1. `src/server.ts` (the Node process entry) exists and boots the runtime via
- *     `createNodeServer` from `@voyant-travel/dedicated-runtime`.
+ *     `createNodeServer` from `@voyant-travel/runtime`.
  *  2. `src/entry.ts` (the app's `fetch`/`scheduled` handlers) keeps SSR behind a
  *     lazy import so the React + react-dom/server graph isn't pulled into the
  *     module's top-level — imported on first render, not at boot. Heavy API and

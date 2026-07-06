@@ -1506,31 +1506,6 @@ importers:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
-  packages/dedicated-runtime:
-    dependencies:
-      '@hono/node-server':
-        specifier: 2.0.6
-        version: 2.0.6(hono@4.12.27)
-      '@voyant-travel/storage':
-        specifier: workspace:^
-        version: link:../storage
-      '@voyant-travel/worker-runtime':
-        specifier: workspace:^
-        version: link:../worker-runtime
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 25.5.2
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-
   packages/distribution:
     dependencies:
       '@hono/zod-openapi':
@@ -3453,6 +3428,28 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
 
+  packages/runtime:
+    dependencies:
+      '@hono/node-server':
+        specifier: 2.0.6
+        version: 2.0.6(hono@4.12.27)
+      '@voyant-travel/storage':
+        specifier: workspace:^
+        version: link:../storage
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.5.2
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+
   packages/schema-kit:
     dependencies:
       typeid-js:
@@ -4017,18 +4014,6 @@ importers:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
-  packages/worker-runtime:
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-
   packages/workflow-runs:
     dependencies:
       '@hono/zod-openapi':
@@ -4227,12 +4212,12 @@ importers:
       '@voyant-travel/relationships-react':
         specifier: workspace:^
         version: link:../../packages/relationships-react
+      '@voyant-travel/runtime':
+        specifier: workspace:^
+        version: link:../../packages/runtime
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../../packages/ui
-      '@voyant-travel/worker-runtime':
-        specifier: workspace:^
-        version: link:../../packages/worker-runtime
       '@voyant-travel/workflow-runs':
         specifier: workspace:^
         version: link:../../packages/workflow-runs
@@ -4480,9 +4465,6 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../../packages/db
-      '@voyant-travel/dedicated-runtime':
-        specifier: workspace:^
-        version: link:../../packages/dedicated-runtime
       '@voyant-travel/distribution':
         specifier: workspace:^
         version: link:../../packages/distribution
@@ -4591,6 +4573,9 @@ importers:
       '@voyant-travel/relationships-react':
         specifier: workspace:^
         version: link:../../packages/relationships-react
+      '@voyant-travel/runtime':
+        specifier: workspace:^
+        version: link:../../packages/runtime
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../../packages/storage
@@ -4618,9 +4603,6 @@ importers:
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../../packages/utils
-      '@voyant-travel/worker-runtime':
-        specifier: workspace:^
-        version: link:../../packages/worker-runtime
       '@voyant-travel/workflow-runs':
         specifier: workspace:^
         version: link:../../packages/workflow-runs
