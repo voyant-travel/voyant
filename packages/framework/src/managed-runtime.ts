@@ -3,7 +3,8 @@
 // provider defaults stay together so Cloud boot behavior is auditable.
 import { readFile } from "node:fs/promises"
 
-import { getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
+import { OpenAPIHono } from "@hono/zod-openapi"
+import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import type { EventBus } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db"
 import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
@@ -43,6 +44,7 @@ import {
   type R2BucketShim,
 } from "@voyant-travel/runtime"
 import { createR2Provider, type R2BucketLike } from "@voyant-travel/storage/providers/r2"
+import type { VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
 import type { PaymentLinkRoutesOptions } from "@voyant-travel/storefront/payment-link"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
@@ -277,7 +279,7 @@ export function createManagedProfileProviders(
     loadMcpAdminRoutes: emptyRoutes,
     loadCatalogBookingRoutes: emptyRoutes,
     loadCatalogContentRoutes: emptyRoutes,
-    loadMediaRoutes: emptyRoutes,
+    loadMediaRoutes: createManagedMediaRoutes,
     loadPaymentLinkRoutes: async () => createManagedPaymentLinkRoutes(),
     loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
     loadBookingScheduleAdminRoutes: emptyRoutes,
@@ -468,6 +470,17 @@ function createStorageProvider(bucket: R2BucketLike | undefined, publicBaseUrl?:
 
 function createDocumentStorage(bindings: unknown) {
   return createStorageProvider((bindings as ManagedProfileRuntimeEnv).DOCUMENTS_BUCKET)
+}
+
+function createMediaStorage(bindings: unknown) {
+  const env = bindings as ManagedProfileRuntimeEnv
+  const base = resolveManagedApiBaseUrl(env)
+  return createStorageProvider(env.MEDIA_BUCKET, base ? `${base}/v1/admin/media/` : undefined)
+}
+
+function resolveManagedApiBaseUrl(env: ManagedProfileRuntimeEnv): string | null {
+  const base = env.API_BASE_URL?.trim() || env.APP_URL?.trim()
+  return base ? base.replace(/\/+$/, "") : null
 }
 
 async function readDocumentContentBase64(
@@ -761,6 +774,65 @@ function metadataRecord(value: unknown): Record<string, unknown> | null {
   return null
 }
 
+async function createManagedMediaRoutes() {
+  const [{ createProductBrochureRoutes }, { createMediaRoutes }] = await Promise.all([
+    import("@voyant-travel/inventory/routes-brochure"),
+    import("@voyant-travel/storage/routes"),
+  ])
+
+  const app = new OpenAPIHono()
+  app.route(
+    "/",
+    createMediaRoutes({
+      resolveStorage: (c) => createMediaStorage(c.env),
+      guessServedMimeType: guessMimeType,
+      signVideoUploadTicket: createManagedVideoUploadTicket,
+    }),
+  )
+  app.route(
+    "/v1/admin/products",
+    createProductBrochureRoutes({
+      resolveStorage: (c) => createMediaStorage(c.env),
+      resolvePrinter: () => null,
+    }),
+  )
+  return app
+}
+
+function createManagedVideoUploadTicket(
+  c: Context,
+  input: VideoUploadTicketRequest,
+): Promise<unknown> {
+  const env = c.env as ManagedProfileRuntimeEnv
+  const apiKey = env.VOYANT_API_KEY?.trim() || env.VOYANT_CLOUD_API_KEY?.trim()
+  if (!apiKey) {
+    throw new Error("Voyant Cloud video upload provider is not configured.")
+  }
+  const cloud = getVoyantCloudClient(
+    {
+      VOYANT_CLOUD_API_KEY: apiKey,
+      ...(env.VOYANT_CLOUD_API_URL ? { VOYANT_CLOUD_API_URL: env.VOYANT_CLOUD_API_URL } : {}),
+    },
+    { apiKey },
+  )
+  return cloud.video.videos.createUpload(toCreateVideoUploadInput(input))
+}
+
+function toCreateVideoUploadInput(input: VideoUploadTicketRequest): CreateVideoUploadInput {
+  const output: CreateVideoUploadInput = {
+    fileSize: input.fileSize,
+    maxDurationSeconds: input.maxDurationSeconds,
+  }
+  if (input.name !== undefined) output.name = input.name
+  if (input.requireSignedUrls !== undefined) output.requireSignedUrls = input.requireSignedUrls
+  if (input.allowedOrigins !== undefined) output.allowedOrigins = input.allowedOrigins
+  if (input.thumbnailTimestampPct !== undefined) {
+    output.thumbnailTimestampPct = input.thumbnailTimestampPct
+  }
+  if (input.meta !== undefined) output.meta = input.meta
+  return output
+}
+
 async function createManagedContractDocumentRoutes() {
   return createContractDocumentRoutes({
     generateContract: (env, db, eventBus, bookingId, opts) =>
@@ -828,12 +900,36 @@ function guessMimeType(key: string): string {
     case "jpg":
     case "jpeg":
       return "image/jpeg"
+    case "gif":
+      return "image/gif"
     case "webp":
       return "image/webp"
+    case "svg":
+      return "image/svg+xml"
+    case "mp4":
+      return "video/mp4"
+    case "webm":
+      return "video/webm"
+    case "mov":
+      return "video/quicktime"
     case "json":
       return "application/json"
     case "txt":
       return "text/plain"
+    case "csv":
+      return "text/csv"
+    case "xml":
+      return "application/xml"
+    case "zip":
+      return "application/zip"
+    case "doc":
+      return "application/msword"
+    case "docx":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    case "xls":
+      return "application/vnd.ms-excel"
+    case "xlsx":
+      return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     default:
       return "application/octet-stream"
   }
