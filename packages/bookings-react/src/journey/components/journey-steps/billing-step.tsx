@@ -28,11 +28,13 @@ export function BillingStep({
   renderExtras,
   warnings,
   errors,
+  defaultPhoneCountry,
 }: StepCommonProps & {
   renderLeadContactPicker?: (props: LeadContactPickerProps) => React.ReactNode
   renderExtras?: () => React.ReactNode
   warnings?: ReadonlyArray<string>
   errors?: ReadonlyArray<string>
+  defaultPhoneCountry?: string
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const billing = draft.billing
@@ -151,6 +153,7 @@ export function BillingStep({
               <PhoneField
                 id="bj-billing-phone"
                 label={messages.bookingJourney.billing.phone}
+                defaultCountry={defaultPhoneCountry}
                 value={billing.contact.phone ?? ""}
                 onChange={(v) =>
                   setDraft(

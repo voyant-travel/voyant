@@ -65,10 +65,12 @@ export function TravelersStep({
   renderTravelerContactPicker,
   warnings,
   errors,
+  defaultPhoneCountry,
 }: StepCommonProps & {
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => React.ReactNode
   warnings?: ReadonlyArray<string>
   errors?: ReadonlyArray<string>
+  defaultPhoneCountry?: string
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const travelers = draft.travelers
@@ -150,6 +152,7 @@ export function TravelersStep({
               renderTravelerContactPicker={renderTravelerContactPicker}
               apply={apply}
               showBandSelect={hasBandChoice}
+              defaultPhoneCountry={defaultPhoneCountry}
               onRemove={travelers.length > 1 ? () => removeTraveler(idx) : undefined}
             />
           )
@@ -191,6 +194,7 @@ function TravelerCard({
   renderTravelerContactPicker,
   apply,
   showBandSelect,
+  defaultPhoneCountry,
   onRemove,
 }: {
   idx: number
@@ -201,6 +205,7 @@ function TravelerCard({
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => React.ReactNode
   apply: TravelerContactPickerProps["apply"]
   showBandSelect?: boolean
+  defaultPhoneCountry?: string
   onRemove?: () => void
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
@@ -376,6 +381,7 @@ function TravelerCard({
                   id={`bj-trav-${idx}-phone`}
                   // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
                   label={phoneField.label + (phoneField.required ? " *" : "")}
+                  defaultCountry={defaultPhoneCountry}
                   value={traveler.phone ?? ""}
                   onChange={(v) => patchRow({ phone: v })}
                 />

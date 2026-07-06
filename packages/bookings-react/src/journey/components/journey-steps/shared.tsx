@@ -17,8 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyant-travel/ui/components/select"
-import { formatMessage, useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../../../i18n/index.js"
 import type { Draft } from "../../lib/draft-state.js"
+import { resolveDefaultPhoneCountry } from "../../lib/phone-country.js"
 import type { DeparturePickerProps, UnitsPickerProps } from "../../types.js"
 
 /** Injectable departure-picker render slot, threaded from BookingJourneyProps. */
@@ -113,18 +118,27 @@ export function PhoneField({
   label,
   value,
   onChange,
+  defaultCountry,
 }: {
   id: string
   label: string
   value: string
   onChange: (v: string) => void
+  /** Caller-supplied ISO 3166-1 alpha-2 country. When absent, the country is
+   *  derived from the active i18n locale, falling back to "GB". */
+  defaultCountry?: string
 }): React.ReactElement {
+  const { locale } = useBookingsUiI18nOrDefault()
+  const country = resolveDefaultPhoneCountry(defaultCountry, locale)
   return (
     <div className="space-y-1">
       <Label htmlFor={id}>{label}</Label>
       <PhoneInput
         id={id}
-        defaultCountry="GB"
+        // `country` is validated to /^[A-Z]{2}$/ by resolveDefaultPhoneCountry;
+        // cast the plain string to the wrapper's `Country` prop type (from
+        // react-phone-number-input) without pulling in that dependency here.
+        defaultCountry={country as React.ComponentProps<typeof PhoneInput>["defaultCountry"]}
         international
         value={value || undefined}
         onChange={(v) => onChange(v ? String(v) : "")}

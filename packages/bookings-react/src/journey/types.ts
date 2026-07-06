@@ -278,6 +278,14 @@ export interface BookingJourneyProps {
   /** Default buyer type — operator: B2B, storefront: B2C. */
   defaultBuyerType?: "B2C" | "B2B"
 
+  /**
+   * Default country for phone-number inputs (travelers + billing), as an ISO
+   * 3166-1 alpha-2 code (e.g. "RO", "US"). When omitted, the country is derived
+   * from the active i18n locale, falling back to "GB". Set this to start phone
+   * entry in the deployment's market regardless of locale.
+   */
+  defaultPhoneCountry?: string
+
   /** Initial fallback shape — rendered before the first quote
    *  resolves. The engine returns a more specific shape on the
    *  first quote response. */
