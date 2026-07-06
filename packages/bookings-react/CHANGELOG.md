@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.141.3
+
+### Patch Changes
+
+- 161dedf: Format the booking journey side panel stay date range and check-in/check-out rows with locale-aware dates instead of raw ISO strings
+  - @voyant-travel/bookings@0.141.3
+
 ## 0.141.2
 
 ### Patch Changes

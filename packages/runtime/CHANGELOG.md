@@ -1,5 +1,12 @@
 # @voyant-travel/worker-runtime
 
+## 0.4.1
+
+### Patch Changes
+
+- e3dd1ff: Tidy a stale `[worker-runtime]` log label in the background-API-warm error path
+  to `[runtime]`, matching the package's post-merge name.
+
 ## 0.4.0
 
 ### Minor Changes
