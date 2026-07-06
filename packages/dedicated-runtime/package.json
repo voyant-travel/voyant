@@ -6,9 +6,9 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./kv": "./src/kv.ts",
+    "./memory-kv": "./src/memory-kv.ts",
+    "./memory-r2": "./src/memory-r2.ts",
     "./r2": "./src/r2.ts",
-    "./cache": "./src/cache.ts",
     "./wait-until": "./src/wait-until.ts",
     "./env": "./src/env.ts",
     "./node-server": "./src/node-server.ts",
@@ -34,20 +34,20 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
-      "./kv": {
-        "types": "./dist/kv.d.ts",
-        "import": "./dist/kv.js",
-        "default": "./dist/kv.js"
+      "./memory-kv": {
+        "types": "./dist/memory-kv.d.ts",
+        "import": "./dist/memory-kv.js",
+        "default": "./dist/memory-kv.js"
+      },
+      "./memory-r2": {
+        "types": "./dist/memory-r2.d.ts",
+        "import": "./dist/memory-r2.js",
+        "default": "./dist/memory-r2.js"
       },
       "./r2": {
         "types": "./dist/r2.d.ts",
         "import": "./dist/r2.js",
         "default": "./dist/r2.js"
-      },
-      "./cache": {
-        "types": "./dist/cache.d.ts",
-        "import": "./dist/cache.js",
-        "default": "./dist/cache.js"
       },
       "./wait-until": {
         "types": "./dist/wait-until.d.ts",

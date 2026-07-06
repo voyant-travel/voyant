@@ -41,7 +41,7 @@ export interface CreateNodeServerOptions<Env> {
   fetch: FetchHandler<Env>
   /** Optional Worker-style scheduled handler, exposed at {@link SCHEDULED_PATH}. */
   scheduled?: ScheduledHandler<Env>
-  /** The composed env bag (see `buildDedicatedEnv`). */
+  /** The composed env bag (see `composeNodeEnv`). */
   env: Env
   /** Listen port. Defaults to `PORT` env or `8080`. */
   port?: number

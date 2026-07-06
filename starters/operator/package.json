@@ -7,13 +7,12 @@
     "dev": "vite dev --port 3300",
     "build": "vite build",
     "preview": "pnpm run build && vite preview",
+    "start": "node dist/server/server.js",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.client.json",
     "test": "vitest run --passWithNoTests",
     "generate:openapi": "UPDATE_OPENAPI=1 vitest run src/api/openapi.test.ts",
-    "deploy": "pnpm run build && wrangler deploy",
-    "check:startup": "pnpm run build && wrangler check startup",
-    "measure:startup": "pnpm run build && node ../../scripts/measure-cloudflare-startup.mjs .",
     "dev:worker": "voyant dev --file src/workflows.ts --port 3310",
+    "emit:cloud-scheduler": "tsx scripts/emit-cloud-scheduler.ts",
     "workflows:build": "voyant workflows build --file src/workflows.ts --out dist/workflows",
     "workflows:doctor": "voyant workflows doctor --target entry --file src/workflows.ts",
     "db:generate": "drizzle-kit generate --config=drizzle.deployment-migrations.config.ts",
@@ -25,14 +24,13 @@
     "reindex": "tsx scripts/reindex.ts",
     "seed": "tsx scripts/seed.ts",
     "sync:sources": "tsx scripts/sync-sources.ts",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "lint": "biome check src/"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@better-auth/api-key": "1.6.23",
-    "@cloudflare/vite-plugin": "^1.42.4",
     "@fontsource-variable/inter-tight": "^5.2.7",
+    "@hono/node-server": "^2.0.6",
     "@hono/zod-openapi": "catalog:",
     "@neondatabase/serverless": "^1.1.0",
     "@scalar/api-reference-react": "^0.9.51",
@@ -69,6 +67,7 @@
     "@voyant-travel/cruises-react": "workspace:^",
     "@voyant-travel/data-sdk": "^0.7.1",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/dedicated-runtime": "workspace:^",
     "@voyant-travel/distribution": "workspace:^",
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
@@ -147,7 +146,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
     "@tanstack/devtools-vite": "^0.8.1",
     "@types/node": "catalog:",
     "@types/pg": "^8.15.6",
@@ -164,7 +162,6 @@
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:",
-    "wrangler": "^4.106.0"
+    "vitest": "catalog:"
   }
 }

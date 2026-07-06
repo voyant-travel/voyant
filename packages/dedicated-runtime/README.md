@@ -1,20 +1,29 @@
 # @voyant-travel/dedicated-runtime
 
-Bindings emulation and a Node server entry so an operator app's **identical**
-`fetch(request, env, ctx)` / `scheduled(event, env, ctx)` code runs unchanged on
-a dedicated Node runtime (Cloud Run) as it does on Cloudflare Workers for
-Platforms.
+A Node server entry plus the real in-process providers an operator app needs so
+its **identical** `fetch(request, env, ctx)` / `scheduled(event, env, ctx)` code
+runs on a dedicated Node runtime (Cloud Run).
 
-Composed operator APIs cannot stay resident on Workers for Platforms
-(evaluated-heap eviction). The platform's per-app **dedicated** runtime runs the
-same bundle on Cloud Run behind the existing dispatcher. This package supplies
-the shims the app expects the runtime to provide — KV, R2, the Cache API, a real
-`waitUntil`, and an HTTP `scheduled()` trigger — plus a Node server that wires
-them together. See voyant-travel/platform#935.
+Composed operator APIs cannot stay resident on Cloudflare Workers for Platforms
+(evaluated-heap eviction — every request pays multi-second graph evaluation).
+Node is the first-class production target for operator deployments; the composed
+graph is built once and reused for the process lifetime. See
+voyant-travel/platform#935 and issue voyant#2966.
 
-It builds on [`@voyant-travel/worker-runtime`](../worker-runtime) (dispatch glue)
-and [`@voyant-travel/storage`](../storage) (SigV4 signing) rather than
-duplicating them.
+Because there is **no Workers lane for the operator**, this package supplies real
+Node providers rather than emulating Cloudflare bindings: an in-process KV, an
+in-process object store for dev (and an S3-backed one for prod), a real
+`waitUntil`, an origin-trust gate, and an HTTP `scheduled()` trigger — plus a Node
+server that wires them together. It builds on
+[`@voyant-travel/worker-runtime`](../worker-runtime) (dispatch glue) and
+[`@voyant-travel/storage`](../storage) (SigV4 signing) rather than duplicating
+them.
+
+> The old Cloudflare-emulation shims (`createKvNamespaceShim` over the KV REST
+> API, the `caches.default` shim, `buildDedicatedEnv`) were removed — with no
+> Workers shape to emulate they no longer had a purpose. Their runtime-true
+> replacements live here (`createMemoryKvNamespace`, `composeNodeEnv`); the
+> `caches.default` path is gone (the operator reads `env.CACHE` KV directly).
 
 ## Install
 
@@ -26,42 +35,35 @@ pnpm add @voyant-travel/dedicated-runtime
 
 ```ts
 import {
-  buildDedicatedEnv,
-  createKvNamespaceShim,
+  composeNodeEnv,
+  createMemoryKvNamespace,
+  createMemoryR2Bucket,
   createNodeServer,
   createR2BucketShim,
-  installCachesShim,
 } from "@voyant-travel/dedicated-runtime"
 
-// Your app — the SAME module you ship to Workers.
-import app, { scheduled } from "./entry.js"
+// Your app — plain fetch + scheduled handlers.
+import { fetch, scheduled } from "./entry.js"
 
-// 1. Resident in-process response cache (picked up by public-cache middleware).
-installCachesShim({ maxEntries: 5_000, maxBytes: 512 * 1024 })
-
-// 2. Rebuild the bindings the Workers runtime would have injected.
-const env = buildDedicatedEnv(process.env, {
-  kv: {
-    CACHE: createKvNamespaceShim({
-      accountId: process.env.CF_ACCOUNT_ID!,
-      namespaceId: process.env.CF_KV_CACHE_ID!,
-      apiToken: process.env.CF_API_TOKEN!,
-      lru: { maxEntries: 10_000, ttlMs: 30_000 }, // a resident process can hold one
-    }),
-  },
-  r2: {
-    DOCUMENTS_BUCKET: createR2BucketShim({
-      endpoint: process.env.R2_S3_ENDPOINT!,
+// 1. Real in-process / S3-backed providers (not Cloudflare-binding shims).
+const documents = process.env.R2_S3_ENDPOINT
+  ? createR2BucketShim({
+      endpoint: process.env.R2_S3_ENDPOINT,
       bucket: "documents",
       accessKeyId: process.env.R2_ACCESS_KEY_ID!,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-    }),
-  },
+    })
+  : createMemoryR2Bucket() // dev / offline
+
+// 2. Compose the env bag app code reads (`env.CACHE`, `env.DOCUMENTS_BUCKET`, …).
+const env = composeNodeEnv(process.env, {
+  kv: { CACHE: createMemoryKvNamespace(), RATE_LIMIT: createMemoryKvNamespace() },
+  r2: { DOCUMENTS_BUCKET: documents },
 })
 
 // 3. Serve. Trust header, waitUntil, scheduled hook, graceful SIGTERM.
 createNodeServer({
-  fetch: app.fetch,
+  fetch,
   scheduled,
   env,
   port: Number(process.env.PORT ?? 8080),
@@ -91,29 +93,30 @@ constant-time match with `403`, exempting `/healthz` for container probes. The
 low-level pieces (`originTrustMiddleware`, `verifyOriginTrust`,
 `constantTimeEqual`, `scheduledHandler`) are exported for custom server loops.
 
-## Shim coverage
+## Provider coverage
 
-| Binding / capability | Shim | Backed by | Notes |
+| Binding / capability | Provider | Backed by | Notes |
 | --- | --- | --- | --- |
-| KV namespace | `createKvNamespaceShim` | Cloudflare KV REST API | `get`/`get(k,"json")`/`put({expirationTtl})`/`delete`; optional read-through LRU |
-| R2 bucket | `createR2BucketShim` | R2 S3-compatible API + `@voyant-travel/storage` SigV4 | `put`/`get`/`delete`/`head`; `get` returns `{ arrayBuffer, body, httpMetadata, customMetadata, size }` |
-| Cache API (`caches.default`) | `installCachesShim` | in-process LRU on `globalThis` | honors `s-maxage`/`max-age`; idempotent install |
+| KV namespace (`CACHE`, `RATE_LIMIT`) | `createMemoryKvNamespace` | in-process `Map` + TTL + LRU | `get`/`get(k,"json")`/`put({expirationTtl})`/`delete`; single-process |
+| R2 bucket (prod) | `createR2BucketShim` | R2 S3-compatible API + `@voyant-travel/storage` SigV4 | `put`/`get`/`delete`/`head`; `get` returns `{ arrayBuffer, body, httpMetadata, customMetadata, size }` |
+| R2 bucket (dev) | `createMemoryR2Bucket` | in-process `Map` | same surface, no credentials |
 | `ctx.waitUntil` | `createWaitUntilRegistry` | in-process promise set | real background tracking + graceful drain |
 | `scheduled()` | `createNodeServer` / `scheduledHandler` | HTTP `POST /__voyant/scheduled` | Cloud Scheduler hook |
-| env bindings bag | `buildDedicatedEnv` | `process.env` + shims | same shape app code sees on Workers |
+| env bindings bag | `composeNodeEnv` | `process.env` + providers | the shape app code reads (`env.CACHE`, …) |
 | Node server + shutdown | `createNodeServer` | `@hono/node-server` | trust gate, waitUntil ctx, SIGTERM drain |
 
-## Intentionally NOT shimmed
+## Out of scope
 
-- **Durable Objects** — no in-process equivalent; DO-dependent features are out
-  of scope for the dedicated runtime and must be provided by the platform.
-- **Analytics Engine (`METRICS`)** — the metrics middleware is already a no-op
-  when the binding is absent, so a dedicated deployment degrades gracefully. An
-  AE HTTP-ingest shim was evaluated as optional stretch scope and skipped to
-  keep the package small; add one here later if metrics parity is needed.
-- **`request.cf`** — Cloudflare's per-request geo/TLS object is not reconstructed;
-  app code that reads `request.cf` must tolerate `undefined` (it already does on
-  non-Workers runtimes).
-- **KV `list` / R2 `list`** — not part of the audited usage surface; add on
-  demand (R2 list needs multipart XML parsing, which isn't cheap).
-```
+- **Cache API (`caches.default`)** — removed. `@voyant-travel/hono`'s
+  `publicResponseCache` reads `env.CACHE` KV directly when `caches.default` is
+  absent (which it always is on Node), so the in-process KV serves the response
+  cache. No `globalThis` shim is installed.
+- **Distributed KV / object store** — `createMemoryKvNamespace` and
+  `createMemoryR2Bucket` are single-process. A multi-instance deployment swaps
+  them for a shared KV/Redis/S3 provider behind the same interface
+  (platform#940); the S3-backed `createR2BucketShim` already covers durable
+  object storage.
+- **Analytics Engine (`METRICS`)** — the metrics middleware is a no-op when the
+  binding is absent, so a Node deployment degrades gracefully.
+- **`request.cf`** — not reconstructed; app code tolerates `undefined` (it
+  already does on non-Workers runtimes).

@@ -5,7 +5,7 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["./env.d.ts", "@cloudflare/workers-types", "node", "vite/client"],
+    "types": ["./env.d.ts", "node", "vite/client"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",

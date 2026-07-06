@@ -584,9 +584,9 @@
       "@voyant-travel/db/utils": ["../db/dist/utils.d.ts"],
       "@voyant-travel/db/write-intents": ["../db/dist/write-intents.d.ts"],
       "@voyant-travel/dedicated-runtime": ["../dedicated-runtime/dist/index.d.ts"],
-      "@voyant-travel/dedicated-runtime/cache": ["../dedicated-runtime/dist/cache.d.ts"],
       "@voyant-travel/dedicated-runtime/env": ["../dedicated-runtime/dist/env.d.ts"],
-      "@voyant-travel/dedicated-runtime/kv": ["../dedicated-runtime/dist/kv.d.ts"],
+      "@voyant-travel/dedicated-runtime/memory-kv": ["../dedicated-runtime/dist/memory-kv.d.ts"],
+      "@voyant-travel/dedicated-runtime/memory-r2": ["../dedicated-runtime/dist/memory-r2.d.ts"],
       "@voyant-travel/dedicated-runtime/node-server": [
         "../dedicated-runtime/dist/node-server.d.ts"
       ],

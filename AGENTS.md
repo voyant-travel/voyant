@@ -24,6 +24,8 @@ and promote repeated review feedback into scripts or docs.
   `docs/architecture/module-provider-plugin-taxonomy.md`
 - External systems as sources of truth:
   `docs/architecture/federated-operating-mode.md`
+- Deployment targets (Node-first for the operator; Workers for storefronts/
+  federated): `docs/architecture/deployment-targets.md`
 - Public package surface rules: `docs/frontend-package-strategy.md`
 
 Update the relevant doc when changing an architectural rule. Add or update a

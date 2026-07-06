@@ -33,9 +33,10 @@ permissions:
 # the duplicated install/build effectively free on warm caches.
 #
 # NOTE: branch protection rules need to require `CI / checks`, `CI / build`,
-# and `CI / db-checks` (the previous single `verify` job no longer exists).
-# `db-checks` is the migration safety gate — it must be a REQUIRED check, or the
-# replay-parity oracle silently provides no protection.
+# `CI / db-checks`, and `CI / node-smoke` (the previous single `verify` job no
+# longer exists). `db-checks` is the migration safety gate — it must be a
+# REQUIRED check, or the replay-parity oracle silently provides no protection.
+# `node-smoke` gates the first-class Node deployment target (voyant#2966).
 
 jobs:
   checks:
@@ -240,3 +241,73 @@ jobs:
           pnpm --filter @voyant-travel/relationships exec vitest run
           tests/integration/custom-fields.test.ts
           tests/integration/custom-fields-values.test.ts
+
+  # Gates the first-class production target (voyant#2966): the operator must
+  # build and boot under Node, serve `/healthz`, and dispatch the API. Node is
+  # the recommended operator deployment, so a regression that breaks the Node
+  # boot should fail CI rather than surface at deploy time.
+  node-smoke:
+    name: node-smoke
+    runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
+      NODE_OPTIONS: --max-old-space-size=8192
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build operator (Node target)
+        # Via turbo so the operator's workspace dependencies build first
+        # (`build` dependsOn `^build`) — the Node build resolves some workspace
+        # subpath exports to their `dist` output. Warm turbo cache from the
+        # `build` job makes the deps effectively free.
+        run: pnpm turbo run build --filter=operator
+
+      - name: Boot under Node and smoke-test
+        # Boot `dist/server/server.js` (the createNodeServer entry), then assert
+        # /healthz is 200 and the API dispatches (a non-5xx status — 401 is the
+        # expected auth rejection for the protected openapi route). No database is
+        # needed: /healthz is served before app.fetch, and the openapi route is
+        # rejected at the auth middleware before any DB access. Throwaway secrets
+        # are generated at runtime (never committed) so the secret scanner has
+        # nothing to flag.
+        working-directory: starters/operator
+        env:
+          PORT: "8080"
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          EMAIL_FROM: ci@example.com
+          KMS_PROVIDER: local
+          APP_URL: http://localhost:8080/api
+          API_BASE_URL: http://localhost:8080/api
+          CORS_ALLOWLIST: http://localhost:8080
+          DASH_BASE_URL: http://localhost:8080
+        run: |
+          export BETTER_AUTH_SECRET="$(openssl rand -hex 24)"
+          export SESSION_CLAIMS_SECRET="$(openssl rand -hex 24)"
+          export INTERNAL_API_KEY="$(openssl rand -hex 16)"
+          export KMS_LOCAL_KEY="$(openssl rand -hex 16)"
+          node dist/server/server.js &
+          SRV=$!
+          trap 'kill $SRV 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:8080/healthz; then break; fi
+            sleep 1
+          done
+          health=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/healthz)
+          echo "healthz -> $health"
+          test "$health" = "200"
+          api=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 http://localhost:8080/api/openapi.json)
+          echo "api dispatch -> $api"
+          test "$api" -lt 500

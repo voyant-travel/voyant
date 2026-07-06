@@ -9,7 +9,7 @@ import { withActiveRouteSsrManifest } from "@voyant-travel/worker-runtime"
  * isolates (including `/api/health`) never load the React SSR graph, mirroring
  * the lazy `import("./api/app")` on the API side.
  *
- * See docs/architecture/cloudflare-worker-entrypoints.md.
+ * See docs/architecture/deployment-targets.md.
  */
 const startHandler = createStartHandler(withActiveRouteSsrManifest(defaultStreamHandler))
 

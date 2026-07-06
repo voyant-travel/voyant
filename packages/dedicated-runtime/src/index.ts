@@ -1,21 +1,14 @@
-export type { CacheApiLike, InstallCachesShimOptions } from "./cache.js"
-export {
-  createCachesShim,
-  installCachesShim,
-  uninstallCachesShim,
-} from "./cache.js"
-export type { BuildDedicatedEnvBindings, DedicatedEnv } from "./env.js"
-export { buildDedicatedEnv } from "./env.js"
+export type { NodeEnv, NodeEnvBindings } from "./env.js"
+export { composeNodeEnv } from "./env.js"
 export type {
-  KvFetch,
   KvGetOptions,
-  KvLruOptions,
   KvNamespaceShim,
-  KvNamespaceShimOptions,
   KvPutOptions,
   KvValueType,
-} from "./kv.js"
-export { createKvNamespaceShim } from "./kv.js"
+  MemoryKvOptions,
+} from "./memory-kv.js"
+export { createMemoryKvNamespace } from "./memory-kv.js"
+export { createMemoryR2Bucket } from "./memory-r2.js"
 export type {
   CreateNodeServerOptions,
   NodeServerHandle,
