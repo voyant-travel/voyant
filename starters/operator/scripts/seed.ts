@@ -9,7 +9,7 @@
  * matching finance docs, a cancellation policy, and a customer contract.
  *
  * Run:   pnpm seed -- --confirm
- * Target: the DATABASE_URL in starters/operator/.dev.vars
+ * Target: the DATABASE_URL in starters/operator/.env
  */
 
 import { readFileSync } from "node:fs"
@@ -157,16 +157,15 @@ function parseDotEnv(path: string): Record<string, string> {
 }
 
 /**
- * Match drizzle.config.ts load order with `.dev.vars` as the final local
+ * Match drizzle.config.ts load order with `.env` as the final local
  * override. This keeps seed, migrate, and local worker runtime aligned.
  */
 function loadEnv(): Record<string, string> {
   const merged: Record<string, string> = {}
   const files = [
-    resolve(TEMPLATE_DIR, ".env"),
     resolve(TEMPLATE_DIR, "../../.env"),
     resolve(TEMPLATE_DIR, "../../.env.local"),
-    resolve(TEMPLATE_DIR, ".dev.vars"),
+    resolve(TEMPLATE_DIR, ".env"),
   ]
   for (const file of files) {
     const parsed = parseDotEnv(file)
@@ -182,7 +181,7 @@ const confirmed = args.includes("--confirm") || args.includes("-y")
 const env = { ...loadEnv(), ...process.env }
 const DATABASE_URL = env.DATABASE_URL
 if (!DATABASE_URL) {
-  console.error("DATABASE_URL not set (checked .dev.vars and process.env)")
+  console.error("DATABASE_URL not set (checked .env and process.env)")
   process.exit(1)
 }
 if (!confirmed) {

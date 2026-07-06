@@ -19,7 +19,7 @@ import { Client } from "pg"
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
-config({ path: ".dev.vars", override: true })
+config({ path: ".env", override: true })
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {

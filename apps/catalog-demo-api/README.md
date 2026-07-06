@@ -20,7 +20,7 @@ pnpm db:migrate             # creates catalog_demo_inventory + catalog_demo_orde
 pnpm dev                    # listens on :3330 by default
 ```
 
-Then in your operator starter (e.g. `starters/operator/.dev.vars`):
+Then in your operator starter (e.g. `starters/operator/.env`):
 
 ```
 CATALOG_DEMO_API_URL=http://localhost:3330

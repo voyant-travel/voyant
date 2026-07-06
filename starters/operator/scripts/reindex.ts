@@ -68,7 +68,7 @@ import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
-config({ path: ".dev.vars", override: true })
+config({ path: ".env", override: true })
 
 const databaseUrl = process.env.DATABASE_URL
 const typesenseHost = process.env.TYPESENSE_HOST
