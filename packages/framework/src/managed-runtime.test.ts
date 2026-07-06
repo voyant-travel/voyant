@@ -215,6 +215,23 @@ describe("managed profile runtime entry", () => {
     expect(await response.text()).toBe("%PDF-1.4")
   })
 
+  it("wires package-owned media routes in the default managed providers", async () => {
+    const env = createManagedProfileNodeEnv({
+      DATABASE_URL: "managed-profile-test-db",
+      APP_URL: "https://api.example.test",
+    })
+    await env.MEDIA_BUCKET?.put("uploads/test.txt", "hello", {
+      httpMetadata: { contentType: "text/plain" },
+    })
+    const app = await createManagedProfileProviders().loadMediaRoutes()
+
+    const response = await app.request("/v1/admin/media/uploads/test.txt", {}, env)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("content-type")).toBe("text/plain")
+    expect(await response.text()).toBe("hello")
+  })
+
   it("wires package-owned action-ledger health routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()
 

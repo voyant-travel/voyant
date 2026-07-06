@@ -212,6 +212,7 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront/customer-portal")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront/verification")
+    expect(bridge.manifest.modules).toContain("operator/media")
     expect(bridge.manifest.modules).toContain("operator/payment-link")
     expect(bridge.manifest.modules).toContain("operator/contract-document")
     expect(bridge.manifest.extensions).toContain("operator/action-ledger-health-extension")

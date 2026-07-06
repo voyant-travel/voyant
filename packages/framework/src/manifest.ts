@@ -88,7 +88,6 @@ export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = [
   "operator/mcp",
   "operator/catalog-booking",
   "operator/catalog-content",
-  "operator/media",
   "@voyant-travel/distribution/channel-push-extension",
   "operator/booking-schedule-extension",
   "operator/quote-version-snapshot-extension",
