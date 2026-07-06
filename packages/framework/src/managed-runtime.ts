@@ -4,6 +4,7 @@
 import { readFile } from "node:fs/promises"
 
 import { getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
+import type { EventBus } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db"
 import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type {
@@ -14,10 +15,21 @@ import type {
 } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import {
+  type ContractDocumentGeneratorContext,
+  createContractDocumentRoutes,
+  createContractDocumentService,
+  createPdfContractDocumentGenerator,
+} from "@voyant-travel/legal"
+import { buildContractVariableBindings } from "@voyant-travel/legal/contract-variables"
+import {
   createVoyantCloudEmailProvider,
   createVoyantCloudSmsProvider,
   type NotificationProvider,
 } from "@voyant-travel/notifications"
+import {
+  getOperatorPaymentInstructions,
+  getOperatorProfile,
+} from "@voyant-travel/operator-settings"
 import {
   type CreateNodeServerOptions,
   composeNodeEnv,
@@ -31,8 +43,12 @@ import {
   type R2BucketShim,
 } from "@voyant-travel/runtime"
 import { createR2Provider, type R2BucketLike } from "@voyant-travel/storage/providers/r2"
+import type { PaymentLinkRoutesOptions } from "@voyant-travel/storefront/payment-link"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
+import { and, asc, desc, eq, inArray } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
 import type { FrameworkProviders } from "./composition-lazy.js"
@@ -262,13 +278,13 @@ export function createManagedProfileProviders(
     loadCatalogBookingRoutes: emptyRoutes,
     loadCatalogContentRoutes: emptyRoutes,
     loadMediaRoutes: emptyRoutes,
-    loadPaymentLinkRoutes: emptyRoutes,
-    loadContractDocumentRoutes: emptyRoutes,
+    loadPaymentLinkRoutes: async () => createManagedPaymentLinkRoutes(),
+    loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
     loadBookingScheduleAdminRoutes: emptyRoutes,
     loadPaymentPolicyPublicRoutes: emptyRoutes,
     loadQuoteVersionSnapshotRoutes: emptyRoutes,
     loadBookingMaintenanceRoutes: emptyRoutes,
-    loadActionLedgerHealthRoutes: emptyRoutes,
+    loadActionLedgerHealthRoutes: createManagedActionLedgerHealthRoutes,
     loadProposalAdminRoutes: emptyRoutes,
     loadProposalPublicRoutes: emptyRoutes,
     loadCatalogOffersRoutes: emptyRoutes,
@@ -595,6 +611,231 @@ function createNoopStorefrontIntakePersistence(): FrameworkProviders["storefront
     updateCustomerSignal: async () => null,
     deleteCustomerSignal: async () => {},
     deletePerson: async () => {},
+  }
+}
+
+function dbFromContext(c: Context): PostgresJsDatabase {
+  return c.get("db") as PostgresJsDatabase
+}
+
+async function createManagedActionLedgerHealthRoutes() {
+  const [
+    { createActionLedgerHealthRoutes },
+    { checkBookingActionLedgerDrift },
+    { checkFinanceActionLedgerDrift },
+    { checkProductActionLedgerDrift },
+  ] = await Promise.all([
+    import("@voyant-travel/action-ledger/health"),
+    import("@voyant-travel/bookings/action-ledger-drift"),
+    import("@voyant-travel/finance/action-ledger-drift"),
+    import("@voyant-travel/inventory/action-ledger-drift"),
+  ])
+
+  return createActionLedgerHealthRoutes({
+    checkBookingDrift: checkBookingActionLedgerDrift,
+    checkFinanceDrift: checkFinanceActionLedgerDrift,
+    checkProductDrift: checkProductActionLedgerDrift,
+  })
+}
+
+async function createManagedPaymentLinkRoutes() {
+  const { createPaymentLinkRoutes } = await import("@voyant-travel/storefront/payment-link")
+  return createPaymentLinkRoutes({
+    resolveBankTransferDetails: async (c) => {
+      const details = resolveBankTransferDetails(c.env)
+      if (!details) return null
+      return {
+        beneficiary: details.beneficiary,
+        iban: details.iban,
+        bankName: details.bankName,
+      }
+    },
+    resolvePublicCheckoutBaseUrl: (c) => resolvePublicCheckoutBaseUrl(c.env),
+    startCardPayment: async () => ({ configured: false }),
+    resolveTripData: resolveManagedPaymentLinkTripData,
+  })
+}
+
+const resolveManagedPaymentLinkTripData: NonNullable<
+  PaymentLinkRoutesOptions["resolveTripData"]
+> = async (c, tripEnvelopeId, session) => {
+  const [{ productMedia, products }, { tripsService }, { tripComponents, tripEnvelopes }] =
+    await Promise.all([
+      import("@voyant-travel/inventory/schema"),
+      import("@voyant-travel/trips"),
+      import("@voyant-travel/trips/schema"),
+    ])
+  const db = dbFromContext(c)
+
+  const [envelope] = await db
+    .select()
+    .from(tripEnvelopes)
+    .where(eq(tripEnvelopes.id, tripEnvelopeId))
+    .limit(1)
+  if (!envelope) return null
+
+  if (session.status === "paid" && envelope.status !== "booked") {
+    try {
+      await tripsService.completeTripCheckout(db, {
+        envelopeId: envelope.id,
+        paymentSessionId: session.id,
+        payload: {
+          source: "payment_link_trip_summary_reconcile",
+          amountCents: session.amountCents,
+          currency: session.currency,
+          provider: session.provider,
+        },
+      })
+    } catch (err) {
+      console.error("[trips] payment summary reconciliation failed", err)
+    }
+  }
+
+  const components = await db
+    .select()
+    .from(tripComponents)
+    .where(eq(tripComponents.envelopeId, tripEnvelopeId))
+    .orderBy(asc(tripComponents.sequence), asc(tripComponents.createdAt))
+  const visibleComponents = components.filter(
+    (component) => component.status !== "removed" && component.status !== "cancelled",
+  )
+  const productIds = Array.from(
+    new Set(
+      visibleComponents
+        .map((component) => component.entityId)
+        .filter((value): value is string => typeof value === "string" && value.length > 0),
+    ),
+  )
+
+  const productNameById = new Map<string, string>()
+  const mediaByProductId = new Map<string, { url: string; altText: string | null }>()
+  if (productIds.length > 0) {
+    const productRows = await db
+      .select({ id: products.id, name: products.name })
+      .from(products)
+      .where(inArray(products.id, productIds))
+    for (const row of productRows) productNameById.set(row.id, row.name)
+
+    const mediaRows = await db
+      .select({
+        productId: productMedia.productId,
+        url: productMedia.url,
+        altText: productMedia.altText,
+        isCover: productMedia.isCover,
+        sortOrder: productMedia.sortOrder,
+        mediaType: productMedia.mediaType,
+      })
+      .from(productMedia)
+      .where(and(inArray(productMedia.productId, productIds), eq(productMedia.mediaType, "image")))
+      .orderBy(asc(productMedia.productId), desc(productMedia.isCover), asc(productMedia.sortOrder))
+    for (const row of mediaRows) {
+      if (!mediaByProductId.has(row.productId)) {
+        mediaByProductId.set(row.productId, { url: row.url, altText: row.altText })
+      }
+    }
+  }
+
+  return {
+    envelope: { id: envelope.id, status: envelope.status },
+    components: visibleComponents.map((component) => ({
+      id: component.id,
+      kind: component.kind,
+      entityModule: component.entityModule,
+      entityId: component.entityId,
+      description: component.description,
+      status: component.status,
+      sequence: component.sequence,
+      componentTotalAmountCents: component.componentTotalAmountCents,
+      componentCurrency: component.componentCurrency,
+      metadata: metadataRecord(component.metadata),
+    })),
+    productNameById,
+    mediaByProductId,
+  }
+}
+
+function metadataRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+  return null
+}
+
+async function createManagedContractDocumentRoutes() {
+  return createContractDocumentRoutes({
+    generateContract: (env, db, eventBus, bookingId, opts) =>
+      managedContractDocumentService(env).generate(
+        db as PostgresJsDatabase,
+        eventBus as EventBus | undefined,
+        bookingId,
+        opts,
+      ),
+    previewContract: (env, db, bookingId) =>
+      managedContractDocumentService(env).preview(db as PostgresJsDatabase, bookingId),
+    resolveStorage: createDocumentStorage,
+    guessMimeType,
+  })
+}
+
+const MANAGED_CONTRACT_SERIES_NAME = "customer-contracts"
+
+function managedContractDocumentService(env: unknown) {
+  return createContractDocumentService({
+    resolveGenerator: () => resolveManagedContractDocumentGenerator(env),
+    autoGenerateOptions: {
+      enabled: true,
+      templateSlug: "customer-sales-agreement",
+      scope: "customer",
+      language: "en",
+      seriesName: MANAGED_CONTRACT_SERIES_NAME,
+      resolveVariables: buildManagedContractVariables(),
+    },
+    defaultSeriesName: MANAGED_CONTRACT_SERIES_NAME,
+    resolveBindings: () => contractDocumentBindings(env),
+    resolveBookingPiiService: () => null,
+  })
+}
+
+function buildManagedContractVariables() {
+  return buildContractVariableBindings({
+    resolveOperatorProfile: (db) => getOperatorProfile(db),
+    resolveOperatorPaymentInstructions: (db) => getOperatorPaymentInstructions(db),
+  })
+}
+
+function contractDocumentBindings(env: unknown): Record<string, unknown> {
+  const bindings = env as ManagedProfileRuntimeEnv
+  return {
+    APP_URL: bindings.APP_URL,
+    DOCUMENTS_BASE_URL: bindings.API_BASE_URL ?? bindings.APP_URL,
+  }
+}
+
+function resolveManagedContractDocumentGenerator(env: unknown) {
+  const storage = createDocumentStorage(env)
+  if (!storage) return null
+  return (context: ContractDocumentGeneratorContext) =>
+    createPdfContractDocumentGenerator({ storage })(context)
+}
+
+function guessMimeType(key: string): string {
+  const ext = key.split(".").pop()?.toLowerCase()
+  switch (ext) {
+    case "pdf":
+      return "application/pdf"
+    case "png":
+      return "image/png"
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg"
+    case "webp":
+      return "image/webp"
+    case "json":
+      return "application/json"
+    case "txt":
+      return "text/plain"
+    default:
+      return "application/octet-stream"
   }
 }
 

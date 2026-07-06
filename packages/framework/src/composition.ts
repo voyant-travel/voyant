@@ -714,7 +714,9 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     }),
     "operator/payment-link": ({ capabilities }) => ({
       module: { name: "payment-link" },
+      publicPath: "/",
       lazyRoutes: { paths: PAYMENT_LINK_ROUTE_PATHS, load: capabilities.loadPaymentLinkRoutes },
+      anonymous: ["payment-link-config", "payment-link"],
     }),
     "operator/contract-document": ({ capabilities }) => ({
       module: { name: "contract-document" },

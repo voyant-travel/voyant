@@ -44,7 +44,8 @@
     "@voyant-travel/runtime": "workspace:*",
     "@voyant-travel/storage": "workspace:*",
     "@voyant-travel/workflows": "workspace:*",
-    "@voyant-travel/workflows-orchestrator": "workspace:*"
+    "@voyant-travel/workflows-orchestrator": "workspace:*",
+    "drizzle-orm": "catalog:"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",

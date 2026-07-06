@@ -177,4 +177,48 @@ describe("managed profile runtime entry", () => {
 
     expect(Object.keys(providers.resolvePaymentStarters?.({}) ?? {})).toEqual(["stripe"])
   })
+
+  it("wires package-owned payment-link routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadPaymentLinkRoutes()
+    const response = await app.request(
+      "/v1/public/payment-link-config",
+      {},
+      {
+        PUBLIC_CHECKOUT_BASE_URL: "https://checkout.example.test",
+        BANK_TRANSFER_BENEFICIARY: "Voyant Travel",
+        BANK_TRANSFER_IBAN: "RO49AAAA1B31007593840000",
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      data: {
+        publicCheckoutBaseUrl: "https://checkout.example.test",
+        bankTransfer: {
+          beneficiary: "Voyant Travel",
+          iban: "RO49AAAA1B31007593840000",
+          bankName: null,
+        },
+      },
+    })
+  })
+
+  it("wires package-owned contract document routes in the default managed providers", async () => {
+    const env = createManagedProfileNodeEnv({ DATABASE_URL: "managed-profile-test-db" })
+    await env.DOCUMENTS_BUCKET?.put("contracts/test.pdf", new TextEncoder().encode("%PDF-1.4"))
+    const app = await createManagedProfileProviders().loadContractDocumentRoutes()
+
+    const response = await app.request("/v1/admin/documents/files/contracts/test.pdf", {}, env)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("content-type")).toBe("application/pdf")
+    expect(await response.text()).toBe("%PDF-1.4")
+  })
+
+  it("wires package-owned action-ledger health routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+  })
 })
