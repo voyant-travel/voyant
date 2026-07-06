@@ -141,9 +141,11 @@ export function buildOperatorProviders(): OperatorCapabilities {
           m.createRelationshipsStorefrontIntakePersistence() as AsyncMethodProvider<StorefrontIntakePersistence>,
       ),
     ),
-    netopiaCheckoutStarter: lazyProvider(async () =>
-      import("@voyant-travel/plugin-netopia").then((m) => m.createNetopiaCheckoutStarter()),
-    ),
+    resolvePaymentStarters: () => ({
+      netopia: lazyProvider(async () =>
+        import("@voyant-travel/plugin-netopia").then((m) => m.createNetopiaCheckoutStarter()),
+      ),
+    }),
     createChannelPushExtension,
     // Lazy route-bundle loaders for the `operator/*` standard families — each
     // wires this deployment's providers into the package-owned route bundle.

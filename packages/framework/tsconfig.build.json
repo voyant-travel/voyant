@@ -801,6 +801,7 @@
       "@voyant-travel/flights/snapshot": ["../flights/dist/snapshot.d.ts"],
       "@voyant-travel/framework": ["./dist/index.d.ts"],
       "@voyant-travel/framework-migrations": ["../framework-migrations/dist/index.d.ts"],
+      "@voyant-travel/framework/operator-runtime": ["./dist/operator-runtime.d.ts"],
       "@voyant-travel/framework/profile": ["./dist/profile.d.ts"],
       "@voyant-travel/hono": ["../hono/dist/index.d.ts"],
       "@voyant-travel/hono/app": ["../hono/dist/app.d.ts"],
@@ -1479,5 +1480,6 @@
       "@voyant-travel/workflows/testing": ["../workflows/dist/testing/index.d.ts"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
 }

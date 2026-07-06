@@ -34,6 +34,11 @@ workload class well. On Node none of it is necessary.
   adds a real per-request `waitUntil` (background work tracked + drained on
   shutdown), an origin-trust gate, an HTTP `scheduled()` hook, graceful
   SIGTERM/SIGINT drain, and serves the client build (`dist/client`).
+- **Managed Cloud entry:** `@voyant-travel/framework/operator-runtime` boots the
+  standard managed `operator` profile from a serialized profile snapshot without
+  importing `starters/operator/src/*`. Cloud packages this framework-owned entry
+  with provisioned env/secrets; storefront/site artifacts remain separate apps
+  that consume the operator API.
 - **Bindings are real Node providers, not Cloudflare emulation.** In-process KV
   (`createMemoryKvNamespace`) backs `CACHE`/`RATE_LIMIT`; object storage is
   S3-backed in prod (`createR2BucketShim`) or in-process in dev

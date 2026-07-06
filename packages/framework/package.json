@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./profile": "./src/profile.ts"
+    "./profile": "./src/profile.ts",
+    "./operator-runtime": "./src/operator-runtime.ts"
   },
   "files": [
     "dist"
@@ -37,7 +38,13 @@
     "@voyant-travel/quotes": "workspace:*",
     "@voyant-travel/relationships": "workspace:*",
     "@voyant-travel/storefront": "workspace:*",
-    "@voyant-travel/trips": "workspace:*"
+    "@voyant-travel/trips": "workspace:*",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
+    "@voyant-travel/db": "workspace:*",
+    "@voyant-travel/runtime": "workspace:*",
+    "@voyant-travel/storage": "workspace:*",
+    "@voyant-travel/workflows": "workspace:*",
+    "@voyant-travel/workflows-orchestrator": "workspace:*"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",
@@ -62,6 +69,10 @@
       "./profile": {
         "types": "./dist/profile.d.ts",
         "import": "./dist/profile.js"
+      },
+      "./operator-runtime": {
+        "types": "./dist/operator-runtime.d.ts",
+        "import": "./dist/operator-runtime.js"
       }
     }
   },

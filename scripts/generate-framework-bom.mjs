@@ -26,11 +26,22 @@ const SRC = join(ROOT, "packages/framework/src/runtime-packages.generated.ts")
 const EMIT = process.argv.includes("--emit")
 
 const runtimePackages = JSON.parse(readFileSync(MANIFEST, "utf-8")).runtimePackages
+const frameworkRuntimeEntryDeps = {
+  "@voyant-travel/cloud-sdk": "^0.11.0",
+  "@voyant-travel/db": "workspace:*",
+  "@voyant-travel/runtime": "workspace:*",
+  "@voyant-travel/storage": "workspace:*",
+  "@voyant-travel/workflows": "workspace:*",
+  "@voyant-travel/workflows-orchestrator": "workspace:*",
+}
 
 // BOM dependencies: one entry per runtime module, pinned via workspace:* (pnpm
 // publishes these as the exact current version → a deterministic set).
 const deps = {}
 for (const name of [...runtimePackages].sort()) deps[name] = "workspace:*"
+for (const name of Object.keys(frameworkRuntimeEntryDeps).sort()) {
+  deps[name] = frameworkRuntimeEntryDeps[name]
+}
 
 const pkg = JSON.parse(readFileSync(PKG, "utf-8"))
 const nextPkg = `${JSON.stringify({ ...pkg, dependencies: deps }, null, 2)}\n`

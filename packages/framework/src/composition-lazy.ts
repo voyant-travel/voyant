@@ -13,10 +13,7 @@ import {
   promotionAffectedAllFilter,
 } from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 import type { BootstrapHandler } from "@voyant-travel/core"
-import type {
-  CheckoutNotificationDelivery,
-  CheckoutPaymentStarter,
-} from "@voyant-travel/finance/checkout"
+import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import type { LazyRoutesLoader } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
@@ -76,7 +73,7 @@ export interface FrameworkProviders {
   >
   financeCheckoutPolicy?: import("@voyant-travel/finance").FinanceHonoModuleOptions["policy"]
   financePaymentScheduleLineDescriptionFormat?: import("@voyant-travel/finance").FinanceHonoModuleOptions["paymentScheduleLineDescriptionFormat"]
-  netopiaCheckoutStarter: CheckoutPaymentStarter
+  resolvePaymentStarters?: import("@voyant-travel/finance").FinanceHonoModuleOptions["resolvePaymentStarters"]
   notificationsAutoConfirmAndDispatch?: CreateNotificationsHonoModuleOptions["autoConfirmAndDispatch"]
   createChannelPushExtension: () => HonoExtension
   loadFlightAdminRoutes: LazyRoutesLoader
@@ -532,9 +529,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
                 ),
             }
           },
-          resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
-            netopia: capabilities.netopiaCheckoutStarter,
-          }),
+          resolvePaymentStarters: capabilities.resolvePaymentStarters,
           policy: capabilities.financeCheckoutPolicy,
           paymentScheduleLineDescriptionFormat:
             capabilities.financePaymentScheduleLineDescriptionFormat,
