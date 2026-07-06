@@ -1,0 +1,97 @@
+{
+  "name": "@voyant-travel/dedicated-runtime",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./kv": "./src/kv.ts",
+    "./r2": "./src/r2.ts",
+    "./cache": "./src/cache.ts",
+    "./wait-until": "./src/wait-until.ts",
+    "./env": "./src/env.ts",
+    "./node-server": "./src/node-server.ts",
+    "./trust": "./src/trust.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./kv": {
+        "types": "./dist/kv.d.ts",
+        "import": "./dist/kv.js",
+        "default": "./dist/kv.js"
+      },
+      "./r2": {
+        "types": "./dist/r2.d.ts",
+        "import": "./dist/r2.js",
+        "default": "./dist/r2.js"
+      },
+      "./cache": {
+        "types": "./dist/cache.d.ts",
+        "import": "./dist/cache.js",
+        "default": "./dist/cache.js"
+      },
+      "./wait-until": {
+        "types": "./dist/wait-until.d.ts",
+        "import": "./dist/wait-until.js",
+        "default": "./dist/wait-until.js"
+      },
+      "./env": {
+        "types": "./dist/env.d.ts",
+        "import": "./dist/env.js",
+        "default": "./dist/env.js"
+      },
+      "./node-server": {
+        "types": "./dist/node-server.d.ts",
+        "import": "./dist/node-server.js",
+        "default": "./dist/node-server.js"
+      },
+      "./trust": {
+        "types": "./dist/trust.d.ts",
+        "import": "./dist/trust.js",
+        "default": "./dist/trust.js"
+      },
+      "./types": {
+        "types": "./dist/types.d.ts",
+        "import": "./dist/types.js",
+        "default": "./dist/types.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.6",
+    "@voyant-travel/storage": "workspace:^",
+    "@voyant-travel/worker-runtime": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/dedicated-runtime"
+  }
+}
