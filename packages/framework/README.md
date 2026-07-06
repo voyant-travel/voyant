@@ -36,3 +36,8 @@ deterministic.
 ## Exports
 
 - `FRAMEWORK_RUNTIME_PACKAGES` — the pinned runtime-module names (e.g. for `voyant upgrade`).
+- `@voyant-travel/framework/profile` — managed profile snapshots, validation,
+  plugin/settings metadata, provider/resource requirements, migration metadata,
+  and the `createVoyantApp` profile bridge for Cloud-managed admin/API operator
+  deployments. Customer-facing site and storefront apps are separate Cloud app
+  artifacts, not managed profile fields.
