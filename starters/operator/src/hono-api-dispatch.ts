@@ -2,13 +2,13 @@ import { requestBodyLimit } from "@voyant-travel/hono/middleware/body-size"
 import { cors } from "@voyant-travel/hono/middleware/cors"
 import { rateLimit } from "@voyant-travel/hono/middleware/rate-limit"
 import { securityHeaders } from "@voyant-travel/hono/middleware/security-headers"
-import { createApiDispatch, lazyApp } from "@voyant-travel/worker-runtime"
-import type { FetchApp } from "@voyant-travel/worker-runtime/types"
+import { createApiDispatch, lazyApp } from "@voyant-travel/runtime"
+import type { FetchApp } from "@voyant-travel/runtime/types"
 import { Hono } from "hono"
 
 /**
  * App-owned loaders for the framework-owned dispatch in
- * `@voyant-travel/worker-runtime`: this file only knows WHICH modules to load;
+ * `@voyant-travel/runtime`: this file only knows WHICH modules to load;
  * prefix matching, URL rewriting, lean-auth dispatch, and background API
  * warm-up live in the package and arrive via version bumps.
  */

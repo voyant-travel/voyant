@@ -778,27 +778,6 @@
       "@voyant-travel/db/types": ["../../packages/db/dist/types.d.ts"],
       "@voyant-travel/db/utils": ["../../packages/db/dist/utils.d.ts"],
       "@voyant-travel/db/write-intents": ["../../packages/db/dist/write-intents.d.ts"],
-      "@voyant-travel/dedicated-runtime": ["../../packages/dedicated-runtime/dist/index.d.ts"],
-      "@voyant-travel/dedicated-runtime/env": ["../../packages/dedicated-runtime/dist/env.d.ts"],
-      "@voyant-travel/dedicated-runtime/memory-kv": [
-        "../../packages/dedicated-runtime/dist/memory-kv.d.ts"
-      ],
-      "@voyant-travel/dedicated-runtime/memory-r2": [
-        "../../packages/dedicated-runtime/dist/memory-r2.d.ts"
-      ],
-      "@voyant-travel/dedicated-runtime/node-server": [
-        "../../packages/dedicated-runtime/dist/node-server.d.ts"
-      ],
-      "@voyant-travel/dedicated-runtime/r2": ["../../packages/dedicated-runtime/dist/r2.d.ts"],
-      "@voyant-travel/dedicated-runtime/trust": [
-        "../../packages/dedicated-runtime/dist/trust.d.ts"
-      ],
-      "@voyant-travel/dedicated-runtime/types": [
-        "../../packages/dedicated-runtime/dist/types.d.ts"
-      ],
-      "@voyant-travel/dedicated-runtime/wait-until": [
-        "../../packages/dedicated-runtime/dist/wait-until.d.ts"
-      ],
       "@voyant-travel/distribution": ["../../packages/distribution/dist/index.d.ts"],
       "@voyant-travel/distribution-react": ["../../packages/distribution-react/dist/index.d.ts"],
       "@voyant-travel/distribution-react/admin": [
@@ -1663,6 +1642,18 @@
       "@voyant-travel/relationships/validation": [
         "../../packages/relationships/dist/validation.d.ts"
       ],
+      "@voyant-travel/runtime": ["../../packages/runtime/dist/index.d.ts"],
+      "@voyant-travel/runtime/api-dispatch": ["../../packages/runtime/dist/api-dispatch.d.ts"],
+      "@voyant-travel/runtime/env": ["../../packages/runtime/dist/env.d.ts"],
+      "@voyant-travel/runtime/memory-kv": ["../../packages/runtime/dist/memory-kv.d.ts"],
+      "@voyant-travel/runtime/memory-r2": ["../../packages/runtime/dist/memory-r2.d.ts"],
+      "@voyant-travel/runtime/node-server": ["../../packages/runtime/dist/node-server.d.ts"],
+      "@voyant-travel/runtime/r2": ["../../packages/runtime/dist/r2.d.ts"],
+      "@voyant-travel/runtime/ssr-manifest": ["../../packages/runtime/dist/ssr-manifest.d.ts"],
+      "@voyant-travel/runtime/trust": ["../../packages/runtime/dist/trust.d.ts"],
+      "@voyant-travel/runtime/types": ["../../packages/runtime/dist/types.d.ts"],
+      "@voyant-travel/runtime/wait-until": ["../../packages/runtime/dist/wait-until.d.ts"],
+      "@voyant-travel/runtime/worker-fetch": ["../../packages/runtime/dist/worker-fetch.d.ts"],
       "@voyant-travel/schema-kit": ["../../packages/schema-kit/dist/index.d.ts"],
       "@voyant-travel/schema-kit/kms": ["../../packages/schema-kit/dist/kms.d.ts"],
       "@voyant-travel/schema-kit/query-params": [
@@ -1838,17 +1829,6 @@
       ],
       "@voyant-travel/utils/timezones": ["../../packages/utils/dist/timezones.d.ts"],
       "@voyant-travel/vite-config": ["../../packages/vite-config/dist/index.d.ts"],
-      "@voyant-travel/worker-runtime": ["../../packages/worker-runtime/dist/index.d.ts"],
-      "@voyant-travel/worker-runtime/api-dispatch": [
-        "../../packages/worker-runtime/dist/api-dispatch.d.ts"
-      ],
-      "@voyant-travel/worker-runtime/ssr-manifest": [
-        "../../packages/worker-runtime/dist/ssr-manifest.d.ts"
-      ],
-      "@voyant-travel/worker-runtime/types": ["../../packages/worker-runtime/dist/types.d.ts"],
-      "@voyant-travel/worker-runtime/worker-fetch": [
-        "../../packages/worker-runtime/dist/worker-fetch.d.ts"
-      ],
       "@voyant-travel/workflow-runs": ["../../packages/workflow-runs/dist/index.d.ts"],
       "@voyant-travel/workflow-runs/recorder": ["../../packages/workflow-runs/dist/recorder.d.ts"],
       "@voyant-travel/workflow-runs/routes": ["../../packages/workflow-runs/dist/routes.d.ts"],

@@ -10,7 +10,7 @@ import {
   createWaitUntilRegistry,
   type ExecutionContextLike,
   type R2BucketShim,
-} from "@voyant-travel/dedicated-runtime"
+} from "@voyant-travel/runtime"
 import { Hono } from "hono"
 
 import { fetch as appFetch, scheduled } from "./entry"

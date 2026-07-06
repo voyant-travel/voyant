@@ -13,7 +13,7 @@ See [docs/architecture/deployment-targets.md](../../docs/architecture/deployment
 ## Stack
 
 - **Runtime**: Node (resident process — e.g. Cloud Run), booted by
-  `src/server.ts` via `createNodeServer` from `@voyant-travel/dedicated-runtime`
+  `src/server.ts` via `createNodeServer` from `@voyant-travel/runtime`
 - **Framework**: TanStack Start + React 19 (Vite build, no `@cloudflare/vite-plugin`)
 - **UI**: Shared `@voyant-travel/ui` components and styles + Tailwind CSS v4
 - **DB**: Postgres via pooled node-postgres (`DATABASE_URL_DIRECT`, the Node

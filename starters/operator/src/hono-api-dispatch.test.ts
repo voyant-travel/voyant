@@ -3,7 +3,7 @@ import { operatorApiDispatch } from "./hono-api-dispatch"
 
 /**
  * Dispatch mechanics (prefix matching, URL rewriting, lean-auth ordering,
- * background warm-up) are covered in @voyant-travel/worker-runtime. These tests
+ * background warm-up) are covered in @voyant-travel/runtime. These tests
  * cover the operator's wiring on top: the lean auth app answers CORS
  * preflight without touching the full API module graph.
  */

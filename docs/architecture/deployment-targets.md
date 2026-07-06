@@ -29,7 +29,7 @@ workload class well. On Node none of it is necessary.
 
 - **Entry:** `starters/operator/src/server.ts` boots a resident HTTP server via
   `createNodeServer` from
-  [`@voyant-travel/dedicated-runtime`](../../packages/dedicated-runtime). It runs
+  [`@voyant-travel/runtime`](../../packages/runtime). It runs
   the app's Worker-style `fetch`/`scheduled` handlers (`src/entry.ts`) unchanged,
   adds a real per-request `waitUntil` (background work tracked + drained on
   shutdown), an origin-trust gate, an HTTP `scheduled()` hook, graceful

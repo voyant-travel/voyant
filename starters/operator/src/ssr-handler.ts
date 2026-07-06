@@ -1,5 +1,5 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { withActiveRouteSsrManifest } from "@voyant-travel/worker-runtime"
+import { withActiveRouteSsrManifest } from "@voyant-travel/runtime"
 
 /**
  * The TanStack Start SSR handler, isolated in its own module so `entry.ts` can
