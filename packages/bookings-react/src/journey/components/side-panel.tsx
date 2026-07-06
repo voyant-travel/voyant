@@ -588,9 +588,13 @@ function formatTaxRate(rate: number): string {
 function formatConfigureDate(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
+  // Date-only strings parse as UTC midnight; render them in UTC so the
+  // calendar date is not shifted for viewers in timezones west of UTC.
+  const timeZone = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? "UTC" : undefined
   return new Intl.DateTimeFormat(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone,
   }).format(date)
 }
