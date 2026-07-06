@@ -1,0 +1,31 @@
+# Build-context ignore for `starters/operator/Dockerfile` (BuildKit uses the
+# `<dockerfile>.dockerignore` next to the Dockerfile in preference to the root
+# `.dockerignore`). The context is the REPO ROOT — keep the whole workspace
+# source (the operator bundles the `@voyant-travel/*` packages), but drop
+# reinstalled/rebuilt artifacts, secrets, and VCS/tooling noise.
+**/node_modules
+**/dist
+**/.turbo
+**/.next
+**/build
+**/out
+**/.wrangler
+**/coverage
+**/*.tsbuildinfo
+
+# Local env / secrets (never bake into an image)
+**/.env
+**/.env.local
+**/.env.*.local
+**/.dev.vars
+**/.dev.vars.local
+
+# VCS + tooling + local scratch
+.git
+.github
+.agent-worktrees
+.audit
+.vscode
+.idea
+**/.DS_Store
+*.log

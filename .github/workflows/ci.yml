@@ -269,11 +269,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build operator (Node target)
-        # Via turbo so the operator's workspace dependencies build first
-        # (`build` dependsOn `^build`) — the Node build resolves some workspace
-        # subpath exports to their `dist` output. Warm turbo cache from the
-        # `build` job makes the deps effectively free.
-        run: pnpm turbo run build --filter=operator
+        # Only the operator is built — its Vite config bundles the workspace
+        # packages from SOURCE (the `development` resolve condition), so the
+        # dependency graph does not need to be prebuilt (same as the Dockerfile).
+        run: pnpm --filter operator build
 
       - name: Boot under Node and smoke-test
         # Boot `dist/server/server.js` (the createNodeServer entry), then assert

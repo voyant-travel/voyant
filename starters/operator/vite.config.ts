@@ -48,5 +48,14 @@ export default defineConfig({
     // time. The old workerd build bundled everything for the same reason. A
     // resident Node process loads the graph once, so there is no cold-start cost.
     noExternal: [/^@voyant-travel\//, /^@pxmstudio\//],
+    // Resolve workspace-package exports from SOURCE by putting `development`
+    // ahead of `node` — a few subpaths (e.g. `@voyant-travel/workflows-orchestrator/in-memory`)
+    // export `node` → prebuilt `dist`, which would force the whole dependency
+    // graph to be built before the operator. With `development` first they
+    // resolve to `./src` and get bundled, so `pnpm --filter operator build`
+    // stands alone (no `turbo ^build` / prebuilt dist needed — see Dockerfile).
+    resolve: {
+      conditions: ["development", "module", "node", "import", "default"],
+    },
   },
 })
