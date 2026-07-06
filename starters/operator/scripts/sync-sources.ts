@@ -51,7 +51,7 @@ import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
-config({ path: ".dev.vars", override: true })
+config({ path: ".env", override: true })
 
 const typesenseHost = process.env.TYPESENSE_HOST
 const typesenseKey = process.env.TYPESENSE_ADMIN_API_KEY ?? process.env.TYPESENSE_API_KEY

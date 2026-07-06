@@ -21,7 +21,7 @@ import { schema } from "./drizzle.schemas.generated.ts"
 const customDeploymentSchemas = ["./src/modules/*/schema.ts", "./src/extensions/*/schema.ts"]
 
 // An explicitly-provided DATABASE_URL (CI, the migration-replay oracle, ad-hoc
-// `DATABASE_URL=… pnpm db:push`) must WIN — `.dev.vars` is loaded with
+// `DATABASE_URL=… pnpm db:push`) must WIN — `.env` is loaded with
 // `override: true` for local `pnpm dev` ergonomics, but without this guard it
 // silently clobbers the caller's DATABASE_URL and redirects every db command at
 // the local dev DB. Capture the explicit value first, then restore it last.
@@ -29,7 +29,7 @@ const explicitDatabaseUrl = process.env.DATABASE_URL
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
-config({ path: ".dev.vars", override: true })
+config({ path: ".env", override: true })
 if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
 
 function resolveDatabaseUrl(): string {

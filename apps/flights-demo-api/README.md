@@ -31,8 +31,8 @@ pnpm --dir apps/flights-demo-api db:migrate
 pnpm --dir apps/flights-demo-api dev
 ```
 
-Then in your starter (e.g. `starters/operator/.dev.vars` in the repository, or
-`.dev.vars` in a packaged starter):
+Then in your starter (e.g. `starters/operator/.env` in the repository, or
+`.env` in a packaged starter):
 
 ```
 FLIGHTS_DEMO_API_URL=http://localhost:3320

@@ -39,9 +39,9 @@ const explicitDatabaseUrl = process.env.DATABASE_URL
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
-config({ path: ".dev.vars", override: true })
+config({ path: ".env", override: true })
 // An explicitly-provided DATABASE_URL (CI, the migration-replay oracle, ad-hoc
-// runs) must WIN over `.dev.vars` (loaded with `override: true` for local-dev
+// runs) must WIN over `.env` (loaded with `override: true` for local-dev
 // ergonomics), which would otherwise redirect every run at the local dev DB.
 if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
 

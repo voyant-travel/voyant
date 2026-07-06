@@ -65,10 +65,14 @@ import {
 } from "./lib/reindex-stale-documents.js"
 import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 
+const explicitDatabaseUrl = process.env.DATABASE_URL
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
-config({ path: ".dev.vars", override: true })
+config({ path: ".env", override: true })
+// An explicitly-provided DATABASE_URL must WIN over the local `.env` (loaded
+// with override:true), which would otherwise reindex the wrong database.
+if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
 
 const databaseUrl = process.env.DATABASE_URL
 const typesenseHost = process.env.TYPESENSE_HOST

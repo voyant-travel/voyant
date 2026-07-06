@@ -16,10 +16,15 @@
 import { config } from "dotenv"
 import { Client } from "pg"
 
+const explicitDatabaseUrl = process.env.DATABASE_URL
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
-config({ path: ".dev.vars", override: true })
+config({ path: ".env", override: true })
+// An explicitly-provided DATABASE_URL (`DATABASE_URL=… tsx scripts/backfill-…`)
+// must WIN over the local `.env` (loaded with override:true for dev ergonomics),
+// which would otherwise redirect a backfill/--clear at the local dev DB.
+if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {

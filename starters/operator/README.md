@@ -24,15 +24,17 @@ See [docs/architecture/deployment-targets.md](../../docs/architecture/deployment
 ## Quick start
 
 ```bash
+cp .env.example .env          # fill in DATABASE_URL, BETTER_AUTH_SECRET, …
 pnpm -F operator dev          # Vite dev server + SSR (port 3300)
 pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
 
-`pnpm dev` gives UI/SSR hot-reload. For a full local Node runtime that also serves
-the `/v1/*` API (the composed API graph relies on the Vite build, so it does not
-run under the dev module runner), use the production lane below —
-`pnpm -F operator build && PORT=3300 pnpm -F operator start`. Wiring the dev
-server to proxy `/api/*` through the Hono app is a tracked follow-up.
+`.env` is loaded into the process by `pnpm dev` and `pnpm start` (via a Node
+`--require` preload — the Node convention; there is no wrangler `.dev.vars`
+anymore). `pnpm dev` serves
+the SSR dashboard, the `/api/*` routes, and Better Auth with hot-reload — the
+same `src/server.ts` handler runs under Vite's dev server. The first `/api/*`
+request compiles the API module graph on demand (a few seconds), then it's warm.
 
 ## Production (Node)
 
@@ -69,7 +71,7 @@ a legacy fallback for both of those specialized keys.
 ## Flights Demo API
 
 The operator starter is wired to the standalone flights demo API when
-`FLIGHTS_DEMO_API_URL` is set in `.dev.vars`. The service runs on port `3320`
+`FLIGHTS_DEMO_API_URL` is set in `.env`. The service runs on port `3320`
 and owns a separate Postgres database for demo flight orders.
 
 From the monorepo root or from an extracted packaged starter:
@@ -82,7 +84,7 @@ pnpm --dir apps/flights-demo-api db:migrate
 pnpm --dir apps/flights-demo-api dev
 ```
 
-Then keep this in `.dev.vars`:
+Then keep this in `.env`:
 
 ```bash
 FLIGHTS_DEMO_API_URL="http://localhost:3320"
