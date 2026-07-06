@@ -1,0 +1,366 @@
+import { subsetStandardManifest } from "./create-app.js"
+import { FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+import { resourceRequirementsFor } from "./profile-requirements.js"
+import {
+  type DefineVoyantProjectInput,
+  MANAGED_OPERATOR_DEFAULT_PROVIDERS,
+  moduleIdFromReference,
+  moduleIdFromSpecifier,
+  moduleSpecifierFromReference,
+  PROVIDER_ROLES,
+  VOYANT_PROFILE_MODULES,
+  VOYANT_PROJECT_SCHEMA_VERSION,
+  type VoyantProfileAppBridge,
+  type VoyantProfileEnvRequirement,
+  type VoyantProfileMigrationMetadata,
+  type VoyantProfileRequirements,
+  type VoyantProfileResourceRequirement,
+  type VoyantProfileValidationIssue,
+  type VoyantProfileValidationResult,
+  type VoyantProjectAdminManifest,
+  type VoyantProjectCustomSourceManifest,
+  type VoyantProjectDeploymentMode,
+  type VoyantProjectManifest,
+  type VoyantProjectProviders,
+  type VoyantProjectSettings,
+} from "./profile-types.js"
+import { isJsonValue, isRecord, validateVoyantProjectRecord } from "./profile-validation.js"
+
+export {
+  type DefineVoyantProjectInput,
+  MANAGED_OPERATOR_DEFAULT_PROVIDERS,
+  PROVIDER_CONTRACTS,
+  PROVIDER_ROLES,
+  VOYANT_PROFILE_MODULES,
+  VOYANT_PROJECT_SCHEMA_VERSION,
+  type VoyantProfileAppBridge,
+  type VoyantProfileEnvRequirement,
+  type VoyantProfileMigrationMetadata,
+  type VoyantProfileModuleDefinition,
+  type VoyantProfileRequirements,
+  type VoyantProfileResourceRequirement,
+  type VoyantProfileValidationIssue,
+  type VoyantProfileValidationResult,
+  type VoyantProjectAdminManifest,
+  type VoyantProjectCustomSourceManifest,
+  type VoyantProjectDeploymentMode,
+  type VoyantProjectJsonValue,
+  type VoyantProjectManifest,
+  type VoyantProjectModuleReference,
+  type VoyantProjectPluginReference,
+  type VoyantProjectProfileId,
+  type VoyantProjectProviderRole,
+  type VoyantProjectProviders,
+  type VoyantProjectSchemaVersion,
+  type VoyantProjectSettings,
+} from "./profile-types.js"
+
+const CUSTOMER_APP_MODULE_SPECIFIERS = new Set([
+  "@voyant-travel/storefront",
+  "@voyant-travel/storefront/customer-portal",
+  "@voyant-travel/storefront/verification",
+])
+
+const OPERATOR_DEFAULT_MODULE_SPECIFIERS = FRAMEWORK_RUNTIME_MANIFEST.modules.filter(
+  (specifier) => !CUSTOMER_APP_MODULE_SPECIFIERS.has(specifier),
+)
+
+const STANDARD_EXTENSION_MODULE_OWNERS = {
+  "@voyant-travel/bookings/booking-supplier-extension": ["@voyant-travel/bookings"],
+  "@voyant-travel/finance/bookings-create-extension": [
+    "@voyant-travel/finance",
+    "@voyant-travel/bookings",
+  ],
+  "@voyant-travel/inventory/booking-extension": [
+    "@voyant-travel/inventory",
+    "@voyant-travel/bookings",
+  ],
+  "@voyant-travel/inventory/authoring/extension": ["@voyant-travel/inventory"],
+  "@voyant-travel/quotes/booking-extension": ["@voyant-travel/quotes", "@voyant-travel/bookings"],
+  "@voyant-travel/distribution": ["@voyant-travel/distribution", "@voyant-travel/bookings"],
+  "@voyant-travel/distribution/channel-push-extension": ["@voyant-travel/distribution"],
+  "@voyant-travel/finance/booking-tax-extension": [
+    "@voyant-travel/finance",
+    "@voyant-travel/bookings",
+    "@voyant-travel/operator-settings",
+  ],
+  "operator/booking-schedule-extension": [
+    "@voyant-travel/finance",
+    "@voyant-travel/bookings",
+    "@voyant-travel/operator-settings",
+  ],
+  "operator/quote-version-snapshot-extension": ["@voyant-travel/quotes", "@voyant-travel/trips"],
+  "operator/booking-maintenance-extension": ["@voyant-travel/bookings"],
+  "operator/action-ledger-health-extension": ["@voyant-travel/action-ledger"],
+  "operator/proposal-extension": ["@voyant-travel/quotes"],
+  "operator/catalog-offers-extension": ["@voyant-travel/catalog"],
+  "operator/catalog-checkout-extension": ["@voyant-travel/catalog", "@voyant-travel/commerce"],
+} as const satisfies Record<
+  (typeof FRAMEWORK_RUNTIME_MANIFEST.extensions)[number],
+  readonly string[]
+>
+
+export function defineVoyantProject(input: DefineVoyantProjectInput): VoyantProjectManifest {
+  const manifest: VoyantProjectManifest = {
+    schemaVersion: input.schemaVersion ?? VOYANT_PROJECT_SCHEMA_VERSION,
+    profile: input.profile,
+    frameworkVersion: input.frameworkVersion,
+    mode: input.mode ?? "managed-cloud",
+    ...(input.region ? { region: input.region } : {}),
+    modules: normalizeModules(input.modules),
+    plugins: normalizePlugins(input.plugins),
+    settings: normalizeSettings(input.settings),
+    ...(input.providers ? { providers: { ...input.providers } } : {}),
+    admin: {
+      enabled: input.admin?.enabled ?? true,
+      path: input.admin?.path ?? "/app",
+    },
+    ...(input.customSource ? { customSource: input.customSource } : {}),
+  }
+
+  assertValidVoyantProject(manifest)
+  return manifest
+}
+
+export function validateVoyantProject(input: unknown): VoyantProfileValidationResult {
+  if (!isRecord(input)) {
+    return issueResult("", "invalid_type", "Project manifest must be an object.")
+  }
+
+  const issues = validateVoyantProjectRecord(input)
+
+  if (issues.length === 0) {
+    try {
+      computeCreateVoyantAppExclude(projectFromValidatedRecord(input))
+    } catch (error) {
+      issues.push({
+        path: "modules",
+        code: "invalid_module_subset",
+        message: error instanceof Error ? error.message : "Selected modules are not valid.",
+      })
+    }
+  }
+
+  return { ok: issues.length === 0, issues }
+}
+
+export function getVoyantProjectRequirements(
+  project: VoyantProjectManifest,
+): VoyantProfileRequirements {
+  assertValidVoyantProject(project)
+  const bridge = toCreateVoyantAppProfileConfig(project)
+  const providers = providersForProject(project)
+
+  return {
+    schemaVersion: project.schemaVersion,
+    profile: project.profile,
+    frameworkVersion: project.frameworkVersion,
+    modules: {
+      include: bridge.manifest.modules,
+      exclude: resolvedExcludedModuleIds(project),
+      createVoyantAppExclude: bridge.exclude,
+    },
+    plugins: project.plugins,
+    settings: project.settings,
+    resources: mergeResourceRequirements(
+      PROVIDER_ROLES.flatMap((role) => resourceRequirementsFor(role, providers)),
+    ),
+    migration: getVoyantProjectMigrationMetadata(project),
+  }
+}
+
+export function getVoyantProjectMigrationMetadata(
+  project: Pick<VoyantProjectManifest, "profile">,
+): VoyantProfileMigrationMetadata {
+  if (project.profile !== "operator") {
+    throw new Error(`Unsupported managed profile "${String(project.profile)}".`)
+  }
+  return {
+    packageName: "@voyant-travel/framework-migrations",
+    bundleId: "operator-standard-profile",
+    bundleSource: "framework",
+    cutlineExport: "loadCutline",
+    doctor: {
+      command: "voyant db doctor --fail-on-drift",
+      parity: [
+        "framework bundle cutline",
+        "deployment migration ledger",
+        "generated schema manifest freshness",
+        "schema drift",
+      ],
+    },
+  }
+}
+
+export function toCreateVoyantAppProfileConfig(
+  project: VoyantProjectManifest,
+): VoyantProfileAppBridge {
+  assertValidVoyantProject(project)
+  const exclude = computeCreateVoyantAppExclude(project)
+  const manifest = subsetStandardManifest({ exclude })
+  return {
+    exclude,
+    manifest,
+    plugins: project.plugins,
+    settings: project.settings,
+    customSource: {
+      modulesInput: "modules",
+      extensionsInput: "extensions",
+      supported: true,
+    },
+  }
+}
+
+function assertValidVoyantProject(project: unknown): asserts project is VoyantProjectManifest {
+  const result = validateVoyantProject(project)
+  if (!result.ok) {
+    throw new Error(
+      `Invalid Voyant managed profile:\n${result.issues
+        .map((issue) => `- ${issue.path || "<root>"}: ${issue.message}`)
+        .join("\n")}`,
+    )
+  }
+}
+
+function normalizeModules(modules: readonly string[] | undefined): string[] {
+  if (!modules) return []
+  return unique(modules.map((ref) => moduleIdFromReference(ref, "module")))
+}
+
+function normalizePlugins(plugins: readonly string[] | undefined): string[] {
+  if (!plugins) return []
+  return unique(plugins.map((plugin) => plugin.trim()))
+}
+
+function normalizeSettings(settings: unknown): VoyantProjectSettings {
+  if (settings == null) return {}
+  if (!isRecord(settings) || !isJsonValue(settings)) {
+    throw new Error("Voyant project settings must be a JSON-serializable object.")
+  }
+  return cloneJsonObject(settings)
+}
+
+function projectFromValidatedRecord(input: Record<string, unknown>): VoyantProjectManifest {
+  return {
+    schemaVersion: VOYANT_PROJECT_SCHEMA_VERSION,
+    profile: "operator",
+    frameworkVersion: input.frameworkVersion as string,
+    mode: input.mode as VoyantProjectDeploymentMode,
+    ...(typeof input.region === "string" && input.region ? { region: input.region } : {}),
+    modules: normalizeModules(input.modules as readonly string[] | undefined),
+    plugins: normalizePlugins(input.plugins as readonly string[] | undefined),
+    settings: isRecord(input.settings) ? cloneJsonObject(input.settings) : {},
+    ...(input.providers ? { providers: input.providers as VoyantProjectProviders } : {}),
+    admin: input.admin as VoyantProjectAdminManifest,
+    ...(input.customSource
+      ? { customSource: input.customSource as VoyantProjectCustomSourceManifest }
+      : {}),
+  }
+}
+
+function computeCreateVoyantAppExclude(project: VoyantProjectManifest): string[] {
+  const excluded = new Set<string>()
+  const include = project.modules.length > 0 ? project.modules : OPERATOR_DEFAULT_MODULE_SPECIFIERS
+
+  if (include.length > 0) {
+    const includedSpecifiers = new Set<string>(
+      include.map((ref) => moduleSpecifierFromReference(ref, "module")),
+    )
+    for (const definition of VOYANT_PROFILE_MODULES) {
+      if (definition.kind === "module" && definition.required) {
+        includedSpecifiers.add(definition.specifier)
+      }
+    }
+    for (const specifier of FRAMEWORK_RUNTIME_MANIFEST.modules) {
+      if (!includedSpecifiers.has(specifier)) excluded.add(specifier)
+    }
+  }
+
+  for (const extension of ownedExtensionsForExcludedModules(excluded)) {
+    excluded.add(extension)
+  }
+
+  const ordered = [
+    ...FRAMEWORK_RUNTIME_MANIFEST.modules,
+    ...FRAMEWORK_RUNTIME_MANIFEST.extensions,
+  ].filter((specifier) => excluded.has(specifier))
+
+  subsetStandardManifest({ exclude: ordered })
+  return ordered
+}
+
+function ownedExtensionsForExcludedModules(excludedModules: Set<string>): string[] {
+  const extensions: string[] = []
+  for (const extensionSpecifier of FRAMEWORK_RUNTIME_MANIFEST.extensions) {
+    const owners = STANDARD_EXTENSION_MODULE_OWNERS[extensionSpecifier]
+    if (owners.some((owner) => excludedModules.has(owner))) {
+      extensions.push(extensionSpecifier)
+    }
+  }
+  return unique(extensions)
+}
+
+function resolvedExcludedModuleIds(project: VoyantProjectManifest): string[] {
+  return computeCreateVoyantAppExclude(project).map(moduleIdFromSpecifier)
+}
+
+function providersForProject(project: VoyantProjectManifest): VoyantProjectProviders {
+  if (project.mode === "managed-cloud") return MANAGED_OPERATOR_DEFAULT_PROVIDERS
+  if (!project.providers) throw new Error(`${project.mode} profiles must declare providers.`)
+  return project.providers
+}
+
+function mergeResourceRequirements(
+  resources: readonly VoyantProfileResourceRequirement[],
+): VoyantProfileResourceRequirement[] {
+  const merged = new Map<string, VoyantProfileResourceRequirement>()
+  for (const resource of resources) {
+    const key = `${resource.resourceKey}:${resource.provider}:${resource.required}`
+    const existing = merged.get(key)
+    if (!existing) {
+      merged.set(key, resource)
+      continue
+    }
+    merged.set(key, {
+      ...existing,
+      roles: unique([...existing.roles, ...resource.roles]),
+      env: mergeEnvRequirements(existing.env, resource.env),
+      ...mergeNotes(existing.notes, resource.notes),
+    })
+  }
+  return [...merged.values()]
+}
+
+function mergeEnvRequirements(
+  left: readonly VoyantProfileEnvRequirement[],
+  right: readonly VoyantProfileEnvRequirement[],
+): VoyantProfileEnvRequirement[] {
+  const merged = new Map<string, VoyantProfileEnvRequirement>()
+  for (const env of [...left, ...right]) {
+    const key = `${env.kind}:${env.name}`
+    const existing = merged.get(key)
+    merged.set(key, existing ? { ...existing, required: existing.required || env.required } : env)
+  }
+  return [...merged.values()]
+}
+
+function mergeNotes(left: string | undefined, right: string | undefined): { notes?: string } {
+  const notes = unique([left, right].filter((note): note is string => Boolean(note)))
+  return notes.length > 0 ? { notes: notes.join(" ") } : {}
+}
+
+function issueResult(
+  path: string,
+  code: VoyantProfileValidationIssue["code"],
+  message: string,
+): VoyantProfileValidationResult {
+  return { ok: false, issues: [{ path, code, message }] }
+}
+
+function cloneJsonObject(value: Record<string, unknown>): VoyantProjectSettings {
+  return JSON.parse(JSON.stringify(value)) as VoyantProjectSettings
+}
+
+function unique<T>(items: readonly T[]): T[] {
+  return [...new Set(items)]
+}
