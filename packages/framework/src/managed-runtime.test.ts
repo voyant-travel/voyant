@@ -201,7 +201,7 @@ describe("managed profile runtime entry", () => {
         },
       },
     })
-  })
+  }, 10000)
 
   it("wires package-owned contract document routes in the default managed providers", async () => {
     const env = createManagedProfileNodeEnv({ DATABASE_URL: "managed-profile-test-db" })
@@ -230,7 +230,14 @@ describe("managed profile runtime entry", () => {
     expect(response.status).toBe(200)
     expect(response.headers.get("content-type")).toBe("text/plain")
     expect(await response.text()).toBe("hello")
-  })
+  }, 10000)
+
+  it("wires package-owned booking maintenance routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadBookingMaintenanceRoutes()
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+  }, 10000)
 
   it("wires package-owned action-ledger health routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()

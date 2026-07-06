@@ -93,7 +93,11 @@ const STANDARD_EXTENSION_MODULE_OWNERS = {
     "@voyant-travel/operator-settings",
   ],
   "operator/quote-version-snapshot-extension": ["@voyant-travel/quotes", "@voyant-travel/trips"],
-  "operator/booking-maintenance-extension": ["@voyant-travel/bookings"],
+  "operator/booking-maintenance-extension": [
+    "@voyant-travel/bookings",
+    "@voyant-travel/commerce",
+    "@voyant-travel/operator-settings",
+  ],
   "operator/action-ledger-health-extension": ["@voyant-travel/action-ledger"],
   "operator/proposal-extension": ["@voyant-travel/quotes"],
   "operator/catalog-offers-extension": ["@voyant-travel/catalog"],

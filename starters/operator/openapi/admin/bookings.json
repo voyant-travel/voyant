@@ -19401,6 +19401,78 @@
         "x-voyant-module": "bookings",
         "x-voyant-surface": "admin"
       }
+    },
+    "/v1/admin/bookings/{bookingId}/rebuild-tax-lines": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking item tax lines were rebuilt from catalog snapshots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "rebuilt": {
+                          "type": "number"
+                        },
+                        "itemsWithoutSnapshot": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "rebuilt",
+                        "itemsWithoutSnapshot"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: route params failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminBookingsByBookingIdRebuildTaxLines",
+        "summary": "POST /v1/admin/bookings/{bookingId}/rebuild-tax-lines",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
     }
   },
   "webhooks": {}

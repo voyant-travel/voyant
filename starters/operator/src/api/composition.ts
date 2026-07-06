@@ -33,7 +33,7 @@ import {
   frameworkComposition,
   modulesFromGlob,
 } from "@voyant-travel/framework"
-import { lazyProvider, type VoyantDb } from "@voyant-travel/hono"
+import { lazyProvider } from "@voyant-travel/hono"
 import type {
   CompositionManifest,
   CompositionRegistry,
@@ -44,7 +44,6 @@ import { createMiceHonoModule } from "@voyant-travel/mice"
 import { miceBookingExtension } from "@voyant-travel/mice/booking-extension"
 import { createRealtimeHonoModule } from "@voyant-travel/realtime"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
-import { Hono } from "hono"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
@@ -196,32 +195,19 @@ export function buildOperatorProviders(): OperatorCapabilities {
         m.createOperatorQuoteVersionSnapshotRoutes(),
       ),
     loadBookingMaintenanceRoutes: async () => {
-      const app = new Hono<{ Variables: { db: VoyantDb } }>()
-      app.post("/:bookingId/rebuild-tax-lines", async (c) => {
-        const bookingId = c.req.param("bookingId")
-        try {
-          const [
-            { rebuildBookingItemTaxLines },
-            { operatorPostgresDb },
-            { resolveBookingTaxSettings: resolveTax },
-          ] = await Promise.all([
-            import("@voyant-travel/commerce/checkout"),
-            import("./runtime/operator-runtime-adapter"),
-            import("@voyant-travel/operator-settings"),
-          ])
-          const result = await rebuildBookingItemTaxLines(
-            operatorPostgresDb(c.get("db")),
-            bookingId,
-            {
-              resolveBookingTaxSettings: resolveTax,
-            },
-          )
-          return c.json({ data: result })
-        } catch (err) {
-          return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
-        }
+      const [
+        { createBookingMaintenanceRoutes },
+        { operatorPostgresDb },
+        { resolveBookingTaxSettings },
+      ] = await Promise.all([
+        import("@voyant-travel/commerce/checkout"),
+        import("./runtime/operator-runtime-adapter"),
+        import("@voyant-travel/operator-settings"),
+      ])
+      return createBookingMaintenanceRoutes({
+        resolveDb: (c) => operatorPostgresDb(c.get("db")),
+        resolveBookingTaxSettings,
       })
-      return app
     },
     loadActionLedgerHealthRoutes: () =>
       import("./runtime/action-ledger-health-runtime").then((m) =>

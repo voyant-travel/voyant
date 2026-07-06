@@ -30,6 +30,7 @@ import {
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
+  resolveBookingTaxSettings,
 } from "@voyant-travel/operator-settings"
 import {
   type CreateNodeServerOptions,
@@ -285,7 +286,7 @@ export function createManagedProfileProviders(
     loadBookingScheduleAdminRoutes: emptyRoutes,
     loadPaymentPolicyPublicRoutes: emptyRoutes,
     loadQuoteVersionSnapshotRoutes: emptyRoutes,
-    loadBookingMaintenanceRoutes: emptyRoutes,
+    loadBookingMaintenanceRoutes: createManagedBookingMaintenanceRoutes,
     loadActionLedgerHealthRoutes: createManagedActionLedgerHealthRoutes,
     loadProposalAdminRoutes: emptyRoutes,
     loadProposalPublicRoutes: emptyRoutes,
@@ -831,6 +832,14 @@ function toCreateVideoUploadInput(input: VideoUploadTicketRequest): CreateVideoU
   }
   if (input.meta !== undefined) output.meta = input.meta
   return output
+}
+
+async function createManagedBookingMaintenanceRoutes() {
+  const { createBookingMaintenanceRoutes } = await import("@voyant-travel/commerce/checkout")
+  return createBookingMaintenanceRoutes({
+    resolveDb: dbFromContext,
+    resolveBookingTaxSettings,
+  })
 }
 
 async function createManagedContractDocumentRoutes() {

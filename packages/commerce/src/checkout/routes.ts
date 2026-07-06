@@ -23,7 +23,8 @@ import type { EventBus } from "@voyant-travel/core"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import type { CheckoutStartOptions } from "./options.js"
+import { rebuildBookingItemTaxLines } from "./materialization-tax.js"
+import type { CheckoutModuleOptions, CheckoutStartOptions } from "./options.js"
 import {
   CatalogCheckoutStartError,
   type CheckoutStartRequestMeta,
@@ -155,6 +156,53 @@ export function createCatalogCheckoutRoutes(
         }
         throw err
       }
+    },
+  )
+}
+
+export interface BookingMaintenanceRoutesOptions {
+  resolveDb?(c: Context): PostgresJsDatabase
+  resolveBookingTaxSettings: CheckoutModuleOptions["resolveBookingTaxSettings"]
+}
+
+const rebuildBookingTaxLinesRoute = createRoute({
+  method: "post",
+  path: "/{bookingId}/rebuild-tax-lines",
+  request: {
+    params: z.object({ bookingId: z.string().trim().min(1) }),
+  },
+  responses: {
+    200: {
+      description: "Booking item tax lines were rebuilt from catalog snapshots",
+      content: {
+        "application/json": {
+          schema: z.object({
+            data: z.object({
+              rebuilt: z.number(),
+              itemsWithoutSnapshot: z.number(),
+            }),
+          }),
+        },
+      },
+    },
+    400: {
+      description: "invalid_request: route params failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+export function createBookingMaintenanceRoutes(
+  options: BookingMaintenanceRoutesOptions,
+): OpenAPIHono<CheckoutEnv> {
+  return new OpenAPIHono<CheckoutEnv>({ defaultHook: openApiValidationHook }).openapi(
+    rebuildBookingTaxLinesRoute,
+    async (c) => {
+      const db = options.resolveDb?.(c) ?? c.get("db")
+      const result = await rebuildBookingItemTaxLines(db, c.req.valid("param").bookingId, {
+        resolveBookingTaxSettings: options.resolveBookingTaxSettings,
+      })
+      return c.json({ data: result }, 200)
     },
   )
 }
