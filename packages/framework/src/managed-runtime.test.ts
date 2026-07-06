@@ -239,6 +239,20 @@ describe("managed profile runtime entry", () => {
     expect(app.routes.length).toBeGreaterThan(0)
   }, 10000)
 
+  it("wires package-owned catalog offers routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadCatalogOffersRoutes()
+    const response = await app.request("/departure-airports", {
+      method: "POST",
+      body: JSON.stringify({ destination: { countryCode: "RO" } }),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ departureAirports: [] })
+  }, 10000)
+
   it("wires package-owned action-ledger health routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()
 

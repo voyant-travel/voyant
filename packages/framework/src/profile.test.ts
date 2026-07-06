@@ -217,6 +217,7 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.modules).toContain("operator/contract-document")
     expect(bridge.manifest.extensions).toContain("operator/booking-maintenance-extension")
     expect(bridge.manifest.extensions).toContain("operator/action-ledger-health-extension")
+    expect(bridge.manifest.extensions).toContain("operator/catalog-offers-extension")
     for (const specifier of FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS) {
       expect([...bridge.manifest.modules, ...bridge.manifest.extensions]).not.toContain(specifier)
       expect(bridge.exclude).toContain(specifier)
