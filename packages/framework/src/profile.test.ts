@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+import {
+  FRAMEWORK_RUNTIME_MANIFEST,
+  FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS,
+} from "./manifest.js"
 import {
   defineVoyantProject,
   getVoyantProjectMigrationMetadata,
@@ -209,6 +212,25 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront/customer-portal")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront/verification")
+    for (const specifier of FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS) {
+      expect([...bridge.manifest.modules, ...bridge.manifest.extensions]).not.toContain(specifier)
+      expect(bridge.exclude).toContain(specifier)
+    }
+  })
+
+  it("rejects explicit managed-cloud modules that still require starter-local glue", () => {
+    const result = validateVoyantProject({
+      ...validProject({ plugins: [] }),
+      modules: ["catalog", "flights"],
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        path: "modules",
+        code: "invalid_module_subset",
+      }),
+    ])
   })
 
   it("rejects website artifacts because customer-facing apps are separate", () => {

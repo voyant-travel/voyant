@@ -1931,9 +1931,15 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:*
         version: link:../catalog
+      '@voyant-travel/cloud-sdk':
+        specifier: ^0.11.0
+        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/commerce':
         specifier: workspace:*
         version: link:../commerce
+      '@voyant-travel/db':
+        specifier: workspace:*
+        version: link:../db
       '@voyant-travel/distribution':
         specifier: workspace:*
         version: link:../distribution
@@ -1970,12 +1976,24 @@ importers:
       '@voyant-travel/relationships':
         specifier: workspace:*
         version: link:../relationships
+      '@voyant-travel/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      '@voyant-travel/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@voyant-travel/storefront':
         specifier: workspace:*
         version: link:../storefront
       '@voyant-travel/trips':
         specifier: workspace:*
         version: link:../trips
+      '@voyant-travel/workflows':
+        specifier: workspace:*
+        version: link:../workflows
+      '@voyant-travel/workflows-orchestrator':
+        specifier: workspace:*
+        version: link:../workflows-orchestrator
     devDependencies:
       '@hono/zod-openapi':
         specifier: 'catalog:'

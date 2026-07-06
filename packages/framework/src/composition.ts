@@ -70,10 +70,7 @@ import {
   createFinanceHonoModule,
   type FinanceHonoModuleOptions,
 } from "@voyant-travel/finance"
-import type {
-  CheckoutNotificationDelivery,
-  CheckoutPaymentStarter,
-} from "@voyant-travel/finance/checkout"
+import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import {
   createPublicDocumentDeliveryHonoModule,
@@ -355,8 +352,8 @@ export interface FrameworkProviders {
    * Optional: omitted deployments keep the finance module default.
    */
   financePaymentScheduleLineDescriptionFormat?: FinanceHonoModuleOptions["paymentScheduleLineDescriptionFormat"]
-  /** The configured pay-by-link starter (Netopia; env resolved lazily). */
-  netopiaCheckoutStarter: CheckoutPaymentStarter
+  /** Configured pay-by-link starters, keyed by payment provider id. */
+  resolvePaymentStarters?: import("@voyant-travel/finance").FinanceHonoModuleOptions["resolvePaymentStarters"]
   /**
    * Booking-confirmed notification auto-dispatch policy. Optional: omitted
    * deployments keep the standard booking-confirmation auto-send.
@@ -517,9 +514,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
                 ),
             }
           },
-          resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
-            netopia: capabilities.netopiaCheckoutStarter,
-          }),
+          resolvePaymentStarters: capabilities.resolvePaymentStarters,
           policy: capabilities.financeCheckoutPolicy,
           paymentScheduleLineDescriptionFormat:
             capabilities.financePaymentScheduleLineDescriptionFormat,

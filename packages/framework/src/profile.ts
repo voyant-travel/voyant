@@ -1,5 +1,8 @@
 import { subsetStandardManifest } from "./create-app.js"
-import { FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+import {
+  FRAMEWORK_RUNTIME_MANIFEST,
+  FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET,
+} from "./manifest.js"
 import { resourceRequirementsFor } from "./profile-requirements.js"
 import {
   type DefineVoyantProjectInput,
@@ -262,6 +265,19 @@ function computeCreateVoyantAppExclude(project: VoyantProjectManifest): string[]
   const excluded = new Set<string>()
   const include = project.modules.length > 0 ? project.modules : OPERATOR_DEFAULT_MODULE_SPECIFIERS
 
+  if (project.mode === "managed-cloud" && project.modules.length > 0) {
+    const unsupported = project.modules
+      .map((ref) => moduleSpecifierFromReference(ref, "module"))
+      .filter((specifier) => FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET.has(specifier))
+    if (unsupported.length > 0) {
+      throw new Error(
+        `Managed Cloud source-free profiles cannot include starter-local module(s): ${unique(
+          unsupported,
+        ).join(", ")}.`,
+      )
+    }
+  }
+
   if (include.length > 0) {
     const includedSpecifiers = new Set<string>(
       include.map((ref) => moduleSpecifierFromReference(ref, "module")),
@@ -278,6 +294,12 @@ function computeCreateVoyantAppExclude(project: VoyantProjectManifest): string[]
 
   for (const extension of ownedExtensionsForExcludedModules(excluded)) {
     excluded.add(extension)
+  }
+
+  if (project.mode === "managed-cloud") {
+    for (const specifier of FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET) {
+      excluded.add(specifier)
+    }
   }
 
   const ordered = [

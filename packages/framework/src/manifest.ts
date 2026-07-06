@@ -83,6 +83,28 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
   ],
 } as const satisfies FrameworkManifest
 
+export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = [
+  "@voyant-travel/flights",
+  "operator/mcp",
+  "operator/catalog-booking",
+  "operator/catalog-content",
+  "operator/media",
+  "operator/payment-link",
+  "operator/contract-document",
+  "@voyant-travel/distribution/channel-push-extension",
+  "operator/booking-schedule-extension",
+  "operator/quote-version-snapshot-extension",
+  "operator/booking-maintenance-extension",
+  "operator/action-ledger-health-extension",
+  "operator/proposal-extension",
+  "operator/catalog-offers-extension",
+  "operator/catalog-checkout-extension",
+] as const
+
+export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET = new Set<string>(
+  FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS,
+)
+
 /**
  * The standard set's capability dependency graph (ADR-0007). `isRequired` marks
  * foundational modules a deployment may not `exclude`; `createVoyantApp` throws a
