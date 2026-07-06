@@ -218,7 +218,8 @@ export function stepHeadline(
   switch (step) {
     case "departure": {
       const range = draft.configure?.dateRange
-      if (range?.checkIn && range?.checkOut) return `${range.checkIn} → ${range.checkOut}`
+      if (range?.checkIn && range?.checkOut)
+        return `${formatConfigureDate(range.checkIn)} → ${formatConfigureDate(range.checkOut)}`
       // Never surface the raw slot id — show the departure date.
       return draft.configure?.departureDate
         ? formatConfigureDate(draft.configure.departureDate)
@@ -334,10 +335,16 @@ function DepartureDetails({
         />
       ) : null}
       {range?.checkIn ? (
-        <Row label={messages.bookingJourney.sidePanel.checkIn} value={range.checkIn} />
+        <Row
+          label={messages.bookingJourney.sidePanel.checkIn}
+          value={formatConfigureDate(range.checkIn)}
+        />
       ) : null}
       {range?.checkOut ? (
-        <Row label={messages.bookingJourney.sidePanel.checkOut} value={range.checkOut} />
+        <Row
+          label={messages.bookingJourney.sidePanel.checkOut}
+          value={formatConfigureDate(range.checkOut)}
+        />
       ) : null}
     </dl>
   )
