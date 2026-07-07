@@ -62,6 +62,7 @@ export function TravelersStep({
   draft,
   setDraft,
   shape,
+  defaultPhoneCountry,
   renderTravelerContactPicker,
   warnings,
   errors,
@@ -147,6 +148,7 @@ export function TravelersStep({
               shape={shape}
               draft={draft}
               setDraft={setDraft}
+              defaultPhoneCountry={defaultPhoneCountry}
               renderTravelerContactPicker={renderTravelerContactPicker}
               apply={apply}
               showBandSelect={hasBandChoice}
@@ -188,6 +190,7 @@ function TravelerCard({
   shape,
   draft,
   setDraft,
+  defaultPhoneCountry,
   renderTravelerContactPicker,
   apply,
   showBandSelect,
@@ -198,6 +201,8 @@ function TravelerCard({
   shape: BookingDraftShape
   draft: Draft
   setDraft: (next: Draft) => void
+  /** Default country (ISO 3166-1 alpha-2) for the traveler's phone input. */
+  defaultPhoneCountry?: string
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => React.ReactNode
   apply: TravelerContactPickerProps["apply"]
   showBandSelect?: boolean
@@ -376,6 +381,7 @@ function TravelerCard({
                   id={`bj-trav-${idx}-phone`}
                   // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
                   label={phoneField.label + (phoneField.required ? " *" : "")}
+                  defaultCountry={defaultPhoneCountry}
                   value={traveler.phone ?? ""}
                   onChange={(v) => patchRow({ phone: v })}
                 />

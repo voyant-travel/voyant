@@ -551,6 +551,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             draft={draft}
             setDraft={setDraft}
             shape={shape}
+            defaultPhoneCountry={props.defaultPhoneCountry}
             renderLeadContactPicker={props.renderLeadContactPicker}
             renderExtras={billingExtrasSlot}
             errors={validationErrorsForStep("billing", draft, messages)}
@@ -563,6 +564,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             draft={draft}
             setDraft={setDraft}
             shape={shape}
+            defaultPhoneCountry={props.defaultPhoneCountry}
             renderTravelerContactPicker={props.renderTravelerContactPicker}
             errors={validationErrorsForStep("travelers", draft, messages)}
             warnings={warningsForStep("travelers", draft, shape, messages)}
@@ -710,6 +712,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               draft={draft}
               setDraft={setDraft}
               shape={shape}
+              defaultPhoneCountry={props.defaultPhoneCountry}
               renderLeadContactPicker={props.renderLeadContactPicker}
               renderExtras={billingExtrasSlot}
             />
@@ -719,6 +722,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               draft={draft}
               setDraft={setDraft}
               shape={shape}
+              defaultPhoneCountry={props.defaultPhoneCountry}
               renderTravelerContactPicker={props.renderTravelerContactPicker}
             />
           ) : null}
