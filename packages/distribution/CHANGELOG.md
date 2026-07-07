@@ -1,5 +1,14 @@
 # @voyant-travel/distribution
 
+## 0.132.0
+
+### Patch Changes
+
+- ee09a7f: Promote the package-owned channel-push extension factory into the managed runtime.
+  - @voyant-travel/bookings@0.142.0
+  - @voyant-travel/catalog@0.140.0
+  - @voyant-travel/identity@0.142.0
+
 ## 0.131.0
 
 ### Patch Changes

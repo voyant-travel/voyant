@@ -1,5 +1,12 @@
 # @voyant-travel/flights
 
+## 0.142.0
+
+### Patch Changes
+
+- 5028f42: Support package-owned flights admin routes in source-free managed runtime wiring.
+  - @voyant-travel/catalog@0.140.0
+
 ## 0.141.0
 
 ### Patch Changes

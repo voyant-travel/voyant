@@ -1,5 +1,15 @@
 # @voyant-travel/crm
 
+## 0.125.0
+
+### Minor Changes
+
+- 97d1c14: Support package-owned quote-version snapshot routes in source-free managed runtime wiring.
+
+### Patch Changes
+
+- @voyant-travel/trips@0.133.0
+
 ## 0.124.2
 
 ### Patch Changes

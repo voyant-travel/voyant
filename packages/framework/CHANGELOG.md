@@ -1,5 +1,48 @@
 # @voyant-travel/framework
 
+## 0.15.0
+
+### Minor Changes
+
+- 05c10f2: Promote booking-maintenance tax-line rebuild routes into package-owned source-free managed runtime wiring.
+- 961cc49: Support package-owned booking schedule and payment-policy routes in source-free managed runtime wiring.
+- effdd55: Support package-owned catalog-checkout routes in source-free managed runtime wiring.
+- 9a49384: Support package-owned catalog-offers routes in source-free managed runtime wiring.
+- 5028f42: Support package-owned flights admin routes in source-free managed runtime wiring.
+- 8903982: Promote the operator media route family into the source-free managed runtime defaults.
+- 742dbfc: Wire the source-free managed runtime default providers for the package-owned
+  `operator/payment-link`, `operator/contract-document`, and
+  `operator/action-ledger-health-extension` route surfaces.
+- fa1424b: Support package-owned MCP routes in source-free managed runtime wiring.
+- 97d1c14: Support package-owned quote-version snapshot routes in source-free managed runtime wiring.
+
+### Patch Changes
+
+- 0f8c804: Promote catalog booking and catalog content route loaders into the managed runtime.
+- ee09a7f: Promote the package-owned channel-push extension factory into the managed runtime.
+- d019fd3: Promote proposal extension route loaders into the managed runtime.
+- Updated dependencies [05c10f2]
+- Updated dependencies [ee09a7f]
+- Updated dependencies [5028f42]
+- Updated dependencies [97d1c14]
+  - @voyant-travel/commerce@0.24.0
+  - @voyant-travel/distribution@0.132.0
+  - @voyant-travel/flights@0.142.0
+  - @voyant-travel/quotes@0.125.0
+  - @voyant-travel/inventory@0.7.2
+  - @voyant-travel/storefront@0.144.0
+  - @voyant-travel/bookings@0.142.0
+  - @voyant-travel/catalog@0.140.0
+  - @voyant-travel/finance@0.142.0
+  - @voyant-travel/identity@0.142.0
+  - @voyant-travel/legal@0.142.0
+  - @voyant-travel/trips@0.133.0
+  - @voyant-travel/accommodations@0.109.10
+  - @voyant-travel/notifications@0.118.3
+  - @voyant-travel/operations@0.5.14
+  - @voyant-travel/operator-settings@0.2.26
+  - @voyant-travel/relationships@0.122.3
+
 ## 0.14.0
 
 ### Minor Changes
