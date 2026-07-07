@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.15.1
+
+### Patch Changes
+
+- badea94: Mount cruise catalog-content routes in the source-free managed runtime and add a provider-neutral card-payment starter hook for managed payment links.
+
 ## 0.15.0
 
 ### Minor Changes
