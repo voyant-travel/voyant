@@ -38,26 +38,37 @@ export interface StepCommonProps {
   setDraft: (next: Draft | ((prev: Draft) => Draft)) => void
   shape: BookingDraftShape
   /**
-   * Default country (ISO 3166-1 alpha-2) for the step's phone inputs,
-   * threaded from `BookingJourneyProps.defaultPhoneCountry`. When omitted the
-   * `PhoneField` derives one from the active locale before falling back to GB.
+   * Default country (ISO 3166-1 alpha-2) for the step's phone inputs, already
+   * resolved by `BookingJourney` from its `defaultPhoneCountry` prop or the
+   * scope locale. When omitted the `PhoneField` derives one from the active
+   * i18n locale before falling back to GB.
    */
   defaultPhoneCountry?: string
 }
 
 /**
- * Resolves the default country (ISO 3166-1 alpha-2) for a phone input.
+ * Derives a default country (ISO 3166-1 alpha-2) for a phone input from an
+ * explicit value or a locale, or `undefined` when neither yields one — so
+ * callers can chain multiple locale sources before falling back.
  *
  * Order of preference:
  *  1. An explicit value (e.g. a deployment's market/storefront setting) when it
  *     looks like a valid alpha-2 code.
- *  2. The region subtag of the active i18n `locale` (e.g. `"ro-RO"` -> `"RO"`).
- *     A bare language tag with no region (e.g. `"ro"`) yields no guess — we
- *     don't invent a country from a language.
- *  3. `"GB"` as the last-resort fallback.
+ *  2. The region subtag of `locale` (e.g. `"ro-RO"` -> `"RO"`). A bare language
+ *     tag with no region (e.g. `"ro"`) yields no guess — we don't invent a
+ *     country from a language.
+ */
+export function deriveDefaultPhoneCountry(explicit?: string, locale?: string): string | undefined {
+  return normalizeAlpha2(explicit) ?? normalizeAlpha2(regionSubtag(locale))
+}
+
+/**
+ * Resolves the default country (ISO 3166-1 alpha-2) for a phone input, applying
+ * {@link deriveDefaultPhoneCountry} and falling back to `"GB"` as the
+ * last resort.
  */
 export function resolveDefaultPhoneCountry(explicit?: string, locale?: string): string {
-  return normalizeAlpha2(explicit) ?? normalizeAlpha2(regionSubtag(locale)) ?? "GB"
+  return deriveDefaultPhoneCountry(explicit, locale) ?? "GB"
 }
 
 /** First 2-letter alpha region subtag of a BCP-47 tag, or `undefined`. */
