@@ -2004,7 +2004,7 @@ importers:
         specifier: workspace:*
         version: link:../trips
       '@voyant-travel/utils':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../utils
       '@voyant-travel/workflows':
         specifier: workspace:*
