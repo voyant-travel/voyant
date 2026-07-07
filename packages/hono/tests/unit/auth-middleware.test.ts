@@ -143,6 +143,41 @@ describe("requireAuth API keys", () => {
       apiKeyId: "key_123",
     })
   })
+
+  it("lets app auth integrations customize the final unauthenticated response", async () => {
+    const onUnauthorized = vi.fn(
+      () =>
+        new Response(null, {
+          status: 302,
+          headers: { Location: "https://login.example.test/start" },
+        }),
+    )
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never, {
+        auth: { onUnauthorized },
+      }),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: { Accept: "text/html" },
+      }),
+      TEST_ENV,
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get("location")).toBe("https://login.example.test/start")
+    expect(onUnauthorized).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.any(Request),
+        env: TEST_ENV,
+      }),
+    )
+  })
 })
 
 function makeApiKeyRow(overrides: Partial<Record<string, unknown>> = {}) {
