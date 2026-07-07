@@ -46,7 +46,9 @@
     "./schema/infra/write_intents": "./src/schema/infra/write_intents.ts",
     "./schema/infra/domains": "./src/schema/infra/domains.ts",
     "./schema/infra/email_domain_records": "./src/schema/infra/email_domain_records.ts",
+    "./schema/infra/fixed_window_rate_limits": "./src/schema/infra/fixed_window_rate_limits.ts",
     "./schema/infra/idempotency_keys": "./src/schema/infra/idempotency_keys.ts",
+    "./schema/infra/kv_store": "./src/schema/infra/kv_store.ts",
     "./schema/infra/public_document_delivery_grants": "./src/schema/infra/public_document_delivery_grants.ts",
     "./schema/infra/rate_limit_buckets": "./src/schema/infra/rate_limit_buckets.ts",
     "./schema/infra/webhook_deliveries": "./src/schema/infra/webhook_deliveries.ts",
@@ -254,10 +256,20 @@
         "import": "./dist/schema/infra/email_domain_records.js",
         "default": "./dist/schema/infra/email_domain_records.js"
       },
+      "./schema/infra/fixed_window_rate_limits": {
+        "types": "./dist/schema/infra/fixed_window_rate_limits.d.ts",
+        "import": "./dist/schema/infra/fixed_window_rate_limits.js",
+        "default": "./dist/schema/infra/fixed_window_rate_limits.js"
+      },
       "./schema/infra/idempotency_keys": {
         "types": "./dist/schema/infra/idempotency_keys.d.ts",
         "import": "./dist/schema/infra/idempotency_keys.js",
         "default": "./dist/schema/infra/idempotency_keys.js"
+      },
+      "./schema/infra/kv_store": {
+        "types": "./dist/schema/infra/kv_store.d.ts",
+        "import": "./dist/schema/infra/kv_store.js",
+        "default": "./dist/schema/infra/kv_store.js"
       },
       "./schema/infra/public_document_delivery_grants": {
         "types": "./dist/schema/infra/public_document_delivery_grants.d.ts",

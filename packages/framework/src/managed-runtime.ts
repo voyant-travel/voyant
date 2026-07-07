@@ -39,7 +39,11 @@ import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-trave
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { EventBus } from "@voyant-travel/core"
 import { createCruiseContentRoutes } from "@voyant-travel/cruises/routes-content"
-import { createDbClient } from "@voyant-travel/db/runtime"
+import {
+  createDbClient,
+  createPostgresFixedWindowRateLimitStore,
+  createPostgresKvStore,
+} from "@voyant-travel/db/runtime"
 import { createChannelPushExtension as createDistributionChannelPushExtension } from "@voyant-travel/distribution"
 import {
   type BookingScheduleRoutesOptions,
@@ -52,6 +56,8 @@ import {
 import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/tools"
 import type { FlightConnectorAdapter } from "@voyant-travel/flights"
 import {
+  createMemoryRateLimitStore,
+  createRedisRateLimitStore,
   isStaffRbacEnforced,
   type VoyantAuthIntegration,
   type VoyantBindings,
@@ -126,6 +132,9 @@ import {
   tripsService,
   tripsTools,
 } from "@voyant-travel/trips"
+import type { KVStore } from "@voyant-travel/utils/cache"
+import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
+import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import { and, asc, desc, eq, gte, inArray, isNotNull } from "drizzle-orm"
@@ -156,6 +165,7 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   MEDIA_PUBLIC_BASE_URL?: string
   API_BASE_URL?: string
   REDIS_URL?: string
+  RATE_LIMIT_STORE?: import("@voyant-travel/hono").RateLimitStore
   EMAIL_FROM?: string
   EMAIL_REPLY_TO?: string
   PUBLIC_CHECKOUT_BASE_URL?: string
@@ -232,6 +242,12 @@ interface DestinationNameResolver {
 let pooledDb: { url: string; db: VoyantDb } | undefined
 let managedSourceAdapterRegistry: SourceAdapterRegistry | undefined
 let managedOwnedBookingHandlers: OwnedBookingHandlerRegistry | undefined
+
+interface ManagedSharedStores {
+  CACHE: KVStore
+  RATE_LIMIT: KVStore
+  RATE_LIMIT_STORE: import("@voyant-travel/hono").RateLimitStore
+}
 
 export async function loadManagedProfileRuntime(
   options: ManagedProfileRuntimeOptions,
@@ -393,10 +409,11 @@ export function createManagedProfileNodeEnv(
   const stringEnv = Object.fromEntries(
     Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   )
+  const stores = createManagedSharedStores(raw, stringEnv)
   return composeNodeEnv<ManagedProfileRuntimeEnv>(stringEnv, {
     kv: {
-      CACHE: isKvNamespace(raw.CACHE) ? raw.CACHE : createMemoryKvNamespace(),
-      RATE_LIMIT: isKvNamespace(raw.RATE_LIMIT) ? raw.RATE_LIMIT : createMemoryKvNamespace(),
+      CACHE: stores.CACHE,
+      RATE_LIMIT: stores.RATE_LIMIT,
     },
     r2: {
       MEDIA_BUCKET: isR2Bucket(raw.MEDIA_BUCKET)
@@ -406,7 +423,63 @@ export function createManagedProfileNodeEnv(
         ? raw.DOCUMENTS_BUCKET
         : objectStore(stringEnv.R2_BUCKET_DOCUMENTS, stringEnv),
     },
+    extra: {
+      RATE_LIMIT_STORE: stores.RATE_LIMIT_STORE,
+    },
   })
+}
+
+function createManagedSharedStores(
+  raw: Record<string, unknown>,
+  env: Record<string, string>,
+): ManagedSharedStores {
+  const injectedCache = isKvNamespace(raw.CACHE) ? raw.CACHE : undefined
+  const injectedRateLimit = isKvNamespace(raw.RATE_LIMIT) ? raw.RATE_LIMIT : undefined
+  const redisUrl = env.REDIS_URL?.trim()
+  const dbUrlValue = env.DATABASE_URL_DIRECT?.trim() || env.DATABASE_URL?.trim()
+
+  const l1Cache = createMemoryKvNamespace()
+  const l1RateLimit = createMemoryKvNamespace()
+
+  if (redisUrl) {
+    const l2Cache = createRedisKvStore(redisUrl)
+    const l2RateLimitKv = createRedisKvStore(redisUrl)
+    return {
+      CACHE: injectedCache ?? createTieredKvStore(l1Cache, l2Cache),
+      RATE_LIMIT: injectedRateLimit ?? createTieredKvStore(l1RateLimit, l2RateLimitKv),
+      RATE_LIMIT_STORE: createRedisRateLimitStore(redisUrl),
+    }
+  }
+
+  if (dbUrlValue && isPostgresConnectionUrl(dbUrlValue)) {
+    const runtimeEnv: ManagedProfileRuntimeEnv = {
+      ...env,
+      DATABASE_URL: env.DATABASE_URL ?? dbUrlValue,
+    }
+    const db = resolveDb(runtimeEnv)
+    const l2Cache = createPostgresKvStore(db)
+    const l2RateLimitKv = createPostgresKvStore(db)
+    return {
+      CACHE: injectedCache ?? createTieredKvStore(l1Cache, l2Cache),
+      RATE_LIMIT: injectedRateLimit ?? createTieredKvStore(l1RateLimit, l2RateLimitKv),
+      RATE_LIMIT_STORE: createPostgresFixedWindowRateLimitStore(db),
+    }
+  }
+
+  return {
+    CACHE: injectedCache ?? l1Cache,
+    RATE_LIMIT: injectedRateLimit ?? l1RateLimit,
+    RATE_LIMIT_STORE: createMemoryRateLimitStore(),
+  }
+}
+
+function isPostgresConnectionUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
+  } catch {
+    return false
+  }
 }
 
 function assertManagedProfileRuntimeSupport(options: {
@@ -460,11 +533,6 @@ function managedProfileEnvIssues(
 ): string[] {
   const issues: string[] = []
   for (const resource of requirements.resources) {
-    if (resource.required && resource.provider === "redis") {
-      issues.push(
-        "Redis-backed CACHE/RATE_LIMIT bindings for REDIS_URL are not implemented in @voyant-travel/framework/managed-runtime yet",
-      )
-    }
     for (const requirement of resource.env) {
       if (!requirement.required) continue
       const value = getEnvValue(env, requirement.name)

@@ -37,10 +37,13 @@ export {
   mountLazyRoutesAt,
 } from "./lazy-routes.js"
 export { createPathDbSelector, type PathDbSelectorOptions } from "./lib/db-selector.js"
+export type { RateLimitStore } from "./middleware/index.js"
 export {
   clientIpKey,
   consoleLoggerProvider,
   cors,
+  createMemoryRateLimitStore,
+  createRedisRateLimitStore,
   DEFAULT_IDEMPOTENCY_TTL_MS,
   db,
   enforceRateLimit,

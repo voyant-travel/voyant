@@ -208,13 +208,14 @@ export async function warmProductReadModel(
 
 /**
  * The slice of a request context read-model invalidation needs: the KV
- * binding, the (optional) Workers `executionCtx` for background scheduling,
- * and `db` for the recompute path.
+ * binding, an optional runtime `waitUntil` for background scheduling, and
+ * `db` for the recompute path.
  */
 export interface ReadModelInvalidationContext {
   // `unknown` so a Hono `Context` whose `Bindings` don't declare `CACHE` (the
   // admin route groups) is still assignable; the binding is narrowed at use.
   env?: unknown
+  waitUntil?: (p: Promise<unknown>) => void
   executionCtx?: unknown
   get?: (key: "db") => PostgresJsDatabase
 }
@@ -254,6 +255,10 @@ export function scheduleReadModelInvalidation(
   const kv = (c.env as { CACHE?: KVStore } | undefined)?.CACHE
   if (!kv) return undefined
   const pending = buildReadModelInvalidationTask(c, kv, productId, mode)
+  if (typeof c.waitUntil === "function") {
+    c.waitUntil(pending)
+    return undefined
+  }
   try {
     const ctx = c.executionCtx as { waitUntil?: (p: Promise<unknown>) => void } | undefined
     if (ctx && typeof ctx.waitUntil === "function") {

@@ -61,7 +61,7 @@ describe("validateVoyantConfig", () => {
     const config: VoyantConfig = {
       projectConfig: {
         database: { urlEnv: "DATABASE_URL", adapter: "node" },
-        cache: { provider: "kv", binding: "CACHE" },
+        cache: { provider: "postgres" },
         auth: { provider: "better-auth" },
       },
       admin: { enabled: true, path: "/app", backendUrl: "https://api.example.com" },

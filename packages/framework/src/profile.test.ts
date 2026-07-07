@@ -62,7 +62,7 @@ describe("managed profile contract", () => {
         ...MANAGED_OPERATOR_DEFAULT_PROVIDERS,
         cache: "postgres",
         sharedState: "postgres",
-        rateLimit: "kv",
+        rateLimit: "platform",
       },
     }
 
@@ -87,7 +87,7 @@ describe("managed profile contract", () => {
         ...MANAGED_OPERATOR_DEFAULT_PROVIDERS,
         cache: "postgres",
         sharedState: "postgres",
-        rateLimit: "kv",
+        rateLimit: "postgres",
         auth: "better-auth",
         workflows: "self-hosted",
       },

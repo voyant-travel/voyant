@@ -14,3 +14,10 @@ export {
   VOYANT_DB_SUPPORTS_TRANSACTIONS,
 } from "../transaction-capability.js"
 export { createPostgresAdvisoryLockManager } from "./locks.js"
+export { createPostgresKvStore, type PostgresKvStoreOptions } from "./postgres-kv.js"
+export {
+  createPostgresFixedWindowRateLimitStore,
+  type FixedWindowRateLimitStore,
+  type PostgresRateLimitStoreOptions,
+  type RateLimitResult,
+} from "./postgres-rate-limit.js"

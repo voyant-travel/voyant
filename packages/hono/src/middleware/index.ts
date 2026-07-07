@@ -38,6 +38,7 @@ export {
   createCloudflareRateLimitStore,
   createKvRateLimitStore,
   createMemoryRateLimitStore,
+  createRedisRateLimitStore,
   enforceRateLimit,
   LIVE_LIMITS,
   type RateLimitConfig,
@@ -46,6 +47,7 @@ export {
   type RateLimitResult,
   type RateLimitRule,
   type RateLimitStore,
+  type RedisRateLimitStoreOptions,
   rateLimit,
   resolveRateLimitStore,
 } from "./rate-limit.js"

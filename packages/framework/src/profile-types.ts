@@ -29,9 +29,9 @@ export type VoyantProjectProviderRole =
 export interface VoyantProjectProviders {
   database: "postgres"
   storage: "s3" | "r2" | "memory"
-  cache: "redis" | "postgres" | "kv" | "memory"
-  sharedState: "redis" | "postgres" | "memory"
-  rateLimit: "redis" | "postgres" | "kv" | "memory"
+  cache: "redis" | "postgres" | "platform" | "memory"
+  sharedState: "redis" | "postgres" | "platform" | "memory"
+  rateLimit: "redis" | "postgres" | "platform" | "memory"
   search: "postgres" | "typesense" | "algolia" | "none"
   email: "voyant-cloud" | "resend" | "sendgrid" | "smtp" | "none"
   sms: "voyant-cloud" | "twilio" | "none"
@@ -181,9 +181,9 @@ export const MANAGED_OPERATOR_DEFAULT_PROVIDERS = {
 export const PROVIDER_CONTRACTS = {
   database: ["postgres"],
   storage: ["s3", "r2", "memory"],
-  cache: ["redis", "postgres", "kv", "memory"],
-  sharedState: ["redis", "postgres", "memory"],
-  rateLimit: ["redis", "postgres", "kv", "memory"],
+  cache: ["redis", "postgres", "platform", "memory"],
+  sharedState: ["redis", "postgres", "platform", "memory"],
+  rateLimit: ["redis", "postgres", "platform", "memory"],
   search: ["postgres", "typesense", "algolia", "none"],
   email: ["voyant-cloud", "resend", "sendgrid", "smtp", "none"],
   sms: ["voyant-cloud", "twilio", "none"],

@@ -25,10 +25,8 @@ export interface ProjectConfig {
   }
   /** Cache backend descriptor. */
   cache?: {
-    /** Provider name (e.g. "kv", "redis", "memory"). */
-    provider?: string
-    /** Cloudflare binding name (when using `kv`). */
-    binding?: string
+    /** Provider name. */
+    provider?: "memory" | "postgres" | "redis" | "platform"
   }
   /** Auth provider descriptor. */
   auth?: {

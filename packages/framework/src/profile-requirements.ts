@@ -72,9 +72,13 @@ function envForProvider(
   ) {
     return [secret("REDIS_URL", "Redis URL used for cache, shared state, and rate limiting.")]
   }
-  if ((role === "cache" || role === "rateLimit") && provider === "kv") {
+  if (
+    (role === "cache" || role === "sharedState" || role === "rateLimit") &&
+    provider === "postgres"
+  ) {
     return [
-      binding(role === "cache" ? "CACHE" : "RATE_LIMIT", `KV-compatible binding for ${role}.`),
+      secret("DATABASE_URL", `Postgres URL used for ${role} shared-state storage.`),
+      secret("DATABASE_URL_DIRECT", "Direct Postgres URL for the resident Node pool.", false),
     ]
   }
   if (role === "search" && (provider === "typesense" || provider === "algolia")) {
@@ -158,6 +162,12 @@ function notesForProvider(role: VoyantProjectProviderRole, provider: string): st
 
 function resourceKeyFor(role: VoyantProjectProviderRole, provider: string): string {
   if (provider === "redis") return "redis"
+  if (
+    provider === "postgres" &&
+    (role === "cache" || role === "sharedState" || role === "rateLimit")
+  ) {
+    return "postgres-shared-state"
+  }
   if (role === "storage" && (provider === "s3" || provider === "r2")) return "object-storage"
   return `${role}:${provider}`
 }
@@ -168,8 +178,4 @@ function secret(name: string, description: string, required = true): VoyantProfi
 
 function variable(name: string, description: string, required = true): VoyantProfileEnvRequirement {
   return { name, kind: "variable", required, description }
-}
-
-function binding(name: string, description: string, required = true): VoyantProfileEnvRequirement {
-  return { name, kind: "binding", required, description }
 }

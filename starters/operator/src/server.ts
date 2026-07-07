@@ -2,6 +2,12 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 
 import { serveStatic } from "@hono/node-server/serve-static"
 import {
+  createDbClient,
+  createPostgresFixedWindowRateLimitStore,
+  createPostgresKvStore,
+} from "@voyant-travel/db/runtime"
+import { createMemoryRateLimitStore, createRedisRateLimitStore } from "@voyant-travel/hono"
+import {
   composeNodeEnv,
   createMemoryKvNamespace,
   createMemoryR2Bucket,
@@ -11,6 +17,9 @@ import {
   type ExecutionContextLike,
   type R2BucketShim,
 } from "@voyant-travel/runtime"
+import type { KVStore } from "@voyant-travel/utils/cache"
+import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
+import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 import { Hono } from "hono"
 
 import { fetch as appFetch, scheduled } from "./entry"
@@ -59,15 +68,76 @@ function objectStore(bucketEnv: string | undefined): R2BucketShim {
   return createMemoryR2Bucket()
 }
 
+function dbUrl(): string | undefined {
+  const url = process.env.DATABASE_URL_DIRECT?.trim() || process.env.DATABASE_URL?.trim()
+  return url && isPostgresConnectionUrl(url) ? url : undefined
+}
+
+function isPostgresConnectionUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
+  } catch {
+    return false
+  }
+}
+
+let sharedStoreDb: ReturnType<typeof createDbClient> | undefined
+
+function resolveSharedStoreDb() {
+  const url = dbUrl()
+  if (!url) return undefined
+  sharedStoreDb ??= createDbClient(url, { adapter: "node" })
+  return sharedStoreDb
+}
+
+function createRuntimeStores(): {
+  CACHE: KVStore
+  RATE_LIMIT: KVStore
+  RATE_LIMIT_STORE: NonNullable<CloudflareBindings["RATE_LIMIT_STORE"]>
+} {
+  const l1Cache = createMemoryKvNamespace()
+  const l1RateLimit = createMemoryKvNamespace()
+  const redisUrl = process.env.REDIS_URL?.trim()
+
+  if (redisUrl) {
+    return {
+      CACHE: createTieredKvStore(l1Cache, createRedisKvStore(redisUrl)),
+      RATE_LIMIT: createTieredKvStore(l1RateLimit, createRedisKvStore(redisUrl)),
+      RATE_LIMIT_STORE: createRedisRateLimitStore(redisUrl),
+    }
+  }
+
+  const db = resolveSharedStoreDb()
+  if (db) {
+    return {
+      CACHE: createTieredKvStore(l1Cache, createPostgresKvStore(db)),
+      RATE_LIMIT: createTieredKvStore(l1RateLimit, createPostgresKvStore(db)),
+      RATE_LIMIT_STORE: createPostgresFixedWindowRateLimitStore(db),
+    }
+  }
+
+  return {
+    CACHE: l1Cache,
+    RATE_LIMIT: l1RateLimit,
+    RATE_LIMIT_STORE: createMemoryRateLimitStore(),
+  }
+}
+
+const stores = createRuntimeStores()
+
 // Compose the env bag app code reads (`env.CACHE`, `env.MEDIA_BUCKET`, …).
 const env = composeNodeEnv<CloudflareBindings>(process.env, {
   kv: {
-    CACHE: createMemoryKvNamespace(),
-    RATE_LIMIT: createMemoryKvNamespace(),
+    CACHE: stores.CACHE,
+    RATE_LIMIT: stores.RATE_LIMIT,
   },
   r2: {
     MEDIA_BUCKET: objectStore(process.env.R2_BUCKET_MEDIA),
     DOCUMENTS_BUCKET: objectStore(process.env.R2_BUCKET_DOCUMENTS),
+  },
+  extra: {
+    RATE_LIMIT_STORE: stores.RATE_LIMIT_STORE,
   },
 })
 
