@@ -9,7 +9,7 @@ import {
   type WorkflowDescriptor,
 } from "@voyant-travel/core"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
-import type { Hono } from "hono"
+import type { Context, Hono } from "hono"
 
 import { assembleAnonymousPaths } from "./anonymous-paths.js"
 import {
@@ -190,6 +190,19 @@ export function mountApp<TBindings extends VoyantBindings>(
   const reporter = config.reporter ?? noopReporter
   const appName = config.appName ?? "voyant"
   app.onError((err, c) => handleApiError(err, c, { reporter, appName }))
+
+  const basePath = normalizeBaseDispatchPath(config.basePath)
+  if (basePath) {
+    const dispatchWithoutBasePath = (request: Request): Request => {
+      const url = new URL(request.url)
+      url.pathname = url.pathname.slice(basePath.length) || "/"
+      return new Request(url, request)
+    }
+    const forwardBasePath = (c: Context<MountEnv<TBindings>>) =>
+      app.fetch(dispatchWithoutBasePath(c.req.raw), c.env, tryGetExecutionCtx(c) as never)
+    app.all(basePath, forwardBasePath)
+    app.all(`${basePath}/*`, forwardBasePath)
+  }
 
   const pluginInputs = config.plugins ?? []
   const eagerPlugins: HonoBundle[] = []
@@ -870,4 +883,11 @@ export function mountApp<TBindings extends VoyantBindings>(
   augmented.ready = (bindings?: TBindings) =>
     ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
   return augmented
+}
+
+function normalizeBaseDispatchPath(basePath: string | undefined): string | null {
+  const trimmed = basePath?.trim()
+  if (!trimmed || trimmed === "/") return null
+  const normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`
+  return normalized.replace(/\/+$/, "") || null
 }

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- managed runtime coverage stays co-located with the composition boundary so Cloud boot/auth/store behavior is tested through one profile harness.
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -6,9 +7,11 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  createManagedProfileApp,
   createManagedProfileNodeEnv,
   createManagedProfileProviders,
   loadManagedProfileRuntime,
+  type ManagedProfileRuntimeEnv,
 } from "./managed-runtime.js"
 import { defineVoyantProject, type VoyantProjectProviders } from "./profile.js"
 
@@ -25,6 +28,47 @@ const localProviders = {
   scheduledJobs: "none",
   workflows: "none",
 } satisfies VoyantProjectProviders
+
+function managedCloudProject() {
+  return defineVoyantProject({
+    profile: "operator",
+    frameworkVersion: "0.16.0",
+    modules: ["catalog", "bookings", "finance", "relationships"],
+  })
+}
+
+function managedCloudEnv(
+  overrides: Partial<ManagedProfileRuntimeEnv> = {},
+): ManagedProfileRuntimeEnv {
+  return createManagedProfileNodeEnv({
+    DATABASE_URL: "postgres://voyant:secret@localhost:5432/voyant_test",
+    REDIS_URL: "redis://localhost:6379",
+    R2_S3_ENDPOINT: "https://r2.example.test",
+    R2_ACCESS_KEY_ID: "access",
+    R2_SECRET_ACCESS_KEY: "secret",
+    R2_BUCKET_MEDIA: "media",
+    R2_BUCKET_DOCUMENTS: "documents",
+    APP_URL: "https://admin.example.test",
+    API_BASE_URL: "https://admin.example.test/api",
+    EMAIL_FROM: "Voyant <noreply@example.test>",
+    VOYANT_API_KEY: "voyant_cloud_api_key",
+    VOYANT_ADMIN_AUTH_MODE: "voyant-cloud",
+    VOYANT_CLOUD_DEPLOYMENT_ID: "dep_test",
+    VOYANT_CLOUD_ADMIN_AUTH_START_URL: "https://dash.example.test/admin-auth/start",
+    VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL: "https://api.example.test/admin-auth/exchange",
+    VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL: "https://api.example.test/.well-known/admin-auth/jwks.json",
+    VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL: "https://api.example.test/admin-auth/revalidate",
+    VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE: "dep_test",
+    VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN: "client_token",
+    SESSION_CLAIMS_SECRET: "s".repeat(40),
+    BETTER_AUTH_SECRET: "b".repeat(40),
+    VOYANT_CLOUD_WORKFLOWS_URL: "https://workflows.example.test",
+    VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN: "workflow_token",
+    VOYANT_CLOUD_APP_SLUG: "operator",
+    ORIGIN_TRUST_SECRET: "origin_trust",
+    ...overrides,
+  })
+}
 
 function makePaymentLinkDb(rows: unknown[][]) {
   let cursor = 0
@@ -114,7 +158,130 @@ describe("managed profile runtime entry", () => {
           DATABASE_URL: "managed-profile-test-db",
         },
       }),
-    ).rejects.toThrow(/REDIS_URL|admin auth integration|R2_S3_ENDPOINT/)
+    ).rejects.toThrow(/REDIS_URL|R2_S3_ENDPOINT/)
+  })
+
+  it("loads a managed-cloud profile with the packaged Cloud admin auth integration", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(snapshotPath, JSON.stringify(managedCloudProject()))
+
+    const runtime = await loadManagedProfileRuntime({
+      profileSnapshotPath: snapshotPath,
+      env: managedCloudEnv(),
+    })
+
+    expect(runtime.project.mode).toBe("managed-cloud")
+    expect(runtime.app.fetch).toEqual(expect.any(Function))
+  })
+
+  it("fails managed-cloud startup when Cloud admin auth env is incomplete", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(snapshotPath, JSON.stringify(managedCloudProject()))
+
+    await expect(
+      loadManagedProfileRuntime({
+        profileSnapshotPath: snapshotPath,
+        env: managedCloudEnv({
+          VOYANT_CLOUD_ADMIN_AUTH_START_URL: "",
+          VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN: "",
+          BETTER_AUTH_SECRET: "",
+        }),
+      }),
+    ).rejects.toThrow(
+      /VOYANT_CLOUD_ADMIN_AUTH_START_URL|VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN|BETTER_AUTH_SECRET/,
+    )
+  })
+
+  it("serves the managed Cloud admin auth start route", async () => {
+    const env = managedCloudEnv()
+    const app = createManagedProfileApp({
+      project: managedCloudProject(),
+      env,
+    })
+
+    const response = await app.fetch(
+      new Request("https://admin.example.test/auth/cloud/start?next=/settings/team"),
+      env,
+    )
+    const redirect = new URL(response.headers.get("location") ?? "")
+
+    expect(response.status).toBe(302)
+    expect(`${redirect.origin}${redirect.pathname}`).toBe(
+      "https://dash.example.test/admin-auth/start",
+    )
+    expect(redirect.searchParams.get("deployment_id")).toBe("dep_test")
+    expect(redirect.searchParams.get("redirect_uri")).toBe(
+      "https://admin.example.test/api/auth/cloud/callback",
+    )
+    expect(redirect.searchParams.get("next")).toBe("/settings/team")
+    expect(response.headers.get("set-cookie")).toContain("voyant-cloud-admin-auth=")
+  })
+
+  it("serves the managed Cloud admin auth start route under the external /api prefix", async () => {
+    const env = managedCloudEnv()
+    const app = createManagedProfileApp({
+      project: managedCloudProject(),
+      env,
+    })
+
+    const response = await app.fetch(
+      new Request("https://admin.example.test/api/auth/sign-in/cloud?next=/app"),
+      env,
+    )
+    const redirect = new URL(response.headers.get("location") ?? "")
+
+    expect(response.status).toBe(302)
+    expect(`${redirect.origin}${redirect.pathname}`).toBe(
+      "https://dash.example.test/admin-auth/start",
+    )
+    expect(redirect.searchParams.get("redirect_uri")).toBe(
+      "https://admin.example.test/api/auth/cloud/callback",
+    )
+    expect(redirect.searchParams.get("next")).toBe("/app")
+    expect(response.headers.get("set-cookie")).toContain("voyant-cloud-admin-auth=")
+  })
+
+  it("redirects unauthenticated managed admin UI requests into Cloud auth", async () => {
+    const env = managedCloudEnv()
+    const app = createManagedProfileApp({
+      project: managedCloudProject(),
+      env,
+    })
+
+    const response = await app.fetch(
+      new Request("https://admin.example.test/app?tab=bookings", {
+        headers: { Accept: "text/html" },
+      }),
+      env,
+    )
+    const redirect = new URL(response.headers.get("location") ?? "")
+
+    expect(response.status).toBe(302)
+    expect(`${redirect.origin}${redirect.pathname}`).toBe(
+      "https://dash.example.test/admin-auth/start",
+    )
+    expect(redirect.searchParams.get("next")).toBe("/app?tab=bookings")
+    expect(response.headers.get("set-cookie")).toContain("voyant-cloud-admin-auth=")
+  })
+
+  it("keeps unauthenticated managed API requests as JSON 401s", async () => {
+    const env = managedCloudEnv()
+    const app = createManagedProfileApp({
+      project: managedCloudProject(),
+      env,
+    })
+
+    const response = await app.fetch(
+      new Request("https://admin.example.test/api/v1/admin/products", {
+        headers: { Accept: "application/json" },
+      }),
+      env,
+    )
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: "Unauthorized" })
   })
 
   it("rejects snapshot plugins instead of silently ignoring them", async () => {

@@ -339,6 +339,16 @@ export function requireAuth<TBindings extends VoyantBindings>(
       }
     }
 
+    if (opts?.auth?.onUnauthorized) {
+      const response = await opts.auth.onUnauthorized({
+        request: c.req.raw,
+        env: c.env,
+        // Guarded: Hono throws on `executionCtx` access outside Workers.
+        ctx: tryGetExecutionCtx(c),
+      })
+      if (response) return response
+    }
+
     return c.json({ error: "Unauthorized" }, 401)
   }
 }
