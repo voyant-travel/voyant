@@ -1961,6 +1961,9 @@ importers:
       '@voyant-travel/legal':
         specifier: workspace:*
         version: link:../legal
+      '@voyant-travel/mcp':
+        specifier: workspace:*
+        version: link:../mcp
       '@voyant-travel/mice':
         specifier: workspace:*
         version: link:../mice
@@ -1991,6 +1994,9 @@ importers:
       '@voyant-travel/storefront':
         specifier: workspace:*
         version: link:../storefront
+      '@voyant-travel/tools':
+        specifier: workspace:*
+        version: link:../tools
       '@voyant-travel/trips':
         specifier: workspace:*
         version: link:../trips

@@ -4,6 +4,18 @@
 import { readFile } from "node:fs/promises"
 
 import { OpenAPIHono } from "@hono/zod-openapi"
+import {
+  bookingsService,
+  redactBookingContact,
+  shouldRevealBookingPii,
+} from "@voyant-travel/bookings"
+import { type BookingsToolServices, bookingsTools } from "@voyant-travel/bookings/tools"
+import {
+  type CatalogSearchRuntime,
+  type CatalogToolServices,
+  catalogTools,
+  executeSemanticSearch,
+} from "@voyant-travel/catalog"
 import type {
   CatalogOffersAirportLabel,
   CatalogOffersConnectClient,
@@ -14,22 +26,27 @@ import type {
 import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { EventBus } from "@voyant-travel/core"
-import { createDbClient } from "@voyant-travel/db"
+import { createDbClient } from "@voyant-travel/db/runtime"
 import {
   type BookingScheduleRoutesOptions,
+  financeService,
   type PaymentPolicy,
   type PaymentPolicyEntityContext,
   type ResolveInvoiceExchangeRate,
   readPolicySourceFromInternalNotes,
 } from "@voyant-travel/finance"
+import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/tools"
 import type { FlightConnectorAdapter } from "@voyant-travel/flights"
-import type {
-  LazyRoutesLoader,
-  VoyantAuthIntegration,
-  VoyantBindings,
-  VoyantDb,
+import {
+  isStaffRbacEnforced,
+  type LazyRoutesLoader,
+  type VoyantAuthIntegration,
+  type VoyantBindings,
+  type VoyantDb,
 } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
+import { productsService } from "@voyant-travel/inventory"
+import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import {
   type ContractDocumentGeneratorContext,
   createContractDocumentRoutes,
@@ -37,11 +54,18 @@ import {
   createPdfContractDocumentGenerator,
 } from "@voyant-travel/legal"
 import { buildContractVariableBindings } from "@voyant-travel/legal/contract-variables"
+import { createMcpHonoApp } from "@voyant-travel/mcp"
 import {
+  createNotificationService,
   createVoyantCloudEmailProvider,
   createVoyantCloudSmsProvider,
   type NotificationProvider,
+  notificationsService,
 } from "@voyant-travel/notifications"
+import {
+  type NotificationsToolServices,
+  notificationsTools,
+} from "@voyant-travel/notifications/tools"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
@@ -49,6 +73,13 @@ import {
   resolveOperatorDefaultPaymentPolicy,
 } from "@voyant-travel/operator-settings"
 import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
+import { quotesService } from "@voyant-travel/quotes"
+import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
+import { relationshipsService } from "@voyant-travel/relationships"
+import {
+  type RelationshipsToolServices,
+  relationshipsTools,
+} from "@voyant-travel/relationships/tools"
 import {
   type CreateNodeServerOptions,
   composeNodeEnv,
@@ -64,6 +95,8 @@ import {
 import { createR2Provider, type R2BucketLike } from "@voyant-travel/storage/providers/r2"
 import type { VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
 import type { PaymentLinkRoutesOptions } from "@voyant-travel/storefront/payment-link"
+import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
+import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm"
@@ -82,6 +115,7 @@ import {
 } from "./profile.js"
 
 export interface ManagedProfileRuntimeEnv extends VoyantBindings {
+  TENANT_ID?: string
   DATABASE_URL_DIRECT?: string
   DATABASE_URL_REPLICAS?: string
   R2_S3_ENDPOINT?: string
@@ -287,15 +321,7 @@ export function createManagedProfileProviders(
     closePaymentSchedulesForBooking: async () => {},
     recordCancellationFinancialSettlement: async () => null,
     resolveBookingRequirementsProductSnapshot: async () => null,
-    resolveCatalogRuntime: (c) => ({
-      indexer: undefined,
-      embeddings: undefined,
-      defaultScope: {
-        locale: "en-GB",
-        audience: c.var.actor === "staff" ? "staff" : (c.var.actor ?? "customer"),
-        market: "default",
-      },
-    }),
+    resolveCatalogRuntime: resolveManagedCatalogRuntime,
     createInvoiceExchangeRateResolver: createInvoiceExchangeRateResolver,
     createInvoiceSettlementPollers: () => ({}),
     createTripsRoutesOptions: async () => ({}),
@@ -303,7 +329,7 @@ export function createManagedProfileProviders(
     resolvePaymentStarters: () => ({}),
     createChannelPushExtension: createEmptyChannelPushExtension,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
-    loadMcpAdminRoutes: emptyRoutes,
+    loadMcpAdminRoutes: createManagedMcpAdminRoutes,
     loadCatalogBookingRoutes: emptyRoutes,
     loadCatalogContentRoutes: emptyRoutes,
     loadMediaRoutes: createManagedMediaRoutes,
@@ -594,6 +620,191 @@ function resolveEmailReplyTo(value: string | undefined): string[] | null {
     .map((address) => address.trim())
     .filter(Boolean)
   return addresses.length > 0 ? addresses : null
+}
+
+type ManagedMcpToolContext = ToolContext & {
+  catalog: CatalogToolServices
+  trips: TripsToolServices
+  inventory: InventoryToolServices
+  bookings: BookingsToolServices
+  finance: FinanceToolServices
+  quotes: QuotesToolServices
+  relationships: RelationshipsToolServices
+  notifications: NotificationsToolServices
+}
+
+type BookingContactRow = {
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactTaxId?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactAddressLine1?: string | null
+  contactAddressLine2?: string | null
+  contactPostalCode?: string | null
+  [key: string]: unknown
+}
+
+function resolveManagedCatalogRuntime(c: Context): CatalogSearchRuntime {
+  return {
+    indexer: undefined,
+    embeddings: undefined,
+    defaultScope: {
+      locale: "en-GB",
+      audience: c.var.actor === "staff" ? "staff" : (c.var.actor ?? "customer"),
+      market: "default",
+    },
+  }
+}
+
+async function createManagedMcpAdminRoutes(): Promise<Hono> {
+  const registry = createToolRegistry()
+  registry.registerAll(catalogTools)
+  registry.registerAll(tripsTools)
+  registry.registerAll(inventoryTools)
+  registry.registerAll(bookingsTools)
+  registry.registerAll(financeTools)
+  registry.registerAll(quotesTools)
+  registry.registerAll(relationshipsTools)
+  registry.registerAll(notificationsTools)
+  return createMcpHonoApp({ registry, buildContext: buildManagedToolContext })
+}
+
+function buildManagedToolContext(c: Context): ManagedMcpToolContext {
+  const env = managedEnv(c)
+  const actor = (c.var.actor ?? "staff") as ToolContext["actor"]
+  const audience = (c.var.audience ?? actor) as ToolContext["audience"]
+  return {
+    db: c.var.db,
+    actor,
+    audience,
+    tenantId: env.TENANT_ID ?? env.VOYANT_CLOUD_DEPLOYMENT_ID ?? "default",
+    resolverScope: { locale: "en-GB", audience, market: "default", actor },
+    catalog: createManagedCatalogToolServices(c),
+    trips: createManagedTripsToolServices(c),
+    inventory: createManagedInventoryToolServices(c),
+    bookings: createManagedBookingsToolServices(c),
+    finance: {
+      listInvoices: (query) => financeService.listInvoices(c.var.db, query),
+      getInvoiceById: (id) => financeService.getInvoiceById(c.var.db, id),
+      voidInvoice: (id, input) => financeService.voidInvoice(c.var.db, id, input),
+    },
+    quotes: {
+      listQuotes: (query) => quotesService.listQuotes(c.var.db, query),
+      getQuoteById: (id) => quotesService.getQuoteById(c.var.db, id),
+      acceptQuoteVersion: (quoteVersionId) =>
+        quotesService.acceptQuoteVersion(c.var.db, quoteVersionId),
+    },
+    relationships: {
+      listPeople: (query) => relationshipsService.listPeople(c.var.db, query),
+      getPersonById: (id) => relationshipsService.getPersonById(c.var.db, id),
+      listOrganizations: (query) => relationshipsService.listOrganizations(c.var.db, query),
+      getOrganizationById: (id) => relationshipsService.getOrganizationById(c.var.db, id),
+    },
+    notifications: {
+      listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
+      getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
+      sendTemplated: (input) =>
+        notificationsService.sendNotification(
+          c.var.db,
+          createNotificationService(resolveManagedNotificationProviders(c.env)),
+          { ...input, targetType: "other" },
+        ),
+    },
+  }
+}
+
+function createManagedCatalogToolServices(c: Context): CatalogToolServices {
+  const runtime = resolveManagedCatalogRuntime(c)
+  return {
+    async search({ slice, request }) {
+      const indexer = runtime.indexer
+      if (!indexer) {
+        throw new ToolError(
+          "Catalog search indexer is not configured for this managed runtime.",
+          "PROVIDER_ERROR",
+        )
+      }
+      if (request.mode === "keyword") return indexer.search(slice, request)
+
+      try {
+        return await executeSemanticSearch({
+          adapter: indexer,
+          slice,
+          request,
+        })
+      } catch {
+        const keywordRequest = {
+          ...request,
+          mode: "keyword" as const,
+          query_embedding: undefined,
+          query_embedding_model_id: undefined,
+        }
+        return indexer.search(slice, keywordRequest)
+      }
+    },
+    async getEntry() {
+      return null
+    },
+  }
+}
+
+function createManagedTripsToolServices(c: Context): TripsToolServices {
+  return {
+    createTrip: (input) => tripsService.createTrip(c.var.db, input),
+    addComponent: (input) => tripsService.addComponent(c.var.db, input),
+    removeComponent: (componentId) => tripsService.removeComponent(c.var.db, componentId),
+    priceTrip: async () => {
+      throw new Error("Trips price dependencies are not configured for this managed runtime")
+    },
+    reserveTrip: async () => {
+      throw new Error("Trips reserve dependencies are not configured for this managed runtime")
+    },
+  }
+}
+
+function createManagedInventoryToolServices(c: Context): InventoryToolServices {
+  return {
+    listProducts: (query) => productsService.listProducts(c.var.db, query),
+    getProductById: (id) => productsService.getProductById(c.var.db, id),
+  }
+}
+
+function createManagedBookingsToolServices(c: Context): BookingsToolServices {
+  const reveal = shouldRevealBookingPii({
+    actor: c.var.actor,
+    scopes: c.var.scopes,
+    callerType: c.var.callerType,
+    isInternalRequest: c.var.isInternalRequest,
+    enforceRbac: isStaffRbacEnforced(c.env),
+  })
+
+  return {
+    async listBookings(query) {
+      const result = await bookingsService.listBookings(c.var.db, query)
+      if (reveal) return result
+      return redactBookingListResult(result)
+    },
+    async getBookingById(id) {
+      const row = await bookingsService.getBookingById(c.var.db, id)
+      if (reveal || !row) return row
+      return redactBookingRow(row)
+    },
+  }
+}
+
+function redactBookingListResult<T>(result: T): T {
+  if (!isRecord(result) || !Array.isArray(result.data)) return result
+  return { ...result, data: result.data.map((row) => redactBookingRow(row)) }
+}
+
+function redactBookingRow<T>(row: T): T {
+  if (!isRecord(row)) return row
+  return redactBookingContact(row as BookingContactRow) as T
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function createInvoiceExchangeRateResolver(

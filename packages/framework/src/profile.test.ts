@@ -222,6 +222,7 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.extensions).toContain("operator/quote-version-snapshot-extension")
     expect(bridge.manifest.extensions).toContain("operator/booking-schedule-extension")
     expect(bridge.manifest.modules).toContain("@voyant-travel/flights")
+    expect(bridge.manifest.modules).toContain("operator/mcp")
     for (const specifier of FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS) {
       expect([...bridge.manifest.modules, ...bridge.manifest.extensions]).not.toContain(specifier)
       expect(bridge.exclude).toContain(specifier)
