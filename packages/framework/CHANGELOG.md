@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.15.2
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.142.1
+
 ## 0.15.1
 
 ### Patch Changes

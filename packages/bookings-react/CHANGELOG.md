@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.142.1
+
+### Patch Changes
+
+- 14432a7: Make the booking journey's default phone country configurable via a new `defaultPhoneCountry` prop, with a locale-derived region fallback and GB only as the last resort instead of always defaulting to the UK.
+  - @voyant-travel/bookings@0.142.1
+
 ## 0.142.0
 
 ### Patch Changes
