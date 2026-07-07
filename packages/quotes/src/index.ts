@@ -40,6 +40,7 @@ export type {
   PublicQuoteVersionProposal,
   PublicQuoteVersionProposalLine,
   QuoteProposalRoutesOptions,
+  QuoteVersionSnapshotRoutesOptions,
   RequestPublicProposalEditsResult,
   SendQuoteVersionResult,
 } from "./proposal-routes.js"
