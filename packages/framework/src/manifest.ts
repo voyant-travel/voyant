@@ -84,7 +84,6 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
 } as const satisfies FrameworkManifest
 
 export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = [
-  "@voyant-travel/flights",
   "operator/mcp",
   "operator/catalog-booking",
   "operator/catalog-content",
