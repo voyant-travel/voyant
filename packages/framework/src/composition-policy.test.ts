@@ -140,4 +140,20 @@ describe("frameworkComposition policy injection", () => {
       }),
     )
   })
+
+  it("registers all cruise catalog-content lazy route shapes", () => {
+    const catalogContent = frameworkComposition.modules["operator/catalog-content"]?.(
+      compositionContext(),
+    )
+    if (Array.isArray(catalogContent)) throw new Error("expected a single catalog-content module")
+
+    expect(catalogContent?.lazyRoutes?.paths).toEqual(
+      expect.arrayContaining([
+        "/v1/admin/cruises/:id/content",
+        "/v1/public/cruises/:id/content",
+        "/v1/admin/cruises/:id/sailings/:sailingExternalId/pricing",
+        "/v1/public/cruises/:id/sailings/:sailingExternalId/pricing",
+      ]),
+    )
+  })
 })

@@ -38,6 +38,7 @@ import type {
 import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { EventBus } from "@voyant-travel/core"
+import { createCruiseContentRoutes } from "@voyant-travel/cruises/routes-content"
 import { createDbClient } from "@voyant-travel/db/runtime"
 import { createChannelPushExtension as createDistributionChannelPushExtension } from "@voyant-travel/distribution"
 import {
@@ -336,7 +337,8 @@ export function createManagedProfileApp(options: {
 export function createManagedProfileProviders(
   overrides: Partial<FrameworkProviders> = {},
 ): FrameworkProviders {
-  const providers: FrameworkProviders = {
+  let providers: FrameworkProviders
+  const defaults: FrameworkProviders = {
     resolveNotificationProviders: resolveManagedNotificationProviders,
     resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrl,
     resolveDocumentDownloadUrl: resolveDocumentDownloadUrl,
@@ -360,13 +362,15 @@ export function createManagedProfileProviders(
     createTripsRoutesOptions: async () => ({}),
     storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
     resolvePaymentStarters: () => ({}),
+    resolveCardPaymentStarter: () => null,
     createChannelPushExtension: createManagedChannelPushExtension,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
     loadMcpAdminRoutes: createManagedMcpAdminRoutes,
     loadCatalogBookingRoutes: createManagedCatalogBookingRoutes,
     loadCatalogContentRoutes: createManagedCatalogContentRoutes,
     loadMediaRoutes: createManagedMediaRoutes,
-    loadPaymentLinkRoutes: async () => createManagedPaymentLinkRoutes(),
+    loadPaymentLinkRoutes: async () =>
+      createManagedPaymentLinkRoutes(providers.resolveCardPaymentStarter),
     loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
     loadBookingScheduleAdminRoutes: createManagedBookingScheduleAdminRoutes,
     loadPaymentPolicyPublicRoutes: createManagedPaymentPolicyPublicRoutes,
@@ -378,7 +382,8 @@ export function createManagedProfileProviders(
     loadCatalogOffersRoutes: createManagedCatalogOffersRoutes,
     loadCatalogCheckoutRoutes: createManagedCatalogCheckoutRoutes,
   }
-  return { ...providers, ...overrides }
+  providers = { ...defaults, ...overrides }
+  return providers
 }
 
 export function createManagedProfileNodeEnv(
@@ -1120,10 +1125,26 @@ async function createManagedCatalogContentRoutes() {
     }),
   )
   app.route(
+    "/v1/admin/cruises",
+    createCruiseContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: false,
+      allowOwnedKeys: true,
+    }),
+  )
+  app.route(
     "/v1/public/accommodations",
     createAccommodationContentRoutes({
       resolveRegistry: resolveManagedSourceAdapterRegistry,
       defaultAcceptMachineTranslated: true,
+    }),
+  )
+  app.route(
+    "/v1/public/cruises",
+    createCruiseContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: true,
+      allowOwnedKeys: true,
     }),
   )
   return app
@@ -1627,7 +1648,9 @@ async function rejectManagedFlightConnectorRequest(): Promise<never> {
   )
 }
 
-async function createManagedPaymentLinkRoutes() {
+async function createManagedPaymentLinkRoutes(
+  resolveCardPaymentStarter: FrameworkProviders["resolveCardPaymentStarter"],
+) {
   const { createPaymentLinkRoutes } = await import("@voyant-travel/storefront/payment-link")
   return createPaymentLinkRoutes({
     resolveBankTransferDetails: async (c) => {
@@ -1640,9 +1663,41 @@ async function createManagedPaymentLinkRoutes() {
       }
     },
     resolvePublicCheckoutBaseUrl: (c) => resolvePublicCheckoutBaseUrl(c.env),
-    startCardPayment: async () => ({ configured: false }),
+    startCardPayment: (c, session) =>
+      startManagedPaymentLinkCardPayment(c, session, resolveCardPaymentStarter),
     resolveTripData: resolveManagedPaymentLinkTripData,
   })
+}
+
+async function startManagedPaymentLinkCardPayment(
+  c: Context,
+  session: Parameters<PaymentLinkRoutesOptions["startCardPayment"]>[1],
+  resolveCardPaymentStarter: FrameworkProviders["resolveCardPaymentStarter"],
+): ReturnType<PaymentLinkRoutesOptions["startCardPayment"]> {
+  const starter = resolveCardPaymentStarter?.(c.env) ?? null
+  if (!starter) return { configured: false }
+
+  const [first, ...rest] = (session.payerName ?? "").trim().split(/\s+/)
+  const last = rest.length > 0 ? rest.join(" ") : "Customer"
+  const result = await starter(c, {
+    db: dbFromContext(c),
+    sessionId: session.id,
+    billing: {
+      email: session.payerEmail ?? "tbd@example.com",
+      phone: "0000000000",
+      firstName: first || "Customer",
+      lastName: last,
+      city: "TBD",
+      country: 642,
+      state: "TBD",
+      postalCode: "00000",
+      details: "Pending - customer to confirm at payment.",
+    },
+    description: session.notes ?? `Payment ${session.id}`,
+  })
+
+  if (!result) return { configured: false }
+  return { configured: true, redirectUrl: result.redirectUrl }
 }
 
 const resolveManagedPaymentLinkTripData: NonNullable<

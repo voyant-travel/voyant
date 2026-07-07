@@ -74,6 +74,9 @@ export interface FrameworkProviders {
   financeCheckoutPolicy?: import("@voyant-travel/finance").FinanceHonoModuleOptions["policy"]
   financePaymentScheduleLineDescriptionFormat?: import("@voyant-travel/finance").FinanceHonoModuleOptions["paymentScheduleLineDescriptionFormat"]
   resolvePaymentStarters?: import("@voyant-travel/finance").FinanceHonoModuleOptions["resolvePaymentStarters"]
+  resolveCardPaymentStarter?: (
+    bindings: unknown,
+  ) => import("@voyant-travel/finance/card-payment").CardPaymentStarter | null
   notificationsAutoConfirmAndDispatch?: CreateNotificationsHonoModuleOptions["autoConfirmAndDispatch"]
   createChannelPushExtension: () => HonoExtension
   loadFlightAdminRoutes: LazyRoutesLoader
@@ -193,6 +196,8 @@ const CATALOG_CONTENT_ROUTE_PATHS = [
   "/v1/public/products/:id/content",
   "/v1/admin/cruises/:id/content",
   "/v1/public/cruises/:id/content",
+  "/v1/admin/cruises/:id/sailings/:sailingExternalId/pricing",
+  "/v1/public/cruises/:id/sailings/:sailingExternalId/pricing",
   "/v1/admin/accommodations/:id/content",
   "/v1/public/accommodations/:id/content",
 ] as const
