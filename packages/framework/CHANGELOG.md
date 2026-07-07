@@ -1,5 +1,44 @@
 # @voyant-travel/framework
 
+## 0.16.0
+
+### Minor Changes
+
+- 425f92e: Add Node-native cache and shared-state providers behind the existing KVStore
+  surface, including in-process LRU, tiered Redis/Postgres providers, Postgres
+  fixed-window rate limiting, Redis rate limiting, and managed-runtime provider
+  selection without KV-shaped binding requirements.
+
+### Patch Changes
+
+- Updated dependencies [425f92e]
+  - @voyant-travel/utils@0.106.0
+  - @voyant-travel/db@0.110.0
+  - @voyant-travel/hono@0.122.0
+  - @voyant-travel/runtime@0.4.2
+  - @voyant-travel/inventory@0.7.3
+  - @voyant-travel/bookings@0.143.0
+  - @voyant-travel/finance@0.143.0
+  - @voyant-travel/legal@0.143.0
+  - @voyant-travel/relationships@0.122.4
+  - @voyant-travel/storefront@0.145.0
+  - @voyant-travel/accommodations@0.109.11
+  - @voyant-travel/action-ledger@0.105.13
+  - @voyant-travel/catalog@0.141.0
+  - @voyant-travel/commerce@0.25.0
+  - @voyant-travel/cruises@0.142.0
+  - @voyant-travel/distribution@0.133.0
+  - @voyant-travel/flights@0.143.0
+  - @voyant-travel/identity@0.143.0
+  - @voyant-travel/mice@0.6.6
+  - @voyant-travel/notifications@0.118.4
+  - @voyant-travel/operations@0.5.15
+  - @voyant-travel/operator-settings@0.2.27
+  - @voyant-travel/quotes@0.125.1
+  - @voyant-travel/trips@0.134.0
+  - @voyant-travel/workflows@0.111.18
+  - @voyant-travel/workflows-orchestrator@0.111.18
+
 ## 0.15.2
 
 ### Patch Changes

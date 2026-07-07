@@ -1,5 +1,19 @@
 # @voyant-travel/db
 
+## 0.110.0
+
+### Minor Changes
+
+- 425f92e: Add Node-native cache and shared-state providers behind the existing KVStore
+  surface, including in-process LRU, tiered Redis/Postgres providers, Postgres
+  fixed-window rate limiting, Redis rate limiting, and managed-runtime provider
+  selection without KV-shaped binding requirements.
+
+### Patch Changes
+
+- Updated dependencies [425f92e]
+  - @voyant-travel/core@0.112.3
+
 ## 0.109.5
 
 ### Patch Changes
