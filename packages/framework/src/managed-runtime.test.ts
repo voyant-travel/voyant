@@ -267,6 +267,19 @@ describe("managed profile runtime entry", () => {
     expect(app.routes.length).toBeGreaterThan(0)
   }, 10000)
 
+  it("wires package-owned booking schedule routes in the default managed providers", async () => {
+    const providers = createManagedProfileProviders()
+    const [adminApp, publicApp] = await Promise.all([
+      providers.loadBookingScheduleAdminRoutes(),
+      providers.loadPaymentPolicyPublicRoutes(),
+    ])
+
+    expect(adminApp.fetch).toEqual(expect.any(Function))
+    expect(adminApp.routes.length).toBeGreaterThan(0)
+    expect(publicApp.fetch).toEqual(expect.any(Function))
+    expect(publicApp.routes.length).toBeGreaterThan(0)
+  }, 10000)
+
   it("wires package-owned action-ledger health routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()
 
