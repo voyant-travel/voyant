@@ -185,6 +185,8 @@ const CATALOG_CONTENT_ROUTE_PATHS = [
   "/v1/public/products/:id/content",
   "/v1/admin/cruises/:id/content",
   "/v1/public/cruises/:id/content",
+  "/v1/admin/cruises/:id/sailings/:sailingExternalId/pricing",
+  "/v1/public/cruises/:id/sailings/:sailingExternalId/pricing",
   "/v1/admin/accommodations/:id/content",
   "/v1/public/accommodations/:id/content",
 ] as const
@@ -354,6 +356,10 @@ export interface FrameworkProviders {
   financePaymentScheduleLineDescriptionFormat?: FinanceHonoModuleOptions["paymentScheduleLineDescriptionFormat"]
   /** Configured pay-by-link starters, keyed by payment provider id. */
   resolvePaymentStarters?: import("@voyant-travel/finance").FinanceHonoModuleOptions["resolvePaymentStarters"]
+  /** Configured hosted card-payment starter for checkout/payment-link surfaces. */
+  resolveCardPaymentStarter?: (
+    bindings: unknown,
+  ) => import("@voyant-travel/finance/card-payment").CardPaymentStarter | null
   /**
    * Booking-confirmed notification auto-dispatch policy. Optional: omitted
    * deployments keep the standard booking-confirmation auto-send.

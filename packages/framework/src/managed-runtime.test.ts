@@ -2,7 +2,8 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { describe, expect, it } from "vitest"
+import { Hono } from "hono"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   createManagedProfileNodeEnv,
@@ -24,6 +25,44 @@ const localProviders = {
   scheduledJobs: "none",
   workflows: "none",
 } satisfies VoyantProjectProviders
+
+function makePaymentLinkDb(rows: unknown[][]) {
+  let cursor = 0
+  const builder: Record<string, unknown> = {}
+  const chain = () => builder
+  builder.select = chain
+  builder.from = chain
+  builder.where = chain
+  builder.orderBy = chain
+  builder.limit = chain
+  // biome-ignore lint/suspicious/noThenProperty: test stub mimics a thenable drizzle query builder -- owner: framework.
+  ;(builder as { then: unknown }).then = (
+    resolve: (value: unknown) => unknown,
+    reject?: (reason: unknown) => unknown,
+  ) => {
+    try {
+      const value = rows[cursor++] ?? []
+      return Promise.resolve(value).then(resolve, reject)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  return builder
+}
+
+async function mountManagedPaymentLinkApp(
+  providers: ReturnType<typeof createManagedProfileProviders>,
+  db: unknown,
+) {
+  const routes = await providers.loadPaymentLinkRoutes()
+  const app = new Hono()
+  app.use("*", async (c, next) => {
+    c.set("db" as never, db as never)
+    await next()
+  })
+  app.route("/", routes)
+  return app
+}
 
 describe("managed profile runtime entry", () => {
   it("loads a local source-free profile snapshot without starter-local glue", async () => {
@@ -203,6 +242,75 @@ describe("managed profile runtime entry", () => {
     })
   }, 10000)
 
+  it("keeps managed payment-link card starts explicitly unconfigured by default", async () => {
+    const db = makePaymentLinkDb([
+      [
+        {
+          id: "ps_1",
+          status: "pending",
+          redirectUrl: null,
+          payerName: null,
+          payerEmail: null,
+          notes: null,
+        },
+      ],
+    ])
+    const app = await mountManagedPaymentLinkApp(createManagedProfileProviders(), db)
+
+    const response = await app.request("/v1/public/payment-link/ps_1/start-card", {
+      method: "POST",
+    })
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: "Card processor not configured" })
+  }, 10000)
+
+  it("starts managed payment-link cards through the provider-neutral card starter", async () => {
+    const db = makePaymentLinkDb([
+      [
+        {
+          id: "ps_1",
+          status: "requires_redirect",
+          redirectUrl: "https://pay.example.test/stale",
+          payerName: "Ada Lovelace",
+          payerEmail: "ada@example.test",
+          notes: "Deposit",
+        },
+      ],
+    ])
+    const startCardPayment = vi.fn(async () => ({
+      redirectUrl: "https://pay.example.test/fresh",
+    }))
+    const app = await mountManagedPaymentLinkApp(
+      createManagedProfileProviders({
+        resolveCardPaymentStarter: () => startCardPayment,
+      }),
+      db,
+    )
+
+    const response = await app.request("/v1/public/payment-link/ps_1/start-card", {
+      method: "POST",
+    })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      data: { redirectUrl: "https://pay.example.test/fresh" },
+    })
+    expect(startCardPayment).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        db,
+        sessionId: "ps_1",
+        billing: expect.objectContaining({
+          email: "ada@example.test",
+          firstName: "Ada",
+          lastName: "Lovelace",
+        }),
+        description: "Deposit",
+      }),
+    )
+  }, 10000)
+
   it("wires package-owned contract document routes in the default managed providers", async () => {
     const env = createManagedProfileNodeEnv({ DATABASE_URL: "managed-profile-test-db" })
     await env.DOCUMENTS_BUCKET?.put("contracts/test.pdf", new TextEncoder().encode("%PDF-1.4"))
@@ -304,9 +412,15 @@ describe("managed profile runtime entry", () => {
 
   it("wires package-owned catalog content routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadCatalogContentRoutes()
+    const response = await app.request("/v1/admin/cruises/!!!invalid/content")
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      error: "invalid_key",
+      detail: "Unrecognized cruise key: !!!invalid",
+    })
   }, 10000)
 
   it("wires package-owned catalog checkout routes in the default managed providers", async () => {

@@ -1940,6 +1940,9 @@ importers:
       '@voyant-travel/connect-sdk':
         specifier: 0.9.1
         version: 0.9.1
+      '@voyant-travel/cruises':
+        specifier: workspace:*
+        version: link:../cruises
       '@voyant-travel/db':
         specifier: workspace:*
         version: link:../db

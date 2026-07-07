@@ -29,6 +29,7 @@ const runtimePackages = JSON.parse(readFileSync(MANIFEST, "utf-8")).runtimePacka
 const frameworkRuntimeEntryDeps = {
   "@voyant-travel/cloud-sdk": "^0.11.0",
   "@voyant-travel/connect-sdk": "0.9.1",
+  "@voyant-travel/cruises": "workspace:*",
   "@voyant-travel/db": "workspace:*",
   "@voyant-travel/mcp": "workspace:*",
   "@voyant-travel/plugin-voyant-connect": "^0.3.2",
