@@ -239,6 +239,32 @@ describe("managed profile runtime entry", () => {
     expect(app.routes.length).toBeGreaterThan(0)
   }, 10000)
 
+  it("wires package-owned flights routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadFlightAdminRoutes()
+    const response = await app.request("/search", {
+      method: "POST",
+      body: JSON.stringify({
+        slices: [
+          {
+            origin: "OTP",
+            destination: "LHR",
+            departureDate: "2026-08-01",
+          },
+        ],
+        passengers: { adults: 1 },
+      }),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({
+      error:
+        "Flight connector is not configured for this managed runtime. Override loadFlightAdminRoutes with a deployment flight connector.",
+    })
+  }, 10000)
+
   it("wires package-owned catalog offers routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadCatalogOffersRoutes()
     const response = await app.request("/departure-airports", {

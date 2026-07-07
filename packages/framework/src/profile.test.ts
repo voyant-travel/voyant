@@ -221,25 +221,20 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.extensions).toContain("operator/catalog-checkout-extension")
     expect(bridge.manifest.extensions).toContain("operator/quote-version-snapshot-extension")
     expect(bridge.manifest.extensions).toContain("operator/booking-schedule-extension")
+    expect(bridge.manifest.modules).toContain("@voyant-travel/flights")
     for (const specifier of FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS) {
       expect([...bridge.manifest.modules, ...bridge.manifest.extensions]).not.toContain(specifier)
       expect(bridge.exclude).toContain(specifier)
     }
   })
 
-  it("rejects explicit managed-cloud modules that still require starter-local glue", () => {
+  it("allows explicit managed-cloud flights modules", () => {
     const result = validateVoyantProject({
       ...validProject({ plugins: [] }),
       modules: ["catalog", "flights"],
     })
 
-    expect(result.ok).toBe(false)
-    expect(result.issues).toEqual([
-      expect.objectContaining({
-        path: "modules",
-        code: "invalid_module_subset",
-      }),
-    ])
+    expect(result.ok).toBe(true)
   })
 
   it("rejects website artifacts because customer-facing apps are separate", () => {

@@ -22,6 +22,7 @@ import {
   type ResolveInvoiceExchangeRate,
   readPolicySourceFromInternalNotes,
 } from "@voyant-travel/finance"
+import type { FlightConnectorAdapter } from "@voyant-travel/flights"
 import type {
   LazyRoutesLoader,
   VoyantAuthIntegration,
@@ -301,7 +302,7 @@ export function createManagedProfileProviders(
     storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
     resolvePaymentStarters: () => ({}),
     createChannelPushExtension: createEmptyChannelPushExtension,
-    loadFlightAdminRoutes: emptyRoutes,
+    loadFlightAdminRoutes: createManagedFlightAdminRoutes,
     loadMcpAdminRoutes: emptyRoutes,
     loadCatalogBookingRoutes: emptyRoutes,
     loadCatalogContentRoutes: emptyRoutes,
@@ -1110,6 +1111,45 @@ async function createManagedActionLedgerHealthRoutes() {
     checkFinanceDrift: checkFinanceActionLedgerDrift,
     checkProductDrift: checkProductActionLedgerDrift,
   })
+}
+
+async function createManagedFlightAdminRoutes() {
+  const [
+    { createFlightAdminRoutes, createFlightOrderPaymentIntegration },
+    { createOrderPaymentSessions },
+  ] = await Promise.all([
+    import("@voyant-travel/flights"),
+    import("@voyant-travel/finance/order-payment-sessions"),
+  ])
+
+  return createFlightAdminRoutes({
+    resolveAdapter: resolveManagedFlightAdapter,
+    payment: createFlightOrderPaymentIntegration({
+      orderPaymentSessions: createOrderPaymentSessions({ targetType: "flight_order" }),
+    }),
+  })
+}
+
+function resolveManagedFlightAdapter(): FlightConnectorAdapter {
+  return managedFlightConnectorNotConfiguredAdapter
+}
+
+const managedFlightConnectorNotConfiguredAdapter: FlightConnectorAdapter = {
+  capabilities: {
+    provider: "unconfigured",
+    declared: [],
+  },
+  searchFlights: rejectManagedFlightConnectorRequest,
+  priceOffer: rejectManagedFlightConnectorRequest,
+  bookFlight: rejectManagedFlightConnectorRequest,
+  getOrder: rejectManagedFlightConnectorRequest,
+  cancelOrder: rejectManagedFlightConnectorRequest,
+}
+
+async function rejectManagedFlightConnectorRequest(): Promise<never> {
+  throw new Error(
+    "Flight connector is not configured for this managed runtime. Override loadFlightAdminRoutes with a deployment flight connector.",
+  )
 }
 
 async function createManagedPaymentLinkRoutes() {
