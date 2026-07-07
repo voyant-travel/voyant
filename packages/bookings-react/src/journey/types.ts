@@ -261,6 +261,16 @@ export interface BookingJourneyProps {
   }
 
   /**
+   * Default country (ISO 3166-1 alpha-2, e.g. `"RO"`, `"GB"`) for the
+   * journey's phone inputs. Deployments should thread this from their
+   * market/storefront settings so the phone country matches the shopper's
+   * market instead of always defaulting to the UK. When omitted, the journey
+   * derives a country from the active locale's region subtag (e.g. `"ro-RO"`
+   * -> `"RO"`) and falls back to `"GB"` only as a last resort.
+   */
+  defaultPhoneCountry?: string
+
+  /**
    * Layout of the booking flow.
    *  - `"wizard"` — one step at a time with Back/Next (the guided
    *    storefront flow).
