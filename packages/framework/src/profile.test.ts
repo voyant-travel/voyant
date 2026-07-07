@@ -132,7 +132,6 @@ describe("managed profile contract", () => {
     expect(bridge.exclude).toContain("@voyant-travel/storefront/customer-portal")
     expect(bridge.exclude).toContain("@voyant-travel/storefront/verification")
     expect(bridge.exclude).toContain("operator/quote-version-snapshot-extension")
-    expect(bridge.exclude).toContain("operator/proposal-extension")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/flights")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront")
     expect(bridge.manifest.extensions).not.toContain("operator/quote-version-snapshot-extension")
@@ -223,6 +222,7 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.extensions).toContain("operator/action-ledger-health-extension")
     expect(bridge.manifest.extensions).toContain("operator/catalog-offers-extension")
     expect(bridge.manifest.extensions).toContain("operator/catalog-checkout-extension")
+    expect(bridge.manifest.extensions).toContain("operator/proposal-extension")
     expect(bridge.manifest.extensions).toContain("operator/quote-version-snapshot-extension")
     expect(bridge.manifest.extensions).toContain("operator/booking-schedule-extension")
     expect(bridge.manifest.extensions).toContain(

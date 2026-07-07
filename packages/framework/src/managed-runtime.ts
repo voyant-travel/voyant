@@ -10,6 +10,7 @@ import {
   redactBookingContact,
   shouldRevealBookingPii,
 } from "@voyant-travel/bookings"
+import { submitBookingReservationPlan } from "@voyant-travel/bookings/reservation-plans"
 import { type BookingsToolServices, bookingsTools } from "@voyant-travel/bookings/tools"
 import {
   type CatalogSearchRuntime,
@@ -51,7 +52,6 @@ import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/t
 import type { FlightConnectorAdapter } from "@voyant-travel/flights"
 import {
   isStaffRbacEnforced,
-  type LazyRoutesLoader,
   type VoyantAuthIntegration,
   type VoyantBindings,
   type VoyantDb,
@@ -84,10 +84,17 @@ import { availabilitySlots } from "@voyant-travel/operations"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
+  getOperatorSettings,
   resolveBookingTaxSettings,
   resolveOperatorDefaultPaymentPolicy,
+  toPublicOperatorSettings,
 } from "@voyant-travel/operator-settings"
-import { quotesService } from "@voyant-travel/quotes"
+import {
+  createQuoteProposalAdminRoutes,
+  createQuoteProposalPublicRoutes,
+  type QuoteProposalRoutesOptions,
+  quotesService,
+} from "@voyant-travel/quotes"
 import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
 import { relationshipsService } from "@voyant-travel/relationships"
 import {
@@ -110,13 +117,19 @@ import { createR2Provider, type R2BucketLike } from "@voyant-travel/storage/prov
 import type { VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
 import type { PaymentLinkRoutesOptions } from "@voyant-travel/storefront/payment-link"
 import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
-import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
+import {
+  type CancelTripComponentsDeps,
+  type ReserveTripDeps,
+  type StartCheckoutDeps,
+  type TripsToolServices,
+  tripsService,
+  tripsTools,
+} from "@voyant-travel/trips"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import { and, asc, desc, eq, gte, inArray, isNotNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context } from "hono"
-import { Hono } from "hono"
+import type { Context, Hono } from "hono"
 
 import type { FrameworkProviders } from "./composition-lazy.js"
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
@@ -360,8 +373,8 @@ export function createManagedProfileProviders(
     loadQuoteVersionSnapshotRoutes: createManagedQuoteVersionSnapshotRoutes,
     loadBookingMaintenanceRoutes: createManagedBookingMaintenanceRoutes,
     loadActionLedgerHealthRoutes: createManagedActionLedgerHealthRoutes,
-    loadProposalAdminRoutes: emptyRoutes,
-    loadProposalPublicRoutes: emptyRoutes,
+    loadProposalAdminRoutes: createManagedProposalAdminRoutes,
+    loadProposalPublicRoutes: createManagedProposalPublicRoutes,
     loadCatalogOffersRoutes: createManagedCatalogOffersRoutes,
     loadCatalogCheckoutRoutes: createManagedCatalogCheckoutRoutes,
   }
@@ -1212,6 +1225,139 @@ async function createManagedQuoteVersionSnapshotRoutes() {
   })
 }
 
+async function createManagedProposalAdminRoutes() {
+  return createQuoteProposalAdminRoutes(createManagedQuoteProposalRoutesOptions())
+}
+
+async function createManagedProposalPublicRoutes() {
+  return createQuoteProposalPublicRoutes(createManagedQuoteProposalRoutesOptions())
+}
+
+function createManagedQuoteProposalRoutesOptions(): QuoteProposalRoutesOptions {
+  return {
+    resolveDb: dbFromContext,
+    resolvePublicProposalBaseUrl: (c) => resolvePublicCheckoutBaseUrl(c.env),
+    reserveTripDeps: createManagedReserveTripDeps,
+    startCheckoutDeps: createManagedStartCheckoutDeps,
+    cancelTripComponentsDeps: createManagedCancelTripComponentsDeps,
+    resolveOperatorProfile: async (db) => {
+      const operatorSettings = await getOperatorSettings(db)
+      return operatorSettings ? toPublicOperatorSettings(operatorSettings) : null
+    },
+    recordPublicProposalFeedback: async (db, input, c) => {
+      const activity = await db.transaction(async (tx) => {
+        const row = await relationshipsService.createActivity(tx, {
+          subject: "Customer requested proposal edits",
+          type: "note",
+          status: "done",
+          completedAt: new Date().toISOString(),
+          description: input.message,
+        })
+        if (!row) throw new Error("Failed to record proposal feedback activity")
+        await relationshipsService.createActivityLink(tx, row.id, {
+          entityType: "quote",
+          entityId: input.quoteId,
+          role: "primary",
+        })
+        return { id: row.id }
+      })
+
+      await getManagedEventBus(c)?.emit(
+        "quote.proposal_feedback.requested",
+        {
+          quoteId: input.quoteId,
+          quoteVersionId: input.quoteVersionId,
+          activityId: activity.id,
+          message: input.message,
+          proposalUrl: input.proposalUrl,
+        },
+        { category: "domain", source: "route" },
+      )
+
+      return activity
+    },
+  }
+}
+
+function createManagedReserveTripDeps(): ReserveTripDeps {
+  return {
+    submitReservationPlan: async (input) => {
+      const submitted = await submitBookingReservationPlan(
+        {
+          reservationPlanId: input.reservationPlan.id,
+          idempotencyKey: input.idempotencyKey,
+          origin: {
+            source: "trips",
+            tripEnvelopeId: input.envelope.id,
+          },
+          envelope: input.envelope,
+          lines: input.components.map((component) => ({
+            planLineId: component.componentId,
+            componentId: component.componentId,
+            kind: component.reservationKind,
+            line: component.component,
+          })),
+        },
+        {
+          reserveCatalogBackedLine: async () => {
+            throw new Error(
+              "Managed proposal reservation requires a catalog-backed reserve adapter",
+            )
+          },
+          reserveNonCatalogLine: async () => {
+            throw new Error("Managed proposal reservation requires a non-catalog reserve adapter")
+          },
+          releaseReservedLine: async () => ({
+            released: false,
+            reason: "release_not_configured",
+          }),
+        },
+      )
+
+      return {
+        reservationPlanId: submitted.reservationPlanId,
+        status: submitted.status,
+        reserved: submitted.reserved.map((item) => ({
+          componentId: item.componentId,
+          status: item.status,
+          result: item.result,
+        })),
+        failures: submitted.failures,
+        compensations: submitted.compensations,
+        warnings: submitted.warnings,
+      }
+    },
+  }
+}
+
+function createManagedStartCheckoutDeps(): StartCheckoutDeps {
+  return {
+    startComponentCheckout: async () => {
+      throw new Error("Managed proposal checkout requires a payment checkout adapter")
+    },
+  }
+}
+
+function createManagedCancelTripComponentsDeps(): CancelTripComponentsDeps {
+  return {
+    previewComponentCancellation: async (input) => ({
+      componentId: input.component.id,
+      action: "staff_remediation",
+      currentStatus: input.component.status,
+      staffActionRequired: true,
+      reason: "Managed proposal cancellation requires a component cancellation adapter",
+    }),
+    cancelComponent: async () => ({
+      status: "failed",
+      reason: "Managed proposal cancellation requires a component cancellation adapter",
+    }),
+  }
+}
+
+function getManagedEventBus(c: Context): EventBus | undefined {
+  return (c.var as { eventBus?: EventBus }).eventBus
+}
+
 function createManagedBookingScheduleRoutesOptions(): BookingScheduleRoutesOptions {
   return {
     resolveDb: dbFromContext,
@@ -1772,8 +1918,6 @@ function guessMimeType(key: string): string {
       return "application/octet-stream"
   }
 }
-
-const emptyRoutes: LazyRoutesLoader = async () => new Hono()
 
 function createManagedChannelPushExtension(): HonoExtension {
   return createDistributionChannelPushExtension({
