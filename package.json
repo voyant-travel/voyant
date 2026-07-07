@@ -96,7 +96,7 @@
     "secretlint": "^13.0.2",
     "semver": "^7.8.5",
     "tsx": "catalog:",
-    "turbo": "^2.10.2",
+    "turbo": "^2.10.4",
     "vitest": "catalog:"
   },
   "packageManager": "pnpm@10.18.0",
