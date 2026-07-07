@@ -83,11 +83,7 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
   ],
 } as const satisfies FrameworkManifest
 
-export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = [
-  "operator/catalog-booking",
-  "operator/catalog-content",
-  "operator/proposal-extension",
-] as const
+export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = ["operator/proposal-extension"] as const
 
 export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET = new Set<string>(
   FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS,

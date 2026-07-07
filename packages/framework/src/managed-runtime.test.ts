@@ -295,6 +295,20 @@ describe("managed profile runtime entry", () => {
     expect(await response.json()).toEqual({ departureAirports: [] })
   }, 10000)
 
+  it("wires package-owned catalog booking routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadCatalogBookingRoutes()
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+  }, 10000)
+
+  it("wires package-owned catalog content routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadCatalogContentRoutes()
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+  }, 10000)
+
   it("wires package-owned catalog checkout routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadCatalogCheckoutRoutes()
 

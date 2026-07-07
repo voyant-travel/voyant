@@ -4,6 +4,7 @@
 import { readFile } from "node:fs/promises"
 
 import { OpenAPIHono } from "@hono/zod-openapi"
+import { createAccommodationContentRoutes } from "@voyant-travel/accommodations/routes-content"
 import {
   bookingsService,
   redactBookingContact,
@@ -17,7 +18,13 @@ import {
   executeSemanticSearch,
 } from "@voyant-travel/catalog"
 import {
+  type CatalogAvailabilitySlotsScope,
+  type CatalogBookingRouteModuleOptions,
+  createOwnedBookingHandlerRegistry,
   createSourceAdapterRegistry,
+  mountCatalogBookingRoutes as mountPackageCatalogBookingRoutes,
+  type OwnedBookingHandlerRegistry,
+  type SlotRow,
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
 import type {
@@ -51,6 +58,8 @@ import {
 } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { productsService } from "@voyant-travel/inventory"
+import { createProductContentRoutes } from "@voyant-travel/inventory/routes-content"
+import { getProductContent } from "@voyant-travel/inventory/service-content"
 import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
 import {
   type ContractDocumentGeneratorContext,
@@ -71,13 +80,13 @@ import {
   type NotificationsToolServices,
   notificationsTools,
 } from "@voyant-travel/notifications/tools"
+import { availabilitySlots } from "@voyant-travel/operations"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
   resolveBookingTaxSettings,
   resolveOperatorDefaultPaymentPolicy,
 } from "@voyant-travel/operator-settings"
-import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
 import { quotesService } from "@voyant-travel/quotes"
 import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
 import { relationshipsService } from "@voyant-travel/relationships"
@@ -104,7 +113,7 @@ import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/
 import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
-import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm"
+import { and, asc, desc, eq, gte, inArray, isNotNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
@@ -202,8 +211,13 @@ type AsyncMethodProvider<T extends object> = {
     : never
 }
 
+interface DestinationNameResolver {
+  resolve(code: string): Promise<string | null | undefined>
+}
+
 let pooledDb: { url: string; db: VoyantDb } | undefined
-let managedChannelPushRegistry: SourceAdapterRegistry | undefined
+let managedSourceAdapterRegistry: SourceAdapterRegistry | undefined
+let managedOwnedBookingHandlers: OwnedBookingHandlerRegistry | undefined
 
 export async function loadManagedProfileRuntime(
   options: ManagedProfileRuntimeOptions,
@@ -336,8 +350,8 @@ export function createManagedProfileProviders(
     createChannelPushExtension: createManagedChannelPushExtension,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
     loadMcpAdminRoutes: createManagedMcpAdminRoutes,
-    loadCatalogBookingRoutes: emptyRoutes,
-    loadCatalogContentRoutes: emptyRoutes,
+    loadCatalogBookingRoutes: createManagedCatalogBookingRoutes,
+    loadCatalogContentRoutes: createManagedCatalogContentRoutes,
     loadMediaRoutes: createManagedMediaRoutes,
     loadPaymentLinkRoutes: async () => createManagedPaymentLinkRoutes(),
     loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
@@ -1016,8 +1030,9 @@ async function resolveCatalogOffersAirportLabels(
   const apiKey = connectApiKey(env)
   if (!apiKey || sorted.length === 0) return sorted.map((code) => ({ code, label: code }))
 
-  let resolver: ReturnType<typeof createDestinationNameResolver> | null = null
+  let resolver: DestinationNameResolver | null = null
   try {
+    const { createDestinationNameResolver } = await import("@voyant-travel/plugin-voyant-connect")
     resolver = createDestinationNameResolver({ apiKey })
   } catch {
     resolver = null
@@ -1045,9 +1060,106 @@ function createManagedCatalogOffersRouteOptions(): CatalogOffersRouteModuleOptio
   }
 }
 
+async function createManagedCatalogBookingRoutes() {
+  const app = new OpenAPIHono()
+  mountPackageCatalogBookingRoutes(app, createManagedCatalogBookingRouteModuleOptions())
+  return app
+}
+
+function createManagedCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
+  return {
+    booking: {
+      resolveDb: dbFromContext,
+      resolveSourceRegistry: resolveManagedSourceAdapterRegistry,
+      resolveOwnedHandlers: resolveManagedOwnedBookingHandlers,
+      onDraftConsumedError: ({ error }) => {
+        console.warn("[catalog-booking] markDraftConsumed failed:", error)
+      },
+    },
+    resolveRegistry: resolveManagedSourceAdapterRegistry,
+    getProductContent: (db, productId, scope, ctx) => getProductContent(db, productId, scope, ctx),
+    listAvailabilitySlots: listManagedAvailabilitySlots,
+    getOwnedProductById: getManagedOwnedProductById,
+  }
+}
+
+async function createManagedCatalogContentRoutes() {
+  const app = new OpenAPIHono()
+  app.route(
+    "/v1/admin/products",
+    createProductContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: false,
+    }),
+  )
+  app.route(
+    "/v1/public/products",
+    createProductContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: true,
+    }),
+  )
+  app.route(
+    "/v1/admin/accommodations",
+    createAccommodationContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: false,
+    }),
+  )
+  app.route(
+    "/v1/public/accommodations",
+    createAccommodationContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: true,
+    }),
+  )
+  return app
+}
+
 async function createManagedCatalogOffersRoutes() {
   const { createCatalogOffersAdminRoutes } = await import("@voyant-travel/catalog/offers")
   return createCatalogOffersAdminRoutes(createManagedCatalogOffersRouteOptions())
+}
+
+async function listManagedAvailabilitySlots(
+  db: unknown,
+  productId: string,
+  todayIso: string,
+  _scope: CatalogAvailabilitySlotsScope,
+): Promise<SlotRow[]> {
+  return (db as PostgresJsDatabase)
+    .select({
+      id: availabilitySlots.id,
+      dateLocal: availabilitySlots.dateLocal,
+      startsAt: availabilitySlots.startsAt,
+      endsAt: availabilitySlots.endsAt,
+      timezone: availabilitySlots.timezone,
+      status: availabilitySlots.status,
+      unlimited: availabilitySlots.unlimited,
+      remainingPax: availabilitySlots.remainingPax,
+      initialPax: availabilitySlots.initialPax,
+      nights: availabilitySlots.nights,
+      days: availabilitySlots.days,
+    })
+    .from(availabilitySlots)
+    .where(
+      and(
+        eq(availabilitySlots.productId, productId),
+        eq(availabilitySlots.status, "open"),
+        gte(availabilitySlots.dateLocal, todayIso),
+      ),
+    )
+    .orderBy(asc(availabilitySlots.startsAt))
+    .limit(60)
+}
+
+async function getManagedOwnedProductById(
+  db: unknown,
+  productId: string,
+): Promise<{ name: string | null; description: string | null } | null> {
+  const product = await productsService.getProductById(db as PostgresJsDatabase, productId)
+  if (!product) return null
+  return { name: product.name, description: product.description }
 }
 
 async function getManagedOwnedProductName(
@@ -1665,13 +1777,18 @@ const emptyRoutes: LazyRoutesLoader = async () => new Hono()
 
 function createManagedChannelPushExtension(): HonoExtension {
   return createDistributionChannelPushExtension({
-    resolveRegistry: resolveManagedChannelPushRegistry,
+    resolveRegistry: resolveManagedSourceAdapterRegistry,
   })
 }
 
-function resolveManagedChannelPushRegistry(): SourceAdapterRegistry {
-  managedChannelPushRegistry ??= createSourceAdapterRegistry()
-  return managedChannelPushRegistry
+function resolveManagedSourceAdapterRegistry(): SourceAdapterRegistry {
+  managedSourceAdapterRegistry ??= createSourceAdapterRegistry()
+  return managedSourceAdapterRegistry
+}
+
+function resolveManagedOwnedBookingHandlers(): OwnedBookingHandlerRegistry {
+  managedOwnedBookingHandlers ??= createOwnedBookingHandlerRegistry()
+  return managedOwnedBookingHandlers
 }
 
 function createNoopExecutionContext(): ExecutionContextLike {
