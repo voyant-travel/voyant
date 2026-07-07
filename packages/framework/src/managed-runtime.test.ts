@@ -265,6 +265,22 @@ describe("managed profile runtime entry", () => {
     })
   }, 10000)
 
+  it("wires package-owned MCP routes in the default managed providers", async () => {
+    const app = await createManagedProfileProviders().loadMcpAdminRoutes()
+    const response = await app.request("/manifest")
+
+    expect(app.fetch).toEqual(expect.any(Function))
+    expect(app.routes.length).toBeGreaterThan(0)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        version: expect.any(String),
+        serverInfo: expect.objectContaining({ name: "voyant-mcp" }),
+        tools: [],
+      }),
+    )
+  }, 10000)
+
   it("wires package-owned catalog offers routes in the default managed providers", async () => {
     const app = await createManagedProfileProviders().loadCatalogOffersRoutes()
     const response = await app.request("/departure-airports", {
