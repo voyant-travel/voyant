@@ -89,7 +89,6 @@ export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = [
   "operator/catalog-booking",
   "operator/catalog-content",
   "@voyant-travel/distribution/channel-push-extension",
-  "operator/booking-schedule-extension",
   "operator/proposal-extension",
 ] as const
 

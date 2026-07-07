@@ -15,7 +15,13 @@ import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-trave
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { EventBus } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db"
-import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
+import {
+  type BookingScheduleRoutesOptions,
+  type PaymentPolicy,
+  type PaymentPolicyEntityContext,
+  type ResolveInvoiceExchangeRate,
+  readPolicySourceFromInternalNotes,
+} from "@voyant-travel/finance"
 import type {
   LazyRoutesLoader,
   VoyantAuthIntegration,
@@ -39,6 +45,7 @@ import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
   resolveBookingTaxSettings,
+  resolveOperatorDefaultPaymentPolicy,
 } from "@voyant-travel/operator-settings"
 import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
 import {
@@ -58,7 +65,7 @@ import type { VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
 import type { PaymentLinkRoutesOptions } from "@voyant-travel/storefront/payment-link"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
-import { and, asc, desc, eq, inArray } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
@@ -301,8 +308,8 @@ export function createManagedProfileProviders(
     loadMediaRoutes: createManagedMediaRoutes,
     loadPaymentLinkRoutes: async () => createManagedPaymentLinkRoutes(),
     loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
-    loadBookingScheduleAdminRoutes: emptyRoutes,
-    loadPaymentPolicyPublicRoutes: emptyRoutes,
+    loadBookingScheduleAdminRoutes: createManagedBookingScheduleAdminRoutes,
+    loadPaymentPolicyPublicRoutes: createManagedPaymentPolicyPublicRoutes,
     loadQuoteVersionSnapshotRoutes: createManagedQuoteVersionSnapshotRoutes,
     loadBookingMaintenanceRoutes: createManagedBookingMaintenanceRoutes,
     loadActionLedgerHealthRoutes: createManagedActionLedgerHealthRoutes,
@@ -873,6 +880,216 @@ async function createManagedQuoteVersionSnapshotRoutes() {
   return createQuoteVersionSnapshotRoutes({
     resolveDb: dbFromContext,
   })
+}
+
+function createManagedBookingScheduleRoutesOptions(): BookingScheduleRoutesOptions {
+  return {
+    resolveDb: dbFromContext,
+    resolveOperatorDefaultPaymentPolicy,
+    resolveSupplierPolicy: resolveManagedSupplierPaymentPolicy,
+    resolveCategoryPolicy: resolveManagedCategoryPaymentPolicy,
+    resolveListingPolicy: resolveManagedListingPaymentPolicy,
+    resolveListingPolicyForEntity: resolveManagedListingPaymentPolicyForEntity,
+    resolveCategoryPolicyForEntity: resolveManagedCategoryPaymentPolicyForEntity,
+    resolveSupplierPolicyForEntity: resolveManagedSupplierPaymentPolicyForEntity,
+    stampPolicySourceOnBooking: async (db, bookingId, source) => {
+      const { stampPolicySourceOnBooking } = await import("@voyant-travel/finance")
+      await stampPolicySourceOnBooking(db, bookingId, source)
+    },
+    readPolicySourceFromInternalNotes,
+  }
+}
+
+async function createManagedBookingScheduleAdminRoutes() {
+  const { createBookingScheduleAdminRoutes } = await import("@voyant-travel/finance")
+  return createBookingScheduleAdminRoutes(createManagedBookingScheduleRoutesOptions())
+}
+
+async function createManagedPaymentPolicyPublicRoutes() {
+  const { createPaymentPolicyPublicRoutes } = await import("@voyant-travel/finance")
+  return createPaymentPolicyPublicRoutes(createManagedBookingScheduleRoutesOptions())
+}
+
+async function resolveManagedSupplierPaymentPolicy(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<PaymentPolicy | null> {
+  const [{ bookingSupplierStatuses }, { supplierServices, suppliers }] = await Promise.all([
+    import("@voyant-travel/bookings/schema"),
+    import("@voyant-travel/distribution"),
+  ])
+  const [row] = await db
+    .select({ policy: suppliers.customerPaymentPolicy })
+    .from(bookingSupplierStatuses)
+    .innerJoin(supplierServices, eq(supplierServices.id, bookingSupplierStatuses.supplierServiceId))
+    .innerJoin(suppliers, eq(suppliers.id, supplierServices.supplierId))
+    .where(eq(bookingSupplierStatuses.bookingId, bookingId))
+    .orderBy(asc(bookingSupplierStatuses.createdAt))
+    .limit(1)
+
+  return paymentPolicyOrNull(row?.policy)
+}
+
+async function resolveManagedCategoryPaymentPolicy(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<PaymentPolicy | null> {
+  const [{ bookingItems }, { productCategories, productCategoryProducts }] = await Promise.all([
+    import("@voyant-travel/bookings/schema"),
+    import("@voyant-travel/inventory/schema"),
+  ])
+  const productRows = await db
+    .select({ productId: bookingItems.productId })
+    .from(bookingItems)
+    .where(eq(bookingItems.bookingId, bookingId))
+  const productIds = productRows
+    .map((row) => row.productId)
+    .filter((id): id is string => Boolean(id))
+  if (productIds.length === 0) return null
+
+  const [row] = await db
+    .select({ policy: productCategories.customerPaymentPolicy })
+    .from(productCategoryProducts)
+    .innerJoin(productCategories, eq(productCategories.id, productCategoryProducts.categoryId))
+    .where(
+      and(
+        inArray(productCategoryProducts.productId, productIds),
+        isNotNull(productCategories.customerPaymentPolicy),
+      ),
+    )
+    .orderBy(asc(productCategoryProducts.sortOrder), asc(productCategoryProducts.createdAt))
+    .limit(1)
+
+  return paymentPolicyOrNull(row?.policy)
+}
+
+async function resolveManagedListingPaymentPolicy(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<PaymentPolicy | null> {
+  return (
+    (await resolveManagedAccommodationListingPaymentPolicy(db, bookingId)) ??
+    resolveManagedProductListingPaymentPolicy(db, bookingId)
+  )
+}
+
+async function resolveManagedAccommodationListingPaymentPolicy(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<PaymentPolicy | null> {
+  const [{ bookingItems }, { ratePlans, stayBookingItems }] = await Promise.all([
+    import("@voyant-travel/bookings/schema"),
+    import("@voyant-travel/accommodations/schema"),
+  ])
+  const [row] = await db
+    .select({ policy: ratePlans.customerPaymentPolicy })
+    .from(stayBookingItems)
+    .innerJoin(bookingItems, eq(bookingItems.id, stayBookingItems.bookingItemId))
+    .innerJoin(ratePlans, eq(ratePlans.id, stayBookingItems.ratePlanId))
+    .where(and(eq(bookingItems.bookingId, bookingId), isNotNull(ratePlans.customerPaymentPolicy)))
+    .orderBy(asc(stayBookingItems.createdAt))
+    .limit(1)
+
+  return paymentPolicyOrNull(row?.policy)
+}
+
+async function resolveManagedProductListingPaymentPolicy(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<PaymentPolicy | null> {
+  const [{ bookingItems }, { products }] = await Promise.all([
+    import("@voyant-travel/bookings/schema"),
+    import("@voyant-travel/inventory/schema"),
+  ])
+  const [row] = await db
+    .select({ policy: products.customerPaymentPolicy })
+    .from(bookingItems)
+    .innerJoin(products, eq(products.id, bookingItems.productId))
+    .where(and(eq(bookingItems.bookingId, bookingId), isNotNull(products.customerPaymentPolicy)))
+    .orderBy(asc(bookingItems.createdAt))
+    .limit(1)
+
+  return paymentPolicyOrNull(row?.policy)
+}
+
+async function resolveManagedListingPaymentPolicyForEntity(
+  db: PostgresJsDatabase,
+  ctx: PaymentPolicyEntityContext,
+): Promise<PaymentPolicy | null> {
+  if (ctx.entityModule === "accommodations" && ctx.ratePlanId) {
+    const { ratePlans } = await import("@voyant-travel/accommodations/schema")
+    const [row] = await db
+      .select({ policy: ratePlans.customerPaymentPolicy })
+      .from(ratePlans)
+      .where(eq(ratePlans.id, ctx.ratePlanId))
+      .limit(1)
+    return paymentPolicyOrNull(row?.policy)
+  }
+
+  if (ctx.entityModule === "products") {
+    const { products } = await import("@voyant-travel/inventory/schema")
+    const [row] = await db
+      .select({ policy: products.customerPaymentPolicy })
+      .from(products)
+      .where(eq(products.id, ctx.entityId))
+      .limit(1)
+    return paymentPolicyOrNull(row?.policy)
+  }
+
+  return null
+}
+
+async function resolveManagedCategoryPaymentPolicyForEntity(
+  db: PostgresJsDatabase,
+  ctx: PaymentPolicyEntityContext,
+): Promise<PaymentPolicy | null> {
+  if (ctx.entityModule !== "products") return null
+  const { productCategories, productCategoryProducts } = await import(
+    "@voyant-travel/inventory/schema"
+  )
+  const [row] = await db
+    .select({ policy: productCategories.customerPaymentPolicy })
+    .from(productCategoryProducts)
+    .innerJoin(productCategories, eq(productCategories.id, productCategoryProducts.categoryId))
+    .where(
+      and(
+        eq(productCategoryProducts.productId, ctx.entityId),
+        isNotNull(productCategories.customerPaymentPolicy),
+      ),
+    )
+    .orderBy(asc(productCategoryProducts.sortOrder), asc(productCategoryProducts.createdAt))
+    .limit(1)
+
+  return paymentPolicyOrNull(row?.policy)
+}
+
+async function resolveManagedSupplierPaymentPolicyForEntity(
+  db: PostgresJsDatabase,
+  ctx: PaymentPolicyEntityContext,
+): Promise<PaymentPolicy | null> {
+  if (ctx.entityModule !== "products") return null
+  const [{ products }, { suppliers }] = await Promise.all([
+    import("@voyant-travel/inventory/schema"),
+    import("@voyant-travel/distribution"),
+  ])
+  const [product] = await db
+    .select({ supplierId: products.supplierId })
+    .from(products)
+    .where(eq(products.id, ctx.entityId))
+    .limit(1)
+  if (!product?.supplierId) return null
+
+  const [supplier] = await db
+    .select({ policy: suppliers.customerPaymentPolicy })
+    .from(suppliers)
+    .where(eq(suppliers.id, product.supplierId))
+    .limit(1)
+
+  return paymentPolicyOrNull(supplier?.policy)
+}
+
+function paymentPolicyOrNull(value: unknown): PaymentPolicy | null {
+  return value ? (value as PaymentPolicy) : null
 }
 
 async function createManagedActionLedgerHealthRoutes() {
