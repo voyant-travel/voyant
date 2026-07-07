@@ -1,4 +1,5 @@
 import type { KVStore } from "@voyant-travel/utils/cache"
+import { createLazyRedisClient, type LazyRedisClient } from "@voyant-travel/utils/redis-client"
 import type { MiddlewareHandler } from "hono"
 
 /**
@@ -240,9 +241,39 @@ export function createCloudflareRateLimitStore(
   }
 }
 
+export interface RedisRateLimitStoreOptions {
+  client?: LazyRedisClient
+}
+
+export function createRedisRateLimitStore(
+  redisUrl: string,
+  options: RedisRateLimitStoreOptions = {},
+): RateLimitStore {
+  const lazyClient = options.client ?? createLazyRedisClient(redisUrl)
+
+  return {
+    async limit(key, { max, windowSeconds }) {
+      const client = await lazyClient.get()
+      const nowSeconds = Math.floor(Date.now() / 1000)
+      const windowKey = Math.floor(nowSeconds / windowSeconds)
+      const storageKey = `${key}:${windowKey}`
+      const count = await client.incr(storageKey)
+      if (count === 1) {
+        await client.expire(storageKey, Math.max(1, windowSeconds * 2))
+      }
+      return {
+        allowed: count <= max,
+        remaining: Math.max(0, max - count),
+        retryAfterSeconds: Math.max(1, windowSeconds - (nowSeconds % windowSeconds)),
+      }
+    },
+  }
+}
+
 // ---- Store resolution ----
 
 const bindingStoreCache = new WeakMap<object, RateLimitStore>()
+const explicitStoreCache = new WeakMap<object, RateLimitStore>()
 const kvStoreCache = new WeakMap<object, RateLimitStore>()
 const sharedMemoryStore = createMemoryRateLimitStore()
 let warnedNoDistributedStore = false
@@ -272,6 +303,7 @@ export function resolveRateLimitStore(
 ): RateLimitStore {
   const env = (c.env ?? {}) as {
     RATE_LIMITER?: CloudflareRateLimiterBinding
+    RATE_LIMIT_STORE?: RateLimitStore
     RATE_LIMIT?: KVStore
   }
 
@@ -281,6 +313,16 @@ export function resolveRateLimitStore(
     if (!store) {
       store = createCloudflareRateLimitStore(binding)
       bindingStoreCache.set(binding, store)
+    }
+    return store
+  }
+
+  const explicit = env.RATE_LIMIT_STORE
+  if (explicit && typeof explicit.limit === "function") {
+    let store = explicitStoreCache.get(explicit)
+    if (!store) {
+      store = explicit
+      explicitStoreCache.set(explicit, store)
     }
     return store
   }
@@ -298,8 +340,8 @@ export function resolveRateLimitStore(
   if (!warnedNoDistributedStore && !isDevLikeEnv()) {
     warnedNoDistributedStore = true
     console.warn(
-      "[voyant] rate-limit: no distributed store available (bind a Cloudflare " +
-        "ratelimiter as RATE_LIMITER or a KV namespace as RATE_LIMIT). " +
+      "[voyant] rate-limit: no distributed store available (inject RATE_LIMIT_STORE " +
+        "or a KV-compatible RATE_LIMIT fallback). " +
         "Falling back to a per-isolate in-memory limiter — limits apply " +
         "per instance, not fleet-wide.",
     )

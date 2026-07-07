@@ -15,6 +15,13 @@
       "when": 1782105104196,
       "tag": "0001_db_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783406670043,
+      "tag": "0002_db_baseline",
+      "breakpoints": true
     }
   ]
 }

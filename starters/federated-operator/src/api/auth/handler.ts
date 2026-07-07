@@ -86,17 +86,6 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
   }
 }
 
-function betterAuthSecondaryStorage(env: CloudflareBindings) {
-  const kv = env.RATE_LIMIT ?? env.CACHE
-  if (!kv) return undefined
-  return {
-    get: (key: string) => kv.get(key),
-    set: (key: string, value: string, ttl?: number) =>
-      kv.put(key, value, ttl ? { expirationTtl: Math.max(60, Math.ceil(ttl)) } : undefined),
-    delete: (key: string) => kv.delete(key),
-  }
-}
-
 function allowAuthSecretLogging(env: CloudflareBindings): boolean {
   return env.VOYANT_AUTH_LOG_SECRET_FALLBACKS === "1"
 }
@@ -110,7 +99,6 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     baseURL: getAuthBaseUrl(env),
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
-    secondaryStorage: betterAuthSecondaryStorage(env),
     sendResetPassword: async ({ user, url }) => {
       if (allowAuthSecretLogging(env)) {
         console.info(`[auth] reset-password -> ${user.email}: ${url}`)

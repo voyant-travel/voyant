@@ -11,7 +11,7 @@ export default defineVoyantConfig({
   deployment: "cloudflare-worker",
   projectConfig: {
     database: { urlEnv: "DATABASE_URL", adapter: "serverless" },
-    cache: { provider: "kv", binding: "CACHE" },
+    cache: { provider: "platform" },
     auth: { provider: "better-auth" },
   },
   admin: { enabled: true, path: "/app" },

@@ -23,6 +23,10 @@
     "./kms": "./src/kms.ts",
     "./session-claims": "./src/session-claims.ts",
     "./cache": "./src/cache.ts",
+    "./memory-kv": "./src/memory-kv.ts",
+    "./redis-client": "./src/redis-client.ts",
+    "./redis-kv": "./src/redis-kv.ts",
+    "./tiered-kv": "./src/tiered-kv.ts",
     "./resilience": "./src/resilience.ts",
     "./template-renderer": "./src/template-renderer.ts",
     "./pdf-renderer": "./src/pdf-renderer.ts"
@@ -97,6 +101,26 @@
         "import": "./dist/cache.js",
         "default": "./dist/cache.js"
       },
+      "./memory-kv": {
+        "types": "./dist/memory-kv.d.ts",
+        "import": "./dist/memory-kv.js",
+        "default": "./dist/memory-kv.js"
+      },
+      "./redis-client": {
+        "types": "./dist/redis-client.d.ts",
+        "import": "./dist/redis-client.js",
+        "default": "./dist/redis-client.js"
+      },
+      "./redis-kv": {
+        "types": "./dist/redis-kv.d.ts",
+        "import": "./dist/redis-kv.js",
+        "default": "./dist/redis-kv.js"
+      },
+      "./tiered-kv": {
+        "types": "./dist/tiered-kv.d.ts",
+        "import": "./dist/tiered-kv.js",
+        "default": "./dist/tiered-kv.js"
+      },
       "./resilience": {
         "types": "./dist/resilience.d.ts",
         "import": "./dist/resilience.js",
@@ -131,6 +155,9 @@
     "drizzle-orm": "catalog:",
     "pdf-lib": "^1.17.1",
     "zod": "catalog:"
+  },
+  "optionalDependencies": {
+    "@upstash/redis": "^1.35.6"
   },
   "devDependencies": {
     "@types/node": "catalog:",

@@ -238,16 +238,6 @@ function allowAuthSecretLogging(env: CloudflareBindings): boolean {
   return env.VOYANT_AUTH_LOG_SECRET_FALLBACKS === "1"
 }
 
-function betterAuthSecondaryStorage(env: CloudflareBindings) {
-  const kv = env.RATE_LIMIT ?? env.CACHE
-  if (!kv) return undefined
-  return {
-    get: (key: string) => kv.get(key),
-    set: (key: string, value: string, ttl?: number) =>
-      kv.put(key, value, ttl ? { expirationTtl: Math.max(60, Math.ceil(ttl)) } : undefined),
-    delete: (key: string) => kv.delete(key),
-  }
-}
 /**
  * Build a Better Auth instance backed by a caller-provided drizzle
  * client. The caller owns the Pool lifecycle (open before, dispose
@@ -289,7 +279,6 @@ function buildBetterAuth(
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
     advanced: buildBetterAuthCookieAdvancedOptions(env),
-    secondaryStorage: betterAuthSecondaryStorage(env),
     customerSignupSurfaces: options.customerSignup ? ["customer"] : undefined,
     plugins: cloudAuthExchange
       ? [

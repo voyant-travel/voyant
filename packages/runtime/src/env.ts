@@ -1,11 +1,14 @@
-import type { KvNamespaceShim } from "./memory-kv.js"
+import type { KVStore } from "@voyant-travel/utils/cache"
+
 import type { R2BucketShim } from "./r2.js"
 
 export interface NodeEnvBindings {
   /** KV namespace bindings, keyed by the binding name app code reads (e.g. `CACHE`). */
-  kv?: Record<string, KvNamespaceShim>
+  kv?: Record<string, KVStore>
   /** R2 bucket bindings, keyed by the binding name (e.g. `DOCUMENTS_BUCKET`). */
   r2?: Record<string, R2BucketShim>
+  /** Additional concrete provider objects keyed by their env name. */
+  extra?: Record<string, unknown>
 }
 
 /**
@@ -14,7 +17,7 @@ export interface NodeEnvBindings {
  * process-env vars plus the real provider objects so app code sees the same
  * shape (`env.CACHE`, `env.MEDIA_BUCKET`, …) without any Workers emulation.
  */
-export type NodeEnv = Record<string, string | KvNamespaceShim | R2BucketShim>
+export type NodeEnv = Record<string, unknown>
 
 /**
  * Compose the env bag for a Node deployment. All string vars from `processEnv`
@@ -44,6 +47,9 @@ export function composeNodeEnv<Env = NodeEnv>(
     env[name] = provider
   }
   for (const [name, provider] of Object.entries(bindings.r2 ?? {})) {
+    env[name] = provider
+  }
+  for (const [name, provider] of Object.entries(bindings.extra ?? {})) {
     env[name] = provider
   }
   return env as Env

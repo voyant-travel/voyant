@@ -60,55 +60,9 @@ function parseCacheControl(value: string | null): CacheControlDirectives {
   return { isPublic, sMaxage }
 }
 
-// ---- Cache API backend (self-hosted / non-namespaced Workers) ----
-
-type CacheApiLike = {
-  match(key: string): Promise<Response | undefined>
-  put(key: string, response: Response): Promise<void>
-}
-
-/**
- * `caches.default` is available on regular Cloudflare Workers but
- * DISABLED inside Workers-for-Platforms namespaced scripts (access or
- * use throws). Probe once, and demote to "unavailable" on any runtime
- * failure so namespaced deployments settle on the KV fallback after a
- * single failed attempt.
- */
-let cacheApiState: "unknown" | "available" | "unavailable" = "unknown"
-
-function getCacheApi(): CacheApiLike | undefined {
-  if (cacheApiState === "unavailable") return undefined
-  try {
-    const candidate = (globalThis as { caches?: { default?: unknown } }).caches?.default as
-      | CacheApiLike
-      | undefined
-    if (candidate && typeof candidate.match === "function") {
-      cacheApiState = "available"
-      return candidate
-    }
-  } catch {
-    // fall through to unavailable
-  }
-  cacheApiState = "unavailable"
-  return undefined
-}
-
-function markCacheApiUnavailable(): void {
-  cacheApiState = "unavailable"
-}
-
 /** Test hook — resets the memoized Cache API probe state. */
 export function resetPublicCacheStateForTests(): void {
-  cacheApiState = "unknown"
-}
-
-function sanitizedResponseCopy(res: Response): Response {
-  const headers = new Headers()
-  res.headers.forEach((value, name) => {
-    if (!isUncacheableHeader(name)) headers.set(name, value)
-  })
-  headers.set("x-voyant-cache", "hit")
-  return new Response(res.body, { status: res.status, headers })
+  // Retained for test/import compatibility after removing the global Cache API path.
 }
 
 // ---- KV backend (Voyant Cloud namespaced workers) ----
@@ -173,9 +127,9 @@ async function kvStore(
  * and no module-graph instantiation, which is the entire point under
  * storefront load (#1686).
  *
- * Backend selection: Cache API (`caches.default`) where the runtime
- * provides it; otherwise the `env.CACHE` KV binding when present;
- * otherwise the middleware is a transparent no-op.
+ * Backend selection: the injected `env.CACHE` {@link KVStore}. Node
+ * composition decides whether that is memory, Postgres, Redis, or a tiered
+ * store; this middleware never probes a global runtime cache.
  */
 export function publicResponseCache<TBindings extends VoyantBindings>(
   options: PublicCacheOptions = {},
@@ -193,53 +147,27 @@ export function publicResponseCache<TBindings extends VoyantBindings>(
     const bypass = requestDirective.includes("no-cache") || requestDirective.includes("no-store")
 
     const url = c.req.url
-    const cacheApi = getCacheApi()
-    const kv = !cacheApi ? c.env.CACHE : undefined
+    const kv = c.env.CACHE
 
-    if (!bypass) {
-      if (cacheApi) {
-        try {
-          const hit = await cacheApi.match(url)
-          if (hit) return sanitizedResponseCopy(hit)
-        } catch {
-          markCacheApiUnavailable()
-        }
-      } else if (kv) {
-        const hit = await kvMatch(kv, url)
-        if (hit) return hit
-      }
+    if (!bypass && kv) {
+      const hit = await kvMatch(kv, url)
+      if (hit) return hit
     }
 
     await next()
 
     const res = c.res
-    if (!res || res.status !== 200) return
+    if (res?.status !== 200) return
     if (res.headers.has("set-cookie")) return
     const { isPublic, sMaxage } = parseCacheControl(res.headers.get("cache-control"))
     if (!isPublic || !sMaxage) return
 
-    const backendCacheApi = getCacheApi()
-    const backendKv = !backendCacheApi ? c.env.CACHE : undefined
-    if (!backendCacheApi && !backendKv) return
+    const backendKv = c.env.CACHE
+    if (!backendKv) return
 
     const copy = res.clone()
     const store = (async () => {
-      if (backendCacheApi) {
-        try {
-          const headers = new Headers()
-          copy.headers.forEach((value, name) => {
-            if (!isUncacheableHeader(name)) headers.set(name, value)
-          })
-          await backendCacheApi.put(url, new Response(copy.body, { status: copy.status, headers }))
-          return
-        } catch {
-          markCacheApiUnavailable()
-        }
-      }
-      const fallbackKv = backendKv ?? c.env.CACHE
-      if (fallbackKv) {
-        await kvStore(fallbackKv, url, copy, sMaxage, maxKvBodyBytes)
-      }
+      await kvStore(backendKv, url, copy, sMaxage, maxKvBodyBytes)
     })()
 
     const executionCtx = tryGetExecutionCtx(c)

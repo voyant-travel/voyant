@@ -16,6 +16,7 @@ interface CloudflareBindings {
 
   // KV namespaces (in-process on Node — see `createMemoryKvNamespace`)
   RATE_LIMIT: KVNamespace
+  RATE_LIMIT_STORE: import("@voyant-travel/hono").RateLimitStore
   CACHE: KVNamespace
 
   // Object storage (public media). S3-backed in prod, in-process in dev.
@@ -60,6 +61,7 @@ interface CloudflareBindings {
    * (the local pg.Pool fallback has no replica support).
    */
   DATABASE_URL_REPLICAS?: string
+  REDIS_URL?: string
   /**
    * Operational escape hatch for the split data plane: set to "1" to
    * serve EVERY request with the transaction-capable WebSocket client

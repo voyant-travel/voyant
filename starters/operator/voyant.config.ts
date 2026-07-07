@@ -16,7 +16,7 @@ export default defineVoyantConfig({
     // On Node the pooled node-postgres lane (`DATABASE_URL_DIRECT`) is the
     // production default; neon-http/WS remain the fallback adapters.
     database: { urlEnv: "DATABASE_URL", adapter: "node" },
-    cache: { provider: "kv", binding: "CACHE" },
+    cache: { provider: "postgres" },
     auth: { provider: "better-auth" },
   },
   admin: { enabled: true, path: "/app" },

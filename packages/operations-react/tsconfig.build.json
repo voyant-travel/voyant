@@ -591,9 +591,13 @@
         "../db/dist/schema/infra/email_domain_records.d.ts"
       ],
       "@voyant-travel/db/schema/infra/event_outbox": ["../db/dist/schema/infra/event_outbox.d.ts"],
+      "@voyant-travel/db/schema/infra/fixed_window_rate_limits": [
+        "../db/dist/schema/infra/fixed_window_rate_limits.d.ts"
+      ],
       "@voyant-travel/db/schema/infra/idempotency_keys": [
         "../db/dist/schema/infra/idempotency_keys.d.ts"
       ],
+      "@voyant-travel/db/schema/infra/kv_store": ["../db/dist/schema/infra/kv_store.d.ts"],
       "@voyant-travel/db/schema/infra/public_document_delivery_grants": [
         "../db/dist/schema/infra/public_document_delivery_grants.d.ts"
       ],
@@ -1313,11 +1317,15 @@
         "../utils/dist/localized-countries-regions.d.ts"
       ],
       "@voyant-travel/utils/localized-regions": ["../utils/dist/localized-regions.d.ts"],
+      "@voyant-travel/utils/memory-kv": ["../utils/dist/memory-kv.d.ts"],
       "@voyant-travel/utils/pdf-renderer": ["../utils/dist/pdf-renderer.d.ts"],
       "@voyant-travel/utils/rate-limits": ["../utils/dist/rate-limits.d.ts"],
+      "@voyant-travel/utils/redis-client": ["../utils/dist/redis-client.d.ts"],
+      "@voyant-travel/utils/redis-kv": ["../utils/dist/redis-kv.d.ts"],
       "@voyant-travel/utils/resilience": ["../utils/dist/resilience.d.ts"],
       "@voyant-travel/utils/session-claims": ["../utils/dist/session-claims.d.ts"],
       "@voyant-travel/utils/template-renderer": ["../utils/dist/template-renderer.d.ts"],
+      "@voyant-travel/utils/tiered-kv": ["../utils/dist/tiered-kv.d.ts"],
       "@voyant-travel/utils/timezones": ["../utils/dist/timezones.d.ts"],
       "@voyant-travel/vite-config": ["../vite-config/dist/index.d.ts"],
       "@voyant-travel/workflow-runs": ["../workflow-runs/dist/index.d.ts"],

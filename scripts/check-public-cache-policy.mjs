@@ -92,14 +92,12 @@ function checkPolicyDoc() {
 }
 
 function checkKvCacheBindings() {
-  // The operator is Node-only (voyant#2966): the public-cache/rate-limit KV
-  // backend is provided in `src/server.ts` (composeNodeEnv → createMemoryKvNamespace)
-  // rather than a wrangler `kv_namespaces` declaration. The contract we still
-  // enforce is that the cache backend is declared as KV and the binding types
-  // are present on the env interface.
+  // The operator is Node-only (voyant#2966): public-cache/rate-limit stores
+  // are concrete Node providers in `src/server.ts`, while consumers still type
+  // against the KVStore-compatible CACHE/RATE_LIMIT env members.
   requireContains(
     "starters/operator/voyant.config.ts",
-    'cache: { provider: "kv", binding: "CACHE" }',
+    'cache: { provider: "postgres" }',
     "operator cache backend declaration",
   )
   requireContains("starters/operator/env.d.ts", "CACHE: KVNamespace", "operator CACHE binding type")

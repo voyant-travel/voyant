@@ -38,6 +38,7 @@ export interface VoyantBindings {
   DASH_BASE_URL?: string
   API_BASE_URL?: string
   RATE_LIMIT?: KVStore
+  RATE_LIMIT_STORE?: import("./middleware/rate-limit.js").RateLimitStore
   CACHE?: KVStore
   RATE_LIMITER?: import("./middleware/rate-limit.js").CloudflareRateLimiterBinding
   /**
@@ -283,9 +284,8 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * default). Enabled by default but inert until a route marks its
    * response `Cache-Control: public, s-maxage=…` — personalized routes
    * are never cached. Set `false` to disable, or pass options to tune
-   * prefixes/limits. Uses the Cache API where the runtime provides it
-   * and falls back to the `env.CACHE` KV binding (Voyant Cloud
-   * namespaced workers have no `caches.default`).
+   * prefixes/limits. Uses the injected `env.CACHE` KVStore when one is
+   * available.
    */
   publicCache?: false | import("./middleware/public-cache.js").PublicCacheOptions
   /**

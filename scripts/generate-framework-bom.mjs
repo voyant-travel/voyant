@@ -36,6 +36,7 @@ const frameworkRuntimeEntryDeps = {
   "@voyant-travel/runtime": "workspace:*",
   "@voyant-travel/storage": "workspace:*",
   "@voyant-travel/tools": "workspace:*",
+  "@voyant-travel/utils": "workspace:^",
   "@voyant-travel/workflows": "workspace:*",
   "@voyant-travel/workflows-orchestrator": "workspace:*",
   "drizzle-orm": "catalog:",
