@@ -56,6 +56,7 @@ import {
   BillingStep,
   DepartureStep,
   DocumentsStep,
+  deriveDefaultPhoneCountry,
   FinalizeControls,
   OptionsStep,
   PaymentStep,
@@ -68,6 +69,14 @@ import { StepHeader } from "./step-header.js"
 
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
+  // Default phone country: the explicit prop, else the scope locale's region
+  // (storefronts thread the shopper locale here even when the bookings-ui i18n
+  // provider isn't mounted). `PhoneField` fills in the i18n locale + GB fallback
+  // when this is undefined.
+  const defaultPhoneCountry = deriveDefaultPhoneCountry(
+    props.defaultPhoneCountry,
+    props.scope?.locale,
+  )
   const surface = props.surface ?? "admin"
   // Admin books on a single stacked page (nothing hidden); the storefront
   // keeps the guided one-step-at-a-time wizard. Two deliberately separate
@@ -551,6 +560,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             draft={draft}
             setDraft={setDraft}
             shape={shape}
+            defaultPhoneCountry={defaultPhoneCountry}
             renderLeadContactPicker={props.renderLeadContactPicker}
             renderExtras={billingExtrasSlot}
             errors={validationErrorsForStep("billing", draft, messages)}
@@ -563,6 +573,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             draft={draft}
             setDraft={setDraft}
             shape={shape}
+            defaultPhoneCountry={defaultPhoneCountry}
             renderTravelerContactPicker={props.renderTravelerContactPicker}
             errors={validationErrorsForStep("travelers", draft, messages)}
             warnings={warningsForStep("travelers", draft, shape, messages)}
@@ -710,6 +721,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               draft={draft}
               setDraft={setDraft}
               shape={shape}
+              defaultPhoneCountry={defaultPhoneCountry}
               renderLeadContactPicker={props.renderLeadContactPicker}
               renderExtras={billingExtrasSlot}
             />
@@ -719,6 +731,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               draft={draft}
               setDraft={setDraft}
               shape={shape}
+              defaultPhoneCountry={defaultPhoneCountry}
               renderTravelerContactPicker={props.renderTravelerContactPicker}
             />
           ) : null}

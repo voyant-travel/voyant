@@ -24,6 +24,7 @@ import {
 export function BillingStep({
   draft,
   setDraft,
+  defaultPhoneCountry,
   renderLeadContactPicker,
   renderExtras,
   warnings,
@@ -151,6 +152,7 @@ export function BillingStep({
               <PhoneField
                 id="bj-billing-phone"
                 label={messages.bookingJourney.billing.phone}
+                defaultCountry={defaultPhoneCountry}
                 value={billing.contact.phone ?? ""}
                 onChange={(v) =>
                   setDraft(

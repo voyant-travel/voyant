@@ -17,7 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyant-travel/ui/components/select"
-import { formatMessage, useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../../../i18n/index.js"
 import type { Draft } from "../../lib/draft-state.js"
 import type { DeparturePickerProps, UnitsPickerProps } from "../../types.js"
 
@@ -33,6 +37,56 @@ export interface StepCommonProps {
   // concurrent updates.
   setDraft: (next: Draft | ((prev: Draft) => Draft)) => void
   shape: BookingDraftShape
+  /**
+   * Default country (ISO 3166-1 alpha-2) for the step's phone inputs, already
+   * resolved by `BookingJourney` from its `defaultPhoneCountry` prop or the
+   * scope locale. When omitted the `PhoneField` derives one from the active
+   * i18n locale before falling back to GB.
+   */
+  defaultPhoneCountry?: string
+}
+
+/**
+ * Derives a default country (ISO 3166-1 alpha-2) for a phone input from an
+ * explicit value or a locale, or `undefined` when neither yields one — so
+ * callers can chain multiple locale sources before falling back.
+ *
+ * Order of preference:
+ *  1. An explicit value (e.g. a deployment's market/storefront setting) when it
+ *     looks like a valid alpha-2 code.
+ *  2. The region subtag of `locale` (e.g. `"ro-RO"` -> `"RO"`). A bare language
+ *     tag with no region (e.g. `"ro"`) yields no guess — we don't invent a
+ *     country from a language.
+ */
+export function deriveDefaultPhoneCountry(explicit?: string, locale?: string): string | undefined {
+  return normalizeAlpha2(explicit) ?? normalizeAlpha2(regionSubtag(locale))
+}
+
+/**
+ * Resolves the default country (ISO 3166-1 alpha-2) for a phone input, applying
+ * {@link deriveDefaultPhoneCountry} and falling back to `"GB"` as the
+ * last resort.
+ */
+export function resolveDefaultPhoneCountry(explicit?: string, locale?: string): string {
+  return deriveDefaultPhoneCountry(explicit, locale) ?? "GB"
+}
+
+/** First 2-letter alpha region subtag of a BCP-47 tag, or `undefined`. */
+function regionSubtag(locale?: string): string | undefined {
+  if (!locale) return undefined
+  // BCP-47 separates subtags with "-"; tolerate "_" too. The language subtag
+  // is first; the region is the first 2-letter alpha subtag after it (skipping
+  // any 4-letter script subtag such as "Hant").
+  return locale
+    .split(/[-_]/)
+    .slice(1)
+    .find((part) => /^[A-Za-z]{2}$/.test(part))
+}
+
+/** Uppercased alpha-2 code, or `undefined` when the input is malformed. */
+function normalizeAlpha2(value?: string): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed && /^[A-Za-z]{2}$/.test(trimmed) ? trimmed.toUpperCase() : undefined
 }
 
 /**
@@ -113,18 +167,26 @@ export function PhoneField({
   label,
   value,
   onChange,
+  defaultCountry,
 }: {
   id: string
   label: string
   value: string
   onChange: (v: string) => void
+  /** Explicit default country (ISO 3166-1 alpha-2). Falls back to the active
+   *  locale's region, then GB. */
+  defaultCountry?: string
 }): React.ReactElement {
+  const i18n = useBookingsUiI18nOrDefault()
+  const resolvedCountry = resolveDefaultPhoneCountry(defaultCountry, i18n.locale)
   return (
     <div className="space-y-1">
       <Label htmlFor={id}>{label}</Label>
       <PhoneInput
         id={id}
-        defaultCountry="GB"
+        defaultCountry={
+          resolvedCountry as React.ComponentProps<typeof PhoneInput>["defaultCountry"]
+        }
         international
         value={value || undefined}
         onChange={(v) => onChange(v ? String(v) : "")}
