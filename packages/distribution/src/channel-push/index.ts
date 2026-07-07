@@ -36,6 +36,11 @@ export {
   upsertContentIntent,
 } from "./content-push.js"
 export {
+  type ChannelPushExtensionOptions,
+  channelPushExtensionDef,
+  createChannelPushExtension,
+} from "./extension.js"
+export {
   type ChannelPushPluginOptions,
   channelPushPlugin,
 } from "./plugin.js"

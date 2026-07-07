@@ -18,25 +18,21 @@
  * Per docs/architecture/channel-push-architecture.md §10 (Phase D-G).
  */
 
-import type { Extension } from "@voyant-travel/core"
 import {
-  createChannelPushAdminRoutes,
+  createChannelPushExtension as createDistributionChannelPushExtension,
   processAvailabilityPushIntents,
   processBookingPush,
   processContentPushIntents,
   resolveAllotmentTargetsForSlot,
   resolveBookingPushTargets,
   resolveContentPushTargets,
-  setChannelPushDeps,
   upsertAvailabilityIntent,
   upsertContentIntent,
   upsertPendingBookingLinks,
 } from "@voyant-travel/distribution"
-import type { VoyantDb } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
-import { Hono } from "hono"
 
 import {
   type BookingEngineEnv,
@@ -170,11 +166,6 @@ export const channelPushBundle: HonoBundle = {
   },
 }
 
-const channelPushExtensionDef: Extension = {
-  name: "channel-push",
-  module: "distribution",
-}
-
 /**
  * Channel-push admin API as a composed distribution extension.
  *
@@ -197,14 +188,7 @@ const channelPushExtensionDef: Extension = {
  * Per docs/architecture/channel-push-architecture.md §9 + §14.5.
  */
 export function createChannelPushExtension(): HonoExtension {
-  const adminRoutes = new Hono<{ Variables: { db: VoyantDb } }>()
-  adminRoutes.use("*", async (c, next) => {
-    setChannelPushDeps({
-      db: c.get("db") as NeonDatabase,
-      registry: getBookingEngineRegistryFromContext(c),
-    })
-    await next()
+  return createDistributionChannelPushExtension({
+    resolveRegistry: getBookingEngineRegistryFromContext,
   })
-  adminRoutes.route("/", createChannelPushAdminRoutes())
-  return { extension: channelPushExtensionDef, adminRoutes }
 }

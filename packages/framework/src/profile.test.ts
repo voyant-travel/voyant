@@ -221,6 +221,10 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.extensions).toContain("operator/catalog-checkout-extension")
     expect(bridge.manifest.extensions).toContain("operator/quote-version-snapshot-extension")
     expect(bridge.manifest.extensions).toContain("operator/booking-schedule-extension")
+    expect(bridge.manifest.extensions).toContain(
+      "@voyant-travel/distribution/channel-push-extension",
+    )
+    expect(bridge.exclude).not.toContain("@voyant-travel/distribution/channel-push-extension")
     expect(bridge.manifest.modules).toContain("@voyant-travel/flights")
     expect(bridge.manifest.modules).toContain("operator/mcp")
     for (const specifier of FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS) {

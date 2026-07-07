@@ -23,16 +23,16 @@ import {
   infraWebhookDeliveriesTable,
 } from "@voyant-travel/db/schema/infra"
 import { and, desc, eq, gte, sql } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 
 import { channelBookingLinks, channels } from "../schema.js"
 import { reconcileAvailability, reconcileBookingLinks, reconcileContent } from "./reconciler.js"
 import { triggerBookingPushForBookingWithResult } from "./subscriber.js"
+import type { ChannelPushDeps } from "./types.js"
 
 type Env = {
   Variables: {
-    db: PostgresJsDatabase
+    db: ChannelPushDeps["db"]
     userId?: string
   }
 }

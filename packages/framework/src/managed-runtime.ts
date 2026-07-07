@@ -16,6 +16,10 @@ import {
   catalogTools,
   executeSemanticSearch,
 } from "@voyant-travel/catalog"
+import {
+  createSourceAdapterRegistry,
+  type SourceAdapterRegistry,
+} from "@voyant-travel/catalog/booking-engine"
 import type {
   CatalogOffersAirportLabel,
   CatalogOffersConnectClient,
@@ -27,6 +31,7 @@ import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-trave
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { EventBus } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db/runtime"
+import { createChannelPushExtension as createDistributionChannelPushExtension } from "@voyant-travel/distribution"
 import {
   type BookingScheduleRoutesOptions,
   financeService,
@@ -198,6 +203,7 @@ type AsyncMethodProvider<T extends object> = {
 }
 
 let pooledDb: { url: string; db: VoyantDb } | undefined
+let managedChannelPushRegistry: SourceAdapterRegistry | undefined
 
 export async function loadManagedProfileRuntime(
   options: ManagedProfileRuntimeOptions,
@@ -327,7 +333,7 @@ export function createManagedProfileProviders(
     createTripsRoutesOptions: async () => ({}),
     storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
     resolvePaymentStarters: () => ({}),
-    createChannelPushExtension: createEmptyChannelPushExtension,
+    createChannelPushExtension: createManagedChannelPushExtension,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
     loadMcpAdminRoutes: createManagedMcpAdminRoutes,
     loadCatalogBookingRoutes: emptyRoutes,
@@ -1657,11 +1663,15 @@ function guessMimeType(key: string): string {
 
 const emptyRoutes: LazyRoutesLoader = async () => new Hono()
 
-function createEmptyChannelPushExtension(): HonoExtension {
-  return {
-    extension: { name: "channel-push", module: "distribution" },
-    lazyAdminRoutes: emptyRoutes,
-  }
+function createManagedChannelPushExtension(): HonoExtension {
+  return createDistributionChannelPushExtension({
+    resolveRegistry: resolveManagedChannelPushRegistry,
+  })
+}
+
+function resolveManagedChannelPushRegistry(): SourceAdapterRegistry {
+  managedChannelPushRegistry ??= createSourceAdapterRegistry()
+  return managedChannelPushRegistry
 }
 
 function createNoopExecutionContext(): ExecutionContextLike {
