@@ -1,5 +1,22 @@
 # @voyant-travel/commerce
 
+## 0.24.0
+
+### Minor Changes
+
+- 05c10f2: Promote booking-maintenance tax-line rebuild routes into package-owned source-free managed runtime wiring.
+
+### Patch Changes
+
+- Updated dependencies [ee09a7f]
+- Updated dependencies [97d1c14]
+  - @voyant-travel/distribution@0.132.0
+  - @voyant-travel/quotes@0.125.0
+  - @voyant-travel/bookings@0.142.0
+  - @voyant-travel/catalog@0.140.0
+  - @voyant-travel/finance@0.142.0
+  - @voyant-travel/legal@0.142.0
+
 ## 0.23.0
 
 ### Patch Changes

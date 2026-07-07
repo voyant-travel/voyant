@@ -1,5 +1,16 @@
 # @voyant-travel/legal-react
 
+## 0.142.0
+
+### Patch Changes
+
+- @voyant-travel/commerce-react@0.24.0
+- @voyant-travel/bookings-react@0.142.0
+- @voyant-travel/distribution-react@0.132.0
+- @voyant-travel/inventory-react@0.24.0
+- @voyant-travel/relationships-react@0.142.0
+- @voyant-travel/legal@0.142.0
+
 ## 0.141.0
 
 ### Patch Changes
