@@ -10,6 +10,7 @@
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
+    "./booking-overview-enricher": "./src/booking-overview-enricher.ts",
     "./service-owned-stays": "./src/service-owned-stays.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
@@ -83,6 +84,11 @@
         "types": "./dist/service-content-synthesizer.d.ts",
         "import": "./dist/service-content-synthesizer.js",
         "default": "./dist/service-content-synthesizer.js"
+      },
+      "./booking-overview-enricher": {
+        "types": "./dist/booking-overview-enricher.d.ts",
+        "import": "./dist/booking-overview-enricher.js",
+        "default": "./dist/booking-overview-enricher.js"
       },
       "./service-owned-stays": {
         "types": "./dist/service-owned-stays.d.ts",

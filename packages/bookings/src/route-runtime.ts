@@ -98,6 +98,33 @@ export type RecordCancellationFinancialSettlement = (
   | null
   | undefined
 
+/**
+ * Item passed to a public-overview enricher. Carries only the core
+ * booking-item fields a vertical package needs to look up its own
+ * detail rows — the enricher joins on `id` (the core `booking_items.id`).
+ */
+export interface BookingOverviewEnricherItem {
+  id: string
+  itemType: string
+  productId: string | null
+  optionId: string | null
+}
+
+/**
+ * Vertical enrichment seam for the public guest-booking overview. A
+ * deployment wires one enricher per `booking_item_type` (e.g.
+ * `accommodation`). Each enricher is invoked ONCE with all overview items
+ * of its type and returns a map keyed by the core `booking_items.id` →
+ * an opaque `details` block that is attached to the matching overview
+ * item. Kept in the route-runtime so verticals inject their detail joins
+ * at composition time without the bookings package importing them
+ * (avoids the accommodations→bookings dependency cycle). See issue #2969.
+ */
+export type BookingOverviewItemEnricher = (
+  db: PostgresJsDatabase,
+  items: ReadonlyArray<BookingOverviewEnricherItem>,
+) => Promise<Map<string, unknown>>
+
 export interface BookingRouteRuntime {
   getKmsProvider(): Promise<KmsProvider>
   resolveTravelSnapshot?: ResolveBookingTravelSnapshot
@@ -109,6 +136,8 @@ export interface BookingRouteRuntime {
   recordCancellationFinancialSettlement?: RecordCancellationFinancialSettlement
   /** Deployment custom-field registry — validates `customFields` on write. */
   customFields?: CustomFieldRegistryResolver
+  /** Per-`booking_item_type` public-overview enrichers (issue #2969). */
+  overviewItemEnrichers?: Partial<Record<string, BookingOverviewItemEnricher>>
 }
 
 /**
@@ -132,6 +161,7 @@ export interface BookingRouteRuntimeOptions {
   closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
   recordCancellationFinancialSettlement?: RecordCancellationFinancialSettlement
   customFields?: CustomFieldRegistryResolver
+  overviewItemEnrichers?: Partial<Record<string, BookingOverviewItemEnricher>>
 }
 
 function buildRuntimeEnv(bindings: KmsBindings): Record<string, string | undefined> {
@@ -169,5 +199,6 @@ export function buildBookingRouteRuntime(
     closePaymentSchedulesForBooking: options.closePaymentSchedulesForBooking,
     recordCancellationFinancialSettlement: options.recordCancellationFinancialSettlement,
     customFields: options.customFields,
+    overviewItemEnrichers: options.overviewItemEnrichers,
   }
 }

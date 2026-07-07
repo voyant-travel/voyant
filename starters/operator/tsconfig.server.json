@@ -14,6 +14,9 @@
       "@voyant-travel/accommodations/booking-engine": [
         "../../packages/accommodations/dist/booking-engine/index.d.ts"
       ],
+      "@voyant-travel/accommodations/booking-overview-enricher": [
+        "../../packages/accommodations/dist/booking-overview-enricher.d.ts"
+      ],
       "@voyant-travel/accommodations/catalog-policy": [
         "../../packages/accommodations/dist/catalog-policy.d.ts"
       ],

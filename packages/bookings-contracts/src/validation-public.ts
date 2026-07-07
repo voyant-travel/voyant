@@ -215,6 +215,17 @@ export const publicBookingSessionItemSchema = z.object({
   travelerLinks: z.array(publicBookingSessionItemTravelerSchema),
 })
 
+/**
+ * Overview items carry an optional vertical `details` block contributed by
+ * a package's public-overview enricher (e.g. accommodations adds property /
+ * room / rate-plan / nightly-rate specifics). Opaque here so the bookings
+ * contract stays vertical-agnostic; each vertical documents its own shape.
+ * See issue #2969.
+ */
+export const publicBookingOverviewItemSchema = publicBookingSessionItemSchema.extend({
+  details: z.unknown().optional(),
+})
+
 export const publicBookingSessionAllocationSchema = z.object({
   id: z.string(),
   bookingItemId: z.string().nullable(),
@@ -354,7 +365,7 @@ export const publicBookingOverviewSchema = z.object({
   cancelledAt: z.string().nullable(),
   completedAt: z.string().nullable(),
   travelers: z.array(publicBookingOverviewTravelerSchema),
-  items: z.array(publicBookingSessionItemSchema),
+  items: z.array(publicBookingOverviewItemSchema),
   documents: z.array(publicBookingOverviewDocumentSchema),
   fulfillments: z.array(publicBookingOverviewFulfillmentSchema),
 })
@@ -387,3 +398,5 @@ export type PublicGuestBookingLookupResponse = z.infer<
 export type InternalBookingOverviewLookupQuery = z.infer<
   typeof internalBookingOverviewLookupQuerySchema
 >
+export type PublicBookingOverviewItem = z.infer<typeof publicBookingOverviewItemSchema>
+export type PublicBookingOverview = z.infer<typeof publicBookingOverviewSchema>

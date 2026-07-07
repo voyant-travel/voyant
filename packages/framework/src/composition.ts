@@ -37,6 +37,7 @@
 
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { accommodationsHonoModule } from "@voyant-travel/accommodations"
+import { enrichStayBookingOverviewItems } from "@voyant-travel/accommodations/booking-overview-enricher"
 import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
 import {
   type BookingsHonoModuleOptions,
@@ -583,6 +584,12 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
           closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
           recordCancellationFinancialSettlement: capabilities.recordCancellationFinancialSettlement,
           customFields: capabilities.customFields,
+          // Vertical enrichment seam (issue #2969): accommodations contributes
+          // property / room / rate-plan / nightly-rate specifics to the public
+          // guest-booking overview, keyed by the `accommodation` item type.
+          overviewItemEnrichers: {
+            accommodation: enrichStayBookingOverviewItems,
+          },
         }),
         true,
       ),
