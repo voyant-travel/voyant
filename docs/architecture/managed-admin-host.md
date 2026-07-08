@@ -1,8 +1,45 @@
 # Managed profile admin host — source-free admin UI serving
 
-- **Status:** Plan (2026-07-08)
+- **Status:** Realized (2026-07-08) — the source-free host works end to end; see status below.
 - **Tracks:** voyant#3044 · Parent: voyant#2983 · Sibling: voyant#2987 (API runtime entry, shipped)
 - **Related:** Packaged Admin RFC (#1643/#1649), `@voyant-travel/vite-config`, platform#953/#954
+
+## Implementation status
+
+`starters/managed-operator/` **is** the source-free managed admin host — it serves
+the full standard admin (SSR + client) from published packages, with the only
+route file being `src/routes/__root.tsx` and every page built at runtime.
+
+Shipped:
+
+- **Serving seam** — `@voyant-travel/admin-host` (`serveManagedProfileAdmin`,
+  `createManagedProfileAdminSsrHandler`) — #3046.
+- **Runtime glue** — `@voyant-travel/admin-app/runtime` (fetcher, api-url,
+  admin-path normalize) — #3048.
+- **Auth port** — `ManagedProfileAdminAuthRuntime` in `@voyant-travel/admin/app`;
+  `createAdminWorkspaceBeforeLoad` consumes it — #3051.
+- **User provider** — `@voyant-travel/admin-react/user` — #3053.
+- **Source-free host + runtime composition** — `starters/managed-operator`, the
+  code-based router, and the runtime route/destination builders
+  (`buildAdminExtensionRoutes` incl. layout children, `buildAdminExtensionDestinations`)
+  — #3055.
+- **Packaged build config** — `voyantStartViteConfig({ nodeSsr: true })` folds in
+  the Node SSR target/`noExternal`/resolve-conditions; the app `vite.config.ts`
+  copies **no** build config — #3057.
+
+**Key finding that changed the plan:** the cross-repo `voyant admin generate`
+codegen is **not** needed. `buildAdminExtensionRoutes` builds the whole admin
+route tree at runtime from the packaged `create<Module>AdminExtension` factories,
+so the entire goal is voyant-repo-only. The codegen remains a compile-time
+typed-link DX nicety for source-backed hosts, not a runtime requirement.
+
+Remaining (non-blocking): compose the real `/api` (`loadManagedProfileRuntime`,
+#2987) with admin serving in one process (managed-operator stubs `/api`);
+widget-slot cross-package wiring; snapshot module-subsetting (#2104/#2107);
+extract `managed-operator`'s thin entry into a Cloud-image template (platform#954).
+
+The phased plan below is retained as the design record; where it says "Phase 3 /
+future," read the status above for what actually shipped.
 
 ## Problem
 
@@ -54,8 +91,9 @@ Packaged already (RFC #1649):
   and per-domain pages under `@voyant-travel/<domain>-react/admin`.
 - **Build config** — `@voyant-travel/vite-config` `voyantStartViteConfig(...)`
   owns vendor chunking (`manualChunks`), SSR `optimizeDeps`, the `@` alias, and
-  dev-tunnel hosts. The starter `vite.config.ts` only instantiates plugins and
-  adds the Node `ssr` target/`noExternal`/resolve-conditions.
+  dev-tunnel hosts, and — via `nodeSsr: true` (#3057) — the Node `ssr`
+  target/`noExternal`/resolve-conditions. The app `vite.config.ts` only
+  instantiates plugins; it copies no build config.
 
 Still starter-owned (blocks source-free):
 
@@ -210,16 +248,20 @@ in packages; the *route map* is emitted per build.
 
 ### Phase 3 — Framework-owned build entry (no copied vite config)
 
-Provide a build path that produces the admin client + SSR bundle from packages +
-a snapshot, with no starter `vite.config.ts` copy.
+Produce the admin client + SSR bundle from packages with no copied build config.
 
-- Extend `@voyant-travel/vite-config` with a `voyantManagedProfileAdminViteConfig(...)`
-  that bundles the Node `ssr` target/`noExternal`/resolve-conditions currently in
-  the starter `vite.config.ts`, and points the TanStack Start route source at the
-  packaged shell (Phase 2).
-- A thin, profile-agnostic build entry (config + `index.html` + client/server
-  entry) Cloud copies **verbatim** (or a generator emits) — carrying no app
-  logic, only the packaged config instantiation.
+- **Shipped (#3057):** `@voyant-travel/vite-config`'s `voyantStartViteConfig`
+  gained `nodeSsr: true`, which folds in the Node `ssr`
+  target/`noExternal`/resolve-conditions the app previously hand-merged. The
+  managed-operator (and operator) `vite.config.ts` is now a single
+  `voyantStartViteConfig(...)` call and copies no build config. (Route source is
+  the code-based router, not a "packaged shell" — see the status section; the
+  earlier `voyantManagedProfileAdminViteConfig` idea was unnecessary.)
+- **Remaining:** a thin, profile-agnostic build entry (`vite.config.ts` +
+  `index.html` + `__root.tsx` + `src/{router,server,entry,start}.ts`) that Cloud
+  copies **verbatim** (or a generator emits) — carrying no app logic, only the
+  packaged-config instantiation. `starters/managed-operator/` is that entry today;
+  extracting it into a template package is the platform#954 follow-up.
 - **Acceptance:** `createManagedProfileAdmin` end-to-end — a build in a scratch
   dir with only published packages + a snapshot + the thin entry produces
   `dist/client` + `dist/server`, and `node server.js` serves SSR admin + `/api`
