@@ -5438,7 +5438,8 @@
                                     "isPrimary"
                                   ]
                                 }
-                              }
+                              },
+                              "details": {}
                             },
                             "required": [
                               "id",
@@ -5964,7 +5965,8 @@
                                         "isPrimary"
                                       ]
                                     }
-                                  }
+                                  },
+                                  "details": {}
                                 },
                                 "required": [
                                   "id",

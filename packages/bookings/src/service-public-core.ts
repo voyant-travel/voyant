@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: bookings; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { applyOverviewEnrichers } from "./overview-enrichment.js"
 import {
   departurePriceOverridesRef,
   optionPriceRulesRef,
@@ -12,6 +12,7 @@ import {
 } from "./pricing-ref.js"
 import { optionUnitsRef, productOptionsRef, productsRef } from "./products-ref.js"
 import type {
+  BookingOverviewItemEnricher,
   BookingPersonResolverContact,
   ResolveBookingBillingPerson,
   ResolveBookingTravelerPerson,
@@ -561,6 +562,7 @@ async function buildOverviewSnapshot(
     bookingCode?: string | null
     email?: string | null
   },
+  enrichers?: Partial<Record<string, BookingOverviewItemEnricher>>,
 ) {
   const bookingLookupNumber = query.bookingNumber ?? query.bookingCode ?? null
   const [booking] = await db
@@ -645,6 +647,32 @@ async function buildOverviewSnapshot(
     itemLinksByItemId.set(link.bookingItemId, existing)
   }
 
+  const overviewItems = items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description ?? null,
+    itemType: item.itemType,
+    status: item.status,
+    serviceDate: normalizeDate(item.serviceDate),
+    startsAt: normalizeDateTime(item.startsAt),
+    endsAt: normalizeDateTime(item.endsAt),
+    quantity: item.quantity,
+    sellCurrency: item.sellCurrency,
+    unitSellAmountCents: item.unitSellAmountCents ?? null,
+    totalSellAmountCents: item.totalSellAmountCents ?? null,
+    costCurrency: item.costCurrency ?? null,
+    unitCostAmountCents: item.unitCostAmountCents ?? null,
+    totalCostAmountCents: item.totalCostAmountCents ?? null,
+    notes: item.notes ?? null,
+    productId: item.productId ?? null,
+    optionId: item.optionId ?? null,
+    optionUnitId: item.optionUnitId ?? null,
+    pricingCategoryId: item.pricingCategoryId ?? null,
+    travelerLinks: itemLinksByItemId.get(item.id) ?? [],
+  }))
+
+  const enrichedItems = await applyOverviewEnrichers(db, overviewItems, enrichers)
+
   return {
     bookingId: booking.id,
     bookingNumber: booking.bookingNumber,
@@ -664,29 +692,7 @@ async function buildOverviewSnapshot(
       lastName: participant.lastName,
       isPrimary: participant.isPrimary,
     })),
-    items: items.map((item) => ({
-      id: item.id,
-      title: item.title,
-      description: item.description ?? null,
-      itemType: item.itemType,
-      status: item.status,
-      serviceDate: normalizeDate(item.serviceDate),
-      startsAt: normalizeDateTime(item.startsAt),
-      endsAt: normalizeDateTime(item.endsAt),
-      quantity: item.quantity,
-      sellCurrency: item.sellCurrency,
-      unitSellAmountCents: item.unitSellAmountCents ?? null,
-      totalSellAmountCents: item.totalSellAmountCents ?? null,
-      costCurrency: item.costCurrency ?? null,
-      unitCostAmountCents: item.unitCostAmountCents ?? null,
-      totalCostAmountCents: item.totalCostAmountCents ?? null,
-      notes: item.notes ?? null,
-      productId: item.productId ?? null,
-      optionId: item.optionId ?? null,
-      optionUnitId: item.optionUnitId ?? null,
-      pricingCategoryId: item.pricingCategoryId ?? null,
-      travelerLinks: itemLinksByItemId.get(item.id) ?? [],
-    })),
+    items: enrichedItems,
     documents: documents.map((document) => ({
       id: document.id,
       travelerId: document.travelerId ?? null,
@@ -1762,15 +1768,27 @@ export const publicBookingsService = {
     return session ? { status: "ok" as const, session } : { status: "not_found" as const }
   },
 
-  async getOverview(db: PostgresJsDatabase, query: PublicBookingOverviewLookupQuery) {
-    return buildOverviewSnapshot(db, query)
+  async getOverview(
+    db: PostgresJsDatabase,
+    query: PublicBookingOverviewLookupQuery,
+    enrichers?: Partial<Record<string, BookingOverviewItemEnricher>>,
+  ) {
+    return buildOverviewSnapshot(db, query, enrichers)
   },
 
-  async getOverviewByGuestAccess(db: PostgresJsDatabase, query: PublicBookingOverviewAccessQuery) {
-    return buildOverviewSnapshot(db, query)
+  async getOverviewByGuestAccess(
+    db: PostgresJsDatabase,
+    query: PublicBookingOverviewAccessQuery,
+    enrichers?: Partial<Record<string, BookingOverviewItemEnricher>>,
+  ) {
+    return buildOverviewSnapshot(db, query, enrichers)
   },
 
-  async getOverviewByLookup(db: PostgresJsDatabase, query: InternalBookingOverviewLookupQuery) {
-    return buildOverviewSnapshot(db, query)
+  async getOverviewByLookup(
+    db: PostgresJsDatabase,
+    query: InternalBookingOverviewLookupQuery,
+    enrichers?: Partial<Record<string, BookingOverviewItemEnricher>>,
+  ) {
+    return buildOverviewSnapshot(db, query, enrichers)
   },
 }

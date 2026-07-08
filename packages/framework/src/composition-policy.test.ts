@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
 
 const mocks = vi.hoisted(() => ({
+  createBookingsHonoModule: vi.fn((options: unknown) => ({
+    module: { name: "bookings" },
+    adminRoutes: {},
+    publicRoutes: {},
+    options,
+  })),
   createFinanceHonoModule: vi.fn((options: unknown) => ({
     module: { name: "finance" },
     options,
@@ -11,6 +17,15 @@ const mocks = vi.hoisted(() => ({
     module: { name: "notifications" },
     options,
   })),
+  enrichStayBookingOverviewItems: vi.fn(),
+}))
+
+vi.mock("@voyant-travel/accommodations/booking-overview-enricher", () => ({
+  enrichStayBookingOverviewItems: mocks.enrichStayBookingOverviewItems,
+}))
+
+vi.mock("@voyant-travel/bookings", () => ({
+  createBookingsHonoModule: mocks.createBookingsHonoModule,
 }))
 
 vi.mock("@voyant-travel/finance", () => ({
@@ -39,8 +54,33 @@ function compositionContext(
 
 describe("frameworkComposition policy injection", () => {
   beforeEach(() => {
+    mocks.createBookingsHonoModule.mockClear()
     mocks.createFinanceHonoModule.mockClear()
     mocks.createNotificationsHonoModule.mockClear()
+  })
+
+  it("wires accommodation overview enrichment into the standard bookings module", async () => {
+    const bookings = frameworkComposition.modules["@voyant-travel/bookings"]?.(
+      compositionContext({
+        relationshipsService: {
+          getOrganizationById: vi.fn(),
+          getPersonById: vi.fn(),
+          loadPersonTravelSnapshot: vi.fn(),
+          upsertPersonFromContact: vi.fn(),
+        },
+        closePaymentSchedulesForBooking: vi.fn(),
+      }),
+    )
+    if (Array.isArray(bookings)) throw new Error("expected a single bookings module")
+    await bookings?.lazyPublicRoutes?.()
+
+    expect(mocks.createBookingsHonoModule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        overviewItemEnrichers: {
+          accommodation: mocks.enrichStayBookingOverviewItems,
+        },
+      }),
+    )
   })
 
   it("passes injected finance checkout policy to the standard finance module", async () => {

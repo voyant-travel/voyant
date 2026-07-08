@@ -1,3 +1,7 @@
+// agent-quality: file-size exception — intentional: this public route module
+// predates the 600-line limit (686 lines on main before the overview
+// enrichment change) and splitting the OpenAPI route group is out of scope for
+// the additive #2969 wiring; tracked for a follow-up split.
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { idempotencyKey, openApiValidationHook, UnauthorizedApiError } from "@voyant-travel/hono"
 import type { Context, MiddlewareHandler } from "hono"
@@ -643,14 +647,19 @@ export const publicBookingRoutes = publicBookingApp
       )
       if (rateLimited) return rateLimited
     }
+    const overviewEnrichers = getRouteRuntime(c).overviewItemEnrichers
     const overview = query.email
-      ? await publicBookingsService.getOverview(c.get("db"), {
-          bookingId: query.bookingId,
-          bookingNumber: query.bookingNumber,
-          bookingCode: query.bookingCode,
-          email: query.email,
-        })
-      : await publicBookingsService.getOverviewByGuestAccess(c.get("db"), query)
+      ? await publicBookingsService.getOverview(
+          c.get("db"),
+          {
+            bookingId: query.bookingId,
+            bookingNumber: query.bookingNumber,
+            bookingCode: query.bookingCode,
+            email: query.email,
+          },
+          overviewEnrichers,
+        )
+      : await publicBookingsService.getOverviewByGuestAccess(c.get("db"), query, overviewEnrichers)
     if (!overview) {
       if (!query.email) {
         throw new UnauthorizedApiError("Missing guest booking access capability")
@@ -670,7 +679,11 @@ export const publicBookingRoutes = publicBookingApp
     const rateLimited = await enforceGuestBookingLookupRateLimit(c, input.bookingCode)
     if (rateLimited) return rateLimited
 
-    const overview = await publicBookingsService.getOverview(c.get("db"), input)
+    const overview = await publicBookingsService.getOverview(
+      c.get("db"),
+      input,
+      getRouteRuntime(c).overviewItemEnrichers,
+    )
     if (!overview) {
       return notFound(c, "Booking overview not found")
     }

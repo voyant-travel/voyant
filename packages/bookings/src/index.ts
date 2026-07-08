@@ -131,6 +131,8 @@ export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}
 export const bookingsHonoModule: HonoModule = createBookingsHonoModule()
 
 export type {
+  BookingOverviewEnricherItem,
+  BookingOverviewItemEnricher,
   BookingPersonResolverContact,
   BookingRouteRuntime,
   BookingRouteRuntimeOptions,
