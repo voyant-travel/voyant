@@ -80,6 +80,7 @@
       ],
       "@voyant-travel/admin-app/root": ["../../packages/admin-app/dist/root.d.ts"],
       "@voyant-travel/admin-app/router": ["../../packages/admin-app/dist/router.d.ts"],
+      "@voyant-travel/admin-app/runtime": ["../../packages/admin-app/dist/runtime.d.ts"],
       "@voyant-travel/admin-app/workspace": ["../../packages/admin-app/dist/workspace.d.ts"],
       "@voyant-travel/admin-client": ["../../packages/admin-client/dist/index.d.ts"],
       "@voyant-travel/admin-contracts": ["../../packages/admin-contracts/dist/index.d.ts"],
