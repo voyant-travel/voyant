@@ -83,6 +83,24 @@ export interface ComputeQuoteResult {
   upstreamPayload?: Record<string, unknown>
 }
 
+export interface ComputeQuoteBatchSelection {
+  selectionId: string
+  entityId: string
+  parameters?: Record<string, unknown>
+  draft?: unknown
+}
+
+export interface ComputeQuotesRequest {
+  entityModule: string
+  scope: OwnedQuoteScope
+  selections: ReadonlyArray<ComputeQuoteBatchSelection>
+}
+
+export interface ComputeQuoteBatchResult {
+  selectionId: string
+  result: ComputeQuoteResult
+}
+
 export interface CommitOwnedRequest {
   entityModule: string
   entityId: string
@@ -162,6 +180,16 @@ export interface OwnedBookingHandler {
    * promo windows, which are explicitly OK to vary).
    */
   computeQuote(ctx: OwnedHandlerContext, request: ComputeQuoteRequest): Promise<ComputeQuoteResult>
+
+  /**
+   * Optional batch quote primitive for verticals that can share availability
+   * and rate reads across selections. The engine falls back to `computeQuote`
+   * for handlers that do not implement it.
+   */
+  computeQuotes?(
+    ctx: OwnedHandlerContext,
+    request: ComputeQuotesRequest,
+  ): Promise<ReadonlyArray<ComputeQuoteBatchResult>>
 
   /**
    * Commit the draft to a booking row. Phase A handlers map the

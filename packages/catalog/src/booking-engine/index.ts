@@ -160,8 +160,11 @@ export {
 export {
   type CommitOwnedRequest,
   type CommitOwnedResult,
+  type ComputeQuoteBatchResult,
+  type ComputeQuoteBatchSelection,
   type ComputeQuoteRequest,
   type ComputeQuoteResult,
+  type ComputeQuotesRequest,
   createOwnedBookingHandlerRegistry,
   type HoldRequest,
   type HoldResult,
@@ -181,10 +184,13 @@ export {
   DEFAULT_QUOTE_TTL_MS,
   type QuoteContentEnricher,
   type QuoteContentEnrichmentInput,
+  type QuoteEntityBatchRequest,
+  type QuoteEntityBatchResult,
   type QuoteEntityDeps,
   type QuoteEntityRequest,
   type QuoteEntityResult,
   type QuoteScope,
+  quoteEntitiesBatch,
   quoteEntity,
 } from "./quote.js"
 export {
@@ -193,6 +199,9 @@ export {
 } from "./registry.js"
 export {
   type CatalogBookingAdapterContextInput,
+  type CatalogBookingBatchQuoteBody,
+  type CatalogBookingBatchQuoteSelection,
+  type CatalogBookingBatchQuoteTransformInput,
   type CatalogBookingBookBody,
   type CatalogBookingBookTransformInput,
   type CatalogBookingCommittedEvent,

@@ -37,6 +37,42 @@ export const quoteResponseV1 = z.object({
   upstreamPayload: z.record(z.string(), z.unknown()).optional(),
 })
 
+export const quoteBatchCriteriaV1 = z.object({
+  checkIn: z.string().min(1).optional(),
+  checkOut: z.string().min(1).optional(),
+  occupancy: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  roomCount: z.number().int().positive().optional(),
+})
+
+export const quoteBatchSelectionV1 = z.object({
+  entityModule: z.string(),
+  entityId: z.string(),
+  ratePlanId: z.string().optional(),
+  sourceKind: z.string().optional(),
+  sourceProvider: z.string().optional(),
+  sourceConnectionId: z.string().optional(),
+  sourceRef: z.string().optional(),
+  parameters: z.record(z.string(), z.unknown()).optional(),
+  draft: z.record(z.string(), z.unknown()).optional(),
+})
+
+export const quoteBatchRequestV1 = z.object({
+  criteria: quoteBatchCriteriaV1.optional(),
+  scope: quoteScopeV1.partial().optional(),
+  parameters: z.record(z.string(), z.unknown()).optional(),
+  draft: z.record(z.string(), z.unknown()).optional(),
+  ttlMs: z.number().int().positive().optional(),
+  selections: z.array(quoteBatchSelectionV1).min(1).max(30),
+})
+
+export const quoteBatchResultV1 = quoteResponseV1.extend({
+  selection: quoteBatchSelectionV1,
+})
+
+export const quoteBatchResponseV1 = z.object({
+  results: z.array(quoteBatchResultV1),
+})
+
 /**
  * Mirrors flights' `paymentIntent` discriminated union from
  * `catalog-flights-architecture.md` §3.1. Default `{ type: "hold" }`
@@ -79,6 +115,11 @@ export const bookResponseV1 = z.object({
 
 export type QuoteRequestV1 = z.infer<typeof quoteRequestV1>
 export type QuoteResponseV1 = z.infer<typeof quoteResponseV1>
+export type QuoteBatchCriteriaV1 = z.infer<typeof quoteBatchCriteriaV1>
+export type QuoteBatchSelectionV1 = z.infer<typeof quoteBatchSelectionV1>
+export type QuoteBatchRequestV1 = z.infer<typeof quoteBatchRequestV1>
+export type QuoteBatchResultV1 = z.infer<typeof quoteBatchResultV1>
+export type QuoteBatchResponseV1 = z.infer<typeof quoteBatchResponseV1>
 export type BookRequestV1 = z.infer<typeof bookRequestV1>
 export type BookResponseV1 = z.infer<typeof bookResponseV1>
 

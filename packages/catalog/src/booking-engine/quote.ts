@@ -18,7 +18,11 @@ import type { LiveResolveResult, SourceAdapterContext } from "../adapter/contrac
 import type { PricingBasis } from "../snapshot/schema.js"
 
 import type { BookingDraftShape } from "./draft-shape.js"
-import type { OwnedBookingHandlerRegistry } from "./owned-handler.js"
+import type {
+  ComputeQuoteResult,
+  OwnedBookingHandlerRegistry,
+  OwnedHandlerContext,
+} from "./owned-handler.js"
 import { OWNED_SOURCE_KIND } from "./owned-handler.js"
 import type {
   CodeStatus,
@@ -82,6 +86,15 @@ export interface QuoteEntityResult {
    * journey hardcodes a minimal shape until templates wire content).
    */
   shape?: BookingDraftShape
+}
+
+export interface QuoteEntityBatchRequest extends QuoteEntityRequest {
+  selectionId: string
+}
+
+export interface QuoteEntityBatchResult {
+  selectionId: string
+  result: QuoteEntityResult
 }
 
 /**
@@ -185,10 +198,110 @@ export async function quoteEntity(
   deps: QuoteEntityDeps,
   request: QuoteEntityRequest,
 ): Promise<QuoteEntityResult> {
-  const ttlMs = request.ttlMs ?? DEFAULT_QUOTE_TTL_MS
-  const quotedAt = new Date()
-  const expiresAt = new Date(quotedAt.getTime() + ttlMs)
+  const [first] = await quoteEntitiesBatch(db, deps, [{ ...request, selectionId: "selection_0" }])
+  if (!first) throw new Error("quoteEntity: batch returned no rows")
+  return first.result
+}
 
+export async function quoteEntitiesBatch(
+  db: AnyDrizzleDb,
+  deps: QuoteEntityDeps,
+  requests: ReadonlyArray<QuoteEntityBatchRequest>,
+): Promise<QuoteEntityBatchResult[]> {
+  const computedBySelection = await computeRawQuotes(db, deps, requests)
+  const results: QuoteEntityBatchResult[] = []
+  for (const request of requests) {
+    const computed = computedBySelection.get(request.selectionId)
+    if (!computed) {
+      throw new Error(`quoteEntitiesBatch: missing computed result ${request.selectionId}`)
+    }
+    results.push({
+      selectionId: request.selectionId,
+      result: await persistComputedQuote(db, deps, request, computed),
+    })
+  }
+  return results
+}
+
+interface RawQuoteComputation {
+  available: boolean
+  failedReason?: string
+  pricing?: PricingBasis
+  upstreamPayload?: Record<string, unknown>
+  ownedShape?: BookingDraftShape
+}
+
+async function computeRawQuotes(
+  db: AnyDrizzleDb,
+  deps: QuoteEntityDeps,
+  requests: ReadonlyArray<QuoteEntityBatchRequest>,
+): Promise<Map<string, RawQuoteComputation>> {
+  const results = new Map<string, RawQuoteComputation>()
+  const fallback: QuoteEntityBatchRequest[] = []
+  const groups = new Map<string, QuoteEntityBatchRequest[]>()
+
+  for (const request of requests) {
+    if (request.sourceKind !== OWNED_SOURCE_KIND || !deps.ownedHandlers) {
+      fallback.push(request)
+      continue
+    }
+    const handler = deps.ownedHandlers.resolveOrThrow(request.entityModule)
+    if (!handler.computeQuotes) {
+      fallback.push(request)
+      continue
+    }
+    const key = [
+      request.entityModule,
+      request.scope.locale,
+      request.scope.audience,
+      request.scope.market,
+      request.scope.currency ?? "",
+      request.adapterContext.connection_id,
+    ].join("\u001f")
+    const group = groups.get(key) ?? []
+    group.push(request)
+    groups.set(key, group)
+  }
+
+  for (const group of groups.values()) {
+    const first = group[0]
+    if (!first || first.sourceKind !== OWNED_SOURCE_KIND || !deps.ownedHandlers) continue
+    const handler = deps.ownedHandlers.resolveOrThrow(first.entityModule)
+    const ctx: OwnedHandlerContext = { db, adapterContext: first.adapterContext }
+    const batch = await handler.computeQuotes?.(ctx, {
+      entityModule: first.entityModule,
+      scope: first.scope,
+      selections: group.map((request) => ({
+        selectionId: request.selectionId,
+        entityId: request.entityId,
+        parameters: request.parameters,
+        draft: (request.parameters as { draft?: unknown } | undefined)?.draft,
+      })),
+    })
+    const returned = new Set<string>()
+    for (const item of batch ?? []) {
+      returned.add(item.selectionId)
+      results.set(item.selectionId, rawFromOwnedResult(item.result))
+    }
+    for (const request of group) {
+      if (!returned.has(request.selectionId)) fallback.push(request)
+    }
+  }
+
+  await Promise.all(
+    fallback.map(async (request) => {
+      results.set(request.selectionId, await computeRawQuote(db, deps, request))
+    }),
+  )
+
+  return results
+}
+
+async function computeRawQuote(
+  db: AnyDrizzleDb,
+  deps: QuoteEntityDeps,
+  request: QuoteEntityRequest,
+): Promise<RawQuoteComputation> {
   // Two dispatch arms:
   //   - Owned: handler registry keyed by entity_module. Returns a
   //     ComputeQuoteResult directly — pricing, shape, availability.
@@ -243,6 +356,24 @@ export async function quoteEntity(
     pricing = available ? liveValuesToPricing(liveValues, request.scope.currency) : undefined
     upstreamPayload = liveValues as Record<string, unknown> | undefined
   }
+
+  return { available, failedReason, pricing, upstreamPayload, ownedShape }
+}
+
+async function persistComputedQuote(
+  db: AnyDrizzleDb,
+  deps: QuoteEntityDeps,
+  request: QuoteEntityRequest,
+  computed: RawQuoteComputation,
+): Promise<QuoteEntityResult> {
+  const ttlMs = request.ttlMs ?? DEFAULT_QUOTE_TTL_MS
+  const quotedAt = new Date()
+  const expiresAt = new Date(quotedAt.getTime() + ttlMs)
+  let available = computed.available
+  let failedReason = computed.failedReason
+  const pricing = computed.pricing
+  const upstreamPayload = computed.upstreamPayload
+  const ownedShape = computed.ownedShape
 
   // Promotion evaluation — runs only for the products vertical in v1
   // (other verticals would need their own bridge to the evaluator).
@@ -367,6 +498,16 @@ export async function quoteEntity(
     pricing,
     upstreamPayload,
     shape,
+  }
+}
+
+function rawFromOwnedResult(result: ComputeQuoteResult): RawQuoteComputation {
+  return {
+    available: result.available,
+    failedReason: result.invalidReason,
+    pricing: result.pricing,
+    upstreamPayload: result.upstreamPayload,
+    ownedShape: result.shape,
   }
 }
 

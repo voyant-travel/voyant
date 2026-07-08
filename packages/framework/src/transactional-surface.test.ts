@@ -43,10 +43,12 @@ describe("standard transactional surface (ADR-0008)", () => {
     const catalogBooking = modules.find((m) => m.module.name === "catalog-booking")
     expect([...(catalogBooking?.transactionalPaths ?? [])]).toEqual([
       "/v1/admin/catalog/quote",
+      "/v1/admin/catalog/quotes/batch",
       "/v1/admin/catalog/book",
       "/v1/admin/catalog/holds",
       "/v1/admin/catalog/orders",
       "/v1/public/catalog/quote",
+      "/v1/public/catalog/quotes/batch",
       "/v1/public/catalog/book",
       "/v1/public/catalog/holds",
     ])

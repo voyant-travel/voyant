@@ -64,6 +64,9 @@ export {
 } from "./booking-engine/operator-routes.js"
 export {
   type CatalogBookingAdapterContextInput,
+  type CatalogBookingBatchQuoteBody,
+  type CatalogBookingBatchQuoteSelection,
+  type CatalogBookingBatchQuoteTransformInput,
   type CatalogBookingBookBody,
   type CatalogBookingBookTransformInput,
   type CatalogBookingCommittedEvent,

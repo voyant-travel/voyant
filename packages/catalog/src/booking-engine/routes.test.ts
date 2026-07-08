@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog; booking-engine route tests stay co-located to cover the shared quote/book/draft/hold route factory until a dedicated split preserves route setup coverage.
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -13,7 +14,7 @@ import {
   updateBookingDraft,
 } from "./drafts-service.js"
 import { createOwnedBookingHandlerRegistry, type OwnedBookingHandler } from "./owned-handler.js"
-import { quoteEntity } from "./quote.js"
+import { quoteEntitiesBatch, quoteEntity } from "./quote.js"
 import { createSourceAdapterRegistry } from "./registry.js"
 import {
   type CatalogBookingRoutesOptions,
@@ -23,7 +24,7 @@ import {
 
 vi.mock("./quote.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./quote.js")>()
-  return { ...actual, quoteEntity: vi.fn() }
+  return { ...actual, quoteEntity: vi.fn(), quoteEntitiesBatch: vi.fn() }
 })
 
 vi.mock("./book.js", async (importOriginal) => {
@@ -77,6 +78,7 @@ describe("createCatalogBookingRoutes", () => {
     vi.mocked(deleteBookingDraft).mockReset()
     vi.mocked(getBookingDraft).mockReset()
     vi.mocked(markDraftConsumed).mockReset()
+    vi.mocked(quoteEntitiesBatch).mockReset()
     vi.mocked(quoteEntity).mockReset()
     vi.mocked(updateBookingDraft).mockReset()
   })
@@ -196,6 +198,110 @@ describe("createCatalogBookingRoutes", () => {
           credentials: { token: "secret" },
         },
       }),
+    )
+  })
+
+  it("batch quotes bounded selections with shared criteria", async () => {
+    vi.mocked(quoteEntitiesBatch).mockResolvedValue([
+      {
+        selectionId: "0",
+        result: {
+          quoteId: "quote_room_1_bar",
+          quotedAt: new Date("2026-05-05T10:00:00.000Z"),
+          expiresAt: new Date("2026-05-05T10:10:00.000Z"),
+          available: true,
+          pricing,
+        },
+      },
+      {
+        selectionId: "1",
+        result: {
+          quoteId: "quote_room_1_nr",
+          quotedAt: new Date("2026-05-05T10:00:00.000Z"),
+          expiresAt: new Date("2026-05-05T10:10:00.000Z"),
+          available: false,
+          invalidReason: "rates_missing",
+        },
+      },
+    ])
+    const resolveEntityProvenance = vi.fn(async () => ({ sourceKind: "owned" }))
+    const transformQuoteResult = vi.fn(async ({ result }) => result)
+    const { app, ownedHandlers } = createTestApp({
+      resolveCorrelationId: () => "req_batch",
+      resolveEntityProvenance,
+      transformQuoteResult,
+      transformBatchQuoteResults: async ({ results }) => results,
+    })
+
+    const response = await app.request("/v1/public/catalog/quotes/batch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        criteria: {
+          checkIn: "2026-09-01",
+          checkOut: "2026-09-03",
+          occupancy: { adult: 2 },
+          roomCount: 2,
+        },
+        selections: [
+          { entityModule: "accommodations", entityId: "room_1", ratePlanId: "rate_bar" },
+          { entityModule: "accommodations", entityId: "room_1", ratePlanId: "rate_nr" },
+        ],
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      results: [
+        {
+          selection: { entityModule: "accommodations", entityId: "room_1", ratePlanId: "rate_bar" },
+          quoteId: "quote_room_1_bar",
+          available: true,
+          pricing: { total: 12150 },
+        },
+        {
+          selection: { entityModule: "accommodations", entityId: "room_1", ratePlanId: "rate_nr" },
+          quoteId: "quote_room_1_nr",
+          available: false,
+          invalidReason: "rates_missing",
+        },
+      ],
+    })
+    expect(resolveEntityProvenance).toHaveBeenCalledTimes(2)
+    expect(transformQuoteResult).toHaveBeenCalledTimes(2)
+    expect(quoteEntitiesBatch).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ registry, ownedHandlers }),
+      [
+        expect.objectContaining({
+          selectionId: "0",
+          entityModule: "accommodations",
+          entityId: "room_1",
+          sourceKind: "owned",
+          parameters: expect.objectContaining({
+            draft: expect.objectContaining({
+              configure: expect.objectContaining({
+                dateRange: { checkIn: "2026-09-01", checkOut: "2026-09-03" },
+                pax: { adult: 2 },
+              }),
+              accommodation: {
+                rooms: [
+                  { optionUnitId: "room_1", quantity: 1, adults: 2, ratePlanId: "rate_bar" },
+                  { optionUnitId: "room_1", quantity: 1, adults: 2, ratePlanId: "rate_bar" },
+                ],
+              },
+            }),
+            ratePlanId: "rate_bar",
+          }),
+          adapterContext: { connection_id: "owned", correlation_id: "req_batch" },
+        }),
+        expect.objectContaining({
+          selectionId: "1",
+          parameters: expect.objectContaining({
+            ratePlanId: "rate_nr",
+          }),
+        }),
+      ],
     )
   })
 

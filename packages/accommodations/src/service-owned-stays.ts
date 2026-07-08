@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: accommodations; owned stay quote, batch quote, and search resolution share the same pure resolver helpers and stay co-located until a dedicated service split preserves behavior and tests.
 import type { OwnedSearchContext } from "@voyant-travel/catalog"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { facilityAddressProjections, properties } from "@voyant-travel/operations"
@@ -300,6 +301,104 @@ export async function quoteOwnedStay(
     rates: rateRows,
     inventory: inventoryRows,
     overlappingBookings,
+  })
+}
+
+export async function quoteOwnedStaysBatch(
+  db: AnyDrizzleDb,
+  inputs: ReadonlyArray<QuoteOwnedStayInput>,
+): Promise<OwnedStayQuoteResult[]> {
+  const results = new Map<number, OwnedStayQuoteResult>()
+  const groups = new Map<string, Array<{ index: number; input: QuoteOwnedStayInput }>>()
+
+  inputs.forEach((input, index) => {
+    const nights = eachStayNight(input.checkIn, input.checkOut)
+    if (nights.length === 0) {
+      results.set(index, { status: "invalid_range", reason: "check_out_after_check_in" })
+      return
+    }
+    const key = [input.roomTypeId, input.checkIn, input.checkOut].join("\u001f")
+    const group = groups.get(key) ?? []
+    group.push({ index, input })
+    groups.set(key, group)
+  })
+
+  await Promise.all(
+    [...groups.values()].map(async (group) => {
+      const first = group[0]
+      if (!first) return
+      const nights = eachStayNight(first.input.checkIn, first.input.checkOut)
+      const ratePlanIds = distinct(group.map(({ input }) => input.ratePlanId))
+      const [roomRow, ratePlanRows, rateRows, inventoryRows, overlappingBookings] =
+        await Promise.all([
+          db.select().from(roomTypes).where(eq(roomTypes.id, first.input.roomTypeId)).limit(1),
+          db.select().from(ratePlans).where(inArray(ratePlans.id, ratePlanIds)),
+          db
+            .select()
+            .from(ratePlanDailyRates)
+            .where(
+              and(
+                eq(ratePlanDailyRates.roomTypeId, first.input.roomTypeId),
+                inArray(ratePlanDailyRates.ratePlanId, ratePlanIds),
+                inArray(ratePlanDailyRates.date, nights),
+              ),
+            ),
+          db
+            .select()
+            .from(roomTypeDailyInventory)
+            .where(
+              and(
+                eq(roomTypeDailyInventory.roomTypeId, first.input.roomTypeId),
+                inArray(roomTypeDailyInventory.date, nights),
+              ),
+            ),
+          db
+            .select({
+              checkInDate: stayBookingItems.checkInDate,
+              checkOutDate: stayBookingItems.checkOutDate,
+              roomCount: stayBookingItems.roomCount,
+            })
+            .from(stayBookingItems)
+            .where(
+              and(
+                eq(stayBookingItems.roomTypeId, first.input.roomTypeId),
+                eq(stayBookingItems.status, "reserved"),
+                lt(stayBookingItems.checkInDate, first.input.checkOut),
+                gt(stayBookingItems.checkOutDate, first.input.checkIn),
+              ),
+            ),
+        ])
+
+      const room = roomRow[0]
+      if (!room) {
+        for (const { index } of group) results.set(index, { status: "room_not_found" })
+        return
+      }
+      const plansById = new Map(ratePlanRows.map((plan) => [plan.id, plan]))
+      for (const { index, input } of group) {
+        const ratePlan = plansById.get(input.ratePlanId)
+        if (!ratePlan) {
+          results.set(index, { status: "rate_plan_not_found" })
+          continue
+        }
+        results.set(
+          index,
+          resolveOwnedStayQuote(input, {
+            room,
+            ratePlan,
+            rates: rateRows.filter((rate) => rate.ratePlanId === input.ratePlanId),
+            inventory: inventoryRows,
+            overlappingBookings,
+          }),
+        )
+      }
+    }),
+  )
+
+  return inputs.map((_, index) => {
+    const result = results.get(index)
+    if (!result) throw new Error(`quoteOwnedStaysBatch: missing result ${index}`)
+    return result
   })
 }
 

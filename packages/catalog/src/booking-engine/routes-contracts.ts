@@ -22,6 +22,27 @@ const quoteScopeSchema = z
   })
   .optional()
 
+const batchCriteriaSchema = z
+  .object({
+    checkIn: z.string().min(1).optional(),
+    checkOut: z.string().min(1).optional(),
+    occupancy: z.record(z.string(), z.number().int().nonnegative()).optional(),
+    roomCount: z.number().int().positive().optional(),
+  })
+  .optional()
+
+const batchSelectionSchema = z.object({
+  entityModule: z.string().min(1),
+  entityId: z.string().min(1),
+  ratePlanId: z.string().min(1).optional(),
+  sourceKind: z.string().min(1).optional(),
+  sourceProvider: z.string().min(1).optional(),
+  sourceConnectionId: z.string().min(1).optional(),
+  sourceRef: z.string().min(1).optional(),
+  parameters: recordSchema.optional(),
+  draft: recordSchema.optional(),
+})
+
 export const quoteBodySchema = z.object({
   entityModule: z.string().min(1),
   entityId: z.string().min(1),
@@ -33,6 +54,15 @@ export const quoteBodySchema = z.object({
   parameters: recordSchema.optional(),
   draft: recordSchema.optional(),
   ttlMs: z.number().int().positive().optional(),
+})
+
+export const batchQuoteBodySchema = z.object({
+  criteria: batchCriteriaSchema,
+  scope: quoteScopeSchema,
+  parameters: recordSchema.optional(),
+  draft: recordSchema.optional(),
+  ttlMs: z.number().int().positive().optional(),
+  selections: z.array(batchSelectionSchema).min(1).max(30),
 })
 
 export const bookBodySchema = z
@@ -81,6 +111,8 @@ export const holdReleaseBodySchema = z.object({
 })
 
 export type CatalogBookingQuoteBody = z.infer<typeof quoteBodySchema>
+export type CatalogBookingBatchQuoteBody = z.infer<typeof batchQuoteBodySchema>
+export type CatalogBookingBatchQuoteSelection = z.infer<typeof batchSelectionSchema>
 export type CatalogBookingBookBody = z.infer<typeof bookBodySchema>
 export type CatalogBookingDraftBody = z.infer<typeof draftBodySchema>
 export type CatalogBookingHoldPlaceBody = z.infer<typeof holdPlaceBodySchema>
@@ -131,6 +163,18 @@ export interface CatalogBookingQuoteTransformInput {
   request: CatalogBookingQuoteBody
   provenance: CatalogBookingProvenance
   result: QuoteEntityResult
+}
+
+export interface CatalogBookingBatchQuoteTransformInput {
+  c: Context
+  db: AnyDrizzleDb
+  request: CatalogBookingBatchQuoteBody
+  results: Array<{
+    selection: CatalogBookingBatchQuoteSelection
+    request: CatalogBookingQuoteBody
+    provenance: CatalogBookingProvenance
+    result: QuoteEntityResult
+  }>
 }
 
 export interface CatalogBookingBookTransformInput {
@@ -200,6 +244,21 @@ export interface CatalogBookingRoutesOptions {
     input: CatalogBookingPrepareBookParametersInput,
   ): Promise<Record<string, unknown>> | Record<string, unknown>
   transformQuoteResult?(input: CatalogBookingQuoteTransformInput): Promise<QuoteEntityResult>
+  transformBatchQuoteResults?(input: CatalogBookingBatchQuoteTransformInput):
+    | Promise<
+        Array<{
+          selection: CatalogBookingBatchQuoteSelection
+          request: CatalogBookingQuoteBody
+          provenance: CatalogBookingProvenance
+          result: QuoteEntityResult
+        }>
+      >
+    | Array<{
+        selection: CatalogBookingBatchQuoteSelection
+        request: CatalogBookingQuoteBody
+        provenance: CatalogBookingProvenance
+        result: QuoteEntityResult
+      }>
   transformBookResult?(input: CatalogBookingBookTransformInput): Promise<BookEntityResult>
   onDraftConsumedError?(event: CatalogBookingDraftConsumedError): void
   onCommitted?(event: CatalogBookingCommittedEvent): Promise<void> | void
