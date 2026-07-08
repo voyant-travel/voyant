@@ -1,5 +1,7 @@
 # @voyant-travel/admin
 
+## 0.118.0
+
 ## 0.117.0
 
 ### Minor Changes
