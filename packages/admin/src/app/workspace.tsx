@@ -167,7 +167,7 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
    * `AdminNavigationProvider` wired to the app router, so packaged pages can
    * navigate to routes they don't own via `useAdminHref`/`useAdminNavigate`.
    */
-  destinations?: AdminDestinationResolvers
+  destinations?: Partial<AdminDestinationResolvers>
   /**
    * Left slot of the workspace header after the sidebar trigger. When omitted,
    * the layout renders its default breadcrumbs.
@@ -248,7 +248,7 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   extensions: AdminWorkspaceShellProps<TUser>["extensions"]
   icons?: OperatorAdminNavigationIcons
   linkComponent: AdminNavLinkComponent
-  destinations?: AdminDestinationResolvers
+  destinations?: Partial<AdminDestinationResolvers>
   headerSlot?: ReactNode
   headerSlotRight?: ReactNode
   onSignOut?: () => void | Promise<void>

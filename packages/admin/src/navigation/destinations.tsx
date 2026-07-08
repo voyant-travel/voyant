@@ -65,15 +65,19 @@ export type AdminDestinationNavigator = <K extends AdminDestinationKey>(
 ) => void
 
 interface AdminNavigationContextValue {
-  resolvers: AdminDestinationResolvers
+  resolvers: Partial<AdminDestinationResolvers>
   navigate: (href: string, options?: AdminNavigateOptions) => void
 }
 
 const AdminNavigationContext = React.createContext<AdminNavigationContextValue | null>(null)
 
 export interface AdminNavigationProviderProps {
-  /** Host resolver map covering every destination key the mounted packages declare. */
-  resolvers: AdminDestinationResolvers
+  /**
+   * Host resolver map for the destination keys the mounted packages declare.
+   * Partial: any unbound key falls back to `#` (resolvers needing more than
+   * path interpolation — search-param construction — stay host-owned).
+   */
+  resolvers: Partial<AdminDestinationResolvers>
   /**
    * Host-injected navigation primitive — typically the app router's
    * href-based navigate. Keeping it injected keeps this package

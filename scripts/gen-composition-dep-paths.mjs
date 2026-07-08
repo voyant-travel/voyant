@@ -182,12 +182,16 @@ const CONFIGS = [
   "packages/framework/tsconfig.typecheck.json",
   "packages/framework/tsconfig.build.json",
   "packages/openapi/tsconfig.typecheck.json",
+  "starters/managed-operator/tsconfig.server.json",
+  "starters/managed-operator/tsconfig.client.json",
 ]
 injectPaths(CONFIGS[0], { "@/*": ["./src/*"] })
 injectPaths(CONFIGS[1], { "@/*": ["./src/*"] })
 injectPaths(CONFIGS[2], {})
 injectPaths(CONFIGS[3], {})
 injectPaths(CONFIGS[4], {})
+injectPaths(CONFIGS[5], { "@/*": ["./src/*"] })
+injectPaths(CONFIGS[6], { "@/*": ["./src/*"] })
 
 // Normalize formatting so this generator's output is byte-stable (the
 // freshness check re-runs it and asserts no diff). Biome owns JSON formatting.
