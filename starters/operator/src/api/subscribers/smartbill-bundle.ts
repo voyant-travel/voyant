@@ -1,6 +1,6 @@
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
 
-type SmartbillEnv = CloudflareBindings & {
+type SmartbillEnv = AppBindings & {
   SMARTBILL_USERNAME?: string
   SMARTBILL_API_TOKEN?: string
   SMARTBILL_TOKEN?: string

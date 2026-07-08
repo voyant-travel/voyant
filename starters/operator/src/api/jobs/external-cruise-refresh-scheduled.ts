@@ -21,7 +21,7 @@ import { operatorPostgresDb } from "../runtime/operator-runtime-adapter"
 
 export async function runScheduledExternalCruiseCatalogRefresh(
   _event: ScheduledController,
-  env: CloudflareBindings & BookingEngineEnv,
+  env: AppBindings & BookingEngineEnv,
 ) {
   return withDbFromEnv(env, async (rawDb) => {
     const db = operatorPostgresDb(rawDb)

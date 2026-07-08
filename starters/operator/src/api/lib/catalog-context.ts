@@ -38,7 +38,7 @@ export interface OperatorCatalogContext {
 }
 
 export function buildCatalogContext(c: Context): OperatorCatalogContext {
-  const env = c.env as CloudflareBindings & {
+  const env = c.env as AppBindings & {
     VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
     TENANT_ID?: string

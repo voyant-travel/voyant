@@ -61,7 +61,7 @@ async function createBookingScheduleRoutesOptions(): Promise<BookingScheduleRout
 export const bookingScheduleBundle: HonoBundle = {
   name: "booking-schedule",
   bootstrap: ({ bindings, eventBus }) => {
-    const env = bindings as CloudflareBindings
+    const env = bindings as AppBindings
     eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
       try {
         const [

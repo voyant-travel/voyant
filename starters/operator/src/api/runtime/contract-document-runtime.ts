@@ -27,7 +27,7 @@ export { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-variables"
  * implementation until a contract is actually generated.
  */
 export function resolveContractDocumentGenerator(
-  env: CloudflareBindings,
+  env: AppBindings,
 ): ContractDocumentGenerator | null {
   const storage = createDocumentStorage(env)
   if (!storage) return null
@@ -66,7 +66,7 @@ export function resolveContractDocumentGenerator(
  * seeding, booking lookup, template render, contract-record persistence) lives
  * in `@voyant-travel/legal/contract-document`.
  */
-function contractDocumentService(env: CloudflareBindings) {
+function contractDocumentService(env: AppBindings) {
   return createContractDocumentService({
     resolveGenerator: () => resolveContractDocumentGenerator(env),
     autoGenerateOptions: AUTO_GENERATE_CONTRACT_OPTIONS,
@@ -77,7 +77,7 @@ function contractDocumentService(env: CloudflareBindings) {
 }
 
 export function generateContractPdfForBooking(
-  env: CloudflareBindings,
+  env: AppBindings,
   db: PostgresJsDatabase,
   eventBus: EventBus | undefined,
   bookingId: string,
@@ -87,7 +87,7 @@ export function generateContractPdfForBooking(
 }
 
 function previewContractForBooking(
-  env: CloudflareBindings,
+  env: AppBindings,
   db: PostgresJsDatabase,
   bookingId: string,
 ): Promise<{ html: string; templateName: string; templateLanguage: string } | null> {
@@ -105,21 +105,21 @@ export function buildContractDocumentRoutes() {
   const options: ContractDocumentRoutesOptions = {
     generateContract: (env, db, eventBus, bookingId, opts) =>
       generateContractPdfForBooking(
-        env as CloudflareBindings,
+        env as AppBindings,
         db as PostgresJsDatabase,
         eventBus as EventBus | undefined,
         bookingId,
         opts,
       ),
     previewContract: (env, db, bookingId) =>
-      previewContractForBooking(env as CloudflareBindings, db as PostgresJsDatabase, bookingId),
-    resolveStorage: (env) => createDocumentStorage(env as CloudflareBindings),
+      previewContractForBooking(env as AppBindings, db as PostgresJsDatabase, bookingId),
+    resolveStorage: (env) => createDocumentStorage(env as AppBindings),
     guessMimeType,
   }
   return createContractDocumentRoutes(options)
 }
 
-async function createContractBookingPiiService(env: CloudflareBindings) {
+async function createContractBookingPiiService(env: AppBindings) {
   const runtime = buildBookingRouteRuntime(env)
   try {
     return createBookingPiiService({ kms: await runtime.getKmsProvider() })

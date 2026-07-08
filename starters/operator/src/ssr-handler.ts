@@ -15,7 +15,7 @@ const startHandler = createStartHandler(withActiveRouteSsrManifest(defaultStream
 
 export function handleSsrRequest(
   request: Request,
-  env: CloudflareBindings,
+  env: AppBindings,
   _ctx: ExecutionContext,
 ): Response | Promise<Response> {
   return startHandler(request, { context: { env } } as never)

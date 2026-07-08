@@ -98,7 +98,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  * Returns `null` when no storage is configured — the upload/serve routes
  * will respond with 503.
  */
-export function createMediaStorage(env: CloudflareBindings): StorageProvider | null {
+export function createMediaStorage(env: AppBindings): StorageProvider | null {
   const appUrl = env.APP_URL?.replace(/\/api$/, "") ?? ""
   return createR2BucketStorage(env.MEDIA_BUCKET, {
     publicBaseUrl: `${appUrl}/api/v1/admin/media/`,
@@ -114,12 +114,12 @@ export function createMediaStorage(env: CloudflareBindings): StorageProvider | n
  *
  * Returns `null` when no private document storage is configured.
  */
-export function createDocumentStorage(env: CloudflareBindings): StorageProvider | null {
+export function createDocumentStorage(env: AppBindings): StorageProvider | null {
   return createR2BucketStorage(env.DOCUMENTS_BUCKET)
 }
 
 export async function readDocumentContentBase64(
-  env: CloudflareBindings,
+  env: AppBindings,
   storageKey: string,
 ): Promise<string | null> {
   const object = await env.DOCUMENTS_BUCKET?.get(storageKey)
@@ -128,7 +128,7 @@ export async function readDocumentContentBase64(
 }
 
 export async function resolveDocumentDownloadUrl(
-  env: CloudflareBindings,
+  env: AppBindings,
   storageKey: string,
   _expiresIn?: number,
 ): Promise<string | null> {
@@ -157,7 +157,7 @@ function normalizeApiBaseUrl(value: string | undefined) {
   return normalized
 }
 
-function resolveDocumentDownloadApiBaseUrl(env: CloudflareBindings) {
+function resolveDocumentDownloadApiBaseUrl(env: AppBindings) {
   return (
     normalizeApiBaseUrl(env.API_BASE_URL) ??
     normalizeApiBaseUrl(env.APP_URL) ??
@@ -167,7 +167,7 @@ function resolveDocumentDownloadApiBaseUrl(env: CloudflareBindings) {
 }
 
 const authenticatedDocumentDownloadResolver =
-  createAuthenticatedR2DocumentDownloadResolver<CloudflareBindings>({
+  createAuthenticatedR2DocumentDownloadResolver<AppBindings>({
     apiBaseUrl: resolveDocumentDownloadApiBaseUrl,
     routePrefix: "/v1/admin/documents/files",
     bucketBindingName: "DOCUMENTS_BUCKET",

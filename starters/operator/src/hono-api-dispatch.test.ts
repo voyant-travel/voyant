@@ -43,7 +43,7 @@ describe("operator API dispatch wiring", () => {
     const env = {
       APP_URL: "https://example.test",
       CORS_ALLOWLIST: "https://dashboard.example",
-    } as CloudflareBindings
+    } as AppBindings
     const ctx: ExecutionContext = {
       props: undefined,
       waitUntil: vi.fn(),

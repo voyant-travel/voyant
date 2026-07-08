@@ -1,13 +1,13 @@
 // The operator is a Node-only deployment (issue voyant#2966): there is no
 // Cloudflare Workers lane, so the binding-shaped members below are backed by
 // real Node providers from `@voyant-travel/runtime` (in-process KV,
-// S3/in-process object store), not Workers bindings. The `CloudflareBindings`
-// name is a historical misnomer kept to avoid churning every consumer in this
-// pass — a rename to `OperatorBindings` is a follow-up. The `KVNamespace` /
-// `R2Bucket` / `ExecutionContext` / `ScheduledController` / `AnalyticsEngineDataset`
-// names below resolve to the Node structural aliases declared at the bottom of
-// this file, not `@cloudflare/workers-types`.
-interface CloudflareBindings {
+// S3/in-process object store), not Workers bindings. This is the deployment's
+// composed Node env bag (`composeNodeEnv`) — a neutral `AppBindings`, not tied
+// to any platform or profile. The `KVNamespace` / `R2Bucket` /
+// `ExecutionContext` / `ScheduledController` / `AnalyticsEngineDataset` names
+// below resolve to the Node structural aliases declared at the bottom of this
+// file, not `@cloudflare/workers-types`.
+interface AppBindings {
   /**
    * Per-request metrics dataset. Optional — the metrics middleware is a no-op
    * without it. On Node this is unset (Analytics Engine is Workers-only).

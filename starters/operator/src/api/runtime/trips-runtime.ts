@@ -39,7 +39,7 @@ export function createOperatorTripsRoutesOptions(): TripsRoutesOptions {
 export const tripsPaymentBundle: HonoBundle = {
   name: "trips-payment-completion",
   bootstrap: ({ bindings, eventBus }) => {
-    const env = bindings as CloudflareBindings
+    const env = bindings as AppBindings
     eventBus.subscribe<PaymentCompletedEvent>("payment.completed", async ({ data }) => {
       if (data.targetType !== "other" || !data.targetId?.startsWith("trip_")) return
 

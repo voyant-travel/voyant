@@ -44,7 +44,7 @@ export interface ReaperResult {
 
 export async function runScheduledDraftReaper(
   _event: ScheduledController,
-  env: CloudflareBindings & BookingEngineEnv,
+  env: AppBindings & BookingEngineEnv,
 ): Promise<ReaperResult> {
   const registry = await ensureBookingEngineRegistry(env)
   const ownedHandlers = getOwnedBookingHandlerRegistry(env)

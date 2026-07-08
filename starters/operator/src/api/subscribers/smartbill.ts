@@ -23,7 +23,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { withDbFromEnv } from "../lib/db"
 import { createDocumentStorage } from "../lib/storage"
 
-type SmartbillEnv = CloudflareBindings & {
+type SmartbillEnv = AppBindings & {
   SMARTBILL_USERNAME?: string
   SMARTBILL_API_TOKEN?: string
   SMARTBILL_TOKEN?: string
@@ -162,7 +162,7 @@ export const smartbillOperatorBundle: HonoBundle = {
 }
 
 export function createSmartbillSettlementPollers(
-  bindings: CloudflareBindings,
+  bindings: AppBindings,
 ): Record<string, InvoiceSettlementPoller> {
   const env = bindings as SmartbillEnv
   const runtimeOptions = resolveSmartbillRuntimeOptions(env)

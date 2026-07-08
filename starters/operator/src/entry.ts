@@ -15,7 +15,7 @@ import {
 // graph (~2.2 MB) is imported on first render rather than at boot. `fetch` and
 // `scheduled` are plain handlers; `src/server.ts` wires them into the Node
 // runtime via `createNodeServer`. See docs/architecture/deployment-targets.md.
-export const fetch = createWorkerFetch<CloudflareBindings, ExecutionContext>({
+export const fetch = createWorkerFetch<AppBindings, ExecutionContext>({
   api: operatorApiDispatch,
   ssr: lazySsr(() => import("./ssr-handler").then((mod) => mod.handleSsrRequest)),
 })
@@ -27,7 +27,7 @@ export const fetch = createWorkerFetch<CloudflareBindings, ExecutionContext>({
 // out to Cloud Scheduler by `scripts/emit-cloud-scheduler.mjs`.
 export async function scheduled(
   event: ScheduledController,
-  env: CloudflareBindings,
+  env: AppBindings,
   ctx: ExecutionContext,
 ): Promise<void> {
   if (event.cron === OUTBOX_DRAIN_CRON) {
