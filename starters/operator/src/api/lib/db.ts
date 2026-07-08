@@ -69,7 +69,7 @@ const noopDispose = async (): Promise<void> => {}
  * Without explicit cleanup, the Pool sits open until the Workers
  * runtime reclaims the isolate.
  */
-export function getDbFromEnv(env: CloudflareBindings): NeonDatabase {
+export function getDbFromEnv(env: AppBindings): NeonDatabase {
   // Node runtime: hand back the resident pooled client so callers that ignore
   // the disposer (framework-injected `resolveDb` for legal/notifications, etc.)
   // don't leak a per-call pool in the long-lived process. See the direct lane
@@ -92,7 +92,7 @@ export function getDbFromEnv(env: CloudflareBindings): NeonDatabase {
  * pays a full TLS+auth handshake per request. Surfaces that never open
  * interactive transactions are served by {@link httpDbFromEnvForApp}.
  */
-export function dbFromEnvForApp(env: CloudflareBindings): {
+export function dbFromEnvForApp(env: AppBindings): {
   db: NeonDatabase
   dispose: () => Promise<void>
 } {
@@ -142,9 +142,7 @@ export function parseReplicaUrls(raw: string | undefined, primaryUrl: string): s
     .filter((entry) => entry.length > 0 && entry !== primaryUrl)
 }
 
-export function httpDbFromEnvForApp(
-  env: CloudflareBindings,
-): NeonDatabase | ReturnType<typeof openDb> {
+export function httpDbFromEnvForApp(env: AppBindings): NeonDatabase | ReturnType<typeof openDb> {
   // Node runtime: serve every request from the resident pooled node-postgres
   // client against the direct endpoint (voyant#2966). Takes precedence over the
   // neon-http lane below, which is the Workers/serverless adapter.
@@ -177,7 +175,7 @@ export function httpDbFromEnvForApp(
  * on settle.
  */
 export async function withDbFromEnv<T>(
-  env: CloudflareBindings,
+  env: AppBindings,
   fn: (db: NeonDatabase) => Promise<T>,
 ): Promise<T> {
   // Node runtime: reuse the resident pooled client (no per-call open/close).

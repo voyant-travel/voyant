@@ -42,7 +42,7 @@ import { operatorWorkflowCloudEnv } from "../runtime/operator-runtime-adapter"
 
 export async function runScheduledPromotionBoundary(
   _event: ScheduledController,
-  env: CloudflareBindings & { TENANT_ID?: string },
+  env: AppBindings & { TENANT_ID?: string },
 ): Promise<BoundarySchedulerResult & { reindexedProductIds: number }> {
   // `withDbFromEnv` owns the per-tick Pool — the WebSocket closes when
   // this scheduled run finishes, instead of leaking until isolate

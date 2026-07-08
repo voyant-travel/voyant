@@ -15,8 +15,8 @@ import {
 } from "../lib/storage"
 import type { generateContractPdfForBooking as generateContractPdfForBookingImpl } from "./contract-document-runtime"
 
-export function operatorBindings(bindings: unknown): CloudflareBindings {
-  return bindings as CloudflareBindings
+export function operatorBindings(bindings: unknown): AppBindings {
+  return bindings as AppBindings
 }
 
 export function operatorPostgresDb(db: VoyantDb): PostgresJsDatabase {
@@ -111,7 +111,7 @@ export function createOperatorInvoiceSettlementPollers(bindings: unknown) {
   }
 }
 
-export function operatorWorkflowCloudEnv(env: CloudflareBindings): CloudWorkflowsClientEnv {
+export function operatorWorkflowCloudEnv(env: AppBindings): CloudWorkflowsClientEnv {
   return {
     VOYANT_CLOUD_WORKFLOWS_URL: env.VOYANT_CLOUD_WORKFLOWS_URL,
     VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN: env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
@@ -141,7 +141,7 @@ export async function generateContractPdfForBooking(
   return generateContractPdfForBooking(...args)
 }
 
-function isSmartbillConfigured(env: CloudflareBindings) {
+function isSmartbillConfigured(env: AppBindings) {
   return Boolean(
     nonEmpty(env.SMARTBILL_USERNAME) &&
       (nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)) &&

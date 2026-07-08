@@ -229,7 +229,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
 function createLazyCatalogSearchRuntime(
   c: Parameters<OperatorCapabilities["resolveCatalogRuntime"]>[0],
 ): CatalogSearchRuntime {
-  const env = c.env as CloudflareBindings & {
+  const env = c.env as AppBindings & {
     VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
     VOYANT_CLOUD_API_URL?: string
@@ -257,7 +257,7 @@ function createLazyCatalogSearchRuntime(
 }
 
 function createLazyCatalogEmbeddingProvider(
-  env: CloudflareBindings & {
+  env: AppBindings & {
     VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
     VOYANT_CLOUD_API_URL?: string
@@ -283,7 +283,7 @@ function createLazyCatalogEmbeddingProvider(
 }
 
 function createLazyCatalogIndexer(
-  env: CloudflareBindings & {
+  env: AppBindings & {
     TYPESENSE_HOST?: string
     TYPESENSE_ADMIN_API_KEY?: string
     TYPESENSE_API_KEY?: string

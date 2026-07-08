@@ -30,7 +30,7 @@ import { resolveEmailReplyTo } from "../../lib/notifications"
 import { tryGetCloudClient } from "../../lib/voyant-cloud"
 import { withDbFromEnv } from "../lib/db"
 
-type InvitationsBindings = CloudflareBindings
+type InvitationsBindings = AppBindings
 type InvitationsVariables = {
   userId?: string
   db: VoyantDb

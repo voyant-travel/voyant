@@ -141,7 +141,7 @@ interface ProductPublicationChangedPayload {
 export const catalogBridgeBundle: HonoBundle = {
   name: "catalog-bridge",
   bootstrap: ({ bindings, eventBus }) => {
-    const env = bindings as CloudflareBindings & {
+    const env = bindings as AppBindings & {
       TENANT_ID?: string
       TYPESENSE_HOST?: string
       TYPESENSE_ADMIN_API_KEY?: string

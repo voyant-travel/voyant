@@ -20,7 +20,7 @@ import {
 } from "./catalog-runtime.js"
 import { withDbFromEnv } from "./db.js"
 
-type BulkReindexEnv = CloudflareBindings & {
+type BulkReindexEnv = AppBindings & {
   TENANT_ID?: string
   TYPESENSE_HOST?: string
   TYPESENSE_ADMIN_API_KEY?: string

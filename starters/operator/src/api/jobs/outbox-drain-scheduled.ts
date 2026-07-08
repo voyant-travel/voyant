@@ -20,7 +20,7 @@ import { withDbFromEnv } from "../lib/db"
  */
 export async function runScheduledOutboxDrain(
   _event: ScheduledController,
-  env: CloudflareBindings,
+  env: AppBindings,
 ): Promise<DrainOutboxResult & { pendingAfter: number; deadLettered: number }> {
   const { app } = await import("../app")
   await app.ready(env)

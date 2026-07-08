@@ -169,7 +169,7 @@ function uniqueSlices(slices: ReadonlyArray<IndexerSlice>): IndexerSlice[] {
 
 /**
  * Just the env keys this module reads. Callers may pass any superset
- * (e.g. the full `CloudflareBindings`); structural assignment ignores
+ * (e.g. the full `AppBindings`); structural assignment ignores
  * extra properties.
  */
 export type CatalogRuntimeEnv = {

@@ -3,7 +3,7 @@ import type { CreateBetterAuthOptions } from "@voyant-travel/auth/server"
 type BetterAuthAdvancedOptions = NonNullable<CreateBetterAuthOptions["advanced"]>
 
 export function buildBetterAuthCookieAdvancedOptions(
-  env: Pick<CloudflareBindings, "AUTH_COOKIE_DOMAIN">,
+  env: Pick<AppBindings, "AUTH_COOKIE_DOMAIN">,
 ):
   | Pick<BetterAuthAdvancedOptions, "crossSubDomainCookies" | "defaultCookieAttributes">
   | undefined {

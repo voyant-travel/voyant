@@ -50,7 +50,7 @@ interface ContractDocumentGeneratedPayload {
  * own callers; it adapts to the package's env-less generator inside the bundle.
  */
 export type CatalogCheckoutContractPdfGenerator = (input: {
-  env: CloudflareBindings
+  env: AppBindings
   db: PostgresJsDatabase
   eventBus: EventBus
   bookingId: string
@@ -58,7 +58,7 @@ export type CatalogCheckoutContractPdfGenerator = (input: {
 }) => Promise<{ contractId: string; attachmentId: string } | null>
 
 type DispatchParams = Omit<DispatchCheckoutFinalizeParams, "generateContractPdf"> & {
-  env: CloudflareBindings
+  env: AppBindings
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
 }
 

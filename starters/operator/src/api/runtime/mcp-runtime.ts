@@ -86,7 +86,7 @@ export function buildMcpAdminRoutes(): Hono {
 }
 
 function buildToolContext(c: Context): OperatorToolContext {
-  const env = c.env as CloudflareBindings & { TENANT_ID?: string }
+  const env = c.env as AppBindings & { TENANT_ID?: string }
   const actor = (c.var.actor ?? "staff") as ToolContext["actor"]
   const audience = (c.var.audience ?? actor) as ToolContext["audience"]
   const locale = DEFAULT_SLICES[0]?.locale ?? "en-GB"

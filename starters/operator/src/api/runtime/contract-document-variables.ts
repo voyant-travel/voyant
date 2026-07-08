@@ -36,7 +36,7 @@ export const AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
   }),
 }
 
-export function contractVariableBindings(env: CloudflareBindings): Record<string, unknown> {
+export function contractVariableBindings(env: AppBindings): Record<string, unknown> {
   return {
     APP_URL: env.APP_URL,
     DOCUMENTS_BASE_URL: env.DOCUMENTS_BASE_URL,

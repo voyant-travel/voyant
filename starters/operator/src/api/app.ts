@@ -44,7 +44,7 @@ const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 // families (`deploymentLocalModules`), then composes + mounts. The deployment no
 // longer hand-maintains a manifest or registry. See the consolidated-deployments
 // RFC (Workstream B) + voyant#1608 / #1620.
-export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOperatorProviders>>({
+export const app = createVoyantApp<AppBindings, ReturnType<typeof buildOperatorProviders>>({
   providers: buildOperatorProviders(),
   modules: deploymentLocalModules,
   extensions: deploymentLocalExtensions,
@@ -103,7 +103,7 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
         const { createBulkReindexProductsService } = await import("./lib/bulk-reindex-service")
         container.register(
           BULK_REINDEX_SERVICE_KEY,
-          createBulkReindexProductsService(bindings as CloudflareBindings),
+          createBulkReindexProductsService(bindings as AppBindings),
         )
       },
     },

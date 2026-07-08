@@ -1,6 +1,6 @@
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { serveStatic } from "@hono/node-server/serve-static"
+import { serveManagedProfileAdmin } from "@voyant-travel/admin-host/serve"
 import {
   createDbClient,
   createPostgresFixedWindowRateLimitStore,
@@ -20,7 +20,6 @@ import {
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
-import { Hono } from "hono"
 
 import { fetch as appFetch, scheduled } from "./entry"
 
@@ -94,7 +93,7 @@ function resolveSharedStoreDb() {
 function createRuntimeStores(): {
   CACHE: KVStore
   RATE_LIMIT: KVStore
-  RATE_LIMIT_STORE: NonNullable<CloudflareBindings["RATE_LIMIT_STORE"]>
+  RATE_LIMIT_STORE: NonNullable<AppBindings["RATE_LIMIT_STORE"]>
 } {
   const l1Cache = createMemoryKvNamespace()
   const l1RateLimit = createMemoryKvNamespace()
@@ -127,7 +126,7 @@ function createRuntimeStores(): {
 const stores = createRuntimeStores()
 
 // Compose the env bag app code reads (`env.CACHE`, `env.MEDIA_BUCKET`, …).
-const env = composeNodeEnv<CloudflareBindings>(process.env, {
+const env = composeNodeEnv<AppBindings>(process.env, {
   kv: {
     CACHE: stores.CACHE,
     RATE_LIMIT: stores.RATE_LIMIT,
@@ -159,9 +158,10 @@ function toExecutionContext(ctx: ExecutionContextLike): ExecutionContext {
 // handler renders the document shell for any non-asset route, so no explicit
 // SPA index fallback is needed. In dev the assets 404 here and are served by
 // Vite's own middleware instead.
-const web = new Hono<{ Bindings: CloudflareBindings }>()
-web.use("*", serveStatic({ root: CLIENT_DIR }))
-web.all("*", (c) => appFetch(c.req.raw, c.env, c.executionCtx))
+const web = serveManagedProfileAdmin<AppBindings>({
+  clientAssetsDir: CLIENT_DIR,
+  app: appFetch,
+})
 
 // Per-request waitUntil context for the dev-server path (see toExecutionContext).
 const devRegistry = createWaitUntilRegistry()
@@ -180,7 +180,7 @@ export default {
 // spawn a second listener — only a direct `node dist/server/server.js` run does.
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
-  const handle = createNodeServer<CloudflareBindings>({
+  const handle = createNodeServer<AppBindings>({
     fetch: (request, bindings, ctx) => web.fetch(request, bindings, toExecutionContext(ctx)),
     scheduled: (event, bindings, ctx) => scheduled(event, bindings, toExecutionContext(ctx)),
     env,

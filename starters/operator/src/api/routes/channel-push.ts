@@ -65,7 +65,7 @@ interface ProductContentChangedPayload {
 export const channelPushBundle: HonoBundle = {
   name: "channel-push",
   bootstrap: ({ bindings, eventBus }) => {
-    const env = bindings as CloudflareBindings & BookingEngineEnv
+    const env = bindings as AppBindings & BookingEngineEnv
     const registry = getBookingEngineRegistry(env)
 
     // Build deps from a per-call db client. Each subscriber wraps with

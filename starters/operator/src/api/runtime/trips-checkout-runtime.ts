@@ -30,7 +30,7 @@ function createTripCheckoutDeps(c: Context): TripCheckoutDeps {
   return {
     db: getDb(c),
     quoteFx: (sourceCurrency, targetCurrency) => quoteFx(c, sourceCurrency, targetCurrency),
-    resolveCheckoutBaseUrl: () => resolvePublicCheckoutBaseUrl(c.env as CloudflareBindings),
+    resolveCheckoutBaseUrl: () => resolvePublicCheckoutBaseUrl(c.env as AppBindings),
     startProviderPayment: async ({ paymentSessionId, billing, description }) => {
       await cardPaymentStarter(c, {
         db: getDb(c) as PostgresJsDatabase,
@@ -50,7 +50,7 @@ export function startTripCheckout(
   return packageStartTripCheckout(createTripCheckoutDeps(c), input)
 }
 
-function resolvePublicCheckoutBaseUrl(env: CloudflareBindings): string | null {
+function resolvePublicCheckoutBaseUrl(env: AppBindings): string | null {
   return (
     env.PUBLIC_CHECKOUT_BASE_URL?.trim() ||
     env.DASH_BASE_URL?.trim() ||

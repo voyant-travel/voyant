@@ -51,7 +51,7 @@ import { buildBetterAuthCookieAdvancedOptions } from "./cookie-domain"
 // Type ctx so that `c.get("db")` resolves to the parent app's middleware-
 // set `VoyantDb` (the per-request Pool the `dbFromEnvForApp` factory
 // installed). Without this, the sub-app sees `unknown` for context vars.
-type AuthHonoEnv = { Bindings: CloudflareBindings; Variables: { db: VoyantDb } }
+type AuthHonoEnv = { Bindings: AppBindings; Variables: { db: VoyantDb } }
 type OperatorAuthMode = "local" | "voyant-cloud"
 
 const auth = new Hono<AuthHonoEnv>()
@@ -92,7 +92,7 @@ const CLOUD_BETTER_AUTH_ALLOWLIST = new Set([
   "/auth/token",
 ])
 
-function resolveOperatorAuthMode(env: CloudflareBindings): OperatorAuthMode {
+function resolveOperatorAuthMode(env: AppBindings): OperatorAuthMode {
   const mode = env.VOYANT_ADMIN_AUTH_MODE?.trim() || "local"
 
   if (mode === "local" || mode === "voyant-cloud") {
@@ -103,7 +103,7 @@ function resolveOperatorAuthMode(env: CloudflareBindings): OperatorAuthMode {
   return "voyant-cloud"
 }
 
-function isVoyantCloudAuthMode(env: CloudflareBindings): boolean {
+function isVoyantCloudAuthMode(env: AppBindings): boolean {
   return resolveOperatorAuthMode(env) === "voyant-cloud"
 }
 
@@ -125,7 +125,7 @@ function normalizeUrl(url: string): string {
   return url.trim().replace(/\/$/, "")
 }
 
-function getAppUrl(env: CloudflareBindings): string {
+function getAppUrl(env: AppBindings): string {
   const candidates = [
     env.APP_URL,
     env.DASH_BASE_URL,
@@ -142,7 +142,7 @@ function getAppUrl(env: CloudflareBindings): string {
   return DEFAULT_APP_URL
 }
 
-function getTrustedOrigins(env: CloudflareBindings): string[] {
+function getTrustedOrigins(env: AppBindings): string[] {
   return Array.from(
     new Set(
       [env.APP_URL, env.DASH_BASE_URL, ...(env.CORS_ALLOWLIST ?? "").split(",")]
@@ -152,7 +152,7 @@ function getTrustedOrigins(env: CloudflareBindings): string[] {
   ).map(normalizeUrl)
 }
 
-function getAuthBaseUrl(env: CloudflareBindings): string {
+function getAuthBaseUrl(env: AppBindings): string {
   // entry.ts strips /api before delegating to the Hono app, so Better Auth
   // sees paths like /auth/*. Its baseURL must be the origin only (no /api).
   const appUrl = getAppUrl(env)
@@ -164,7 +164,7 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
   }
 }
 
-function getPublicApiBaseUrl(env: CloudflareBindings): string {
+function getPublicApiBaseUrl(env: AppBindings): string {
   const candidate = env.API_BASE_URL?.trim() || env.APP_URL?.trim() || `${getAppUrl(env)}/api`
   const normalized = normalizeUrl(candidate)
 
@@ -181,7 +181,7 @@ function getPublicApiBaseUrl(env: CloudflareBindings): string {
   return normalized
 }
 
-function getCloudAuthStartConfig(env: CloudflareBindings) {
+function getCloudAuthStartConfig(env: AppBindings) {
   const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
   const cloudAuthStartUrl = env.VOYANT_CLOUD_ADMIN_AUTH_START_URL?.trim()
   if (!deploymentId || !cloudAuthStartUrl) return null
@@ -196,7 +196,7 @@ function getCloudAuthStartConfig(env: CloudflareBindings) {
   }
 }
 
-function getCloudAuthExchangeConfig(env: CloudflareBindings) {
+function getCloudAuthExchangeConfig(env: AppBindings) {
   const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
   const exchangeUrl = env.VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?.trim()
   const assertionJwksUrl = env.VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL?.trim()
@@ -212,7 +212,7 @@ function getCloudAuthExchangeConfig(env: CloudflareBindings) {
   }
 }
 
-function getCloudAuthRevalidateConfig(env: CloudflareBindings) {
+function getCloudAuthRevalidateConfig(env: AppBindings) {
   const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
   const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
   const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
@@ -230,11 +230,11 @@ function isLocalRequest(request: Request): boolean {
   return hostname === "127.0.0.1" || hostname === "localhost"
 }
 
-function shouldUseBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Request): boolean {
+function shouldUseBrowserEvidenceAuthFallback(env: AppBindings, request: Request): boolean {
   return env.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
 }
 
-function allowAuthSecretLogging(env: CloudflareBindings): boolean {
+function allowAuthSecretLogging(env: AppBindings): boolean {
   return env.VOYANT_AUTH_LOG_SECRET_FALLBACKS === "1"
 }
 
@@ -255,7 +255,7 @@ interface BuildBetterAuthOptions {
 }
 
 function buildBetterAuth(
-  env: CloudflareBindings,
+  env: AppBindings,
   db: ReturnType<typeof dbFromEnvForApp>["db"],
   options: BuildBetterAuthOptions = {},
 ) {
@@ -352,7 +352,7 @@ const FULL_ACCESS_SCOPES = ["*"]
  */
 async function resolveMemberScopes(
   db: ReturnType<typeof dbFromEnvForApp>["db"],
-  env: CloudflareBindings,
+  env: AppBindings,
   userId: string,
 ): Promise<string[]> {
   if (isVoyantCloudAuthMode(env)) {
@@ -374,7 +374,7 @@ async function resolveMemberScopes(
 
 export async function resolveAuthRequest(
   request: Request,
-  env: CloudflareBindings,
+  env: AppBindings,
 ): Promise<VoyantRequestAuthContext | null> {
   const { db, dispose } = dbFromEnvForApp(env)
   try {
@@ -434,10 +434,7 @@ export async function resolveAuthRequest(
  * implicitly allowed. If you need granular RBAC later, switch on
  * `user_profiles.isSuperAdmin` / `isSupportUser` here.
  */
-export async function hasAuthPermission(
-  request: Request,
-  env: CloudflareBindings,
-): Promise<boolean> {
+export async function hasAuthPermission(request: Request, env: AppBindings): Promise<boolean> {
   const auth = await resolveAuthRequest(request, env)
   return auth !== null
 }
@@ -451,7 +448,7 @@ class CurrentUserNotFoundError extends Error {
 
 export async function getCurrentUserForRequest(
   request: Request,
-  env: CloudflareBindings,
+  env: AppBindings,
 ): Promise<CurrentUser | null> {
   if (shouldUseBrowserEvidenceAuthFallback(env, request)) {
     return null
@@ -508,7 +505,7 @@ export async function getCurrentUserForRequest(
 
 export async function getBootstrapStatusForRequest(
   request: Request,
-  env: CloudflareBindings,
+  env: AppBindings,
 ): Promise<BootstrapStatus> {
   if (shouldUseBrowserEvidenceAuthFallback(env, request)) {
     return { hasUsers: true }
@@ -528,7 +525,7 @@ export async function getBootstrapStatusForRequest(
 }
 
 export async function validateApiTokenAccess(
-  env: CloudflareBindings,
+  env: AppBindings,
   db: VoyantDb,
   apiKey: SelectApikey,
 ): Promise<boolean> {

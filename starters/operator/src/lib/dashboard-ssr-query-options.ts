@@ -13,7 +13,7 @@ import { dbFromEnvForApp } from "../api/lib/db"
 import { getOperatorStartEnv } from "./operator-start-context"
 
 type OperatorServerContext = {
-  env?: CloudflareBindings
+  env?: AppBindings
   request: Request
 }
 
@@ -24,7 +24,7 @@ const withOperatorRequest = createMiddleware({ type: "request" }).server(
     }),
 )
 
-function requireOperatorEnv(context: OperatorServerContext): CloudflareBindings {
+function requireOperatorEnv(context: OperatorServerContext): AppBindings {
   if (!context.env) {
     throw new Error("Cloudflare bindings are not available for server-side dashboard data")
   }
@@ -37,7 +37,7 @@ function unauthorizedDashboardError(): Error & { status: 401 } {
 
 async function requireAuthenticatedOperatorRequest(
   context: OperatorServerContext,
-): Promise<CloudflareBindings> {
+): Promise<AppBindings> {
   const env = requireOperatorEnv(context)
   const { hasAuthPermission } = await import("../api/auth/handler")
 
@@ -48,10 +48,7 @@ async function requireAuthenticatedOperatorRequest(
   return env
 }
 
-async function withDashboardDb<TDb, T>(
-  env: CloudflareBindings,
-  fn: (db: TDb) => Promise<T>,
-): Promise<T> {
+async function withDashboardDb<TDb, T>(env: AppBindings, fn: (db: TDb) => Promise<T>): Promise<T> {
   const { db, dispose } = dbFromEnvForApp(env)
   try {
     return await fn(db as TDb)

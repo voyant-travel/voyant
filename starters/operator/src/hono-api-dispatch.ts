@@ -13,15 +13,15 @@ import { Hono } from "hono"
  * warm-up live in the package and arrive via version bumps.
  */
 
-const loadOperatorApiApp = lazyApp<CloudflareBindings, ExecutionContext>(() =>
+const loadOperatorApiApp = lazyApp<AppBindings, ExecutionContext>(() =>
   import("./api/app").then((mod) => ({
-    fetch: (request, env, ctx) => mod.app.fetch(request, env as CloudflareBindings, ctx),
+    fetch: (request, env, ctx) => mod.app.fetch(request, env as AppBindings, ctx),
   })),
 )
 
-const loadOperatorAuthHandler = lazyApp<CloudflareBindings, ExecutionContext>(() =>
+const loadOperatorAuthHandler = lazyApp<AppBindings, ExecutionContext>(() =>
   import("./api/auth/handler").then((mod) => ({
-    fetch: (request, env, ctx) => mod.default.fetch(request, env as CloudflareBindings, ctx),
+    fetch: (request, env, ctx) => mod.default.fetch(request, env as AppBindings, ctx),
   })),
 )
 
@@ -29,8 +29,8 @@ const loadOperatorAuthHandler = lazyApp<CloudflareBindings, ExecutionContext>(()
  * Lean auth app: CORS + the Better Auth handler, nothing else. Keeps
  * `/api/auth/*` (including preflight) off the full API module graph.
  */
-const loadOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>(async () => {
-  const authApp = new Hono<{ Bindings: CloudflareBindings }>()
+const loadOperatorAuthApp = lazyApp<AppBindings, ExecutionContext>(async () => {
+  const authApp = new Hono<{ Bindings: AppBindings }>()
   authApp.use("*", cors())
   authApp.use("*", securityHeaders())
   authApp.use("*", requestBodyLimit({ maxBytes: 1024 * 1024 }))
@@ -46,10 +46,10 @@ const loadOperatorAuthApp = lazyApp<CloudflareBindings, ExecutionContext>(async 
     const authHandler = await loadOperatorAuthHandler()
     return authHandler.fetch(c.req.raw, c.env, c.executionCtx as ExecutionContext)
   })
-  return authApp as FetchApp<CloudflareBindings, ExecutionContext>
+  return authApp as FetchApp<AppBindings, ExecutionContext>
 })
 
-export const operatorApiDispatch = createApiDispatch<CloudflareBindings, ExecutionContext>({
+export const operatorApiDispatch = createApiDispatch<AppBindings, ExecutionContext>({
   loadApiApp: loadOperatorApiApp,
   loadAuthApp: loadOperatorAuthApp,
   // Cloud isolates are frequently evicted; auth/JWKS traffic must not kick off

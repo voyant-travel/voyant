@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import { resolveDocumentDownloadUrl } from "./storage"
 
-function env(overrides: Partial<CloudflareBindings> = {}): CloudflareBindings {
+function env(overrides: Partial<AppBindings> = {}): AppBindings {
   return {
     DOCUMENTS_BUCKET: {},
     ...overrides,
-  } as CloudflareBindings
+  } as AppBindings
 }
 
 describe("document download URL resolution", () => {

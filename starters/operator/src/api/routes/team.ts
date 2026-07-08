@@ -33,7 +33,7 @@ import { eq } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
 
-type TeamBindings = CloudflareBindings
+type TeamBindings = AppBindings
 type TeamVariables = {
   userId?: string
   db: VoyantDb

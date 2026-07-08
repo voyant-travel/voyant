@@ -30,7 +30,7 @@ import { withDbFromEnv } from "../lib/db"
 
 export async function runScheduledChannelPushReconciler(
   event: ScheduledController,
-  env: CloudflareBindings & BookingEngineEnv,
+  env: AppBindings & BookingEngineEnv,
 ): Promise<void> {
   // `withDbFromEnv` owns the per-tick Pool — the WebSocket closes when
   // this scheduled run finishes, instead of leaking until isolate

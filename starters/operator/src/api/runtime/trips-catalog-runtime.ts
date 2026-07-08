@@ -119,7 +119,7 @@ export async function startComponentCheckout(
       await startCatalogCheckout(
         {
           db: getDb(c) as PostgresJsDatabase,
-          env: c.env as CloudflareBindings & Record<string, string | undefined>,
+          env: c.env as AppBindings & Record<string, string | undefined>,
           eventBus: getEventBus(c),
           resolveRuntime: (key) => getContainer(c)?.resolve(key),
           requestMeta: checkoutRequestMeta(c),
