@@ -7,6 +7,7 @@ import { OperatorAdminBootstrapGate } from "@voyant-travel/admin/components/oper
 import { OperatorAdminWorkspaceLayout } from "@voyant-travel/admin/components/operator-admin-sidebar"
 import { AdminNavigationProvider } from "@voyant-travel/admin/navigation/destinations"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
+import { adminAuthRuntime } from "@/lib/admin-auth-runtime"
 import { federatedAdminDestinations } from "@/lib/admin-destinations"
 import {
   createFederatedAdminExtensions,
@@ -14,9 +15,9 @@ import {
   federatedBaseNav,
 } from "@/lib/admin-extensions"
 import { useSignOut } from "@/lib/auth"
-import { type CurrentUser, getCurrentUser } from "@/lib/current-user"
+import type { CurrentUser } from "@/lib/current-user"
 
-const workspaceGuard = createAdminWorkspaceBeforeLoad({ getCurrentUser })
+const workspaceGuard = createAdminWorkspaceBeforeLoad({ auth: adminAuthRuntime })
 const federatedAdminExtensions = createFederatedAdminExtensions()
 
 export const Route = createFileRoute("/_workspace")({

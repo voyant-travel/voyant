@@ -7,16 +7,16 @@ import {
 } from "@voyant-travel/admin/app/workspace"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
 import { RealtimeLiveProvider } from "@/components/realtime-live"
+import { adminAuthRuntime } from "@/lib/admin-auth-runtime"
 import { operatorAdminDestinations } from "@/lib/admin-destinations"
 import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
 import { useSignOut } from "@/lib/auth"
-import { getCurrentUser } from "@/lib/current-user"
 
 // The standard nav icon set ships from @voyant-travel/admin. Override a single
 // entry with `{ ...defaultOperatorNavIcons, finance: MyIcon }` if needed.
 const operatorNavigationIcons = defaultOperatorNavIcons
 
-const workspaceGuard = createAdminWorkspaceBeforeLoad({ getCurrentUser })
+const workspaceGuard = createAdminWorkspaceBeforeLoad({ auth: adminAuthRuntime })
 
 export const Route = createFileRoute("/_workspace")({
   // Parent loader runs server-side (auth check + user fetch through cookie-

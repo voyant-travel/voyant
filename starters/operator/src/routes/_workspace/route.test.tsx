@@ -75,8 +75,13 @@ vi.mock("@/lib/auth", () => ({
   useSignOut: () => mocks.signOut,
 }))
 
-vi.mock("@/lib/current-user", () => ({
-  getCurrentUser: vi.fn(),
+vi.mock("@/lib/admin-auth-runtime", () => ({
+  adminAuthRuntime: {
+    getCurrentUser: vi.fn(),
+    getBootstrapStatus: vi.fn(async () => ({ hasUsers: true })),
+    cloudAuthStartHref: () => "/api/auth/cloud/start",
+    signOut: vi.fn(),
+  },
 }))
 
 import { WorkspaceLayout } from "./route"
