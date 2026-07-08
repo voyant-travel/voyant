@@ -90,6 +90,27 @@ export class MigrationImmutabilityError extends Error {
 
 const contentHash = (sql: string) => createHash("sha256").update(sql).digest("hex")
 
+// `db/0001_db_baseline` originally shipped a plain `ADD COLUMN scopes`; it is
+// equivalent after narrowing to `ADD COLUMN IF NOT EXISTS` for framework-bundle
+// replay safety. Keep this exception exact so migration immutability remains the default.
+const EQUIVALENT_MIGRATION_HASHES = new Map<string, ReadonlySet<string>>([
+  [
+    "db/0001_db_baseline/073492f087f0b3035aa7215cbb03560e910712dd08f28b41a5ef0daa8f9d0e10",
+    new Set(["a152b612c5f41e6dd6ad1271faf9e51d3926526de7995df68e28046dc518ad0f"]),
+  ],
+])
+
+function isEquivalentMigrationHash(
+  migration: Pick<PlannedMigration, "source" | "tag" | "contentHash">,
+  ledgerHash: string,
+): boolean {
+  return (
+    EQUIVALENT_MIGRATION_HASHES.get(
+      `${migration.source}/${migration.tag}/${migration.contentHash}`,
+    )?.has(ledgerHash) ?? false
+  )
+}
+
 /** Split a drizzle migration's SQL into individual statements. */
 function splitStatements(sql: string): string[] {
   return sql
@@ -229,7 +250,7 @@ export async function applyMigrations(
     )
     if (seen.rows.length > 0) {
       const ledgerHash = String(seen.rows[0]?.content_hash ?? "")
-      if (ledgerHash !== m.contentHash) {
+      if (ledgerHash !== m.contentHash && !isEquivalentMigrationHash(m, ledgerHash)) {
         throw new MigrationImmutabilityError(m.source, m.tag, ledgerHash, m.contentHash)
       }
       continue // already applied, identical → no-op
