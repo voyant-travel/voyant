@@ -36,6 +36,7 @@ if (pkgs.length === 0) {
 }
 
 const FRAMEWORK_BUNDLE = join(ROOT, "packages/framework-migrations/migrations")
+const FRAMEWORK_D2_CUTLINE_TAG = "0007_framework_baseline"
 // NB: extensions are NOT seeded out-of-band — the sources must create them
 // themselves (the framework bundle ships a pg_trgm/unaccent preamble; the db
 // package owns them for the per-package sources). Seeding here would mask a
@@ -56,6 +57,17 @@ function loadFolder(folder) {
   return journalTags(folder).flatMap((tag) =>
     splitStatements(readFileSync(join(folder, `${tag}.sql`), "utf8")),
   )
+}
+
+function loadFrameworkCutlineBundle() {
+  const tags = journalTags(FRAMEWORK_BUNDLE)
+  const cutlineIndex = tags.indexOf(FRAMEWORK_D2_CUTLINE_TAG)
+  if (cutlineIndex === -1) {
+    throw new Error(`framework D.2 cutline tag ${FRAMEWORK_D2_CUTLINE_TAG} is missing`)
+  }
+  return tags
+    .slice(0, cutlineIndex + 1)
+    .flatMap((tag) => splitStatements(readFileSync(join(FRAMEWORK_BUNDLE, `${tag}.sql`), "utf8")))
 }
 
 // The frozen cutline (bundle == the cutline union by construction). The bundle
@@ -182,7 +194,7 @@ async function main() {
   try {
     const bundleCols = await withFreshDb(admin, "d2_verify_bundle", async () => {
       await onDb("d2_verify_bundle", async (c) => {
-        for (const stmt of loadFolder(FRAMEWORK_BUNDLE)) await c.query(stmt)
+        for (const stmt of loadFrameworkCutlineBundle()) await c.query(stmt)
       })
       return onDb("d2_verify_bundle", columnsByTable)
     })
