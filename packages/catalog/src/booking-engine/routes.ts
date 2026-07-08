@@ -32,7 +32,9 @@ import {
   type BookResponseV1,
   bookResponseV1,
   type PricingBreakdownV1,
+  type QuoteBatchResponseV1,
   type QuoteResponseV1,
+  quoteBatchResponseV1,
   quoteResponseV1,
 } from "./contracts.js"
 import {
@@ -55,10 +57,14 @@ import {
   RESERVE_FAILED,
 } from "./errors.js"
 import { OWNED_SOURCE_KIND } from "./owned-handler.js"
-import { type QuoteEntityResult, quoteEntity } from "./quote.js"
+import { type QuoteEntityResult, quoteEntitiesBatch, quoteEntity } from "./quote.js"
 import {
+  batchQuoteBodySchema,
   bookBodySchema,
   type CatalogBookingAdapterContextInput,
+  type CatalogBookingBatchQuoteBody,
+  type CatalogBookingBatchQuoteSelection,
+  type CatalogBookingBatchQuoteTransformInput,
   type CatalogBookingBookBody,
   type CatalogBookingDraftBody,
   type CatalogBookingHoldPlaceBody,
@@ -167,6 +173,43 @@ const quoteRoute = createRoute({
     },
     503: {
       description: "No adapter/handler registered for this vertical",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchQuoteRoute = createRoute({
+  method: "post",
+  path: "/quotes/batch",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: batchQuoteBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Batch quote results for the requested selections",
+      content: { "application/json": { schema: quoteBatchResponseV1 } },
+    },
+    400: {
+      description: "invalid_request — body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Quote/order referenced by the engine was not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Quote expired or conflicts with current availability",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Upstream reservation failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "No adapter/handler registered for one or more selections",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -332,6 +375,9 @@ const holdReleaseRoute = createRoute({
 
 export type {
   CatalogBookingAdapterContextInput,
+  CatalogBookingBatchQuoteBody,
+  CatalogBookingBatchQuoteSelection,
+  CatalogBookingBatchQuoteTransformInput,
   CatalogBookingBookBody,
   CatalogBookingBookTransformInput,
   CatalogBookingCommittedEvent,
@@ -357,6 +403,9 @@ export function createCatalogBookingRoutes(options: CatalogBookingRoutesOptions)
   // Runtime payloads honor the declared schemas (asserted by the contract tests).
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(quoteRoute, async (c) => asRouteResponse(handleQuote(c, options, c.req.valid("json"))))
+    .openapi(batchQuoteRoute, async (c) =>
+      asRouteResponse(handleBatchQuote(c, options, c.req.valid("json"))),
+    )
     .openapi(bookRoute, async (c) => asRouteResponse(handleBook(c, options, c.req.valid("json"))))
     .openapi(draftPutRoute, async (c) =>
       asRouteResponse(handleDraftPut(c, options, c.req.valid("param").id, c.req.valid("json"))),
@@ -453,6 +502,111 @@ async function handleQuote(
     const transformed =
       (await options.transformQuoteResult?.({ c, db, request: body, provenance, result })) ?? result
     return c.json(serializeQuoteResult(transformed))
+  } catch (err) {
+    return bookingEngineErrorResponse(c, err)
+  }
+}
+
+async function handleBatchQuote(
+  c: Context,
+  options: CatalogBookingRoutesOptions,
+  body: CatalogBookingBatchQuoteBody,
+): Promise<Response> {
+  const db = options.resolveDb(c)
+  const correlationId = resolveCorrelationId(c, options)
+
+  try {
+    const prepared = await Promise.all(
+      body.selections.map(async (selection, index) => {
+        const request = quoteRequestFromBatchSelection(c, body, selection)
+        const provenance = request.sourceKind
+          ? {
+              sourceKind: request.sourceKind,
+              sourceProvider: request.sourceProvider,
+              sourceConnectionId: request.sourceConnectionId,
+              sourceRef: request.sourceRef,
+            }
+          : await resolveEntityProvenance(c, options, db, request.entityModule, request.entityId)
+        const adapterContext = resolveAdapterContext(c, options, {
+          db,
+          operation: "quote",
+          entityModule: request.entityModule,
+          entityId: request.entityId,
+          sourceKind: provenance.sourceKind,
+          sourceConnectionId: provenance.sourceConnectionId,
+          correlationId,
+        })
+        const scope = {
+          locale: request.scope?.locale ?? "en-GB",
+          audience: request.scope?.audience ?? defaultAudienceForPath(c),
+          market: request.scope?.market ?? "default",
+          currency: request.scope?.currency,
+        }
+        return {
+          selectionId: String(index),
+          selection,
+          request,
+          provenance,
+          engineRequest: {
+            entityModule: request.entityModule,
+            entityId: request.entityId,
+            sourceKind: provenance.sourceKind,
+            sourceProvider: provenance.sourceProvider,
+            sourceConnectionId: provenance.sourceConnectionId,
+            sourceRef: provenance.sourceRef,
+            scope,
+            parameters: engineParametersFromDraft(request.parameters, request.draft, {
+              entityModule: request.entityModule,
+              sourceKind: provenance.sourceKind,
+              sourceProvider: provenance.sourceProvider,
+            }),
+            ttlMs: request.ttlMs,
+            adapterContext,
+            selectionId: String(index),
+          },
+        }
+      }),
+    )
+    const quoted = await quoteEntitiesBatch(
+      db,
+      {
+        registry: options.resolveSourceRegistry(c),
+        ownedHandlers: options.resolveOwnedHandlers?.(c),
+        contentEnricher: options.contentEnricher,
+        onEnricherError: options.onContentEnricherError,
+        evaluatePromotions: options.resolveEvaluatePromotions?.({ c, db }),
+      },
+      prepared.map((item) => item.engineRequest),
+    )
+    const bySelectionId = new Map(quoted.map((item) => [item.selectionId, item.result]))
+    const resultItems = await Promise.all(
+      prepared.map(async (item) => {
+        const result = bySelectionId.get(item.selectionId)
+        if (!result) throw new Error(`missing batch quote result ${item.selectionId}`)
+        const transformed =
+          (await options.transformQuoteResult?.({
+            c,
+            db,
+            request: item.request,
+            provenance: item.provenance,
+            result,
+          })) ?? result
+        return {
+          selection: item.selection,
+          request: item.request,
+          provenance: item.provenance,
+          result: transformed,
+        }
+      }),
+    )
+    const transformed =
+      (await options.transformBatchQuoteResults?.({
+        c,
+        db,
+        request: body,
+        results: resultItems,
+      })) ?? resultItems
+    return c.json(serializeBatchQuoteResult(transformed))
   } catch (err) {
     return bookingEngineErrorResponse(c, err)
   }
@@ -814,6 +968,89 @@ function defaultAudienceForPath(c: Context): "staff" | "customer" {
   return c.req.path.startsWith("/v1/public/") ? "customer" : "staff"
 }
 
+function quoteRequestFromBatchSelection(
+  c: Context,
+  body: CatalogBookingBatchQuoteBody,
+  selection: CatalogBookingBatchQuoteSelection,
+): CatalogBookingQuoteBody {
+  const draft = mergeBatchDraft(body.draft, selection.draft, body.criteria, selection)
+  return {
+    entityModule: selection.entityModule,
+    entityId: selection.entityId,
+    sourceKind: selection.sourceKind,
+    sourceProvider: selection.sourceProvider,
+    sourceConnectionId: selection.sourceConnectionId,
+    sourceRef: selection.sourceRef,
+    scope: {
+      locale: body.scope?.locale ?? "en-GB",
+      audience: body.scope?.audience ?? defaultAudienceForPath(c),
+      market: body.scope?.market ?? "default",
+      currency: body.scope?.currency,
+    },
+    parameters: {
+      ...(body.parameters ?? {}),
+      ...(selection.parameters ?? {}),
+      ...(selection.ratePlanId ? { ratePlanId: selection.ratePlanId } : {}),
+    },
+    draft,
+    ttlMs: body.ttlMs,
+  }
+}
+
+function mergeBatchDraft(
+  baseDraft: Record<string, unknown> | undefined,
+  selectionDraft: Record<string, unknown> | undefined,
+  criteria: CatalogBookingBatchQuoteBody["criteria"],
+  selection: CatalogBookingBatchQuoteSelection,
+): Record<string, unknown> | undefined {
+  const draft = deepMergeRecords(baseDraft, selectionDraft)
+  if (!criteria || selection.entityModule !== "accommodations") return draft
+  const configure = asRecord(draft?.configure) ?? {}
+  const accommodation = asRecord(draft?.accommodation) ?? {}
+  const checkIn = criteria.checkIn
+  const checkOut = criteria.checkOut
+  const nextConfigure = {
+    ...configure,
+    ...(checkIn || checkOut
+      ? {
+          dateRange: {
+            ...(asRecord(configure.dateRange) ?? {}),
+            ...(checkIn ? { checkIn } : {}),
+            ...(checkOut ? { checkOut } : {}),
+          },
+        }
+      : {}),
+    ...(criteria.occupancy ? { pax: { ...criteria.occupancy } } : {}),
+  }
+  const rooms = [
+    {
+      optionUnitId: selection.entityId,
+      quantity: criteria.roomCount ?? 1,
+      ...(selection.ratePlanId ? { ratePlanId: selection.ratePlanId } : {}),
+    },
+  ]
+  return {
+    ...(draft ?? {}),
+    configure: nextConfigure,
+    accommodation: { ...accommodation, rooms },
+  }
+}
+
+function deepMergeRecords(
+  base: Record<string, unknown> | undefined,
+  override: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (!base) return override
+  if (!override) return base
+  const merged = { ...base }
+  for (const [key, value] of Object.entries(override)) {
+    const baseValue = asRecord(merged[key])
+    const overrideValue = asRecord(value)
+    merged[key] = baseValue && overrideValue ? deepMergeRecords(baseValue, overrideValue) : value
+  }
+  return merged
+}
+
 function engineParametersFromDraft(
   parameters: Record<string, unknown> | undefined,
   draftPayload: unknown,
@@ -1040,6 +1277,17 @@ function serializeQuoteResult(result: QuoteEntityResult): QuoteResponseV1 {
     quotedAt: result.quotedAt.toISOString(),
     expiresAt: result.expiresAt.toISOString(),
     pricing: toPricingBreakdownV1(result.pricing),
+  })
+}
+
+function serializeBatchQuoteResult(
+  items: CatalogBookingBatchQuoteTransformInput["results"],
+): QuoteBatchResponseV1 {
+  return quoteBatchResponseV1.parse({
+    results: items.map((item) => ({
+      selection: item.selection,
+      ...serializeQuoteResult(item.result),
+    })),
   })
 }
 

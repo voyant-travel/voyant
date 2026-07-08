@@ -22,8 +22,10 @@ import type {
   BookingDraftShape,
   CommitOwnedRequest,
   CommitOwnedResult,
+  ComputeQuoteBatchResult,
   ComputeQuoteRequest,
   ComputeQuoteResult,
+  ComputeQuotesRequest,
   OwnedBookingHandler,
   OwnedHandlerContext,
 } from "@voyant-travel/catalog/booking-engine"
@@ -34,6 +36,7 @@ import {
   type OwnedStayQuoteResult,
   type QuoteOwnedStayInput,
   quoteOwnedStay,
+  quoteOwnedStaysBatch,
 } from "../service-owned-stays.js"
 
 interface DraftLike {
@@ -176,6 +179,57 @@ export function createAccommodationBookingHandler(
         pricing,
         shape,
       }
+    },
+
+    async computeQuotes(
+      ctx: OwnedHandlerContext,
+      request: ComputeQuotesRequest,
+    ): Promise<ReadonlyArray<ComputeQuoteBatchResult>> {
+      const prepared = await Promise.all(
+        request.selections.map(async (selection) => {
+          const content = await options.loadContent(ctx, selection.entityId)
+          const shape = content
+            ? buildAccommodationDraftShape(content, {
+                minNights: options.defaultMinNights,
+                maxNights: options.defaultMaxNights,
+              })
+            : undefined
+          const draft = (selection.draft ?? {}) as DraftLike
+          return {
+            selection,
+            shape,
+            quoteInput: content ? quoteInputFromDraft(draft, request.scope.currency) : undefined,
+            invalidReason: content ? undefined : "property_not_found",
+          }
+        }),
+      )
+      const quotable = prepared.flatMap((item) =>
+        item.quoteInput
+          ? [{ selectionId: item.selection.selectionId, input: item.quoteInput }]
+          : [],
+      )
+      const quotes = quotable.length
+        ? await quoteOwnedStaysBatch(
+            ctx.db,
+            quotable.map((item) => item.input),
+          )
+        : []
+      const quoteBySelectionId = new Map(
+        quotable.map((item, index) => [item.selectionId, quotes[index]]),
+      )
+
+      return prepared.map(({ selection, shape, invalidReason }) => {
+        const quote = quoteBySelectionId.get(selection.selectionId)
+        return {
+          selectionId: selection.selectionId,
+          result: {
+            available: quote?.status === "ok" ? quote.available : !invalidReason,
+            invalidReason: invalidReason ?? quoteInvalidReason(quote),
+            pricing: quote?.status === "ok" ? pricingFromOwnedStayQuote(quote) : undefined,
+            shape,
+          },
+        }
+      })
     },
 
     async commit(

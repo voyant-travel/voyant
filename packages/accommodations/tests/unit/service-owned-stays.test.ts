@@ -10,6 +10,7 @@ import {
 } from "../../src/schema-inventory.js"
 import {
   eachStayNight,
+  quoteOwnedStaysBatch,
   type ResolveOwnedStayQuoteRecords,
   resolveOwnedStayQuote,
   searchOwnedStays,
@@ -363,6 +364,83 @@ describe("resolveOwnedStayQuote", () => {
     if (result.status !== "ok") return
     expect(result.totalAmountCents).toBe(40_000)
     expect(result.nightlyRates[0]?.quantity).toBe(4)
+  })
+})
+
+describe("quoteOwnedStaysBatch", () => {
+  it("resolves multiple rate plans for one room/date range from shared records", async () => {
+    const db = fakeDb(
+      new Map<unknown, unknown[] | QueuedRows>([
+        [roomTypes, [room()]],
+        [
+          ratePlans,
+          [
+            ratePlan({ id: "rate_bar", mealPlanId: "meal_bb" }),
+            ratePlan({ id: "rate_flex", mealPlanId: "meal_hb" }),
+          ],
+        ],
+        [
+          ratePlanDailyRates,
+          [
+            dailyRate({
+              id: "bar_1",
+              ratePlanId: "rate_bar",
+              date: "2026-09-01",
+              sellAmountCents: 10_000,
+            }),
+            dailyRate({
+              id: "bar_2",
+              ratePlanId: "rate_bar",
+              date: "2026-09-02",
+              sellAmountCents: 11_000,
+            }),
+            dailyRate({
+              id: "flex_1",
+              ratePlanId: "rate_flex",
+              date: "2026-09-01",
+              sellAmountCents: 12_000,
+            }),
+            dailyRate({
+              id: "flex_2",
+              ratePlanId: "rate_flex",
+              date: "2026-09-02",
+              sellAmountCents: 13_000,
+            }),
+          ],
+        ],
+        [
+          roomTypeDailyInventory,
+          [
+            dailyInventory({ date: "2026-09-01", capacity: 3 }),
+            dailyInventory({ date: "2026-09-02", capacity: 3 }),
+          ],
+        ],
+      ]),
+    )
+
+    const [bar, flex] = await quoteOwnedStaysBatch(db, [
+      {
+        roomTypeId: "room_std",
+        ratePlanId: "rate_bar",
+        checkIn: "2026-09-01",
+        checkOut: "2026-09-03",
+        occupancy: { adults: 2 },
+      },
+      {
+        roomTypeId: "room_std",
+        ratePlanId: "rate_flex",
+        checkIn: "2026-09-01",
+        checkOut: "2026-09-03",
+        occupancy: { adults: 2 },
+      },
+    ])
+
+    expect(bar).toMatchObject({ status: "ok", ratePlanId: "rate_bar", totalAmountCents: 21_000 })
+    expect(flex).toMatchObject({
+      status: "ok",
+      ratePlanId: "rate_flex",
+      totalAmountCents: 25_000,
+    })
   })
 })
 

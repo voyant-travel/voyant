@@ -147,6 +147,7 @@ type FrameworkRelationshipsService = Pick<
 // the `load` closure that wires its providers into the route bundle.
 const CATALOG_BOOKING_ROUTE_PATHS = [
   "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/quotes/batch",
   "/v1/admin/catalog/book",
   "/v1/admin/catalog/drafts/:id",
   "/v1/admin/catalog/holds/place",
@@ -157,6 +158,7 @@ const CATALOG_BOOKING_ROUTE_PATHS = [
   "/v1/admin/catalog/orders/:id/cancel",
   "/v1/admin/bookings/:id/catalog-snapshot",
   "/v1/public/catalog/quote",
+  "/v1/public/catalog/quotes/batch",
   "/v1/public/catalog/book",
   "/v1/public/catalog/drafts/:id",
   "/v1/public/catalog/holds/place",
@@ -173,10 +175,12 @@ const CATALOG_BOOKING_ROUTE_PATHS = [
 // matchers) so deployments don't hand-list them in `dbTransactionalPaths`.
 const CATALOG_BOOKING_TRANSACTIONAL_PATHS = [
   "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/quotes/batch",
   "/v1/admin/catalog/book",
   "/v1/admin/catalog/holds",
   "/v1/admin/catalog/orders",
   "/v1/public/catalog/quote",
+  "/v1/public/catalog/quotes/batch",
   "/v1/public/catalog/book",
   "/v1/public/catalog/holds",
 ] as const

@@ -4,6 +4,8 @@ import {
   bookingDraftV1,
   bookRequestV1,
   pricingBreakdownV1,
+  quoteBatchRequestV1,
+  quoteBatchResponseV1,
   quoteRequestV1,
   quoteResponseV1,
 } from "./contracts.js"
@@ -133,6 +135,56 @@ describe("V1 contracts", () => {
         expiresAt: new Date(Date.now() + 60_000).toISOString(),
         available: false,
         invalidReason: "out_of_stock",
+      })
+      expect(result.success).toBe(true)
+    })
+  })
+
+  describe("quoteBatchRequestV1", () => {
+    it("caps batch quote selections", () => {
+      const selection = {
+        entityModule: "accommodations",
+        entityId: "room_1",
+        ratePlanId: "rate_1",
+      }
+      expect(
+        quoteBatchRequestV1.safeParse({
+          criteria: { checkIn: "2026-09-01", checkOut: "2026-09-03" },
+          selections: [selection],
+        }).success,
+      ).toBe(true)
+      expect(
+        quoteBatchRequestV1.safeParse({
+          selections: Array.from({ length: 31 }, () => selection),
+        }).success,
+      ).toBe(false)
+    })
+  })
+
+  describe("quoteBatchResponseV1", () => {
+    it("validates per-selection quote results", () => {
+      const result = quoteBatchResponseV1.safeParse({
+        results: [
+          {
+            selection: {
+              entityModule: "accommodations",
+              entityId: "room_1",
+              ratePlanId: "rate_1",
+            },
+            quoteId: "q1",
+            quotedAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+            available: true,
+            pricing: {
+              currency: "USD",
+              lines: [],
+              taxes: [],
+              subtotal: 10000,
+              taxTotal: 0,
+              total: 10000,
+            },
+          },
+        ],
       })
       expect(result.success).toBe(true)
     })
