@@ -1,5 +1,14 @@
 # @voyant-travel/octo
 
+## 0.104.49
+
+### Patch Changes
+
+- Updated dependencies [ba6c30a]
+  - @voyant-travel/bookings@0.144.0
+  - @voyant-travel/inventory@0.7.4
+  - @voyant-travel/operations@0.5.16
+
 ## 0.104.48
 
 ### Patch Changes
