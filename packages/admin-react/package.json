@@ -13,7 +13,8 @@
     ".": "./src/index.ts",
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks.ts",
-    "./query-keys": "./src/query-keys.ts"
+    "./query-keys": "./src/query-keys.ts",
+    "./user": "./src/user.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -68,6 +69,11 @@
         "types": "./dist/query-keys.d.ts",
         "import": "./dist/query-keys.js",
         "default": "./dist/query-keys.js"
+      },
+      "./user": {
+        "types": "./dist/user.d.ts",
+        "import": "./dist/user.js",
+        "default": "./dist/user.js"
       }
     },
     "main": "./dist/index.js",
