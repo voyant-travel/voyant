@@ -1,5 +1,49 @@
 # @voyant-travel/framework
 
+## 0.17.0
+
+### Minor Changes
+
+- ba6c30a: Add a vertical enrichment seam to the public guest-booking overview so
+  storefront "manage my booking" / confirmation surfaces can render
+  accommodation specifics from the public API alone (issue #2969).
+
+  Deployments can register a per-`booking_item_type` enricher via the new
+  `overviewItemEnrichers` option on the bookings route runtime. Each enricher
+  receives the overview items of its type and returns an opaque `details`
+  block that is attached to the matching overview item, keyed by booking item
+  id. Enrichment is best-effort — a failing enricher is skipped rather than
+  failing the guest-authorized overview.
+
+  `@voyant-travel/accommodations` ships the first enricher
+  (`enrichStayBookingOverviewItems`, exported from
+  `@voyant-travel/accommodations/booking-overview-enricher`), contributing
+  property, room type, rate plan, meal plan and per-night rate details. The
+  framework composition wires it to the `accommodation` item type.
+
+### Patch Changes
+
+- Updated dependencies [ba6c30a]
+  - @voyant-travel/bookings@0.144.0
+  - @voyant-travel/accommodations@0.110.0
+  - @voyant-travel/commerce@0.26.0
+  - @voyant-travel/cruises@0.143.0
+  - @voyant-travel/distribution@0.134.0
+  - @voyant-travel/finance@0.144.0
+  - @voyant-travel/legal@0.144.0
+  - @voyant-travel/notifications@0.118.5
+  - @voyant-travel/storefront@0.146.0
+  - @voyant-travel/trips@0.135.0
+  - @voyant-travel/mice@0.6.7
+  - @voyant-travel/catalog@0.142.0
+  - @voyant-travel/flights@0.144.0
+  - @voyant-travel/identity@0.144.0
+  - @voyant-travel/operator-settings@0.2.28
+  - @voyant-travel/quotes@0.125.2
+  - @voyant-travel/inventory@0.7.4
+  - @voyant-travel/operations@0.5.16
+  - @voyant-travel/relationships@0.122.5
+
 ## 0.16.1
 
 ### Patch Changes
