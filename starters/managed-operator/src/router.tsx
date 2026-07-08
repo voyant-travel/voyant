@@ -2,6 +2,7 @@ import { createRoute, Outlet } from "@tanstack/react-router"
 import {
   type AdminBootstrapStatus,
   attachAdminExtensionRoutes,
+  buildAdminExtensionDestinations,
   buildAdminExtensionRoutes,
   createAdminRouter,
   type ManagedProfileAdminAuthRuntime,
@@ -70,6 +71,11 @@ const managedAuthRuntime: ManagedProfileAdminAuthRuntime<ManagedUser> = {
 // standard domain extension, composed entirely from published packages.
 const extensions = createManagedAdminExtensions()
 
+// Semantic-destination resolvers derived at runtime from the registry's route
+// bindings, so packaged pages' `useAdminHref`/`useAdminNavigate` (cross-page
+// links, post-action redirects) resolve instead of falling back to `#`.
+const destinations = buildAdminExtensionDestinations(extensions)
+
 const workspaceGuard = createAdminWorkspaceBeforeLoad({ auth: managedAuthRuntime })
 
 // The `_workspace` auth-guarded layout — built in CODE (no route file). Mirrors
@@ -102,6 +108,7 @@ function WorkspaceContent() {
       user={user}
       isUserLoading={isLoading}
       extensions={extensions}
+      destinations={destinations}
       onSignOut={() => managedAuthRuntime.signOut()}
     >
       <Outlet />

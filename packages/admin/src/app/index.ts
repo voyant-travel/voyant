@@ -13,6 +13,7 @@ export {
   adminExtensionChildRoutes,
   adminExtensionRouteOptions,
   attachAdminExtensionRoutes,
+  buildAdminExtensionDestinations,
   buildAdminExtensionRoutes,
 } from "./extension-routes.js"
 export type { AdminRootErrorBoundaryProps, AdminRootHeadOptions } from "./root.js"

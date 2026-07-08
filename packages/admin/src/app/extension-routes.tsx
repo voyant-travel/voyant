@@ -17,6 +17,7 @@ import {
   type ImplementedAdminRoute,
   requireImplementedAdminRoute,
 } from "../extensions.js"
+import type { AdminDestinationResolvers } from "../navigation/destinations.js"
 import { useLocale } from "../providers/locale.js"
 
 import type { AdminRouterContext } from "./router.js"
@@ -291,17 +292,73 @@ export function buildAdminExtensionRoutes(
   const routes: Array<AnyRoute> = []
   for (const extension of extensions) {
     for (const contribution of extension.routes ?? []) {
-      routes.push(
-        createRoute({
-          getParentRoute,
-          path: contribution.path,
-          validateSearch: contribution.validateSearch,
-          ...adminExtensionRouteOptions(extension, contribution.id, runtime),
-        }),
-      )
+      const route = createRoute({
+        getParentRoute,
+        path: contribution.path,
+        validateSearch: contribution.validateSearch,
+        ...adminExtensionRouteOptions(extension, contribution.id, runtime),
+      })
+      // Layout contributions (e.g. core `/settings`) nest child pages under
+      // `children`; build and attach them too, else deep links like
+      // `/settings/api-tokens` land on not-found. A generated host binds these
+      // statically for typed links — a runtime host builds them all here.
+      if (contribution.children && contribution.children.length > 0) {
+        route.addChildren(
+          adminExtensionChildRoutes(extension, contribution.id, () => route, runtime),
+        )
+      }
+      routes.push(route)
     }
   }
   return routes
+}
+
+/**
+ * Build the semantic-destination resolver map from an extension registry at
+ * runtime — the runtime analogue of `voyant admin generate --destinations`.
+ *
+ * Scans every route contribution (and layout children) for a `destination`
+ * binding whose `path` resolves by pure param interpolation, and emits a
+ * resolver per key (`encodeURIComponent`, with `destinationParams` mapping
+ * route-param names to destination-param names). Pass the result to the
+ * workspace shell's `destinations` prop so packaged pages' `useAdminHref` /
+ * `useAdminNavigate` resolve instead of falling back to `#`.
+ *
+ * Partial by construction: destinations whose resolver needs more than path
+ * interpolation (search-param construction, multi-route targets) are the
+ * host's to add; the navigation provider falls back to `#` for any unbound key.
+ */
+export function buildAdminExtensionDestinations(
+  extensions: ReadonlyArray<AdminExtension>,
+): Partial<AdminDestinationResolvers> {
+  const resolvers: Record<string, (params: Record<string, unknown>) => string> = {}
+
+  const collect = (contribution: AdminUiRouteContribution): void => {
+    if (contribution.destination && !(contribution.destination in resolvers)) {
+      resolvers[contribution.destination] = destinationResolver(
+        contribution.path,
+        contribution.destinationParams ?? {},
+      )
+    }
+    for (const child of contribution.children ?? []) collect(child)
+  }
+
+  for (const extension of extensions) {
+    for (const contribution of extension.routes ?? []) collect(contribution)
+  }
+  return resolvers as Partial<AdminDestinationResolvers>
+}
+
+/** A `$param`-interpolating href resolver for a route path + param-name map. */
+function destinationResolver(
+  path: string,
+  destinationParams: Record<string, string>,
+): (params: Record<string, unknown>) => string {
+  return (params) =>
+    path.replace(/\$([A-Za-z0-9_]+)/g, (_match, routeParam: string) => {
+      const destParam = destinationParams[routeParam] ?? routeParam
+      return encodeURIComponent(String(params[destParam]))
+    })
 }
 
 /**
