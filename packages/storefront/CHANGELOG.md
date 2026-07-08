@@ -1,5 +1,16 @@
 # @voyant-travel/storefront
 
+## 0.147.0
+
+### Patch Changes
+
+- @voyant-travel/commerce@0.27.0
+- @voyant-travel/bookings@0.145.0
+- @voyant-travel/finance@0.145.0
+- @voyant-travel/identity@0.145.0
+- @voyant-travel/legal@0.145.0
+- @voyant-travel/relationships@0.122.6
+
 ## 0.146.0
 
 ### Patch Changes

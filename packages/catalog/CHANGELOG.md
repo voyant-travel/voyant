@@ -1,5 +1,16 @@
 # @voyant-travel/catalog
 
+## 0.143.0
+
+### Minor Changes
+
+- 4829ef3: Add a bounded catalog batch quote endpoint for room/rate price matrices, plus an accommodations batch stay quote path that shares room/date availability and rate reads across selections.
+
+### Patch Changes
+
+- Updated dependencies [4829ef3]
+  - @voyant-travel/catalog-contracts@0.109.0
+
 ## 0.142.0
 
 ## 0.141.0
