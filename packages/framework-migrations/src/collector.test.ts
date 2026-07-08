@@ -99,6 +99,49 @@ describe("compatibility preflight migrations", () => {
   })
 })
 
+describe("migration hash compatibility", () => {
+  it("accepts the db cloud-auth scopes idempotency rewrite as equivalent", async () => {
+    const queries: string[] = []
+    const client: MigrationClient = {
+      async query(sql: string) {
+        queries.push(sql)
+        if (sql.includes(`SELECT "content_hash"`)) {
+          return {
+            rows: [
+              {
+                content_hash: "a152b612c5f41e6dd6ad1271faf9e51d3926526de7995df68e28046dc518ad0f",
+              },
+            ],
+          }
+        }
+        return { rows: [] }
+      },
+    }
+
+    const result = await applyMigrations(
+      client,
+      [
+        {
+          name: "db",
+          priority: 0,
+          migrations: [
+            {
+              tag: "0001_db_baseline",
+              sql:
+                'ALTER TABLE "cloud_auth_user_links" ADD COLUMN IF NOT EXISTS "scopes" jsonb;--> statement-breakpoint\n' +
+                'ALTER TABLE "user_profiles" ADD COLUMN "permissions" jsonb;\n',
+            },
+          ],
+        },
+      ],
+      ledgerOpts,
+    )
+
+    expect(result).toEqual({ executed: [], baselined: [] })
+    expect(queries.some((sql) => sql === "BEGIN")).toBe(false)
+  })
+})
+
 // ---- applyMigrations: execute path (integration) ----------------------------
 
 function sources(): { db: MigrationSource; deployment: MigrationSource } {
