@@ -67,7 +67,8 @@
       "!starters/operator/src/components/ui",
       "!starters/operator/src/lib/async-utils.ts",
       "!starters/operator/src/styles.css",
-      "!starters/federated-operator/src/styles.css"
+      "!starters/federated-operator/src/styles.css",
+      "!starters/managed-operator/src/styles.css"
     ]
   }
 }

@@ -1,0 +1,36 @@
+{
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["./env.d.ts", "node", "vite/client"],
+
+    /* Bundler mode — resolve workspace packages from their `exports` (source),
+       so this reference stands alone without a prebuilt dist graph, mirroring
+       the vite `ssr.resolve.conditions` (`development` first). */
+    "moduleResolution": "bundler",
+    "customConditions": ["development"],
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    /* Linting */
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    // NOTE: only the `@/*` alias lives here. Vite reads THIS base tsconfig for
+    // `tsconfigPaths` resolution, so mapping `@voyant-travel/*` to `dist/*.d.ts`
+    // here would send the bundler at declaration files. The dist type-surface
+    // map lives in `tsconfig.server.json` / `tsconfig.client.json` (used only by
+    // `tsc` for the typecheck), mirroring the operator's split tsconfig.
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

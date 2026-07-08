@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter-tight";
+
+/* Tailwind v4 auto-detection does not scan published package code under
+   node_modules. Voyant UI components emit Tailwind utility classes from
+   those packages, so include them explicitly. This source-free reference
+   only mounts the CORE admin extension (dashboard + workspace chrome), so it
+   scans just the admin/ui/auth-react packages the core slice renders. */
+@source "../node_modules/@voyant-travel/admin/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/admin-app/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/admin-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/auth-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/ui/dist/**/*.{js,mjs}";
+/* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
+   runs from live source, not the package `dist/`. Scan the workspace src
+   trees directly so utilities aren't dropped during local dev. */
+@source "../../../packages/admin/src/**/*.{ts,tsx}";
+@source "../../../packages/admin-app/src/**/*.{ts,tsx}";
+@source "../../../packages/admin-react/src/**/*.{ts,tsx}";
+@source "../../../packages/auth-react/src/**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+/* Theme (palette, fonts, radius, dark variant, base layer) comes entirely
+   from @voyant-travel/ui/styles.css — the framework source of truth. */
+@import "@voyant-travel/ui/styles.css";
+@import "@voyant-travel/admin/styles.css";
+@import "@voyant-travel/auth-react/styles.css";
