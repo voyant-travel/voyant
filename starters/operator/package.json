@@ -48,6 +48,7 @@
     "@voyant-travel/action-ledger-react": "workspace:^",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/admin-app": "workspace:^",
+    "@voyant-travel/admin-host": "workspace:^",
     "@voyant-travel/auth": "workspace:^",
     "@voyant-travel/auth-react": "workspace:^",
     "@voyant-travel/availability": "workspace:^",

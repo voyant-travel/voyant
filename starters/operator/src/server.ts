@@ -1,6 +1,6 @@
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { serveStatic } from "@hono/node-server/serve-static"
+import { serveManagedProfileAdmin } from "@voyant-travel/admin-host/serve"
 import {
   createDbClient,
   createPostgresFixedWindowRateLimitStore,
@@ -20,7 +20,6 @@ import {
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
-import { Hono } from "hono"
 
 import { fetch as appFetch, scheduled } from "./entry"
 
@@ -159,9 +158,10 @@ function toExecutionContext(ctx: ExecutionContextLike): ExecutionContext {
 // handler renders the document shell for any non-asset route, so no explicit
 // SPA index fallback is needed. In dev the assets 404 here and are served by
 // Vite's own middleware instead.
-const web = new Hono<{ Bindings: AppBindings }>()
-web.use("*", serveStatic({ root: CLIENT_DIR }))
-web.all("*", (c) => appFetch(c.req.raw, c.env, c.executionCtx))
+const web = serveManagedProfileAdmin<AppBindings>({
+  clientAssetsDir: CLIENT_DIR,
+  app: appFetch,
+})
 
 // Per-request waitUntil context for the dev-server path (see toExecutionContext).
 const devRegistry = createWaitUntilRegistry()
