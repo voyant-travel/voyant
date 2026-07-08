@@ -11,13 +11,13 @@ import {
   AdminWorkspaceShell,
   createAdminWorkspaceBeforeLoad,
 } from "@voyant-travel/admin/app/workspace"
-import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import {
   getManagedProfileAdminApiUrl,
   managedProfileAdminFetcher,
 } from "@voyant-travel/admin-app/runtime"
 import { UserProvider, useUser } from "@voyant-travel/admin-react/user"
 
+import { createManagedAdminExtensions } from "./managed-admin-extensions"
 import { Route as rootRoute } from "./routes/__root"
 import { routeTree } from "./routeTree.gen"
 
@@ -66,9 +66,9 @@ const managedAuthRuntime: ManagedProfileAdminAuthRuntime<ManagedUser> = {
   signOut: async () => {},
 }
 
-// CORE extension only for this vertical slice: the dashboard, account, and
-// settings pages every Voyant admin ships. Domain extensions come later.
-const extensions = [createAdminCoreExtension()]
+// The full source-free admin: CORE (dashboard, account, settings) plus every
+// standard domain extension, composed entirely from published packages.
+const extensions = createManagedAdminExtensions()
 
 const workspaceGuard = createAdminWorkspaceBeforeLoad({ auth: managedAuthRuntime })
 

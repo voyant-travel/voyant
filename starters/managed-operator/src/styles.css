@@ -4,25 +4,77 @@
 
 /* Tailwind v4 auto-detection does not scan published package code under
    node_modules. Voyant UI components emit Tailwind utility classes from
-   those packages, so include them explicitly. This source-free reference
-   only mounts the CORE admin extension (dashboard + workspace chrome), so it
-   scans just the admin/ui/auth-react packages the core slice renders. */
+   those packages, so include them explicitly. This source-free host mounts
+   the FULL admin — the core chrome plus every standard domain extension — so
+   it scans every *-react package it renders. The in-package styles.css files
+   imported below also declare @source globs, but those globs are relative to
+   src/ trees that don't ship in published tarballs (upstream issue #416), so
+   the dist scans below are still required. */
 @source "../node_modules/@voyant-travel/admin/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyant-travel/admin-app/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyant-travel/admin-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyant-travel/auth-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyant-travel/ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/action-ledger-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/bookings-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/catalog-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/commerce-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/distribution-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/finance-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/flights-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/inventory-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/legal-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/mice-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/notifications-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/operations-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/quotes-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/relationships-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/trips-react/dist/**/*.{js,mjs}";
 /* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
-   runs from live source, not the package `dist/`. Scan the workspace src
-   trees directly so utilities aren't dropped during local dev. */
+   runs from live source, not the package `dist/`. The dist scans above
+   only help published consumers and can lag behind src during local dev,
+   so also scan workspace src trees directly. */
 @source "../../../packages/admin/src/**/*.{ts,tsx}";
 @source "../../../packages/admin-app/src/**/*.{ts,tsx}";
 @source "../../../packages/admin-react/src/**/*.{ts,tsx}";
 @source "../../../packages/auth-react/src/**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/action-ledger-react/src/**/*.{ts,tsx}";
+@source "../../../packages/bookings-react/src/**/*.{ts,tsx}";
+@source "../../../packages/catalog-react/src/**/*.{ts,tsx}";
+@source "../../../packages/commerce-react/src/**/*.{ts,tsx}";
+@source "../../../packages/distribution-react/src/**/*.{ts,tsx}";
+@source "../../../packages/finance-react/src/**/*.{ts,tsx}";
+@source "../../../packages/flights-react/src/**/*.{ts,tsx}";
+@source "../../../packages/inventory-react/src/**/*.{ts,tsx}";
+@source "../../../packages/legal-react/src/**/*.{ts,tsx}";
+@source "../../../packages/mice-react/src/**/*.{ts,tsx}";
+@source "../../../packages/notifications-react/src/**/*.{ts,tsx}";
+@source "../../../packages/operations-react/src/**/*.{ts,tsx}";
+@source "../../../packages/quotes-react/src/**/*.{ts,tsx}";
+@source "../../../packages/relationships-react/src/**/*.{ts,tsx}";
+@source "../../../packages/trips-react/src/**/*.{ts,tsx}";
 
 /* Theme (palette, fonts, radius, dark variant, base layer) comes entirely
-   from @voyant-travel/ui/styles.css — the framework source of truth. */
+   from @voyant-travel/ui/styles.css — the framework source of truth. The
+   per-package styles.css imports below carry each domain's component styles;
+   trips-react and action-ledger-react ship no styles.css (utilities only, so
+   the @source scans above are enough). */
 @import "@voyant-travel/ui/styles.css";
 @import "@voyant-travel/admin/styles.css";
 @import "@voyant-travel/auth-react/styles.css";
+@import "@voyant-travel/bookings-react/styles.css";
+@import "@voyant-travel/catalog-react/styles.css";
+@import "@voyant-travel/commerce-react/styles.css";
+@import "@voyant-travel/distribution-react/styles.css";
+@import "@voyant-travel/distribution-react/suppliers/styles.css";
+@import "@voyant-travel/finance-react/styles.css";
+@import "@voyant-travel/flights-react/styles.css";
+@import "@voyant-travel/inventory-react/styles.css";
+@import "@voyant-travel/legal-react/styles.css";
+@import "@voyant-travel/mice-react/styles.css";
+@import "@voyant-travel/notifications-react/styles.css";
+@import "@voyant-travel/operations-react/availability/styles.css";
+@import "@voyant-travel/operations-react/resources/styles.css";
+@import "@voyant-travel/quotes-react/styles.css";
+@import "@voyant-travel/relationships-react/styles.css";
