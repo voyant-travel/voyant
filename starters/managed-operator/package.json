@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3400",
-    "build": "vite build",
+    "build": "vite build && pnpm run copy:snapshot",
+    "copy:snapshot": "cp managed-profile.json dist/managed-profile.json",
+    "generate:snapshot": "tsx scripts/generate-snapshot.ts",
     "preview": "pnpm run build && vite preview",
     "start": "node dist/server/server.js",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.client.json",
@@ -31,6 +33,7 @@
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/flights-react": "workspace:^",
+    "@voyant-travel/framework": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
     "@voyant-travel/mice-react": "workspace:^",
@@ -56,6 +59,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@voyant-travel/vite-config": "workspace:^",
     "rollup-plugin-visualizer": "^7.0.1",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

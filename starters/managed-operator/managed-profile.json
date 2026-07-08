@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "voyant.managed-profile.v1",
+  "profile": "operator",
+  "frameworkVersion": "0.18.3",
+  "mode": "self-hosted",
+  "modules": ["catalog", "bookings", "finance", "relationships"],
+  "plugins": [],
+  "settings": {},
+  "providers": {
+    "database": "postgres",
+    "storage": "memory",
+    "cache": "memory",
+    "sharedState": "memory",
+    "rateLimit": "memory",
+    "search": "none",
+    "email": "none",
+    "sms": "none",
+    "auth": "better-auth",
+    "scheduledJobs": "none",
+    "workflows": "none"
+  },
+  "admin": {
+    "enabled": true,
+    "path": "/app"
+  }
+}
