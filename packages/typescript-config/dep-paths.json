@@ -55,6 +55,7 @@
       "@voyant-travel/admin-app/extension-routes": ["../admin-app/dist/extension-routes.d.ts"],
       "@voyant-travel/admin-app/root": ["../admin-app/dist/root.d.ts"],
       "@voyant-travel/admin-app/router": ["../admin-app/dist/router.d.ts"],
+      "@voyant-travel/admin-app/runtime": ["../admin-app/dist/runtime.d.ts"],
       "@voyant-travel/admin-app/workspace": ["../admin-app/dist/workspace.d.ts"],
       "@voyant-travel/admin-client": ["../admin-client/dist/index.d.ts"],
       "@voyant-travel/admin-contracts": ["../admin-contracts/dist/index.d.ts"],

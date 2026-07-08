@@ -10,7 +10,8 @@
     "./router": "./src/router.tsx",
     "./workspace": "./src/workspace.tsx",
     "./extension-routes": "./src/extension-routes.tsx",
-    "./core-extension": "./src/core-extension/index.tsx"
+    "./core-extension": "./src/core-extension/index.tsx",
+    "./runtime": "./src/runtime.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -23,12 +24,14 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-router": "^1.0.0",
+    "@tanstack/react-start": "^1.168.27",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/auth-react": "workspace:^",
     "@voyant-travel/commerce-react": "workspace:^",
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -37,6 +40,8 @@
   "devDependencies": {
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-router": "^1.170.17",
+    "@tanstack/react-start": "^1.168.27",
+    "@types/node": "catalog:",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
@@ -45,6 +50,7 @@
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.23.0",
@@ -88,6 +94,11 @@
         "types": "./dist/core-extension/index.d.ts",
         "import": "./dist/core-extension/index.js",
         "default": "./dist/core-extension/index.js"
+      },
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "import": "./dist/runtime.js",
+        "default": "./dist/runtime.js"
       }
     },
     "main": "./dist/index.js",

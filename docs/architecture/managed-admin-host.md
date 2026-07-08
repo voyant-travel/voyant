@@ -139,6 +139,30 @@ artifact derived from the snapshot — not a published npm package of
 tenant/profile-specific generated files.** The reusable *shell* and *host* live
 in packages; the *route map* is emitted per build.
 
+> **Investigation findings (2026-07-08) that refine this phase:**
+> - **The glue is client/isomorphic, so it lives in a client package — NOT the
+>   server `@voyant-travel/admin-host`.** The starter fetcher
+>   (`lib/voyant-fetcher.ts`) is a `createIsomorphicFn` over `defaultFetcher`
+>   (canonical in `@voyant-travel/react` `./provider`) plus an admin-path
+>   normalizer (`/v1/<module>` → `/v1/admin/<module>`, generic not
+>   operator-specific). Home: a new `@voyant-travel/admin-app/runtime` subpath
+>   (`createManagedProfileAdminRuntime` / `createManagedProfileAdminFetcher` /
+>   `normalizeAdminApiUrl`).
+> - **The codegen is a separate repo.** `voyant admin generate` lives in
+>   `@voyant-travel/cli` (sibling `cli/` repo, bin `voyant`:
+>   `src/commands/admin-generate.ts` + `src/lib/admin-routes.ts`), config-driven
+>   off `voyant.config` `modules`. `scripts/check-admin-composition-drift.mjs`
+>   in THIS repo only *validates* the committed output. So the managed
+>   route-map slice is **cross-repo** (voyant + cli), sequenced after the
+>   voyant-repo glue/shell/auth slices.
+> - **Auth is a thick starter-local stack**, not a thin `getCurrentUser`. The
+>   `_workspace` shell already consumes `createAdminWorkspaceBeforeLoad({
+>   getCurrentUser })`, but `getCurrentUser` (`lib/current-user.ts`) is a
+>   TanStack server-fn wrapping cloud-auth start, bootstrap status, and a
+>   browser-evidence fallback, and the shell also calls `useSignOut`
+>   (`lib/auth.ts`, Better Auth client). The `ManagedProfileAdminAuthRuntime`
+>   seam must wrap all three, injected — not baked.
+
 - **Shell in a package.** New `@voyant-travel/admin-app/shell` (or extend
   `admin-app`) exporting `__root`/`_workspace`/auth route definitions as
   factories parametrized by injected glue (fetcher, api-url, auth seam).
@@ -149,14 +173,27 @@ in packages; the *route map* is emitted per build.
   (`packages/admin/src/app/workspace.tsx:59`). Do **not** bake `lib/auth.ts` /
   Better Auth into the shell: managed Cloud auth and self-host auth each
   implement the seam.
-- **Codegen: own it, then dual-mode it.** First locate/own the
-  `voyant admin generate` CLI (not found under obvious local paths — treated as
-  CLI-owned today). Keep **starter-local** generation for self-host; add a
-  **managed** mode that emits the profile route map into a scratch build
-  directory (or a Vite virtual-module namespace — no virtual-module precedent
-  in-repo yet), derived from the snapshot `modules` (ties to #2107 subsetting —
-  excluded modules contribute no route/extension). Update
-  `scripts/check-admin-composition-drift.mjs` to understand both outputs.
+- **Codegen: cross-repo, dual-mode it.** The generator is `@voyant-travel/cli`'s
+  `admin generate` (separate `cli/` repo). Keep **starter-local** generation for
+  self-host; add a **managed** mode that emits the profile route map into a
+  scratch build directory (or a Vite virtual-module namespace — no
+  virtual-module precedent in-repo yet), derived from the snapshot `modules`
+  (ties to #2107 subsetting — excluded modules contribute no route/extension).
+  Update `scripts/check-admin-composition-drift.mjs` (voyant repo) to understand
+  both outputs.
+
+**Voyant-repo slices, sequenced (each independently mergeable):**
+1. **Runtime glue** → `@voyant-travel/admin-app/runtime`
+   (`createManagedProfileAdminRuntime`: isomorphic fetcher + api-url +
+   `normalizeAdminApiUrl`); starter's `lib/voyant-fetcher.ts`/`env.ts`/
+   `operator-admin-api-paths.ts` become thin adopters. Lowest risk; unblocks the
+   shell move.
+2. **Auth capability seam** → `ManagedProfileAdminAuthRuntime` wrapping
+   getCurrentUser/signOut/bootstrap; starter provides the Better-Auth impl.
+3. **Packaged app-shell routes** (`__root`/`_workspace`/`(auth)`) as
+   glue+auth-injected factories.
+4. **(cross-repo)** managed codegen mode in `@voyant-travel/cli` + drift-checker
+   dual-mode + framework build wiring (overlaps Phase 3).
 - **Typed links stay first-class generated exports.** The generated module
   exports the profile-specific `AdminExtensionRoutesBy*` maps; the **host
   package** provides the merge helper (the `MergeRouteTypeMaps` /
