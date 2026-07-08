@@ -7,6 +7,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  createManagedCloudAuthApp,
   createManagedProfileApp,
   createManagedProfileNodeEnv,
   createManagedProfileProviders,
@@ -683,4 +684,29 @@ describe("managed profile runtime entry", () => {
     expect(extension.adminRoutes?.routes.length).toBeGreaterThan(0)
     expect(extension.lazyAdminRoutes).toBeUndefined()
   })
+
+  it("resolves managed bootstrap status as voyant-cloud when in cloud auth mode", async () => {
+    const app = createManagedCloudAuthApp()
+    const env = managedCloudEnv()
+
+    const response = await app.request("/auth/bootstrap-status", {}, env)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ hasUsers: true, authMode: "voyant-cloud" })
+  }, 10000)
+
+  it("returns 401 from /auth/me when the request carries no session", async () => {
+    const app = createManagedCloudAuthApp()
+    const env = createManagedProfileNodeEnv({
+      DATABASE_URL: "postgres://voyant:secret@localhost:5432/voyant_test",
+      VOYANT_ADMIN_AUTH_MODE: "local",
+      BETTER_AUTH_SECRET: "b".repeat(40),
+      APP_URL: "https://admin.example.test",
+    })
+
+    const response = await app.request("/auth/me", {}, env)
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: "unauthorized" })
+  }, 10000)
 })

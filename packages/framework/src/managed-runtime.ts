@@ -54,7 +54,7 @@ import {
   createPostgresFixedWindowRateLimitStore,
   createPostgresKvStore,
 } from "@voyant-travel/db/runtime"
-import { cloudAuthUserLinks } from "@voyant-travel/db/schema/iam"
+import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import { createChannelPushExtension as createDistributionChannelPushExtension } from "@voyant-travel/distribution"
 import {
   type BookingScheduleRoutesOptions,
@@ -149,7 +149,7 @@ import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
-import { and, asc, desc, eq, gte, inArray, isNotNull } from "drizzle-orm"
+import { and, asc, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
@@ -599,7 +599,7 @@ function createManagedCloudAdminAuthIntegration(): VoyantAuthIntegration<Managed
 
 type ManagedAuthHonoEnv = { Bindings: ManagedProfileRuntimeEnv }
 
-function createManagedCloudAuthApp(): Hono<ManagedAuthHonoEnv> {
+export function createManagedCloudAuthApp(): Hono<ManagedAuthHonoEnv> {
   const auth = new Hono<ManagedAuthHonoEnv>()
 
   async function startCloudAuth(c: Context<ManagedAuthHonoEnv>) {
@@ -657,6 +657,16 @@ function createManagedCloudAuthApp(): Hono<ManagedAuthHonoEnv> {
     }
   })
 
+  auth.get("/auth/me", async (c) => {
+    const user = await resolveManagedCurrentUser(c.env, c.req.raw)
+    if (!user) return c.json({ error: "unauthorized" }, 401)
+    return c.json(user)
+  })
+
+  auth.get("/auth/bootstrap-status", async (c) => {
+    return c.json(await resolveManagedBootstrapStatus(c.env, c.req.raw))
+  })
+
   auth.all("/auth/*", async (c) => {
     if (isManagedVoyantCloudAuthMode(c.env) && !isManagedCloudAllowedBetterAuthRoute(c.req.raw)) {
       return c.json({ error: "Local auth routes are disabled in Voyant Cloud auth mode" }, 404)
@@ -666,6 +676,88 @@ function createManagedCloudAuthApp(): Hono<ManagedAuthHonoEnv> {
   })
 
   return auth
+}
+
+/**
+ * Shape returned by `GET /auth/me` for a source-free managed admin host —
+ * mirrors the operator starter's `CurrentUser` so the packaged admin UI can
+ * resolve its current user directly from the managed API.
+ */
+export type ManagedCurrentUser = {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  locale: string
+  timezone: string | null
+  uiPrefs: Record<string, unknown> | null
+  isSuperAdmin: boolean
+  isSupportUser: boolean
+  createdAt: string
+  profilePictureUrl: string | null
+}
+
+export type ManagedBootstrapStatus = {
+  hasUsers: boolean
+  authMode: "local" | "voyant-cloud"
+}
+
+async function resolveManagedCurrentUser(
+  env: ManagedProfileRuntimeEnv,
+  request: Request,
+): Promise<ManagedCurrentUser | null> {
+  const db = resolveDb(env)
+  const betterAuth = createManagedBetterAuth(env, db)
+  const session = await betterAuth.api.getSession({ headers: request.headers })
+  if (!session) return null
+
+  const [row] = await db
+    .select({
+      id: authUser.id,
+      email: authUser.email,
+      createdAt: authUser.createdAt,
+      firstName: userProfilesTable.firstName,
+      lastName: userProfilesTable.lastName,
+      locale: userProfilesTable.locale,
+      timezone: userProfilesTable.timezone,
+      uiPrefs: userProfilesTable.uiPrefs,
+      avatarUrl: userProfilesTable.avatarUrl,
+      isSuperAdmin: userProfilesTable.isSuperAdmin,
+      isSupportUser: userProfilesTable.isSupportUser,
+    })
+    .from(authUser)
+    .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
+    .where(eq(authUser.id, session.user.id))
+    .limit(1)
+
+  if (!row) return null
+
+  return {
+    id: row.id,
+    email: row.email ?? session.user.email ?? "",
+    firstName: row.firstName ?? null,
+    lastName: row.lastName ?? null,
+    locale: row.locale ?? "en",
+    timezone: row.timezone ?? null,
+    uiPrefs: (row.uiPrefs as ManagedCurrentUser["uiPrefs"]) ?? null,
+    isSuperAdmin: row.isSuperAdmin ?? false,
+    isSupportUser: row.isSupportUser ?? false,
+    createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+    profilePictureUrl: row.avatarUrl ?? null,
+  }
+}
+
+async function resolveManagedBootstrapStatus(
+  env: ManagedProfileRuntimeEnv,
+  _request: Request,
+): Promise<ManagedBootstrapStatus> {
+  if (isManagedVoyantCloudAuthMode(env)) {
+    return { hasUsers: true, authMode: "voyant-cloud" }
+  }
+
+  const db = resolveDb(env)
+  const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
+  return { hasUsers: (row?.count ?? 0) > 0, authMode: "local" }
 }
 
 function createManagedBetterAuth(env: ManagedProfileRuntimeEnv, db: VoyantDb) {
