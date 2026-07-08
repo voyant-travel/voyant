@@ -4506,6 +4506,9 @@ importers:
       '@voyant-travel/admin-host':
         specifier: workspace:^
         version: link:../../packages/admin-host
+      '@voyant-travel/admin-react':
+        specifier: workspace:^
+        version: link:../../packages/admin-react
       '@voyant-travel/auth':
         specifier: workspace:^
         version: link:../../packages/auth

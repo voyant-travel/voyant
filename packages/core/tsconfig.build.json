@@ -72,6 +72,7 @@
       "@voyant-travel/admin-react/hooks": ["../admin-react/dist/hooks.d.ts"],
       "@voyant-travel/admin-react/provider": ["../admin-react/dist/provider.d.ts"],
       "@voyant-travel/admin-react/query-keys": ["../admin-react/dist/query-keys.d.ts"],
+      "@voyant-travel/admin-react/user": ["../admin-react/dist/user.d.ts"],
       "@voyant-travel/admin/app": ["../admin/dist/app/index.d.ts"],
       "@voyant-travel/admin/app/extension-routes": ["../admin/dist/app/extension-routes.d.ts"],
       "@voyant-travel/admin/app/root": ["../admin/dist/app/root.d.ts"],

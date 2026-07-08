@@ -1,17 +1,21 @@
-import { useQuery } from "@tanstack/react-query"
-import { createContext, type ReactNode, useContext } from "react"
+"use client"
 
-import { type CurrentUser, getCurrentUserQueryOptions } from "@/lib/current-user"
+import {
+  type AdminUserContextValue,
+  UserProvider as AdminUserProvider,
+  useUser as useAdminUser,
+} from "@voyant-travel/admin-react/user"
+import type { ReactNode } from "react"
 
-type UserContextValue = {
-  user: CurrentUser | null
-  isLoading: boolean
-  error: Error | null
-  refetch: () => Promise<unknown>
-}
+import { adminAuthRuntime } from "@/lib/admin-auth-runtime"
+import type { CurrentUser } from "@/lib/current-user"
 
-const UserContext = createContext<UserContextValue | undefined>(undefined)
-
+/**
+ * Operator current-user provider — a thin adopter of the packaged
+ * `@voyant-travel/admin-react/user` provider, wired to the deployment's auth
+ * runtime (`getCurrentUser`). Kept as a local module so the ~app-wide `useUser`
+ * import path and the `CurrentUser` type stay stable.
+ */
 export function UserProvider({
   children,
   initialUser,
@@ -19,34 +23,16 @@ export function UserProvider({
   children: ReactNode
   initialUser?: CurrentUser | null
 }) {
-  const {
-    data: user,
-    isPending,
-    isFetching,
-    error,
-    refetch,
-  } = useQuery(getCurrentUserQueryOptions(initialUser))
-
-  const isLoading = isPending || (isFetching && user === undefined)
-
   return (
-    <UserContext.Provider
-      value={{
-        user: user ?? null,
-        isLoading,
-        error: error ? error : null,
-        refetch,
-      }}
+    <AdminUserProvider<CurrentUser>
+      getCurrentUser={adminAuthRuntime.getCurrentUser}
+      initialUser={initialUser}
     >
       {children}
-    </UserContext.Provider>
+    </AdminUserProvider>
   )
 }
 
-export function useUser() {
-  const context = useContext(UserContext)
-  if (context === undefined) {
-    throw new Error("useUser must be used within UserProvider")
-  }
-  return context
+export function useUser(): AdminUserContextValue<CurrentUser> {
+  return useAdminUser<CurrentUser>()
 }

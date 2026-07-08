@@ -91,6 +91,7 @@
       "@voyant-travel/admin-react/hooks": ["../../packages/admin-react/dist/hooks.d.ts"],
       "@voyant-travel/admin-react/provider": ["../../packages/admin-react/dist/provider.d.ts"],
       "@voyant-travel/admin-react/query-keys": ["../../packages/admin-react/dist/query-keys.d.ts"],
+      "@voyant-travel/admin-react/user": ["../../packages/admin-react/dist/user.d.ts"],
       "@voyant-travel/admin/app": ["../../packages/admin/dist/app/index.d.ts"],
       "@voyant-travel/admin/app/extension-routes": [
         "../../packages/admin/dist/app/extension-routes.d.ts"
