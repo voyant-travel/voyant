@@ -568,38 +568,44 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       )
     },
     "@voyant-travel/bookings": ({ capabilities }) => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/bookings").then((m) =>
-          m.createBookingsHonoModule({
-            resolveTravelSnapshot: (db, personId, { kms }) =>
-              capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
-            resolveBillingPerson: async (db, contact, ctx) =>
-              (
-                await capabilities.relationshipsService.upsertPersonFromContact(db, contact, {
-                  source: ctx.source,
-                  sourceRef: ctx.sourceRef,
-                })
-              )?.id ?? null,
-            resolveTravelerPerson: async (db, contact, ctx) =>
-              (
-                await capabilities.relationshipsService.upsertPersonFromContact(db, contact, {
-                  source: ctx.source,
-                  sourceRef: ctx.sourceRef,
-                  requireContactPoint: true,
-                })
-              )?.id ?? null,
-            resolveBillingPersonById: async (db, personId) =>
-              (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-            resolveBillingOrganizationById: async (db, organizationId) =>
-              (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) !=
-              null,
-            closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
-            recordCancellationFinancialSettlement:
-              capabilities.recordCancellationFinancialSettlement,
-            customFields: capabilities.customFields,
-          }),
-        ),
-      )
+      const unit = createLazyUnit(async () => {
+        const [bookings, accommodationsOverview] = await Promise.all([
+          import("@voyant-travel/bookings"),
+          import("@voyant-travel/accommodations/booking-overview-enricher"),
+        ])
+        return bookings.createBookingsHonoModule({
+          resolveTravelSnapshot: (db, personId, { kms }) =>
+            capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
+          resolveBillingPerson: async (db, contact, ctx) =>
+            (
+              await capabilities.relationshipsService.upsertPersonFromContact(db, contact, {
+                source: ctx.source,
+                sourceRef: ctx.sourceRef,
+              })
+            )?.id ?? null,
+          resolveTravelerPerson: async (db, contact, ctx) =>
+            (
+              await capabilities.relationshipsService.upsertPersonFromContact(db, contact, {
+                source: ctx.source,
+                sourceRef: ctx.sourceRef,
+                requireContactPoint: true,
+              })
+            )?.id ?? null,
+          resolveBillingPersonById: async (db, personId) =>
+            (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+          resolveBillingOrganizationById: async (db, organizationId) =>
+            (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) !=
+            null,
+          closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
+          recordCancellationFinancialSettlement: capabilities.recordCancellationFinancialSettlement,
+          customFields: capabilities.customFields,
+          // Vertical enrichment seam (issue #2969): keep lazy composition in
+          // sync with the eager registry used by non-lazy deployments.
+          overviewItemEnrichers: {
+            accommodation: accommodationsOverview.enrichStayBookingOverviewItems,
+          },
+        })
+      })
       return withAnonymous(
         {
           module: { name: "bookings", requiresTransactionalDb: true },
