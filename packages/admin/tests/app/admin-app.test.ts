@@ -75,15 +75,33 @@ describe("adminRootHead", () => {
 })
 
 describe("createAdminWorkspaceBeforeLoad", () => {
+  type TestUser = { id: string }
+  function authStub(
+    overrides: Partial<{
+      user: TestUser | null | undefined
+      authMode: "local" | "voyant-cloud"
+    }> = {},
+  ) {
+    return {
+      getCurrentUser: vi.fn(async () => ("user" in overrides ? overrides.user : { id: "usr_1" })),
+      getBootstrapStatus: vi.fn(async () => ({
+        hasUsers: true,
+        ...(overrides.authMode ? { authMode: overrides.authMode } : {}),
+      })),
+      cloudAuthStartHref: (next?: string) =>
+        `/api/auth/cloud/start${next ? `?next=${encodeURIComponent(next)}` : ""}`,
+    }
+  }
+
   it("returns the user in route context when authenticated", async () => {
     const user = { id: "usr_1" }
-    const beforeLoad = createAdminWorkspaceBeforeLoad({ getCurrentUser: async () => user })
+    const beforeLoad = createAdminWorkspaceBeforeLoad({ auth: authStub({ user }) })
 
     await expect(beforeLoad({ location: { href: "/bookings" } })).resolves.toEqual({ user })
   })
 
-  it("redirects unauthenticated visitors to sign-in with a next param", async () => {
-    const beforeLoad = createAdminWorkspaceBeforeLoad({ getCurrentUser: async () => null })
+  it("redirects unauthenticated visitors to sign-in with a next param (local mode)", async () => {
+    const beforeLoad = createAdminWorkspaceBeforeLoad({ auth: authStub({ user: null }) })
 
     const thrown = await beforeLoad({ location: { href: "/bookings?tab=upcoming" } }).then(
       () => undefined,
@@ -96,9 +114,31 @@ describe("createAdminWorkspaceBeforeLoad", () => {
     expect(options?.search?.next).toBe("/bookings?tab=upcoming")
   })
 
+  it("redirects unauthenticated visitors to the Cloud broker in voyant-cloud mode", async () => {
+    const beforeLoad = createAdminWorkspaceBeforeLoad({
+      auth: authStub({ user: null, authMode: "voyant-cloud" }),
+    })
+
+    const thrown = await beforeLoad({ location: { href: "/bookings" } }).then(
+      () => undefined,
+      (error: unknown) => error,
+    )
+
+    const options = (
+      thrown as { options?: { href?: string; to?: string; reloadDocument?: boolean } }
+    ).options
+    expect(options?.href).toBe("/api/auth/cloud/start?next=%2Fbookings")
+    expect(options?.to).toBeUndefined()
+    // The broker href is a relative API path, so force a full-document redirect
+    // (TanStack only infers it for absolute hrefs).
+    expect(options?.reloadDocument).toBe(true)
+  })
+
   it("honors a custom sign-in path", async () => {
-    const getCurrentUser = vi.fn(async () => undefined)
-    const beforeLoad = createAdminWorkspaceBeforeLoad({ getCurrentUser, signInPath: "/login" })
+    const beforeLoad = createAdminWorkspaceBeforeLoad({
+      auth: authStub({ user: undefined }),
+      signInPath: "/login",
+    })
 
     const thrown = await beforeLoad({ location: { href: "/" } }).then(
       () => undefined,

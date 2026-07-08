@@ -1,7 +1,6 @@
 import { Link, redirect, useRouter, useRouterState } from "@tanstack/react-router"
 import { Loader2 } from "lucide-react"
 import { forwardRef, type ReactNode, useCallback, useMemo } from "react"
-
 import type { AdminNavLinkComponent, AdminNavLinkProps } from "../components/admin-nav-link.js"
 import { AdminWidgetSlotRenderer } from "../components/admin-widget-slot.js"
 import { OperatorAdminBootstrapGate } from "../components/operator-admin-bootstrap-gate.js"
@@ -21,6 +20,7 @@ import {
   useOperatorAdminMessages,
 } from "../providers/operator-admin-messages.js"
 import type { AdminUser } from "../types.js"
+import type { AdminBootstrapStatus, ManagedProfileAdminAuthRuntime } from "./auth-runtime.js"
 
 /**
  * Router-aware sidebar link. SidebarMenuButton with `asChild` wraps this in a
@@ -57,9 +57,15 @@ export const AdminRouterLink = forwardRef<HTMLAnchorElement, AdminNavLinkProps>(
 )
 
 export interface CreateAdminWorkspaceBeforeLoadOptions<TUser> {
-  /** Resolve the current user (server fn / cookie-forwarding fetch). */
-  getCurrentUser: () => Promise<TUser | null | undefined>
-  /** Where unauthenticated visitors are sent. Default `/sign-in`. */
+  /**
+   * The deployment's auth capability (see {@link ManagedProfileAdminAuthRuntime}).
+   * Only the read/redirect members the guard needs are required.
+   */
+  auth: Pick<
+    ManagedProfileAdminAuthRuntime<TUser>,
+    "getCurrentUser" | "getBootstrapStatus" | "cloudAuthStartHref"
+  >
+  /** Where unauthenticated visitors are sent in `local` auth mode. Default `/sign-in`. */
   signInPath?: string
 }
 
@@ -70,22 +76,38 @@ export interface CreateAdminWorkspaceBeforeLoadOptions<TUser> {
  * loader it would race child loaders whose 401s surface the root error
  * boundary and beat the redirect, dead-ending logged-out users. Returns
  * `{ user }`, which TanStack merges into route context.
+ *
+ * The unauthenticated destination is mode-dependent (resolved from the auth
+ * port, not hard-coded): in `voyant-cloud` mode the visitor is sent to the
+ * Cloud identity-broker; otherwise to the local `signInPath`. Deciding it here
+ * keeps the packaged admin free of a concrete auth client and avoids a
+ * double-hop through the local sign-in page.
  */
 export function createAdminWorkspaceBeforeLoad<TUser>({
-  getCurrentUser,
+  auth,
   signInPath = "/sign-in",
 }: CreateAdminWorkspaceBeforeLoadOptions<TUser>) {
   return async ({ location }: { location: { href: string } }): Promise<{ user: TUser }> => {
-    const user = await getCurrentUser()
+    const user = await auth.getCurrentUser()
 
-    if (!user) {
-      throw redirect({
-        to: signInPath,
-        search: { next: location.href },
-      })
+    if (user) return { user }
+
+    // Unauthenticated: send to the Cloud broker in voyant-cloud mode, else the
+    // local sign-in. A failed bootstrap probe falls back to the local path.
+    const bootstrap = await auth
+      .getBootstrapStatus()
+      .catch((): AdminBootstrapStatus => ({ hasUsers: true }))
+
+    if (bootstrap.authMode === "voyant-cloud") {
+      // `cloudAuthStartHref` is a relative API path (`/api/auth/cloud/start…`).
+      // TanStack only infers a full-document redirect for absolute hrefs, so on
+      // a client-side navigation a relative href would be handled as in-app
+      // routing to a non-route API path. Force a document request so the browser
+      // actually starts the broker flow.
+      throw redirect({ href: auth.cloudAuthStartHref(location.href), reloadDocument: true })
     }
 
-    return { user }
+    throw redirect({ to: signInPath, search: { next: location.href } })
   }
 }
 
