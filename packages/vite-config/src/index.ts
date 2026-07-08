@@ -125,6 +125,24 @@ export interface VoyantStartViteConfigOptions {
   extraManualChunks?: (id: string) => string | undefined
   /** Extra SSR optimizeDeps entries appended to the Voyant set. */
   ssrOptimizeDepsInclude?: readonly string[]
+  /**
+   * Build the SSR/server environment for a Node runtime (voyant#2966: Voyant
+   * deployments are Node-only — no `@cloudflare/vite-plugin`). Adds the
+   * load-bearing Node-SSR config the app would otherwise hand-merge:
+   *
+   * - `ssr.target: "node"` so `node:` builtins the API graph uses resolve
+   *   instead of being externalized for the browser;
+   * - `ssr.noExternal` for `@voyant-travel/*` / `@pxmstudio/*` so workspace
+   *   packages (whose `exports` point at `.js`-specifier TS source) are bundled
+   *   into the server build rather than left unresolvable at runtime;
+   * - `ssr.resolve.conditions` with `development` ahead of `node` so those
+   *   packages resolve from `./src` and the app build stands alone (no
+   *   prebuilt `dist` / `turbo ^build` needed).
+   *
+   * This is the config a Cloud-built managed admin image would otherwise copy;
+   * packaging it keeps it a version bump, not a copy (voyant#3044).
+   */
+  nodeSsr?: boolean
 }
 
 /**
@@ -133,7 +151,7 @@ export interface VoyantStartViteConfigOptions {
  * `vite.config.ts` shrinks to plugin instantiation + this call.
  */
 export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): UserConfig {
-  const { appRootUrl, plugins, allowedHosts = true, extraManualChunks } = options
+  const { appRootUrl, plugins, allowedHosts = true, extraManualChunks, nodeSsr } = options
 
   return {
     server: {
@@ -158,6 +176,15 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       optimizeDeps: {
         include: [...VOYANT_SSR_OPTIMIZE_DEPS, ...(options.ssrOptimizeDepsInclude ?? [])],
       },
+      ...(nodeSsr
+        ? {
+            target: "node" as const,
+            noExternal: [/^@voyant-travel\//, /^@pxmstudio\//],
+            resolve: {
+              conditions: ["development", "module", "node", "import", "default"],
+            },
+          }
+        : {}),
     },
     plugins,
   }
