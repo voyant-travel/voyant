@@ -1022,13 +1022,26 @@ function mergeBatchDraft(
       : {}),
     ...(criteria.occupancy ? { pax: { ...criteria.occupancy } } : {}),
   }
-  const rooms = [
-    {
-      optionUnitId: selection.entityId,
-      quantity: criteria.roomCount ?? 1,
-      ...(selection.ratePlanId ? { ratePlanId: selection.ratePlanId } : {}),
-    },
-  ]
+  const roomCount = criteria.roomCount ?? 1
+  const roomOccupancy = criteria.occupancy
+    ? {
+        ...(typeof criteria.occupancy.adult === "number"
+          ? { adults: criteria.occupancy.adult }
+          : {}),
+        ...(typeof criteria.occupancy.child === "number"
+          ? { children: criteria.occupancy.child }
+          : {}),
+        ...(typeof criteria.occupancy.infant === "number"
+          ? { infants: criteria.occupancy.infant }
+          : {}),
+      }
+    : {}
+  const rooms = Array.from({ length: roomCount }, () => ({
+    optionUnitId: selection.entityId,
+    quantity: 1,
+    ...roomOccupancy,
+    ...(selection.ratePlanId ? { ratePlanId: selection.ratePlanId } : {}),
+  }))
   return {
     ...(draft ?? {}),
     configure: nextConfigure,

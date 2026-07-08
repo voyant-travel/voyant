@@ -70,7 +70,10 @@ describe("createAccommodationBookingHandler", () => {
           draft: {
             configure: { dateRange: { checkIn: "2026-09-01", checkOut: "2026-09-03" } },
             accommodation: {
-              rooms: [{ optionUnitId: "room_1", quantity: 1, ratePlanId: "rate_bar" }],
+              rooms: [
+                { optionUnitId: "room_1", quantity: 1, adults: 2, ratePlanId: "rate_bar" },
+                { optionUnitId: "room_1", quantity: 1, adults: 2, ratePlanId: "rate_bar" },
+              ],
             },
           },
         },
@@ -88,7 +91,13 @@ describe("createAccommodationBookingHandler", () => {
     })
 
     expect(mockQuoteOwnedStaysBatch).toHaveBeenCalledWith({}, [
-      expect.objectContaining({ roomTypeId: "room_1", ratePlanId: "rate_bar" }),
+      expect.objectContaining({
+        roomTypeId: "room_1",
+        ratePlanId: "rate_bar",
+        roomCount: 2,
+        occupancy: { adults: 1, children: 0, infants: 0 },
+        occupancies: [{ adults: 2 }, { adults: 2 }],
+      }),
       expect.objectContaining({ roomTypeId: "room_1", ratePlanId: "rate_nr" }),
     ])
     expect(result).toMatchObject([

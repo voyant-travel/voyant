@@ -241,6 +241,7 @@ describe("createCatalogBookingRoutes", () => {
           checkIn: "2026-09-01",
           checkOut: "2026-09-03",
           occupancy: { adult: 2 },
+          roomCount: 2,
         },
         selections: [
           { entityModule: "accommodations", entityId: "room_1", ratePlanId: "rate_bar" },
@@ -284,7 +285,10 @@ describe("createCatalogBookingRoutes", () => {
                 pax: { adult: 2 },
               }),
               accommodation: {
-                rooms: [{ optionUnitId: "room_1", quantity: 1, ratePlanId: "rate_bar" }],
+                rooms: [
+                  { optionUnitId: "room_1", quantity: 1, adults: 2, ratePlanId: "rate_bar" },
+                  { optionUnitId: "room_1", quantity: 1, adults: 2, ratePlanId: "rate_bar" },
+                ],
               },
             }),
             ratePlanId: "rate_bar",
