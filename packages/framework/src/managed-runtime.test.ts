@@ -284,7 +284,46 @@ describe("managed profile runtime entry", () => {
     expect(await response.json()).toEqual({ error: "Unauthorized" })
   })
 
-  it("rejects snapshot plugins instead of silently ignoring them", async () => {
+  it("resolves snapshot plugins from published specifiers and boots source-free", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          plugins: ["@third-party/plugin-regional-accounting"],
+          settings: { "@third-party/plugin-regional-accounting": { fiscalRegion: "RO" } },
+          providers: localProviders,
+        }),
+      ),
+    )
+
+    const factory = vi.fn((ctx: { settings: unknown }) => ({
+      name: "regional-accounting",
+      version: "1.0.0",
+      settings: ctx.settings,
+    }))
+
+    const runtime = await loadManagedProfileRuntime({
+      profileSnapshotPath: snapshotPath,
+      env: { DATABASE_URL: "managed-profile-test-db" },
+      importPluginModule: async () => ({ voyantPlugin: factory }),
+    })
+
+    expect(runtime.app.fetch).toEqual(expect.any(Function))
+    expect(factory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        specifier: "@third-party/plugin-regional-accounting",
+        settings: { fiscalRegion: "RO" },
+      }),
+    )
+  })
+
+  it("fails fast when a snapshot plugin exposes no managed-plugin entry", async () => {
     const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
     const snapshotPath = join(dir, "managed-profile.json")
     await writeFile(
@@ -304,11 +343,10 @@ describe("managed profile runtime entry", () => {
     await expect(
       loadManagedProfileRuntime({
         profileSnapshotPath: snapshotPath,
-        env: {
-          DATABASE_URL: "managed-profile-test-db",
-        },
+        env: { DATABASE_URL: "managed-profile-test-db" },
+        importPluginModule: async () => ({ notAFactory: 42 }),
       }),
-    ).rejects.toThrow(/snapshot plugins are not yet resolved/)
+    ).rejects.toThrow(/does not export a managed-plugin entry/)
   })
 
   it("builds managed Node bindings from plain env/secrets", () => {

@@ -155,6 +155,7 @@ import { type Context, Hono } from "hono"
 
 import type { FrameworkProviders } from "./composition-lazy.js"
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
+import { type ManagedPlugin, resolveManagedPlugins } from "./plugin-resolution.js"
 import {
   getVoyantProjectRequirements,
   toCreateVoyantAppProfileConfig,
@@ -162,6 +163,14 @@ import {
   type VoyantProjectManifest,
   validateVoyantProject,
 } from "./profile.js"
+
+export {
+  type ManagedPlugin,
+  type ResolveManagedPluginsOptions,
+  resolveManagedPlugins,
+  type VoyantManagedPluginContext,
+  type VoyantManagedPluginFactory,
+} from "./plugin-resolution.js"
 
 export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   TENANT_ID?: string
@@ -227,6 +236,12 @@ export interface ManagedProfileRuntimeOptions {
       "providers" | "exclude"
     >
   >
+  /**
+   * Override how snapshot `plugins` specifiers are imported. Defaults to dynamic
+   * `import()`; injectable so Cloud (or tests) can resolve plugins from a
+   * pre-bundled registry instead of node resolution.
+   */
+  importPluginModule?: (specifier: string) => Promise<Record<string, unknown>>
 }
 
 export interface ManagedProfileRuntime {
@@ -291,11 +306,17 @@ export async function loadManagedProfileRuntime(
     env,
     auth: options.app?.auth ?? options.auth,
   })
+  const plugins = await resolveManagedPlugins(
+    project,
+    toPluginEnvRecord(env),
+    options.importPluginModule ? { importModule: options.importPluginModule } : {},
+  )
   assertManagedProfileRuntimeSupport({
     project,
     requirements,
     env,
     hasAuthIntegration: Boolean(auth),
+    hasResolvedPlugins: plugins.length > 0,
   })
   const app = createManagedProfileApp({
     project,
@@ -303,6 +324,7 @@ export async function loadManagedProfileRuntime(
     auth,
     providers: options.providers,
     app: options.app,
+    plugins,
   })
 
   return {
@@ -360,14 +382,22 @@ export function createManagedProfileApp(options: {
       "providers" | "exclude"
     >
   >
+  /**
+   * Plugins resolved from the snapshot's `plugins` list (see
+   * {@link resolveManagedPlugins}), merged after any `app.plugins`. When the
+   * snapshot declares plugins, either these or `app.plugins` must be non-empty.
+   */
+  plugins?: ManagedPlugin[]
 }) {
   const auth = resolveManagedProfileAuthIntegration({
     env: options.env,
     auth: options.app?.auth ?? options.auth,
   })
+  const mergedPlugins = [...(options.app?.plugins ?? []), ...(options.plugins ?? [])]
   assertManagedProfileAppSupport({
     project: options.project,
     hasAuthIntegration: Boolean(auth),
+    hasResolvedPlugins: mergedPlugins.length > 0,
   })
   const bridge = toCreateVoyantAppProfileConfig(options.project)
   return createVoyantApp<ManagedProfileRuntimeEnv, FrameworkProviders>({
@@ -384,6 +414,13 @@ export function createManagedProfileApp(options: {
       projectId: options.env?.VOYANT_CLOUD_APP_SLUG ?? options.project.profile,
     },
     ...options.app,
+    // Managed integration bundles are registered like a starter's inline
+    // `plugins: [...]`; core plugins (subscribers/workflows) and Hono bundles
+    // (routes) both flatten through `registerPlugins` at `createApp` boot.
+    plugins: mergedPlugins as CreateVoyantAppConfig<
+      ManagedProfileRuntimeEnv,
+      FrameworkProviders
+    >["plugins"],
     basePath: options.app?.basePath ?? "/api",
     auth,
     exclude: bridge.exclude,
@@ -878,9 +915,14 @@ function assertManagedProfileRuntimeSupport(options: {
   requirements: VoyantProfileRequirements
   env: ManagedProfileRuntimeEnv
   hasAuthIntegration: boolean
+  hasResolvedPlugins: boolean
 }) {
   const issues = [
-    ...managedProfileAppSupportIssues(options.project, options.hasAuthIntegration),
+    ...managedProfileAppSupportIssues(
+      options.project,
+      options.hasAuthIntegration,
+      options.hasResolvedPlugins,
+    ),
     ...managedProfileEnvIssues(options.requirements, options.env),
   ]
   if (issues.length > 0) {
@@ -891,8 +933,13 @@ function assertManagedProfileRuntimeSupport(options: {
 function assertManagedProfileAppSupport(options: {
   project: VoyantProjectManifest
   hasAuthIntegration: boolean
+  hasResolvedPlugins: boolean
 }) {
-  const issues = managedProfileAppSupportIssues(options.project, options.hasAuthIntegration)
+  const issues = managedProfileAppSupportIssues(
+    options.project,
+    options.hasAuthIntegration,
+    options.hasResolvedPlugins,
+  )
   if (issues.length > 0) {
     throw new Error(`Managed profile app is not ready to start:\n${formatIssues(issues)}`)
   }
@@ -901,11 +948,12 @@ function assertManagedProfileAppSupport(options: {
 function managedProfileAppSupportIssues(
   project: VoyantProjectManifest,
   hasAuthIntegration: boolean,
+  hasResolvedPlugins: boolean,
 ): string[] {
   const issues: string[] = []
-  if (project.plugins.length > 0) {
+  if (project.plugins.length > 0 && !hasResolvedPlugins) {
     issues.push(
-      `snapshot plugins are not yet resolved by @voyant-travel/framework/managed-runtime: ${project.plugins.join(
+      `snapshot plugins were declared but not resolved by @voyant-travel/framework/managed-runtime: ${project.plugins.join(
         ", ",
       )}`,
     )
@@ -1376,6 +1424,15 @@ function dbFromContext(c: Context): PostgresJsDatabase {
 
 function managedEnv(c: Context): ManagedProfileRuntimeEnv {
   return (c.env ?? {}) as ManagedProfileRuntimeEnv
+}
+
+/**
+ * Flatten the runtime env bag (string vars + provider bindings) into a plain
+ * record for plugin factories to read secrets/connection config from. A real
+ * mapper rather than a cast — the managed env has no index signature.
+ */
+function toPluginEnvRecord(env: ManagedProfileRuntimeEnv): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(env))
 }
 
 function connectApiKey(env: ManagedProfileRuntimeEnv): string | undefined {
