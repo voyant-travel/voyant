@@ -1,5 +1,7 @@
 # @voyant-travel/catalog
 
+## 0.144.0
+
 ## 0.143.0
 
 ### Minor Changes
