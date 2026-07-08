@@ -6,12 +6,15 @@
 // `loadManagedProfileRuntime({ profileSnapshotPath })` reads this file, validates
 // it, and mounts the composed `/api` in-process (voyant#3044).
 //
-// This reference snapshot is a SELF-HOSTED, provider-light composition: a small
-// module set (catalog + bookings + finance + relationships) with in-memory
-// providers everywhere except the Postgres database and Better Auth. The small
-// set keeps the API module graph — and therefore the Vite build — light while
-// still proving the composition shape: `node dist/server/server.js` serving both
-// the SSR admin UI and a real `/api` in one process.
+// This reference snapshot is a SELF-HOSTED, provider-light composition: the FULL
+// standard module set (an empty `modules` resolves to every default operator
+// module) with in-memory providers everywhere except the Postgres database and
+// Better Auth. It covers the full set on purpose so the composed API matches the
+// admin UI the source-free host mounts — `createManagedAdminExtensions` registers
+// every standard domain, so restricting the snapshot would leave nav/pages whose
+// `/api/v1/admin/*` routes the runtime never mounts. It proves the composition
+// shape: `node dist/server/server.js` serving both the SSR admin UI and a real
+// `/api` in one process.
 //
 // Re-run with `pnpm --filter managed-operator generate:snapshot` and commit the
 // resulting `managed-profile.json`.
@@ -36,10 +39,11 @@ const project = defineVoyantProject({
   profile: "operator",
   frameworkVersion,
   mode: "self-hosted",
-  // A deliberately small module set keeps the reference build light. The
-  // composition shape (real `/api` in one process) is identical regardless of
-  // which modules are included.
-  modules: ["catalog", "bookings", "finance", "relationships"],
+  // Empty `modules` = the full default operator module set, so the composed API
+  // matches every domain the packaged admin UI mounts (see comment above). List
+  // a subset here only once the admin extensions are pruned from the same
+  // snapshot (module subsetting, voyant#2107).
+  modules: [],
   providers: {
     database: "postgres",
     storage: "memory",

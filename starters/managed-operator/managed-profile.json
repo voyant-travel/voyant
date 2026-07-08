@@ -3,7 +3,7 @@
   "profile": "operator",
   "frameworkVersion": "0.18.3",
   "mode": "self-hosted",
-  "modules": ["catalog", "bookings", "finance", "relationships"],
+  "modules": [],
   "plugins": [],
   "settings": {},
   "providers": {

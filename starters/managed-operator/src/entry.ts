@@ -46,11 +46,66 @@ const loadManagedApi: AppLoader<AppBindings, ExecutionContext> = lazyApp(async (
   return { fetch: (request) => runtime.fetch(request) }
 })
 
+/**
+ * DEV-ONLY local auth surface.
+ *
+ * This reference boots in `self-hosted` mode, where the managed runtime mounts
+ * NO auth handler — managed profiles authenticate via the Voyant Cloud broker
+ * (`VOYANT_ADMIN_AUTH_MODE=voyant-cloud`), and the source-free admin ships no
+ * local sign-in page (it redirects to the broker). Without a local auth surface
+ * the workspace guard's `/api/auth/me` probe fails and redirects to a
+ * non-existent `/sign-in`, so `pnpm start` could never reach the workspace.
+ *
+ * The dispatch's lean-auth slot serves the two admin-session endpoints the guard
+ * needs with a fixed dev user, so the packaged admin is reachable locally. Data
+ * routes (`/api/v1/*`) still hit the REAL managed runtime above. A managed-cloud
+ * deployment drops this and mounts the runtime's real Cloud-broker auth (which
+ * serves the same `/auth/me` + `/auth/bootstrap-status`, added in the framework).
+ */
+const DEV_USER = {
+  id: "usr_managed_reference",
+  email: "operator@managed.local",
+  firstName: "Managed",
+  lastName: "Operator",
+  locale: "en",
+  timezone: null,
+  uiPrefs: null,
+  isSuperAdmin: true,
+  isSupportUser: false,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  profilePictureUrl: null,
+} as const
+
+function devAuthJson(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  })
+}
+
+const loadDevAuth: AppLoader<AppBindings, ExecutionContext> = lazyApp(async () => ({
+  // The dispatch strips `/api` before forwarding, so paths arrive as `/auth/*`.
+  fetch: (request) => {
+    const { pathname } = new URL(request.url)
+    if (pathname === "/auth/me") return devAuthJson(DEV_USER)
+    if (pathname === "/auth/bootstrap-status") {
+      return devAuthJson({ hasUsers: true, authMode: "local" })
+    }
+    return new Response(JSON.stringify({ error: "not_found" }), {
+      status: 404,
+      headers: { "content-type": "application/json" },
+    })
+  },
+}))
+
 // SSR is loaded lazily behind the non-API branch so the React + react-dom/server
 // graph (~2.2 MB) is imported on first render rather than at boot. `src/server.ts`
 // wires this `fetch` into the Node runtime via `createNodeServer`.
 export const fetch = createWorkerFetch<AppBindings, ExecutionContext>({
-  api: createApiDispatch<AppBindings, ExecutionContext>({ loadApiApp: loadManagedApi }),
+  api: createApiDispatch<AppBindings, ExecutionContext>({
+    loadApiApp: loadManagedApi,
+    loadAuthApp: loadDevAuth,
+  }),
   ssr: lazySsr(() => import("./ssr-handler").then((mod) => mod.handleSsrRequest)),
 })
 
