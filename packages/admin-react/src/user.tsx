@@ -43,7 +43,10 @@ export function UserProvider<TUser>({
     refetch,
   } = useQuery({
     queryKey,
-    queryFn: () => getCurrentUser(),
+    // Coalesce to `null`: the port allows `getCurrentUser` to resolve
+    // `undefined` for a signed-out user, but React Query treats an `undefined`
+    // query result as an error rather than data.
+    queryFn: async () => (await getCurrentUser()) ?? null,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 1,

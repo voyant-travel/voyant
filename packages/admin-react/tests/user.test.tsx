@@ -42,6 +42,17 @@ describe("UserProvider / useUser", () => {
     expect(getCurrentUser).not.toHaveBeenCalled()
   })
 
+  it("treats an undefined current user as signed out (not an error)", async () => {
+    const getCurrentUser = vi.fn(async (): Promise<TestUser | null | undefined> => undefined)
+    const { result } = renderHook(() => useUser<TestUser>(), {
+      wrapper: wrapper(getCurrentUser as () => Promise<TestUser | null>),
+    })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.user).toBeNull()
+    expect(result.current.error).toBeNull()
+  })
+
   it("throws when used outside a UserProvider", () => {
     expect(() => renderHook(() => useUser<TestUser>())).toThrow(
       /useUser must be used within UserProvider/,
