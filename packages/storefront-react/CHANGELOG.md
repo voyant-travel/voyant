@@ -1,5 +1,11 @@
 # @voyant-travel/storefront-react
 
+## 0.147.0
+
+### Patch Changes
+
+- @voyant-travel/storefront@0.147.0
+
 ## 0.146.0
 
 ### Patch Changes

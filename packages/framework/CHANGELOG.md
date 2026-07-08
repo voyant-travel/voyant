@@ -1,5 +1,31 @@
 # @voyant-travel/framework
 
+## 0.17.1
+
+### Patch Changes
+
+- 4829ef3: Add a bounded catalog batch quote endpoint for room/rate price matrices, plus an accommodations batch stay quote path that shares room/date availability and rate reads across selections.
+- Updated dependencies [4829ef3]
+  - @voyant-travel/accommodations@0.111.0
+  - @voyant-travel/catalog@0.143.0
+  - @voyant-travel/mice@0.6.8
+  - @voyant-travel/commerce@0.27.0
+  - @voyant-travel/cruises@0.144.0
+  - @voyant-travel/distribution@0.135.0
+  - @voyant-travel/flights@0.145.0
+  - @voyant-travel/inventory@0.7.5
+  - @voyant-travel/operations@0.5.17
+  - @voyant-travel/trips@0.136.0
+  - @voyant-travel/bookings@0.145.0
+  - @voyant-travel/quotes@0.125.3
+  - @voyant-travel/finance@0.145.0
+  - @voyant-travel/identity@0.145.0
+  - @voyant-travel/legal@0.145.0
+  - @voyant-travel/notifications@0.118.6
+  - @voyant-travel/storefront@0.147.0
+  - @voyant-travel/operator-settings@0.2.29
+  - @voyant-travel/relationships@0.122.6
+
 ## 0.17.0
 
 ### Minor Changes
