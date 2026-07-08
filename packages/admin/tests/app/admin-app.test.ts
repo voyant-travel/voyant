@@ -124,9 +124,14 @@ describe("createAdminWorkspaceBeforeLoad", () => {
       (error: unknown) => error,
     )
 
-    const options = (thrown as { options?: { href?: string; to?: string } }).options
+    const options = (
+      thrown as { options?: { href?: string; to?: string; reloadDocument?: boolean } }
+    ).options
     expect(options?.href).toBe("/api/auth/cloud/start?next=%2Fbookings")
     expect(options?.to).toBeUndefined()
+    // The broker href is a relative API path, so force a full-document redirect
+    // (TanStack only infers it for absolute hrefs).
+    expect(options?.reloadDocument).toBe(true)
   })
 
   it("honors a custom sign-in path", async () => {

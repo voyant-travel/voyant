@@ -99,7 +99,12 @@ export function createAdminWorkspaceBeforeLoad<TUser>({
       .catch((): AdminBootstrapStatus => ({ hasUsers: true }))
 
     if (bootstrap.authMode === "voyant-cloud") {
-      throw redirect({ href: auth.cloudAuthStartHref(location.href) })
+      // `cloudAuthStartHref` is a relative API path (`/api/auth/cloud/start…`).
+      // TanStack only infers a full-document redirect for absolute hrefs, so on
+      // a client-side navigation a relative href would be handled as in-app
+      // routing to a non-route API path. Force a document request so the browser
+      // actually starts the broker flow.
+      throw redirect({ href: auth.cloudAuthStartHref(location.href), reloadDocument: true })
     }
 
     throw redirect({ to: signInPath, search: { next: location.href } })
