@@ -16,7 +16,9 @@ import { defineVoyantProject } from "../packages/framework/src/profile.ts"
 import {
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
+  OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS,
 } from "../starters/operator/deployment-graph.local.ts"
+import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 
 const failures: string[] = []
@@ -123,11 +125,26 @@ async function main(): Promise<void> {
   const operatorGraph = await readOperatorGeneratedGraph()
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
   const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
+  const operatorPackageNames = new Set(
+    operatorGraph.packageRecords.map((record) => record.packageName),
+  )
   for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
+  for (const id of OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS) {
+    if (!operatorModuleIds.has(id)) {
+      failures.push(`expected operator graph to include schema-only module ${id}`)
+    }
+  }
   for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS) {
     if (!operatorPluginIds.has(id)) failures.push(`expected operator graph to include ${id}`)
+  }
+  for (const packageName of operatorMigrationSourcePackageNames()) {
+    if (!operatorPackageNames.has(packageName)) {
+      failures.push(
+        `expected operator graph package records to include migration source ${packageName}`,
+      )
+    }
   }
 
   const frameworkRecord = first.packageRecords.find(
@@ -172,6 +189,7 @@ async function main(): Promise<void> {
 async function readOperatorGeneratedGraph(): Promise<{
   modules: Array<{ id: string }>
   plugins: Array<{ id: string }>
+  packageRecords: Array<{ packageName: string }>
 }> {
   return JSON.parse(
     await readFile(
@@ -181,7 +199,23 @@ async function readOperatorGeneratedGraph(): Promise<{
   ) as {
     modules: Array<{ id: string }>
     plugins: Array<{ id: string }>
+    packageRecords: Array<{ packageName: string }>
   }
+}
+
+function operatorMigrationSourcePackageNames(): string[] {
+  return sortedUnique(
+    operatorSchemaPaths
+      .map((schemaPath) => {
+        const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
+        return match?.[1] ? `@voyant-travel/${match[1]}` : undefined
+      })
+      .filter((packageName): packageName is string => Boolean(packageName)),
+  )
+}
+
+function sortedUnique(values: readonly string[]): string[] {
+  return [...new Set(values)].sort()
 }
 
 main().catch((error) => {

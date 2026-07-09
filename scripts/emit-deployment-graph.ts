@@ -17,7 +17,10 @@ import {
   resolveDeploymentGraph,
 } from "../packages/framework/src/deployment-graph.ts"
 import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
-import { OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST } from "../starters/operator/deployment-graph.local.ts"
+import {
+  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST,
+  OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST,
+} from "../starters/operator/deployment-graph.local.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 
 interface CliOptions {
@@ -138,7 +141,11 @@ function defineOperatorGraphProject(project: VoyantProjectManifest) {
   const managedProject = defineProjectFromManagedProfile(project)
   return defineProject({
     presetLineage: managedProject.presetLineage,
-    modules: [...managedProject.modules, ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.modules],
+    modules: [
+      ...managedProject.modules,
+      ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.modules,
+      ...OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST.modules,
+    ],
     plugins: [...managedProject.plugins, ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.plugins],
     meta: managedProject.meta,
   })
