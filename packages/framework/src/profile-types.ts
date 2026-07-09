@@ -123,11 +123,32 @@ export interface VoyantProfileResourceRequirement {
   notes?: string
 }
 
+/**
+ * A custom schema-owning module the managed migrate booter must apply AFTER the
+ * framework bundle (voyant#3069). The booter resolves each package's pre-built
+ * `migrations/` folder via `loadModuleBundleSource(packageName)` and applies
+ * `[framework, ...moduleSources]` deps-first. Standard-profile modules are
+ * already in the framework bundle, so only the snapshot's `customSource.modules`
+ * appear here; a module that ships no migrations is loaded as a no-op.
+ */
+export interface VoyantProfileModuleMigrationSource {
+  /** npm package name to resolve the module's `migrations/` folder from. */
+  packageName: string
+  /** Apply order among module sources (after the framework bundle), 1-based. */
+  priority: number
+}
+
 export interface VoyantProfileMigrationMetadata {
   packageName: "@voyant-travel/framework-migrations"
   bundleId: "operator-standard-profile"
   bundleSource: "framework"
   cutlineExport: "loadCutline"
+  /**
+   * Custom schema-owning module packages (from `customSource.modules`) whose
+   * pre-built migrations apply after the framework bundle (voyant#3069). Empty
+   * for a standard profile with no bring-your-own modules.
+   */
+  moduleSources: readonly VoyantProfileModuleMigrationSource[]
   doctor: {
     command: "voyant db doctor --fail-on-drift"
     parity: readonly string[]

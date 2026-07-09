@@ -305,11 +305,28 @@ describe("managed profile contract", () => {
       bundleId: "operator-standard-profile",
       bundleSource: "framework",
       cutlineExport: "loadCutline",
+      moduleSources: [],
       doctor: {
         command: "voyant db doctor --fail-on-drift",
         parity: expect.arrayContaining(["schema drift"]),
       },
     })
+  })
+
+  it("enumerates custom schema-owning modules as ordered migration sources (voyant#3069)", () => {
+    const project = defineVoyantProject({
+      profile: "operator",
+      frameworkVersion: "0.21.0",
+      modules: [],
+      plugins: [],
+      settings: {},
+      customSource: { modules: ["@acme/loyalty", "@acme/gift-cards"] },
+    })
+
+    expect(getVoyantProjectMigrationMetadata(project).moduleSources).toEqual([
+      { packageName: "@acme/loyalty", priority: 1 },
+      { packageName: "@acme/gift-cards", priority: 2 },
+    ])
   })
 })
 

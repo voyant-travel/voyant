@@ -1,0 +1,149 @@
+/**
+ * Load a schema-owning module PACKAGE's pre-built `migrations/` folder as a
+ * collector {@link MigrationSource}, resolved by package NAME (voyant#3069).
+ *
+ * A source-backed deployment discovers each package's migrations via its
+ * generated schema-path list ({@link discoverMigrationSources}); a **source-free
+ * managed image** has no such list — it only knows the module package NAMES its
+ * profile snapshot declares. This resolves a declared module's package root and
+ * loads its `migrations/` the same way {@link loadFrameworkBundleSource} loads
+ * the framework bundle, so the managed migrate booter can apply
+ * `[framework, ...customModules]` deps-first with no drizzle-kit generation.
+ *
+ * The convention (Option 1 of voyant#3069): a schema-owning module package ships
+ * a committed drizzle `migrations/` folder (`meta/_journal.json` + `*.sql`).
+ * Modules that own no schema (e.g. payment plugins) ship none, and resolve to
+ * `null` here — they need no migrations and are simply skipped.
+ */
+
+import { existsSync, readFileSync } from "node:fs"
+import { createRequire } from "node:module"
+import { dirname, join } from "node:path"
+
+import type { MigrationSource } from "./collector.js"
+import { loadMigrationFolder } from "./load-folder.js"
+
+export interface LoadModuleBundleSourceOptions {
+  /**
+   * Apply order across sources (lower first). MUST be greater than the framework
+   * bundle's `0` — a module's tables FK into framework tables, so the framework
+   * bundle applies first.
+   */
+  priority: number
+  /**
+   * Module specifier/file to resolve `packageName` from (a path or `file:` URL).
+   * Defaults to this module's location; pass the deployment's own location so
+   * the module resolves against the deployment's installed dependency tree.
+   */
+  resolveFrom?: string | URL
+  /**
+   * Ledger source name (recorded in `_voyant_migrations`). Defaults to the
+   * package's unscoped name so the same module records under one stable name
+   * across source and managed modes. Override only to match an existing ledger.
+   */
+  name?: string
+  /** Resolved migrations folder, bypassing package resolution (mainly for tests). */
+  migrationsDir?: string
+}
+
+/** The unscoped package name (`@acme/loyalty` → `loyalty`) used as the ledger source name. */
+export function moduleSourceName(packageName: string): string {
+  return packageName.replace(/^@[^/]+\//, "")
+}
+
+/**
+ * Walk up from a resolved entry file to the package root — the nearest ancestor
+ * whose `package.json` `name` matches `packageName`. Robust to `dist/` nesting
+ * and any scope, unlike a node_modules path regex.
+ */
+function resolvePackageRoot(packageName: string, entryPath: string): string | null {
+  let dir = dirname(entryPath)
+  for (;;) {
+    const packageJsonPath = join(dir, "package.json")
+    if (existsSync(packageJsonPath)) {
+      try {
+        const parsed = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { name?: string }
+        if (parsed.name === packageName) return dir
+      } catch {
+        // Unreadable/partial package.json — keep walking.
+      }
+    }
+    const parent = dirname(dir)
+    if (parent === dir) return null
+    dir = parent
+  }
+}
+
+function resolveModuleMigrationsDir(packageName: string, resolveFrom: string | URL): string | null {
+  let entryPath: string
+  try {
+    entryPath = createRequire(resolveFrom).resolve(packageName)
+  } catch {
+    return null
+  }
+  const root = resolvePackageRoot(packageName, entryPath)
+  return root ? join(root, "migrations") : null
+}
+
+/**
+ * Load a module package's pre-built migrations as a {@link MigrationSource}, or
+ * `null` when the package ships no `migrations/` folder (it owns no schema).
+ * Throws only if a present `migrations/` folder is malformed (missing SQL a
+ * journal references) — a packaging error, surfaced rather than applied partially.
+ */
+export async function loadModuleBundleSource(
+  packageName: string,
+  options: LoadModuleBundleSourceOptions,
+): Promise<MigrationSource | null> {
+  const migrationsDir =
+    options.migrationsDir ??
+    resolveModuleMigrationsDir(packageName, options.resolveFrom ?? import.meta.url)
+  if (!migrationsDir) return null
+  if (!existsSync(join(migrationsDir, "meta", "_journal.json"))) return null
+
+  return {
+    name: options.name ?? moduleSourceName(packageName),
+    priority: options.priority,
+    migrations: await loadMigrationFolder(migrationsDir),
+  }
+}
+
+export interface CollectManagedMigrationSourcesOptions {
+  /** Framework bundle folder override (defaults to the shipped bundle). */
+  frameworkBundleDir?: string
+  /**
+   * Custom schema-owning module package names to load AFTER the framework
+   * bundle, in deps-first order (framework metadata's `moduleSources`).
+   */
+  modulePackages?: readonly string[]
+  /** Where to resolve module packages from (the deployment's location). */
+  resolveFrom?: string | URL
+}
+
+/**
+ * The ordered migration sources for a managed profile: the framework bundle
+ * (priority 0) followed by each declared custom schema-owning module's pre-built
+ * migrations (priority 1..n, in declaration order). Pass the result straight to
+ * `runDeploymentMigrations`. Modules that ship no migrations are skipped.
+ */
+export async function collectManagedMigrationSources(
+  options: CollectManagedMigrationSourcesOptions = {},
+): Promise<MigrationSource[]> {
+  // Imported lazily to keep this module usable without eagerly resolving the
+  // shipped framework bundle folder when only module sources are wanted.
+  const { loadFrameworkBundleSource } = await import("./bundle.js")
+  const sources: MigrationSource[] = [await loadFrameworkBundleSource(options.frameworkBundleDir)]
+
+  let priority = 1
+  for (const packageName of options.modulePackages ?? []) {
+    const source = await loadModuleBundleSource(packageName, {
+      priority,
+      ...(options.resolveFrom ? { resolveFrom: options.resolveFrom } : {}),
+    })
+    if (source) {
+      sources.push(source)
+      priority += 1
+    }
+  }
+  return sources
+}

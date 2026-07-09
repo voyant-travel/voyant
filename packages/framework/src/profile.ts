@@ -40,6 +40,7 @@ export {
   type VoyantProfileEnvRequirement,
   type VoyantProfileMigrationMetadata,
   type VoyantProfileModuleDefinition,
+  type VoyantProfileModuleMigrationSource,
   type VoyantProfileRequirements,
   type VoyantProfileResourceRequirement,
   type VoyantProfileValidationIssue,
@@ -193,16 +194,24 @@ export function getVoyantProjectRequirements(
 }
 
 export function getVoyantProjectMigrationMetadata(
-  project: Pick<VoyantProjectManifest, "profile">,
+  project: Pick<VoyantProjectManifest, "profile" | "customSource">,
 ): VoyantProfileMigrationMetadata {
   if (project.profile !== "operator") {
     throw new Error(`Unsupported managed profile "${String(project.profile)}".`)
   }
+  // Standard-profile modules are baked into the framework bundle; only the
+  // snapshot's custom (bring-your-own) schema-owning modules need their own
+  // pre-built migration source, applied after the framework bundle (voyant#3069).
+  const moduleSources = unique(project.customSource?.modules ?? []).map((packageName, index) => ({
+    packageName,
+    priority: index + 1,
+  }))
   return {
     packageName: "@voyant-travel/framework-migrations",
     bundleId: "operator-standard-profile",
     bundleSource: "framework",
     cutlineExport: "loadCutline",
+    moduleSources,
     doctor: {
       command: "voyant db doctor --fail-on-drift",
       parity: [
