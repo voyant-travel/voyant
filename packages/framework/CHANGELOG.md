@@ -1,5 +1,60 @@
 # @voyant-travel/framework
 
+## 0.20.0
+
+### Minor Changes
+
+- a97e845: Expose the managed profile's active module set at runtime so the source-free
+  admin can gate its composition by the deployment's module subset (voyant#3063).
+
+  The managed runtime already honors a profile's `modules: [...]` subset for the
+  API (`createVoyantApp({ exclude })`), but the shared, framework-version-tagged
+  admin image composed _every_ `create<Module>AdminExtension()` factory
+  unconditionally — so every managed operator saw the full nav even when its
+  profile activated a subset, with nav entries linking to pages whose API isn't
+  mounted (dead links / 404s).
+
+  `@voyant-travel/framework`:
+
+  - Add `resolveActiveModuleIds(project)` (`/profile`) — the resolved module `include`
+    set (the same one that drives `createVoyantApp({ exclude })`) as `moduleId`s.
+  - `GET /auth/bootstrap-status` now returns `modules` on `ManagedBootstrapStatus`,
+    so the workspace bootstrap probe learns what's active for this deployment.
+
+  `@voyant-travel/admin`:
+
+  - `AdminBootstrapStatus` carries an optional `modules` module-id list the
+    source-free admin filters its nav/widget composition by (fail-open when
+    absent).
+  - `AdminWorkspaceShell` accepts `activeModuleIds`; when provided, the packaged
+    **base** nav is gated to those modules (`filterAdminNavigationByModules` /
+    `OPERATOR_ADMIN_NAV_MODULE_IDS`), so a shared image's static nav (Flights,
+    Finance, Legal, …) is hidden for a profile subset — not just
+    extension-contributed items. Fail-open when omitted, so self-hosted starters
+    are unaffected.
+
+### Patch Changes
+
+- @voyant-travel/auth@0.124.0
+- @voyant-travel/bookings@0.149.0
+- @voyant-travel/catalog@0.147.0
+- @voyant-travel/cruises@0.148.0
+- @voyant-travel/distribution@0.139.0
+- @voyant-travel/finance@0.149.0
+- @voyant-travel/flights@0.149.0
+- @voyant-travel/identity@0.149.0
+- @voyant-travel/legal@0.149.0
+- @voyant-travel/notifications@0.122.0
+- @voyant-travel/trips@0.140.0
+- @voyant-travel/accommodations@0.111.4
+- @voyant-travel/commerce@0.31.0
+- @voyant-travel/storefront@0.151.0
+- @voyant-travel/inventory@0.7.9
+- @voyant-travel/operations@0.5.21
+- @voyant-travel/operator-settings@0.2.33
+- @voyant-travel/relationships@0.122.10
+- @voyant-travel/quotes@0.125.7
+
 ## 0.19.0
 
 ### Minor Changes
