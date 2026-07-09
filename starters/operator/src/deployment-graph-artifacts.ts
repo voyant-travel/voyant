@@ -19,6 +19,23 @@ export interface OperatorDeploymentGraphArtifactSummary {
   moduleIds: readonly string[]
   pluginIds: readonly string[]
   packageNames: readonly string[]
+  resourceRequirements: readonly OperatorDeploymentGraphResourceRequirement[]
+}
+
+export interface OperatorDeploymentGraphResourceRequirement {
+  resourceKey: string
+  roles: readonly string[]
+  provider: string
+  required: boolean
+  env: readonly OperatorDeploymentGraphEnvRequirement[]
+  notes?: string
+}
+
+export interface OperatorDeploymentGraphEnvRequirement {
+  name: string
+  kind: string
+  required: boolean
+  description: string
 }
 
 interface DeploymentArtifactManifest {
@@ -42,6 +59,7 @@ interface ResolvedDeploymentGraph {
   contentHash?: unknown
   diagnostics?: unknown
   deployment?: unknown
+  requirements?: unknown
   modules?: unknown
   plugins?: unknown
   packageRecords?: unknown
@@ -182,11 +200,70 @@ export function loadOperatorDeploymentGraphArtifacts(
       "deployment graph packageRecords",
       "packageName",
     ),
+    resourceRequirements: collectResourceRequirements(graph.requirements),
   }
 
   validateGeneratedRuntimeEntrySource({ graphHash, manifestUrl, mode, summary, target })
 
   return summary
+}
+
+function collectResourceRequirements(value: unknown): OperatorDeploymentGraphResourceRequirement[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("deployment graph requirements must be an object")
+  }
+  const resources = arrayOfRecords(
+    (value as Record<string, unknown>).resources,
+    "deployment graph requirements.resources",
+  )
+  return resources.map((resource, index) => {
+    const resourceKey = requireString(
+      resource.resourceKey,
+      `deployment graph requirements.resources[${index}].resourceKey`,
+    )
+    const provider = requireString(
+      resource.provider,
+      `deployment graph requirements.resources[${index}].provider`,
+    )
+    const required = requireBoolean(
+      resource.required,
+      `deployment graph requirements.resources[${index}].required`,
+    )
+    const roles = collectStringArray(
+      resource.roles,
+      `deployment graph requirements.resources[${index}].roles`,
+    )
+    const env = arrayOfRecords(
+      resource.env,
+      `deployment graph requirements.resources[${index}].env`,
+    ).map((entry, envIndex) => ({
+      name: requireString(
+        entry.name,
+        `deployment graph requirements.resources[${index}].env[${envIndex}].name`,
+      ),
+      kind: requireString(
+        entry.kind,
+        `deployment graph requirements.resources[${index}].env[${envIndex}].kind`,
+      ),
+      required: requireBoolean(
+        entry.required,
+        `deployment graph requirements.resources[${index}].env[${envIndex}].required`,
+      ),
+      description: requireString(
+        entry.description,
+        `deployment graph requirements.resources[${index}].env[${envIndex}].description`,
+      ),
+    }))
+    const notes = stringField(resource, "notes")
+    return {
+      resourceKey,
+      roles,
+      provider,
+      required,
+      env,
+      ...(notes ? { notes } : {}),
+    }
+  })
 }
 
 function readJsonFile<T>(url: URL, label: string): T {
@@ -338,6 +415,16 @@ function escapeRegExp(value: string): string {
 function requireString(value: unknown, label: string): string {
   if (typeof value === "string" && value.length > 0) return value
   throw new Error(`${label} must be a non-empty string`)
+}
+
+function requireBoolean(value: unknown, label: string): boolean {
+  if (typeof value === "boolean") return value
+  throw new Error(`${label} must be a boolean`)
+}
+
+function collectStringArray(value: unknown, label: string): string[] {
+  if (!Array.isArray(value)) throw new Error(`${label} must be an array`)
+  return value.map((entry, index) => requireString(entry, `${label}[${index}]`))
 }
 
 function requireSha256ContentHash(value: unknown, label: string): string {
