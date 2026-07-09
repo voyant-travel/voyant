@@ -3,10 +3,8 @@
 
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { startManagedProfileRuntime } from "@voyant-travel/framework/managed-runtime"
-
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:87a7ee6f21d659b2e2cfecd372ca463df0ed409f3bcd38fdda0c1bec8a73e56d" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:fa12612d273b8c480a798266dd55fe5a92ad5955a1aa7c9d5d4e14dd1da0efe8" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const
@@ -111,6 +109,7 @@ export function resolveGeneratedProfileSnapshotPath(): string {
 
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
+  const { startManagedProfileRuntime } = await import("@voyant-travel/framework/managed-runtime")
   const handle = await startManagedProfileRuntime({
     profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
   })

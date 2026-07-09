@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:87a7ee6f21d659b2e2cfecd372ca463df0ed409f3bcd38fdda0c1bec8a73e56d",
+  "contentHash": "sha256:fa12612d273b8c480a798266dd55fe5a92ad5955a1aa7c9d5d4e14dd1da0efe8",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -255,7 +255,12 @@
           "surface": "admin"
         }
       ],
-      "events": [],
+      "events": [
+        {
+          "eventType": "promotion.changed",
+          "id": "@voyant-travel/commerce#event.promotion.changed"
+        }
+      ],
       "id": "@voyant-travel/commerce",
       "kind": "module",
       "links": [],
@@ -272,8 +277,48 @@
         "ports": []
       },
       "schema": [],
-      "subscribers": [],
-      "workflows": []
+      "subscribers": [
+        {
+          "eventFilterId": "ef_6f8e4b4ce409d04c",
+          "eventType": "promotion.changed",
+          "filter": {
+            "eventType": "promotion.changed",
+            "id": "ef_6f8e4b4ce409d04c",
+            "input": {
+              "object": {
+                "offerId": {
+                  "path": "data.offerId"
+                },
+                "source": {
+                  "path": "data.source"
+                }
+              }
+            },
+            "payloadHash": "6f8e4b4ce409d04c",
+            "targetWorkflowId": "promotions.reindex-all-products",
+            "where": {
+              "eq": [
+                {
+                  "path": "data.affected.kind"
+                },
+                {
+                  "lit": "all"
+                }
+              ]
+            }
+          },
+          "id": "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
+          "workflowId": "promotions.reindex-all-products"
+        }
+      ],
+      "workflows": [
+        {
+          "config": {
+            "defaultRuntime": "node"
+          },
+          "id": "promotions.reindex-all-products"
+        }
+      ]
     },
     {
       "api": [

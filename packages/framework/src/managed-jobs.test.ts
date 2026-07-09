@@ -102,7 +102,13 @@ describe("getManagedProfileEventFilters (voyant#3032)", () => {
 
     // The commerce workflow only fires because this filter routes
     // promotion.changed (kind=all) into it — the workflow manifest alone is inert.
-    expect(filters).toEqual([promotionAffectedAllFilter])
+    expect(filters).toEqual([
+      {
+        id: promotionAffectedAllFilter.id,
+        eventType: promotionAffectedAllFilter.eventType,
+        manifest: promotionAffectedAllFilter.manifest,
+      },
+    ])
     expect(filters[0]?.manifest).toMatchObject({
       targetWorkflowId: bulkReindexProductsWorkflowManifest.id,
     })

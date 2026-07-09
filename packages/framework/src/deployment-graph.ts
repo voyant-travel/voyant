@@ -1,5 +1,11 @@
 // agent-quality: file-size exception -- reason: first v1 deployment-graph cut keeps schema versions, diagnostics, resolver, managed-profile bridge, and author harness co-located until generated runtime lowering defines stable split points.
 import {
+  getStandardProfileEventFiltersForModule,
+  getStandardProfileWorkflowManifestForModule,
+  type ManagedEventFilterEntry,
+  type ManagedWorkflowManifestEntry,
+} from "./managed-jobs.js"
+import {
   FRAMEWORK_CAPABILITY_GRAPH,
   FRAMEWORK_RUNTIME_MANIFEST,
   subsetStandardManifest,
@@ -50,6 +56,8 @@ export const VOYANT_GRAPH_RESERVED_FACETS = [
 ] as const
 
 export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
+  VOYANT_GRAPH_ARTIFACT_MISSING: "A generated deployment graph artifact is missing.",
+  VOYANT_GRAPH_ARTIFACT_STALE: "A generated deployment graph artifact is stale.",
   VOYANT_GRAPH_DUPLICATE_ENTITY_ID: "Two v1 graph entities resolved to the same stable entity id.",
   VOYANT_GRAPH_DUPLICATE_ID: "Two selected graph units resolved to the same graph id.",
   VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN:
@@ -110,7 +118,19 @@ export interface VoyantGraphFacetEntity {
   source?: string
 }
 
+export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
+  eventType?: string
+}
+
+export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
+  eventType?: string
+  eventFilterId?: string
+  workflowId?: string
+  filter?: VoyantGraphJsonObject
+}
+
 export interface VoyantGraphWorkflow extends VoyantGraphFacetEntity {
+  config?: VoyantGraphJsonObject
   schedules?: readonly VoyantGraphWorkflowSchedule[]
 }
 
@@ -131,8 +151,8 @@ export interface VoyantGraphUnitManifest {
   schema?: readonly VoyantGraphFacetEntity[]
   migrations?: readonly VoyantGraphFacetEntity[]
   links?: readonly VoyantGraphFacetEntity[]
-  subscribers?: readonly VoyantGraphFacetEntity[]
-  events?: readonly VoyantGraphFacetEntity[]
+  subscribers?: readonly VoyantGraphSubscriber[]
+  events?: readonly VoyantGraphEvent[]
   workflows?: readonly VoyantGraphWorkflow[]
   meta?: VoyantGraphJsonObject
 }
@@ -255,8 +275,8 @@ export interface ResolvedVoyantGraphUnit {
   schema: readonly VoyantGraphFacetEntity[]
   migrations: readonly VoyantGraphFacetEntity[]
   links: readonly VoyantGraphFacetEntity[]
-  subscribers: readonly VoyantGraphFacetEntity[]
-  events: readonly VoyantGraphFacetEntity[]
+  subscribers: readonly VoyantGraphSubscriber[]
+  events: readonly VoyantGraphEvent[]
   workflows: readonly VoyantGraphWorkflow[]
 }
 
@@ -689,6 +709,9 @@ export function generateFrameworkModuleManifests(
           mount: specifier,
         },
       ],
+      workflows: lowerManagedWorkflowFacets(specifier),
+      events: lowerManagedEventFacets(id, specifier),
+      subscribers: lowerManagedEventFilterFacets(id, specifier),
     })
   })
 }
@@ -757,6 +780,11 @@ export function childGraphEntityId(parentId: string, childId: string): string {
 
 export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonicalize(value))
+}
+
+function toGraphJsonObject(value: unknown): VoyantGraphJsonObject | undefined {
+  if (!isRecord(value)) return undefined
+  return JSON.parse(JSON.stringify(value)) as VoyantGraphJsonObject
 }
 
 export async function sha256(value: unknown): Promise<string> {
@@ -864,9 +892,57 @@ function resolveUnit(
     schema: sortFacetEntities(unit.schema ?? []),
     migrations: sortFacetEntities(unit.migrations ?? []),
     links: sortFacetEntities(unit.links ?? []),
-    subscribers: sortFacetEntities(unit.subscribers ?? []),
-    events: sortFacetEntities(unit.events ?? []),
+    subscribers: sortFacetEntities(unit.subscribers ?? []) as VoyantGraphSubscriber[],
+    events: sortFacetEntities(unit.events ?? []) as VoyantGraphEvent[],
     workflows: sortWorkflows(unit.workflows ?? []),
+  }
+}
+
+function lowerManagedWorkflowFacets(moduleSpecifier: string): VoyantGraphWorkflow[] {
+  return getStandardProfileWorkflowManifestForModule(moduleSpecifier).map((workflow) =>
+    lowerManagedWorkflowFacet(workflow),
+  )
+}
+
+function lowerManagedWorkflowFacet(workflow: ManagedWorkflowManifestEntry): VoyantGraphWorkflow {
+  const config = toGraphJsonObject(workflow.config)
+  return {
+    id: workflow.id,
+    ...(config ? { config } : {}),
+  }
+}
+
+function lowerManagedEventFacets(unitId: string, moduleSpecifier: string): VoyantGraphEvent[] {
+  const eventTypes = sortedUnique(
+    getStandardProfileEventFiltersForModule(moduleSpecifier).map((filter) => filter.eventType),
+  )
+  return eventTypes.map((eventType) => ({
+    id: childGraphEntityId(unitId, `event.${eventType}`),
+    eventType,
+  }))
+}
+
+function lowerManagedEventFilterFacets(
+  unitId: string,
+  moduleSpecifier: string,
+): VoyantGraphSubscriber[] {
+  return getStandardProfileEventFiltersForModule(moduleSpecifier).map((filter) =>
+    lowerManagedEventFilterFacet(unitId, filter),
+  )
+}
+
+function lowerManagedEventFilterFacet(
+  unitId: string,
+  filter: ManagedEventFilterEntry,
+): VoyantGraphSubscriber {
+  const manifest = toGraphJsonObject(filter.manifest)
+  const workflowId = manifest?.targetWorkflowId
+  return {
+    id: childGraphEntityId(unitId, `subscriber.${filter.id}`),
+    eventType: filter.eventType,
+    eventFilterId: filter.id,
+    ...(typeof workflowId === "string" ? { workflowId } : {}),
+    ...(manifest ? { filter: manifest } : {}),
   }
 }
 
