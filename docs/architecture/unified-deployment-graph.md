@@ -655,6 +655,12 @@ Existing `?cron=<expr>` dispatch should be migrated toward
 Low-level runtime maintenance can keep an internal scheduler escape hatch, but
 it should not become the module/plugin authoring surface.
 
+Implementation note: v1 graph units lower workflow descriptor
+`config.schedule` declarations into nested `workflows[].schedules` entries with
+stable graph entity ids. Existing Cloud Scheduler cron callbacks are not modeled
+as workflow schedules; they remain runtime maintenance/provisioning metadata
+until the scheduler dispatch migration has a stable schedule-id contract.
+
 ## Events And Webhooks
 
 V1 should include subscribers and workflow event filters that already map to
