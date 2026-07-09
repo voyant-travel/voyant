@@ -43,6 +43,32 @@ import { type FrameworkProviders, frameworkComposition } from "./composition-laz
 import { subsetStandardManifest } from "./manifest.js"
 
 /**
+ * Standard families whose route loader is deployment-injected AND optional: when
+ * the loader isn't provided, `createVoyantApp` auto-excludes the family (no
+ * routes, no admin nav) instead of forcing the deployment to stub it or install
+ * a data source it doesn't run. Keyed by manifest specifier → the
+ * {@link FrameworkProviders} field that mounts it.
+ *
+ * `@voyant-travel/flights` has no first-party real connector yet — only the demo
+ * adapter — so an operator that doesn't sell flights should never need to wire or
+ * install one. "Not wired" is treated as "not run" (ADR-0007 subsetting).
+ */
+const OPTIONAL_FAMILY_LOADERS = {
+  "@voyant-travel/flights": "loadFlightAdminRoutes",
+} as const satisfies Record<string, keyof FrameworkProviders>
+
+/**
+ * The optional standard families whose injected loader is absent from
+ * `providers` — auto-excluded so a deployment never has to stub a family (or
+ * install its demo/data source) it doesn't run. Exported for tests.
+ */
+export function optionalFamiliesToExclude(providers: Partial<FrameworkProviders>): string[] {
+  return Object.entries(OPTIONAL_FAMILY_LOADERS)
+    .filter(([, field]) => providers[field] == null)
+    .map(([specifier]) => specifier)
+}
+
+/**
  * Config for {@link createVoyantApp}: the injected providers + deployment-local
  * additions, plus everything else `createApp` takes (db, auth, workflows,
  * outbox, publicPaths, …) — minus the `manifest`/`registry`/`capabilities` the
@@ -93,8 +119,13 @@ export function createVoyantApp<
 >(config: CreateVoyantAppConfig<TBindings, TProviders>) {
   const { providers, modules = {}, extensions = {}, exclude, ...rest } = config
 
+  // Auto-exclude optional standard families whose injected loader wasn't provided
+  // (e.g. flights on a deployment that doesn't sell them) — merged with the
+  // explicit `exclude`, then cascaded to owned extensions by subsetStandardManifest.
+  const resolvedExclude = [...(exclude ?? []), ...optionalFamiliesToExclude(providers)]
+
   const { modules: standardModules, extensions: standardExtensions } = subsetStandardManifest({
-    exclude,
+    exclude: resolvedExclude,
   })
 
   const registry: CompositionRegistry<TProviders> = {

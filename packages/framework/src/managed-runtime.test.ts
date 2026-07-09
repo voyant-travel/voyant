@@ -554,7 +554,9 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned flights routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadFlightAdminRoutes()
+    const loadFlightAdminRoutes = createManagedProfileProviders().loadFlightAdminRoutes
+    if (!loadFlightAdminRoutes) throw new Error("managed providers must wire flights")
+    const app = await loadFlightAdminRoutes()
     const response = await app.request("/search", {
       method: "POST",
       body: JSON.stringify({

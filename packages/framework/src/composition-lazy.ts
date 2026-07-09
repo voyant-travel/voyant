@@ -79,7 +79,14 @@ export interface FrameworkProviders {
   ) => import("@voyant-travel/finance/card-payment").CardPaymentStarter | null
   notificationsAutoConfirmAndDispatch?: CreateNotificationsHonoModuleOptions["autoConfirmAndDispatch"]
   createChannelPushExtension: () => HonoExtension
-  loadFlightAdminRoutes: LazyRoutesLoader
+  /**
+   * OPTIONAL: the `@voyant-travel/flights` family has no first-party real
+   * connector yet (only the demo adapter), so a deployment that doesn't run
+   * flights should not have to wire or install one. When this loader is omitted,
+   * `createVoyantApp` auto-excludes the flights module (see
+   * `OPTIONAL_FAMILY_LOADERS`) rather than forcing a stub.
+   */
+  loadFlightAdminRoutes?: LazyRoutesLoader
   loadMcpAdminRoutes: LazyRoutesLoader
   loadCatalogBookingRoutes: LazyRoutesLoader
   loadCatalogContentRoutes: LazyRoutesLoader
@@ -776,10 +783,23 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         },
       }
     },
-    "@voyant-travel/flights": ({ capabilities }) => ({
-      module: { name: "flights" },
-      lazyAdminRoutes: capabilities.loadFlightAdminRoutes,
-    }),
+    "@voyant-travel/flights": ({ capabilities }) => {
+      // `loadFlightAdminRoutes` is optional so `createVoyantApp` can auto-exclude
+      // flights when it's unwired. If flights IS in the manifest (e.g. a direct
+      // `frameworkComposition` mount) the loader must be present — fail fast here
+      // rather than mounting a flights module in admin metadata with no routes.
+      if (!capabilities.loadFlightAdminRoutes) {
+        throw new Error(
+          "frameworkComposition: @voyant-travel/flights is in the manifest but " +
+            "loadFlightAdminRoutes was not provided. Provide the loader, or drop the " +
+            "specifier (createVoyantApp auto-excludes it when the loader is absent).",
+        )
+      }
+      return {
+        module: { name: "flights" },
+        lazyAdminRoutes: capabilities.loadFlightAdminRoutes,
+      }
+    },
     "operator/mcp": ({ capabilities }) => ({
       module: { name: "mcp" },
       lazyAdminRoutes: capabilities.loadMcpAdminRoutes,
