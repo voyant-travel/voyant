@@ -147,7 +147,7 @@ export function getVoyantProjectRequirements(
 ): VoyantProfileRequirements {
   assertValidVoyantProject(project)
   const bridge = toCreateVoyantAppProfileConfig(project)
-  const providers = providersForProject(project)
+  const providers = getVoyantProjectProviders(project)
 
   return {
     schemaVersion: project.schemaVersion,
@@ -165,6 +165,13 @@ export function getVoyantProjectRequirements(
     ),
     migration: getVoyantProjectMigrationMetadata(project),
   }
+}
+
+export function getVoyantProjectProviders(project: VoyantProjectManifest): VoyantProjectProviders {
+  assertValidVoyantProject(project)
+  if (project.mode === "managed-cloud") return MANAGED_OPERATOR_DEFAULT_PROVIDERS
+  if (!project.providers) throw new Error(`${project.mode} profiles must declare providers.`)
+  return project.providers
 }
 
 export function getVoyantProjectMigrationMetadata(
@@ -324,12 +331,6 @@ function computeCreateVoyantAppExclude(project: VoyantProjectManifest): string[]
 
 function resolvedExcludedModuleIds(project: VoyantProjectManifest): string[] {
   return computeCreateVoyantAppExclude(project).map(moduleIdFromSpecifier)
-}
-
-function providersForProject(project: VoyantProjectManifest): VoyantProjectProviders {
-  if (project.mode === "managed-cloud") return MANAGED_OPERATOR_DEFAULT_PROVIDERS
-  if (!project.providers) throw new Error(`${project.mode} profiles must declare providers.`)
-  return project.providers
 }
 
 function mergeResourceRequirements(

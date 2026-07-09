@@ -5,8 +5,11 @@ import {
   subsetStandardManifest,
 } from "./manifest.js"
 import {
+  getVoyantProjectProviders,
   getVoyantProjectRequirements,
   toCreateVoyantAppProfileConfig,
+  type VoyantProfileEnvRequirement,
+  type VoyantProfileResourceRequirement,
   type VoyantProjectDeploymentMode,
   type VoyantProjectManifest,
   type VoyantProjectProviderRole,
@@ -170,7 +173,12 @@ export interface DefineVoyantGraphDeploymentInput {
   target: string
   providers?: Partial<Record<VoyantProjectProviderRole | string, string>>
   mode?: VoyantProjectDeploymentMode
+  requirements?: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
+}
+
+export interface VoyantGraphDeploymentRequirements {
+  resources: readonly VoyantProfileResourceRequirement[]
 }
 
 export interface VoyantGraphDeployment {
@@ -179,6 +187,7 @@ export interface VoyantGraphDeployment {
   target: string
   providers: Partial<Record<VoyantProjectProviderRole | string, string>>
   mode?: VoyantProjectDeploymentMode
+  requirements: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
 }
 
@@ -262,6 +271,7 @@ export interface ResolvedVoyantDeploymentGraph {
     mode?: VoyantProjectDeploymentMode
     providers: Partial<Record<VoyantProjectProviderRole | string, string>>
   }
+  requirements: VoyantGraphDeploymentRequirements
   modules: readonly ResolvedVoyantGraphUnit[]
   plugins: readonly ResolvedVoyantGraphUnit[]
   capabilities: {
@@ -365,6 +375,7 @@ export function defineDeployment(input: DefineVoyantGraphDeploymentInput): Voyan
     target: input.target,
     providers: { ...(input.providers ?? {}) },
     ...(input.mode ? { mode: input.mode } : {}),
+    requirements: normalizeDeploymentRequirements(input.requirements),
     ...(input.meta ? { meta: input.meta } : {}),
   } satisfies VoyantGraphDeployment
 
@@ -477,6 +488,7 @@ export async function resolveDeploymentGraph(
   const target = input.target ?? input.deployment?.target
   const mode = input.mode ?? input.deployment?.mode
   const providers = { ...(input.deployment?.providers ?? {}) }
+  const requirements = normalizeDeploymentRequirements(input.deployment?.requirements)
   const selectedModules = input.project.modules.map((unit, index) =>
     resolveUnit(unit, "module", index),
   )
@@ -511,6 +523,7 @@ export async function resolveDeploymentGraph(
       ...(mode ? { mode } : {}),
       providers,
     },
+    requirements,
     modules,
     plugins,
     capabilities: {
@@ -560,11 +573,13 @@ export function defineDeploymentFromManagedProfile(
   project: VoyantProjectManifest,
 ): VoyantGraphDeployment {
   const requirements = getVoyantProjectRequirements(project)
+  const providers = getVoyantProjectProviders(project)
   return defineDeployment({
     project: defineProjectFromManagedProfile(project),
     target: project.mode === "managed-cloud" ? "voyant-cloud" : "node",
     mode: project.mode,
-    providers: project.providers ? { ...project.providers } : undefined,
+    providers: { ...providers },
+    requirements: { resources: requirements.resources },
     meta: {
       compatibilityProfile: requirements.profile,
       frameworkVersion: requirements.frameworkVersion,
@@ -749,6 +764,58 @@ export async function sha256(value: unknown): Promise<string> {
   const bytes = new TextEncoder().encode(text)
   const digest = await getCrypto().subtle.digest("SHA-256", bytes)
   return bytesToHex(new Uint8Array(digest))
+}
+
+function normalizeDeploymentRequirements(
+  requirements: VoyantGraphDeploymentRequirements | undefined,
+): VoyantGraphDeploymentRequirements {
+  return {
+    resources: [...(requirements?.resources ?? [])]
+      .map(normalizeResourceRequirement)
+      .sort(compareResourceRequirements),
+  }
+}
+
+function normalizeResourceRequirement(
+  requirement: VoyantProfileResourceRequirement,
+): VoyantProfileResourceRequirement {
+  return {
+    resourceKey: requirement.resourceKey,
+    roles: [...requirement.roles].sort(),
+    provider: requirement.provider,
+    required: requirement.required,
+    env: [...requirement.env].sort(compareEnvRequirements).map((env) => ({
+      name: env.name,
+      kind: env.kind,
+      required: env.required,
+      description: env.description,
+    })),
+    ...(requirement.notes ? { notes: requirement.notes } : {}),
+  }
+}
+
+function compareEnvRequirements(
+  left: VoyantProfileEnvRequirement,
+  right: VoyantProfileEnvRequirement,
+): number {
+  return (
+    left.name.localeCompare(right.name) ||
+    left.kind.localeCompare(right.kind) ||
+    Number(left.required) - Number(right.required) ||
+    left.description.localeCompare(right.description)
+  )
+}
+
+function compareResourceRequirements(
+  left: VoyantProfileResourceRequirement,
+  right: VoyantProfileResourceRequirement,
+): number {
+  return (
+    left.resourceKey.localeCompare(right.resourceKey) ||
+    left.provider.localeCompare(right.provider) ||
+    Number(left.required) - Number(right.required) ||
+    left.roles.join(",").localeCompare(right.roles.join(","))
+  )
 }
 
 function defineGraphUnit(

@@ -6,6 +6,7 @@ import {
 import {
   defineVoyantProject,
   getVoyantProjectMigrationMetadata,
+  getVoyantProjectProviders,
   getVoyantProjectRequirements,
   MANAGED_OPERATOR_DEFAULT_PROVIDERS,
   resolveActiveModuleIds,
@@ -95,6 +96,33 @@ describe("managed profile contract", () => {
     })
 
     expect(validateVoyantProject(project)).toEqual({ ok: true, issues: [] })
+  })
+
+  it("normalizes providers for managed-cloud and self-hosted profiles", () => {
+    expect(getVoyantProjectProviders(validProject())).toEqual(MANAGED_OPERATOR_DEFAULT_PROVIDERS)
+
+    const selfHostedProviders = {
+      ...MANAGED_OPERATOR_DEFAULT_PROVIDERS,
+      storage: "memory",
+      cache: "postgres",
+      sharedState: "postgres",
+      rateLimit: "postgres",
+      search: "none",
+      email: "none",
+      sms: "none",
+      auth: "better-auth",
+      scheduledJobs: "none",
+      workflows: "self-hosted",
+    } as const
+    const selfHostedProject = defineVoyantProject({
+      profile: "operator",
+      frameworkVersion: "0.12.22",
+      mode: "self-hosted",
+      modules: ["catalog", "bookings", "finance", "relationships"],
+      providers: selfHostedProviders,
+    })
+
+    expect(getVoyantProjectProviders(selfHostedProject)).toEqual(selfHostedProviders)
   })
 
   it("exports resource requirements before app boot", () => {

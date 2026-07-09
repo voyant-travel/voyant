@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:4e90fce9c92fa2a651ae591bab8c7c2fbabafdc711e68732b274d687ca17af2c",
+  "contentHash": "sha256:8ab9e3ee54d6b743c3072cdcae9a2174c9aa0dca369ee43d4b77f383ed6a62a9",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -1569,6 +1569,106 @@
   ],
   "project": {
     "presetLineage": "operator-standard"
+  },
+  "requirements": {
+    "resources": [
+      {
+        "env": [],
+        "provider": "better-auth",
+        "required": true,
+        "resourceKey": "auth:better-auth",
+        "roles": ["auth"]
+      },
+      {
+        "env": [],
+        "provider": "memory",
+        "required": true,
+        "resourceKey": "cache:memory",
+        "roles": ["cache"]
+      },
+      {
+        "env": [
+          {
+            "description": "Primary Postgres connection URL used by migrations and fallback DB clients.",
+            "kind": "secret",
+            "name": "DATABASE_URL",
+            "required": true
+          },
+          {
+            "description": "Direct Postgres URL for the resident Node pool.",
+            "kind": "secret",
+            "name": "DATABASE_URL_DIRECT",
+            "required": false
+          },
+          {
+            "description": "Comma-separated read replica URLs for the HTTP data plane.",
+            "kind": "secret",
+            "name": "DATABASE_URL_REPLICAS",
+            "required": false
+          }
+        ],
+        "provider": "postgres",
+        "required": true,
+        "resourceKey": "database:postgres",
+        "roles": ["database"]
+      },
+      {
+        "env": [],
+        "provider": "none",
+        "required": false,
+        "resourceKey": "email:none",
+        "roles": ["email"]
+      },
+      {
+        "env": [],
+        "provider": "memory",
+        "required": true,
+        "resourceKey": "rateLimit:memory",
+        "roles": ["rateLimit"]
+      },
+      {
+        "env": [],
+        "provider": "none",
+        "required": false,
+        "resourceKey": "scheduledJobs:none",
+        "roles": ["scheduledJobs"]
+      },
+      {
+        "env": [],
+        "provider": "none",
+        "required": false,
+        "resourceKey": "search:none",
+        "roles": ["search"]
+      },
+      {
+        "env": [],
+        "provider": "memory",
+        "required": true,
+        "resourceKey": "sharedState:memory",
+        "roles": ["sharedState"]
+      },
+      {
+        "env": [],
+        "provider": "none",
+        "required": false,
+        "resourceKey": "sms:none",
+        "roles": ["sms"]
+      },
+      {
+        "env": [],
+        "provider": "memory",
+        "required": true,
+        "resourceKey": "storage:memory",
+        "roles": ["storage"]
+      },
+      {
+        "env": [],
+        "provider": "none",
+        "required": false,
+        "resourceKey": "workflows:none",
+        "roles": ["workflows"]
+      }
+    ]
   },
   "schemaVersion": "voyant.resolved-graph.v1"
 }

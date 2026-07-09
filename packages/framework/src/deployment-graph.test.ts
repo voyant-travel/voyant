@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
+  defineDeployment,
   defineModule,
   definePlugin,
   defineProject,
@@ -137,6 +138,85 @@ describe("deployment graph v1", () => {
     expect(second.contentHash).toBe(first.contentHash)
   })
 
+  it("normalizes deployment resource requirements before hashing", async () => {
+    const project = defineProject({
+      modules: [],
+    })
+    const firstDeployment = defineDeployment({
+      project,
+      target: "node",
+      mode: "self-hosted",
+      requirements: {
+        resources: [
+          {
+            resourceKey: "database:postgres",
+            roles: ["database", "cache"],
+            provider: "postgres",
+            required: true,
+            env: [
+              {
+                name: "DATABASE_URL_REPLICAS",
+                kind: "secret",
+                required: false,
+                description: "Read replicas.",
+              },
+              {
+                name: "DATABASE_URL",
+                kind: "secret",
+                required: true,
+                description: "Primary database.",
+              },
+            ],
+          },
+        ],
+      },
+    })
+    const secondDeployment = defineDeployment({
+      project,
+      target: "node",
+      mode: "self-hosted",
+      requirements: {
+        resources: [
+          {
+            resourceKey: "database:postgres",
+            roles: ["cache", "database"],
+            provider: "postgres",
+            required: true,
+            env: [
+              {
+                name: "DATABASE_URL",
+                kind: "secret",
+                required: true,
+                description: "Primary database.",
+              },
+              {
+                name: "DATABASE_URL_REPLICAS",
+                kind: "secret",
+                required: false,
+                description: "Read replicas.",
+              },
+            ],
+          },
+        ],
+      },
+    })
+    const { project: _firstProject, ...firstDeploymentInput } = firstDeployment
+    const { project: _secondProject, ...secondDeploymentInput } = secondDeployment
+
+    const first = await resolveDeploymentGraph({
+      project,
+      deployment: firstDeploymentInput,
+    })
+    const second = await resolveDeploymentGraph({
+      project,
+      deployment: secondDeploymentInput,
+    })
+
+    expect(first.requirements.resources).toEqual(second.requirements.resources)
+    expect(JSON.stringify(first.requirements)).not.toContain('"notes":null')
+    expect(second.contentHash).toBe(first.contentHash)
+  })
+
   it("detects package framework incompatibility from metadata", async () => {
     const project = defineProject({
       modules: [
@@ -206,6 +286,28 @@ describe("deployment graph v1", () => {
     expect(graph.schemaVersion).toBe("voyant.resolved-graph.v1")
     expect(graph.project.presetLineage).toBe("operator-standard")
     expect(graph.deployment.target).toBe("voyant-cloud")
+    expect(graph.deployment.providers).toEqual(
+      expect.objectContaining({
+        database: "postgres",
+        storage: "s3",
+        cache: "redis",
+        sharedState: "redis",
+        rateLimit: "redis",
+        auth: "voyant-cloud",
+        workflows: "voyant-cloud",
+      }),
+    )
+    expect(graph.requirements.resources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ resourceKey: "redis", provider: "redis" }),
+        expect.objectContaining({ resourceKey: "object-storage", provider: "s3" }),
+        expect.objectContaining({ resourceKey: "auth:voyant-cloud", provider: "voyant-cloud" }),
+        expect.objectContaining({
+          resourceKey: "workflows:voyant-cloud",
+          provider: "voyant-cloud",
+        }),
+      ]),
+    )
     expect(graph.modules.map((unit) => unit.id)).toEqual(
       expect.arrayContaining([
         "@voyant-travel/bookings",

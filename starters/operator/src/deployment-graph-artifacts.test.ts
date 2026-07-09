@@ -22,6 +22,9 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(summary.graphHash).toMatch(/^sha256:[a-f0-9]{64}$/)
     expect(summary.moduleIds).toContain("@voyant-travel/bookings")
     expect(summary.packageNames).toContain("@voyant-travel/framework")
+    expect(summary.resourceRequirements.map((resource) => resource.resourceKey)).toContain(
+      "database:postgres",
+    )
   })
 
   it("fails when the artifact graph hash does not match the graph content hash", () => {
@@ -69,6 +72,15 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(() =>
       loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/VOYANT_GRAPH_MISSING_CAPABILITY/)
+  })
+
+  it("fails when the graph omits resource requirements", () => {
+    const root = fixtureRoot()
+    writeFixture(root, { omitRequirements: true })
+
+    expect(() =>
+      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+    ).toThrow(/deployment graph requirements must be an object/)
   })
 
   it("resolves source-style artifact paths beside src", () => {
@@ -127,6 +139,8 @@ function writeFixture(
     manifestGraphHash?: string
     graphHash?: string
     diagnostics?: Array<{ code: string; message: string }>
+    requirements?: FixtureDeploymentGraph["requirements"]
+    omitRequirements?: boolean
     runtimeEntry?: Record<string, unknown>
     runtimeEntrySource?: { graphHash?: string }
     writeRuntimeEntrySource?: boolean
@@ -138,6 +152,30 @@ function writeFixture(
     schemaVersion: "voyant.resolved-graph.v1",
     diagnostics: options.diagnostics ?? [],
     deployment: { target: "node", mode: "self-hosted" },
+    ...(!options.omitRequirements && options.requirements !== undefined
+      ? { requirements: options.requirements }
+      : !options.omitRequirements
+        ? {
+            requirements: {
+              resources: [
+                {
+                  resourceKey: "database:postgres",
+                  roles: ["database"],
+                  provider: "postgres",
+                  required: true,
+                  env: [
+                    {
+                      name: "DATABASE_URL",
+                      kind: "secret",
+                      required: true,
+                      description: "Primary Postgres connection URL.",
+                    },
+                  ],
+                },
+              ],
+            },
+          }
+        : {}),
     modules: [{ id: "@voyant-travel/bookings" }],
     plugins: [{ id: "@voyant-travel/plugin-smartbill" }],
     packageRecords: [{ packageName: "@voyant-travel/framework" }],
@@ -180,6 +218,15 @@ interface FixtureDeploymentGraph {
   contentHash: string
   diagnostics: Array<{ code: string; message: string }>
   deployment: { target: string; mode: string }
+  requirements?: {
+    resources: Array<{
+      resourceKey: string
+      roles: string[]
+      provider: string
+      required: boolean
+      env: Array<{ name: string; kind: string; required: boolean; description: string }>
+    }>
+  }
   modules: Array<{ id: string }>
   plugins: Array<{ id: string }>
   packageRecords: Array<{ packageName: string }>

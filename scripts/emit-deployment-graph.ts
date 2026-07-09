@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import path, { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -35,7 +36,7 @@ const command = "pnpm --filter operator graph:emit"
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
   const graph = await resolveGraph(options.profilePath)
-  const graphText = buildDeploymentGraphJson(graph)
+  const graphText = formatGeneratedText(options.graphOutputPath, buildDeploymentGraphJson(graph))
   const graphArtifactPath = toPosixRelativePath(
     dirname(options.entryOutputPath),
     options.graphOutputPath,
@@ -46,12 +47,15 @@ async function main(): Promise<void> {
     options.profilePath,
     path,
   )
-  const entryText = buildManagedNodeRuntimeEntry({
-    graph,
-    graphArtifactPath,
-    profileSnapshotPath,
-    command,
-  })
+  const entryText = formatGeneratedText(
+    options.entryOutputPath,
+    buildManagedNodeRuntimeEntry({
+      graph,
+      graphArtifactPath,
+      profileSnapshotPath,
+      command,
+    }),
+  )
   const manifest = buildDeploymentArtifactManifest({
     graph,
     graphArtifactPath: relativeToOperator(options.graphOutputPath),
@@ -63,7 +67,10 @@ async function main(): Promise<void> {
       }),
     ],
   })
-  const manifestText = `${JSON.stringify(manifest, null, 2)}\n`
+  const manifestText = formatGeneratedText(
+    options.manifestOutputPath,
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  )
 
   if (options.emit) {
     await writeGeneratedFile(options.manifestOutputPath, manifestText)
@@ -140,6 +147,15 @@ function defineOperatorGraphProject(project: VoyantProjectManifest) {
 async function writeGeneratedFile(filePath: string, text: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true })
   await writeFile(filePath, text, "utf8")
+}
+
+function formatGeneratedText(filePath: string, text: string): string {
+  return execFileSync("pnpm", ["exec", "biome", "format", "--stdin-file-path", filePath], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    input: text,
+    maxBuffer: 1024 * 1024 * 16,
+  })
 }
 
 async function staleGeneratedFiles(

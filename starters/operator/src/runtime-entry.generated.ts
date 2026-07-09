@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { startManagedProfileRuntime } from "@voyant-travel/framework/managed-runtime"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:4e90fce9c92fa2a651ae591bab8c7c2fbabafdc711e68732b274d687ca17af2c" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:8ab9e3ee54d6b743c3072cdcae9a2174c9aa0dca369ee43d4b77f383ed6a62a9" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const

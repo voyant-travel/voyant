@@ -27,6 +27,7 @@ export function resourceRequirementsFor(
     ]
   }
 
+  const notes = notesForProvider(role, provider)
   return [
     {
       resourceKey: resourceKeyFor(role, provider),
@@ -34,7 +35,7 @@ export function resourceRequirementsFor(
       provider,
       required: true,
       env: envForProvider(role, provider),
-      notes: notesForProvider(role, provider),
+      ...(notes ? { notes } : {}),
     },
   ]
 }
