@@ -7,6 +7,8 @@
     "dev": "vite dev --port 3400",
     "build": "vite build && pnpm run copy:snapshot",
     "copy:snapshot": "cp managed-profile.json dist/managed-profile.json",
+    "graph:check": "tsx ../../scripts/emit-deployment-graph.ts",
+    "graph:emit": "tsx ../../scripts/emit-deployment-graph.ts --emit",
     "generate:snapshot": "tsx scripts/generate-snapshot.ts",
     "preview": "pnpm run build && vite preview",
     "start": "node dist/server/server.js",

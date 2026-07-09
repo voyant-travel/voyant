@@ -1,4 +1,11 @@
 import {
+  buildDeploymentArtifactManifest,
+  buildDeploymentGraphJson,
+  buildManagedNodeRuntimeEntry,
+  buildManagedNodeRuntimeEntryArtifact,
+  VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
+} from "../packages/framework/src/deployment-artifacts.ts"
+import {
   canonicalJson,
   resolveManagedProfileDeploymentGraph,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
@@ -37,6 +44,48 @@ async function main(): Promise<void> {
 
   if (canonicalJson(first) !== canonicalJson(second)) {
     failures.push("expected managed profile graph JSON manifest to be deterministic")
+  }
+
+  const graphJson = buildDeploymentGraphJson(first)
+  const parsedGraphJson = JSON.parse(graphJson) as { contentHash?: string; schemaVersion?: string }
+  if (parsedGraphJson.contentHash !== first.contentHash) {
+    failures.push("expected generated graph JSON artifact to include the resolved graph hash")
+  }
+  if (parsedGraphJson.schemaVersion !== first.schemaVersion) {
+    failures.push("expected generated graph JSON artifact to preserve the graph schema version")
+  }
+
+  const runtimeEntry = buildManagedNodeRuntimeEntry({
+    graph: first,
+    graphArtifactPath: "../deployment-graph.generated.json",
+    profileSnapshotPath: "../managed-profile.json",
+  })
+  if (!runtimeEntry.includes(first.contentHash)) {
+    failures.push("expected generated runtime entry to reference the resolved graph hash")
+  }
+  if (!runtimeEntry.includes("@voyant-travel/framework/managed-runtime")) {
+    failures.push("expected generated runtime entry to start from the framework managed runtime")
+  }
+
+  const artifactManifest = buildDeploymentArtifactManifest({
+    graph: first,
+    graphArtifactPath: "deployment-graph.generated.json",
+    runtimeEntries: [
+      buildManagedNodeRuntimeEntryArtifact({
+        graph: first,
+        file: "src/runtime-entry.generated.ts",
+        profileSnapshot: "managed-profile.json",
+      }),
+    ],
+  })
+  if (artifactManifest.schemaVersion !== VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION) {
+    failures.push("expected deployment artifact manifest schema version v1")
+  }
+  if (artifactManifest.graphHash !== first.contentHash) {
+    failures.push("expected deployment artifact manifest to reference the resolved graph hash")
+  }
+  if (artifactManifest.runtimeEntries[0]?.graphHash !== first.contentHash) {
+    failures.push("expected runtime entry artifact to reference the resolved graph hash")
   }
 
   if (first.diagnostics.length > 0) {

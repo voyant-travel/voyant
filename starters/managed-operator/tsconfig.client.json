@@ -1028,6 +1028,9 @@
       "@voyant-travel/framework-migrations": [
         "../../packages/framework-migrations/dist/index.d.ts"
       ],
+      "@voyant-travel/framework/deployment-artifacts": [
+        "../../packages/framework/dist/deployment-artifacts.d.ts"
+      ],
       "@voyant-travel/framework/deployment-graph": [
         "../../packages/framework/dist/deployment-graph.d.ts"
       ],
