@@ -1,17 +1,16 @@
 // Runtime-neutral cron declarations. These expressions are the single source of
 // truth for the operator's scheduled work: `entry.ts` `scheduled()` dispatches
-// off them, and `scripts/emit-cloud-scheduler.mjs` fans them out to Cloud
+// off them, and `scripts/emit-cloud-scheduler.ts` fans them out to Cloud
 // Scheduler jobs that POST `/__voyant/scheduled?cron=<expr>` on the Node runtime.
-// (Under Cloudflare Workers the same list populated `wrangler.jsonc`
-// `triggers.crons`; the operator is now Node-only — voyant#2966.)
+//
+// The STANDARD job set is now owned by the framework and derived from the
+// composed module set (voyant#3032) — `@voyant-travel/framework/managed-jobs` —
+// so the operator and a source-free managed deployment provision the same jobs
+// from one source. The operator appends only its deployment-local jobs (the
+// external cruise refresh, since `@voyant-travel/cruises` is not a standard
+// framework module).
 
-export const CHANNEL_PUSH_BOOKING_LINK_CRON = "*/15 * * * *"
-export const CHANNEL_PUSH_AVAILABILITY_CRON = "0 * * * *"
-export const CHANNEL_PUSH_CONTENT_CRON = "0 3 * * *"
-export const EXTERNAL_CRUISE_CATALOG_REFRESH_CRON = "30 3 * * *"
-export const DRAFT_REAPER_CRON = "5 * * * *"
-export const PROMOTION_BOUNDARY_SCHEDULER_CRON = "*/5 * * * *"
-export const OUTBOX_DRAIN_CRON = "*/2 * * * *"
+import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "@voyant-travel/framework/managed-jobs"
 
 /** One scheduled job: a stable id, its cron expression, and what it does. */
 export interface CronJob {
@@ -23,45 +22,41 @@ export interface CronJob {
   description: string
 }
 
+function standardCron(id: string): string {
+  const job = STANDARD_OPERATOR_SCHEDULED_JOBS.find((entry) => entry.id === id)
+  if (!job) {
+    throw new Error(`[scheduled-crons] unknown standard framework scheduled job "${id}".`)
+  }
+  return job.cron
+}
+
+// The cron expressions `entry.ts` `scheduled()` dispatches on. Sourced from the
+// framework's standard job set so the dispatch and the emitted Cloud Scheduler
+// jobs can never drift.
+export const CHANNEL_PUSH_BOOKING_LINK_CRON = standardCron("channel-push-booking-link")
+export const CHANNEL_PUSH_AVAILABILITY_CRON = standardCron("channel-push-availability")
+export const CHANNEL_PUSH_CONTENT_CRON = standardCron("channel-push-content")
+export const DRAFT_REAPER_CRON = standardCron("draft-reaper")
+export const PROMOTION_BOUNDARY_SCHEDULER_CRON = standardCron("promotion-boundary-scheduler")
+export const OUTBOX_DRAIN_CRON = standardCron("outbox-drain")
+
+// Deployment-local: `@voyant-travel/cruises` is not part of the standard
+// framework runtime manifest, so the operator owns this cron itself.
+export const EXTERNAL_CRUISE_CATALOG_REFRESH_CRON = "30 3 * * *"
+
 /**
- * The full set of scheduled jobs, in declaration order. Consumed by the Cloud
- * Scheduler emitter; kept in sync with `entry.ts` `scheduled()` dispatch by the
- * shared cron constants above.
+ * The full set of scheduled jobs, in declaration order: the framework's
+ * standard set (from the composed module set) plus the operator's
+ * deployment-local jobs. Consumed by the Cloud Scheduler emitter; kept in sync
+ * with `entry.ts` `scheduled()` dispatch by the shared cron constants above.
  */
 export const OPERATOR_CRON_JOBS: readonly CronJob[] = [
-  {
-    id: "channel-push-booking-link",
-    cron: CHANNEL_PUSH_BOOKING_LINK_CRON,
-    description: "Channel-push booking-link reconciler (every 15 min).",
-  },
-  {
-    id: "channel-push-availability",
-    cron: CHANNEL_PUSH_AVAILABILITY_CRON,
-    description: "Channel-push availability reconciler (hourly).",
-  },
-  {
-    id: "channel-push-content",
-    cron: CHANNEL_PUSH_CONTENT_CRON,
-    description: "Channel-push content reconciler (nightly at 03:00).",
-  },
+  ...STANDARD_OPERATOR_SCHEDULED_JOBS.map(
+    ({ id, cron, description }): CronJob => ({ id, cron, description }),
+  ),
   {
     id: "external-cruise-catalog-refresh",
     cron: EXTERNAL_CRUISE_CATALOG_REFRESH_CRON,
     description: "External cruise catalog refresh (nightly at 03:30).",
-  },
-  {
-    id: "draft-reaper",
-    cron: DRAFT_REAPER_CRON,
-    description: "Drops expired booking drafts (hourly at :05).",
-  },
-  {
-    id: "promotion-boundary-scheduler",
-    cron: PROMOTION_BOUNDARY_SCHEDULER_CRON,
-    description: "Emits promotion.changed at valid_from / valid_until boundaries (every 5 min).",
-  },
-  {
-    id: "outbox-drain",
-    cron: OUTBOX_DRAIN_CRON,
-    description: "Redelivers failed/interrupted event-outbox deliveries (every 2 min).",
   },
 ]

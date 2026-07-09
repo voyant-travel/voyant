@@ -1029,6 +1029,7 @@
       "@voyant-travel/framework-migrations": [
         "../../packages/framework-migrations/dist/index.d.ts"
       ],
+      "@voyant-travel/framework/managed-jobs": ["../../packages/framework/dist/managed-jobs.d.ts"],
       "@voyant-travel/framework/managed-runtime": [
         "../../packages/framework/dist/managed-runtime.d.ts"
       ],
