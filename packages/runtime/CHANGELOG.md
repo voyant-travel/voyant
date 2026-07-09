@@ -1,5 +1,11 @@
 # @voyant-travel/worker-runtime
 
+## 0.5.0
+
+### Minor Changes
+
+- e232b21: Support stable schedule-id dispatch for scheduled Node runtime hooks.
+
 ## 0.4.2
 
 ### Patch Changes
