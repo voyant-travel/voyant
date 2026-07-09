@@ -195,6 +195,10 @@ describe("deployment graph v1", () => {
       frameworkVersion: "0.24.1",
       modules: ["bookings", "finance", "relationships"],
       plugins: ["@voyant-travel/plugin-netopia"],
+      customSource: {
+        modules: ["@acme/voyant-loyalty"],
+        extensions: ["@acme/voyant-loyalty-admin"],
+      },
     })
 
     const graph = await resolveManagedProfileDeploymentGraph(profile)
@@ -207,20 +211,112 @@ describe("deployment graph v1", () => {
         "@voyant-travel/bookings",
         "@voyant-travel/finance",
         "@voyant-travel/relationships",
+        "@acme/voyant-loyalty",
       ]),
     )
     expect(graph.modules.map((unit) => unit.id)).not.toContain("@voyant-travel/flights")
-    expect(graph.plugins.map((unit) => unit.id)).toContain("@voyant-travel/plugin-netopia")
+    expect(graph.plugins.map((unit) => unit.id)).toEqual(
+      expect.arrayContaining(["@voyant-travel/plugin-netopia", "@acme/voyant-loyalty-admin"]),
+    )
     expect(graph.packageRecords).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           packageName: "@voyant-travel/framework",
           version: "0.24.1",
-          source: { kind: "workspace" },
+          source: { kind: "unknown" },
+        }),
+        expect.objectContaining({
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "unknown" },
+        }),
+        expect.objectContaining({
+          packageName: "@acme/voyant-loyalty-admin",
+          source: { kind: "unknown" },
+        }),
+        expect.objectContaining({
+          packageName: "@voyant-travel/plugin-netopia",
+          source: { kind: "unknown" },
         }),
       ]),
     )
     expect(graph.diagnostics).toEqual([])
+  })
+
+  it("validates admission policy against inferred package records", async () => {
+    const project = defineProject({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-loyalty",
+        }),
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({
+      project,
+      admission: { allowedSourceKinds: ["workspace"] },
+    })
+
+    expect(graph.packageRecords).toEqual([
+      expect.objectContaining({
+        packageName: "@acme/voyant-loyalty",
+        source: { kind: "unknown" },
+      }),
+    ])
+    expect(graph.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
+        source: "@acme/voyant-loyalty",
+      }),
+    ])
+  })
+
+  it("does not infer first-party package provenance from package scope", async () => {
+    const project = defineProject({
+      modules: [
+        defineModule({
+          id: "@voyant-travel/custom-managed-module",
+        }),
+      ],
+      plugins: [
+        definePlugin({
+          id: "@voyant-travel/plugin-netopia",
+        }),
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project })
+    const workspaceOnlyGraph = await resolveDeploymentGraph({
+      project,
+      admission: { allowedSourceKinds: ["workspace"] },
+    })
+
+    expect(graph.packageRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          packageName: "@voyant-travel/custom-managed-module",
+          source: { kind: "unknown" },
+        }),
+        expect.objectContaining({
+          packageName: "@voyant-travel/plugin-netopia",
+          source: { kind: "unknown" },
+        }),
+      ]),
+    )
+    expect(graph.packageRecords).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: { kind: "workspace" },
+        }),
+      ]),
+    )
+    expect(workspaceOnlyGraph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
+          source: "@voyant-travel/plugin-netopia",
+        }),
+      ]),
+    )
   })
 
   it("normalizes framework specifiers to package-scoped graph ids", () => {

@@ -485,12 +485,13 @@ export async function resolveDeploymentGraph(
   )
   const selectedUnits = [...selectedModules, ...selectedPlugins]
 
+  const packageRecords = mergePackageRecords(selectedUnits, input.packageRecords ?? [])
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
     ...validateCapabilityClosure(selectedUnits),
     ...validateDuplicateEntityIds(selectedUnits),
-    ...validatePackageAdmission(input.packageRecords ?? [], {
+    ...validatePackageAdmission(packageRecords, {
       frameworkVersion: input.frameworkVersion,
       target,
       mode,
@@ -498,7 +499,6 @@ export async function resolveDeploymentGraph(
     }),
   ])
 
-  const packageRecords = mergePackageRecords(selectedUnits, input.packageRecords ?? [])
   const modules = selectedModules.map(({ original: _original, ...unit }) => unit)
   const plugins = selectedPlugins.map(({ original: _original, ...unit }) => unit)
   const graphWithoutHash: Omit<ResolvedVoyantDeploymentGraph, "contentHash"> = {
@@ -533,9 +533,13 @@ export function defineProjectFromManagedProfile(
   const bridge = toCreateVoyantAppProfileConfig(project)
   return defineProject({
     presetLineage: `${project.profile}-standard`,
-    modules: generateFrameworkModuleManifests(bridge.manifest.modules),
+    modules: [
+      ...generateFrameworkModuleManifests(bridge.manifest.modules),
+      ...generateCustomSourceModuleManifests(project.customSource?.modules),
+    ],
     plugins: [
       ...generateFrameworkPluginManifests(bridge.manifest.extensions),
+      ...generateCustomSourcePluginManifests(project.customSource?.extensions),
       ...project.plugins.map((specifier) =>
         definePlugin({
           id: graphIdFromSpecifier(specifier),
@@ -694,6 +698,32 @@ export function generateFrameworkPluginManifests(
       ],
     })
   })
+}
+
+export function generateCustomSourceModuleManifests(
+  specifiers: readonly string[] = [],
+): VoyantGraphUnitManifest[] {
+  return validCustomSourceSpecifiers(specifiers).map((specifier) =>
+    defineModule({
+      id: graphIdFromSpecifier(specifier),
+      packageName: packageNameFromSpecifier(specifier),
+      localId: moduleIdFromSpecifier(specifier),
+      meta: { source: "managed-custom-source" },
+    }),
+  )
+}
+
+export function generateCustomSourcePluginManifests(
+  specifiers: readonly string[] = [],
+): VoyantGraphUnitManifest[] {
+  return validCustomSourceSpecifiers(specifiers).map((specifier) =>
+    definePlugin({
+      id: graphIdFromSpecifier(specifier),
+      packageName: packageNameFromSpecifier(specifier),
+      localId: moduleIdFromSpecifier(specifier),
+      meta: { source: "managed-custom-source" },
+    }),
+  )
 }
 
 export function graphIdFromSpecifier(specifier: string): string {
@@ -1119,7 +1149,7 @@ function mergePackageRecords(
   for (const unit of units) {
     records.set(unit.packageName, {
       packageName: unit.packageName,
-      source: { kind: isFirstPartyPackage(unit.packageName) ? "workspace" : "unknown" },
+      source: { kind: "unknown" },
     })
   }
   for (const record of input) {
@@ -1141,7 +1171,7 @@ function generateWorkspacePackageRecords(
   return names.map((packageName) => ({
     packageName,
     ...(packageName === "@voyant-travel/framework" ? { version: frameworkVersion } : {}),
-    source: { kind: isFirstPartyPackage(packageName) ? "workspace" : "unknown" },
+    source: { kind: "unknown" },
   }))
 }
 
@@ -1202,6 +1232,12 @@ function normalizeCapabilities(
   capabilities: readonly string[] | undefined,
 ): VoyantGraphCapabilityDeclaration | undefined {
   return capabilities && capabilities.length > 0 ? { capabilities } : undefined
+}
+
+function validCustomSourceSpecifiers(specifiers: readonly string[]): string[] {
+  return sortedUnique(
+    specifiers.map((specifier) => specifier.trim()).filter((specifier) => specifier.length > 0),
+  )
 }
 
 function splitPackageSpecifier(specifier: string): { packageName: string; subpath?: string } {
