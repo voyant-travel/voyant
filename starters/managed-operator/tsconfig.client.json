@@ -1500,6 +1500,12 @@
       "@voyant-travel/operations/schema": ["../../packages/operations/dist/schema.d.ts"],
       "@voyant-travel/operations/validation": ["../../packages/operations/dist/validation.d.ts"],
       "@voyant-travel/operator-settings": ["../../packages/operator-settings/dist/index.d.ts"],
+      "@voyant-travel/operator-settings-react": [
+        "../../packages/operator-settings-react/dist/index.d.ts"
+      ],
+      "@voyant-travel/operator-settings-react/settings": [
+        "../../packages/operator-settings-react/dist/settings.d.ts"
+      ],
       "@voyant-travel/operator-settings/hono-module": [
         "../../packages/operator-settings/dist/hono-module.d.ts"
       ],

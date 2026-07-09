@@ -1,20 +1,29 @@
 "use client"
 
 /**
- * Settings -> Operator profile.
+ * Settings -> Operator profile (source-free, package-delivered).
  *
- * Operator identity, payment instructions, and operator-level
- * booking payment defaults live in separate API/storage concepts, but
- * remain one operational settings form.
+ * Operator identity, payment instructions, and operator-level booking payment
+ * defaults live in separate API/storage concepts, but remain one operational
+ * settings form. This is the packaged counterpart of the operator starter's
+ * former app-custom page: it resolves its API surface from the admin runtime
+ * context ({@link useVoyantReactContext}) and its copy from the shared operator
+ * admin messages, so a source-free managed admin can mount it in one line via
+ * `createAdminCoreExtension({ settings: { extraPages: [...] } })`.
+ *
+ * It talks to the `@voyant-travel/operator-settings` routes already mounted on
+ * the managed runtime (`/v1/admin/settings/operator-*`).
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useOperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
 import {
   noDepositPolicy,
   normalizePaymentPolicy,
   type PaymentPolicy,
 } from "@voyant-travel/finance/payment-policy"
 import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyant-travel/finance-react/ui"
+import { useVoyantReactContext } from "@voyant-travel/react"
 import {
   Button,
   Card,
@@ -30,9 +39,6 @@ import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
 
 interface OperatorProfileForm {
   name?: string | null
@@ -94,21 +100,18 @@ const EMPTY_FORM: OperatorProfileForm = {
   invoicePayUrlTemplate: "",
 }
 
-function OperatorProfilePage() {
+export function OperatorProfileSettingsPage() {
   const queryClient = useQueryClient()
-  const t = useAdminMessages().settings.operatorProfilePage
+  const { baseUrl, fetcher } = useVoyantReactContext()
+  const t = useOperatorAdminMessages().settings.operatorProfilePage
 
   const { data, isPending } = useQuery({
     queryKey: ["operator-profile-settings"],
     queryFn: async (): Promise<OperatorProfileForm | null> => {
       const [profileRes, instructionsRes, defaultsRes] = await Promise.all([
-        fetch(`${getApiUrl()}/v1/admin/settings/operator-profile`, { credentials: "include" }),
-        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-instructions`, {
-          credentials: "include",
-        }),
-        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-defaults`, {
-          credentials: "include",
-        }),
+        fetcher(`${baseUrl}/v1/admin/settings/operator-profile`),
+        fetcher(`${baseUrl}/v1/admin/settings/operator-payment-instructions`),
+        fetcher(`${baseUrl}/v1/admin/settings/operator-payment-defaults`),
       ])
       if (!profileRes.ok && !instructionsRes.ok && !defaultsRes.ok) return null
 
@@ -147,11 +150,11 @@ function OperatorProfilePage() {
 
   const save = useMutation({
     mutationFn: async (next: OperatorProfileForm) => {
+      const jsonHeaders = { "content-type": "application/json" }
       const responses = await Promise.all([
-        fetch(`${getApiUrl()}/v1/admin/settings/operator-profile`, {
+        fetcher(`${baseUrl}/v1/admin/settings/operator-profile`, {
           method: "PATCH",
-          credentials: "include",
-          headers: { "content-type": "application/json" },
+          headers: jsonHeaders,
           body: JSON.stringify({
             name: next.name ?? null,
             legalName: next.legalName ?? null,
@@ -167,10 +170,9 @@ function OperatorProfilePage() {
             signatoryRole: next.signatoryRole ?? null,
           }),
         }),
-        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-instructions`, {
+        fetcher(`${baseUrl}/v1/admin/settings/operator-payment-instructions`, {
           method: "PATCH",
-          credentials: "include",
-          headers: { "content-type": "application/json" },
+          headers: jsonHeaders,
           body: JSON.stringify({
             bankTransferBeneficiary: next.bankTransferBeneficiary ?? null,
             iban: next.iban ?? null,
@@ -178,10 +180,9 @@ function OperatorProfilePage() {
             notes: next.notes ?? null,
           }),
         }),
-        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-defaults`, {
+        fetcher(`${baseUrl}/v1/admin/settings/operator-payment-defaults`, {
           method: "PATCH",
-          credentials: "include",
-          headers: { "content-type": "application/json" },
+          headers: jsonHeaders,
           body: JSON.stringify({
             customerPaymentPolicy: next.customerPaymentPolicy ?? null,
             bookingCheckoutUrlTemplate: next.bookingCheckoutUrlTemplate || null,
@@ -474,5 +475,3 @@ function OperatorProfilePage() {
     </form>
   )
 }
-
-export const OperatorSettingsPage = OperatorProfilePage

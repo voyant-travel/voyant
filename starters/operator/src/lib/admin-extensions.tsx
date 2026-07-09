@@ -11,16 +11,9 @@ import {
   createAdminExtensionRegistry,
 } from "@voyant-travel/admin/extensions"
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
+import { createOperatorProfileSettingsExtraPage } from "@voyant-travel/operator-settings-react/settings"
 import { Button } from "@voyant-travel/ui/components/button"
-import {
-  Building,
-  CalendarRange,
-  FileText,
-  Route,
-  ScrollText,
-  SlidersHorizontal,
-  Tag,
-} from "lucide-react"
+import { CalendarRange, FileText, Route, ScrollText, SlidersHorizontal, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
@@ -277,10 +270,11 @@ function withOperatorRouteMessagesProviders(
 //   aggregates through TanStack Start server functions that read the
 //   database directly (cookie-authenticated), which no package can own —
 //   the package page consumes the same dashboard query keys client-side.
-// - the Operator Profile settings page: an app-custom page (it talks to the
-//   operator starter's `/v1/admin/settings/operator-*` endpoints, which
-//   have no packaged client yet) spliced into the packaged settings layout
-//   as an extra page, leading the General group.
+// - the Operator Profile settings page: package-delivered by
+//   `@voyant-travel/operator-settings-react` (it talks to the
+//   `/v1/admin/settings/operator-*` endpoints), spliced into the packaged
+//   settings layout as an extra page, leading the General group — the same
+//   descriptor the source-free managed admin mounts.
 function createCoreExtension() {
   return createAdminCoreExtension({
     dashboard: {
@@ -304,19 +298,11 @@ function createCoreExtension() {
     },
     settings: {
       extraPages: [
-        {
-          id: "operator",
-          path: "/operator",
-          title: "Operator Profile",
-          label: (messages) => messages.settings.operator,
-          icon: Building,
-          group: "general",
-          order: 10,
-          page: () =>
-            import("@/components/voyant/settings/operator-settings-page").then((module) =>
-              adminRoutePageModule(module.OperatorSettingsPage),
-            ),
-        },
+        // The Operator Profile page is now package-delivered
+        // (@voyant-travel/operator-settings-react) so the source-free managed
+        // admin can render the same page; the starter mounts the packaged
+        // descriptor instead of an app-custom source component.
+        createOperatorProfileSettingsExtraPage(),
         {
           id: "custom-fields",
           path: "/custom-fields",
