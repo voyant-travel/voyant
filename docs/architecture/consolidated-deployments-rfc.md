@@ -3,7 +3,12 @@
 - **Status:** Draft
 - **Author:** Platform
 - **Date:** 2026-06-16
-- **Related:** `api-route-ownership-and-composition.md`, `api-route-authoring.md`, ADR-0001 (tenant scoping)
+- **Related:** `api-route-ownership-and-composition.md`, `api-route-authoring.md`, ADR-0001 (tenant scoping), [unified-deployment-graph.md](./unified-deployment-graph.md)
+
+> Update: [unified-deployment-graph.md](./unified-deployment-graph.md)
+> consolidates the later deployment/profile RFC design notes into the scoped
+> explicit-graph plan. Treat it as the controlling document for the v1 graph
+> resolver, facet cut, diagnostics model, and phase sequence.
 
 ## Summary
 
