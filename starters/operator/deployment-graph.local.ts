@@ -22,11 +22,24 @@ export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS = [
   "@voyant-travel/mice/booking-extension",
 ] as const
 
+export const OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS = [
+  "@voyant-travel/db",
+  "@voyant-travel/availability",
+  "@voyant-travel/storefront",
+  "@voyant-travel/catalog-authoring",
+  "@voyant-travel/workflow-runs",
+  "@voyant-travel/charters",
+  "@voyant-travel/cruises",
+] as const
+
 export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS =
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS.map(graphIdFromSpecifier)
 
 export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS =
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS.map(graphIdFromSpecifier)
+
+export const OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS =
+  OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS.map(graphIdFromSpecifier)
 
 export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST = {
   modules: [
@@ -47,6 +60,12 @@ export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST = {
 } satisfies {
   modules: readonly VoyantGraphUnitManifest[]
   plugins: readonly VoyantGraphUnitManifest[]
+}
+
+export const OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST = {
+  modules: OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS.map(schemaOnlyModule),
+} satisfies {
+  modules: readonly VoyantGraphUnitManifest[]
 }
 
 function localModule(
@@ -74,6 +93,18 @@ function localPlugin(
     localId: moduleIdFromSpecifier(specifier),
     api: routeBundles(id, specifier, api),
     meta: { source: "operator-local" },
+  })
+}
+
+function schemaOnlyModule(specifier: string): VoyantGraphUnitManifest {
+  const id = graphIdFromSpecifier(specifier)
+  return defineModule({
+    id,
+    packageName: packageNameFromSpecifier(specifier),
+    localId: moduleIdFromSpecifier(specifier),
+    schema: [{ id: childGraphEntityId(id, "schema") }],
+    migrations: [{ id: childGraphEntityId(id, "migrations") }],
+    meta: { source: "operator-schema-only" },
   })
 }
 

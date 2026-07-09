@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:aa98ef69f10afdcde1a6264f615d28ed0a7c04defa24f7fbd52251f35dda7ccd",
+  "contentHash": "sha256:87a7ee6f21d659b2e2cfecd372ca463df0ed409f3bcd38fdda0c1bec8a73e56d",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -941,6 +941,216 @@
       "schema": [],
       "subscribers": [],
       "workflows": []
+    },
+    {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/db",
+      "kind": "module",
+      "links": [],
+      "localId": "db",
+      "migrations": [
+        {
+          "id": "@voyant-travel/db#migrations"
+        }
+      ],
+      "order": 32,
+      "packageName": "@voyant-travel/db",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/db#schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/availability",
+      "kind": "module",
+      "links": [],
+      "localId": "availability",
+      "migrations": [
+        {
+          "id": "@voyant-travel/availability#migrations"
+        }
+      ],
+      "order": 33,
+      "packageName": "@voyant-travel/availability",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/availability#schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/storefront",
+      "kind": "module",
+      "links": [],
+      "localId": "storefront",
+      "migrations": [
+        {
+          "id": "@voyant-travel/storefront#migrations"
+        }
+      ],
+      "order": 34,
+      "packageName": "@voyant-travel/storefront",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/storefront#schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/catalog-authoring",
+      "kind": "module",
+      "links": [],
+      "localId": "catalog-authoring",
+      "migrations": [
+        {
+          "id": "@voyant-travel/catalog-authoring#migrations"
+        }
+      ],
+      "order": 35,
+      "packageName": "@voyant-travel/catalog-authoring",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/catalog-authoring#schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/workflow-runs",
+      "kind": "module",
+      "links": [],
+      "localId": "workflow-runs",
+      "migrations": [
+        {
+          "id": "@voyant-travel/workflow-runs#migrations"
+        }
+      ],
+      "order": 36,
+      "packageName": "@voyant-travel/workflow-runs",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/workflow-runs#schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/charters",
+      "kind": "module",
+      "links": [],
+      "localId": "charters",
+      "migrations": [
+        {
+          "id": "@voyant-travel/charters#migrations"
+        }
+      ],
+      "order": 37,
+      "packageName": "@voyant-travel/charters",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/charters#schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/cruises",
+      "kind": "module",
+      "links": [],
+      "localId": "cruises",
+      "migrations": [
+        {
+          "id": "@voyant-travel/cruises#migrations"
+        }
+      ],
+      "order": 38,
+      "packageName": "@voyant-travel/cruises",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/cruises#schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
     }
   ],
   "packageRecords": [
@@ -961,6 +1171,14 @@
       "version": "0.105.13"
     },
     {
+      "packageName": "@voyant-travel/availability",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../availability"
+      },
+      "version": "0.1.2"
+    },
+    {
       "packageName": "@voyant-travel/bookings",
       "source": {
         "kind": "workspace",
@@ -977,12 +1195,44 @@
       "version": "0.147.0"
     },
     {
+      "packageName": "@voyant-travel/catalog-authoring",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/catalog-authoring"
+      },
+      "version": "0.106.28"
+    },
+    {
+      "packageName": "@voyant-travel/charters",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../charters"
+      },
+      "version": "0.147.0"
+    },
+    {
       "packageName": "@voyant-travel/commerce",
       "source": {
         "kind": "workspace",
         "reference": "link:../commerce"
       },
       "version": "0.31.0"
+    },
+    {
+      "packageName": "@voyant-travel/cruises",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../cruises"
+      },
+      "version": "0.148.0"
+    },
+    {
+      "packageName": "@voyant-travel/db",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/db"
+      },
+      "version": "0.110.0"
     },
     {
       "packageName": "@voyant-travel/distribution",
@@ -1109,12 +1359,28 @@
       "version": "0.122.10"
     },
     {
+      "packageName": "@voyant-travel/storefront",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../storefront"
+      },
+      "version": "0.151.0"
+    },
+    {
       "packageName": "@voyant-travel/trips",
       "source": {
         "kind": "workspace",
         "reference": "link:../trips"
       },
       "version": "0.140.0"
+    },
+    {
+      "packageName": "@voyant-travel/workflow-runs",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../workflow-runs"
+      },
+      "version": "0.111.18"
     }
   ],
   "plugins": [

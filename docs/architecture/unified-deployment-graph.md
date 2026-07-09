@@ -762,6 +762,16 @@ runtime shapes:
 This validates the manifest against reality before third-party authors depend
 on it, and avoids hand-retrofitting every package up front.
 
+Some first-party schema owners are not active runtime modules in a given
+deployment. Examples include foundational schema packages, additional schema
+packages, and route-deferred verticals whose migrations still apply. The
+resolved graph must still represent those packages as schema-only units with
+stable `schema` and `migrations` entity ids, and its package records must cover
+every package-backed migration source discovered from the generated schema
+manifest. This is the bridge that keeps D.2 package-owned migration discovery
+and deployment-graph lowering from drifting while richer per-migration entity
+generation lands.
+
 ## Implementation Phases
 
 Phases 0-2 are the complete v1 deployment-graph program. Phase 1 is the first

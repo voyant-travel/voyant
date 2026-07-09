@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { startManagedProfileRuntime } from "@voyant-travel/framework/managed-runtime"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:aa98ef69f10afdcde1a6264f615d28ed0a7c04defa24f7fbd52251f35dda7ccd" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:87a7ee6f21d659b2e2cfecd372ca463df0ed409f3bcd38fdda0c1bec8a73e56d" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const
@@ -45,6 +45,13 @@ export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = [
   "@voyant-travel/operator#charters",
   "@voyant-travel/operator#realtime",
   "@voyant-travel/mice",
+  "@voyant-travel/db",
+  "@voyant-travel/availability",
+  "@voyant-travel/storefront",
+  "@voyant-travel/catalog-authoring",
+  "@voyant-travel/workflow-runs",
+  "@voyant-travel/charters",
+  "@voyant-travel/cruises",
 ] as const
 export const GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS = [
   "@voyant-travel/bookings#booking-supplier-extension",
@@ -67,9 +74,14 @@ export const GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS = [
 export const GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES = [
   "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
+  "@voyant-travel/availability",
   "@voyant-travel/bookings",
   "@voyant-travel/catalog",
+  "@voyant-travel/catalog-authoring",
+  "@voyant-travel/charters",
   "@voyant-travel/commerce",
+  "@voyant-travel/cruises",
+  "@voyant-travel/db",
   "@voyant-travel/distribution",
   "@voyant-travel/finance",
   "@voyant-travel/flights",
@@ -86,7 +98,9 @@ export const GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES = [
   "@voyant-travel/public-document-delivery",
   "@voyant-travel/quotes",
   "@voyant-travel/relationships",
+  "@voyant-travel/storefront",
   "@voyant-travel/trips",
+  "@voyant-travel/workflow-runs",
 ] as const
 
 export function resolveGeneratedProfileSnapshotPath(): string {
