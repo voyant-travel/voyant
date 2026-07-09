@@ -17,14 +17,22 @@ const frameworkBundleDir = join(dirname(fileURLToPath(import.meta.url)), "..", "
 function writeFakePackage(
   root: string,
   packageName: string,
-  { withMigrations }: { withMigrations: boolean },
+  { withMigrations, esmOnly = false }: { withMigrations: boolean; esmOnly?: boolean },
 ): void {
   const pkgDir = join(root, "node_modules", ...packageName.split("/"))
   mkdirSync(pkgDir, { recursive: true })
-  writeFileSync(
-    join(pkgDir, "package.json"),
-    JSON.stringify({ name: packageName, version: "1.0.0", main: "index.js" }),
-  )
+  // `esmOnly` writes an import-only `exports` map (no `require`/`default`
+  // condition), so `require.resolve` throws ERR_PACKAGE_PATH_NOT_EXPORTED — the
+  // publish shape that must still resolve via the package-root walk.
+  const packageJson = esmOnly
+    ? {
+        name: packageName,
+        version: "1.0.0",
+        type: "module",
+        exports: { ".": { import: "./index.js" } },
+      }
+    : { name: packageName, version: "1.0.0", main: "index.js" }
+  writeFileSync(join(pkgDir, "package.json"), JSON.stringify(packageJson))
   writeFileSync(join(pkgDir, "index.js"), "export {}\n")
   if (!withMigrations) return
   const migrationsDir = join(pkgDir, "migrations")
@@ -48,6 +56,7 @@ beforeAll(() => {
   resolveFrom = pathToFileURL(join(root, "consumer.js")).href
   writeFakePackage(root, "@acme/loyalty", { withMigrations: true })
   writeFakePackage(root, "@acme/analytics", { withMigrations: false })
+  writeFakePackage(root, "@acme/esm-only", { withMigrations: true, esmOnly: true })
 })
 
 afterAll(() => {
@@ -79,6 +88,15 @@ describe("loadModuleBundleSource (voyant#3069)", () => {
 
   it("returns null for an unresolvable package", async () => {
     expect(await loadModuleBundleSource("@acme/missing", { priority: 1, resolveFrom })).toBeNull()
+  })
+
+  it("resolves ESM-only (import-only exports) packages require.resolve rejects", async () => {
+    // The publish shape used across this repo: `require.resolve` throws
+    // ERR_PACKAGE_PATH_NOT_EXPORTED, so the migrations must be found by root walk.
+    const source = await loadModuleBundleSource("@acme/esm-only", { priority: 2, resolveFrom })
+    expect(source).not.toBeNull()
+    expect(source?.name).toBe("esm-only")
+    expect(source?.migrations.length).toBeGreaterThan(0)
   })
 
   it("honors an explicit migrationsDir, bypassing package resolution", async () => {

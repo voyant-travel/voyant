@@ -56,6 +56,7 @@ export function validateVoyantProjectRecord(
   validatePlugins(input.plugins, issues)
   validateSettings(input.settings, issues)
   validateAdmin(input.admin, issues)
+  validateCustomSource(input.customSource, issues)
   validateNoWebsiteArtifacts(input.websites, issues)
 
   return issues
@@ -225,6 +226,41 @@ function validateAdmin(admin: unknown, issues: VoyantProfileValidationIssue[]) {
       message: 'admin.path must be an absolute path such as "/app".',
     })
   }
+}
+
+function validateCustomSource(customSource: unknown, issues: VoyantProfileValidationIssue[]) {
+  if (customSource == null) return
+  if (!isRecord(customSource)) {
+    issues.push({
+      path: "customSource",
+      code: "invalid_type",
+      message: "customSource must be an object with optional modules/extensions arrays.",
+    })
+    return
+  }
+  validateStringArray(customSource.modules, "customSource.modules", issues)
+  validateStringArray(customSource.extensions, "customSource.extensions", issues)
+}
+
+function validateStringArray(value: unknown, path: string, issues: VoyantProfileValidationIssue[]) {
+  if (value == null) return
+  if (!Array.isArray(value)) {
+    issues.push({
+      path,
+      code: "invalid_type",
+      message: `${path} must be an array of package names.`,
+    })
+    return
+  }
+  value.forEach((entry, index) => {
+    if (typeof entry !== "string" || entry.trim().length === 0) {
+      issues.push({
+        path: `${path}[${index}]`,
+        code: "invalid_type",
+        message: `${path} entries must be non-empty package-name strings.`,
+      })
+    }
+  })
 }
 
 function validateNoWebsiteArtifacts(websites: unknown, issues: VoyantProfileValidationIssue[]) {

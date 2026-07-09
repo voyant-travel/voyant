@@ -16,9 +16,10 @@
  * `null` here — they need no migrations and are simply skipped.
  */
 
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync, statSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 
 import type { MigrationSource } from "./collector.js"
 import { loadMigrationFolder } from "./load-folder.js"
@@ -74,14 +75,58 @@ function resolvePackageRoot(packageName: string, entryPath: string): string | nu
   }
 }
 
+/** The directory to start a `node_modules` walk from, given a file/dir path or `file:` URL. */
+function toStartDir(resolveFrom: string | URL): string {
+  const path =
+    resolveFrom instanceof URL ||
+    (typeof resolveFrom === "string" && resolveFrom.startsWith("file:"))
+      ? fileURLToPath(resolveFrom)
+      : resolveFrom
+  try {
+    return statSync(path).isDirectory() ? path : dirname(path)
+  } catch {
+    return dirname(path)
+  }
+}
+
+/**
+ * Locate an installed package's root by walking `node_modules` up from
+ * `resolveFrom`, matching the `package.json` `name`. Ignores package `exports`
+ * conditions, so it resolves ESM-only ("import"-only) packages that
+ * `require.resolve` rejects with `ERR_PACKAGE_PATH_NOT_EXPORTED` — the publish
+ * shape used across this repo. Only the package root is needed here (to read its
+ * committed `migrations/`), so no entry-point resolution is required.
+ */
+function findInstalledPackageRoot(packageName: string, resolveFrom: string | URL): string | null {
+  let dir = toStartDir(resolveFrom)
+  for (;;) {
+    const packageJsonPath = join(dir, "node_modules", packageName, "package.json")
+    if (existsSync(packageJsonPath)) {
+      try {
+        const parsed = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { name?: string }
+        if (parsed.name === packageName) return dirname(packageJsonPath)
+      } catch {
+        // Unreadable/partial package.json — keep walking.
+      }
+    }
+    const parent = dirname(dir)
+    if (parent === dir) return null
+    dir = parent
+  }
+}
+
 function resolveModuleMigrationsDir(packageName: string, resolveFrom: string | URL): string | null {
-  let entryPath: string
+  let entryPath: string | null = null
   try {
     entryPath = createRequire(resolveFrom).resolve(packageName)
   } catch {
-    return null
+    // ESM-only packages (import-only `exports`) reject the CommonJS `require`
+    // condition — fall back to a package-root walk that ignores export conditions.
+    entryPath = null
   }
-  const root = resolvePackageRoot(packageName, entryPath)
+  const root = entryPath
+    ? resolvePackageRoot(packageName, entryPath)
+    : findInstalledPackageRoot(packageName, resolveFrom)
   return root ? join(root, "migrations") : null
 }
 
