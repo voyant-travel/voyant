@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { loadOperatorDeploymentGraphArtifacts } from "./deployment-graph-artifacts"
 import {
   CHANNEL_PUSH_AVAILABILITY_CRON,
   OUTBOX_DRAIN_CRON,
@@ -29,5 +30,16 @@ describe("resolveOperatorCronJob", () => {
   it("returns undefined for unknown schedule dispatch keys", () => {
     expect(resolveOperatorCronJob({ scheduleId: "missing-job" })).toBeUndefined()
     expect(resolveOperatorCronJob({ cron: "1 2 3 4 5" })).toBeUndefined()
+  })
+
+  it("can dispatch every graph-derived scheduled job", () => {
+    const graph = loadOperatorDeploymentGraphArtifacts()
+
+    for (const job of graph.scheduledJobs) {
+      expect(resolveOperatorCronJob({ scheduleId: job.id })).toMatchObject({
+        id: job.id,
+        cron: job.cron,
+      })
+    }
   })
 })

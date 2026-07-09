@@ -1,8 +1,10 @@
 // agent-quality: file-size exception -- reason: first v1 deployment-graph cut keeps schema versions, diagnostics, resolver, managed-profile bridge, and author harness co-located until generated runtime lowering defines stable split points.
 import {
+  getManagedProfileScheduledJobs,
   getStandardProfileEventFiltersForModule,
   getStandardProfileWorkflowManifestForModule,
   type ManagedEventFilterEntry,
+  type ManagedScheduledJob,
   type ManagedWorkflowManifestEntry,
 } from "./managed-jobs.js"
 import {
@@ -147,6 +149,14 @@ export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {
   name?: string
 }
 
+export interface VoyantGraphScheduledJob {
+  id: string
+  cron: string
+  description: string
+  route: string
+  module: string
+}
+
 export interface VoyantGraphUnitManifest {
   schemaVersion:
     | typeof VOYANT_GRAPH_MODULE_SCHEMA_VERSION
@@ -252,6 +262,7 @@ export interface ResolveDeploymentGraphInput {
   project: VoyantGraphProject
   deployment?: Omit<VoyantGraphDeployment, "project">
   packageRecords?: readonly VoyantGraphPackageRecord[]
+  scheduledJobs?: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[]
   frameworkVersion?: string
   target?: string
   mode?: VoyantProjectDeploymentMode
@@ -308,6 +319,9 @@ export interface ResolvedVoyantDeploymentGraph {
     required: readonly string[]
   }
   packageRecords: readonly VoyantGraphPackageRecord[]
+  provisioning: {
+    scheduledJobs: readonly VoyantGraphScheduledJob[]
+  }
   diagnostics: readonly VoyantGraphDiagnostic[]
 }
 
@@ -527,6 +541,7 @@ export async function resolveDeploymentGraph(
   const selectedUnits = [...selectedModules, ...selectedPlugins]
 
   const packageRecords = mergePackageRecords(selectedUnits, input.packageRecords ?? [])
+  const scheduledJobs = normalizeScheduledJobs(input.scheduledJobs ?? [])
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
@@ -560,6 +575,9 @@ export async function resolveDeploymentGraph(
       required: sortedUnique(selectedUnits.flatMap((unit) => unit.requires.capabilities)),
     },
     packageRecords,
+    provisioning: {
+      scheduledJobs,
+    },
     diagnostics,
   }
 
@@ -628,6 +646,7 @@ export async function resolveManagedProfileDeploymentGraph(
     packageRecords:
       options.packageRecords ??
       generateWorkspacePackageRecords(deployment.project, project.frameworkVersion),
+    scheduledJobs: options.scheduledJobs ?? getManagedProfileScheduledJobs(project),
     frameworkVersion: options.frameworkVersion ?? project.frameworkVersion,
     target: options.target ?? deployment.target,
     mode: options.mode ?? deployment.mode,
@@ -836,6 +855,20 @@ function normalizeResourceRequirement(
     })),
     ...(requirement.notes ? { notes: requirement.notes } : {}),
   }
+}
+
+function normalizeScheduledJobs(
+  jobs: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[],
+): VoyantGraphScheduledJob[] {
+  return jobs
+    .map((job) => ({
+      id: job.id,
+      cron: job.cron,
+      description: job.description,
+      route: job.route,
+      module: job.module,
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id))
 }
 
 function compareEnvRequirements(

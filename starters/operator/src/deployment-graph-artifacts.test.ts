@@ -29,6 +29,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(summary.resourceRequirements.map((resource) => resource.resourceKey)).toContain(
       "database:postgres",
     )
+    expect(summary.scheduledJobs.map((job) => job.id)).toContain("external-cruise-catalog-refresh")
   })
 
   it("fails when the artifact graph hash does not match the graph content hash", () => {
@@ -103,6 +104,53 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(() => assertOperatorDeploymentGraphResourceEnv(summary, {})).toThrow(
       /Operator deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
     )
+  })
+
+  it("loads graph-derived scheduled jobs for provisioning", () => {
+    const root = fixtureRoot()
+    writeFixture(root)
+    const summary = loadOperatorDeploymentGraphArtifacts(
+      pathToFileURL(join(root, "src", "server.ts")).href,
+    )
+
+    expect(summary.scheduledJobs).toEqual([
+      {
+        id: "outbox-drain",
+        cron: "*/2 * * * *",
+        description: "Redelivers failed/interrupted event-outbox deliveries (every 2 min).",
+        route: "/__voyant/scheduled",
+        module: "framework",
+      },
+    ])
+  })
+
+  it("fails when graph-derived scheduler provisioning metadata is missing", () => {
+    const root = fixtureRoot()
+    writeFixture(root, { omitProvisioning: true })
+
+    expect(() =>
+      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+    ).toThrow(/deployment graph provisioning is missing/)
+  })
+
+  it("fails when graph-derived scheduled jobs are malformed", () => {
+    const root = fixtureRoot()
+    writeFixture(root, {
+      provisioning: {
+        scheduledJobs: [
+          {
+            id: "outbox-drain",
+            cron: "*/2 * * * *",
+            description: "Redelivers failed/interrupted event-outbox deliveries (every 2 min).",
+            module: "framework",
+          },
+        ],
+      },
+    })
+
+    expect(() =>
+      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+    ).toThrow(/deployment graph provisioning\.scheduledJobs\[0\]\.route/)
   })
 
   it("accepts satisfied required resource environment before boot", () => {
@@ -181,7 +229,9 @@ function writeFixture(
     graphHash?: string
     diagnostics?: Array<{ code: string; message: string }>
     requirements?: FixtureDeploymentGraph["requirements"]
+    provisioning?: FixtureDeploymentGraph["provisioning"]
     omitRequirements?: boolean
+    omitProvisioning?: boolean
     runtimeEntry?: Record<string, unknown>
     runtimeEntrySource?: { graphHash?: string }
     writeRuntimeEntrySource?: boolean
@@ -220,6 +270,21 @@ function writeFixture(
     modules: [{ id: "@voyant-travel/bookings" }],
     plugins: [{ id: "@voyant-travel/plugin-smartbill" }],
     packageRecords: [{ packageName: "@voyant-travel/framework" }],
+    ...(!options.omitProvisioning
+      ? {
+          provisioning: options.provisioning ?? {
+            scheduledJobs: [
+              {
+                id: "outbox-drain",
+                cron: "*/2 * * * *",
+                description: "Redelivers failed/interrupted event-outbox deliveries (every 2 min).",
+                route: "/__voyant/scheduled",
+                module: "framework",
+              },
+            ],
+          },
+        }
+      : {}),
   }
   const graphHash = options.graphHash ?? computeGraphContentHash(graphWithoutHash)
   const graph: FixtureDeploymentGraph = { ...graphWithoutHash, contentHash: graphHash }
@@ -271,6 +336,15 @@ interface FixtureDeploymentGraph {
   modules: Array<{ id: string }>
   plugins: Array<{ id: string }>
   packageRecords: Array<{ packageName: string }>
+  provisioning?: {
+    scheduledJobs: Array<{
+      id: string
+      cron: string
+      description: string
+      route?: string
+      module: string
+    }>
+  }
 }
 
 function writeGeneratedRuntimeEntrySource(

@@ -20,6 +20,15 @@ export interface OperatorDeploymentGraphArtifactSummary {
   pluginIds: readonly string[]
   packageNames: readonly string[]
   resourceRequirements: readonly OperatorDeploymentGraphResourceRequirement[]
+  scheduledJobs: readonly OperatorDeploymentGraphScheduledJob[]
+}
+
+export interface OperatorDeploymentGraphScheduledJob {
+  id: string
+  cron: string
+  description: string
+  route: string
+  module: string
 }
 
 export interface OperatorDeploymentGraphResourceRequirement {
@@ -62,6 +71,7 @@ interface ResolvedDeploymentGraph {
   diagnostics?: unknown
   deployment?: unknown
   requirements?: unknown
+  provisioning?: unknown
   modules?: unknown
   plugins?: unknown
   packageRecords?: unknown
@@ -203,6 +213,7 @@ export function loadOperatorDeploymentGraphArtifacts(
       "packageName",
     ),
     resourceRequirements: collectResourceRequirements(graph.requirements),
+    scheduledJobs: collectScheduledJobs(graph.provisioning),
   }
 
   validateGeneratedRuntimeEntrySource({ graphHash, manifestUrl, mode, summary, target })
@@ -240,6 +251,34 @@ export function assertOperatorDeploymentGraphResourceEnv(
   throw new Error(
     `Operator deployment graph resource requirements are not satisfied:\n${formatIssues(issues)}`,
   )
+}
+
+function collectScheduledJobs(value: unknown): OperatorDeploymentGraphScheduledJob[] {
+  if (value == null) {
+    throw new Error(
+      "deployment graph provisioning is missing; regenerate deployment graph artifacts",
+    )
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("deployment graph provisioning must be an object")
+  }
+  const jobs = arrayOfRecords(
+    (value as Record<string, unknown>).scheduledJobs,
+    "deployment graph provisioning.scheduledJobs",
+  )
+  return jobs.map((job, index) => ({
+    id: requireString(job.id, `deployment graph provisioning.scheduledJobs[${index}].id`),
+    cron: requireString(job.cron, `deployment graph provisioning.scheduledJobs[${index}].cron`),
+    description: requireString(
+      job.description,
+      `deployment graph provisioning.scheduledJobs[${index}].description`,
+    ),
+    route: requireString(job.route, `deployment graph provisioning.scheduledJobs[${index}].route`),
+    module: requireString(
+      job.module,
+      `deployment graph provisioning.scheduledJobs[${index}].module`,
+    ),
+  }))
 }
 
 function collectResourceRequirements(value: unknown): OperatorDeploymentGraphResourceRequirement[] {
