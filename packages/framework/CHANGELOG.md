@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.28.0
+
+### Minor Changes
+
+- 4d70808: Lower workflow schedule descriptors into deployment graph workflow facets.
+
 ## 0.27.0
 
 ### Minor Changes
