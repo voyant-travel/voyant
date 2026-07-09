@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "dev": "pnpm run graph:check && node -r ./scripts/env-preload.cjs node_modules/vite/bin/vite.js dev --port 3300",
+    "dev": "pnpm run graph:check && pnpm run graph:env && node -r ./scripts/env-preload.cjs node_modules/vite/bin/vite.js dev --port 3300",
     "build": "pnpm run graph:check && vite build && pnpm run copy:deployment-artifacts",
     "copy:deployment-artifacts": "cp managed-profile.json deployment-artifacts.generated.json deployment-graph.generated.json dist/",
     "preview": "pnpm run build && vite preview",
@@ -14,6 +14,7 @@
     "generate:openapi": "UPDATE_OPENAPI=1 vitest run src/api/openapi.test.ts",
     "generate:managed-profile": "tsx scripts/generate-managed-profile.ts",
     "graph:check": "tsx ../../scripts/emit-deployment-graph.ts",
+    "graph:env": "tsx scripts/check-deployment-graph-env.ts",
     "graph:emit": "tsx ../../scripts/emit-deployment-graph.ts --emit",
     "dev:worker": "voyant dev --file src/workflows.ts --port 3310",
     "emit:cloud-scheduler": "tsx scripts/emit-cloud-scheduler.ts",

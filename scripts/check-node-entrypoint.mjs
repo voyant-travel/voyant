@@ -22,6 +22,8 @@ const ROOT = join(__dirname, "..")
 
 const APP_ENTRY = "starters/operator/src/entry.ts"
 const NODE_ENTRY = "starters/operator/src/server.ts"
+const OPERATOR_PACKAGE_JSON = "starters/operator/package.json"
+const OPERATOR_GRAPH_ENV_CHECK = "starters/operator/scripts/check-deployment-graph-env.ts"
 const GENERATED_RUNTIME_ENTRY = "runtime-entry.generated"
 
 const FORBIDDEN_IMPORTS = [
@@ -129,6 +131,90 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
   }
 }
 
+// 3. Dev lane: must preflight the same graph resource env before Vite boots.
+if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
+  violations.push({
+    file: OPERATOR_PACKAGE_JSON,
+    line: 0,
+    check: {
+      id: "missing-operator-package-json",
+      message: "The operator package manifest is missing.",
+    },
+    text: "",
+  })
+} else {
+  const packageJson = JSON.parse(readFileSync(join(ROOT, OPERATOR_PACKAGE_JSON), "utf-8"))
+  const scripts =
+    packageJson.scripts && typeof packageJson.scripts === "object" ? packageJson.scripts : {}
+  const graphEnvScript = typeof scripts["graph:env"] === "string" ? scripts["graph:env"] : ""
+  const devScript = typeof scripts.dev === "string" ? scripts.dev : ""
+  const graphEnvIndex = devScript.indexOf("pnpm run graph:env")
+  const viteIndex = devScript.indexOf("node_modules/vite/bin/vite.js")
+
+  if (!graphEnvScript.includes("scripts/check-deployment-graph-env.ts")) {
+    violations.push({
+      file: OPERATOR_PACKAGE_JSON,
+      line: 0,
+      check: {
+        id: "operator-graph-env-script-missing",
+        message: "The operator package must expose graph:env for graph resource env preflight.",
+      },
+      text: graphEnvScript,
+    })
+  }
+  if (graphEnvIndex === -1) {
+    violations.push({
+      file: OPERATOR_PACKAGE_JSON,
+      line: 0,
+      check: {
+        id: "operator-dev-graph-env-missing",
+        message: "The operator dev script must run graph:env before Vite boots.",
+      },
+      text: devScript,
+    })
+  }
+  if (viteIndex !== -1 && graphEnvIndex > viteIndex) {
+    violations.push({
+      file: OPERATOR_PACKAGE_JSON,
+      line: 0,
+      check: {
+        id: "operator-dev-graph-env-after-vite",
+        message: "The operator dev script must run graph:env before Vite boots.",
+      },
+      text: devScript,
+    })
+  }
+}
+
+if (!existsSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK))) {
+  violations.push({
+    file: OPERATOR_GRAPH_ENV_CHECK,
+    line: 0,
+    check: {
+      id: "missing-operator-graph-env-check",
+      message: "The operator graph resource env preflight script is missing.",
+    },
+    text: "",
+  })
+} else {
+  const graphEnvSource = readFileSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK), "utf-8")
+  if (
+    !graphEnvSource.includes("loadOperatorDeploymentGraphArtifacts") ||
+    !graphEnvSource.includes("assertOperatorDeploymentGraphResourceEnv") ||
+    !graphEnvSource.includes("process.env")
+  ) {
+    violations.push({
+      file: OPERATOR_GRAPH_ENV_CHECK,
+      line: 0,
+      check: {
+        id: "operator-graph-env-check-not-wired",
+        message: "The operator graph env script must load graph artifacts and assert resource env.",
+      },
+      text: "",
+    })
+  }
+}
+
 if (violations.length > 0) {
   console.error("Node entrypoint violation.")
   console.error("See docs/architecture/deployment-targets.md for the rule.\n")
@@ -142,5 +228,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer + graph artifacts + resource env)",
+  "check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer + graph artifacts + resource env; dev preflights graph env)",
 )
