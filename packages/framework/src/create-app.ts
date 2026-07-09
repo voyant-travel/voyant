@@ -34,15 +34,13 @@
  */
 
 import { type CreateAppConfig, createApp, type VoyantBindings } from "@voyant-travel/hono"
-import {
-  type CapabilityGraph,
-  type CompositionRegistry,
-  type ExtensionFactory,
-  findCapabilityGaps,
-  type ModuleFactory,
+import type {
+  CompositionRegistry,
+  ExtensionFactory,
+  ModuleFactory,
 } from "@voyant-travel/hono/composition"
 import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-import { FRAMEWORK_CAPABILITY_GRAPH, FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+import { subsetStandardManifest } from "./manifest.js"
 
 /**
  * Config for {@link createVoyantApp}: the injected providers + deployment-local
@@ -81,69 +79,6 @@ export interface CreateVoyantAppConfig<
    * yet wired (ADR-0007 "Deferred to v2").
    */
   exclude?: readonly string[]
-}
-
-/** Options for {@link subsetStandardManifest}. See {@link CreateVoyantAppConfig}. */
-export interface SubsetOptions {
-  /** Specifiers to remove entirely (rejected if unknown, `isRequired`, or depended-on). */
-  exclude?: readonly string[]
-}
-
-/**
- * Apply `exclude` to the standard set (ADR-0007), returning the module/extension
- * specifiers that should mount. Pure and provider-free, so it is unit-testable and
- * reusable by tooling (`db doctor`). Throws — fail-loud at boot, never a runtime
- * 500 — when `exclude` names a specifier absent from the standard set (a typo),
- * names an `isRequired` module, or leaves a still-mounted module's `requires`
- * unmet (drop the consumers too).
- */
-export function subsetStandardManifest({ exclude = [] }: SubsetOptions = {}): {
-  modules: string[]
-  extensions: string[]
-} {
-  const excludeSet = new Set(exclude)
-
-  if (excludeSet.size > 0) {
-    const known = new Set<string>([
-      ...FRAMEWORK_RUNTIME_MANIFEST.modules,
-      ...FRAMEWORK_RUNTIME_MANIFEST.extensions,
-    ])
-    const unknown = [...excludeSet].filter((spec) => !known.has(spec)).sort()
-    if (unknown.length > 0) {
-      throw new Error(
-        `createVoyantApp: exclude names ${unknown.length} specifier(s) not in the standard set: ` +
-          `${unknown.join(", ")}. Only standard framework modules/extensions can be excluded.`,
-      )
-    }
-
-    const graph: CapabilityGraph = FRAMEWORK_CAPABILITY_GRAPH
-    const required = [...excludeSet].filter((spec) => graph[spec]?.isRequired).sort()
-    if (required.length > 0) {
-      throw new Error(
-        `createVoyantApp: cannot exclude required module(s): ${required.join(", ")}. ` +
-          "They are foundational and cannot be removed.",
-      )
-    }
-  }
-
-  const modules = FRAMEWORK_RUNTIME_MANIFEST.modules.filter((m) => !excludeSet.has(m))
-  const extensions = FRAMEWORK_RUNTIME_MANIFEST.extensions.filter((e) => !excludeSet.has(e))
-
-  // The capability graph is validated over what actually mounts: dropping a
-  // module a still-mounted module depends on — without also dropping the consumer
-  // — fails loudly here rather than as a runtime 500.
-  const gaps = findCapabilityGaps(modules, FRAMEWORK_CAPABILITY_GRAPH)
-  if (gaps.length > 0) {
-    const detail = gaps
-      .map((g) => `"${g.capability}" (required by ${g.requiredBy.join(", ")})`)
-      .join("; ")
-    throw new Error(
-      `createVoyantApp: exclude leaves unmet capabilities: ${detail}. ` +
-        "Exclude the consumers too (capability replacement is a future release).",
-    )
-  }
-
-  return { modules, extensions }
 }
 
 /**
