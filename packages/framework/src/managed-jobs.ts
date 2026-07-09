@@ -21,7 +21,7 @@ import { moduleIdFromSpecifier, type VoyantProjectManifest } from "./profile-typ
 
 /**
  * The Node runtime path a Cloud Scheduler job POSTs to trigger scheduled work.
- * The cron expression is passed as `?cron=<expr>` and the request carries the
+ * The stable job id is passed as `?schedule=<id>` and the request carries the
  * origin-trust header — see `packages/runtime`'s `SCHEDULED_PATH`.
  */
 export const SCHEDULED_JOB_ROUTE = "/__voyant/scheduled"
@@ -34,7 +34,7 @@ export interface ManagedScheduledJob {
   readonly cron: string
   /** Human-readable description of the work this trigger drives. */
   readonly description: string
-  /** The runtime route the job POSTs (`?cron=<expr>` selects the handler). */
+  /** The runtime route the job POSTs (`?schedule=<id>` selects the handler). */
   readonly route: string
   /**
    * The module this job belongs to — a `moduleId` (e.g. `distribution`) for
@@ -224,7 +224,7 @@ function resolveActiveModuleSpecifiers(project: VoyantProjectManifest): Readonly
  * Given only a valid `voyant.managed-profile.v1` snapshot and the installed
  * framework version, Cloud can compute exactly which scheduler jobs to create:
  * always-on framework jobs plus one job per active module that owns scheduled
- * work. Every job POSTs {@link SCHEDULED_JOB_ROUTE} with `?cron=<expr>`.
+ * work. Every job POSTs {@link SCHEDULED_JOB_ROUTE} with `?schedule=<id>`.
  */
 export function getManagedProfileScheduledJobs(
   project: VoyantProjectManifest,

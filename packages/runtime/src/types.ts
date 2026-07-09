@@ -51,12 +51,14 @@ export type FetchHandler<Env> = (
 ) => Response | Promise<Response>
 
 /**
- * The event object passed to a Worker `scheduled()` handler. On Cloud Run the
- * cron triggers arrive over HTTP (Cloud Scheduler), so `scheduledTime` is the
- * dispatch time and `cron` is echoed from the request.
+ * The event object passed to a Worker `scheduled()` handler. On Node targets the
+ * scheduler dispatch arrives over HTTP, so `scheduledTime` is the dispatch time.
+ * New dispatchers identify jobs by stable `scheduleId`; `cron` remains optional
+ * for Workers compatibility and legacy Cloud Scheduler URLs.
  */
 export interface ScheduledEventLike {
-  cron: string
+  scheduleId?: string
+  cron?: string
   scheduledTime: number
 }
 

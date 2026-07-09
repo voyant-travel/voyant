@@ -43,9 +43,9 @@ pnpm -F operator build        # emits dist/client + dist/server/server.js
 pnpm -F operator start        # node dist/server/server.js (PORT, default 8080)
 ```
 
-The server exposes `/healthz` (probe), `/__voyant/scheduled?cron=<expr>` (the
+The server exposes `/healthz` (probe), `/__voyant/scheduled?schedule=<id>` (the
 Cloud Scheduler hook, origin-trust gated), and serves the client build. Generate
-Cloud Scheduler jobs for the crons in `src/scheduled-crons.ts` with
+Cloud Scheduler jobs for the jobs in `src/scheduled-crons.ts` with
 `pnpm -F operator emit:cloud-scheduler` (see the script header for env).
 
 ## Optional Cloud Services
@@ -148,7 +148,7 @@ gcloud run deploy operator \
 `/healthz` is the container/liveness probe. Set `ORIGIN_TRUST_SECRET` when a
 dispatcher fronts the service (it stamps `x-voyant-origin-trust`; `/healthz` is
 exempt). Crons don't run in-process — wire Cloud Scheduler with
-`pnpm -F operator emit:cloud-scheduler` (POSTs `/__voyant/scheduled?cron=…`). See
+`pnpm -F operator emit:cloud-scheduler` (POSTs `/__voyant/scheduled?schedule=…`). See
 [docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md).
 
 ## Routes
@@ -158,7 +158,7 @@ exempt). Crons don't run in-process — wire Cloud Scheduler with
 - `/api/auth/*` — Better Auth handler
 - `/*` — TanStack Start SSR dashboard
 - `/healthz` — liveness probe (Node runtime)
-- `/__voyant/scheduled?cron=<expr>` — Cloud Scheduler hook (origin-trust gated)
+- `/__voyant/scheduled?schedule=<id>` — Cloud Scheduler hook (origin-trust gated)
 
 ## External cruise adapters
 

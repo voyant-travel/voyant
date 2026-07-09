@@ -68,7 +68,9 @@ workload class well. On Node none of it is necessary.
 - **Crons:** declared runtime-neutrally in `src/scheduled-crons.ts`
   (`OPERATOR_CRON_JOBS`). On Node they can't run on a timer inside the process, so
   `pnpm --filter operator emit:cloud-scheduler` fans them out to Cloud Scheduler
-  jobs that POST `/__voyant/scheduled?cron=<expr>` with the origin-trust header.
+  jobs that POST `/__voyant/scheduled?schedule=<stable-id>` with the
+  origin-trust header. During rollout the emitted URL also carries `cron` as a
+  compatibility fallback for older runtimes.
 - **CI:** the `node-smoke` job builds the operator, boots it under Node, and
   asserts `/healthz` + API dispatch — so the first-class target is gated.
 

@@ -153,7 +153,7 @@ function envForProvider(
 
 function notesForProvider(role: VoyantProjectProviderRole, provider: string): string | undefined {
   if (role === "scheduledJobs" && provider === "cloud-scheduler") {
-    return "Cloud Scheduler should POST /__voyant/scheduled?cron=<expr> with x-voyant-origin-trust."
+    return "Cloud Scheduler should POST /__voyant/scheduled?schedule=<stable-id> with x-voyant-origin-trust."
   }
   if (role === "workflows" && provider === "voyant-cloud") {
     return "App code forwards workflow trigger/event calls to the hosted Voyant Cloud workflow runtime."

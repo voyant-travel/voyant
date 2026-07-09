@@ -18,17 +18,28 @@ export interface ScheduledHandlerArgs<Env> {
 
 /**
  * Invoke a Worker-style `scheduled()` handler from an HTTP request. Reads the
- * cron expression from the `cron` query param. Returns `202` on success, `500`
- * on handler error, `400` when `cron` is missing. Exported standalone so it can
- * be mounted into any server loop, not just {@link createNodeServer}.
+ * stable schedule id from the `schedule` query param; legacy callers may still
+ * send `cron`. Returns `202` on success, `500` on handler error, `400` when
+ * neither dispatch key is present. Exported standalone so it can be mounted
+ * into any server loop, not just {@link createNodeServer}.
  */
 export async function scheduledHandler<Env>(args: ScheduledHandlerArgs<Env>): Promise<Response> {
-  const cron = new URL(args.request.url).searchParams.get("cron")
-  if (!cron) {
-    return new Response("Missing `cron` query param", { status: 400 })
+  const params = new URL(args.request.url).searchParams
+  const scheduleId = params.get("schedule") ?? undefined
+  const cron = params.get("cron") ?? undefined
+  if (!scheduleId && !cron) {
+    return new Response("Missing `schedule` or `cron` query param", { status: 400 })
   }
   try {
-    await args.scheduled({ cron, scheduledTime: Date.now() }, args.env, args.ctx)
+    await args.scheduled(
+      {
+        ...(scheduleId ? { scheduleId } : {}),
+        ...(cron ? { cron } : {}),
+        scheduledTime: Date.now(),
+      },
+      args.env,
+      args.ctx,
+    )
     return new Response(null, { status: 202 })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

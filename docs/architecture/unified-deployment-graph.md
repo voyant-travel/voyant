@@ -661,6 +661,11 @@ stable graph entity ids. Existing Cloud Scheduler cron callbacks are not modeled
 as workflow schedules; they remain runtime maintenance/provisioning metadata
 until the scheduler dispatch migration has a stable schedule-id contract.
 
+Implementation note: Node scheduler dispatch now accepts `?schedule=<stable-id>`
+and the operator Cloud Scheduler emitter uses that stable id as the runtime
+dispatch key. Legacy `?cron=<expr>` URLs remain accepted as a compatibility
+fallback for already-provisioned scheduler jobs.
+
 ## Events And Webhooks
 
 V1 should include subscribers and workflow event filters that already map to

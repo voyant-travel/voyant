@@ -2,9 +2,12 @@
  * Emit Cloud Scheduler job definitions for the operator's scheduled work.
  *
  * The operator is a Node deployment (voyant#2966): cron triggers can't run on a
- * timer inside a Cloud Run process, so each cron in `src/scheduled-crons.ts`
- * (`OPERATOR_CRON_JOBS` — the single source of truth) becomes a Cloud Scheduler
- * job that POSTs `/__voyant/scheduled?cron=<expr>` with the origin-trust header.
+ * timer inside a Cloud Run process, so each stable job id in
+ * `src/scheduled-crons.ts` (`OPERATOR_CRON_JOBS` — the single source of truth)
+ * becomes a Cloud Scheduler job that POSTs
+ * `/__voyant/scheduled?schedule=<id>&cron=<expr>` with the origin-trust header.
+ * The stable schedule id is the dispatch key; the cron expression remains in
+ * the URL during rollout so older runtimes can still dispatch the job.
  * This mirrors what `wrangler.jsonc` `triggers.crons` did on Workers.
  *
  * Usage:
@@ -48,7 +51,9 @@ const lines: string[] = [
 ]
 
 for (const job of OPERATOR_CRON_JOBS) {
-  const uri = `${targetUrl}/__voyant/scheduled?cron=${encodeURIComponent(job.cron)}`
+  const uri =
+    `${targetUrl}/__voyant/scheduled?schedule=${encodeURIComponent(job.id)}` +
+    `&cron=${encodeURIComponent(job.cron)}`
   const args = [
     `gcloud scheduler jobs create http ${jobPrefix}-${job.id}`,
     location ? `--location=${location}` : undefined,
