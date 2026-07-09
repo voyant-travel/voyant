@@ -5,7 +5,11 @@ import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { loadOperatorDeploymentGraphArtifacts } from "./deployment-graph-artifacts"
+import {
+  assertOperatorDeploymentGraphResourceEnv,
+  loadOperatorDeploymentGraphArtifacts,
+  validateOperatorDeploymentGraphResourceEnv,
+} from "./deployment-graph-artifacts"
 
 const OTHER_HASH = `sha256:${"b".repeat(64)}`
 
@@ -81,6 +85,43 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(() =>
       loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/deployment graph requirements must be an object/)
+  })
+
+  it("reports missing required resource environment before boot", () => {
+    const root = fixtureRoot()
+    writeFixture(root)
+    const summary = loadOperatorDeploymentGraphArtifacts(
+      pathToFileURL(join(root, "src", "server.ts")).href,
+    )
+
+    expect(validateOperatorDeploymentGraphResourceEnv(summary, {})).toEqual([
+      "secret DATABASE_URL is required for database:postgres",
+    ])
+    expect(validateOperatorDeploymentGraphResourceEnv(summary, { DATABASE_URL: "   " })).toEqual([
+      "secret DATABASE_URL is required for database:postgres",
+    ])
+    expect(() => assertOperatorDeploymentGraphResourceEnv(summary, {})).toThrow(
+      /Operator deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
+    )
+  })
+
+  it("accepts satisfied required resource environment before boot", () => {
+    const root = fixtureRoot()
+    writeFixture(root)
+    const summary = loadOperatorDeploymentGraphArtifacts(
+      pathToFileURL(join(root, "src", "server.ts")).href,
+    )
+
+    expect(
+      validateOperatorDeploymentGraphResourceEnv(summary, {
+        DATABASE_URL: "postgres://user:pass@example.test:5432/voyant",
+      }),
+    ).toEqual([])
+    expect(() =>
+      assertOperatorDeploymentGraphResourceEnv(summary, {
+        DATABASE_URL: "postgres://user:pass@example.test:5432/voyant",
+      }),
+    ).not.toThrow()
   })
 
   it("resolves source-style artifact paths beside src", () => {

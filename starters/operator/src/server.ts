@@ -21,7 +21,10 @@ import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 
-import { loadOperatorDeploymentGraphArtifacts } from "./deployment-graph-artifacts"
+import {
+  assertOperatorDeploymentGraphResourceEnv,
+  loadOperatorDeploymentGraphArtifacts,
+} from "./deployment-graph-artifacts"
 import { fetch as appFetch, scheduled } from "./entry"
 
 /**
@@ -182,6 +185,8 @@ export default {
 // spawn a second listener — only a direct `node dist/server/server.js` run does.
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
+  assertOperatorDeploymentGraphResourceEnv(deploymentGraphArtifacts, process.env)
+
   const handle = createNodeServer<AppBindings>({
     fetch: (request, bindings, ctx) => web.fetch(request, bindings, toExecutionContext(ctx)),
     scheduled: (event, bindings, ctx) => scheduled(event, bindings, toExecutionContext(ctx)),

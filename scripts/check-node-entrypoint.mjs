@@ -3,8 +3,9 @@
  *
  *  1. `src/server.ts` (the Node process entry) exists and boots the runtime via
  *     `createNodeServer` from `@voyant-travel/runtime`.
- *  1b. `src/server.ts` consumes the checked deployment graph artifacts at boot
- *      so dev/build/deploy share the same graph contract.
+ *  1b. `src/server.ts` consumes the checked deployment graph artifacts and
+ *      asserts graph resource env before standalone boot so dev/build/deploy
+ *      share the same graph contract.
  *  2. `src/entry.ts` (the app's `fetch`/`scheduled` handlers) keeps SSR behind a
  *     lazy import so the React + react-dom/server graph isn't pulled into the
  *     module's top-level — imported on first render, not at boot. Heavy API and
@@ -84,9 +85,8 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
     })
   }
   if (
-    !/^import\s+\{\s*loadOperatorDeploymentGraphArtifacts\s*\}\s+from\s+["']\.\/deployment-graph-artifacts["']/m.test(
-      nodeEntrySource,
-    ) ||
+    !nodeEntrySource.includes('from "./deployment-graph-artifacts"') ||
+    !nodeEntrySource.includes("loadOperatorDeploymentGraphArtifacts") ||
     !/^const\s+\w+\s*=\s*loadOperatorDeploymentGraphArtifacts\(\s*\)/m.test(nodeEntrySource)
   ) {
     violations.push({
@@ -95,6 +95,22 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
       check: {
         id: "deployment-graph-artifacts-not-consumed",
         message: "The Node entry must validate deployment graph artifacts at boot.",
+      },
+      text: "",
+    })
+  }
+  if (
+    !nodeEntrySource.includes("assertOperatorDeploymentGraphResourceEnv") ||
+    !/assertOperatorDeploymentGraphResourceEnv\(\s*\w+\s*,\s*process\.env\s*\)/m.test(
+      nodeEntrySource,
+    )
+  ) {
+    violations.push({
+      file: NODE_ENTRY,
+      line: 0,
+      check: {
+        id: "deployment-graph-resource-env-not-asserted",
+        message: "The Node entry must assert graph resource env before standalone boot.",
       },
       text: "",
     })
@@ -126,5 +142,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer + graph artifacts)",
+  "check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer + graph artifacts + resource env)",
 )
