@@ -11,6 +11,7 @@
 // framework module).
 
 import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "@voyant-travel/framework/managed-jobs"
+import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "./local-scheduled-jobs"
 
 /** One scheduled job: a stable id, its cron expression, and what it does. */
 export interface CronJob {
@@ -40,10 +41,6 @@ export const DRAFT_REAPER_CRON = standardCron("draft-reaper")
 export const PROMOTION_BOUNDARY_SCHEDULER_CRON = standardCron("promotion-boundary-scheduler")
 export const OUTBOX_DRAIN_CRON = standardCron("outbox-drain")
 
-// Deployment-local: `@voyant-travel/cruises` is not part of the standard
-// framework runtime manifest, so the operator owns this cron itself.
-export const EXTERNAL_CRUISE_CATALOG_REFRESH_CRON = "30 3 * * *"
-
 /**
  * The full set of scheduled jobs, in declaration order: the framework's
  * standard set (from the composed module set) plus the operator's
@@ -54,11 +51,9 @@ export const OPERATOR_CRON_JOBS: readonly CronJob[] = [
   ...STANDARD_OPERATOR_SCHEDULED_JOBS.map(
     ({ id, cron, description }): CronJob => ({ id, cron, description }),
   ),
-  {
-    id: "external-cruise-catalog-refresh",
-    cron: EXTERNAL_CRUISE_CATALOG_REFRESH_CRON,
-    description: "External cruise catalog refresh (nightly at 03:30).",
-  },
+  ...OPERATOR_LOCAL_SCHEDULED_JOBS.map(
+    ({ id, cron, description }): CronJob => ({ id, cron, description }),
+  ),
 ]
 
 export interface ScheduledDispatchKey {

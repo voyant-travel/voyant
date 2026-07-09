@@ -2,9 +2,8 @@
  * Emit Cloud Scheduler job definitions for the operator's scheduled work.
  *
  * The operator is a Node deployment (voyant#2966): cron triggers can't run on a
- * timer inside a Cloud Run process, so each stable job id in
- * `src/scheduled-crons.ts` (`OPERATOR_CRON_JOBS` — the single source of truth)
- * becomes a Cloud Scheduler job that POSTs
+ * timer inside a Cloud Run process, so each graph-derived scheduled job becomes
+ * a Cloud Scheduler job that POSTs
  * `/__voyant/scheduled?schedule=<id>&cron=<expr>` with the origin-trust header.
  * The stable schedule id is the dispatch key; the cron expression remains in
  * the URL during rollout so older runtimes can still dispatch the job.
@@ -21,7 +20,7 @@
  * then pipe to a shell or paste into your provisioning tooling. Re-running with
  * `create` fails on existing jobs; switch to `update` in your IaC as needed.
  */
-import { OPERATOR_CRON_JOBS } from "../src/scheduled-crons.js"
+import { loadOperatorDeploymentGraphArtifacts } from "../src/deployment-graph-artifacts.js"
 
 function requireEnv(name: string): string {
   const value = process.env[name]
@@ -38,6 +37,7 @@ const timeZone = process.env.SCHEDULER_TIME_ZONE ?? "Etc/UTC"
 const jobPrefix = process.env.SCHEDULER_JOB_PREFIX ?? "operator"
 const location = process.env.SCHEDULER_LOCATION
 const oidcServiceAccount = process.env.SCHEDULER_OIDC_SERVICE_ACCOUNT
+const deploymentGraphArtifacts = loadOperatorDeploymentGraphArtifacts()
 
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`
@@ -50,9 +50,9 @@ const lines: string[] = [
   "",
 ]
 
-for (const job of OPERATOR_CRON_JOBS) {
+for (const job of deploymentGraphArtifacts.scheduledJobs) {
   const uri =
-    `${targetUrl}/__voyant/scheduled?schedule=${encodeURIComponent(job.id)}` +
+    `${targetUrl}${job.route}?schedule=${encodeURIComponent(job.id)}` +
     `&cron=${encodeURIComponent(job.cron)}`
   const args = [
     `gcloud scheduler jobs create http ${jobPrefix}-${job.id}`,

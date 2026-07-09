@@ -450,6 +450,41 @@ describe("deployment graph v1", () => {
     expect(graph.diagnostics).toEqual([])
   })
 
+  it("projects managed scheduled jobs into graph provisioning metadata", async () => {
+    const graph = await resolveManagedProfileDeploymentGraph(
+      defineVoyantProject({
+        profile: "operator",
+        frameworkVersion: "0.24.1",
+        modules: ["bookings", "catalog"],
+        plugins: [],
+      }),
+    )
+
+    expect(graph.provisioning.scheduledJobs).toEqual([
+      expect.objectContaining({
+        id: "draft-reaper",
+        cron: "5 * * * *",
+        route: "/__voyant/scheduled",
+        module: "catalog",
+      }),
+      expect.objectContaining({
+        id: "outbox-drain",
+        cron: "*/2 * * * *",
+        route: "/__voyant/scheduled",
+        module: "framework",
+      }),
+      expect.objectContaining({
+        id: "promotion-boundary-scheduler",
+        cron: "*/5 * * * *",
+        route: "/__voyant/scheduled",
+        module: "commerce",
+      }),
+    ])
+    expect(graph.provisioning.scheduledJobs.map((job) => job.id)).not.toEqual(
+      expect.arrayContaining(["channel-push-availability"]),
+    )
+  })
+
   it("validates admission policy against inferred package records", async () => {
     const project = defineProject({
       modules: [

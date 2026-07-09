@@ -16,11 +16,13 @@ import {
   type ResolveDeploymentGraphInput,
   resolveDeploymentGraph,
 } from "../packages/framework/src/deployment-graph.ts"
+import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
 import {
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST,
   OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST,
 } from "../starters/operator/deployment-graph.local.ts"
+import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
 import {
   buildDeploymentGraphDoctorJson,
   buildDeploymentGraphDoctorReport,
@@ -181,6 +183,10 @@ function resolveOperatorDeploymentGraph(
     ...options,
     project: graphProject,
     deployment,
+    scheduledJobs: [
+      ...(options.scheduledJobs ?? getManagedProfileScheduledJobs(project)),
+      ...OPERATOR_LOCAL_SCHEDULED_JOBS,
+    ],
     frameworkVersion: options.frameworkVersion ?? project.frameworkVersion,
     target: options.target ?? deployment.target,
     mode: options.mode ?? deployment.mode,

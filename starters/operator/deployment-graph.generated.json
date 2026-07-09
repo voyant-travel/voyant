@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:2bece857d9029971b23d24a23447062bbecbd2a487f375222247204e4ae04de4",
+  "contentHash": "sha256:b5edbb4e5b4bba529cd91f4d9e8eb84551df90e2f00468d4d5b40f03f39020fd",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -1309,7 +1309,7 @@
         "kind": "workspace",
         "reference": "link:../framework"
       },
-      "version": "0.27.0"
+      "version": "0.28.1"
     },
     {
       "packageName": "@voyant-travel/framework-migrations",
@@ -1880,6 +1880,59 @@
   ],
   "project": {
     "presetLineage": "operator-standard"
+  },
+  "provisioning": {
+    "scheduledJobs": [
+      {
+        "cron": "0 * * * *",
+        "description": "Channel-push availability reconciler (hourly).",
+        "id": "channel-push-availability",
+        "module": "distribution",
+        "route": "/__voyant/scheduled"
+      },
+      {
+        "cron": "*/15 * * * *",
+        "description": "Channel-push booking-link reconciler (every 15 min).",
+        "id": "channel-push-booking-link",
+        "module": "distribution",
+        "route": "/__voyant/scheduled"
+      },
+      {
+        "cron": "0 3 * * *",
+        "description": "Channel-push content reconciler (nightly at 03:00).",
+        "id": "channel-push-content",
+        "module": "distribution",
+        "route": "/__voyant/scheduled"
+      },
+      {
+        "cron": "5 * * * *",
+        "description": "Drops expired booking drafts (hourly at :05).",
+        "id": "draft-reaper",
+        "module": "catalog",
+        "route": "/__voyant/scheduled"
+      },
+      {
+        "cron": "30 3 * * *",
+        "description": "External cruise catalog refresh (nightly at 03:30).",
+        "id": "external-cruise-catalog-refresh",
+        "module": "@voyant-travel/operator#cruises",
+        "route": "/__voyant/scheduled"
+      },
+      {
+        "cron": "*/2 * * * *",
+        "description": "Redelivers failed/interrupted event-outbox deliveries (every 2 min).",
+        "id": "outbox-drain",
+        "module": "framework",
+        "route": "/__voyant/scheduled"
+      },
+      {
+        "cron": "*/5 * * * *",
+        "description": "Emits promotion.changed at valid_from / valid_until boundaries (every 5 min).",
+        "id": "promotion-boundary-scheduler",
+        "module": "commerce",
+        "route": "/__voyant/scheduled"
+      }
+    ]
   },
   "requirements": {
     "resources": [
