@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.25.0
+
+### Minor Changes
+
+- fd5c97d: Add the `@voyant-travel/framework/deployment-graph` subpath with v1 graph declarations, resolver diagnostics, managed-profile graph bridging, deterministic graph hashing, and an author test harness.
+
 ## 0.24.1
 
 ### Patch Changes
