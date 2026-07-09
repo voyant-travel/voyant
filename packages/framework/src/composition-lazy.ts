@@ -79,7 +79,14 @@ export interface FrameworkProviders {
   ) => import("@voyant-travel/finance/card-payment").CardPaymentStarter | null
   notificationsAutoConfirmAndDispatch?: CreateNotificationsHonoModuleOptions["autoConfirmAndDispatch"]
   createChannelPushExtension: () => HonoExtension
-  loadFlightAdminRoutes: LazyRoutesLoader
+  /**
+   * OPTIONAL: the `@voyant-travel/flights` family has no first-party real
+   * connector yet (only the demo adapter), so a deployment that doesn't run
+   * flights should not have to wire or install one. When this loader is omitted,
+   * `createVoyantApp` auto-excludes the flights module (see
+   * `OPTIONAL_FAMILY_LOADERS`) rather than forcing a stub.
+   */
+  loadFlightAdminRoutes?: LazyRoutesLoader
   loadMcpAdminRoutes: LazyRoutesLoader
   loadCatalogBookingRoutes: LazyRoutesLoader
   loadCatalogContentRoutes: LazyRoutesLoader
