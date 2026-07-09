@@ -48,6 +48,12 @@ workload class well. On Node none of it is necessary.
 - **Build:** `pnpm --filter operator build` (Vite, no `@cloudflare/vite-plugin`)
   emits `dist/client` + `dist/server/server.js`. **Run:** `pnpm --filter operator
   start` (`node dist/server/server.js`).
+- **Docker target:** `starters/operator/Dockerfile` is the reference
+  self-hosted Node image. Its build stage must call `pnpm --filter operator
+  build`, not raw Vite, so graph freshness and graph artifact copying stay on
+  the same path as local build. The runtime image boots `dist/server/server.js`,
+  which validates the graph artifacts and required graph resource env before
+  serving traffic.
 - **Graph contract:** `pnpm --filter operator dev`, `pnpm --filter operator
   db:migrate`, and standalone Node boot all load the generated deployment graph
   artifacts and fail before serving traffic or touching the database when
@@ -101,11 +107,13 @@ Avoid:
 - `import { createStartHandler } from "@tanstack/react-start/server"` in `entry.ts`;
 - `import "./workflows.js"`.
 
-The mechanical check lives in `scripts/check-node-entrypoint.mjs` and is part of
-`pnpm verify:architecture`: it asserts `src/server.ts` wires `createNodeServer`
+The mechanical checks live in `scripts/check-node-entrypoint.mjs` and
+`scripts/check-operator-docker-target.mjs` and are part of
+`pnpm verify:architecture`: they assert `src/server.ts` wires `createNodeServer`
 and graph artifact/resource validation, that `pnpm --filter operator dev` and
-`pnpm --filter operator db:migrate` preflight graph resource env, and that the
-app entry keeps those graphs lazy.
+`pnpm --filter operator db:migrate` preflight graph resource env, that the Docker
+target consumes the graph-checked build artifacts, and that the app entry keeps
+those graphs lazy.
 
 ## Stop-the-bleed policy
 
