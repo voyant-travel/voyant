@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 
@@ -9,6 +10,8 @@ const EXPECTED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node"
 const EXPECTED_NODE_RUNTIME_ENTRY_FILE = "src/runtime-entry.generated.ts"
 const EXPECTED_NODE_RUNTIME_ENTRY_KIND = "managed-profile-node"
 const EXPECTED_PROFILE_SNAPSHOT = "managed-profile.json"
+const EXPECTED_RUNTIME_ENTRY_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json"
+const EXPECTED_RUNTIME_ENTRY_PROFILE_SNAPSHOT_PATH = "../managed-profile.json"
 const SHA256_CONTENT_HASH_PATTERN = /^sha256:[a-f0-9]{64}$/
 
 export interface OperatorDeploymentGraphArtifactSummary {
@@ -83,11 +86,18 @@ export function loadOperatorDeploymentGraphArtifacts(
       `deployment artifact graphHash ${manifestGraphHash} does not match graph contentHash ${graphHash}`,
     )
   }
+  const canonicalGraphHash = computeGraphContentHash(graph)
+  if (graphHash !== canonicalGraphHash) {
+    throw new Error(
+      `deployment graph contentHash ${graphHash} does not match canonical graph hash ${canonicalGraphHash}`,
+    )
+  }
 
   const target = graphDeploymentTarget(graph)
   if (target !== "node") {
     throw new Error(`operator deployment graph target must be node, got ${String(target)}`)
   }
+  const mode = graphDeploymentMode(graph)
 
   const diagnostics = arrayOfRecords(graph.diagnostics, "deployment graph diagnostics")
   if (diagnostics.length > 0) {
@@ -163,7 +173,7 @@ export function loadOperatorDeploymentGraphArtifacts(
     )
   }
 
-  return {
+  const summary = {
     graphHash,
     moduleIds: collectStringField(graph.modules, "deployment graph modules", "id"),
     pluginIds: collectStringField(graph.plugins, "deployment graph plugins", "id"),
@@ -173,6 +183,10 @@ export function loadOperatorDeploymentGraphArtifacts(
       "packageName",
     ),
   }
+
+  validateGeneratedRuntimeEntrySource({ graphHash, manifestUrl, mode, summary, target })
+
+  return summary
 }
 
 function readJsonFile<T>(url: URL, label: string): T {
@@ -196,6 +210,129 @@ function graphDeploymentTarget(graph: ResolvedDeploymentGraph): string | undefin
   return deployment && typeof deployment === "object"
     ? stringField(deployment as Record<string, unknown>, "target")
     : undefined
+}
+
+function graphDeploymentMode(graph: ResolvedDeploymentGraph): string | undefined {
+  const deployment = graph.deployment
+  return deployment && typeof deployment === "object"
+    ? stringField(deployment as Record<string, unknown>, "mode")
+    : undefined
+}
+
+function computeGraphContentHash(graph: ResolvedDeploymentGraph): string {
+  const { contentHash: _contentHash, ...graphWithoutHash } = graph
+  return `sha256:${createHash("sha256").update(canonicalJson(graphWithoutHash)).digest("hex")}`
+}
+
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(canonicalize(value))
+}
+
+function canonicalize(value: unknown): unknown {
+  if (value === undefined) return null
+  if (value === null || typeof value !== "object") return value
+  if (Array.isArray(value)) return value.map(canonicalize)
+
+  const sorted: Record<string, unknown> = {}
+  for (const key of Object.keys(value).sort()) {
+    sorted[key] = canonicalize((value as Record<string, unknown>)[key])
+  }
+  return sorted
+}
+
+function validateGeneratedRuntimeEntrySource(input: {
+  graphHash: string
+  manifestUrl: URL
+  mode: string | undefined
+  summary: OperatorDeploymentGraphArtifactSummary
+  target: string
+}): void {
+  const runtimeEntryUrl = relativeArtifactUrl(EXPECTED_NODE_RUNTIME_ENTRY_FILE, input.manifestUrl)
+  const runtimeEntryFile = fileURLToPath(runtimeEntryUrl)
+  if (!existsSync(runtimeEntryFile)) return
+
+  const source = readFileSync(runtimeEntryFile, "utf8")
+  assertGeneratedStringConst(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION",
+    RESOLVED_GRAPH_SCHEMA_VERSION,
+  )
+  assertGeneratedStringConst(source, "GENERATED_DEPLOYMENT_GRAPH_HASH", input.graphHash)
+  assertGeneratedStringConst(source, "GENERATED_DEPLOYMENT_GRAPH_TARGET", input.target)
+  assertGeneratedStringConst(source, "GENERATED_DEPLOYMENT_GRAPH_MODE", input.mode)
+  assertGeneratedStringConst(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH",
+    EXPECTED_RUNTIME_ENTRY_GRAPH_ARTIFACT_PATH,
+  )
+  assertGeneratedStringConst(
+    source,
+    "GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH",
+    EXPECTED_RUNTIME_ENTRY_PROFILE_SNAPSHOT_PATH,
+  )
+  assertGeneratedStringArrayConst(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS",
+    input.summary.moduleIds,
+  )
+  assertGeneratedStringArrayConst(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS",
+    input.summary.pluginIds,
+  )
+  assertGeneratedStringArrayConst(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES",
+    input.summary.packageNames,
+  )
+}
+
+function assertGeneratedStringConst(source: string, name: string, expected: string | undefined) {
+  const actual = parseGeneratedStringConst(source, name)
+  if (actual === expected) return
+  throw new Error(
+    `generated runtime entry ${name} must be ${String(expected)}, got ${String(actual)}`,
+  )
+}
+
+function parseGeneratedStringConst(source: string, name: string): string | undefined {
+  const escapedName = escapeRegExp(name)
+  const match = source.match(
+    new RegExp(`export\\s+const\\s+${escapedName}\\s*=\\s*("(?:[^"\\\\]|\\\\.)*")\\s+as\\s+const`),
+  )
+  if (!match) return undefined
+  return JSON.parse(match[1]) as string
+}
+
+function assertGeneratedStringArrayConst(
+  source: string,
+  name: string,
+  expected: readonly string[],
+): void {
+  const actual = parseGeneratedStringArrayConst(source, name)
+  if (actual && stringArraysEqual(actual, expected)) return
+  throw new Error(`generated runtime entry ${name} must match deployment graph`)
+}
+
+function parseGeneratedStringArrayConst(source: string, name: string): string[] | undefined {
+  const escapedName = escapeRegExp(name)
+  const match = source.match(
+    new RegExp(`export\\s+const\\s+${escapedName}\\s*=\\s*\\[([\\s\\S]*?)\\]\\s+as\\s+const`),
+  )
+  if (!match) return undefined
+  return Array.from(match[1].matchAll(/"((?:[^"\\]|\\.)*)"/g), (entry) =>
+    JSON.parse(`"${entry[1]}"`),
+  )
+}
+
+function stringArraysEqual(actual: readonly string[], expected: readonly string[]): boolean {
+  return (
+    actual.length === expected.length && actual.every((value, index) => value === expected[index])
+  )
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 function requireString(value: unknown, label: string): string {
