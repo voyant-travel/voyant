@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.29.0
+
+### Minor Changes
+
+- 0049ba7: Expose graph-derived scheduled-job provisioning metadata on resolved deployment graphs.
+
 ## 0.28.1
 
 ### Patch Changes
