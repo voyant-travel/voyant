@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.26.1
+
+### Patch Changes
+
+- 0a4beea: Expose graph resource requirements from resolved deployment graphs.
+
 ## 0.26.0
 
 ### Minor Changes
