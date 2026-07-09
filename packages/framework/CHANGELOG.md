@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.26.0
+
+### Minor Changes
+
+- 57d3e71: Add deployment graph artifact helpers for deterministic resolved graph JSON,
+  artifact manifests, and managed Node runtime entry generation.
+
 ## 0.25.0
 
 ### Minor Changes
