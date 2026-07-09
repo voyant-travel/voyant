@@ -136,6 +136,15 @@ export interface VoyantGraphWorkflow extends VoyantGraphFacetEntity {
 
 export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {
   workflowId?: string
+  cron?: string
+  every?: string | number
+  at?: string
+  timezone?: string
+  input?: VoyantGraphJsonValue
+  enabled?: boolean
+  overlap?: "skip" | "queue" | "allow"
+  environments?: readonly ("production" | "preview" | "development")[]
+  name?: string
 }
 
 export interface VoyantGraphUnitManifest {
@@ -787,6 +796,13 @@ function toGraphJsonObject(value: unknown): VoyantGraphJsonObject | undefined {
   return JSON.parse(JSON.stringify(value)) as VoyantGraphJsonObject
 }
 
+function toGraphJsonValue(value: unknown): VoyantGraphJsonValue | undefined {
+  if (value === undefined || typeof value === "function") return undefined
+  const text = JSON.stringify(value)
+  if (text === undefined) return undefined
+  return JSON.parse(text) as VoyantGraphJsonValue
+}
+
 export async function sha256(value: unknown): Promise<string> {
   const text = canonicalJson(value)
   const bytes = new TextEncoder().encode(text)
@@ -894,7 +910,7 @@ function resolveUnit(
     links: sortFacetEntities(unit.links ?? []),
     subscribers: sortFacetEntities(unit.subscribers ?? []) as VoyantGraphSubscriber[],
     events: sortFacetEntities(unit.events ?? []) as VoyantGraphEvent[],
-    workflows: sortWorkflows(unit.workflows ?? []),
+    workflows: sortWorkflows(normalizeWorkflowScheduleFacets(unit.id, unit.workflows ?? [])),
   }
 }
 
@@ -910,6 +926,79 @@ function lowerManagedWorkflowFacet(workflow: ManagedWorkflowManifestEntry): Voya
     id: workflow.id,
     ...(config ? { config } : {}),
   }
+}
+
+function normalizeWorkflowScheduleFacets(
+  unitId: string,
+  workflows: readonly VoyantGraphWorkflow[],
+): VoyantGraphWorkflow[] {
+  return workflows.map((workflow) => {
+    const declared = workflow.schedules ?? []
+    const lowered =
+      isRecord(workflow.config) && workflow.config.schedule !== undefined
+        ? lowerWorkflowScheduleFacets(unitId, workflow.id, workflow.config.schedule)
+        : []
+    return lowered.length > 0 ? { ...workflow, schedules: [...declared, ...lowered] } : workflow
+  })
+}
+
+function lowerWorkflowScheduleFacets(
+  unitId: string,
+  workflowId: string,
+  value: unknown,
+): VoyantGraphWorkflowSchedule[] {
+  const schedules = Array.isArray(value) ? value : [value]
+  return schedules.flatMap((schedule, index) => {
+    const lowered = lowerWorkflowScheduleFacet(unitId, workflowId, schedule, index)
+    return lowered ? [lowered] : []
+  })
+}
+
+function lowerWorkflowScheduleFacet(
+  unitId: string,
+  workflowId: string,
+  value: unknown,
+  index: number,
+): VoyantGraphWorkflowSchedule | undefined {
+  if (!isRecord(value)) return undefined
+  const input = typeof value.input === "function" ? undefined : toGraphJsonValue(value.input)
+  const environments = normalizeScheduleEnvironments(value.environments)
+  return {
+    id: childGraphEntityId(unitId, `schedule.${workflowId}.${scheduleEntityKey(value, index)}`),
+    workflowId,
+    ...(typeof value.cron === "string" ? { cron: value.cron } : {}),
+    ...(typeof value.every === "string" || typeof value.every === "number"
+      ? { every: value.every }
+      : {}),
+    ...(typeof value.at === "string"
+      ? { at: value.at }
+      : value.at instanceof Date
+        ? { at: value.at.toISOString() }
+        : {}),
+    ...(typeof value.timezone === "string" ? { timezone: value.timezone } : {}),
+    ...(input !== undefined ? { input } : {}),
+    ...(typeof value.enabled === "boolean" ? { enabled: value.enabled } : {}),
+    ...(value.overlap === "skip" || value.overlap === "queue" || value.overlap === "allow"
+      ? { overlap: value.overlap }
+      : {}),
+    ...(environments.length > 0 ? { environments } : {}),
+    ...(typeof value.name === "string" ? { name: value.name } : {}),
+  }
+}
+
+function scheduleEntityKey(value: Record<string, unknown>, index: number): string {
+  if (typeof value.name === "string" && isGraphEntityIdSegment(value.name)) return value.name
+  return `schedule-${index + 1}`
+}
+
+function normalizeScheduleEnvironments(
+  value: unknown,
+): Array<"production" | "preview" | "development"> {
+  if (!Array.isArray(value)) return []
+  return value.filter(
+    (entry): entry is "production" | "preview" | "development" =>
+      entry === "production" || entry === "preview" || entry === "development",
+  )
 }
 
 function lowerManagedEventFacets(unitId: string, moduleSpecifier: string): VoyantGraphEvent[] {
@@ -1412,6 +1501,10 @@ function packageNameFromGraphId(id: string): string {
 
 function isCanonicalGraphId(id: string): boolean {
   return GRAPH_ID_PATTERN.test(id)
+}
+
+function isGraphEntityIdSegment(value: string): boolean {
+  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(value)
 }
 
 function usesReservedCapabilityNamespace(token: string): boolean {

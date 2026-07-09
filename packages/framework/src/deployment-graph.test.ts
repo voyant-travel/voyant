@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while the resolver, diagnostics, hashing, and managed-profile bridge share one contract harness.
 import {
   bulkReindexProductsWorkflowManifest,
   promotionAffectedAllFilter,
@@ -51,6 +52,7 @@ describe("deployment graph v1", () => {
         }),
       ]),
     )
+    expect(validateGraphUnitManifest(module)).toEqual([])
   })
 
   it("rejects bare legacy aliases as canonical graph ids", () => {
@@ -88,6 +90,89 @@ describe("deployment graph v1", () => {
         expect.objectContaining({ code: "VOYANT_GRAPH_MISSING_CAPABILITY" }),
       ]),
     )
+  })
+
+  it("lowers workflow schedule descriptors into nested stable graph entities", async () => {
+    const project = defineProject({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-automation",
+          workflows: [
+            {
+              id: "daily-rollup",
+              config: {
+                defaultRuntime: "node",
+                schedule: [
+                  {
+                    cron: "0 * * * *",
+                    timezone: "UTC",
+                    environments: ["production"],
+                    input: { kind: "hourly" },
+                    overlap: "skip",
+                    name: "hourly",
+                  },
+                  {
+                    at: "2026-01-01T12:00:00.000Z",
+                    enabled: false,
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project, target: "node", mode: "self-hosted" })
+    const [unit] = graph.modules
+
+    expect(unit?.workflows[0]?.schedules).toEqual([
+      {
+        id: "@acme/voyant-automation#schedule.daily-rollup.hourly",
+        workflowId: "daily-rollup",
+        cron: "0 * * * *",
+        timezone: "UTC",
+        environments: ["production"],
+        input: { kind: "hourly" },
+        overlap: "skip",
+        name: "hourly",
+      },
+      {
+        id: "@acme/voyant-automation#schedule.daily-rollup.schedule-2",
+        workflowId: "daily-rollup",
+        at: "2026-01-01T12:00:00.000Z",
+        enabled: false,
+      },
+    ])
+    expect(graph.diagnostics).toEqual([])
+  })
+
+  it("detects duplicate workflow schedule entity ids after descriptor lowering", async () => {
+    const project = defineProject({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-automation",
+          workflows: [
+            {
+              id: "daily-rollup",
+              schedules: [{ id: "@acme/voyant-automation#schedule.daily-rollup.hourly" }],
+              config: {
+                schedule: { cron: "0 * * * *", name: "hourly" },
+              },
+            },
+          ],
+        }),
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project, target: "node", mode: "self-hosted" })
+
+    expect(graph.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
+        source: "@acme/voyant-automation",
+      }),
+    ])
   })
 
   it("hashes deterministic canonical graph content", async () => {

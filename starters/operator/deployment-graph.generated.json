@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:fa12612d273b8c480a798266dd55fe5a92ad5955a1aa7c9d5d4e14dd1da0efe8",
+  "contentHash": "sha256:2bece857d9029971b23d24a23447062bbecbd2a487f375222247204e4ae04de4",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -1309,7 +1309,7 @@
         "kind": "workspace",
         "reference": "link:../framework"
       },
-      "version": "0.26.1"
+      "version": "0.27.0"
     },
     {
       "packageName": "@voyant-travel/framework-migrations",
