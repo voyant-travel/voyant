@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "dev": "node -r ./scripts/env-preload.cjs node_modules/vite/bin/vite.js dev --port 3300",
+    "dev": "pnpm run graph:check && node -r ./scripts/env-preload.cjs node_modules/vite/bin/vite.js dev --port 3300",
     "build": "pnpm run graph:check && vite build && pnpm run copy:deployment-artifacts",
     "copy:deployment-artifacts": "cp managed-profile.json deployment-artifacts.generated.json deployment-graph.generated.json dist/",
     "preview": "pnpm run build && vite preview",
