@@ -1,5 +1,12 @@
 # @voyant-travel/admin-host
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [e232b21]
+  - @voyant-travel/runtime@0.5.0
+
 ## 0.2.0
 
 ### Minor Changes
