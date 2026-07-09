@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.27.0
+
+### Minor Changes
+
+- 410afa7: Add deployment graph doctor diagnostics for generated artifacts and lower first-party workflow event-filter metadata into resolved graph facets.
+
 ## 0.26.1
 
 ### Patch Changes
