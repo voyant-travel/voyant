@@ -94,8 +94,6 @@
     "@voyant-travel/operations-react": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
     "@voyant-travel/operator-settings-react": "workspace:^",
-    "@voyant-travel/plugin-catalog-demo": "workspace:^",
-    "@voyant-travel/plugin-flights-demo": "workspace:^",
     "@voyant-travel/plugin-netopia": "^0.105.18",
     "@voyant-travel/plugin-smartbill": "^0.137.3",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
@@ -147,6 +145,10 @@
     "typesense": "^3.0.6",
     "vaul": "^1.1.2",
     "zod": "catalog:"
+  },
+  "optionalDependencies": {
+    "@voyant-travel/plugin-catalog-demo": "workspace:^",
+    "@voyant-travel/plugin-flights-demo": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/devtools-vite": "^0.8.1",

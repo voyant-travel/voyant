@@ -10,7 +10,6 @@
  * Each exported function keeps the `(c, input)` signature the trips route wiring
  * (`trips-runtime.ts`) already imports.
  */
-import { createDemoFlightAdapter } from "@voyant-travel/plugin-flights-demo"
 import type {
   CancelComponentInput,
   CancelComponentResult,
@@ -26,6 +25,18 @@ import {
   previewFlightCancellation,
 } from "@voyant-travel/trips/flight-component"
 import type { Context } from "hono"
+
+import { isDemoInstalled } from "../lib/demo-availability"
+
+const FLIGHTS_DEMO_SPECIFIER = "@voyant-travel/plugin-flights-demo"
+
+const createDemoFlightAdapter = isDemoInstalled(FLIGHTS_DEMO_SPECIFIER)
+  ? (
+      (await import(FLIGHTS_DEMO_SPECIFIER)) as {
+        createDemoFlightAdapter: (options: { baseUrl: string }) => never
+      }
+    ).createDemoFlightAdapter
+  : undefined
 
 /** Build the trips flight-component adapter for a request, injecting the
  * deployment's concrete flight adapter + adapter context. */
@@ -64,6 +75,9 @@ export function cancelFlightComponent(
 }
 
 function getFlightAdapter(c: Context) {
+  if (!createDemoFlightAdapter) {
+    throw new Error("@voyant-travel/plugin-flights-demo is not installed.")
+  }
   const baseUrl = (c.env as { FLIGHTS_DEMO_API_URL?: string }).FLIGHTS_DEMO_API_URL
   if (!baseUrl) {
     throw new Error(

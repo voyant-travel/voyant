@@ -11,6 +11,7 @@ import {
 } from "@voyant-travel/trips"
 import type { Context } from "hono"
 import { withDbFromEnv } from "../lib/db"
+import { isDemoInstalled } from "../lib/demo-availability"
 import {
   cancelComponent as cancelCatalogComponent,
   previewComponentCancellation as previewCatalogComponentCancellation,
@@ -20,12 +21,8 @@ import {
   startComponentCheckout,
 } from "./trips-catalog-runtime"
 import { startTripCheckout } from "./trips-checkout-runtime"
-import {
-  cancelFlightComponent,
-  previewFlightComponentCancellation,
-  reserveNonCatalogComponent,
-  validateNonCatalogComponentBeforeReserve,
-} from "./trips-flight-runtime"
+
+const flightDemoInstalled = isDemoInstalled("@voyant-travel/plugin-flights-demo")
 
 export function createOperatorTripsRoutesOptions(): TripsRoutesOptions {
   return {
@@ -73,8 +70,16 @@ function createPriceTripDeps(c: Context): PriceTripDeps {
 export function createReserveTripDeps(c: Context): ReserveTripDeps {
   return {
     quoteCatalogComponentBeforeReserve: (input) => quoteCatalogComponent(c, input),
-    validateNonCatalogComponentBeforeReserve: (input) =>
-      validateNonCatalogComponentBeforeReserve(c, input),
+    ...(flightDemoInstalled
+      ? {
+          validateNonCatalogComponentBeforeReserve: async (input) => {
+            const { validateNonCatalogComponentBeforeReserve } = await import(
+              "./trips-flight-runtime"
+            )
+            return validateNonCatalogComponentBeforeReserve(c, input)
+          },
+        }
+      : {}),
     submitReservationPlan: async (input) => {
       const submitted = await submitBookingReservationPlan(
         {
@@ -99,12 +104,18 @@ export function createReserveTripDeps(c: Context): ReserveTripDeps {
               component: line.line,
               reservationPlanId: plan.reservationPlanId,
             }),
-          reserveNonCatalogLine: ({ plan, line }) =>
-            reserveNonCatalogComponent(c, {
-              envelope: plan.envelope,
-              component: line.line,
-              reservationPlanId: plan.reservationPlanId,
-            }),
+          ...(flightDemoInstalled
+            ? {
+                reserveNonCatalogLine: async ({ plan, line }) => {
+                  const { reserveNonCatalogComponent } = await import("./trips-flight-runtime")
+                  return reserveNonCatalogComponent(c, {
+                    envelope: plan.envelope,
+                    component: line.line,
+                    reservationPlanId: plan.reservationPlanId,
+                  })
+                },
+              }
+            : {}),
           releaseReservedLine: ({ line, result }) => {
             if (line.kind !== "catalog_backed") {
               return Promise.resolve({ released: false, reason: "release_not_configured" })
@@ -142,13 +153,19 @@ export function createStartCheckoutDeps(c: Context): StartCheckoutDeps {
 
 export function createCancelTripComponentsDeps(c: Context): CancelTripComponentsDeps {
   return {
-    previewComponentCancellation: (input) =>
-      input.component.kind === "flight_placeholder"
-        ? previewFlightComponentCancellation(input)
-        : previewCatalogComponentCancellation(input),
-    cancelComponent: (input) =>
-      input.component.kind === "flight_placeholder"
-        ? cancelFlightComponent(c, input)
-        : cancelCatalogComponent(c, input),
+    previewComponentCancellation: async (input) => {
+      if (input.component.kind !== "flight_placeholder" || !flightDemoInstalled) {
+        return previewCatalogComponentCancellation(input)
+      }
+      const { previewFlightComponentCancellation } = await import("./trips-flight-runtime")
+      return previewFlightComponentCancellation(input)
+    },
+    cancelComponent: async (input) => {
+      if (input.component.kind !== "flight_placeholder" || !flightDemoInstalled) {
+        return cancelCatalogComponent(c, input)
+      }
+      const { cancelFlightComponent } = await import("./trips-flight-runtime")
+      return cancelFlightComponent(c, input)
+    },
   }
 }

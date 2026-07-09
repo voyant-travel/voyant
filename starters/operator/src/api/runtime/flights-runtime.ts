@@ -17,10 +17,20 @@ import {
   createFlightOrderPaymentIntegration,
   type FlightCardBilling,
 } from "@voyant-travel/flights"
-import { createDemoFlightAdapter } from "@voyant-travel/plugin-flights-demo"
 import type { Context } from "hono"
 
+import { isDemoInstalled } from "../lib/demo-availability"
 import { cardPaymentStarter } from "./card-payment"
+
+const FLIGHTS_DEMO_SPECIFIER = "@voyant-travel/plugin-flights-demo"
+
+const createDemoFlightAdapter = isDemoInstalled(FLIGHTS_DEMO_SPECIFIER)
+  ? (
+      (await import(FLIGHTS_DEMO_SPECIFIER)) as {
+        createDemoFlightAdapter: (options: { baseUrl: string }) => never
+      }
+    ).createDemoFlightAdapter
+  : undefined
 
 /**
  * Resolve the flight connector adapter. The demo adapter is a thin HTTP client
@@ -28,6 +38,9 @@ import { cardPaymentStarter } from "./card-payment"
  * GDS connector is a one-line change here.
  */
 function resolveAdapter(c: Context) {
+  if (!createDemoFlightAdapter) {
+    throw new Error("@voyant-travel/plugin-flights-demo is not installed.")
+  }
   const baseUrl = (c.env as { FLIGHTS_DEMO_API_URL?: string }).FLIGHTS_DEMO_API_URL
   if (!baseUrl) {
     throw new Error(

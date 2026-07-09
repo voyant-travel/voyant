@@ -9,7 +9,6 @@ import {
   type OwnedBookingHandlerRegistry,
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
-import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
 import {
   createVoyantConnectSources,
   type PrepareVoyantConnectSourcesOptions,
@@ -24,6 +23,7 @@ import {
   registerCruiseAdapters,
   syncVerticalRegistryFromCatalog,
 } from "./cruise-adapters-runtime"
+import { isDemoInstalled } from "./demo-availability"
 import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers"
 
 // `VoyantConnectConnectionCache` isn't re-exported from the package root (0.3.0),
@@ -31,6 +31,16 @@ import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers"
 type VoyantConnectConnectionCache = NonNullable<
   PrepareVoyantConnectSourcesOptions["connectionCache"]
 >
+
+const CATALOG_DEMO_SPECIFIER = "@voyant-travel/plugin-catalog-demo"
+
+const createDemoCatalogAdapter = isDemoInstalled(CATALOG_DEMO_SPECIFIER)
+  ? (
+      (await import(CATALOG_DEMO_SPECIFIER)) as {
+        createDemoCatalogAdapter: (options: { baseUrl: string }) => never
+      }
+    ).createDemoCatalogAdapter
+  : undefined
 
 let _registry: SourceAdapterRegistry | undefined
 let _ownedHandlers: OwnedBookingHandlerRegistry | undefined
@@ -47,7 +57,7 @@ let _connectWarm: Promise<void> | undefined
 function ensureRegistry(env: BookingEngineEnv): SourceAdapterRegistry {
   if (!_registry) {
     const registry = createSourceAdapterRegistry()
-    if (env.CATALOG_DEMO_API_URL) {
+    if (env.CATALOG_DEMO_API_URL && createDemoCatalogAdapter) {
       registry.register(createDemoCatalogAdapter({ baseUrl: env.CATALOG_DEMO_API_URL }))
     }
     registerVoyantConnectFallback(registry, env)

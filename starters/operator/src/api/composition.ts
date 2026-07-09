@@ -48,6 +48,7 @@ import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
+import { isDemoInstalled } from "./lib/demo-availability"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
 import {
@@ -105,8 +106,10 @@ export interface OperatorCapabilities extends FrameworkProviders {
  * Build the operator provider container (gathers deployment resolvers/loaders).
  * Providers are bindings-deferred closures, so no `env` is needed here.
  */
-export function buildOperatorProviders(): OperatorCapabilities {
-  return {
+export function buildOperatorProviders(
+  demoInstalled: (specifier: string) => boolean = isDemoInstalled,
+): OperatorCapabilities {
+  const providers: OperatorCapabilities = {
     customFields: resolveOperatorCustomFields,
     resolveNotificationProviders,
     resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
@@ -148,8 +151,6 @@ export function buildOperatorProviders(): OperatorCapabilities {
     createChannelPushExtension,
     // Lazy route-bundle loaders for the `operator/*` standard families — each
     // wires this deployment's providers into the package-owned route bundle.
-    loadFlightAdminRoutes: () =>
-      import("./runtime/flights-runtime").then((m) => m.buildFlightAdminRoutes()),
     loadMcpAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
     loadCatalogBookingRoutes: () =>
       import("./runtime/catalog-booking-runtime").then((m) => {
@@ -224,6 +225,13 @@ export function buildOperatorProviders(): OperatorCapabilities {
     loadCatalogCheckoutRoutes: () =>
       import("./routes/catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
   }
+
+  if (demoInstalled("@voyant-travel/plugin-flights-demo")) {
+    providers.loadFlightAdminRoutes = () =>
+      import("./runtime/flights-runtime").then((m) => m.buildFlightAdminRoutes())
+  }
+
+  return providers
 }
 
 function createLazyCatalogSearchRuntime(

@@ -24,6 +24,22 @@ describe("operator runtime composition", () => {
     )
   })
 
+  it("omits flight admin routes when the flight demo plugin is unavailable", () => {
+    const providers = buildOperatorProviders(
+      (specifier) => specifier !== "@voyant-travel/plugin-flights-demo",
+    )
+
+    expect(providers.loadFlightAdminRoutes).toBeUndefined()
+  })
+
+  it("includes flight admin routes when the flight demo plugin is available", () => {
+    const providers = buildOperatorProviders(
+      (specifier) => specifier === "@voyant-travel/plugin-flights-demo",
+    )
+
+    expect(providers.loadFlightAdminRoutes).toBeTypeOf("function")
+  })
+
   it("registry covers the manifest exactly (no missing factories, no orphans)", () => {
     const modules = diffManifestRegistry(
       OPERATOR_RUNTIME_MANIFEST.modules,
