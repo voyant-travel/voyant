@@ -8,7 +8,15 @@ import {
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
 } from "../packages/framework/src/deployment-artifacts.ts"
-import { resolveManagedProfileDeploymentGraph } from "../packages/framework/src/deployment-graph.ts"
+import {
+  defineDeploymentFromManagedProfile,
+  defineProject,
+  defineProjectFromManagedProfile,
+  type ResolveDeploymentGraphInput,
+  resolveDeploymentGraph,
+} from "../packages/framework/src/deployment-graph.ts"
+import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
+import { OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST } from "../starters/operator/deployment-graph.local.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 
 interface CliOptions {
@@ -90,13 +98,43 @@ async function main(): Promise<void> {
 }
 
 async function resolveGraph(profilePath: string) {
-  const project = JSON.parse(await readFile(profilePath, "utf8"))
-  const discoveredGraph = await resolveManagedProfileDeploymentGraph(project)
+  const project = JSON.parse(await readFile(profilePath, "utf8")) as VoyantProjectManifest
+  const discoveredGraph = await resolveOperatorDeploymentGraph(project)
   const packageRecords = readPnpmLockfilePackageRecords({
     repoRoot,
-    packageNames: discoveredGraph.packageRecords.map((record) => record.packageName),
+    packageNames: [
+      "@voyant-travel/framework",
+      "@voyant-travel/framework-migrations",
+      ...discoveredGraph.packageRecords.map((record) => record.packageName),
+    ],
   })
-  return resolveManagedProfileDeploymentGraph(project, { packageRecords })
+  return resolveOperatorDeploymentGraph(project, { packageRecords })
+}
+
+function resolveOperatorDeploymentGraph(
+  project: VoyantProjectManifest,
+  options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
+) {
+  const graphProject = defineOperatorGraphProject(project)
+  const { project: _managedProject, ...deployment } = defineDeploymentFromManagedProfile(project)
+  return resolveDeploymentGraph({
+    ...options,
+    project: graphProject,
+    deployment,
+    frameworkVersion: options.frameworkVersion ?? project.frameworkVersion,
+    target: options.target ?? deployment.target,
+    mode: options.mode ?? deployment.mode,
+  })
+}
+
+function defineOperatorGraphProject(project: VoyantProjectManifest) {
+  const managedProject = defineProjectFromManagedProfile(project)
+  return defineProject({
+    presetLineage: managedProject.presetLineage,
+    modules: [...managedProject.modules, ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.modules],
+    plugins: [...managedProject.plugins, ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.plugins],
+    meta: managedProject.meta,
+  })
 }
 
 async function writeGeneratedFile(filePath: string, text: string): Promise<void> {

@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { startManagedProfileRuntime } from "@voyant-travel/framework/managed-runtime"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:963c397abac564cd5aea200269c5492fc9057bc35d1bfb853dbb97a796552130" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:4e90fce9c92fa2a651ae591bab8c7c2fbabafdc711e68732b274d687ca17af2c" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const
@@ -39,6 +39,12 @@ export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = [
   "@voyant-travel/operator#media",
   "@voyant-travel/operator#payment-link",
   "@voyant-travel/operator#contract-document",
+  "@voyant-travel/operator#invitations",
+  "@voyant-travel/operator#team",
+  "@voyant-travel/operator#cruises",
+  "@voyant-travel/operator#charters",
+  "@voyant-travel/operator#realtime",
+  "@voyant-travel/mice",
 ] as const
 export const GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS = [
   "@voyant-travel/bookings#booking-supplier-extension",
@@ -56,6 +62,7 @@ export const GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS = [
   "@voyant-travel/operator#proposal-extension",
   "@voyant-travel/operator#catalog-offers-extension",
   "@voyant-travel/operator#catalog-checkout-extension",
+  "@voyant-travel/mice#booking-extension",
 ] as const
 export const GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES = [
   "@voyant-travel/accommodations",
@@ -71,6 +78,7 @@ export const GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES = [
   "@voyant-travel/identity",
   "@voyant-travel/inventory",
   "@voyant-travel/legal",
+  "@voyant-travel/mice",
   "@voyant-travel/notifications",
   "@voyant-travel/operations",
   "@voyant-travel/operator",

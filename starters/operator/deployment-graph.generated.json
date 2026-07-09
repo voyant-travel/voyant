@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:963c397abac564cd5aea200269c5492fc9057bc35d1bfb853dbb97a796552130",
+  "contentHash": "sha256:4e90fce9c92fa2a651ae591bab8c7c2fbabafdc711e68732b274d687ca17af2c",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -750,6 +750,197 @@
       "schema": [],
       "subscribers": [],
       "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/operator#invitations.api.admin",
+          "mount": "operator/invitations",
+          "surface": "admin"
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/operator#invitations.api.public",
+          "mount": "operator/invitations",
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/operator#invitations",
+      "kind": "module",
+      "links": [],
+      "localId": "operator.invitations",
+      "migrations": [],
+      "order": 26,
+      "packageName": "@voyant-travel/operator",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/operator#team.api.admin",
+          "mount": "operator/team",
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/operator#team",
+      "kind": "module",
+      "links": [],
+      "localId": "operator.team",
+      "migrations": [],
+      "order": 27,
+      "packageName": "@voyant-travel/operator",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/operator#cruises.api.admin",
+          "mount": "operator/cruises",
+          "surface": "admin"
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/operator#cruises.api.public",
+          "mount": "operator/cruises",
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/operator#cruises",
+      "kind": "module",
+      "links": [],
+      "localId": "operator.cruises",
+      "migrations": [],
+      "order": 28,
+      "packageName": "@voyant-travel/operator",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/operator#charters.api.admin",
+          "mount": "operator/charters",
+          "surface": "admin"
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/operator#charters.api.public",
+          "mount": "operator/charters",
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/operator#charters",
+      "kind": "module",
+      "links": [],
+      "localId": "operator.charters",
+      "migrations": [],
+      "order": 29,
+      "packageName": "@voyant-travel/operator",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/operator#realtime.api.admin",
+          "mount": "operator/realtime",
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/operator#realtime.api.public",
+          "mount": "operator/realtime",
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/operator#realtime",
+      "kind": "module",
+      "links": [],
+      "localId": "operator.realtime",
+      "migrations": [],
+      "order": 30,
+      "packageName": "@voyant-travel/operator",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/mice#api.admin",
+          "mount": "@voyant-travel/mice",
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/mice",
+      "kind": "module",
+      "links": [],
+      "localId": "mice",
+      "migrations": [],
+      "order": 31,
+      "packageName": "@voyant-travel/mice",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
     }
   ],
   "packageRecords": [
@@ -856,6 +1047,14 @@
         "reference": "link:../legal"
       },
       "version": "0.149.0"
+    },
+    {
+      "packageName": "@voyant-travel/mice",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../mice"
+      },
+      "version": "0.6.8"
     },
     {
       "packageName": "@voyant-travel/notifications",
@@ -1327,6 +1526,34 @@
       "migrations": [],
       "order": 14,
       "packageName": "@voyant-travel/operator",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/mice#booking-extension.api.admin",
+          "mount": "@voyant-travel/mice/booking-extension",
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/mice#booking-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "mice.booking-extension",
+      "migrations": [],
+      "order": 15,
+      "packageName": "@voyant-travel/mice",
       "provides": {
         "capabilities": [],
         "ports": []

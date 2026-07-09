@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises"
+
 import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
@@ -11,6 +13,10 @@ import {
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
 } from "../packages/framework/src/deployment-graph.ts"
 import { defineVoyantProject } from "../packages/framework/src/profile.ts"
+import {
+  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
+  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
+} from "../starters/operator/deployment-graph.local.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 
 const failures: string[] = []
@@ -114,6 +120,16 @@ async function main(): Promise<void> {
     failures.push("expected managed graph to include selected plugin @voyant-travel/plugin-netopia")
   }
 
+  const operatorGraph = await readOperatorGeneratedGraph()
+  const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
+  const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
+  for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS) {
+    if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
+  }
+  for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS) {
+    if (!operatorPluginIds.has(id)) failures.push(`expected operator graph to include ${id}`)
+  }
+
   const frameworkRecord = first.packageRecords.find(
     (record) => record.packageName === "@voyant-travel/framework",
   )
@@ -151,6 +167,21 @@ async function main(): Promise<void> {
   console.log(
     `check-deployment-graph: OK (${first.modules.length} modules, ${first.plugins.length} plugins, ${first.contentHash})`,
   )
+}
+
+async function readOperatorGeneratedGraph(): Promise<{
+  modules: Array<{ id: string }>
+  plugins: Array<{ id: string }>
+}> {
+  return JSON.parse(
+    await readFile(
+      new URL("../starters/operator/deployment-graph.generated.json", import.meta.url),
+      "utf8",
+    ),
+  ) as {
+    modules: Array<{ id: string }>
+    plugins: Array<{ id: string }>
+  }
 }
 
 main().catch((error) => {
