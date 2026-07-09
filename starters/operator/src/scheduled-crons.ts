@@ -1,7 +1,7 @@
-// Runtime-neutral cron declarations. These expressions are the single source of
-// truth for the operator's scheduled work: `entry.ts` `scheduled()` dispatches
-// off them, and `scripts/emit-cloud-scheduler.ts` fans them out to Cloud
-// Scheduler jobs that POST `/__voyant/scheduled?cron=<expr>` on the Node runtime.
+// Runtime-neutral scheduled job declarations. Stable ids are the dispatch keys
+// for the operator's scheduled work: `entry.ts` `scheduled()` resolves them, and
+// `scripts/emit-cloud-scheduler.ts` fans them out to Cloud Scheduler jobs that
+// POST `/__voyant/scheduled?schedule=<id>&cron=<expr>` on the Node runtime.
 //
 // The STANDARD job set is now owned by the framework and derived from the
 // composed module set (voyant#3032) — `@voyant-travel/framework/managed-jobs` —
@@ -60,3 +60,18 @@ export const OPERATOR_CRON_JOBS: readonly CronJob[] = [
     description: "External cruise catalog refresh (nightly at 03:30).",
   },
 ]
+
+export interface ScheduledDispatchKey {
+  cron?: string
+  scheduleId?: string
+}
+
+export function resolveOperatorCronJob(event: ScheduledDispatchKey) {
+  if (event.scheduleId) {
+    return OPERATOR_CRON_JOBS.find((job) => job.id === event.scheduleId)
+  }
+  if (event.cron) {
+    return OPERATOR_CRON_JOBS.find((job) => job.cron === event.cron)
+  }
+  return undefined
+}

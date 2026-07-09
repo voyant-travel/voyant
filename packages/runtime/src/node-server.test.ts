@@ -96,6 +96,52 @@ describe("createNodeServer", () => {
     expect(seenCron).toBe("*/2 * * * *")
   })
 
+  it("dispatches the scheduled handler over HTTP with the stable schedule id", async () => {
+    let seenScheduleId: string | undefined
+    let seenCron: string | undefined
+    const handle = boot({
+      env: {},
+      originTrustSecret: "top-secret",
+      fetch: () => new Response("app"),
+      scheduled: (event) => {
+        seenScheduleId = event.scheduleId
+        seenCron = event.cron
+      },
+    })
+    const port = await ready(handle)
+
+    const res = await fetch(`http://127.0.0.1:${port}/__voyant/scheduled?schedule=outbox-drain`, {
+      method: "POST",
+      headers: { [ORIGIN_TRUST_HEADER]: "top-secret" },
+    })
+    expect(res.status).toBe(202)
+    expect(seenScheduleId).toBe("outbox-drain")
+    expect(seenCron).toBeUndefined()
+  })
+
+  it("dispatches both stable schedule id and legacy cron when both are present", async () => {
+    let seenScheduleId: string | undefined
+    let seenCron: string | undefined
+    const handle = boot({
+      env: {},
+      originTrustSecret: "top-secret",
+      fetch: () => new Response("app"),
+      scheduled: (event) => {
+        seenScheduleId = event.scheduleId
+        seenCron = event.cron
+      },
+    })
+    const port = await ready(handle)
+
+    const res = await fetch(
+      `http://127.0.0.1:${port}/__voyant/scheduled?schedule=outbox-drain&cron=${encodeURIComponent("*/2 * * * *")}`,
+      { method: "POST", headers: { [ORIGIN_TRUST_HEADER]: "top-secret" } },
+    )
+    expect(res.status).toBe(202)
+    expect(seenScheduleId).toBe("outbox-drain")
+    expect(seenCron).toBe("*/2 * * * *")
+  })
+
   it("requires trust for the scheduled hook", async () => {
     const handle = boot({
       env: {},
