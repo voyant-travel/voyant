@@ -39,6 +39,7 @@
     "@voyant-travel/mice-react": "workspace:^",
     "@voyant-travel/notifications-react": "workspace:^",
     "@voyant-travel/operations-react": "workspace:^",
+    "@voyant-travel/operator-settings-react": "workspace:^",
     "@voyant-travel/quotes-react": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/runtime": "workspace:^",

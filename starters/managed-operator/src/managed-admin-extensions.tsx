@@ -21,6 +21,7 @@ import { createLegalAdminExtension } from "@voyant-travel/legal-react/admin"
 import { createMiceAdminExtension } from "@voyant-travel/mice-react/admin"
 import { createNotificationsAdminExtension } from "@voyant-travel/notifications-react/admin"
 import { createOperationsAdminExtension } from "@voyant-travel/operations-react/admin"
+import { createOperatorProfileSettingsExtraPage } from "@voyant-travel/operator-settings-react/settings"
 import { createQuotesAdminExtension } from "@voyant-travel/quotes-react/admin"
 import { createRelationshipsAdminExtension } from "@voyant-travel/relationships-react/admin"
 import { createTripsAdminExtension } from "@voyant-travel/trips-react/admin"
@@ -237,7 +238,15 @@ export function createManagedAdminExtensions(): AdminExtension[] {
   return [
     ...withManagedRouteMessagesProviders(
       createAdminExtensionRegistry(
-        createAdminCoreExtension(),
+        // The Operator Profile settings page is the one GENERAL settings item
+        // that is not a built-in core page — it edits the operator's
+        // contract identity via `@voyant-travel/operator-settings`'s
+        // `/v1/admin/settings/operator-*` routes (already mounted on the
+        // managed runtime). Mount the packaged, source-free page as an extra
+        // settings page so the managed admin matches the operator starter.
+        createAdminCoreExtension({
+          settings: { extraPages: [createOperatorProfileSettingsExtraPage()] },
+        }),
         createOperationsAdminExtension(),
         createBookingsAdminExtension(),
         createCatalogAdminExtension({
