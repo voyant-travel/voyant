@@ -53,6 +53,7 @@ export {
   type VoyantProfileEnvRequirement,
   type VoyantProfileMigrationMetadata,
   type VoyantProfileModuleDefinition,
+  type VoyantProfileModuleMigrationSource,
   type VoyantProfileRequirements,
   type VoyantProfileResourceRequirement,
   type VoyantProfileValidationIssue,

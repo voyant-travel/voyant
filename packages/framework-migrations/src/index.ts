@@ -35,3 +35,10 @@ export {
   packageRootOfSchemaPath,
 } from "./discover.js"
 export { loadMigrationFolder } from "./load-folder.js"
+export {
+  type CollectManagedMigrationSourcesOptions,
+  collectManagedMigrationSources,
+  type LoadModuleBundleSourceOptions,
+  loadModuleBundleSource,
+  moduleSourceName,
+} from "./module-source.js"
