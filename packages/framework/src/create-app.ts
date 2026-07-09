@@ -88,17 +88,19 @@ export interface CreateVoyantAppConfig<
    * REMOVE (ADR-0007): standard module *and/or extension* specifiers to drop from
    * the framework set entirely — for a deployment that simply doesn't run them
    * (e.g. a non-flights operator excluding `@voyant-travel/flights`). Filters the
-   * runtime manifest (and, once the schema side lands, drizzle generation, so
-   * routes and tables drop together). Naming a specifier absent from the standard
-   * set is a typo and throws; excluding an `isRequired` module throws; excluding a
-   * module another mounted module depends on throws, naming the consumers (drop
-   * those too).
+   * runtime manifest and admin surface. Naming a specifier absent from the
+   * standard set is a typo and throws; excluding an `isRequired` module throws;
+   * excluding a module another mounted module depends on throws, naming the
+   * consumers (drop those too).
    *
-   * Note: an extension's mount prefix (`extension.module`) is a path, not a
-   * foreign key to a mounted module, so excluding a module does NOT auto-drop the
-   * standard extensions that augment its surface — list those extension
-   * specifiers here too. Automatic cascade needs explicit module→extension
-   * ownership metadata (a follow-up; see ADR-0007).
+   * Excluding a module cascades to the standard extensions it owns: an extension's
+   * mount prefix is a path, not a foreign key to a mounted module, so ownership is
+   * declared in `FRAMEWORK_EXTENSION_OWNERSHIP` and its augmenting extensions are
+   * dropped automatically (voyant#2104) — no need to list them here.
+   *
+   * Schema is unaffected: the managed migration bundle is monolithic, so an
+   * excluded module's tables are still created but left inert (no routes/nav
+   * reach them). `voyant db doctor` treats them as expected-absent, not drift.
    *
    * To *replace* a module's capability with a substitute (e.g. HubSpot for CRM)
    * rather than removing it — override-by-capability — is the v2 design and not
