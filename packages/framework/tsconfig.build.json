@@ -813,6 +813,7 @@
       "@voyant-travel/flights/snapshot": ["../flights/dist/snapshot.d.ts"],
       "@voyant-travel/framework": ["./dist/index.d.ts"],
       "@voyant-travel/framework-migrations": ["../framework-migrations/dist/index.d.ts"],
+      "@voyant-travel/framework/deployment-artifacts": ["./dist/deployment-artifacts.d.ts"],
       "@voyant-travel/framework/deployment-graph": ["./dist/deployment-graph.d.ts"],
       "@voyant-travel/framework/managed-jobs": ["./dist/managed-jobs.d.ts"],
       "@voyant-travel/framework/managed-runtime": ["./dist/managed-runtime.d.ts"],

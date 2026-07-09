@@ -748,6 +748,9 @@
       "@voyant-travel/flights/snapshot": ["../flights/dist/snapshot.d.ts"],
       "@voyant-travel/framework": ["../framework/dist/index.d.ts"],
       "@voyant-travel/framework-migrations": ["../framework-migrations/dist/index.d.ts"],
+      "@voyant-travel/framework/deployment-artifacts": [
+        "../framework/dist/deployment-artifacts.d.ts"
+      ],
       "@voyant-travel/framework/deployment-graph": ["../framework/dist/deployment-graph.d.ts"],
       "@voyant-travel/framework/managed-jobs": ["../framework/dist/managed-jobs.d.ts"],
       "@voyant-travel/framework/managed-runtime": ["../framework/dist/managed-runtime.d.ts"],

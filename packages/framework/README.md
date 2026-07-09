@@ -41,3 +41,9 @@ deterministic.
   and the `createVoyantApp` profile bridge for Cloud-managed admin/API operator
   deployments. Customer-facing site and storefront apps are separate Cloud app
   artifacts, not managed profile fields.
+- `@voyant-travel/framework/deployment-graph` — v1 project/deployment graph
+  declarations, resolver diagnostics, managed-profile bridging, and deterministic
+  resolved graph hashing.
+- `@voyant-travel/framework/deployment-artifacts` — pure lowering helpers that
+  turn a resolved graph into deterministic JSON, artifact manifests, and tiny
+  managed Node runtime entry modules for build/deploy tooling.
