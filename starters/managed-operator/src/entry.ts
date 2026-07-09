@@ -83,20 +83,45 @@ function devAuthJson(body: unknown): Response {
   })
 }
 
-const loadDevAuth: AppLoader<AppBindings, ExecutionContext> = lazyApp(async () => ({
+/**
+ * The active module ids for this snapshot, so the DEV `/auth/bootstrap-status`
+ * reports the same module set a managed-cloud deployment's real handler would —
+ * letting the source-free admin's module gating (voyant#3063) be exercised
+ * locally (set `modules` to a subset in `managed-profile.json` and the nav
+ * follows). Uses the LIGHT `@voyant-travel/framework/profile` export (pure
+ * composition math), not the full API runtime. Fails open (returns `undefined`)
+ * so a malformed/absent snapshot leaves the admin composing everything.
+ */
+async function resolveDevActiveModuleIds(): Promise<string[] | undefined> {
+  try {
+    const [{ readFile }, { resolveActiveModuleIds }] = await Promise.all([
+      import("node:fs/promises"),
+      import("@voyant-travel/framework/profile"),
+    ])
+    const raw = await readFile(resolveSnapshotPath(), "utf8")
+    return resolveActiveModuleIds(JSON.parse(raw))
+  } catch {
+    return undefined
+  }
+}
+
+const loadDevAuth: AppLoader<AppBindings, ExecutionContext> = lazyApp(async () => {
+  const modules = await resolveDevActiveModuleIds()
   // The dispatch strips `/api` before forwarding, so paths arrive as `/auth/*`.
-  fetch: (request) => {
-    const { pathname } = new URL(request.url)
-    if (pathname === "/auth/me") return devAuthJson(DEV_USER)
-    if (pathname === "/auth/bootstrap-status") {
-      return devAuthJson({ hasUsers: true, authMode: "local" })
-    }
-    return new Response(JSON.stringify({ error: "not_found" }), {
-      status: 404,
-      headers: { "content-type": "application/json" },
-    })
-  },
-}))
+  return {
+    fetch: (request) => {
+      const { pathname } = new URL(request.url)
+      if (pathname === "/auth/me") return devAuthJson(DEV_USER)
+      if (pathname === "/auth/bootstrap-status") {
+        return devAuthJson({ hasUsers: true, authMode: "local", ...(modules ? { modules } : {}) })
+      }
+      return new Response(JSON.stringify({ error: "not_found" }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      })
+    },
+  }
+})
 
 // SSR is loaded lazily behind the non-API branch so the React + react-dom/server
 // graph (~2.2 MB) is imported on first render rather than at boot. `src/server.ts`

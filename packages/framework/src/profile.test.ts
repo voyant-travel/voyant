@@ -8,6 +8,7 @@ import {
   getVoyantProjectMigrationMetadata,
   getVoyantProjectRequirements,
   MANAGED_OPERATOR_DEFAULT_PROVIDERS,
+  resolveActiveModuleIds,
   toCreateVoyantAppProfileConfig,
   VOYANT_PROJECT_SCHEMA_VERSION,
   type VoyantProjectManifest,
@@ -309,5 +310,48 @@ describe("managed profile contract", () => {
         parity: expect.arrayContaining(["schema drift"]),
       },
     })
+  })
+})
+
+describe("resolveActiveModuleIds (admin gating signal, voyant#3063)", () => {
+  it("returns the full standard operator module set when no subset is declared", () => {
+    const project = defineVoyantProject({
+      profile: "operator",
+      frameworkVersion: "0.19.0",
+      modules: [],
+      plugins: [],
+      settings: {},
+    })
+
+    const active = resolveActiveModuleIds(project)
+
+    // Standard domain modules the packaged admin can compose are all active.
+    expect(active).toEqual(
+      expect.arrayContaining([
+        "bookings",
+        "catalog",
+        "finance",
+        "relationships",
+        "operations",
+        "action-ledger",
+      ]),
+    )
+    // Storefront customer-app modules are never part of the operator set, and
+    // `mice` has no standard manifest module — so neither is ever active.
+    expect(active).not.toContain("storefront")
+    expect(active).not.toContain("mice")
+  })
+
+  it("honors a declared subset, plus the required foundational modules", () => {
+    const project = validProject({ modules: ["catalog", "bookings"] })
+
+    const active = resolveActiveModuleIds(project)
+
+    expect(active).toEqual(expect.arrayContaining(["catalog", "bookings"]))
+    // Required foundational modules are always active even when not listed.
+    expect(active).toEqual(expect.arrayContaining(["action-ledger", "relationships", "commerce"]))
+    // A domain excluded from the subset is not active — so its admin nav hides.
+    expect(active).not.toContain("flights")
+    expect(active).not.toContain("legal")
   })
 })

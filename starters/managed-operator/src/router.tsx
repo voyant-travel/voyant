@@ -17,8 +17,10 @@ import {
   managedProfileAdminFetcher,
 } from "@voyant-travel/admin-app/runtime"
 import { UserProvider, useUser } from "@voyant-travel/admin-react/user"
+import { useMemo } from "react"
 
 import { createManagedAdminExtensions } from "./managed-admin-extensions"
+import { filterManagedAdminExtensionsByModules } from "./managed-admin-module-gating"
 import { Route as rootRoute } from "./routes/__root"
 import { routeTree } from "./routeTree.gen"
 
@@ -68,8 +70,26 @@ const managedAuthRuntime: ManagedProfileAdminAuthRuntime<ManagedUser> = {
 }
 
 // The full source-free admin: CORE (dashboard, account, settings) plus every
-// standard domain extension, composed entirely from published packages.
+// standard domain extension, composed entirely from published packages. The
+// route tree + destinations below are built from this FULL set so it stays
+// hydration-stable across the shared image; the NAV is gated per deployment at
+// render time (see `WorkspaceContent`) by the active module set (voyant#3063).
 const extensions = createManagedAdminExtensions()
+
+// The active module ids this deployment mounts, reported by
+// `/auth/bootstrap-status` (voyant#3063). Fetched once and memoized: the set is
+// static per deployment, so every workspace navigation reuses the first probe.
+// A failed/legacy probe yields `undefined`, which fails OPEN (nav shows every
+// module) rather than hiding pages.
+let activeModuleIdsPromise: Promise<readonly string[] | undefined> | undefined
+
+function loadActiveModuleIds(): Promise<readonly string[] | undefined> {
+  activeModuleIdsPromise ??= managedAuthRuntime
+    .getBootstrapStatus()
+    .then((status) => status.modules)
+    .catch(() => undefined)
+  return activeModuleIdsPromise
+}
 
 // Semantic-destination resolvers derived at runtime from the registry's route
 // bindings, so packaged pages' `useAdminHref`/`useAdminNavigate` (cross-page
@@ -85,29 +105,41 @@ const workspaceRoute = createRoute({
   id: "_workspace",
   ssr: "data-only",
   beforeLoad: ({ location }) => workspaceGuard({ location }),
-  loader: ({ context }) => ({ user: (context as { user: ManagedUser }).user }),
+  loader: async ({ context }) => ({
+    user: (context as { user: ManagedUser }).user,
+    activeModuleIds: await loadActiveModuleIds(),
+  }),
   pendingComponent: AdminWorkspacePendingFallback,
   component: WorkspaceLayout,
 })
 
 function WorkspaceLayout() {
-  const { user } = workspaceRoute.useLoaderData()
+  const { user, activeModuleIds } = workspaceRoute.useLoaderData()
 
   return (
     <UserProvider getCurrentUser={managedAuthRuntime.getCurrentUser} initialUser={user}>
-      <WorkspaceContent />
+      <WorkspaceContent activeModuleIds={activeModuleIds} />
     </UserProvider>
   )
 }
 
-function WorkspaceContent() {
+function WorkspaceContent({ activeModuleIds }: { activeModuleIds: readonly string[] | undefined }) {
   const { user, isLoading } = useUser<ManagedUser>()
+
+  // Gate the NAV/widgets by the deployment's active module set. The route tree
+  // stays full (built once at import, hydration-stable), so this only removes
+  // sidebar entries + dashboard widgets for modules this operator does not run —
+  // no more dead links to pages whose API isn't mounted (voyant#3063).
+  const activeExtensions = useMemo(
+    () => filterManagedAdminExtensionsByModules(extensions, activeModuleIds),
+    [activeModuleIds],
+  )
 
   return (
     <AdminWorkspaceShell
       user={user}
       isUserLoading={isLoading}
-      extensions={extensions}
+      extensions={activeExtensions}
       destinations={destinations}
       onSignOut={() => managedAuthRuntime.signOut()}
     >

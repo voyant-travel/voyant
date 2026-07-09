@@ -158,6 +158,7 @@ import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 import { type ManagedPlugin, resolveManagedPlugins } from "./plugin-resolution.js"
 import {
   getVoyantProjectRequirements,
+  resolveActiveModuleIds,
   toCreateVoyantAppProfileConfig,
   type VoyantProfileRequirements,
   type VoyantProjectManifest,
@@ -305,6 +306,7 @@ export async function loadManagedProfileRuntime(
   const auth = resolveManagedProfileAuthIntegration({
     env,
     auth: options.app?.auth ?? options.auth,
+    activeModules: resolveActiveModuleIds(project),
   })
   const plugins = await resolveManagedPlugins(
     project,
@@ -392,6 +394,7 @@ export function createManagedProfileApp(options: {
   const auth = resolveManagedProfileAuthIntegration({
     env: options.env,
     auth: options.app?.auth ?? options.auth,
+    activeModules: resolveActiveModuleIds(options.project),
   })
   const mergedPlugins = [...(options.app?.plugins ?? []), ...(options.plugins ?? [])]
   assertManagedProfileAppSupport({
@@ -510,16 +513,20 @@ export function createManagedProfileNodeEnv(
 function resolveManagedProfileAuthIntegration(options: {
   env?: ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
+  /** Active module ids surfaced on `/auth/bootstrap-status` for admin gating (voyant#3063). */
+  activeModules?: readonly string[]
 }): VoyantAuthIntegration<ManagedProfileRuntimeEnv> | undefined {
   if (options.auth) return options.auth
   if (!isManagedVoyantCloudAuthMode(options.env)) return undefined
-  return createManagedCloudAdminAuthIntegration()
+  return createManagedCloudAdminAuthIntegration(options.activeModules ?? [])
 }
 
-function createManagedCloudAdminAuthIntegration(): VoyantAuthIntegration<ManagedProfileRuntimeEnv> {
+function createManagedCloudAdminAuthIntegration(
+  activeModules: readonly string[],
+): VoyantAuthIntegration<ManagedProfileRuntimeEnv> {
   return {
     handler: () => {
-      const app = createManagedCloudAuthApp()
+      const app = createManagedCloudAuthApp(activeModules)
       return {
         fetch: (request, env, ctx) => app.fetch(request, env, ctx as never),
       }
@@ -599,7 +606,9 @@ function createManagedCloudAdminAuthIntegration(): VoyantAuthIntegration<Managed
 
 type ManagedAuthHonoEnv = { Bindings: ManagedProfileRuntimeEnv }
 
-export function createManagedCloudAuthApp(): Hono<ManagedAuthHonoEnv> {
+export function createManagedCloudAuthApp(
+  activeModules: readonly string[] = [],
+): Hono<ManagedAuthHonoEnv> {
   const auth = new Hono<ManagedAuthHonoEnv>()
 
   async function startCloudAuth(c: Context<ManagedAuthHonoEnv>) {
@@ -664,7 +673,7 @@ export function createManagedCloudAuthApp(): Hono<ManagedAuthHonoEnv> {
   })
 
   auth.get("/auth/bootstrap-status", async (c) => {
-    return c.json(await resolveManagedBootstrapStatus(c.env, c.req.raw))
+    return c.json(await resolveManagedBootstrapStatus(c.env, c.req.raw, activeModules))
   })
 
   auth.all("/auth/*", async (c) => {
@@ -700,6 +709,14 @@ export type ManagedCurrentUser = {
 export type ManagedBootstrapStatus = {
   hasUsers: boolean
   authMode: "local" | "voyant-cloud"
+  /**
+   * The active module ids for this deployment (voyant#3063). The source-free
+   * managed admin — a shared, framework-version-tagged image — reads this to
+   * gate its composition so it shows only the modules the profile activates,
+   * instead of every module the image can compose. Always the resolved set the
+   * API actually mounts (see {@link resolveActiveModuleIds}).
+   */
+  modules: string[]
 }
 
 async function resolveManagedCurrentUser(
@@ -750,14 +767,16 @@ async function resolveManagedCurrentUser(
 async function resolveManagedBootstrapStatus(
   env: ManagedProfileRuntimeEnv,
   _request: Request,
+  activeModules: readonly string[],
 ): Promise<ManagedBootstrapStatus> {
+  const modules = [...activeModules]
   if (isManagedVoyantCloudAuthMode(env)) {
-    return { hasUsers: true, authMode: "voyant-cloud" }
+    return { hasUsers: true, authMode: "voyant-cloud", modules }
   }
 
   const db = resolveDb(env)
   const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-  return { hasUsers: (row?.count ?? 0) > 0, authMode: "local" }
+  return { hasUsers: (row?.count ?? 0) > 0, authMode: "local", modules }
 }
 
 function createManagedBetterAuth(env: ManagedProfileRuntimeEnv, db: VoyantDb) {
