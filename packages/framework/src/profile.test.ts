@@ -399,4 +399,19 @@ describe("resolveActiveModuleIds (admin gating signal, voyant#3063)", () => {
     expect(active).not.toContain("flights")
     expect(active).not.toContain("legal")
   })
+
+  it("includes custom source modules the runtime mounts (voyant#3079)", () => {
+    const project = validProject({
+      modules: ["catalog", "bookings"],
+      customSource: { modules: ["@acme/loyalty", "@acme/gift-cards"] },
+    })
+
+    const active = resolveActiveModuleIds(project)
+
+    // Custom schema-owning modules are now mounted, so the admin gating signal
+    // must report them alongside the standard subset — otherwise a source-free
+    // admin hides a UI whose API routes are live.
+    expect(active).toEqual(expect.arrayContaining(["@acme.loyalty", "@acme.gift-cards"]))
+    expect(active).toEqual(expect.arrayContaining(["catalog", "bookings"]))
+  })
 })

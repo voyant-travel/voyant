@@ -74,6 +74,7 @@ import {
   type VoyantBindings,
   type VoyantDb,
 } from "@voyant-travel/hono"
+import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { productsService } from "@voyant-travel/inventory"
 import { createProductContentRoutes } from "@voyant-travel/inventory/routes-content"
@@ -155,6 +156,10 @@ import { type Context, Hono } from "hono"
 
 import type { FrameworkProviders } from "./composition-lazy.js"
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
+import {
+  resolveManagedCustomExtensions,
+  resolveManagedCustomModules,
+} from "./custom-source-resolution.js"
 import { type ManagedPlugin, resolveManagedPlugins } from "./plugin-resolution.js"
 import {
   getVoyantProjectRequirements,
@@ -164,6 +169,12 @@ import {
   type VoyantProjectManifest,
   validateVoyantProject,
 } from "./profile.js"
+
+export {
+  type ResolveManagedCustomSourceOptions,
+  resolveManagedCustomExtensions,
+  resolveManagedCustomModules,
+} from "./custom-source-resolution.js"
 
 export {
   type ManagedPlugin,
@@ -226,6 +237,9 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   PORT?: string
 }
 
+type ManagedProfileAppModules = Record<string, ModuleFactory<FrameworkProviders>>
+type ManagedProfileAppExtensions = Record<string, ExtensionFactory<FrameworkProviders>>
+
 export interface ManagedProfileRuntimeOptions {
   profileSnapshotPath: string
   env?: Record<string, unknown> | ManagedProfileRuntimeEnv
@@ -243,6 +257,13 @@ export interface ManagedProfileRuntimeOptions {
    * pre-bundled registry instead of node resolution.
    */
   importPluginModule?: (specifier: string) => Promise<Record<string, unknown>>
+  /**
+   * Override how snapshot `customSource.modules` and `customSource.extensions`
+   * specifiers are imported. Defaults to dynamic `import()`; injectable so Cloud
+   * (or tests) can resolve custom source packages from a pre-bundled registry
+   * instead of node resolution.
+   */
+  importCustomSourceModule?: (specifier: string) => Promise<Record<string, unknown>>
 }
 
 export interface ManagedProfileRuntime {
@@ -313,12 +334,27 @@ export async function loadManagedProfileRuntime(
     toPluginEnvRecord(env),
     options.importPluginModule ? { importModule: options.importPluginModule } : {},
   )
+  const customSourceOptions = options.importCustomSourceModule
+    ? { importModule: options.importCustomSourceModule }
+    : {}
+  const customModules = await resolveManagedCustomModules(
+    project,
+    toPluginEnvRecord(env),
+    customSourceOptions,
+  )
+  const customExtensions = await resolveManagedCustomExtensions(
+    project,
+    toPluginEnvRecord(env),
+    customSourceOptions,
+  )
   assertManagedProfileRuntimeSupport({
     project,
     requirements,
     env,
     hasAuthIntegration: Boolean(auth),
     hasResolvedPlugins: plugins.length > 0,
+    hasResolvedCustomModules: Object.keys(customModules).length > 0,
+    hasResolvedCustomExtensions: Object.keys(customExtensions).length > 0,
   })
   const app = createManagedProfileApp({
     project,
@@ -327,6 +363,8 @@ export async function loadManagedProfileRuntime(
     providers: options.providers,
     app: options.app,
     plugins,
+    modules: customModules,
+    extensions: customExtensions,
   })
 
   return {
@@ -390,6 +428,20 @@ export function createManagedProfileApp(options: {
    * snapshot declares plugins, either these or `app.plugins` must be non-empty.
    */
   plugins?: ManagedPlugin[]
+  /**
+   * Module factories resolved from the snapshot's `customSource.modules` list
+   * (see {@link resolveManagedCustomModules}), merged after any `app.modules`.
+   * When the snapshot declares custom modules, either these or `app.modules`
+   * must be non-empty.
+   */
+  modules?: ManagedProfileAppModules
+  /**
+   * Extension factories resolved from the snapshot's `customSource.extensions`
+   * list (see {@link resolveManagedCustomExtensions}), merged after any
+   * `app.extensions`. When the snapshot declares custom extensions, either these
+   * or `app.extensions` must be non-empty.
+   */
+  extensions?: ManagedProfileAppExtensions
 }) {
   const auth = resolveManagedProfileAuthIntegration({
     env: options.env,
@@ -397,10 +449,20 @@ export function createManagedProfileApp(options: {
     activeModules: resolveActiveModuleIds(options.project),
   })
   const mergedPlugins = [...(options.app?.plugins ?? []), ...(options.plugins ?? [])]
+  const mergedModules: ManagedProfileAppModules = {
+    ...(options.app?.modules ?? {}),
+    ...(options.modules ?? {}),
+  }
+  const mergedExtensions: ManagedProfileAppExtensions = {
+    ...(options.app?.extensions ?? {}),
+    ...(options.extensions ?? {}),
+  }
   assertManagedProfileAppSupport({
     project: options.project,
     hasAuthIntegration: Boolean(auth),
     hasResolvedPlugins: mergedPlugins.length > 0,
+    hasResolvedCustomModules: Object.keys(mergedModules).length > 0,
+    hasResolvedCustomExtensions: Object.keys(mergedExtensions).length > 0,
   })
   const bridge = toCreateVoyantAppProfileConfig(options.project)
   return createVoyantApp<ManagedProfileRuntimeEnv, FrameworkProviders>({
@@ -424,6 +486,8 @@ export function createManagedProfileApp(options: {
       ManagedProfileRuntimeEnv,
       FrameworkProviders
     >["plugins"],
+    modules: mergedModules,
+    extensions: mergedExtensions,
     basePath: options.app?.basePath ?? "/api",
     auth,
     exclude: bridge.exclude,
@@ -1027,13 +1091,17 @@ function assertManagedProfileRuntimeSupport(options: {
   env: ManagedProfileRuntimeEnv
   hasAuthIntegration: boolean
   hasResolvedPlugins: boolean
+  hasResolvedCustomModules: boolean
+  hasResolvedCustomExtensions: boolean
 }) {
   const issues = [
-    ...managedProfileAppSupportIssues(
-      options.project,
-      options.hasAuthIntegration,
-      options.hasResolvedPlugins,
-    ),
+    ...managedProfileAppSupportIssues({
+      project: options.project,
+      hasAuthIntegration: options.hasAuthIntegration,
+      hasResolvedPlugins: options.hasResolvedPlugins,
+      hasResolvedCustomModules: options.hasResolvedCustomModules,
+      hasResolvedCustomExtensions: options.hasResolvedCustomExtensions,
+    }),
     ...managedProfileEnvIssues(options.requirements, options.env),
   ]
   if (issues.length > 0) {
@@ -1045,31 +1113,46 @@ function assertManagedProfileAppSupport(options: {
   project: VoyantProjectManifest
   hasAuthIntegration: boolean
   hasResolvedPlugins: boolean
+  hasResolvedCustomModules: boolean
+  hasResolvedCustomExtensions: boolean
 }) {
-  const issues = managedProfileAppSupportIssues(
-    options.project,
-    options.hasAuthIntegration,
-    options.hasResolvedPlugins,
-  )
+  const issues = managedProfileAppSupportIssues(options)
   if (issues.length > 0) {
     throw new Error(`Managed profile app is not ready to start:\n${formatIssues(issues)}`)
   }
 }
 
-function managedProfileAppSupportIssues(
-  project: VoyantProjectManifest,
-  hasAuthIntegration: boolean,
-  hasResolvedPlugins: boolean,
-): string[] {
+function managedProfileAppSupportIssues(options: {
+  project: VoyantProjectManifest
+  hasAuthIntegration: boolean
+  hasResolvedPlugins: boolean
+  hasResolvedCustomModules: boolean
+  hasResolvedCustomExtensions: boolean
+}): string[] {
+  const { project } = options
   const issues: string[] = []
-  if (project.plugins.length > 0 && !hasResolvedPlugins) {
+  if (project.plugins.length > 0 && !options.hasResolvedPlugins) {
     issues.push(
       `snapshot plugins were declared but not resolved by @voyant-travel/framework/managed-runtime: ${project.plugins.join(
         ", ",
       )}`,
     )
   }
-  if (project.mode === "managed-cloud" && !hasAuthIntegration) {
+  if ((project.customSource?.modules?.length ?? 0) > 0 && !options.hasResolvedCustomModules) {
+    issues.push(
+      `snapshot customSource.modules were declared but not resolved by @voyant-travel/framework/managed-runtime: ${project.customSource?.modules?.join(
+        ", ",
+      )}`,
+    )
+  }
+  if ((project.customSource?.extensions?.length ?? 0) > 0 && !options.hasResolvedCustomExtensions) {
+    issues.push(
+      `snapshot customSource.extensions were declared but not resolved by @voyant-travel/framework/managed-runtime: ${project.customSource?.extensions?.join(
+        ", ",
+      )}`,
+    )
+  }
+  if (project.mode === "managed-cloud" && !options.hasAuthIntegration) {
     issues.push(
       "managed-cloud profiles require VOYANT_ADMIN_AUTH_MODE=voyant-cloud with Cloud admin auth env, or an injected admin auth integration",
     )

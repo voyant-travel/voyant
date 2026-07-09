@@ -350,6 +350,82 @@ describe("managed profile runtime entry", () => {
     ).rejects.toThrow(/does not export a managed-plugin entry/)
   })
 
+  it("resolves snapshot custom source modules/extensions and boots source-free", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          customSource: {
+            modules: ["@third-party/custom-module"],
+            extensions: ["@third-party/custom-ext"],
+          },
+          providers: localProviders,
+        }),
+      ),
+    )
+
+    const moduleFactory = vi.fn(() => ({
+      module: { name: "custom-module" },
+    }))
+    const extensionFactory = vi.fn(() => ({
+      extension: { name: "custom-ext", module: "custom-module" },
+    }))
+
+    const importCustomSourceModule = vi.fn(async (specifier: string) => {
+      if (specifier === "@third-party/custom-module") {
+        return { voyantModule: moduleFactory }
+      }
+      if (specifier === "@third-party/custom-ext") {
+        return { voyantExtension: extensionFactory }
+      }
+      throw new Error(`Unexpected specifier ${specifier}`)
+    })
+
+    const runtime = await loadManagedProfileRuntime({
+      profileSnapshotPath: snapshotPath,
+      env: { DATABASE_URL: "managed-profile-test-db" },
+      importCustomSourceModule,
+    })
+
+    expect(runtime.app.fetch).toEqual(expect.any(Function))
+    expect(importCustomSourceModule).toHaveBeenCalledWith("@third-party/custom-module")
+    expect(importCustomSourceModule).toHaveBeenCalledWith("@third-party/custom-ext")
+    expect(moduleFactory).toHaveBeenCalled()
+    expect(extensionFactory).toHaveBeenCalled()
+  })
+
+  it("fails fast when a snapshot custom module exposes no managed-module entry", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          customSource: { modules: ["@third-party/custom-module"] },
+          providers: localProviders,
+        }),
+      ),
+    )
+
+    await expect(
+      loadManagedProfileRuntime({
+        profileSnapshotPath: snapshotPath,
+        env: { DATABASE_URL: "managed-profile-test-db" },
+        importCustomSourceModule: async () => ({ notAFactory: 42 }),
+      }),
+    ).rejects.toThrow(/does not export a managed-module entry/)
+  })
+
   it("builds managed Node bindings from plain env/secrets", () => {
     const env = createManagedProfileNodeEnv({
       DATABASE_URL: "managed-profile-test-db",
