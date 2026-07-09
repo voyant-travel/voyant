@@ -111,3 +111,55 @@ export const FRAMEWORK_CAPABILITY_GRAPH = {
   "@voyant-travel/commerce": { isRequired: true },
   "@voyant-travel/relationships": { isRequired: true },
 } as const satisfies CapabilityGraph
+
+/**
+ * Which standard module(s) each standard extension augments (voyant#2104,
+ * ADR-0007 follow-up a). An extension's mount prefix is a *path*, not a foreign
+ * key to a module `name` — the standard set legitimately ships path-mounted
+ * extensions with no same-named module (e.g. `operator/proposal-extension`
+ * mounts under `quote-versions`), so a name-match orphan check is unsound.
+ * Ownership is therefore *declared* here, co-located with the manifest it is
+ * typed against, so excluding a module can cascade to its extensions safely
+ * (see `ownedExtensionsForExcludedModules` / `subsetStandardManifest`).
+ *
+ * An extension is owned by every listed module: excluding *any* owner drops it,
+ * because the extension augments a surface that owner contributes.
+ */
+export const FRAMEWORK_EXTENSION_OWNERSHIP = {
+  "@voyant-travel/bookings/booking-supplier-extension": ["@voyant-travel/bookings"],
+  "@voyant-travel/finance/bookings-create-extension": [
+    "@voyant-travel/finance",
+    "@voyant-travel/bookings",
+  ],
+  "@voyant-travel/inventory/booking-extension": [
+    "@voyant-travel/inventory",
+    "@voyant-travel/bookings",
+  ],
+  "@voyant-travel/inventory/authoring/extension": ["@voyant-travel/inventory"],
+  "@voyant-travel/quotes/booking-extension": ["@voyant-travel/quotes", "@voyant-travel/bookings"],
+  "@voyant-travel/distribution": ["@voyant-travel/distribution", "@voyant-travel/bookings"],
+  "@voyant-travel/distribution/channel-push-extension": ["@voyant-travel/distribution"],
+  "@voyant-travel/finance/booking-tax-extension": [
+    "@voyant-travel/finance",
+    "@voyant-travel/bookings",
+    "@voyant-travel/operator-settings",
+  ],
+  "operator/booking-schedule-extension": [
+    "@voyant-travel/finance",
+    "@voyant-travel/bookings",
+    "@voyant-travel/operator-settings",
+  ],
+  "operator/quote-version-snapshot-extension": ["@voyant-travel/quotes", "@voyant-travel/trips"],
+  "operator/booking-maintenance-extension": [
+    "@voyant-travel/bookings",
+    "@voyant-travel/commerce",
+    "@voyant-travel/operator-settings",
+  ],
+  "operator/action-ledger-health-extension": ["@voyant-travel/action-ledger"],
+  "operator/proposal-extension": ["@voyant-travel/quotes"],
+  "operator/catalog-offers-extension": ["@voyant-travel/catalog"],
+  "operator/catalog-checkout-extension": ["@voyant-travel/catalog", "@voyant-travel/commerce"],
+} as const satisfies Record<
+  (typeof FRAMEWORK_RUNTIME_MANIFEST.extensions)[number],
+  readonly (typeof FRAMEWORK_RUNTIME_MANIFEST.modules)[number][]
+>

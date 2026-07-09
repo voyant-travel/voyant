@@ -1,4 +1,4 @@
-import { subsetStandardManifest } from "./create-app.js"
+import { ownedExtensionsForExcludedModules, subsetStandardManifest } from "./create-app.js"
 import {
   FRAMEWORK_RUNTIME_MANIFEST,
   FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET,
@@ -68,45 +68,6 @@ const CUSTOMER_APP_MODULE_SPECIFIERS = new Set([
 const OPERATOR_DEFAULT_MODULE_SPECIFIERS = FRAMEWORK_RUNTIME_MANIFEST.modules.filter(
   (specifier) => !CUSTOMER_APP_MODULE_SPECIFIERS.has(specifier),
 )
-
-const STANDARD_EXTENSION_MODULE_OWNERS = {
-  "@voyant-travel/bookings/booking-supplier-extension": ["@voyant-travel/bookings"],
-  "@voyant-travel/finance/bookings-create-extension": [
-    "@voyant-travel/finance",
-    "@voyant-travel/bookings",
-  ],
-  "@voyant-travel/inventory/booking-extension": [
-    "@voyant-travel/inventory",
-    "@voyant-travel/bookings",
-  ],
-  "@voyant-travel/inventory/authoring/extension": ["@voyant-travel/inventory"],
-  "@voyant-travel/quotes/booking-extension": ["@voyant-travel/quotes", "@voyant-travel/bookings"],
-  "@voyant-travel/distribution": ["@voyant-travel/distribution", "@voyant-travel/bookings"],
-  "@voyant-travel/distribution/channel-push-extension": ["@voyant-travel/distribution"],
-  "@voyant-travel/finance/booking-tax-extension": [
-    "@voyant-travel/finance",
-    "@voyant-travel/bookings",
-    "@voyant-travel/operator-settings",
-  ],
-  "operator/booking-schedule-extension": [
-    "@voyant-travel/finance",
-    "@voyant-travel/bookings",
-    "@voyant-travel/operator-settings",
-  ],
-  "operator/quote-version-snapshot-extension": ["@voyant-travel/quotes", "@voyant-travel/trips"],
-  "operator/booking-maintenance-extension": [
-    "@voyant-travel/bookings",
-    "@voyant-travel/commerce",
-    "@voyant-travel/operator-settings",
-  ],
-  "operator/action-ledger-health-extension": ["@voyant-travel/action-ledger"],
-  "operator/proposal-extension": ["@voyant-travel/quotes"],
-  "operator/catalog-offers-extension": ["@voyant-travel/catalog"],
-  "operator/catalog-checkout-extension": ["@voyant-travel/catalog", "@voyant-travel/commerce"],
-} as const satisfies Record<
-  (typeof FRAMEWORK_RUNTIME_MANIFEST.extensions)[number],
-  readonly string[]
->
 
 export function defineVoyantProject(input: DefineVoyantProjectInput): VoyantProjectManifest {
   const manifest: VoyantProjectManifest = {
@@ -338,17 +299,6 @@ function computeCreateVoyantAppExclude(project: VoyantProjectManifest): string[]
 
   subsetStandardManifest({ exclude: ordered })
   return ordered
-}
-
-function ownedExtensionsForExcludedModules(excludedModules: Set<string>): string[] {
-  const extensions: string[] = []
-  for (const extensionSpecifier of FRAMEWORK_RUNTIME_MANIFEST.extensions) {
-    const owners = STANDARD_EXTENSION_MODULE_OWNERS[extensionSpecifier]
-    if (owners.some((owner) => excludedModules.has(owner))) {
-      extensions.push(extensionSpecifier)
-    }
-  }
-  return unique(extensions)
 }
 
 function resolvedExcludedModuleIds(project: VoyantProjectManifest): string[] {

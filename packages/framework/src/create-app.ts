@@ -42,7 +42,11 @@ import {
   type ModuleFactory,
 } from "@voyant-travel/hono/composition"
 import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-import { FRAMEWORK_CAPABILITY_GRAPH, FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+import {
+  FRAMEWORK_CAPABILITY_GRAPH,
+  FRAMEWORK_EXTENSION_OWNERSHIP,
+  FRAMEWORK_RUNTIME_MANIFEST,
+} from "./manifest.js"
 
 /**
  * Config for {@link createVoyantApp}: the injected providers + deployment-local
@@ -90,6 +94,24 @@ export interface SubsetOptions {
 }
 
 /**
+ * The standard extensions owned by any of the excluded specifiers — an extension
+ * whose declared owner module (see `FRAMEWORK_EXTENSION_OWNERSHIP`) is being
+ * removed. Excluding a module must cascade to these, or the removed surface
+ * partially leaks: e.g. dropping `bookings` while `finance/bookings-create-extension`
+ * (mounting under `/v1/admin/bookings`) stays mounted (voyant#2104). Ownership is
+ * declared, not name-matched, so path-mounted extensions cascade correctly.
+ */
+export function ownedExtensionsForExcludedModules(excluded: Iterable<string>): string[] {
+  const excludedSet = excluded instanceof Set ? excluded : new Set(excluded)
+  const owned: string[] = []
+  for (const extension of FRAMEWORK_RUNTIME_MANIFEST.extensions) {
+    const owners = FRAMEWORK_EXTENSION_OWNERSHIP[extension]
+    if (owners.some((owner) => excludedSet.has(owner))) owned.push(extension)
+  }
+  return owned
+}
+
+/**
  * Apply `exclude` to the standard set (ADR-0007), returning the module/extension
  * specifiers that should mount. Pure and provider-free, so it is unit-testable and
  * reusable by tooling (`db doctor`). Throws — fail-loud at boot, never a runtime
@@ -124,6 +146,15 @@ export function subsetStandardManifest({ exclude = [] }: SubsetOptions = {}): {
           "They are foundational and cannot be removed.",
       )
     }
+  }
+
+  // Cascade: dropping a module also drops the standard extensions it owns. They
+  // mount under the module's surface, so leaving them would partially leak the
+  // removed surface. Ownership is declared (`FRAMEWORK_EXTENSION_OWNERSHIP`), so
+  // path-mounted extensions cascade by declaration rather than an unsound
+  // name-match (voyant#2104). Idempotent — already-excluded extensions no-op.
+  for (const extension of ownedExtensionsForExcludedModules(excludeSet)) {
+    excludeSet.add(extension)
   }
 
   const modules = FRAMEWORK_RUNTIME_MANIFEST.modules.filter((m) => !excludeSet.has(m))

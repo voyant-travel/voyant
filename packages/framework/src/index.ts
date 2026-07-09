@@ -22,6 +22,7 @@ export { type FrameworkProviders, frameworkComposition } from "./composition-laz
 export {
   type CreateVoyantAppConfig,
   createVoyantApp,
+  ownedExtensionsForExcludedModules,
   subsetStandardManifest,
 } from "./create-app.js"
 export {
@@ -35,6 +36,7 @@ export {
 } from "./discover-modules.js"
 export {
   FRAMEWORK_CAPABILITY_GRAPH,
+  FRAMEWORK_EXTENSION_OWNERSHIP,
   FRAMEWORK_RUNTIME_MANIFEST,
   type FrameworkManifest,
 } from "./manifest.js"
