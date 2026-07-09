@@ -34,6 +34,10 @@ import {
 import { config } from "dotenv"
 import { Client } from "pg"
 import { schema } from "../drizzle.schemas.generated.ts"
+import {
+  assertOperatorDeploymentGraphResourceEnv,
+  loadOperatorDeploymentGraphArtifacts,
+} from "../src/deployment-graph-artifacts"
 
 const explicitDatabaseUrl = process.env.DATABASE_URL
 config({ path: ".env" })
@@ -44,6 +48,14 @@ config({ path: ".env", override: true })
 // runs) must WIN over `.env` (loaded with `override: true` for local-dev
 // ergonomics), which would otherwise redirect every run at the local dev DB.
 if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
+
+const deploymentGraphArtifacts = loadOperatorDeploymentGraphArtifacts()
+try {
+  assertOperatorDeploymentGraphResourceEnv(deploymentGraphArtifacts, process.env)
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exit(1)
+}
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {

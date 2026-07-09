@@ -6,6 +6,8 @@
  *  1b. `src/server.ts` consumes the checked deployment graph artifacts and
  *      asserts graph resource env before standalone boot so dev/build/deploy
  *      share the same graph contract.
+ *  1c. the operator dev and migration lanes preflight the same graph contract
+ *      before serving traffic or touching the database.
  *  2. `src/entry.ts` (the app's `fetch`/`scheduled` handlers) keeps SSR behind a
  *     lazy import so the React + react-dom/server graph isn't pulled into the
  *     module's top-level — imported on first render, not at boot. Heavy API and
@@ -22,6 +24,7 @@ const ROOT = join(__dirname, "..")
 
 const APP_ENTRY = "starters/operator/src/entry.ts"
 const NODE_ENTRY = "starters/operator/src/server.ts"
+const OPERATOR_MIGRATE_SCRIPT = "starters/operator/scripts/migrate.ts"
 const OPERATOR_PACKAGE_JSON = "starters/operator/package.json"
 const OPERATOR_GRAPH_ENV_CHECK = "starters/operator/scripts/check-deployment-graph-env.ts"
 const GENERATED_RUNTIME_ENTRY = "runtime-entry.generated"
@@ -148,6 +151,7 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
     packageJson.scripts && typeof packageJson.scripts === "object" ? packageJson.scripts : {}
   const graphEnvScript = typeof scripts["graph:env"] === "string" ? scripts["graph:env"] : ""
   const devScript = typeof scripts.dev === "string" ? scripts.dev : ""
+  const migrateScript = typeof scripts["db:migrate"] === "string" ? scripts["db:migrate"] : ""
   const graphEnvIndex = devScript.indexOf("pnpm run graph:env")
   const viteIndex = devScript.indexOf("node_modules/vite/bin/vite.js")
 
@@ -184,6 +188,17 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
       text: devScript,
     })
   }
+  if (!migrateScript.includes("pnpm run graph:check")) {
+    violations.push({
+      file: OPERATOR_PACKAGE_JSON,
+      line: 0,
+      check: {
+        id: "operator-migrate-graph-check-missing",
+        message: "The operator db:migrate script must run graph:check before migration.",
+      },
+      text: migrateScript,
+    })
+  }
 }
 
 if (!existsSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK))) {
@@ -215,6 +230,35 @@ if (!existsSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK))) {
   }
 }
 
+if (!existsSync(join(ROOT, OPERATOR_MIGRATE_SCRIPT))) {
+  violations.push({
+    file: OPERATOR_MIGRATE_SCRIPT,
+    line: 0,
+    check: {
+      id: "missing-operator-migrate-script",
+      message: "The operator migration script is missing.",
+    },
+    text: "",
+  })
+} else {
+  const migrateSource = readFileSync(join(ROOT, OPERATOR_MIGRATE_SCRIPT), "utf-8")
+  if (
+    !migrateSource.includes("loadOperatorDeploymentGraphArtifacts") ||
+    !migrateSource.includes("assertOperatorDeploymentGraphResourceEnv") ||
+    !/assertOperatorDeploymentGraphResourceEnv\(\s*\w+\s*,\s*process\.env\s*\)/m.test(migrateSource)
+  ) {
+    violations.push({
+      file: OPERATOR_MIGRATE_SCRIPT,
+      line: 0,
+      check: {
+        id: "operator-migrate-graph-env-not-asserted",
+        message: "The operator migration script must assert graph resource env before connecting.",
+      },
+      text: "",
+    })
+  }
+}
+
 if (violations.length > 0) {
   console.error("Node entrypoint violation.")
   console.error("See docs/architecture/deployment-targets.md for the rule.\n")
@@ -228,5 +272,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer + graph artifacts + resource env; dev preflights graph env)",
+  "check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer + graph artifacts + resource env; dev/migrate preflight graph env)",
 )
