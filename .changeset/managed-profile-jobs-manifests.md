@@ -22,6 +22,10 @@ New subpath `@voyant-travel/framework/managed-jobs`:
   (`/__voyant/scheduled?cron=<expr>`).
 - `getManagedProfileWorkflowManifest(project)` — the profile's workflow
   definitions at `{ id, config }` grain (voyant#2925), for active modules only.
+- `getManagedProfileEventFilters(project)` — the `event → workflow` routing
+  bindings for active modules, registered alongside the workflows (a workflow
+  registered without its event filter never fires on the events meant to
+  trigger it).
 - `STANDARD_OPERATOR_SCHEDULED_JOBS` — the full all-modules set.
 
 The `operator` starter now derives `OPERATOR_CRON_JOBS` (and its cron dispatch

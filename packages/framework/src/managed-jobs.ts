@@ -16,7 +16,10 @@
 // modules provisions fewer jobs. `starters/operator` consumes the same set as
 // its single source of truth (plus its own deployment-local jobs).
 
-import { bulkReindexProductsWorkflowManifest } from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
+import {
+  bulkReindexProductsWorkflowManifest,
+  promotionAffectedAllFilter,
+} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 
 import { getVoyantProjectRequirements } from "./profile.js"
 import { moduleIdFromSpecifier, type VoyantProjectManifest } from "./profile-types.js"
@@ -54,6 +57,23 @@ export interface ManagedScheduledJob {
 export interface ManagedWorkflowManifestEntry {
   readonly id: string
   readonly config?: Readonly<Record<string, unknown>>
+}
+
+/**
+ * An event-filter binding to register at deploy — the declarative `event.name →
+ * workflow` routing a module owns. Structurally compatible with
+ * `@voyant-travel/core`'s `EventFilterDescriptor`; the runtime entry carries the
+ * full serializable `manifest` (where/input/target) the Cloud event router needs.
+ *
+ * These MUST be registered alongside {@link ManagedWorkflowManifestEntry}: a
+ * workflow registered without its event filter never fires on the events that
+ * are meant to trigger it (voyant#3032 review).
+ */
+export interface ManagedEventFilterEntry {
+  readonly id: string
+  readonly eventType: string
+  /** Opaque serializable routing descriptor (where/input/target) the Cloud event router registers. */
+  readonly manifest?: unknown
 }
 
 /**
@@ -138,6 +158,18 @@ const STANDARD_PROFILE_WORKFLOWS: Readonly<
   "@voyant-travel/commerce": [bulkReindexProductsWorkflowManifest],
 }
 
+/**
+ * The standard event-filter bindings each module contributes, keyed by module
+ * specifier. Mirrors the `module.eventFilters` metadata the framework
+ * composition declares (`composition-lazy.ts`) alongside `workflows`, so a
+ * managed deployment routes the same events into the same workflows the composed
+ * runtime does. Kept in sync by a unit test.
+ */
+const STANDARD_PROFILE_EVENT_FILTERS: Readonly<Record<string, readonly ManagedEventFilterEntry[]>> =
+  {
+    "@voyant-travel/commerce": [promotionAffectedAllFilter],
+  }
+
 function toManagedScheduledJob(job: StandardScheduledJobDefinition): ManagedScheduledJob {
   return {
     id: job.id,
@@ -190,10 +222,30 @@ export function getManagedProfileScheduledJobs(
 export function getManagedProfileWorkflowManifest(
   project: VoyantProjectManifest,
 ): ManagedWorkflowManifestEntry[] {
+  return collectActiveModuleEntries(project, STANDARD_PROFILE_WORKFLOWS)
+}
+
+/**
+ * The event-filter bindings for a managed profile snapshot (voyant#3032). These
+ * register the `event → workflow` routes alongside
+ * {@link getManagedProfileWorkflowManifest} — without them a registered workflow
+ * never fires on the events meant to trigger it. Only filters owned by active
+ * modules are included.
+ */
+export function getManagedProfileEventFilters(
+  project: VoyantProjectManifest,
+): ManagedEventFilterEntry[] {
+  return collectActiveModuleEntries(project, STANDARD_PROFILE_EVENT_FILTERS)
+}
+
+function collectActiveModuleEntries<T>(
+  project: VoyantProjectManifest,
+  byModuleSpecifier: Readonly<Record<string, readonly T[]>>,
+): T[] {
   const active = resolveActiveModuleSpecifiers(project)
-  const workflows: ManagedWorkflowManifestEntry[] = []
-  for (const [specifier, entries] of Object.entries(STANDARD_PROFILE_WORKFLOWS)) {
-    if (active.has(specifier)) workflows.push(...entries)
+  const entries: T[] = []
+  for (const [specifier, moduleEntries] of Object.entries(byModuleSpecifier)) {
+    if (active.has(specifier)) entries.push(...moduleEntries)
   }
-  return workflows
+  return entries
 }

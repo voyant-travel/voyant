@@ -1,7 +1,11 @@
-import { bulkReindexProductsWorkflowManifest } from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
+import {
+  bulkReindexProductsWorkflowManifest,
+  promotionAffectedAllFilter,
+} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 import { describe, expect, it } from "vitest"
 
 import {
+  getManagedProfileEventFilters,
   getManagedProfileScheduledJobs,
   getManagedProfileWorkflowManifest,
   SCHEDULED_JOB_ROUTE,
@@ -89,5 +93,24 @@ describe("getManagedProfileWorkflowManifest (voyant#3032)", () => {
     // by confirming the id matches the commerce-owned workflow.
     const ids = getManagedProfileWorkflowManifest(project(["bookings", "catalog"])).map((w) => w.id)
     expect(ids).toEqual(["promotions.reindex-all-products"])
+  })
+})
+
+describe("getManagedProfileEventFilters (voyant#3032)", () => {
+  it("registers the event filters that route events into active modules' workflows", () => {
+    const filters = getManagedProfileEventFilters(project([]))
+
+    // The commerce workflow only fires because this filter routes
+    // promotion.changed (kind=all) into it — the workflow manifest alone is inert.
+    expect(filters).toEqual([promotionAffectedAllFilter])
+    expect(filters[0]?.manifest).toMatchObject({
+      targetWorkflowId: bulkReindexProductsWorkflowManifest.id,
+    })
+  })
+
+  it("only includes filters owned by active modules", () => {
+    expect(
+      getManagedProfileEventFilters(project(["bookings", "catalog"])).map((f) => f.id),
+    ).toEqual([promotionAffectedAllFilter.id])
   })
 })
