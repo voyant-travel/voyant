@@ -21,6 +21,11 @@ function includesAll(value, snippets) {
   return snippets.every((snippet) => value.includes(snippet))
 }
 
+function commandIndex(value, snippet) {
+  const index = value.indexOf(snippet)
+  return index === -1 ? null : index
+}
+
 if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
   violations.push({
     file: OPERATOR_PACKAGE_JSON,
@@ -36,19 +41,48 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
     typeof scripts["copy:deployment-artifacts"] === "string"
       ? scripts["copy:deployment-artifacts"]
       : ""
+  const graphCheckIndex = commandIndex(buildScript, "pnpm run graph:check")
+  const viteBuildIndex = commandIndex(buildScript, "vite build")
+  const copyArtifactsIndex = commandIndex(buildScript, "pnpm run copy:deployment-artifacts")
 
-  if (!buildScript.includes("pnpm run graph:check")) {
+  if (graphCheckIndex === null) {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
       check: "operator-build-graph-check-missing",
       message: "The operator build script must run graph:check before Vite.",
     })
   }
-  if (!buildScript.includes("pnpm run copy:deployment-artifacts")) {
+  if (viteBuildIndex === null) {
+    violations.push({
+      file: OPERATOR_PACKAGE_JSON,
+      check: "operator-build-vite-missing",
+      message: "The operator build script must run Vite before copying deployment artifacts.",
+    })
+  }
+  if (copyArtifactsIndex === null) {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
       check: "operator-build-artifact-copy-missing",
       message: "The operator build script must copy deployment graph artifacts into dist.",
+    })
+  }
+  if (graphCheckIndex !== null && viteBuildIndex !== null && graphCheckIndex > viteBuildIndex) {
+    violations.push({
+      file: OPERATOR_PACKAGE_JSON,
+      check: "operator-build-graph-check-after-vite",
+      message: "The operator build script must run graph:check before Vite creates dist.",
+    })
+  }
+  if (
+    viteBuildIndex !== null &&
+    copyArtifactsIndex !== null &&
+    copyArtifactsIndex < viteBuildIndex
+  ) {
+    violations.push({
+      file: OPERATOR_PACKAGE_JSON,
+      check: "operator-build-artifact-copy-before-vite",
+      message:
+        "The operator build script must copy deployment graph artifacts after Vite creates dist.",
     })
   }
   if (
