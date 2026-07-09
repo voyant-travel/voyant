@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { createOperatorAdminNavigation } from "../../src/navigation/operator-navigation.js"
+import {
+  createOperatorAdminNavigation,
+  filterAdminNavigationByModules,
+} from "../../src/navigation/operator-navigation.js"
 import type { OperatorAdminMessages } from "../../src/providers/operator-admin-messages.js"
 
 const navMessages: OperatorAdminMessages["nav"] = {
@@ -114,5 +117,50 @@ describe("createOperatorAdminNavigation", () => {
       "policies",
       "number-series",
     ])
+  })
+})
+
+describe("filterAdminNavigationByModules (voyant#3063)", () => {
+  const nav = createOperatorAdminNavigation({ messages: navMessages })
+  const ids = (items: ReturnType<typeof createOperatorAdminNavigation>) =>
+    items.map((item) => item.id)
+
+  it("gates the real base nav down to a deployment's active module set", () => {
+    // The `[bookings, catalog]` subset resolves (server-side) to include the
+    // required foundational modules — here we assert the nav gating for that set.
+    const gated = filterAdminNavigationByModules(nav, [
+      "action-ledger",
+      "relationships",
+      "identity",
+      "commerce",
+      "catalog",
+      "bookings",
+    ])
+
+    expect(ids(gated)).toEqual(["dashboard", "catalog", "bookings", "people", "organizations"])
+    // Inactive modules' base entries are gone — no dead links to unmounted APIs.
+    for (const gone of ["flights", "products", "availability", "suppliers", "finance", "legal"]) {
+      expect(ids(gated)).not.toContain(gone)
+    }
+  })
+
+  it("maps non-identity nav ids to their backing module", () => {
+    // products → inventory, availability/resources → operations,
+    // suppliers/channel-sync → distribution, people/organizations → relationships.
+    const withInventory = ids(filterAdminNavigationByModules(nav, ["inventory"]))
+    expect(withInventory).toContain("products")
+    expect(withInventory).not.toContain("availability")
+
+    const withDistribution = ids(filterAdminNavigationByModules(nav, ["distribution"]))
+    expect(withDistribution).toContain("suppliers")
+    expect(withDistribution).toContain("channel-sync")
+  })
+
+  it("fails open when no active set is provided", () => {
+    expect(ids(filterAdminNavigationByModules(nav, undefined))).toEqual(ids(nav))
+  })
+
+  it("keeps only unmapped items (e.g. dashboard) when the active set is empty", () => {
+    expect(ids(filterAdminNavigationByModules(nav, []))).toEqual(["dashboard"])
   })
 })

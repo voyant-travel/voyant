@@ -151,6 +151,13 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
   user: TUser | null | undefined
   isUserLoading?: boolean
   /**
+   * The deployment's active module ids (voyant#3063). When provided, the nav is
+   * gated to these modules — a source-free managed admin composes the full nav
+   * from one shared, framework-version-tagged image and hides modules its
+   * profile doesn't activate (whose API isn't mounted). Omit to show everything.
+   */
+  activeModuleIds?: readonly string[]
+  /**
    * Admin extensions for the navigation/widget seam. Pass a function to
    * derive nav labels from the resolved admin messages.
    */
@@ -190,6 +197,7 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
 export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
   user,
   isUserLoading,
+  activeModuleIds,
   extensions,
   icons,
   linkComponent = AdminRouterLink,
@@ -215,6 +223,7 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
           <AdminLocalePreferenceSync source={loadedUser} />
           <AdminWorkspaceShellInner
             user={loadedUser}
+            activeModuleIds={activeModuleIds}
             extensions={extensions}
             icons={icons}
             linkComponent={linkComponent}
@@ -234,6 +243,7 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
 
 function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   user,
+  activeModuleIds,
   extensions,
   icons,
   linkComponent,
@@ -245,6 +255,7 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   children,
 }: {
   user: TUser
+  activeModuleIds?: readonly string[]
   extensions: AdminWorkspaceShellProps<TUser>["extensions"]
   icons?: OperatorAdminNavigationIcons
   linkComponent: AdminNavLinkComponent
@@ -285,6 +296,7 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
 
   const layout = (
     <OperatorAdminWorkspaceLayout
+      activeModuleIds={activeModuleIds}
       currentPath={currentPath}
       extensions={resolvedExtensions}
       headerSlot={headerSlot}

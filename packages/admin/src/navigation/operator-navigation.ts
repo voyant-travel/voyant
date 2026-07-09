@@ -69,6 +69,54 @@ export interface CreateOperatorAdminNavigationOptions {
   icons?: OperatorAdminNavigationIcons
 }
 
+/**
+ * The module id each standard nav item needs mounted (voyant#3063). Used to gate
+ * the base nav for a deployment that activates only a module subset — a
+ * source-free managed admin composes the full nav from one shared image and
+ * filters it at runtime by the active module set, so items whose API isn't
+ * mounted don't render as dead links.
+ *
+ * Keyed by the `id`s in {@link createOperatorAdminNavigation}. Items with no
+ * entry here (e.g. `dashboard`, `settings`) are always shown. Note the mapping
+ * is not always identity: `products` → `inventory`, `availability`/`resources` →
+ * `operations`, `people`/`organizations` → `relationships`, `suppliers` and
+ * `channel-sync` → `distribution`.
+ */
+export const OPERATOR_ADMIN_NAV_MODULE_IDS: Record<string, string> = {
+  catalog: "catalog",
+  flights: "flights",
+  products: "inventory",
+  availability: "operations",
+  bookings: "bookings",
+  notifications: "notifications",
+  suppliers: "distribution",
+  people: "relationships",
+  organizations: "relationships",
+  resources: "operations",
+  finance: "finance",
+  legal: "legal",
+  "channel-sync": "distribution",
+}
+
+/**
+ * Filter a nav list down to a deployment's active modules (voyant#3063), keyed
+ * by {@link OPERATOR_ADMIN_NAV_MODULE_IDS}. Fail-open: when `activeModuleIds` is
+ * `undefined` (a host that does not gate — e.g. a self-hosted starter built from
+ * its own module set) every item is kept. Items with no module mapping are
+ * always kept; a mapped item survives only when its module is active.
+ */
+export function filterAdminNavigationByModules(
+  items: ReadonlyArray<NavItem>,
+  activeModuleIds: readonly string[] | undefined,
+): NavItem[] {
+  if (!activeModuleIds) return [...items]
+  const active = new Set(activeModuleIds)
+  return items.filter((item) => {
+    const moduleId = item.id ? OPERATOR_ADMIN_NAV_MODULE_IDS[item.id] : undefined
+    return moduleId === undefined || active.has(moduleId)
+  })
+}
+
 export function createOperatorAdminNavigation({
   icons = {},
   messages,

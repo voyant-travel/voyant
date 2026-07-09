@@ -25,3 +25,9 @@ mounted (dead links / 404s).
 - `AdminBootstrapStatus` carries an optional `modules` module-id list the
   source-free admin filters its nav/widget composition by (fail-open when
   absent).
+- `AdminWorkspaceShell` accepts `activeModuleIds`; when provided, the packaged
+  **base** nav is gated to those modules (`filterAdminNavigationByModules` /
+  `OPERATOR_ADMIN_NAV_MODULE_IDS`), so a shared image's static nav (Flights,
+  Finance, Legal, …) is hidden for a profile subset — not just
+  extension-contributed items. Fail-open when omitted, so self-hosted starters
+  are unaffected.

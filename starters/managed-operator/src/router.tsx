@@ -126,10 +126,13 @@ function WorkspaceLayout() {
 function WorkspaceContent({ activeModuleIds }: { activeModuleIds: readonly string[] | undefined }) {
   const { user, isLoading } = useUser<ManagedUser>()
 
-  // Gate the NAV/widgets by the deployment's active module set. The route tree
-  // stays full (built once at import, hydration-stable), so this only removes
-  // sidebar entries + dashboard widgets for modules this operator does not run —
-  // no more dead links to pages whose API isn't mounted (voyant#3063).
+  // Gate composition by the deployment's active module set (voyant#3063). Two
+  // seams, because the managed nav has two sources: `activeModuleIds` (passed to
+  // the shell) gates the packaged BASE nav; filtering `extensions` here gates
+  // extension-contributed nav + dashboard widgets. The route tree stays full
+  // (built once at import, hydration-stable) — this only removes sidebar entries
+  // and widgets for modules this operator does not run, so no more dead links to
+  // pages whose API isn't mounted.
   const activeExtensions = useMemo(
     () => filterManagedAdminExtensionsByModules(extensions, activeModuleIds),
     [activeModuleIds],
@@ -139,6 +142,7 @@ function WorkspaceContent({ activeModuleIds }: { activeModuleIds: readonly strin
     <AdminWorkspaceShell
       user={user}
       isUserLoading={isLoading}
+      activeModuleIds={activeModuleIds}
       extensions={activeExtensions}
       destinations={destinations}
       onSignOut={() => managedAuthRuntime.signOut()}
