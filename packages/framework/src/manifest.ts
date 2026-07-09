@@ -10,10 +10,12 @@
  * The standard set is the DEFAULT, not a fixed profile (ADR-0007). A deployment
  * may pare it down via `createVoyantApp({ exclude })` (remove), validated against
  * `FRAMEWORK_CAPABILITY_GRAPH` (below) so dropping a depended-on module, or an
- * `isRequired` one, fails at boot rather than as a runtime 500. Phase 1 lands the
- * runtime removal mechanism here; aligning schema/migration generation with the
- * same subset is the immediate follow-up. Capability *replacement* (override a
- * module with a substitute) is the v2 design — see ADR-0007 "Deferred to v2".
+ * `isRequired` one, fails at boot rather than as a runtime 500. Excluding a module
+ * cascades to the extensions it owns (`FRAMEWORK_EXTENSION_OWNERSHIP`, voyant#2104).
+ * The subset gates runtime + admin surfaces only; the migration bundle stays
+ * monolithic, so an excluded module's tables are created but inert. Capability
+ * *replacement* (override a module with a substitute) is the v2 design — see
+ * ADR-0007 "Deferred to v2".
  *
  * Workstream B of the consolidated-deployments RFC: the standard registry's
  * factories live in this package alongside the manifest (the "which + order").

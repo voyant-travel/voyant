@@ -2,7 +2,7 @@
 
 - **Status:** Proposed (2026-06-22)
 - **Relates to:** [consolidated-deployments-rfc](../architecture/consolidated-deployments-rfc.md) (Workstream B / D.1), [ADR-0006](./0006-live-availability-search-contract.md) (capability-gated adapters as precedent), [custom-modules](../architecture/custom-modules.md)
-- **Implemented by:** This PR — `createVoyantApp({ exclude })`, `FRAMEWORK_CAPABILITY_GRAPH` (marking the foundational core, incl. CRM, `isRequired`), and the pure `findCapabilityGaps` / `subsetStandardManifest` validators. A pluggable-implementation port (swap a required module for an external one) was considered and rejected for v1 — see Alternatives. Near-term follow-up: schema-side subsetting + extension cascade.
+- **Implemented by:** This PR — `createVoyantApp({ exclude })`, `FRAMEWORK_CAPABILITY_GRAPH` (marking the foundational core, incl. CRM, `isRequired`), and the pure `findCapabilityGaps` / `subsetStandardManifest` validators. A pluggable-implementation port (swap a required module for an external one) was considered and rejected for v1 — see Alternatives. Extension-ownership cascade shipped as a follow-up (voyant#2104/#3074); the schema side is decided as no-bundle-partitioning (see Phasing).
 
 ## Context
 
@@ -31,9 +31,10 @@ Two facts from the codebase shape the design:
 
 2. **There are two manifests that can drift.** `voyant.config.ts` `modules` drives
    schema/migration/CLI (`db doctor`, drizzle config), while
-   `FRAMEWORK_RUNTIME_MANIFEST` drives runtime mounting. A naive runtime `exclude`
-   would un-mount routes while still migrating the dropped module's tables — hence
-   the schema-side follow-up.
+   `FRAMEWORK_RUNTIME_MANIFEST` drives runtime mounting. A runtime `exclude`
+   un-mounts routes while the monolithic bundle still migrates the dropped module's
+   tables — resolved by keeping schema whole + inert and having `db doctor` treat
+   it as expected (see Phasing), not by partitioning the bundle.
 
 3. **Some modules can't be dropped safely.** Cross-cutting infrastructure (audit
    ledger, identity, commerce primitives) and CRM are reached by many others, so
@@ -112,21 +113,23 @@ goal. See Alternatives.
   `relationshipsService` directly without breaking subsetting — no decoupling debt,
   no port to maintain. If an external-CRM requirement ever appears, the seam is
   override-by-capability (Alternatives); it is not built now.
-- **Schema for excluded modules is not auto-dropped.** Excluding stops *future*
-  migration of those tables; an existing deployment that excludes a module still
-  owns its historical tables and must drop them deliberately. `db doctor` reports
-  orphaned-schema drift.
-- **Excluding a module does not auto-drop its augmenting extensions.** An
-  extension's mount prefix (`HonoExtension.extension.module`) is a *path*, not a
-  foreign key to a mounted module's `name` — the standard set legitimately
-  contains, e.g., a `proposal` extension that mounts under `quote-versions` with
-  no module of that name. So a name-match "orphan" check is unsound (it would
-  reject the full set at boot). `exclude` filters both the module and extension
-  manifest lists, so a deployment dropping a module with augmenting extensions
-  (e.g. `bookings` + `finance/bookings-create-extension`, which mounts under
-  `/v1/admin/bookings`) must list those extension specifiers too, else the
-  excluded module's surface partially leaks. Auto-cascade needs explicit
-  module→extension *ownership* metadata in the graph — a follow-up.
+- **Schema for excluded modules stays whole (by design).** The managed migration
+  bundle is monolithic and version-pinned, so an excluded module's tables are
+  still created but left inert — no routes or admin nav reach them. This keeps the
+  fixed-operator and subset paths on the same single-bundle migration model rather
+  than partitioning the bundle per subset. `voyant db doctor` treats an excluded
+  module's tables as *expected-absent-from-use*, not drift. (Re-selecting the
+  module later "just works" with no migration.)
+- **Excluding a module auto-drops its augmenting extensions** (voyant#2104,
+  shipped). An extension's mount prefix (`HonoExtension.extension.module`) is a
+  *path*, not a foreign key to a mounted module's `name` — the standard set
+  legitimately contains, e.g., a `proposal` extension that mounts under
+  `quote-versions` with no module of that name — so a name-match "orphan" check is
+  unsound. Ownership is therefore *declared* in `FRAMEWORK_EXTENSION_OWNERSHIP`
+  (co-located with the manifest), and `subsetStandardManifest` cascades exclusion
+  from it: dropping `bookings` also drops `finance/bookings-create-extension`
+  (which mounts under `/v1/admin/bookings`) with no need to list it. This runs in
+  the core primitive, so every `exclude` caller is safe, not just the managed path.
 
 ## Phasing
 
@@ -134,10 +137,16 @@ goal. See Alternatives.
 manifest; `FRAMEWORK_CAPABILITY_GRAPH` with `isRequired` (incl. CRM); validated by
 `findCapabilityGaps` + `subsetStandardManifest`.
 
-**Follow-up (near-term, separate issue).** Schema-side subsetting + extension
-cascade: feed `exclude` into drizzle generation so tables drop with routes, and
-declare module→extension *ownership* so excluding a module also drops its
-augmenting extensions (closing the partial-surface-leak above).
+**Extension cascade (shipped, voyant#2104/#3074).** `FRAMEWORK_EXTENSION_OWNERSHIP`
+declares module→extension ownership and `subsetStandardManifest` cascades
+exclusion from it, closing the partial-surface-leak above.
+
+**Schema-side (decided — no bundle partitioning).** Rather than feeding `exclude`
+into drizzle generation to drop tables, the subset leaves the monolithic bundle
+whole and inert (see Consequences); the remaining work is `voyant db doctor`
+knowing a subset's unselected-module tables are expected-absent-from-use rather
+than drift. Admin-UI subsetting + a stable people-picker contract for a substitute
+CRM is a separate, demand-driven follow-up (voyant#2107).
 
 Pluggable-implementation ports (swap a required module — e.g. CRM — for an
 external system) are **not** on the roadmap; see Alternatives.
