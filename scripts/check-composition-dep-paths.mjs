@@ -17,8 +17,6 @@ const CONFIGS = [
   "packages/framework/tsconfig.typecheck.json",
   "packages/framework/tsconfig.build.json",
   "packages/openapi/tsconfig.typecheck.json",
-  "starters/managed-operator/tsconfig.server.json",
-  "starters/managed-operator/tsconfig.client.json",
 ]
 
 const before = CONFIGS.map((f) => readFileSync(join(ROOT, f), "utf8"))

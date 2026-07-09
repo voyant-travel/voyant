@@ -1,7 +1,7 @@
 {
   "schemaVersion": "voyant.managed-profile.v1",
   "profile": "operator",
-  "frameworkVersion": "0.18.3",
+  "frameworkVersion": "0.26.0",
   "mode": "self-hosted",
   "modules": [],
   "plugins": [],

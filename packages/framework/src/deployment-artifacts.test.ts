@@ -87,7 +87,7 @@ describe("deployment graph artifacts", () => {
       graph,
       graphArtifactPath: "../deployment-graph.generated.json",
       profileSnapshotPath: "../managed-profile.json",
-      command: "pnpm --filter managed-operator graph:emit",
+      command: "pnpm --filter operator graph:emit",
     })
 
     expect(source).toContain(`GENERATED_DEPLOYMENT_GRAPH_HASH = "${graph.contentHash}"`)

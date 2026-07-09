@@ -21,8 +21,8 @@ interface CliOptions {
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDir, "..")
-const defaultManagedOperatorRoot = join(repoRoot, "starters", "managed-operator")
-const command = "pnpm --filter managed-operator graph:emit"
+const defaultOperatorRoot = join(repoRoot, "starters", "operator")
+const command = "pnpm --filter operator graph:emit"
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
@@ -46,12 +46,12 @@ async function main(): Promise<void> {
   })
   const manifest = buildDeploymentArtifactManifest({
     graph,
-    graphArtifactPath: relativeToManagedOperator(options.graphOutputPath),
+    graphArtifactPath: relativeToOperator(options.graphOutputPath),
     runtimeEntries: [
       buildManagedNodeRuntimeEntryArtifact({
         graph,
-        file: relativeToManagedOperator(options.entryOutputPath),
-        profileSnapshot: relativeToManagedOperator(options.profilePath),
+        file: relativeToOperator(options.entryOutputPath),
+        profileSnapshot: relativeToOperator(options.profilePath),
       }),
     ],
   })
@@ -126,10 +126,10 @@ async function staleGeneratedFiles(
 function parseArgs(args: readonly string[]): CliOptions {
   const options: CliOptions = {
     emit: false,
-    profilePath: join(defaultManagedOperatorRoot, "managed-profile.json"),
-    manifestOutputPath: join(defaultManagedOperatorRoot, "deployment-artifacts.generated.json"),
-    graphOutputPath: join(defaultManagedOperatorRoot, "deployment-graph.generated.json"),
-    entryOutputPath: join(defaultManagedOperatorRoot, "src", "runtime-entry.generated.ts"),
+    profilePath: join(defaultOperatorRoot, "managed-profile.json"),
+    manifestOutputPath: join(defaultOperatorRoot, "deployment-artifacts.generated.json"),
+    graphOutputPath: join(defaultOperatorRoot, "deployment-graph.generated.json"),
+    entryOutputPath: join(defaultOperatorRoot, "src", "runtime-entry.generated.ts"),
   }
 
   for (let index = 0; index < args.length; index += 1) {
@@ -182,8 +182,8 @@ function relativeToRepo(filePath: string): string {
   return path.relative(repoRoot, filePath).replaceAll(path.sep, "/")
 }
 
-function relativeToManagedOperator(filePath: string): string {
-  return path.relative(defaultManagedOperatorRoot, filePath).replaceAll(path.sep, "/")
+function relativeToOperator(filePath: string): string {
+  return path.relative(defaultOperatorRoot, filePath).replaceAll(path.sep, "/")
 }
 
 function toPosixRelativePath(fromDir: string, toPath: string, pathModule: typeof path): string {
@@ -195,7 +195,7 @@ function toPosixRelativePath(fromDir: string, toPath: string, pathModule: typeof
 function printHelp(): void {
   console.log(`Usage: tsx scripts/emit-deployment-graph.ts [--emit]
 
-Resolves the managed-operator profile into committed generated graph artifacts.
+Resolves the operator managed profile into committed generated graph artifacts.
 
 Options:
   --emit                 write generated artifacts instead of checking staleness

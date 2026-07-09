@@ -1,4 +1,4 @@
-// Generates the managed-profile snapshot the source-free admin host boots from.
+// Generates the managed-profile snapshot the operator graph artifacts boot from.
 //
 // The managed runtime (`@voyant-travel/framework/managed-runtime`) composes the
 // REAL API from a serialized project snapshot — a plain JSON file describing the
@@ -9,14 +9,11 @@
 // This reference snapshot is a SELF-HOSTED, provider-light composition: the FULL
 // standard module set (an empty `modules` resolves to every default operator
 // module) with in-memory providers everywhere except the Postgres database and
-// Better Auth. It covers the full set on purpose so the composed API matches the
-// admin UI the source-free host mounts — `createManagedAdminExtensions` registers
-// every standard domain, so restricting the snapshot would leave nav/pages whose
-// `/api/v1/admin/*` routes the runtime never mounts. It proves the composition
-// shape: `node dist/server/server.js` serving both the SSR admin UI and a real
-// `/api` in one process.
+// Better Auth. It covers the full set on purpose so the managed runtime graph
+// tracks the same operator module set that build/doctor/deploy inspect. List a
+// subset only when the operator admin composition is pruned from the same graph.
 //
-// Re-run with `pnpm --filter managed-operator generate:snapshot` and commit the
+// Re-run with `pnpm --filter operator generate:managed-profile` and commit the
 // resulting `managed-profile.json`.
 import { readFile, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
@@ -61,4 +58,4 @@ const project = defineVoyantProject({
 
 const outPath = fileURLToPath(new URL("../managed-profile.json", import.meta.url))
 await writeFile(outPath, `${JSON.stringify(project, null, 2)}\n`, "utf8")
-console.info(`[managed-operator] wrote ${outPath} (framework ${frameworkVersion})`)
+console.info(`[operator] wrote ${outPath} (framework ${frameworkVersion})`)
