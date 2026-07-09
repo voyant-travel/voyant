@@ -21,6 +21,7 @@ import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 
+import { loadOperatorDeploymentGraphArtifacts } from "./deployment-graph-artifacts"
 import { fetch as appFetch, scheduled } from "./entry"
 
 /**
@@ -45,6 +46,7 @@ import { fetch as appFetch, scheduled } from "./entry"
 /** Built client assets (`dist/client`), served for `/assets/*` and public files. */
 const CLIENT_DIR =
   process.env.CLIENT_ASSETS_DIR ?? fileURLToPath(new URL("../client", import.meta.url))
+const deploymentGraphArtifacts = loadOperatorDeploymentGraphArtifacts()
 
 /**
  * Build an object-store binding: S3-backed when R2 credentials are present,
@@ -189,5 +191,7 @@ if (isMainModule) {
       ? { originTrustSecret: process.env.ORIGIN_TRUST_SECRET }
       : {}),
   })
-  console.info(`[operator] Node runtime listening on :${handle.port}`)
+  console.info(
+    `[operator] Node runtime listening on :${handle.port} (${deploymentGraphArtifacts.graphHash})`,
+  )
 }
