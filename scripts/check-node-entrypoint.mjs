@@ -3,6 +3,8 @@
  *
  *  1. `src/server.ts` (the Node process entry) exists and boots the runtime via
  *     `createNodeServer` from `@voyant-travel/runtime`.
+ *  1b. `src/server.ts` consumes the checked deployment graph artifacts at boot
+ *      so dev/build/deploy share the same graph contract.
  *  2. `src/entry.ts` (the app's `fetch`/`scheduled` handlers) keeps SSR behind a
  *     lazy import so the React + react-dom/server graph isn't pulled into the
  *     module's top-level — imported on first render, not at boot. Heavy API and
@@ -19,6 +21,7 @@ const ROOT = join(__dirname, "..")
 
 const APP_ENTRY = "starters/operator/src/entry.ts"
 const NODE_ENTRY = "starters/operator/src/server.ts"
+const GENERATED_RUNTIME_ENTRY = "runtime-entry.generated"
 
 const FORBIDDEN_IMPORTS = [
   {
@@ -67,16 +70,47 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
     check: { id: "missing-node-entry", message: "The Node process entry is missing." },
     text: "",
   })
-} else if (!readFileSync(join(ROOT, NODE_ENTRY), "utf-8").includes("createNodeServer")) {
-  violations.push({
-    file: NODE_ENTRY,
-    line: 0,
-    check: {
-      id: "node-entry-not-wired",
-      message: "The Node entry must boot the runtime via createNodeServer.",
-    },
-    text: "",
-  })
+} else {
+  const nodeEntrySource = readFileSync(join(ROOT, NODE_ENTRY), "utf-8")
+  if (!nodeEntrySource.includes("createNodeServer")) {
+    violations.push({
+      file: NODE_ENTRY,
+      line: 0,
+      check: {
+        id: "node-entry-not-wired",
+        message: "The Node entry must boot the runtime via createNodeServer.",
+      },
+      text: "",
+    })
+  }
+  if (
+    !/^import\s+\{\s*loadOperatorDeploymentGraphArtifacts\s*\}\s+from\s+["']\.\/deployment-graph-artifacts["']/m.test(
+      nodeEntrySource,
+    ) ||
+    !/^const\s+\w+\s*=\s*loadOperatorDeploymentGraphArtifacts\(\s*\)/m.test(nodeEntrySource)
+  ) {
+    violations.push({
+      file: NODE_ENTRY,
+      line: 0,
+      check: {
+        id: "deployment-graph-artifacts-not-consumed",
+        message: "The Node entry must validate deployment graph artifacts at boot.",
+      },
+      text: "",
+    })
+  }
+  if (nodeEntrySource.includes(GENERATED_RUNTIME_ENTRY)) {
+    violations.push({
+      file: NODE_ENTRY,
+      line: 0,
+      check: {
+        id: "deployment-runtime-entry-imported",
+        message:
+          "The Node entry must validate deployment graph artifacts without importing the generated runtime entry.",
+      },
+      text: "",
+    })
+  }
 }
 
 if (violations.length > 0) {
@@ -91,4 +125,6 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log("check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer)")
+console.log(
+  "check-node-entrypoint: OK (app entry lazy; server.ts wires createNodeServer + graph artifacts)",
+)
