@@ -38,6 +38,8 @@ export interface OperatorDeploymentGraphEnvRequirement {
   description: string
 }
 
+export type OperatorDeploymentGraphEnv = Record<string, unknown>
+
 interface DeploymentArtifactManifest {
   schemaVersion?: unknown
   graphHash?: unknown
@@ -206,6 +208,38 @@ export function loadOperatorDeploymentGraphArtifacts(
   validateGeneratedRuntimeEntrySource({ graphHash, manifestUrl, mode, summary, target })
 
   return summary
+}
+
+export function validateOperatorDeploymentGraphResourceEnv(
+  summary: Pick<OperatorDeploymentGraphArtifactSummary, "resourceRequirements">,
+  env: OperatorDeploymentGraphEnv,
+): string[] {
+  const issues: string[] = []
+  for (const resource of summary.resourceRequirements) {
+    for (const requirement of resource.env) {
+      if (!requirement.required) continue
+      const value = env[requirement.name]
+      const present =
+        typeof value === "string" ? value.trim().length > 0 : value !== null && value !== undefined
+      if (!present) {
+        issues.push(
+          `${requirement.kind} ${requirement.name} is required for ${resource.resourceKey}`,
+        )
+      }
+    }
+  }
+  return [...new Set(issues)]
+}
+
+export function assertOperatorDeploymentGraphResourceEnv(
+  summary: Pick<OperatorDeploymentGraphArtifactSummary, "resourceRequirements">,
+  env: OperatorDeploymentGraphEnv,
+): void {
+  const issues = validateOperatorDeploymentGraphResourceEnv(summary, env)
+  if (issues.length === 0) return
+  throw new Error(
+    `Operator deployment graph resource requirements are not satisfied:\n${formatIssues(issues)}`,
+  )
 }
 
 function collectResourceRequirements(value: unknown): OperatorDeploymentGraphResourceRequirement[] {
@@ -406,6 +440,10 @@ function stringArraysEqual(actual: readonly string[], expected: readonly string[
   return (
     actual.length === expected.length && actual.every((value, index) => value === expected[index])
   )
+}
+
+function formatIssues(issues: readonly string[]): string {
+  return issues.map((issue) => `- ${issue}`).join("\n")
 }
 
 function escapeRegExp(value: string): string {
