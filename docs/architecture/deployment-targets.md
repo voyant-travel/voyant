@@ -48,10 +48,11 @@ workload class well. On Node none of it is necessary.
 - **Build:** `pnpm --filter operator build` (Vite, no `@cloudflare/vite-plugin`)
   emits `dist/client` + `dist/server/server.js`. **Run:** `pnpm --filter operator
   start` (`node dist/server/server.js`).
-- **Graph contract:** `pnpm --filter operator dev` and standalone Node boot both
-  load the generated deployment graph artifacts and fail before serving traffic
-  when graph-declared required resource env is missing. Local `.env` loading is
-  only a source for satisfying the same graph contract; it is not a parallel
+- **Graph contract:** `pnpm --filter operator dev`, `pnpm --filter operator
+  db:migrate`, and standalone Node boot all load the generated deployment graph
+  artifacts and fail before serving traffic or touching the database when
+  graph-declared required resource env is missing. Local `.env` loading is only
+  a source for satisfying the same graph contract; it is not a parallel
   deployment shape.
 - **Database:** the pooled node-postgres lane (`DATABASE_URL_DIRECT`, `adapter:
   "node"`) is the production default — one resident pool per process. neon-http/WS
@@ -102,8 +103,9 @@ Avoid:
 
 The mechanical check lives in `scripts/check-node-entrypoint.mjs` and is part of
 `pnpm verify:architecture`: it asserts `src/server.ts` wires `createNodeServer`
-and graph artifact/resource validation, that `pnpm --filter operator dev`
-preflights graph resource env, and that the app entry keeps those graphs lazy.
+and graph artifact/resource validation, that `pnpm --filter operator dev` and
+`pnpm --filter operator db:migrate` preflight graph resource env, and that the
+app entry keeps those graphs lazy.
 
 ## Stop-the-bleed policy
 
