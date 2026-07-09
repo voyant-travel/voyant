@@ -2,7 +2,6 @@ packages:
   - "packages/*"
   - "packages/plugins/*"
   - "starters/federated-operator"
-  - "starters/managed-operator"
   - "starters/operator"
   - "apps/*"
   - "examples/*"

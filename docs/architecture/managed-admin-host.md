@@ -1,14 +1,18 @@
 # Managed profile admin host — source-free admin UI serving
 
-- **Status:** Realized (2026-07-08) — the source-free host works end to end; see status below.
+- **Status:** Folded into the unified `operator` starter (2026-07-09). There is
+  intentionally no separate managed-operator starter.
 - **Tracks:** voyant#3044 · Parent: voyant#2983 · Sibling: voyant#2987 (API runtime entry, shipped)
 - **Related:** Packaged Admin RFC (#1643/#1649), `@voyant-travel/vite-config`, platform#953/#954
 
 ## Implementation status
 
-`starters/managed-operator/` **is** the source-free managed admin host — it serves
-the full standard admin (SSR + client) from published packages, with the only
-route file being `src/routes/__root.tsx` and every page built at runtime.
+The source-free managed-profile work is now represented by graph artifacts under
+`starters/operator/`, not by a second starter. The operator starter is the single
+reference deployment surface; its `managed-profile.json`,
+`deployment-graph.generated.json`, `deployment-artifacts.generated.json`, and
+`src/runtime-entry.generated.ts` are the checked graph artifacts for the managed
+Node runtime path.
 
 Shipped:
 
@@ -19,13 +23,16 @@ Shipped:
 - **Auth port** — `ManagedProfileAdminAuthRuntime` in `@voyant-travel/admin/app`;
   `createAdminWorkspaceBeforeLoad` consumes it — #3051.
 - **User provider** — `@voyant-travel/admin-react/user` — #3053.
-- **Source-free host + runtime composition** — `starters/managed-operator`, the
-  code-based router, and the runtime route/destination builders
+- **Source-free host + runtime composition** — packaged serving seams, the
+  code-based router pattern, and the runtime route/destination builders
   (`buildAdminExtensionRoutes` incl. layout children, `buildAdminExtensionDestinations`)
   — #3055.
 - **Packaged build config** — `voyantStartViteConfig({ nodeSsr: true })` folds in
   the Node SSR target/`noExternal`/resolve-conditions; the app `vite.config.ts`
   copies **no** build config — #3057.
+- **Unified deployment graph artifacts** — the operator starter emits and checks
+  the managed-profile graph artifacts from the same deployment surface instead of
+  maintaining a duplicate starter.
 
 **Key finding that changed the plan:** the cross-repo `voyant admin generate`
 codegen is **not** needed. `buildAdminExtensionRoutes` builds the whole admin
@@ -34,9 +41,9 @@ so the entire goal is voyant-repo-only. The codegen remains a compile-time
 typed-link DX nicety for source-backed hosts, not a runtime requirement.
 
 Remaining (non-blocking): compose the real `/api` (`loadManagedProfileRuntime`,
-#2987) with admin serving in one process (managed-operator stubs `/api`);
-widget-slot cross-package wiring; snapshot module-subsetting (#2104/#2107);
-extract `managed-operator`'s thin entry into a Cloud-image template (platform#954).
+#2987) with admin serving in one process; widget-slot cross-package wiring;
+snapshot module-subsetting (#2104/#2107); extract a thin Cloud-image template
+from the unified operator graph artifacts if platform#954 still needs one.
 
 The phased plan below is retained as the design record; where it says "Phase 3 /
 future," read the status above for what actually shipped.
@@ -62,20 +69,20 @@ build/import time, so the composition needs a **runtime signal**:
    drift from what the API mounts — to `moduleId`s. The managed runtime returns
    them as `modules` on `GET /api/auth/bootstrap-status`
    (`ManagedBootstrapStatus`), the probe the workspace already issues at
-   bootstrap. The managed-operator dev `/auth` stub computes the same set from
-   the snapshot so subsets can be exercised locally.
+   bootstrap. Local subset exercise should use the same operator-managed profile
+   artifact that graph check/build/deploy consume.
 
 2. **Admin gates composition by it.** The route tree + destinations stay built
-   from the FULL registry (kept **hydration-stable** across the shared image);
-   the **nav/widgets** are filtered at render (`WorkspaceContent`) via
-   `filterManagedAdminExtensionsByModules` (in `managed-admin-module-gating.ts`),
-   keyed by `MANAGED_ADMIN_EXTENSION_MODULE_IDS` (extension id → required module
-   id; `core` is always active). Filtering is **fail-open**: if the runtime does
-   not report a module set, every extension is kept.
+   from the FULL registry (kept **hydration-stable** across the shared image).
+   The packaged workspace shell accepts `activeModuleIds` and filters navigation
+   with fail-open behavior: if the runtime does not report a module set, every
+   item is kept.
+   Extension/widget gating must be package-owned metadata before it is re-enabled
+   in the unified operator starter; it must not live in a second host starter.
 
-Note `mice` maps to a module absent from the standard manifest, so gating drops
-it whenever the runtime reports its set — removing an extension whose API the
-managed runtime never mounts.
+Note `mice` maps to a module absent from the standard manifest, so full
+extension/widget gating must continue to drop it whenever the runtime reports
+its set, removing an extension whose API the managed runtime never mounts.
 
 Scoped follow-up: direct-URL navigation to a disabled module still resolves its
 route (the page renders, then its API 404s). Per-route gating would need routes
@@ -296,15 +303,15 @@ Produce the admin client + SSR bundle from packages with no copied build config.
 - **Shipped (#3057):** `@voyant-travel/vite-config`'s `voyantStartViteConfig`
   gained `nodeSsr: true`, which folds in the Node `ssr`
   target/`noExternal`/resolve-conditions the app previously hand-merged. The
-  managed-operator (and operator) `vite.config.ts` is now a single
-  `voyantStartViteConfig(...)` call and copies no build config. (Route source is
-  the code-based router, not a "packaged shell" — see the status section; the
-  earlier `voyantManagedProfileAdminViteConfig` idea was unnecessary.)
+  operator `vite.config.ts` is now a single `voyantStartViteConfig(...)` call and
+  copies no build config. (Route source is the code-based router, not a
+  "packaged shell" — see the status section; the earlier
+  `voyantManagedProfileAdminViteConfig` idea was unnecessary.)
 - **Remaining:** a thin, profile-agnostic build entry (`vite.config.ts` +
   `index.html` + `__root.tsx` + `src/{router,server,entry,start}.ts`) that Cloud
   copies **verbatim** (or a generator emits) — carrying no app logic, only the
-  packaged-config instantiation. `starters/managed-operator/` is that entry today;
-  extracting it into a template package is the platform#954 follow-up.
+  packaged-config instantiation. That template must be derived from the unified
+  operator graph contract, not kept as a second workspace starter.
 - **Acceptance:** `createManagedProfileAdmin` end-to-end — a build in a scratch
   dir with only published packages + a snapshot + the thin entry produces
   `dist/client` + `dist/server`, and `node server.js` serves SSR admin + `/api`

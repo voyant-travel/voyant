@@ -792,6 +792,8 @@ that build on the same graph contract.
 - emit deterministic JSON graph manifest with content hash and package
   provenance
 - emit generated runtime entry modules
+- keep the reference Node target in `starters/operator`; graph artifacts for the
+  managed-profile bridge live there, not in a separate managed-operator starter
 - make `voyant dev` consume the same resolved graph as doctor/build/deploy
 - wire `voyant doctor`
 - wire `voyant doctor --json`
