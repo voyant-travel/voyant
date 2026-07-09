@@ -1,8 +1,10 @@
 import {
+  canonicalJson,
   resolveManagedProfileDeploymentGraph,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
 } from "../packages/framework/src/deployment-graph.ts"
 import { defineVoyantProject } from "../packages/framework/src/profile.ts"
+import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 
 const failures: string[] = []
 
@@ -14,8 +16,12 @@ const project = defineVoyantProject({
 })
 
 async function main(): Promise<void> {
-  const first = await resolveManagedProfileDeploymentGraph(project)
-  const second = await resolveManagedProfileDeploymentGraph(project)
+  const discoveredGraph = await resolveManagedProfileDeploymentGraph(project)
+  const packageRecords = readPnpmLockfilePackageRecords({
+    packageNames: discoveredGraph.packageRecords.map((record) => record.packageName),
+  })
+  const first = await resolveManagedProfileDeploymentGraph(project, { packageRecords })
+  const second = await resolveManagedProfileDeploymentGraph(project, { packageRecords })
 
   if (first.schemaVersion !== "voyant.resolved-graph.v1") {
     failures.push(`expected resolved graph schema v1, got ${first.schemaVersion}`)
@@ -27,6 +33,10 @@ async function main(): Promise<void> {
 
   if (first.contentHash !== second.contentHash) {
     failures.push("expected managed profile graph hash to be deterministic across identical inputs")
+  }
+
+  if (canonicalJson(first) !== canonicalJson(second)) {
+    failures.push("expected managed profile graph JSON manifest to be deterministic")
   }
 
   if (first.diagnostics.length > 0) {
@@ -53,6 +63,28 @@ async function main(): Promise<void> {
 
   if (!first.plugins.some((unit) => unit.id === "@voyant-travel/plugin-netopia")) {
     failures.push("expected managed graph to include selected plugin @voyant-travel/plugin-netopia")
+  }
+
+  const frameworkRecord = first.packageRecords.find(
+    (record) => record.packageName === "@voyant-travel/framework",
+  )
+  if (frameworkRecord?.source.kind !== "workspace" || !frameworkRecord.version) {
+    failures.push(
+      "expected @voyant-travel/framework package record to include workspace provenance",
+    )
+  }
+
+  const netopiaRecord = first.packageRecords.find(
+    (record) => record.packageName === "@voyant-travel/plugin-netopia",
+  )
+  if (
+    netopiaRecord?.source.kind !== "registry" ||
+    !netopiaRecord.version ||
+    !netopiaRecord.source.integrity
+  ) {
+    failures.push(
+      "expected @voyant-travel/plugin-netopia package record to include lockfile registry provenance",
+    )
   }
 
   const diagnosticCodes = Object.keys(VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY)
