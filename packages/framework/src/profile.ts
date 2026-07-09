@@ -1,7 +1,8 @@
-import { ownedExtensionsForExcludedModules, subsetStandardManifest } from "./create-app.js"
 import {
   FRAMEWORK_RUNTIME_MANIFEST,
   FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET,
+  ownedExtensionsForExcludedModules,
+  subsetStandardManifest,
 } from "./manifest.js"
 import { resourceRequirementsFor } from "./profile-requirements.js"
 import {

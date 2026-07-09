@@ -25,6 +25,12 @@ now-absent surface — e.g. removing `bookings` while
   now use the single source of truth (the hand-maintained ownership map
   previously duplicated in `profile.ts` is removed).
 
+The pure subset math (`subsetStandardManifest`, `ownedExtensionsForExcludedModules`,
+`FRAMEWORK_EXTENSION_OWNERSHIP`) lives in `manifest.js`, so the lightweight
+`@voyant-travel/framework/profile` subpath no longer transitively imports the
+runtime composition graph (`create-app.js` → `composition-lazy.js` → `@hono/zod-openapi`).
+Snapshot/requirements math stays free of runtime bundle weight.
+
 Schema stays whole: subsetting gates runtime + admin surfaces only; the standard
 migration bundle is unchanged (an unselected module's tables are migrated but
 inert). This keeps the fixed-operator and subset paths on the same single-bundle

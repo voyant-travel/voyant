@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { ownedExtensionsForExcludedModules, subsetStandardManifest } from "./create-app.js"
-import { FRAMEWORK_EXTENSION_OWNERSHIP, FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+import {
+  FRAMEWORK_EXTENSION_OWNERSHIP,
+  FRAMEWORK_RUNTIME_MANIFEST,
+  ownedExtensionsForExcludedModules,
+  subsetStandardManifest,
+} from "./manifest.js"
 
 describe("subsetStandardManifest (ADR-0007 module subsetting)", () => {
   it("returns the full standard set when nothing is excluded", () => {

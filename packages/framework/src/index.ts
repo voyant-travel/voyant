@@ -19,12 +19,7 @@
  */
 
 export { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-export {
-  type CreateVoyantAppConfig,
-  createVoyantApp,
-  ownedExtensionsForExcludedModules,
-  subsetStandardManifest,
-} from "./create-app.js"
+export { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 export {
   type DeploymentExtensionDeclaration,
   type DeploymentModuleDeclaration,
@@ -39,6 +34,8 @@ export {
   FRAMEWORK_EXTENSION_OWNERSHIP,
   FRAMEWORK_RUNTIME_MANIFEST,
   type FrameworkManifest,
+  ownedExtensionsForExcludedModules,
+  subsetStandardManifest,
 } from "./manifest.js"
 export {
   type DefineVoyantProjectInput,
