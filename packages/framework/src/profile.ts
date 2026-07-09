@@ -124,10 +124,22 @@ export function validateVoyantProject(input: unknown): VoyantProfileValidationRe
  * matching module extensions.
  *
  * Derived from the same `include` set that drives `createVoyantApp({ exclude })`,
- * so the admin nav can never drift from what the API mounts.
+ * plus the snapshot's `customSource.modules` — which the managed runtime now
+ * mounts (voyant#3079) — so the admin nav can never drift from what the API
+ * mounts. The custom specifiers are guarded the same way as the migration-source
+ * derivation: a malformed snapshot value is ignored, not iterated per character.
  */
 export function resolveActiveModuleIds(project: VoyantProjectManifest): string[] {
-  return getVoyantProjectRequirements(project).modules.include.map(moduleIdFromSpecifier)
+  const standard = getVoyantProjectRequirements(project).modules.include.map(moduleIdFromSpecifier)
+  const custom = Array.isArray(project.customSource?.modules)
+    ? project.customSource.modules
+        .filter(
+          (specifier): specifier is string =>
+            typeof specifier === "string" && specifier.trim().length > 0,
+        )
+        .map(moduleIdFromSpecifier)
+    : []
+  return unique([...standard, ...custom])
 }
 
 export function getVoyantProjectRequirements(
