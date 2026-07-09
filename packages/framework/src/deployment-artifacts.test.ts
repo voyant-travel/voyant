@@ -91,7 +91,7 @@ describe("deployment graph artifacts", () => {
     })
 
     expect(source).toContain(`GENERATED_DEPLOYMENT_GRAPH_HASH = "${graph.contentHash}"`)
-    expect(source).toContain('from "@voyant-travel/framework/managed-runtime"')
+    expect(source).toContain('await import(\n    "@voyant-travel/framework/managed-runtime"')
     expect(source).toContain('from "node:url"')
     expect(source).toContain("startManagedProfileRuntime")
     expect(source).not.toContain("starters/")

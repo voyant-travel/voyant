@@ -10,6 +10,7 @@ import {
 } from "@voyant-travel/runtime"
 
 import { fetch as appFetch, scheduled } from "./entry"
+import { GENERATED_DEPLOYMENT_GRAPH_HASH } from "./runtime-entry.generated"
 
 /**
  * Node entry for the managed-operator reference (voyant#3044). This file is also
@@ -90,5 +91,7 @@ if (isMainModule) {
       ? { originTrustSecret: process.env.ORIGIN_TRUST_SECRET }
       : {}),
   })
-  console.info(`[managed-operator] Node runtime listening on :${handle.port}`)
+  console.info(
+    `[managed-operator] Node runtime listening on :${handle.port} (${GENERATED_DEPLOYMENT_GRAPH_HASH})`,
+  )
 }

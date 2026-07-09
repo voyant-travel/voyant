@@ -1,5 +1,3 @@
-import { fileURLToPath } from "node:url"
-
 import {
   type AppLoader,
   createApiDispatch,
@@ -7,6 +5,11 @@ import {
   lazyApp,
   lazySsr,
 } from "@voyant-travel/runtime"
+
+import {
+  GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS,
+  resolveGeneratedProfileSnapshotPath,
+} from "./runtime-entry.generated"
 
 /**
  * The managed-operator reference serves the SSR admin UI AND the REAL managed
@@ -22,25 +25,11 @@ import {
  * store) end-to-end.
  */
 
-/**
- * Resolve the managed-profile snapshot the runtime composes from.
- *
- * `MANAGED_PROFILE_SNAPSHOT` wins when set (the robust deployment path — the
- * orchestrator passes an absolute path at boot). Otherwise we resolve
- * `managed-profile.json` relative to this module. At runtime this module is
- * `dist/server/server.js`, so `../managed-profile.json` points at `dist/` — the
- * `build` script copies `managed-profile.json` into `dist/` (see
- * `copy:snapshot`) precisely so this relative resolution lands on a real file.
- */
-function resolveSnapshotPath(): string {
-  const fromEnv = process.env.MANAGED_PROFILE_SNAPSHOT?.trim()
-  if (fromEnv) return fromEnv
-  return fileURLToPath(new URL("../managed-profile.json", import.meta.url))
-}
-
 const loadManagedApi: AppLoader<AppBindings, ExecutionContext> = lazyApp(async () => {
   const { loadManagedProfileRuntime } = await import("@voyant-travel/framework/managed-runtime")
-  const runtime = await loadManagedProfileRuntime({ profileSnapshotPath: resolveSnapshotPath() })
+  const runtime = await loadManagedProfileRuntime({
+    profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
+  })
   // The runtime serves the API from its own composed env (process.env), so we
   // drop the dispatch-supplied env/ctx and defer entirely to `runtime.fetch`.
   return { fetch: (request) => runtime.fetch(request) }
@@ -84,25 +73,12 @@ function devAuthJson(body: unknown): Response {
 }
 
 /**
- * The active module ids for this snapshot, so the DEV `/auth/bootstrap-status`
- * reports the same module set a managed-cloud deployment's real handler would —
- * letting the source-free admin's module gating (voyant#3063) be exercised
- * locally (set `modules` to a subset in `managed-profile.json` and the nav
- * follows). Uses the LIGHT `@voyant-travel/framework/profile` export (pure
- * composition math), not the full API runtime. Fails open (returns `undefined`)
- * so a malformed/absent snapshot leaves the admin composing everything.
+ * The active module ids for this graph, so the DEV `/auth/bootstrap-status`
+ * reports the same module set doctor/build/deploy validated. `graph:check`
+ * keeps this generated module in lockstep with `managed-profile.json`.
  */
-async function resolveDevActiveModuleIds(): Promise<string[] | undefined> {
-  try {
-    const [{ readFile }, { resolveActiveModuleIds }] = await Promise.all([
-      import("node:fs/promises"),
-      import("@voyant-travel/framework/profile"),
-    ])
-    const raw = await readFile(resolveSnapshotPath(), "utf8")
-    return resolveActiveModuleIds(JSON.parse(raw))
-  } catch {
-    return undefined
-  }
+async function resolveDevActiveModuleIds(): Promise<string[]> {
+  return [...GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS]
 }
 
 const loadDevAuth: AppLoader<AppBindings, ExecutionContext> = lazyApp(async () => {

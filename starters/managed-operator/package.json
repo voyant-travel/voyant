@@ -4,9 +4,10 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3400",
-    "build": "vite build && pnpm run copy:snapshot",
-    "copy:snapshot": "cp managed-profile.json dist/managed-profile.json",
+    "dev": "pnpm run graph:check && vite dev --port 3400",
+    "build": "pnpm run graph:check && vite build && pnpm run copy:deployment-artifacts",
+    "copy:deployment-artifacts": "cp managed-profile.json deployment-artifacts.generated.json deployment-graph.generated.json dist/",
+    "doctor": "pnpm run graph:check",
     "graph:check": "tsx ../../scripts/emit-deployment-graph.ts",
     "graph:emit": "tsx ../../scripts/emit-deployment-graph.ts --emit",
     "generate:snapshot": "tsx scripts/generate-snapshot.ts",

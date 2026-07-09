@@ -95,8 +95,6 @@ export function buildManagedNodeRuntimeEntry(input: BuildManagedNodeRuntimeEntry
 
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { startManagedProfileRuntime } from "@voyant-travel/framework/managed-runtime"
-
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = ${quote(input.graph.schemaVersion)} as const
 export const GENERATED_DEPLOYMENT_GRAPH_HASH = ${quote(input.graph.contentHash)} as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = ${quote(input.graph.deployment.target)} as const
@@ -122,6 +120,9 @@ export function resolveGeneratedProfileSnapshotPath(): string {
 
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
+  const { startManagedProfileRuntime } = await import(
+    "@voyant-travel/framework/managed-runtime"
+  )
   const handle = await startManagedProfileRuntime({
     profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
   })
