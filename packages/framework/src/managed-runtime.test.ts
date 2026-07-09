@@ -692,7 +692,22 @@ describe("managed profile runtime entry", () => {
     const response = await app.request("/auth/bootstrap-status", {}, env)
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ hasUsers: true, authMode: "voyant-cloud" })
+    expect(await response.json()).toEqual({ hasUsers: true, authMode: "voyant-cloud", modules: [] })
+  }, 10000)
+
+  it("reports the deployment's active module ids on bootstrap status (voyant#3063)", async () => {
+    const activeModules = ["bookings", "catalog", "finance", "relationships"]
+    const app = createManagedCloudAuthApp(activeModules)
+    const env = managedCloudEnv()
+
+    const response = await app.request("/auth/bootstrap-status", {}, env)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      hasUsers: true,
+      authMode: "voyant-cloud",
+      modules: activeModules,
+    })
   }, 10000)
 
   it("returns 401 from /auth/me when the request carries no session", async () => {

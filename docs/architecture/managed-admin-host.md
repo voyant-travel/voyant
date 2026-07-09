@@ -41,6 +41,49 @@ extract `managed-operator`'s thin entry into a Cloud-image template (platform#95
 The phased plan below is retained as the design record; where it says "Phase 3 /
 future," read the status above for what actually shipped.
 
+## Module-subset gating (source-free admin, #3063)
+
+A managed profile can declare a **module subset** (`modules: [...]` in the
+snapshot), and the runtime already honors it for the **API**
+(`computeCreateVoyantAppExclude` → `createVoyantApp({ exclude })`). The
+source-free admin, however, composes *every* `create<Module>AdminExtension()`
+factory unconditionally — so without gating, every managed operator sees the
+full nav (~18 modules) even when its profile activates a subset, and nav entries
+for inactive modules link to pages whose API isn't mounted (dead links / 404s).
+
+This is inherently a **shared-image** problem: the managed admin is one
+framework-version-tagged image; the active-module set is per-operator, injected
+at deploy via the snapshot. The client bundle cannot know the subset at
+build/import time, so the composition needs a **runtime signal**:
+
+1. **Runtime exposes the active module set.** `resolveActiveModuleIds(project)`
+   (`@voyant-travel/framework/profile`) maps the resolved `include` specifiers —
+   the same set that drives `createVoyantApp({ exclude })`, so nav can never
+   drift from what the API mounts — to `moduleId`s. The managed runtime returns
+   them as `modules` on `GET /api/auth/bootstrap-status`
+   (`ManagedBootstrapStatus`), the probe the workspace already issues at
+   bootstrap. The managed-operator dev `/auth` stub computes the same set from
+   the snapshot so subsets can be exercised locally.
+
+2. **Admin gates composition by it.** The route tree + destinations stay built
+   from the FULL registry (kept **hydration-stable** across the shared image);
+   the **nav/widgets** are filtered at render (`WorkspaceContent`) via
+   `filterManagedAdminExtensionsByModules` (in `managed-admin-module-gating.ts`),
+   keyed by `MANAGED_ADMIN_EXTENSION_MODULE_IDS` (extension id → required module
+   id; `core` is always active). Filtering is **fail-open**: if the runtime does
+   not report a module set, every extension is kept.
+
+Note `mice` maps to a module absent from the standard manifest, so gating drops
+it whenever the runtime reports its set — removing an extension whose API the
+managed runtime never mounts.
+
+Scoped follow-up: direct-URL navigation to a disabled module still resolves its
+route (the page renders, then its API 404s). Per-route gating would need routes
+to carry an owning-module tag; nav gating fully resolves the reported symptom
+(dead links in the sidebar). Under a per-operator *build* (client bundle built
+from the declared module set) the subset bakes in and no runtime signal is
+needed — see platform#1014.
+
 ## Problem
 
 `loadManagedProfileRuntime` (`@voyant-travel/framework/managed-runtime`, #2987)

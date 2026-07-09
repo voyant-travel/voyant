@@ -23,6 +23,14 @@ export type AdminAuthMode = "local" | "voyant-cloud"
 export interface AdminBootstrapStatus {
   hasUsers: boolean
   authMode?: AdminAuthMode
+  /**
+   * The active module ids for this deployment (voyant#3063). A source-free
+   * managed admin (one shared image, per-operator module subset injected at
+   * deploy) reads this to gate its composition — showing only the modules the
+   * profile activates. Absent for hosts that do not gate (e.g. a self-hosted
+   * starter built from its own module set); the admin then composes everything.
+   */
+  modules?: readonly string[]
 }
 
 /**

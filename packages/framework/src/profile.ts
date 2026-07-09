@@ -151,6 +151,22 @@ export function validateVoyantProject(input: unknown): VoyantProfileValidationRe
   return { ok: issues.length === 0, issues }
 }
 
+/**
+ * The active MODULE IDs for a managed deployment — the resolved module set the
+ * runtime actually mounts, expressed as `moduleId`s (e.g. `bookings`,
+ * `catalog`) rather than package specifiers. This is the runtime signal the
+ * source-free admin gates its composition on (voyant#3063): a shared,
+ * framework-version-tagged admin image cannot know the per-operator subset at
+ * build time, so it reads this set from the runtime and composes/shows only the
+ * matching module extensions.
+ *
+ * Derived from the same `include` set that drives `createVoyantApp({ exclude })`,
+ * so the admin nav can never drift from what the API mounts.
+ */
+export function resolveActiveModuleIds(project: VoyantProjectManifest): string[] {
+  return getVoyantProjectRequirements(project).modules.include.map(moduleIdFromSpecifier)
+}
+
 export function getVoyantProjectRequirements(
   project: VoyantProjectManifest,
 ): VoyantProfileRequirements {
