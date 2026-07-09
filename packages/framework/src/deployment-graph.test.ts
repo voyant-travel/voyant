@@ -1,0 +1,287 @@
+import { describe, expect, it } from "vitest"
+import {
+  createTestDeployment,
+  defineModule,
+  definePlugin,
+  defineProject,
+  graphIdFromSpecifier,
+  resolveDeploymentGraph,
+  resolveManagedProfileDeploymentGraph,
+  VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
+  VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
+  validateGraphUnitManifest,
+} from "./deployment-graph.js"
+import { defineVoyantProject } from "./profile.js"
+
+describe("deployment graph v1", () => {
+  it("defines closed module and plugin manifests", () => {
+    const module = defineModule({
+      id: "@acme/voyant-loyalty",
+      provides: { capabilities: ["acme.loyalty.points"] },
+      api: [{ id: "@acme/voyant-loyalty#api.admin", surface: "admin" }],
+    })
+    const plugin = definePlugin({
+      id: "@acme/voyant-fiscal#smartbill",
+      provides: { capabilities: ["acme.fiscal.invoice"] },
+    })
+
+    expect(module.schemaVersion).toBe("voyant.module.v1")
+    expect(plugin.schemaVersion).toBe("voyant.plugin.v1")
+
+    expect(
+      validateGraphUnitManifest({
+        ...module,
+        admin: { nav: [] },
+        unsupportedThing: true,
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_UNSUPPORTED_FACET",
+          facet: "admin",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_UNKNOWN_FACET",
+          facet: "unsupportedThing",
+        }),
+      ]),
+    )
+  })
+
+  it("rejects bare legacy aliases as canonical graph ids", () => {
+    expect(
+      validateGraphUnitManifest({
+        schemaVersion: "voyant.module.v1",
+        id: "bookings",
+      }).map((entry) => entry.code),
+    ).toContain("VOYANT_GRAPH_INVALID_ID")
+
+    expect(
+      validateGraphUnitManifest({ schemaVersion: "voyant.module.v1", id: "acme/bookings" }),
+    ).toEqual([])
+  })
+
+  it("detects duplicate graph ids and missing required capabilities", async () => {
+    const project = defineProject({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-loyalty",
+          requires: { capabilities: ["acme.crm.people"] },
+        }),
+        defineModule({
+          id: "@acme/voyant-loyalty",
+          provides: { capabilities: ["acme.loyalty.points"] },
+        }),
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project, target: "node", mode: "self-hosted" })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_DUPLICATE_ID" }),
+        expect.objectContaining({ code: "VOYANT_GRAPH_MISSING_CAPABILITY" }),
+      ]),
+    )
+  })
+
+  it("hashes deterministic canonical graph content", async () => {
+    const project = defineProject({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-crm",
+          provides: { capabilities: ["acme.crm.people"] },
+          api: [{ id: "@acme/voyant-crm#api.admin", surface: "admin" }],
+        }),
+        defineModule({
+          id: "@acme/voyant-loyalty",
+          provides: { capabilities: ["acme.loyalty.points"] },
+          requires: { capabilities: ["acme.crm.people"] },
+          api: [{ id: "@acme/voyant-loyalty#api.admin", surface: "admin" }],
+        }),
+      ],
+      plugins: [
+        definePlugin({
+          id: "@acme/voyant-fiscal#smartbill",
+          provides: { capabilities: ["acme.fiscal.invoice"] },
+        }),
+      ],
+    })
+
+    const first = await resolveDeploymentGraph({
+      project,
+      target: "node",
+      mode: "self-hosted",
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "registry", reference: "npm:@acme/voyant-loyalty@1.0.0" },
+        },
+      ],
+    })
+    const second = await resolveDeploymentGraph({
+      project,
+      mode: "self-hosted",
+      target: "node",
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { reference: "npm:@acme/voyant-loyalty@1.0.0", kind: "registry" },
+        },
+      ],
+    })
+
+    expect(first.schemaVersion).toBe(VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION)
+    expect(first.diagnostics).toEqual([])
+    expect(first.contentHash).toMatch(/^sha256:[a-f0-9]{64}$/)
+    expect(second.contentHash).toBe(first.contentHash)
+  })
+
+  it("detects package framework incompatibility from metadata", async () => {
+    const project = defineProject({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-loyalty",
+        }),
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({
+      project,
+      frameworkVersion: "0.24.1",
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "registry", reference: "npm:@acme/voyant-loyalty@1.0.0" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            compatibleWith: { framework: "^0.25.0" },
+          },
+        },
+      ],
+    })
+
+    expect(graph.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE",
+        source: "@acme/voyant-loyalty",
+        facet: "package.compatibleWith.framework",
+      }),
+    ])
+
+    const compatibleGraph = await resolveDeploymentGraph({
+      project,
+      frameworkVersion: "0.24.1",
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "registry", reference: "npm:@acme/voyant-loyalty@1.0.0" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            compatibleWith: { framework: "^0.24.0" },
+          },
+        },
+      ],
+    })
+
+    expect(compatibleGraph.diagnostics).toEqual([])
+  })
+
+  it("bridges managed operator snapshots into explicit graph units", async () => {
+    const profile = defineVoyantProject({
+      profile: "operator",
+      frameworkVersion: "0.24.1",
+      modules: ["bookings", "finance", "relationships"],
+      plugins: ["@voyant-travel/plugin-netopia"],
+    })
+
+    const graph = await resolveManagedProfileDeploymentGraph(profile)
+
+    expect(graph.schemaVersion).toBe("voyant.resolved-graph.v1")
+    expect(graph.project.presetLineage).toBe("operator-standard")
+    expect(graph.deployment.target).toBe("voyant-cloud")
+    expect(graph.modules.map((unit) => unit.id)).toEqual(
+      expect.arrayContaining([
+        "@voyant-travel/bookings",
+        "@voyant-travel/finance",
+        "@voyant-travel/relationships",
+      ]),
+    )
+    expect(graph.modules.map((unit) => unit.id)).not.toContain("@voyant-travel/flights")
+    expect(graph.plugins.map((unit) => unit.id)).toContain("@voyant-travel/plugin-netopia")
+    expect(graph.packageRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          packageName: "@voyant-travel/framework",
+          version: "0.24.1",
+          source: { kind: "workspace" },
+        }),
+      ]),
+    )
+    expect(graph.diagnostics).toEqual([])
+  })
+
+  it("normalizes framework specifiers to package-scoped graph ids", () => {
+    expect(graphIdFromSpecifier("@voyant-travel/inventory/extras")).toBe(
+      "@voyant-travel/inventory#extras",
+    )
+    expect(graphIdFromSpecifier("operator/payment-link")).toBe(
+      "@voyant-travel/operator#payment-link",
+    )
+  })
+
+  it("keeps diagnostic codes checked in and sorted", () => {
+    expect(Object.keys(VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY)).toEqual([
+      "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
+      "VOYANT_GRAPH_DUPLICATE_ID",
+      "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
+      "VOYANT_GRAPH_INVALID_ENTITY_ID",
+      "VOYANT_GRAPH_INVALID_ID",
+      "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
+      "VOYANT_GRAPH_MISSING_CAPABILITY",
+      "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE",
+      "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
+      "VOYANT_GRAPH_UNKNOWN_FACET",
+      "VOYANT_GRAPH_UNSUPPORTED_FACET",
+    ])
+  })
+
+  it("provides a module/plugin author test harness skeleton", async () => {
+    const deployment = await createTestDeployment({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-loyalty",
+          localId: "loyalty",
+          provides: { capabilities: ["acme.loyalty.points"] },
+          api: [{ id: "@acme/voyant-loyalty#api.admin", surface: "admin" }],
+          migrations: [{ id: "@acme/voyant-loyalty#migration.20260709120000_create_loyalty" }],
+        }),
+      ],
+    })
+
+    expect(() => deployment.doctor.expectClean()).not.toThrow()
+    expect(() =>
+      deployment.migrations.expectDeclared(
+        "@acme/voyant-loyalty#migration.20260709120000_create_loyalty",
+      ),
+    ).not.toThrow()
+    expect(() => deployment.migrations.expectReplayParity()).not.toThrow()
+    expect(deployment.routes.list()).toEqual(["/v1/admin/loyalty"])
+    expect(() => deployment.routes.expectMounted("/v1/admin/loyalty")).not.toThrow()
+  })
+
+  it("surfaces graph diagnostics through the author test harness", async () => {
+    const deployment = await createTestDeployment({
+      modules: [
+        defineModule({
+          id: "@acme/voyant-loyalty",
+          requires: { capabilities: ["acme.crm.people"] },
+        }),
+      ],
+    })
+
+    expect(() => deployment.doctor.expectClean()).toThrow(/VOYANT_GRAPH_MISSING_CAPABILITY/)
+  })
+})

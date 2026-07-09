@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./deployment-graph": "./src/deployment-graph.ts",
     "./profile": "./src/profile.ts",
     "./managed-jobs": "./src/managed-jobs.ts",
     "./managed-runtime": "./src/managed-runtime.ts"
@@ -79,6 +80,10 @@
       "./profile": {
         "types": "./dist/profile.d.ts",
         "import": "./dist/profile.js"
+      },
+      "./deployment-graph": {
+        "types": "./dist/deployment-graph.d.ts",
+        "import": "./dist/deployment-graph.js"
       },
       "./managed-jobs": {
         "types": "./dist/managed-jobs.d.ts",
