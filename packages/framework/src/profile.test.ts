@@ -328,6 +328,34 @@ describe("managed profile contract", () => {
       { packageName: "@acme/gift-cards", priority: 2 },
     ])
   })
+
+  it("rejects a malformed customSource.modules during validation", () => {
+    const result = validateVoyantProject({
+      ...validProject({ plugins: [] }),
+      customSource: { modules: "@acme/loyalty" },
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({ path: "customSource.modules", code: "invalid_type" }),
+    )
+  })
+
+  it("coerces a malformed customSource.modules to no sources rather than per-character", () => {
+    // Simulates a JSON-loaded snapshot that bypassed validation: a string is
+    // iterable, so an unguarded derivation would emit one source per character.
+    // Typed as `unknown` (a JSON boundary) and narrowed once at the call seam.
+    const malformed: unknown = {
+      profile: "operator",
+      customSource: { modules: "@acme/loyalty" },
+    }
+
+    expect(
+      getVoyantProjectMigrationMetadata(
+        malformed as Pick<VoyantProjectManifest, "profile" | "customSource">,
+      ).moduleSources,
+    ).toEqual([])
+  })
 })
 
 describe("resolveActiveModuleIds (admin gating signal, voyant#3063)", () => {

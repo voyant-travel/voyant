@@ -164,7 +164,15 @@ export function getVoyantProjectMigrationMetadata(
   // Standard-profile modules are baked into the framework bundle; only the
   // snapshot's custom (bring-your-own) schema-owning modules need their own
   // pre-built migration source, applied after the framework bundle (voyant#3069).
-  const moduleSources = unique(project.customSource?.modules ?? []).map((packageName, index) => ({
+  // Guard the JSON-loaded value: a malformed snapshot (e.g. a string instead of
+  // an array) is iterable and would otherwise yield one "package" per character.
+  const declaredModules = Array.isArray(project.customSource?.modules)
+    ? project.customSource.modules.filter(
+        (packageName): packageName is string =>
+          typeof packageName === "string" && packageName.trim().length > 0,
+      )
+    : []
+  const moduleSources = unique(declaredModules).map((packageName, index) => ({
     packageName,
     priority: index + 1,
   }))
