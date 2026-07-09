@@ -772,6 +772,19 @@ manifest. This is the bridge that keeps D.2 package-owned migration discovery
 and deployment-graph lowering from drifting while richer per-migration entity
 generation lands.
 
+The operator graph now also lowers the first declarative workflow/event-filter
+pair from first-party metadata: commerce contributes
+`promotions.reindex-all-products`, the `promotion.changed` event, and the
+event-filter subscriber that targets that workflow. This is intentionally a
+small facet slice: it proves the graph shape for declarative workflow/event
+routing without pulling runtime workflow bodies into graph discovery.
+
+Product-side tooling exposes the same graph diagnostics in human and JSON form
+through `scripts/emit-deployment-graph.ts --json`, using the checked-in
+diagnostic-code registry. The public `voyant doctor --json` command remains the
+CLI follow-up; it should consume this report contract rather than inventing a
+separate diagnostic model.
+
 ## Implementation Phases
 
 Phases 0-2 are the complete v1 deployment-graph program. Phase 1 is the first

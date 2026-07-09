@@ -1,0 +1,280 @@
+#!/usr/bin/env node
+/**
+ * Enforces the deployment-graph cold-start invariant from
+ * docs/architecture/unified-deployment-graph.md.
+ *
+ * Graph declaration and generated metadata entrypoints must be cheap to import:
+ * static imports may reach manifest math helpers, but must not pull route,
+ * schema, UI, workflow, runtime, or provider graphs into discovery.
+ */
+import { existsSync, readFileSync, statSync } from "node:fs"
+import path from "node:path"
+
+const DEFAULT_ENTRY_SURFACES = [
+  {
+    id: "framework-deployment-graph",
+    file: "packages/framework/src/deployment-graph.ts",
+  },
+  {
+    id: "framework-deployment-artifacts",
+    file: "packages/framework/src/deployment-artifacts.ts",
+  },
+  {
+    id: "operator-local-deployment-graph",
+    file: "starters/operator/deployment-graph.local.ts",
+  },
+  {
+    id: "operator-generated-runtime-entry",
+    file: "starters/operator/src/runtime-entry.generated.ts",
+  },
+]
+
+const ALLOWED_EXTERNAL_IMPORTS = new Set(["@voyant-travel/hono/composition"])
+
+const ALLOWED_EXTERNAL_IMPORT_PATTERNS = [
+  /\/workflow-[^/]+-manifest$/,
+  /\/[^/]+-workflow-manifest$/,
+]
+
+const FORBIDDEN_EXTERNAL_IMPORTS = new Map([
+  [
+    "@voyant-travel/framework/managed-runtime",
+    "managed runtime route/provider graph must stay behind a dynamic import",
+  ],
+])
+
+const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs"]
+const TEST_PATH_SEGMENTS = new Set(["__tests__", "tests"])
+
+const repoRoot = process.cwd()
+const entrySurfaces = parseArgs(process.argv.slice(2))
+const failures = []
+const checkedFiles = new Set()
+
+for (const entry of entrySurfaces) {
+  const entryPath = path.resolve(repoRoot, entry.file)
+  if (!existsSync(entryPath)) {
+    failures.push({
+      code: "missing-entry",
+      entry,
+      importer: entryPath,
+      message: `entry surface ${entry.file} does not exist`,
+    })
+    continue
+  }
+  walkEntry(entry, entryPath, new Set())
+}
+
+if (failures.length > 0) {
+  console.error("Deployment graph import-cheap check failed.")
+  for (const failure of failures) {
+    console.error(formatFailure(failure))
+  }
+  process.exit(1)
+}
+
+console.log(
+  `check-deployment-graph-import-cheap: OK (${entrySurfaces.length} entry surfaces, ${checkedFiles.size} files)`,
+)
+
+function walkEntry(entry, filePath, activeStack) {
+  const resolved = path.resolve(filePath)
+  if (activeStack.has(resolved)) return
+  checkedFiles.add(resolved)
+
+  const source = readFileSync(resolved, "utf8")
+  for (const edge of staticRuntimeImports(source)) {
+    const violation = forbiddenImport(edge.specifier, resolved)
+    if (violation) {
+      failures.push({
+        code: violation.code,
+        entry,
+        importer: resolved,
+        specifier: edge.specifier,
+        message: violation.reason,
+      })
+      continue
+    }
+
+    if (!isRelativeSpecifier(edge.specifier)) continue
+    const target = resolveSourceImport(path.dirname(resolved), edge.specifier)
+    if (!target) {
+      failures.push({
+        code: "unresolved-import",
+        entry,
+        importer: resolved,
+        specifier: edge.specifier,
+        message: "static relative import could not be resolved",
+      })
+      continue
+    }
+
+    activeStack.add(resolved)
+    walkEntry(entry, target, activeStack)
+    activeStack.delete(resolved)
+  }
+}
+
+function staticRuntimeImports(source) {
+  const imports = []
+  const declarations = /(^|[;\n])\s*(import|export)\s+([^'"();]*?)\s+from\s*["']([^"']+)["']/gs
+  let match = declarations.exec(source)
+  while (match) {
+    const kind = match[2]
+    const clause = match[3].trim()
+    if (!isTypeOnlyImport(kind, clause)) {
+      imports.push({ specifier: match[4] })
+    }
+    match = declarations.exec(source)
+  }
+
+  const sideEffects = /(^|[;\n])\s*import\s*["']([^"']+)["']/gs
+  match = sideEffects.exec(source)
+  while (match) {
+    imports.push({ specifier: match[2] })
+    match = sideEffects.exec(source)
+  }
+
+  return imports
+}
+
+function isTypeOnlyImport(kind, clause) {
+  if (clause.startsWith("type ")) return true
+  if (kind !== "export") return false
+  const named = clause.match(/^\{([^}]*)\}$/s)
+  if (!named) return false
+  const entries = named[1]
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+  return entries.length > 0 && entries.every((entry) => entry.startsWith("type "))
+}
+
+function forbiddenImport(specifier, importer) {
+  if (specifier.startsWith("node:")) return undefined
+  if (ALLOWED_EXTERNAL_IMPORTS.has(specifier)) return undefined
+  if (ALLOWED_EXTERNAL_IMPORT_PATTERNS.some((pattern) => pattern.test(specifier))) {
+    return undefined
+  }
+
+  const exactExternalReason = FORBIDDEN_EXTERNAL_IMPORTS.get(specifier)
+  if (exactExternalReason) {
+    return { code: "runtime-heavy-import", reason: exactExternalReason }
+  }
+
+  const labels = [specifier]
+  if (isRelativeSpecifier(specifier)) {
+    const target = resolveSourceImport(path.dirname(importer), specifier)
+    if (target) labels.push(relativeToRepo(target))
+  }
+
+  for (const label of labels) {
+    const normalized = label.replaceAll("\\", "/")
+    const reason = forbiddenPathReason(normalized)
+    if (reason) return { code: "runtime-heavy-import", reason }
+  }
+
+  return undefined
+}
+
+function forbiddenPathReason(value) {
+  const segments = value.split("/").filter(Boolean)
+  if (segments.some((segment) => TEST_PATH_SEGMENTS.has(segment))) return undefined
+
+  const basename = segments.at(-1) ?? value
+  const basenameWithoutExt = basename.replace(/\.[^.]+$/, "")
+
+  if (value.endsWith(".tsx") || segments.some((segment) => segment.endsWith("-react"))) {
+    return "UI/React graph must not be statically imported by deployment graph discovery"
+  }
+  if (matchesSegment(segments, /^(routes?|api-routes|routes-.+)$/)) {
+    return "route graph must stay behind a lazy runtime import"
+  }
+  if (matchesSegment(segments, /^(schema|schemas|drizzle|migrations)$/)) {
+    return "schema and migration graphs must not be statically imported by manifest discovery"
+  }
+  if (/^(schema|schemas|drizzle|migrations)(\.|$|-)/.test(basenameWithoutExt)) {
+    return "schema and migration graphs must not be statically imported by manifest discovery"
+  }
+  if (matchesSegment(segments, /^(workflows?|workflow-.+)$/)) {
+    return "workflow graph must stay behind a lazy runtime import"
+  }
+  if (matchesSegment(segments, /^(providers?|runtime)$/)) {
+    return "provider/runtime graph must stay behind a lazy runtime import"
+  }
+  if (/^(managed-runtime|runtime|server|service-.+|.*-service)$/.test(basenameWithoutExt)) {
+    return "provider/runtime graph must stay behind a lazy runtime import"
+  }
+
+  return undefined
+}
+
+function matchesSegment(segments, pattern) {
+  return segments.some((segment) => pattern.test(segment))
+}
+
+function resolveSourceImport(fromDir, specifier) {
+  const candidate = path.resolve(fromDir, specifier)
+  const candidates = [candidate]
+  const extension = path.extname(candidate)
+  if ([".js", ".mjs", ".cjs"].includes(extension)) {
+    const withoutExtension = candidate.slice(0, -extension.length)
+    candidates.push(`${withoutExtension}.ts`, `${withoutExtension}.tsx`)
+  }
+  if (!extension) {
+    for (const extension of SOURCE_EXTENSIONS) candidates.push(`${candidate}${extension}`)
+    for (const extension of SOURCE_EXTENSIONS) {
+      candidates.push(path.join(candidate, `index${extension}`))
+    }
+  }
+
+  for (const filePath of candidates) {
+    if (existsSync(filePath) && statSync(filePath).isFile()) return filePath
+  }
+  return undefined
+}
+
+function isRelativeSpecifier(specifier) {
+  return specifier.startsWith(".") || specifier.startsWith("/")
+}
+
+function parseArgs(args) {
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(`Usage: node scripts/check-deployment-graph-import-cheap.mjs [--entry id:path]
+
+Checks deployment graph declaration/generated metadata entry surfaces for
+runtime-heavy static imports. Repeat --entry to test custom fixture entries.`)
+    process.exit(0)
+  }
+
+  const entries = []
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]
+    if (arg !== "--entry") throw new Error(`Unknown argument: ${arg}`)
+    const value = args[index + 1]
+    if (!value) throw new Error("--entry requires a value")
+    index += 1
+    const separatorIndex = value.indexOf(":")
+    if (separatorIndex === -1) {
+      entries.push({ id: value, file: value })
+      continue
+    }
+    entries.push({
+      id: value.slice(0, separatorIndex),
+      file: value.slice(separatorIndex + 1),
+    })
+  }
+
+  return entries.length > 0 ? entries : DEFAULT_ENTRY_SURFACES
+}
+
+function formatFailure(failure) {
+  const location = failure.specifier
+    ? `${relativeToRepo(failure.importer)} imports ${failure.specifier}`
+    : relativeToRepo(failure.importer)
+  return `  - [deployment-graph-import-cheap:${failure.code}] ${failure.entry.id}: ${location}. ${failure.message}.`
+}
+
+function relativeToRepo(filePath) {
+  return path.relative(repoRoot, filePath).replaceAll(path.sep, "/")
+}

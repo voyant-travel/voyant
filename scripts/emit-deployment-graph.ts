@@ -21,10 +21,17 @@ import {
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST,
   OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST,
 } from "../starters/operator/deployment-graph.local.ts"
+import {
+  buildDeploymentGraphDoctorJson,
+  buildDeploymentGraphDoctorReport,
+  checkDeploymentGraphGeneratedArtifacts,
+  formatDeploymentGraphDoctorDiagnostics,
+} from "./lib/deployment-graph-doctor.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 
 interface CliOptions {
   emit: boolean
+  json: boolean
   profilePath: string
   manifestOutputPath: string
   graphOutputPath: string
@@ -79,6 +86,19 @@ async function main(): Promise<void> {
     await writeGeneratedFile(options.manifestOutputPath, manifestText)
     await writeGeneratedFile(options.graphOutputPath, graphText)
     await writeGeneratedFile(options.entryOutputPath, entryText)
+    const report = buildDeploymentGraphDoctorReport({ graph })
+    if (options.json) {
+      process.stdout.write(buildDeploymentGraphDoctorJson(report))
+      if (!report.ok) process.exit(1)
+      return
+    }
+    if (!report.ok) {
+      console.error(
+        "Deployment graph generated artifacts were written, but graph diagnostics remain.",
+      )
+      console.error(formatDeploymentGraphDoctorDiagnostics(report.diagnostics))
+      process.exit(1)
+    }
     console.log(
       `emit-deployment-graph: wrote ${relativeToRepo(
         options.manifestOutputPath,
@@ -89,16 +109,46 @@ async function main(): Promise<void> {
     return
   }
 
-  const failures = await staleGeneratedFiles([
-    { path: options.manifestOutputPath, expected: manifestText },
-    { path: options.graphOutputPath, expected: graphText },
-    { path: options.entryOutputPath, expected: entryText },
-  ])
+  const artifactDiagnostics = await checkDeploymentGraphGeneratedArtifacts(
+    [
+      {
+        path: options.manifestOutputPath,
+        expected: manifestText,
+        facet: "deployment-artifacts",
+        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
+      },
+      {
+        path: options.graphOutputPath,
+        expected: graphText,
+        facet: "deployment-graph",
+        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
+      },
+      {
+        path: options.entryOutputPath,
+        expected: entryText,
+        facet: "runtime-entry",
+        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
+      },
+    ],
+    { repoRoot },
+  )
+  const report = buildDeploymentGraphDoctorReport({ graph, diagnostics: artifactDiagnostics })
 
-  if (failures.length > 0) {
-    console.error("Deployment graph generated artifacts are stale.")
-    for (const failure of failures) console.error(`  - ${failure}`)
-    console.error(`Run \`${command}\` to refresh them.`)
+  if (options.json) {
+    process.stdout.write(buildDeploymentGraphDoctorJson(report))
+    if (!report.ok) process.exit(1)
+    return
+  }
+
+  if (!report.ok) {
+    console.error("Deployment graph doctor failed.")
+    if (artifactDiagnostics.length > 0) {
+      console.error("Generated deployment graph artifacts are stale or missing.")
+    }
+    console.error(formatDeploymentGraphDoctorDiagnostics(report.diagnostics))
+    if (artifactDiagnostics.length > 0) {
+      console.error(`Run \`${command}\` to refresh them.`)
+    }
     process.exit(1)
   }
 
@@ -165,28 +215,10 @@ function formatGeneratedText(filePath: string, text: string): string {
   })
 }
 
-async function staleGeneratedFiles(
-  files: readonly { path: string; expected: string }[],
-): Promise<string[]> {
-  const failures: string[] = []
-  for (const file of files) {
-    let actual: string
-    try {
-      actual = await readFile(file.path, "utf8")
-    } catch {
-      failures.push(`${relativeToRepo(file.path)} is missing`)
-      continue
-    }
-    if (actual !== file.expected) {
-      failures.push(`${relativeToRepo(file.path)} is stale`)
-    }
-  }
-  return failures
-}
-
 function parseArgs(args: readonly string[]): CliOptions {
   const options: CliOptions = {
     emit: false,
+    json: false,
     profilePath: join(defaultOperatorRoot, "managed-profile.json"),
     manifestOutputPath: join(defaultOperatorRoot, "deployment-artifacts.generated.json"),
     graphOutputPath: join(defaultOperatorRoot, "deployment-graph.generated.json"),
@@ -197,6 +229,10 @@ function parseArgs(args: readonly string[]): CliOptions {
     const arg = args[index]
     if (arg === "--emit") {
       options.emit = true
+      continue
+    }
+    if (arg === "--json") {
+      options.json = true
       continue
     }
     if (arg === "--profile") {
@@ -260,6 +296,7 @@ Resolves the operator managed profile into committed generated graph artifacts.
 
 Options:
   --emit                 write generated artifacts instead of checking staleness
+  --json                 print the graph doctor report JSON contract
   --profile <path>       managed profile JSON path
   --manifest-output <path> deployment artifact manifest output path
   --graph-output <path>  resolved graph JSON output path

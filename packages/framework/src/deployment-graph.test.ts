@@ -1,3 +1,7 @@
+import {
+  bulkReindexProductsWorkflowManifest,
+  promotionAffectedAllFilter,
+} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
@@ -317,6 +321,23 @@ describe("deployment graph v1", () => {
       ]),
     )
     expect(graph.modules.map((unit) => unit.id)).not.toContain("@voyant-travel/flights")
+    const commerce = graph.modules.find((unit) => unit.id === "@voyant-travel/commerce")
+    expect(commerce?.workflows).toEqual([bulkReindexProductsWorkflowManifest])
+    expect(commerce?.events).toEqual([
+      {
+        id: "@voyant-travel/commerce#event.promotion.changed",
+        eventType: "promotion.changed",
+      },
+    ])
+    expect(commerce?.subscribers).toEqual([
+      {
+        id: `@voyant-travel/commerce#subscriber.${promotionAffectedAllFilter.id}`,
+        eventType: "promotion.changed",
+        eventFilterId: promotionAffectedAllFilter.id,
+        workflowId: bulkReindexProductsWorkflowManifest.id,
+        filter: promotionAffectedAllFilter.manifest,
+      },
+    ])
     expect(graph.plugins.map((unit) => unit.id)).toEqual(
       expect.arrayContaining(["@voyant-travel/plugin-netopia", "@acme/voyant-loyalty-admin"]),
     )
@@ -432,6 +453,8 @@ describe("deployment graph v1", () => {
 
   it("keeps diagnostic codes checked in and sorted", () => {
     expect(Object.keys(VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY)).toEqual([
+      "VOYANT_GRAPH_ARTIFACT_MISSING",
+      "VOYANT_GRAPH_ARTIFACT_STALE",
       "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
       "VOYANT_GRAPH_DUPLICATE_ID",
       "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",

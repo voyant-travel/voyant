@@ -16,11 +16,6 @@
 // modules provisions fewer jobs. `starters/operator` consumes the same set as
 // its single source of truth (plus its own deployment-local jobs).
 
-import {
-  bulkReindexProductsWorkflowManifest,
-  promotionAffectedAllFilter,
-} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
-
 import { getVoyantProjectRequirements } from "./profile.js"
 import { moduleIdFromSpecifier, type VoyantProjectManifest } from "./profile-types.js"
 
@@ -155,7 +150,14 @@ export const STANDARD_PROFILE_SCHEDULED_JOBS: readonly StandardScheduledJobDefin
 const STANDARD_PROFILE_WORKFLOWS: Readonly<
   Record<string, readonly ManagedWorkflowManifestEntry[]>
 > = {
-  "@voyant-travel/commerce": [bulkReindexProductsWorkflowManifest],
+  "@voyant-travel/commerce": [
+    {
+      id: "promotions.reindex-all-products",
+      config: {
+        defaultRuntime: "node",
+      },
+    },
+  ],
 }
 
 /**
@@ -167,7 +169,27 @@ const STANDARD_PROFILE_WORKFLOWS: Readonly<
  */
 const STANDARD_PROFILE_EVENT_FILTERS: Readonly<Record<string, readonly ManagedEventFilterEntry[]>> =
   {
-    "@voyant-travel/commerce": [promotionAffectedAllFilter],
+    "@voyant-travel/commerce": [
+      {
+        id: "ef_6f8e4b4ce409d04c",
+        eventType: "promotion.changed",
+        manifest: {
+          eventType: "promotion.changed",
+          id: "ef_6f8e4b4ce409d04c",
+          input: {
+            object: {
+              offerId: { path: "data.offerId" },
+              source: { path: "data.source" },
+            },
+          },
+          payloadHash: "6f8e4b4ce409d04c",
+          targetWorkflowId: "promotions.reindex-all-products",
+          where: {
+            eq: [{ path: "data.affected.kind" }, { lit: "all" }],
+          },
+        },
+      },
+    ],
   }
 
 function toManagedScheduledJob(job: StandardScheduledJobDefinition): ManagedScheduledJob {
@@ -236,6 +258,18 @@ export function getManagedProfileEventFilters(
   project: VoyantProjectManifest,
 ): ManagedEventFilterEntry[] {
   return collectActiveModuleEntries(project, STANDARD_PROFILE_EVENT_FILTERS)
+}
+
+export function getStandardProfileWorkflowManifestForModule(
+  moduleSpecifier: string,
+): ManagedWorkflowManifestEntry[] {
+  return [...(STANDARD_PROFILE_WORKFLOWS[moduleSpecifier] ?? [])]
+}
+
+export function getStandardProfileEventFiltersForModule(
+  moduleSpecifier: string,
+): ManagedEventFilterEntry[] {
+  return [...(STANDARD_PROFILE_EVENT_FILTERS[moduleSpecifier] ?? [])]
 }
 
 function collectActiveModuleEntries<T>(
