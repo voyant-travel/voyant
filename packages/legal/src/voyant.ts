@@ -50,6 +50,29 @@ export const legalVoyantModule = defineModule({
     { id: "@voyant-travel/legal#linkable.policyAcceptance", source: linkableSource },
     { id: "@voyant-travel/legal#linkable.term", source: linkableSource },
   ],
+  events: [
+    { id: "@voyant-travel/legal#event.contract.issued", eventType: "contract.issued" },
+    { id: "@voyant-travel/legal#event.contract.sent", eventType: "contract.sent" },
+    { id: "@voyant-travel/legal#event.contract.signed", eventType: "contract.signed" },
+    { id: "@voyant-travel/legal#event.contract.executed", eventType: "contract.executed" },
+    { id: "@voyant-travel/legal#event.contract.voided", eventType: "contract.voided" },
+    {
+      id: "@voyant-travel/legal#event.contract.document.generated",
+      eventType: "contract.document.generated",
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/legal#access.legal",
+        resource: "legal",
+        actions: ["read", "write"],
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

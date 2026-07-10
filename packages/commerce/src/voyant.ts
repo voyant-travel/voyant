@@ -95,6 +95,14 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#event.promotion.changed",
       eventType: "promotion.changed",
     },
+    {
+      id: "@voyant-travel/commerce#event.pricing.rule.changed",
+      eventType: "pricing.rule.changed",
+    },
+    {
+      id: "@voyant-travel/commerce#event.inquiry.created",
+      eventType: "inquiry.created",
+    },
   ],
   subscribers: [
     {
@@ -115,6 +123,9 @@ export const commerceVoyantModule = defineModule({
       source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
     },
   ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

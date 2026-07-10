@@ -23,6 +23,7 @@
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
     "./tools": "./src/tools.ts",
+    "./setup/vouchers": "./src/service-vouchers-migration.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {

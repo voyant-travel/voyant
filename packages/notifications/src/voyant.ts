@@ -86,6 +86,54 @@ export const notificationsVoyantModule = defineModule({
       source: "@voyant-travel/notifications/workflows",
     },
   ],
+  events: [
+    {
+      id: "@voyant-travel/notifications#event.booking.fully-paid",
+      eventType: "booking.fully-paid",
+    },
+    {
+      id: "@voyant-travel/notifications#event.booking.documents.sent",
+      eventType: "booking.documents.sent",
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/notifications#access.notifications",
+        resource: "notifications",
+        actions: ["read", "send"],
+      },
+    ],
+  },
+  tools: [
+    {
+      id: "@voyant-travel/notifications#tool.list-deliveries",
+      name: "list_notification_deliveries",
+      runtime: {
+        entry: "@voyant-travel/notifications/tools",
+        export: "listDeliveriesTool",
+      },
+      requiredScopes: ["notifications:read"],
+    },
+    {
+      id: "@voyant-travel/notifications#tool.get-delivery",
+      name: "get_notification_delivery",
+      runtime: { entry: "@voyant-travel/notifications/tools", export: "getDeliveryTool" },
+      requiredScopes: ["notifications:read"],
+    },
+    {
+      id: "@voyant-travel/notifications#tool.send-notification",
+      name: "send_notification",
+      runtime: {
+        entry: "@voyant-travel/notifications/tools",
+        export: "sendNotificationTool",
+      },
+      requiredScopes: ["notifications:send"],
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

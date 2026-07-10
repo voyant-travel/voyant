@@ -58,6 +58,85 @@ export const financeVoyantModule = defineModule({
       source: "@voyant-travel/finance/linkables",
     },
   ],
+  events: [
+    { id: "@voyant-travel/finance#event.invoice.issued", eventType: "invoice.issued" },
+    {
+      id: "@voyant-travel/finance#event.invoice.proforma.issued",
+      eventType: "invoice.proforma.issued",
+    },
+    {
+      id: "@voyant-travel/finance#event.invoice.proforma.converted",
+      eventType: "invoice.proforma.converted",
+    },
+    { id: "@voyant-travel/finance#event.invoice.voided", eventType: "invoice.voided" },
+    { id: "@voyant-travel/finance#event.invoice.settled", eventType: "invoice.settled" },
+    { id: "@voyant-travel/finance#event.invoice.rendered", eventType: "invoice.rendered" },
+    {
+      id: "@voyant-travel/finance#event.invoice.document.generated",
+      eventType: "invoice.document.generated",
+    },
+    {
+      id: "@voyant-travel/finance#event.invoice.payment.recorded",
+      eventType: "invoice.payment.recorded",
+    },
+    { id: "@voyant-travel/finance#event.payment.completed", eventType: "payment.completed" },
+    { id: "@voyant-travel/finance#event.booking.created", eventType: "booking.created" },
+    { id: "@voyant-travel/finance#event.booking.confirmed", eventType: "booking.confirmed" },
+    {
+      id: "@voyant-travel/finance#event.booking.dual-created",
+      eventType: "booking.dual-created",
+    },
+    {
+      id: "@voyant-travel/finance#event.booking-create.rejected",
+      eventType: "booking_create.rejected",
+    },
+    {
+      id: "@voyant-travel/finance#event.booking.contract-document.requested",
+      eventType: "booking.contract_document.requested",
+    },
+    {
+      id: "@voyant-travel/finance#event.booking-payment-schedule.paid",
+      eventType: "booking_payment_schedule.paid",
+    },
+  ],
+  setupMigrations: [
+    {
+      id: "@voyant-travel/finance#setup.vouchers-from-payment-instruments.v1",
+      source: "@voyant-travel/finance/setup/vouchers",
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/finance#access.finance",
+        resource: "finance",
+        actions: ["read", "write", "refund", "void"],
+      },
+    ],
+  },
+  tools: [
+    {
+      id: "@voyant-travel/finance#tool.list-invoices",
+      name: "list_invoices",
+      runtime: { entry: "@voyant-travel/finance/tools", export: "listInvoicesTool" },
+      requiredScopes: ["finance:read"],
+    },
+    {
+      id: "@voyant-travel/finance#tool.get-invoice",
+      name: "get_invoice",
+      runtime: { entry: "@voyant-travel/finance/tools", export: "getInvoiceTool" },
+      requiredScopes: ["finance:read"],
+    },
+    {
+      id: "@voyant-travel/finance#tool.void-invoice",
+      name: "void_invoice",
+      runtime: { entry: "@voyant-travel/finance/tools", export: "voidInvoiceTool" },
+      requiredScopes: ["finance:void"],
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },
