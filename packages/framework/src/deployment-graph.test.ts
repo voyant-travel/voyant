@@ -126,6 +126,71 @@ describe("deployment graph v1", () => {
     expect(graph.diagnostics).toEqual([])
   })
 
+  it("derives pre-admission provenance from clean project selections", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: ["@acme/voyant-suite/loyalty"],
+        plugins: ["./src/plugins/smartbill"],
+      }),
+    })
+
+    expect(graph.modules.map((unit) => unit.id)).toEqual(["@acme/voyant-suite#loyalty"])
+    expect(graph.plugins.map((unit) => unit.id)).toEqual(["local/src.plugins.smartbill"])
+    expect(graph.packageRecords).toEqual([
+      {
+        packageName: "@acme/voyant-suite",
+        source: { kind: "unknown", reference: "@acme/voyant-suite" },
+      },
+      {
+        packageName: "local/src.plugins.smartbill",
+        source: { kind: "file", reference: "./src/plugins/smartbill" },
+      },
+    ])
+    expect(graph.diagnostics).toEqual([])
+  })
+
+  it("replaces a clean package selection with its admitted voyant manifest", async () => {
+    const project = defineProject({
+      modules: [
+        {
+          resolve: "@acme/voyant-suite/loyalty",
+          config: { tiers: ["silver", "gold"] },
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraphWithPackageManifests({
+      project,
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-suite",
+          source: { kind: "workspace" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            manifest: "./voyant",
+          },
+        },
+      ],
+      admission: { allowedSourceKinds: ["workspace"] },
+      loadPackageManifests: async (record) => {
+        expect(record.packageName).toBe("@acme/voyant-suite")
+        return [
+          defineModule({
+            id: "@acme/voyant-suite#loyalty",
+            packageName: "@acme/voyant-suite",
+            schema: [{ id: "@acme/voyant-suite#loyalty.schema", source: "./schema" }],
+          }),
+        ]
+      },
+    })
+
+    expect(project.selections?.modules[0]?.config).toEqual({ tiers: ["silver", "gold"] })
+    expect(graph.modules[0]?.schema).toEqual([
+      { id: "@acme/voyant-suite#loyalty.schema", source: "./schema" },
+    ])
+    expect(graph.diagnostics).toEqual([])
+  })
+
   it("does not execute package manifests when admission fails", async () => {
     let loaded = false
     const graph = await resolveDeploymentGraphWithPackageManifests({
