@@ -1,5 +1,40 @@
 # @voyant-travel/framework
 
+## 0.34.0
+
+### Minor Changes
+
+- 496f2ef: Add the dependency-light package-owned deployment manifest authoring interface,
+  publish the bookings manifest through `./voyant`, and let framework graph
+  resolution consume the same contract.
+
+### Patch Changes
+
+- Updated dependencies [496f2ef]
+  - @voyant-travel/bookings@0.150.0
+  - @voyant-travel/core@0.113.0
+  - @voyant-travel/accommodations@0.111.6
+  - @voyant-travel/commerce@0.32.0
+  - @voyant-travel/cruises@0.149.0
+  - @voyant-travel/distribution@0.140.0
+  - @voyant-travel/finance@0.150.0
+  - @voyant-travel/legal@0.150.0
+  - @voyant-travel/notifications@0.122.2
+  - @voyant-travel/storefront@0.152.0
+  - @voyant-travel/trips@0.141.0
+  - @voyant-travel/action-ledger@0.105.15
+  - @voyant-travel/catalog@0.148.0
+  - @voyant-travel/db@0.110.2
+  - @voyant-travel/hono@0.122.3
+  - @voyant-travel/identity@0.150.0
+  - @voyant-travel/inventory@0.7.11
+  - @voyant-travel/mice@0.6.10
+  - @voyant-travel/operations@0.5.23
+  - @voyant-travel/quotes@0.125.9
+  - @voyant-travel/relationships@0.122.12
+  - @voyant-travel/flights@0.150.0
+  - @voyant-travel/operator-settings@0.2.35
+
 ## 0.33.0
 
 ### Minor Changes

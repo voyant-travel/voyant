@@ -1,5 +1,16 @@
 # @voyant-travel/crm
 
+## 0.122.12
+
+### Patch Changes
+
+- Updated dependencies [496f2ef]
+  - @voyant-travel/core@0.113.0
+  - @voyant-travel/action-ledger@0.105.15
+  - @voyant-travel/db@0.110.2
+  - @voyant-travel/hono@0.122.3
+  - @voyant-travel/identity@0.150.0
+
 ## 0.122.11
 
 ### Patch Changes
