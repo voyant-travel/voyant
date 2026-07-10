@@ -63,6 +63,12 @@ describe("deployment graph artifacts", () => {
         graph,
         graphArtifactPath: "deployment-graph.generated.json",
         runtimeEntries: [entry],
+        migrationSources: [
+          {
+            packageName: "@acme/voyant-loyalty",
+            schema: "../../node_modules/@acme/voyant-loyalty/dist/schema.js",
+          },
+        ],
       }),
     ).toEqual({
       schemaVersion: VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
@@ -76,6 +82,12 @@ describe("deployment graph artifacts", () => {
           graphHash: graph.contentHash,
           kind: "managed-profile-node",
           profileSnapshot: "managed-profile.json",
+        },
+      ],
+      migrationSources: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          schema: "../../node_modules/@acme/voyant-loyalty/dist/schema.js",
         },
       ],
     })

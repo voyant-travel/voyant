@@ -796,6 +796,14 @@ manifest. This is the bridge that keeps D.2 package-owned migration discovery
 and deployment-graph lowering from drifting while richer per-migration entity
 generation lands.
 
+The source-backed operator deployment artifact manifest also records the
+package-backed migration source list derived from
+`drizzle.schemas.generated.ts`. Runtime migration execution consumes that
+validated artifact list, then still uses the D.2 collector to resolve package
+migration folders and apply the deployment-local migration source last. Graph
+artifact validation rejects sources that are not represented in graph package
+records.
+
 The operator graph now also lowers the first declarative workflow/event-filter
 pair from first-party metadata: commerce contributes
 `promotions.reindex-all-products`, the `promotion.changed` event, and the

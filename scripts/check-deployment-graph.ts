@@ -85,6 +85,7 @@ async function main(): Promise<void> {
         profileSnapshot: "managed-profile.json",
       }),
     ],
+    migrationSources: operatorMigrationSources(),
   })
   if (artifactManifest.schemaVersion !== VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION) {
     failures.push("expected deployment artifact manifest schema version v1")
@@ -94,6 +95,15 @@ async function main(): Promise<void> {
   }
   if (artifactManifest.runtimeEntries[0]?.graphHash !== first.contentHash) {
     failures.push("expected runtime entry artifact to reference the resolved graph hash")
+  }
+  const artifactMigrationSourcePackageNames = artifactManifest.migrationSources.map(
+    (source) => source.packageName,
+  )
+  if (
+    JSON.stringify(artifactMigrationSourcePackageNames) !==
+    JSON.stringify(operatorMigrationSourcePackageNames())
+  ) {
+    failures.push("expected deployment artifacts to preserve operator migration source packages")
   }
 
   if (first.diagnostics.length > 0) {
@@ -161,6 +171,17 @@ async function main(): Promise<void> {
         `expected operator graph package records to include migration source ${packageName}`,
       )
     }
+  }
+
+  const operatorMigrateSource = await readFile(
+    new URL("../starters/operator/scripts/migrate.ts", import.meta.url),
+    "utf8",
+  )
+  if (operatorMigrateSource.includes("drizzle.schemas.generated")) {
+    failures.push("expected operator db:migrate to avoid importing drizzle.schemas.generated.ts")
+  }
+  if (!operatorMigrateSource.includes("deploymentGraphArtifacts.migrationSources")) {
+    failures.push("expected operator db:migrate to consume graph artifact migration sources")
   }
 
   const frameworkRecord = first.packageRecords.find(
@@ -232,18 +253,21 @@ async function readOperatorGeneratedGraph(): Promise<{
 }
 
 function operatorMigrationSourcePackageNames(): string[] {
-  return sortedUnique(
-    operatorSchemaPaths
-      .map((schemaPath) => {
-        const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
-        return match?.[1] ? `@voyant-travel/${match[1]}` : undefined
-      })
-      .filter((packageName): packageName is string => Boolean(packageName)),
-  )
+  return operatorMigrationSources().map((source) => source.packageName)
 }
 
-function sortedUnique(values: readonly string[]): string[] {
-  return [...new Set(values)].sort()
+function operatorMigrationSources(): Array<{ packageName: string; schema: string }> {
+  const seen = new Set<string>()
+  const sources: Array<{ packageName: string; schema: string }> = []
+  for (const schemaPath of operatorSchemaPaths) {
+    const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
+    if (!match?.[1]) continue
+    const packageName = `@voyant-travel/${match[1]}`
+    if (seen.has(packageName)) continue
+    seen.add(packageName)
+    sources.push({ packageName, schema: schemaPath })
+  }
+  return sources
 }
 
 main().catch((error) => {

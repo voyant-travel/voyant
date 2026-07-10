@@ -11,5 +11,107 @@
       "kind": "managed-profile-node",
       "profileSnapshot": "managed-profile.json"
     }
+  ],
+  "migrationSources": [
+    {
+      "packageName": "@voyant-travel/db",
+      "schema": "../../packages/db/src/schema/index.ts"
+    },
+    {
+      "packageName": "@voyant-travel/action-ledger",
+      "schema": "../../packages/action-ledger/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/relationships",
+      "schema": "../../packages/relationships/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/quotes",
+      "schema": "../../packages/quotes/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/identity",
+      "schema": "../../packages/identity/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/bookings",
+      "schema": "../../packages/bookings/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/distribution",
+      "schema": "../../packages/distribution/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/inventory",
+      "schema": "../../packages/inventory/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/commerce",
+      "schema": "../../packages/commerce/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/catalog",
+      "schema": "../../packages/catalog/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/finance",
+      "schema": "../../packages/finance/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/availability",
+      "schema": "../../packages/availability/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/operations",
+      "schema": "../../packages/operations/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/notifications",
+      "schema": "../../packages/notifications/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/flights",
+      "schema": "../../packages/flights/src/reference/local-postgres.ts"
+    },
+    {
+      "packageName": "@voyant-travel/legal",
+      "schema": "../../packages/legal/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/storefront",
+      "schema": "../../packages/storefront/src/verification/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/trips",
+      "schema": "../../packages/trips/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/operator-settings",
+      "schema": "../../packages/operator-settings/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/accommodations",
+      "schema": "../../packages/accommodations/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/mice",
+      "schema": "../../packages/mice/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/catalog-authoring",
+      "schema": "../../packages/catalog-authoring/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/workflow-runs",
+      "schema": "../../packages/workflow-runs/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/charters",
+      "schema": "../../packages/charters/src/schema.ts"
+    },
+    {
+      "packageName": "@voyant-travel/cruises",
+      "schema": "../../packages/cruises/src/schema.ts"
+    }
   ]
 }

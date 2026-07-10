@@ -26,6 +26,12 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(summary.graphHash).toMatch(/^sha256:[a-f0-9]{64}$/)
     expect(summary.moduleIds).toContain("@voyant-travel/bookings")
     expect(summary.packageNames).toContain("@voyant-travel/framework")
+    expect(summary.migrationSources.map((source) => source.packageName)).toEqual(
+      expect.arrayContaining(["@voyant-travel/db", "@voyant-travel/bookings"]),
+    )
+    expect(summary.migrationSources.map((source) => source.schema)).toContain(
+      "../../packages/db/src/schema/index.ts",
+    )
     expect(summary.providers).toMatchObject({
       database: "postgres",
       storage: "memory",
@@ -256,6 +262,22 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     ).toThrow(/deployment graph provisioning\.scheduledJobs\[0\]\.route/)
   })
 
+  it("fails when artifact migration sources are not graph package records", () => {
+    const root = fixtureRoot()
+    writeFixture(root, {
+      migrationSources: [
+        {
+          packageName: "@voyant-travel/missing",
+          schema: "../../packages/missing/src/schema.ts",
+        },
+      ],
+    })
+
+    expect(() =>
+      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+    ).toThrow(/is not present in deployment graph packageRecords/)
+  })
+
   it("accepts satisfied required resource environment before boot", () => {
     const root = fixtureRoot()
     writeFixture(root)
@@ -339,6 +361,7 @@ function writeFixture(
     runtimeEntry?: Record<string, unknown>
     runtimeEntrySource?: { graphHash?: string }
     writeRuntimeEntrySource?: boolean
+    migrationSources?: Array<{ packageName: string; schema: string }>
   } = {},
 ): string {
   mkdirSync(join(root, "src"), { recursive: true })
@@ -423,6 +446,12 @@ function writeFixture(
           profileSnapshot: "managed-profile.json",
         },
         ...options.runtimeEntry,
+      },
+    ],
+    migrationSources: options.migrationSources ?? [
+      {
+        packageName: "@voyant-travel/framework",
+        schema: "../../packages/framework/src/schema.ts",
       },
     ],
   })

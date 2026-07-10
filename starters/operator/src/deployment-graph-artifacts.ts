@@ -22,6 +22,7 @@ export interface OperatorDeploymentGraphArtifactSummary {
   providers: Readonly<Record<string, string>>
   resourceRequirements: readonly OperatorDeploymentGraphResourceRequirement[]
   scheduledJobs: readonly OperatorDeploymentGraphScheduledJob[]
+  migrationSources: readonly OperatorDeploymentGraphMigrationSource[]
 }
 
 export interface OperatorDeploymentGraphScheduledJob {
@@ -43,6 +44,11 @@ export interface OperatorDeploymentGraphResourceRequirement {
   notes?: string
 }
 
+export interface OperatorDeploymentGraphMigrationSource {
+  packageName: string
+  schema: string
+}
+
 export interface OperatorDeploymentGraphEnvRequirement {
   name: string
   kind: string
@@ -57,6 +63,7 @@ interface DeploymentArtifactManifest {
   graphHash?: unknown
   graph?: unknown
   runtimeEntries?: unknown
+  migrationSources?: unknown
 }
 
 interface RuntimeEntryArtifact {
@@ -206,18 +213,22 @@ export function loadOperatorDeploymentGraphArtifacts(
     )
   }
 
+  const packageNames = collectStringField(
+    graph.packageRecords,
+    "deployment graph packageRecords",
+    "packageName",
+  )
+  const migrationSources = collectMigrationSources(manifest.migrationSources, packageNames)
+
   const summary = {
     graphHash,
     moduleIds: collectStringField(graph.modules, "deployment graph modules", "id"),
     pluginIds: collectStringField(graph.plugins, "deployment graph plugins", "id"),
-    packageNames: collectStringField(
-      graph.packageRecords,
-      "deployment graph packageRecords",
-      "packageName",
-    ),
+    packageNames,
     providers: collectDeploymentProviders(graph.deployment),
     resourceRequirements: collectResourceRequirements(graph.requirements),
     scheduledJobs: collectScheduledJobs(graph.provisioning),
+    migrationSources,
   }
 
   validateGeneratedRuntimeEntrySource({ graphHash, manifestUrl, mode, summary, target })
@@ -285,6 +296,30 @@ function collectScheduledJobs(value: unknown): OperatorDeploymentGraphScheduledJ
     ...(typeof job.workflowId === "string" ? { workflowId: job.workflowId } : {}),
     ...(Object.hasOwn(job, "input") ? { input: job.input } : {}),
   }))
+}
+
+function collectMigrationSources(
+  value: unknown,
+  packageNames: readonly string[],
+): OperatorDeploymentGraphMigrationSource[] {
+  const knownPackages = new Set(packageNames)
+  return arrayOfRecords(value, "deployment artifacts migrationSources").map((source, index) => {
+    const packageName = requireString(
+      source.packageName,
+      `deployment artifacts migrationSources[${index}].packageName`,
+    )
+    if (!knownPackages.has(packageName)) {
+      throw new Error(
+        `deployment artifacts migrationSources[${index}].packageName ${packageName} is not present in deployment graph packageRecords`,
+      )
+    }
+    const schema = requireString(
+      source.schema,
+      `deployment artifacts migrationSources[${index}].schema`,
+    )
+    assertRelativePosixPath(schema, `deployment artifacts migrationSources[${index}].schema`)
+    return { packageName, schema }
+  })
 }
 
 function collectResourceRequirements(value: unknown): OperatorDeploymentGraphResourceRequirement[] {
@@ -374,10 +409,14 @@ function readJsonFile<T>(url: URL, label: string): T {
 }
 
 function relativeArtifactUrl(value: string, baseUrl: URL): URL {
-  if (value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value) || value.includes("\\")) {
-    throw new Error(`deployment artifact paths must be relative POSIX paths, got ${value}`)
-  }
+  assertRelativePosixPath(value, "deployment artifact paths")
   return new URL(value, baseUrl)
+}
+
+function assertRelativePosixPath(value: string, label: string): void {
+  if (value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value) || value.includes("\\")) {
+    throw new Error(`${label} must be relative POSIX paths, got ${value}`)
+  }
 }
 
 function graphDeploymentTarget(graph: ResolvedDeploymentGraph): string | undefined {
