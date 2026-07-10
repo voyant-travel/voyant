@@ -217,6 +217,40 @@ describe("check-deployment-graph-openapi-coverage", () => {
     assert.match(result.stdout, /0 covered graph API bundles, 1 allowlisted gaps/)
   })
 
+  it("emits a stable JSON coverage report", async () => {
+    const root = await createFixture({
+      "graph.json": graph([
+        {
+          id: "@voyant-travel/flights",
+          localId: "flights",
+          packageName: "@voyant-travel/flights",
+          api: [
+            {
+              id: "@voyant-travel/flights#api",
+              surface: "admin",
+              mount: "@voyant-travel/flights",
+            },
+          ],
+        },
+      ]),
+      "openapi/admin/bookings.json": openapi({
+        "/v1/admin/bookings": {
+          get: { responses: { 200: { description: "OK" } } },
+        },
+      }),
+      "allowlist.json": JSON.stringify({ "@voyant-travel/flights#api": "fixture gap" }),
+    })
+
+    const result = await runChecker(root, ["--allowlist", "allowlist.json", "--json"])
+    const report = JSON.parse(result.stdout)
+
+    assert.equal(report.schemaVersion, "voyant.graph-openapi-coverage-report.v1")
+    assert.equal(report.ok, true)
+    assert.equal(report.bundles.allowlistedGaps[0].id, "@voyant-travel/flights#api")
+    assert.equal(report.bundles.allowlistedGaps[0].reason, "fixture gap")
+    assert.deepEqual(report.diagnostics, [])
+  })
+
   it("fails stale allowlist entries once coverage exists", async () => {
     const root = await createFixture({
       "graph.json": graph([
