@@ -69,6 +69,14 @@ describe("commerce deployment manifest", () => {
           id: "@voyant-travel/commerce#event.promotion.changed",
           eventType: "promotion.changed",
         },
+        {
+          id: "@voyant-travel/commerce#event.pricing.rule.changed",
+          eventType: "pricing.rule.changed",
+        },
+        {
+          id: "@voyant-travel/commerce#event.inquiry.created",
+          eventType: "inquiry.created",
+        },
       ],
       workflows: [
         {
