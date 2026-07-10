@@ -1,0 +1,272 @@
+import { createHash } from "node:crypto"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import path from "node:path"
+import { afterEach, describe, expect, it } from "vitest"
+
+import { canonicalJson } from "./deployment-graph.js"
+import { defineProject, resolveProject } from "./project.js"
+
+const roots: string[] = []
+
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
+  delete (globalThis as Record<string, unknown>).__voyantManifestLoaded
+})
+
+describe("framework project resolver", () => {
+  it("matches the CLI contract with one deterministic target-neutral graph hash", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
+    })
+    const project = defineProject({
+      modules: [
+        {
+          resolve: "@acme/loyalty",
+          config: { tiers: ["silver", "gold"] },
+        },
+      ],
+      deployment: {
+        target: "node",
+        mode: "self-hosted",
+        providers: { database: "postgres" },
+      },
+    })
+
+    const first = await resolve(root, project)
+    const second = await resolve(root, project)
+    const anotherTarget = await resolve(root, {
+      ...project,
+      deployment: { ...project.deployment, target: "voyant-cloud" },
+    })
+    const { contentHash: _contentHash, ...withoutHash } = first.graph
+    const expectedHash = `sha256:${createHash("sha256")
+      .update(canonicalJson(withoutHash))
+      .digest("hex")}`
+
+    expect(first).toEqual(second)
+    expect(first.graph.contentHash).toBe(expectedHash)
+    expect(anotherTarget.graph.contentHash).toBe(expectedHash)
+    expect(first.graph.deployment).toEqual({
+      mode: "self-hosted",
+      providers: { database: "postgres" },
+    })
+    expect(first.graph.deployment).not.toHaveProperty("target")
+    expect(first.artifacts.runtimeEntry).toBe("runtime/project-runtime.generated.ts")
+    expect(first.artifacts.files.map((file) => file.path)).toEqual([
+      "runtime/project-runtime.generated.ts",
+    ])
+    expect(first.artifacts.files[0]?.contents).toContain(expectedHash)
+    expect(first.artifacts.files[0]?.contents).toContain(
+      'GENERATED_PROJECT_RUNTIME_KIND = "application"',
+    )
+    expect(first.artifacts.files[0]?.contents).toContain('"database": "postgres"')
+    expect(first.artifacts.files[0]?.contents).not.toContain('"target"')
+    expect(first.artifacts.migrationPlan).toEqual({
+      schemaVersion: "voyant.migration-plan.v1",
+      contentHash: expectedHash,
+      migrations: [
+        {
+          id: "@acme/loyalty#migrations",
+          owner: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          source: "./migrations",
+        },
+      ],
+    })
+  })
+
+  it("loads string and object selections from package-owned ./voyant exports", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/suite",
+      manifest: `
+export const loyalty = ${JSON.stringify(moduleManifest("@acme/suite#loyalty"))}
+export const audit = ${JSON.stringify(pluginManifest("@acme/suite#audit"))}
+`,
+    })
+
+    const resolution = await resolve(
+      root,
+      defineProject({
+        modules: [{ resolve: "@acme/suite#loyalty", config: { enabled: true } }],
+        plugins: ["@acme/suite#audit"],
+      }),
+    )
+
+    expect(resolution.graph.modules.map((unit) => unit.id)).toEqual(["@acme/suite#loyalty"])
+    expect(resolution.graph.plugins.map((unit) => unit.id)).toEqual(["@acme/suite#audit"])
+    expect(resolution.graph.packageRecords).toHaveLength(1)
+    expect(resolution.graph.packageRecords[0]).toMatchObject({
+      packageName: "@acme/suite",
+      metadata: { manifest: "./voyant" },
+    })
+  })
+
+  it("rejects stale and invalid package selections", async () => {
+    const staleRoot = projectRoot()
+    writePackage(staleRoot, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/renamed"))}\n`,
+    })
+    await expect(resolve(staleRoot, defineProject({ modules: ["@acme/loyalty"] }))).rejects.toThrow(
+      /does not declare any selected unit|resolved graph contains 1 error diagnostic/,
+    )
+
+    const invalidRoot = projectRoot()
+    writePackage(invalidRoot, {
+      name: "@acme/invalid",
+      manifest: "export default {}\n",
+      voyant: null,
+    })
+    await expect(
+      resolve(invalidRoot, defineProject({ modules: ["@acme/invalid"] })),
+    ).rejects.toThrow(/must declare package\.json#voyant/)
+  })
+
+  it("does not import a package manifest before compatibility admission", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/cloud-only",
+      manifest: `
+globalThis.__voyantManifestLoaded = true
+export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
+`,
+      compatibleWith: { modes: ["managed-cloud"] },
+    })
+
+    await expect(
+      resolve(
+        root,
+        defineProject({
+          modules: ["@acme/cloud-only"],
+          deployment: { mode: "self-hosted" },
+        }),
+      ),
+    ).rejects.toThrow(/VOYANT_GRAPH_PACKAGE_INCOMPATIBLE/)
+    expect((globalThis as Record<string, unknown>).__voyantManifestLoaded).toBeUndefined()
+  })
+
+  it("loads project-relative manifests and lowers their runtime exports beneath .voyant", async () => {
+    const root = projectRoot()
+    const localDirectory = path.join(root, "src", "modules", "loyalty")
+    writePackageAt(localDirectory, {
+      name: "@fixture/loyalty",
+      manifest: `export default ${JSON.stringify(
+        moduleManifest("@fixture/loyalty", { runtimeEntry: "./runtime" }),
+      )}\n`,
+      extraExports: { "./runtime": "./runtime.mjs" },
+    })
+    writeFileSync(path.join(localDirectory, "runtime.mjs"), "export const routes = {}\n")
+
+    const resolution = await resolve(root, defineProject({ modules: ["./src/modules/loyalty"] }))
+    const runtimeSource = resolution.artifacts.files[0]?.contents ?? ""
+
+    expect(resolution.graph.modules[0]).toMatchObject({
+      id: "@fixture/loyalty",
+      packageName: "@fixture/loyalty",
+    })
+    expect(resolution.graph.packageRecords[0]?.source).toEqual({
+      kind: "file",
+      reference: "./src/modules/loyalty",
+    })
+    expect(runtimeSource).toContain(
+      '"../../src/modules/loyalty/runtime.mjs": () => import("../../src/modules/loyalty/runtime.mjs")',
+    )
+    expect(runtimeSource).not.toContain(root)
+    expect(runtimeSource).not.toContain("starters/")
+  })
+})
+
+function projectRoot(): string {
+  const root = mkdtempSync(path.join(tmpdir(), "voyant-framework-project-"))
+  roots.push(root)
+  writeFileSync(
+    path.join(root, "package.json"),
+    `${JSON.stringify({ name: "fixture", private: true, type: "module" }, null, 2)}\n`,
+  )
+  writeFileSync(path.join(root, "voyant.config.mjs"), "export default {}\n")
+  return root
+}
+
+async function resolve(root: string, project: unknown) {
+  return resolveProject({
+    project,
+    projectRoot: root,
+    configPath: path.join(root, "voyant.config.mjs"),
+  })
+}
+
+interface WritePackageOptions {
+  name: string
+  manifest: string
+  voyant?: Record<string, unknown> | null
+  compatibleWith?: Record<string, unknown>
+  extraExports?: Record<string, string>
+}
+
+function writePackage(root: string, options: WritePackageOptions): void {
+  writePackageAt(path.join(root, "node_modules", ...options.name.split("/")), options)
+}
+
+function writePackageAt(directory: string, options: WritePackageOptions): void {
+  mkdirSync(directory, { recursive: true })
+  const voyant =
+    options.voyant === null
+      ? undefined
+      : (options.voyant ?? {
+          schemaVersion: "voyant.package.v1",
+          kind: "module",
+          manifest: "./voyant",
+          ...(options.compatibleWith ? { compatibleWith: options.compatibleWith } : {}),
+        })
+  writeFileSync(
+    path.join(directory, "package.json"),
+    `${JSON.stringify(
+      {
+        name: options.name,
+        version: "1.2.3",
+        type: "module",
+        exports: { "./voyant": "./voyant.mjs", ...options.extraExports },
+        ...(voyant ? { voyant } : {}),
+      },
+      null,
+      2,
+    )}\n`,
+  )
+  writeFileSync(path.join(directory, "voyant.mjs"), options.manifest)
+}
+
+function moduleManifest(
+  id: string,
+  options: { runtimeEntry?: string } = {},
+): Record<string, unknown> {
+  return {
+    schemaVersion: "voyant.module.v1",
+    id,
+    packageName: id.split("#")[0],
+    migrations: [{ id: `${id.split("#")[0]}#migrations`, source: "./migrations" }],
+    ...(options.runtimeEntry
+      ? {
+          api: [
+            {
+              id: `${id}#api.admin`,
+              surface: "admin",
+              runtime: { entry: options.runtimeEntry, export: "routes" },
+            },
+          ],
+        }
+      : {}),
+  }
+}
+
+function pluginManifest(id: string): Record<string, unknown> {
+  return {
+    schemaVersion: "voyant.plugin.v1",
+    id,
+    packageName: id.split("#")[0],
+  }
+}

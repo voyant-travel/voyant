@@ -167,11 +167,25 @@ export interface VoyantGraphProjectSelections {
   plugins: readonly VoyantGraphProjectSelection[]
 }
 
+export type VoyantGraphProjectDeploymentMode = "local" | "managed-cloud" | "self-hosted"
+
+/**
+ * Target authoring stays on the project, while graph resolution consumes only
+ * mode and provider choices. This keeps one product graph deployable to more
+ * than one substrate without importing framework runtime types here.
+ */
+export interface VoyantGraphProjectDeployment {
+  target?: string
+  mode?: VoyantGraphProjectDeploymentMode
+  providers?: Readonly<Record<string, string>>
+}
+
 export interface DefineVoyantGraphProjectInput {
   schemaVersion?: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
   presetLineage?: string
   modules: readonly DefineVoyantGraphProjectUnitInput[]
   plugins?: readonly DefineVoyantGraphProjectUnitInput[]
+  deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
 
@@ -181,6 +195,7 @@ export interface VoyantGraphProject {
   modules: readonly VoyantGraphUnitManifest[]
   plugins: readonly VoyantGraphUnitManifest[]
   selections?: VoyantGraphProjectSelections
+  deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
 
@@ -203,6 +218,7 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
   const modules = normalizeProjectUnits(input.modules, "module")
   const plugins = normalizeProjectUnits(input.plugins ?? [], "plugin")
   const hasSelections = modules.selections.length > 0 || plugins.selections.length > 0
+  const deployment = normalizeProjectDeployment(input.deployment)
 
   return {
     schemaVersion,
@@ -217,8 +233,64 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
           },
         }
       : {}),
+    ...(deployment ? { deployment } : {}),
     ...(input.meta ? { meta: input.meta } : {}),
   }
+}
+
+function normalizeProjectDeployment(
+  input: VoyantGraphProjectDeployment | undefined,
+): VoyantGraphProjectDeployment | undefined {
+  if (!input) return undefined
+
+  const target = normalizeOptionalString(input.target, "deployment.target")
+  if (
+    input.mode !== undefined &&
+    input.mode !== "local" &&
+    input.mode !== "managed-cloud" &&
+    input.mode !== "self-hosted"
+  ) {
+    throw new Error(
+      'defineProject: deployment.mode must be "local", "managed-cloud", or "self-hosted".',
+    )
+  }
+
+  const providers: Record<string, string> = {}
+  if (input.providers !== undefined) {
+    if (!isPlainObject(input.providers)) {
+      throw new Error("defineProject: deployment.providers must be a plain string record.")
+    }
+    for (const role of Object.keys(input.providers).sort((left, right) =>
+      left.localeCompare(right),
+    )) {
+      if (role.trim().length === 0) {
+        throw new Error("defineProject: deployment.providers keys must be non-empty strings.")
+      }
+      const provider = normalizeOptionalString(
+        input.providers[role],
+        `deployment.providers.${role}`,
+      )
+      if (!provider) {
+        throw new Error(`defineProject: deployment.providers.${role} must be a non-empty string.`)
+      }
+      providers[role] = provider
+    }
+  }
+
+  if (!target && input.mode === undefined && Object.keys(providers).length === 0) return undefined
+  return {
+    ...(target ? { target } : {}),
+    ...(input.mode ? { mode: input.mode } : {}),
+    ...(Object.keys(providers).length > 0 ? { providers } : {}),
+  }
+}
+
+function normalizeOptionalString(value: unknown, label: string): string | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`defineProject: ${label} must be a non-empty string.`)
+  }
+  return value.trim()
 }
 
 function normalizeProjectUnits(

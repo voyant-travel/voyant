@@ -85,6 +85,7 @@
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "@types/node": "catalog:",
     "hono": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -110,7 +111,8 @@
       },
       "./project": {
         "types": "./dist/project.d.ts",
-        "import": "./dist/project.js"
+        "import": "./dist/project.js",
+        "default": "./dist/project.js"
       },
       "./managed-jobs": {
         "types": "./dist/managed-jobs.d.ts",

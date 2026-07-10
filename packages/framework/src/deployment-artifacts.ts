@@ -70,7 +70,11 @@ export interface BuildManagedNodeRuntimeEntryInput {
 export interface BuildGraphRuntimeModuleInput {
   graph: ResolvedVoyantDeploymentGraph
   command?: string
+  /** Build-time import lowering for admitted project-relative packages. */
+  runtimeEntryOverrides?: Readonly<Record<string, string>>
 }
+
+export interface BuildProjectRuntimeModuleInput extends BuildGraphRuntimeModuleInput {}
 
 interface GeneratedRuntimeRouteDefinition {
   route: ResolvedVoyantGraphUnit["api"][number]
@@ -97,8 +101,8 @@ export function buildDeploymentGraphJson(graph: ResolvedVoyantDeploymentGraph): 
 export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): string {
   assertGraphRuntimeLowerable(input.graph)
 
-  const modules = lowerRuntimeUnits(input.graph.modules, input.graph)
-  const plugins = lowerRuntimeUnits(input.graph.plugins, input.graph)
+  const modules = lowerRuntimeUnits(input.graph.modules, input.graph, input.runtimeEntryOverrides)
+  const plugins = lowerRuntimeUnits(input.graph.plugins, input.graph, input.runtimeEntryOverrides)
   const entries = [
     ...new Set(
       [...modules, ...plugins].flatMap((unit) =>
@@ -135,6 +139,41 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
     plugins: ${formatGeneratedValue(plugins, 4)},
   })
 }
+`
+}
+
+/**
+ * Emit the single application runtime consumed by project lifecycle commands.
+ * The selected target remains a CLI/adapter concern; only mode and provider
+ * bindings are embedded beside the target-neutral lazy graph runtime.
+ */
+export function buildProjectRuntimeModule(input: BuildProjectRuntimeModuleInput): string {
+  if (input.graph.deployment.target !== undefined) {
+    throw new Error(
+      `buildProjectRuntimeModule: resolved graph must be target-neutral, got ${input.graph.deployment.target}.`,
+    )
+  }
+
+  const graphRuntime = buildGraphRuntimeModule(input)
+  const deployment = {
+    ...(input.graph.deployment.mode ? { mode: input.graph.deployment.mode } : {}),
+    providers: input.graph.deployment.providers,
+  }
+
+  return `${graphRuntime}
+export const GENERATED_PROJECT_RUNTIME_KIND = "application" as const
+export const GENERATED_PROJECT_RUNTIME_DEPLOYMENT = ${formatGeneratedValue(deployment, 0)} as const
+
+export function createGeneratedProjectRuntime() {
+  return {
+    kind: GENERATED_PROJECT_RUNTIME_KIND,
+    graphHash: GENERATED_GRAPH_RUNTIME_HASH,
+    deployment: GENERATED_PROJECT_RUNTIME_DEPLOYMENT,
+    graphRuntime: createGeneratedGraphRuntime(),
+  }
+}
+
+export default createGeneratedProjectRuntime
 `
 }
 
@@ -388,6 +427,7 @@ function assertGraphRuntimeLowerable(graph: ResolvedVoyantDeploymentGraph): void
 function lowerRuntimeUnits(
   units: readonly ResolvedVoyantGraphUnit[],
   graph: ResolvedVoyantDeploymentGraph,
+  runtimeEntryOverrides: Readonly<Record<string, string>> | undefined,
 ): GeneratedRuntimeUnitDefinition[] {
   const admittedPackages = new Set(graph.packageRecords.map((record) => record.packageName))
 
@@ -410,9 +450,10 @@ function lowerRuntimeUnits(
               `buildGraphRuntimeModule: runtime entry "${runtime.entry}" for ${unit.id} route ${route.id} resolves to package "${referencedPackage}", which is not admitted by the graph.`,
             )
           }
+          const importEntry = lowerRuntimeImportEntry(unit, runtime.entry)
           return {
             route,
-            importEntry: lowerRuntimeImportEntry(unit, runtime.entry),
+            importEntry: runtimeEntryOverrides?.[importEntry] ?? importEntry,
           }
         })
         .sort((left, right) => left.route.id.localeCompare(right.route.id))

@@ -252,7 +252,10 @@ export interface VoyantGraphAdmissionPolicy {
 
 export interface ResolveDeploymentGraphInput {
   project: VoyantGraphProject
-  deployment?: Omit<VoyantGraphDeployment, "project">
+  deployment?: Omit<VoyantGraphDeployment, "project" | "schemaVersion" | "target"> & {
+    schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
+    target?: string
+  }
   packageRecords?: readonly VoyantGraphPackageRecord[]
   scheduledJobs?: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[]
   frameworkVersion?: string

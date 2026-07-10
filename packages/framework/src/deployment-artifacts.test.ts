@@ -5,6 +5,7 @@ import {
   buildGraphRuntimeModule,
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
+  buildProjectRuntimeModule,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
   VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
@@ -168,6 +169,21 @@ describe("deployment graph artifacts", () => {
     expect(first).toContain('"createLoyaltyModule"')
     expect(first).toContain("createGeneratedGraphRuntime")
     expect(first).not.toContain("FRAMEWORK_RUNTIME_MANIFEST")
+  })
+
+  it("builds one target-neutral whole-application runtime", async () => {
+    const graph = await sampleGraph()
+    const targetNeutralGraph = {
+      ...graph,
+      deployment: { mode: graph.deployment.mode, providers: graph.deployment.providers },
+    }
+    const source = buildProjectRuntimeModule({ graph: targetNeutralGraph })
+
+    expect(source).toContain('GENERATED_PROJECT_RUNTIME_KIND = "application"')
+    expect(source).toContain(`graphHash: GENERATED_GRAPH_RUNTIME_HASH`)
+    expect(source).toContain(`GENERATED_GRAPH_RUNTIME_HASH = "${graph.contentHash}"`)
+    expect(source).not.toContain("starters/")
+    expect(() => buildProjectRuntimeModule({ graph })).toThrow(/must be target-neutral/)
   })
 
   it("removes package importers and loaders when the package is not selected", async () => {
