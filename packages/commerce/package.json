@@ -11,7 +11,8 @@
     "./promotions/validation": "./src/promotions/validation.ts",
     "./promotions/workflow-bulk-reindex-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
     "./promotions/workflow-bulk-reindex": "./src/promotions/workflow-bulk-reindex.ts",
-    "./sellability/validation": "./src/sellability/validation.ts"
+    "./sellability/validation": "./src/sellability/validation.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -107,6 +108,11 @@
         "types": "./dist/sellability/validation.d.ts",
         "import": "./dist/sellability/validation.js",
         "default": "./dist/sellability/validation.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -120,6 +126,7 @@
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
