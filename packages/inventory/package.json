@@ -64,7 +64,7 @@
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "marked": "^18.0.5",
+    "marked": "^18.0.6",
     "pdf-lib": "^1.17.1",
     "sanitize-html": "^2.17.5",
     "zod": "catalog:",
