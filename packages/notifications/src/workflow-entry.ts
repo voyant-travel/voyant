@@ -34,7 +34,7 @@ export const notificationsDeliverReminderWorkflowManifest = {
     retry: {
       max: 3,
       backoff: "exponential" as const,
-      maxDelay: "300s",
+      maxDelay: "300s" as const,
     },
   },
 } satisfies WorkflowDescriptor

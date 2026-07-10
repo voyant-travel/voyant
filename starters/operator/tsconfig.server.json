@@ -317,6 +317,7 @@
       "@voyant-travel/bookings/tools": ["../../packages/bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../../packages/bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../../packages/bookings/dist/voyant.d.ts"],
+      "@voyant-travel/bookings/workflows": ["../../packages/bookings/dist/workflow-entry.d.ts"],
       "@voyant-travel/catalog": ["../../packages/catalog/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring": ["../../packages/catalog-authoring/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring/extension": [
@@ -1237,6 +1238,7 @@
       "@voyant-travel/inventory/tools": ["../../packages/inventory/dist/tools.d.ts"],
       "@voyant-travel/inventory/validation": ["../../packages/inventory/dist/validation.d.ts"],
       "@voyant-travel/inventory/voyant": ["../../packages/inventory/dist/voyant.d.ts"],
+      "@voyant-travel/inventory/workflows": ["../../packages/inventory/dist/workflow-entry.d.ts"],
       "@voyant-travel/legal": ["../../packages/legal/dist/index.d.ts"],
       "@voyant-travel/legal-contracts": ["../../packages/legal-contracts/dist/index.d.ts"],
       "@voyant-travel/legal-contracts/contracts/validation": [
@@ -1378,6 +1380,9 @@
         "../../packages/notifications/dist/validation.d.ts"
       ],
       "@voyant-travel/notifications/voyant": ["../../packages/notifications/dist/voyant.d.ts"],
+      "@voyant-travel/notifications/workflows": [
+        "../../packages/notifications/dist/workflow-entry.d.ts"
+      ],
       "@voyant-travel/observability-sentry": [
         "../../packages/observability-sentry/dist/index.d.ts"
       ],
@@ -1598,6 +1603,12 @@
       "@voyant-travel/products-contracts/validation-shared": [
         "../../packages/products-contracts/dist/validation-shared.d.ts"
       ],
+      "@voyant-travel/public-document-delivery": [
+        "../../packages/public-document-delivery/dist/index.d.ts"
+      ],
+      "@voyant-travel/public-document-delivery/voyant": [
+        "../../packages/public-document-delivery/dist/voyant.d.ts"
+      ],
       "@voyant-travel/quotes": ["../../packages/quotes/dist/index.d.ts"],
       "@voyant-travel/quotes-contracts": ["../../packages/quotes-contracts/dist/index.d.ts"],
       "@voyant-travel/quotes-contracts/validation": [
@@ -1739,6 +1750,7 @@
       "@voyant-travel/storage/routes": ["../../packages/storage/dist/routes.d.ts"],
       "@voyant-travel/storage/service": ["../../packages/storage/dist/service.d.ts"],
       "@voyant-travel/storage/types": ["../../packages/storage/dist/types.d.ts"],
+      "@voyant-travel/storage/voyant": ["../../packages/storage/dist/voyant.d.ts"],
       "@voyant-travel/storefront": ["../../packages/storefront/dist/index.d.ts"],
       "@voyant-travel/storefront-react": ["../../packages/storefront-react/dist/index.d.ts"],
       "@voyant-travel/storefront-react/client": [
@@ -1905,6 +1917,9 @@
       "@voyant-travel/utils/timezones": ["../../packages/utils/dist/timezones.d.ts"],
       "@voyant-travel/vite-config": ["../../packages/vite-config/dist/index.d.ts"],
       "@voyant-travel/workflow-runs": ["../../packages/workflow-runs/dist/index.d.ts"],
+      "@voyant-travel/workflow-runs/hono-module": [
+        "../../packages/workflow-runs/dist/hono-module.d.ts"
+      ],
       "@voyant-travel/workflow-runs/recorder": ["../../packages/workflow-runs/dist/recorder.d.ts"],
       "@voyant-travel/workflow-runs/routes": ["../../packages/workflow-runs/dist/routes.d.ts"],
       "@voyant-travel/workflow-runs/schema": ["../../packages/workflow-runs/dist/schema.d.ts"],

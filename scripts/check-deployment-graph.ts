@@ -241,7 +241,7 @@ async function main(): Promise<void> {
     const route = bookingsUnit?.api?.find((entry) => entry.surface === surface)
     if (
       route?.runtime?.entry !== "@voyant-travel/bookings" ||
-      route.runtime.export !== "bookingsHonoModule" ||
+      route.runtime.export !== "createBookingsHonoModule" ||
       route.transactional !== true
     ) {
       failures.push(
@@ -261,21 +261,24 @@ async function main(): Promise<void> {
   for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
-  const operatorWorkflowModule = operatorGraph.modules.find(
-    (unit) => unit.id === "@voyant-travel/operator#workflows",
-  )
-  const operatorWorkflowIds = new Set(operatorWorkflowModule?.workflows?.map((entry) => entry.id))
-  for (const workflowId of ["bookings.expire-stale-holds", "notifications.send-due-reminders"]) {
-    if (!operatorWorkflowIds.has(workflowId)) {
-      failures.push(`expected operator workflow graph module to include ${workflowId}`)
+  for (const [ownerId, workflowId] of [
+    ["@voyant-travel/bookings", "bookings.expire-stale-holds"],
+    ["@voyant-travel/notifications", "notifications.send-due-reminders"],
+  ] as const) {
+    const owner = operatorGraph.modules.find((unit) => unit.id === ownerId)
+    if (!owner?.workflows?.some((workflow) => workflow.id === workflowId)) {
+      failures.push(`expected ${ownerId} package manifest to own ${workflowId}`)
     }
     if (
       !operatorGraph.provisioning?.scheduledJobs?.some(
-        (job) => job.workflowId === workflowId && job.id.includes(`#workflows.schedule.`),
+        (job) => job.workflowId === workflowId && job.id.startsWith(`${ownerId}#schedule.`),
       )
     ) {
-      failures.push(`expected operator graph provisioning to schedule ${workflowId}`)
+      failures.push(`expected ${ownerId} graph provisioning to schedule ${workflowId}`)
     }
+  }
+  if (operatorModuleIds.has("@voyant-travel/operator#workflows")) {
+    failures.push("expected package-owned workflows to replace the operator workflow aggregate")
   }
   for (const id of OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) {
