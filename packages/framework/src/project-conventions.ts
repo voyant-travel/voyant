@@ -71,7 +71,7 @@ export type DiscoverProjectConventionsInput = string | DiscoverProjectConvention
 
 interface RecursiveConvention {
   directory: string
-  kind: Exclude<ProjectConventionKind, "api-route" | "module">
+  kind: Exclude<ProjectConventionKind, "admin" | "api-route" | "module">
   accepts: (fileName: string) => boolean
 }
 
@@ -93,7 +93,6 @@ const RECURSIVE_CONVENTIONS: readonly RecursiveConvention[] = [
   { directory: "src/jobs", kind: "job", accepts: isTypeScriptFile },
   { directory: "src/subscribers", kind: "subscriber", accepts: isTypeScriptFile },
   { directory: "src/links", kind: "link", accepts: isTypeScriptFile },
-  { directory: "src/admin", kind: "admin", accepts: () => true },
 ]
 
 /**
@@ -114,6 +113,7 @@ export async function discoverProjectConventions(
     ...RECURSIVE_CONVENTIONS.map((convention) =>
       discoverRecursiveConvention(projectRoot, convention, contributions),
     ),
+    discoverAdminExtensions(projectRoot, contributions),
     discoverModules(projectRoot, contributions),
   ])
 
@@ -122,6 +122,27 @@ export async function discoverProjectConventions(
   return {
     contributions,
     diagnostics: findDiagnostics(contributions),
+  }
+}
+
+async function discoverAdminExtensions(
+  projectRoot: string,
+  contributions: ProjectConventionContribution[],
+): Promise<void> {
+  const directory = "src/admin"
+  for (const entry of await readDirectory(path.join(projectRoot, directory))) {
+    if (!entry.isDirectory() || shouldIgnoreDirectory(entry.name)) continue
+
+    for (const fileName of ["index.ts", "index.tsx"] as const) {
+      const sourcePath = `${directory}/${entry.name}/${fileName}`
+      if (!(await containsFile(projectRoot, sourcePath))) continue
+
+      contributions.push({
+        id: stableId("admin", entry.name),
+        kind: "admin",
+        sourcePath,
+      })
+    }
   }
 }
 

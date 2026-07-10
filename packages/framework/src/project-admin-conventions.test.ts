@@ -1,0 +1,200 @@
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import path from "node:path"
+import { afterEach, describe, expect, it } from "vitest"
+import {
+  analyzeProjectAdminConventions,
+  compileProjectAdminConventions,
+  type ProjectAdminConventionError,
+  VOYANT_PROJECT_ADMIN_GENERATED_FILE,
+} from "./project-admin-conventions.js"
+import type { ProjectConventionContribution } from "./project-conventions.js"
+
+const fixtureRoots: string[] = []
+
+afterEach(async () => {
+  await Promise.all(
+    fixtureRoots.splice(0).map((root) => rm(root, { force: true, recursive: true })),
+  )
+})
+
+describe("project admin conventions", () => {
+  it("analyzes default exports without executing project source", async () => {
+    const root = await projectFixture({
+      "src/admin/concierge/index.tsx": `
+        throw new Error("must not execute")
+        export default { id: "concierge", routes: [] }
+      `,
+    })
+
+    await expect(
+      analyzeProjectAdminConventions({
+        projectRoot: root,
+        contributions: [adminContribution("concierge", "src/admin/concierge/index.tsx")],
+      }),
+    ).resolves.toEqual({
+      entries: [
+        {
+          conventionId: "project.admin.concierge",
+          extensionId: "concierge",
+          sourcePath: "src/admin/concierge/index.tsx",
+        },
+      ],
+      diagnostics: [],
+    })
+  })
+
+  it("reports a missing default export", async () => {
+    const root = await projectFixture({
+      "src/admin/reports/index.ts": `export const reports = { id: "reports" }`,
+    })
+
+    const result = await analyzeProjectAdminConventions({
+      projectRoot: root,
+      contributions: [adminContribution("reports", "src/admin/reports/index.ts")],
+    })
+
+    expect(result.diagnostics).toEqual([
+      {
+        code: "PROJECT_ADMIN_MISSING_DEFAULT_EXPORT",
+        message:
+          'Project admin entry "src/admin/reports/index.ts" must default-export an AdminExtension.',
+        severity: "error",
+        sourcePaths: ["src/admin/reports/index.ts"],
+      },
+    ])
+  })
+
+  it("reports duplicate extension IDs when they are statically provable", async () => {
+    const root = await projectFixture({
+      "src/admin/alpha/index.ts": `
+        import { defineAdminExtension } from "@voyant-travel/admin"
+        export default defineAdminExtension({ id: "shared" })
+      `,
+      "src/admin/beta/index.tsx": `
+        const extension = { id: "shared", routes: [] } as const
+        export { extension as default }
+      `,
+    })
+
+    const result = await analyzeProjectAdminConventions({
+      projectRoot: root,
+      contributions: [
+        adminContribution("beta", "src/admin/beta/index.tsx"),
+        adminContribution("alpha", "src/admin/alpha/index.ts"),
+      ],
+    })
+
+    expect(result.diagnostics).toEqual([
+      {
+        code: "PROJECT_ADMIN_DUPLICATE_EXTENSION_ID",
+        extensionId: "shared",
+        message:
+          'AdminExtension ID "shared" is declared by "src/admin/alpha/index.ts", "src/admin/beta/index.tsx".',
+        severity: "error",
+        sourcePaths: ["src/admin/alpha/index.ts", "src/admin/beta/index.tsx"],
+      },
+    ])
+  })
+
+  it("fails compilation when both index variants are supplied", async () => {
+    const root = await projectFixture({
+      "src/admin/orders/index.ts": `export default { id: "orders-ts" }`,
+      "src/admin/orders/index.tsx": `export default { id: "orders-tsx" }`,
+    })
+
+    const compilation = compileProjectAdminConventions({
+      projectRoot: root,
+      contributions: [
+        adminContribution("orders", "src/admin/orders/index.ts"),
+        adminContribution("orders", "src/admin/orders/index.tsx"),
+      ],
+    })
+
+    await expect(compilation).rejects.toMatchObject({
+      name: "ProjectAdminConventionError",
+      diagnostics: [{ code: "PROJECT_ADMIN_DUPLICATE_ENTRY" }],
+    } satisfies Partial<ProjectAdminConventionError>)
+  })
+
+  it("generates deterministic sorted client source and metadata", async () => {
+    const root = await projectFixture({
+      "src/admin/zeta/index.tsx": `export default { id: "zeta" }`,
+      "src/admin/alpha/index.ts": `export default { id: "alpha" }`,
+    })
+    const contributions: ProjectConventionContribution[] = [
+      adminContribution("zeta", "src/admin/zeta/index.tsx"),
+      {
+        id: "project.api.admin.secret",
+        kind: "api-route",
+        route: "/secret",
+        sourcePath: "src/api/admin/secret/route.ts",
+        surface: "admin",
+      },
+      adminContribution("alpha", "src/admin/alpha/index.ts"),
+    ]
+
+    const first = await compileProjectAdminConventions({ projectRoot: root, contributions })
+    const second = await compileProjectAdminConventions({
+      projectRoot: root,
+      contributions: [...contributions].reverse(),
+    })
+
+    expect(first).toEqual(second)
+    expect(first.file).toEqual({
+      path: VOYANT_PROJECT_ADMIN_GENERATED_FILE,
+      contents: `// Generated by @voyant-travel/framework. Do not edit.
+import type { AdminExtension } from "@voyant-travel/admin"
+import projectAdminExtension0 from "../../src/admin/alpha/index.js"
+import projectAdminExtension1 from "../../src/admin/zeta/index.js"
+
+export const projectAdminExtensions = [
+  projectAdminExtension0,
+  projectAdminExtension1,
+] satisfies readonly AdminExtension[]
+`,
+    })
+    expect(first.file.contents).not.toContain("src/api")
+    expect(first.file.contents).not.toContain("server")
+  })
+
+  it("rejects lexical and symlink path escapes", async () => {
+    const outsideRoot = await projectFixture({ "outside.ts": `export default { id: "outside" }` })
+    const root = await projectFixture({})
+    await mkdir(path.join(root, "src/admin/escape"), { recursive: true })
+    await symlink(
+      path.join(outsideRoot, "outside.ts"),
+      path.join(root, "src/admin/escape/index.ts"),
+    )
+
+    const result = await analyzeProjectAdminConventions({
+      projectRoot: root,
+      contributions: [
+        adminContribution("outside", "../outside/index.ts"),
+        adminContribution("escape", "src/admin/escape/index.ts"),
+      ],
+    })
+
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "PROJECT_ADMIN_INVALID_ENTRY_PATH",
+      "PROJECT_ADMIN_INVALID_ENTRY_PATH",
+    ])
+  })
+})
+
+function adminContribution(name: string, sourcePath: string): ProjectConventionContribution {
+  return { id: `project.admin.${name}`, kind: "admin", sourcePath }
+}
+
+async function projectFixture(files: Readonly<Record<string, string>>): Promise<string> {
+  const root = await mkdtemp(path.join(tmpdir(), "voyant-project-admin-conventions-"))
+  fixtureRoots.push(root)
+  await Promise.all(
+    Object.entries(files).map(async ([filePath, contents]) => {
+      const absolutePath = path.join(root, filePath)
+      await mkdir(path.dirname(absolutePath), { recursive: true })
+      await writeFile(absolutePath, contents)
+    }),
+  )
+  return root
+}

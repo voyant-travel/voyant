@@ -10,6 +10,7 @@
     "./deployment-graph": "./src/deployment-graph.ts",
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
+    "./project-admin-conventions": "./src/project-admin-conventions.ts",
     "./project": "./src/project.ts",
     "./profile": "./src/profile.ts",
     "./managed-jobs": "./src/managed-jobs.ts",
@@ -121,6 +122,10 @@
         "types": "./dist/project-api-conventions.d.ts",
         "import": "./dist/project-api-conventions.js",
         "default": "./dist/project-api-conventions.js"
+      },
+      "./project-admin-conventions": {
+        "types": "./dist/project-admin-conventions.d.ts",
+        "import": "./dist/project-admin-conventions.js"
       },
       "./project": {
         "types": "./dist/project.d.ts",
