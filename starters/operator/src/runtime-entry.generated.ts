@@ -8,7 +8,7 @@ import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework
 import type { ManagedProfileRuntimeDeployment } from "@voyant-travel/framework/managed-runtime"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:7ae3ecba924a3d1ac54d4142ab517e138740790d1c6fe459c93ed8d8c61d203f" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:5437efbd41150df211f7218d0ac45e16f66b75a0c7519da53f16d9bf7751ced5" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const

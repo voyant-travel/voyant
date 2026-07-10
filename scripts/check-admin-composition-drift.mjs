@@ -1,21 +1,21 @@
 /**
- * Guards against admin-composition drift between voyant.config `modules` and the
- * generated admin surface. RFC: docs/architecture/consolidated-deployments-rfc.md
- * (Workstream C — checker hardening).
+ * Guards against admin-composition drift between the resolved deployment graph
+ * and the generated admin surface. RFC:
+ * docs/architecture/unified-deployment-graph.md (Phase 3).
  *
  * The silent-failure this prevents (the #1 upgrade risk in the deployment-DX
- * assessment): a module is mounted (or newly arrives upstream) and exposes a
- * packaged admin (`@voyant-travel/<m>-react/admin`), but is missing from the
- * generated `admin.extensions.generated.ts` — so its nav/pages silently vanish.
- * And the reverse: a generated admin entry whose module is no longer mounted.
+ * assessment): a graph-selected package exposes a packaged admin
+ * (`@voyant-travel/<m>-react/admin`), but is missing from the generated
+ * `admin.extensions.generated.ts` — so its nav/pages silently vanish. And the
+ * reverse: a generated admin entry whose package is no longer graph-selected.
  *
  * Rule:
- *   expected = mounted modules (voyant.config `modules`) whose `<m>-react`
- *              package exposes a `./admin` export.
+ *   expected = graph-selected module/plugin packages with an admin route
+ *              surface whose `<m>-react` package exposes a `./admin` export.
  *   actual   = the `@voyant-travel/<m>-react/admin` imports wired into
  *              admin.extensions.generated.ts.
- *   FAIL on  (expected \ actual)  [silently dropped admin]
- *        or  (actual not mounted) [admin for an unmounted module].
+ *   FAIL on  (expected \ actual) [silently dropped admin]
+ *        or  (actual not graph-selected) [admin for an unselected package].
  */
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -23,31 +23,43 @@ import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, "..")
-const CONFIG = join(ROOT, "starters/operator/voyant.config.ts")
-const EXTENSIONS = join(ROOT, "starters/operator/src/admin.extensions.generated.ts")
+const GRAPH = optionPath("--graph", join(ROOT, "starters/operator/deployment-graph.generated.json"))
+const EXTENSIONS = optionPath(
+  "--extensions",
+  join(ROOT, "starters/operator/src/admin.extensions.generated.ts"),
+)
 const DESTINATIONS = join(ROOT, "starters/operator/src/admin.destinations.generated.ts")
 const ROUTES = join(ROOT, "starters/operator/src/admin.routes.generated.tsx")
 
-function readMountedModules() {
-  const src = readFileSync(CONFIG, "utf-8")
-  const start = src.indexOf("modules: [")
-  if (start === -1) throw new Error("voyant.config.ts: `modules: [` not found")
-  let depth = 0
-  let end = -1
-  for (let i = src.indexOf("[", start); i < src.length; i++) {
-    if (src[i] === "[") depth++
-    else if (src[i] === "]" && --depth === 0) {
-      end = i
-      break
+function optionPath(name, fallback) {
+  const index = process.argv.indexOf(name)
+  if (index === -1) return fallback
+  const value = process.argv[index + 1]
+  if (!value) throw new Error(`${name} requires a path`)
+  return value
+}
+
+function readGraphSelectedAdminPackages() {
+  if (!existsSync(GRAPH)) {
+    throw new Error(
+      "starters/operator/deployment-graph.generated.json is missing — run `pnpm --filter operator graph:emit`",
+    )
+  }
+
+  const graph = JSON.parse(readFileSync(GRAPH, "utf-8"))
+  const units = [...(graph.modules ?? []), ...(graph.plugins ?? [])]
+  const packages = new Set()
+
+  for (const unit of units) {
+    if (
+      typeof unit?.packageName === "string" &&
+      unit.api?.some((route) => route?.surface === "admin")
+    ) {
+      packages.add(unit.packageName)
     }
   }
-  const block = src.slice(start, end)
-  const names = []
-  for (const line of block.split("\n")) {
-    const m = line.replace(/\/\/.*$/, "").match(/"(@voyant-travel\/[^"]+)"/)
-    if (m) names.push(m[1])
-  }
-  return [...new Set(names)]
+
+  return [...packages].sort()
 }
 
 /** Does `<module>-react` expose a `./admin` export? */
@@ -89,25 +101,25 @@ if (!existsSync(EXTENSIONS)) {
   )
 }
 
-const mounted = readMountedModules()
-const mountedSet = new Set(mounted)
-const expected = mounted.filter(hasAdminSurface)
+const selected = readGraphSelectedAdminPackages()
+const selectedSet = new Set(selected)
+const expected = selected.filter(hasAdminSurface)
 const actual = adminImportsIn(EXTENSIONS)
 
-// Silently-dropped admin: mounted + has ./admin, but not wired.
+// Silently-dropped admin: graph-selected + has ./admin, but not wired.
 for (const name of expected) {
   if (!actual.has(name)) {
     violations.push(
-      `${name} is mounted and exposes ${name}-react/admin but is missing from admin.extensions.generated.ts — run \`voyant admin generate\` (its admin nav/pages would silently disappear)`,
+      `${name} is selected by the deployment graph and exposes ${name}-react/admin but is missing from admin.extensions.generated.ts — run \`voyant admin generate\` (its admin nav/pages would silently disappear)`,
     )
   }
 }
 
-// Orphan admin: wired for a module that is not mounted.
+// Orphan admin: wired for a package the graph did not select.
 for (const name of actual) {
-  if (!mountedSet.has(name)) {
+  if (!selectedSet.has(name)) {
     violations.push(
-      `admin.extensions.generated.ts wires ${name}-react/admin but ${name} is not in voyant.config modules — remove it or mount the module`,
+      `admin.extensions.generated.ts wires ${name}-react/admin but ${name} is not selected by the deployment graph — remove it or select the package`,
     )
   }
 }
@@ -127,11 +139,11 @@ for (const [label, file] of [
 
 if (violations.length) {
   console.error("Admin composition drift.")
-  console.error("See docs/architecture/consolidated-deployments-rfc.md (Workstream C).\n")
+  console.error("See docs/architecture/unified-deployment-graph.md (Phase 3).\n")
   for (const v of violations) console.error(`  - ${v}`)
   process.exit(1)
 }
 
 console.log(
-  `check-admin-composition-drift: OK (${expected.length} admin domains in sync with mounted modules)`,
+  `check-admin-composition-drift: OK (${expected.length} admin domains in sync with the deployment graph)`,
 )
