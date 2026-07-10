@@ -33,6 +33,7 @@ export const VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION = "voyant.package.v1" as const
 export const VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
 
 export type VoyantGraphUnitKind = "module" | "plugin"
+export type VoyantGraphPackageKind = VoyantGraphUnitKind | "framework" | "library"
 export type VoyantGraphDiagnosticSeverity = "info" | "warning" | "error"
 export type VoyantGraphRouteSurface = "admin" | "public" | "webhook" | "internal"
 export type VoyantGraphPackageSourceKind = "registry" | "workspace" | "file" | "git" | "unknown"
@@ -239,7 +240,7 @@ export interface VoyantGraphDeployment {
 
 export interface VoyantGraphPackageMetadata {
   schemaVersion: typeof VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION
-  kind: VoyantGraphUnitKind
+  kind: VoyantGraphPackageKind
   compatibleWith?: {
     framework?: string
     targets?: readonly string[]

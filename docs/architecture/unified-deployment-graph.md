@@ -830,6 +830,15 @@ compatibility metadata alongside the existing migration-facing `schema` and
 operator migration source to expose that normalized module metadata before the
 package can remain in generated operator graph artifacts.
 
+Substrate package records use the same metadata contract without becoming graph
+units: `@voyant-travel/framework` publishes `kind: "framework"`, while
+supporting packages such as `@voyant-travel/framework-migrations` and
+`@voyant-travel/hono` publish `kind: "library"`. Released first-party registry
+plugins that predate package-owned v1 metadata may be admitted through an
+explicit operator metadata bridge, but generated operator graph checks still
+require the final package record to carry normalized `voyant.package.v1`
+compatibility metadata before runtime imports are emitted.
+
 ## Implementation Phases
 
 Phases 0-2 are the complete v1 deployment-graph program. Phase 1 is the first

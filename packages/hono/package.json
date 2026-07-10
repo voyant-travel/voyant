@@ -60,6 +60,22 @@
   "files": [
     "dist"
   ],
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "library",
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": [
+        "node",
+        "voyant-cloud"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    }
+  },
   "publishConfig": {
     "access": "public",
     "exports": {
