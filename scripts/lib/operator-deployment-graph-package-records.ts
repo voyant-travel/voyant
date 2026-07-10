@@ -53,7 +53,7 @@ export const OPERATOR_GRAPH_ADMISSION_POLICY = {
 
 const OPERATOR_GRAPH_COMPATIBILITY = {
   framework: ">=0.26.0",
-  targets: ["node", "voyant-cloud"],
+  targets: ["node"],
   modes: ["local", "managed-cloud", "self-hosted"],
 } as const
 
@@ -92,6 +92,25 @@ export function withOperatorDeploymentLocalPackageRecords(
   )
 }
 
+export function withOperatorNodePackageCompatibility(
+  records: readonly VoyantGraphPackageRecord[],
+): VoyantGraphPackageRecord[] {
+  return records.map((record) =>
+    record.metadata
+      ? {
+          ...record,
+          metadata: {
+            ...record.metadata,
+            compatibleWith: {
+              ...record.metadata.compatibleWith,
+              targets: ["node"],
+            },
+          },
+        }
+      : record,
+  )
+}
+
 /** Resolve the one authored operator config, then admit and load package manifests. */
 export async function resolveOperatorDeploymentGraph(
   options: ResolveOperatorDeploymentGraphOptions,
@@ -107,18 +126,20 @@ export async function resolveOperatorDeploymentGraph(
     admission: OPERATOR_GRAPH_ADMISSION_POLICY,
   } as const
   const discoveredGraph = await resolveDeploymentGraph(graphInput)
-  const selectedPackageRecords = withOperatorDeploymentLocalPackageRecords(
-    readPnpmLockfilePackageRecords({
-      repoRoot: options.repoRoot,
-      projectRoot: options.projectRoot,
-      importerPaths: ["starters/operator"],
-      packageNames: [
-        "@voyant-travel/framework",
-        "@voyant-travel/framework-migrations",
-        ...discoveredGraph.packageRecords.map((record) => record.packageName),
-      ],
-      packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
-    }),
+  const selectedPackageRecords = withOperatorNodePackageCompatibility(
+    withOperatorDeploymentLocalPackageRecords(
+      readPnpmLockfilePackageRecords({
+        repoRoot: options.repoRoot,
+        projectRoot: options.projectRoot,
+        importerPaths: ["starters/operator"],
+        packageNames: [
+          "@voyant-travel/framework",
+          "@voyant-travel/framework-migrations",
+          ...discoveredGraph.packageRecords.map((record) => record.packageName),
+        ],
+        packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
+      }),
+    ),
   )
   const manifestedGraph = await resolveDeploymentGraphWithPackageManifests({
     ...graphInput,
@@ -133,20 +154,22 @@ export async function resolveOperatorDeploymentGraph(
     ...manifestedGraph.modules,
     ...manifestedGraph.plugins,
   ])
-  const packageRecords = withInferredRuntimePackageMetadata(
-    withOperatorDeploymentLocalPackageRecords(
-      readPnpmLockfilePackageRecords({
-        repoRoot: options.repoRoot,
-        projectRoot: options.projectRoot,
-        importerPaths: ["starters/operator"],
-        packageNames: [
-          ...manifestedGraph.packageRecords.map((record) => record.packageName),
-          ...referencedPackageNames,
-        ],
-        packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
-      }),
+  const packageRecords = withOperatorNodePackageCompatibility(
+    withInferredRuntimePackageMetadata(
+      withOperatorDeploymentLocalPackageRecords(
+        readPnpmLockfilePackageRecords({
+          repoRoot: options.repoRoot,
+          projectRoot: options.projectRoot,
+          importerPaths: ["starters/operator"],
+          packageNames: [
+            ...manifestedGraph.packageRecords.map((record) => record.packageName),
+            ...referencedPackageNames,
+          ],
+          packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
+        }),
+      ),
+      referencedPackageNames,
     ),
-    referencedPackageNames,
   )
   const graph = await resolveDeploymentGraphWithPackageManifests({
     ...graphInput,
@@ -233,13 +256,12 @@ function normalizeFrameworkResolution(
     record.deployment && typeof record.deployment === "object"
       ? (record.deployment as Record<string, unknown>)
       : record
-  const target = stringValue(deploymentValue.target) ?? authored.deployment.target
   const mode = deploymentMode(deploymentValue.mode) ?? authored.deployment.mode
   const providers = stringRecord(deploymentValue.providers) ?? authored.deployment.providers
 
   return {
     project,
-    deployment: deploymentFromSettings(project, { target, mode, providers }),
+    deployment: deploymentFromSettings(project, { mode, providers }),
   }
 }
 
@@ -374,11 +396,11 @@ function deploymentFromProject(
 
 function deploymentFromSettings(
   project: VoyantGraphProject,
-  settings: OperatorAuthoredProject["deployment"],
+  settings: Pick<OperatorAuthoredProject["deployment"], "mode" | "providers">,
 ): Omit<VoyantGraphDeployment, "project"> {
   const { project: _project, ...deployment } = defineDeployment({
     project,
-    target: settings.target,
+    target: "node",
     mode: settings.mode,
     providers: settings.providers,
   })
@@ -411,10 +433,6 @@ function deploymentMode(value: unknown): OperatorAuthoredProject["deployment"]["
   return value === "local" || value === "managed-cloud" || value === "self-hosted"
     ? value
     : undefined
-}
-
-function stringValue(value: unknown): string | undefined {
-  return typeof value === "string" && value.length > 0 ? value : undefined
 }
 
 function stringRecord(value: unknown): VoyantProjectProviders | undefined {

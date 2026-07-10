@@ -90,6 +90,18 @@ async function main(): Promise<void> {
     failures.push(`expected resolved graph schema v1, got ${first.schemaVersion}`)
   }
 
+  if (first.deployment.target !== "node") {
+    failures.push(
+      `expected managed-cloud graph runtime target node, got ${first.deployment.target}`,
+    )
+  }
+  if (
+    first.deployment.providers.auth !== "voyant-cloud" ||
+    first.deployment.providers.workflows !== "voyant-cloud"
+  ) {
+    failures.push("expected managed-cloud graph to preserve voyant-cloud auth/workflow providers")
+  }
+
   if (!/^sha256:[a-f0-9]{64}$/.test(first.contentHash)) {
     failures.push(`expected sha256 content hash, got ${first.contentHash}`)
   }
@@ -206,6 +218,11 @@ async function main(): Promise<void> {
   const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
   const declaredOperatorModuleIds = new Set(resolvedOperator.project.modules.map((unit) => unit.id))
   const declaredOperatorPluginIds = new Set(resolvedOperator.project.plugins.map((unit) => unit.id))
+  if (operatorGraph.deployment.target !== "node") {
+    failures.push(
+      `expected resolved operator graph runtime target node, got ${operatorGraph.deployment.target}`,
+    )
+  }
   if (operatorGraph.project?.presetLineage !== resolvedOperator.project.presetLineage) {
     failures.push("expected resolved operator graph to preserve declared preset lineage")
   }
@@ -255,9 +272,7 @@ async function main(): Promise<void> {
       metadata?.schemaVersion !== "voyant.package.v1" ||
       metadata.kind !== expectedKind ||
       typeof metadata.compatibleWith?.framework !== "string" ||
-      !metadata.compatibleWith.targets?.includes("node") ||
-      (!runtimeOnlyPackageNames.has(record.packageName) &&
-        !metadata.compatibleWith.targets?.includes("voyant-cloud")) ||
+      JSON.stringify(metadata.compatibleWith.targets) !== JSON.stringify(["node"]) ||
       !metadata.compatibleWith.modes?.includes("local") ||
       !metadata.compatibleWith.modes?.includes("managed-cloud") ||
       !metadata.compatibleWith.modes?.includes("self-hosted")

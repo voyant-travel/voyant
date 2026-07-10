@@ -213,7 +213,7 @@ export interface VoyantGraphDeploymentRequirements {
 export interface VoyantGraphDeployment {
   schemaVersion: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
-  target: string
+  target: "node"
   providers: Partial<Record<VoyantProjectProviderRole | string, string>>
   mode?: VoyantProjectDeploymentMode
   requirements: VoyantGraphDeploymentRequirements
@@ -415,6 +415,10 @@ const STANDARD_CAPABILITY_PREFIXES = new Set([
 ])
 
 export function defineDeployment(input: DefineVoyantGraphDeploymentInput): VoyantGraphDeployment {
+  if (input.target !== "node") {
+    throw new Error('defineDeployment: target must be "node".')
+  }
+
   const deployment = {
     schemaVersion: input.schemaVersion ?? VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION,
     project: input.project,
@@ -731,7 +735,7 @@ export function defineDeploymentFromManagedProfile(
   const providers = getVoyantProjectProviders(project)
   return defineDeployment({
     project: defineProjectFromManagedProfile(project),
-    target: project.mode === "managed-cloud" ? "voyant-cloud" : "node",
+    target: "node",
     mode: project.mode,
     providers: { ...providers },
     meta: {
