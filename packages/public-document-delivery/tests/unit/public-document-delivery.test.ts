@@ -11,7 +11,7 @@ import {
   type RevokePublicDocumentDeliveryGrantInput,
   resolvePublicDocumentDeliveryGrant,
   revokePublicDocumentDeliveryGrant,
-} from "../../src/public-document-delivery.js"
+} from "../../src/index.js"
 
 function createMemoryGrantStore(): PublicDocumentDeliveryGrantStore & {
   grants: PublicDocumentDeliveryGrant[]

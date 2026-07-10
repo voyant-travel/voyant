@@ -2,7 +2,7 @@
  * Operator (deployment) wiring for the media routes.
  *
  * The route SHAPES live in packages:
- *   - upload + serve in `@voyant-travel/storage` (`createMediaRoutes`),
+ *   - upload + serve in `@voyant-travel/storage` (`createMediaHonoModule`),
  *   - product brochure generation in `@voyant-travel/inventory`
  *     (`createProductBrochureRoutes`).
  *
@@ -19,7 +19,7 @@
 
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { createProductBrochureRoutes } from "@voyant-travel/inventory/routes-brochure"
-import { createMediaRoutes, type VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
+import { createMediaHonoModule, type VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
 import type { Context } from "hono"
 
 import { createProductBrochurePrinter } from "../../lib/brochure-printer"
@@ -33,8 +33,8 @@ function resolveStorage(c: Context) {
 }
 
 /** Build the upload + serve routes (`/v1/admin/uploads`, `/v1/admin/media/*`, …). */
-function buildMediaUploadAndServeRoutes() {
-  return createMediaRoutes({
+function buildMediaUploadAndServeModule() {
+  return createMediaHonoModule({
     resolveStorage,
     guessServedMimeType: guessMimeType,
     signVideoUploadTicket: (c: Context, input: VideoUploadTicketRequest) =>
@@ -54,12 +54,11 @@ function buildBrochureRoutes() {
 }
 
 /**
- * The combined media route surface for the operator — upload + serve (from
- * storage) and brochure generation (from inventory), wired with this
- * deployment's options. Brochure routes mount under `/v1/admin/products`; the
- * media routes already register absolute paths.
+ * Compatibility composition for the former combined operator media surface.
+ * Storage upload/serve and inventory brochure generation now have separate
+ * package ownership, while this loader preserves the existing mounted routes.
  */
-export function buildOperatorMediaRoutes(): OpenAPIHono {
+export async function buildOperatorMediaRoutes(): Promise<OpenAPIHono> {
   // OpenAPIHono parent so the brochure-generation sub-app's `.openapi()` def
   // (`POST /v1/admin/products/{id}/brochure/generate`) surfaces in the operator
   // spec via the build-time lazy-merge — `mergeLazyOpenApiPaths` skips plain
@@ -67,7 +66,7 @@ export function buildOperatorMediaRoutes(): OpenAPIHono {
   // serve routes from `@voyant-travel/storage` stay plain `Hono` (multipart /
   // wildcard byte streams), so they remain undocumented.
   const app = new OpenAPIHono()
-  app.route("/", buildMediaUploadAndServeRoutes())
+  app.route("/", await buildMediaUploadAndServeModule().lazyRoutes.load())
   app.route("/v1/admin/products", buildBrochureRoutes())
   return app
 }
