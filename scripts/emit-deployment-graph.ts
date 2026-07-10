@@ -10,20 +10,14 @@ import {
   buildManagedNodeRuntimeEntryArtifact,
 } from "../packages/framework/src/deployment-artifacts.ts"
 import {
-  defineDeploymentFromManagedProfile,
-  defineProject,
-  defineProjectFromManagedProfile,
   type ResolveDeploymentGraphInput,
   resolveDeploymentGraph,
 } from "../packages/framework/src/deployment-graph.ts"
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
-import {
-  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST,
-  OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST,
-} from "../starters/operator/deployment-graph.local.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
+import { OPERATOR_VOYANT_DEPLOYMENT } from "../starters/operator/voyant.deployment.ts"
 import {
   buildDeploymentGraphDoctorJson,
   buildDeploymentGraphDoctorReport,
@@ -187,8 +181,7 @@ function resolveOperatorDeploymentGraph(
   project: VoyantProjectManifest,
   options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
 ) {
-  const graphProject = defineOperatorGraphProject(project)
-  const { project: _managedProject, ...deployment } = defineDeploymentFromManagedProfile(project)
+  const { project: graphProject, ...deployment } = OPERATOR_VOYANT_DEPLOYMENT
   return resolveDeploymentGraph({
     ...options,
     project: graphProject,
@@ -201,20 +194,6 @@ function resolveOperatorDeploymentGraph(
     target: options.target ?? deployment.target,
     mode: options.mode ?? deployment.mode,
     admission: options.admission ?? OPERATOR_GRAPH_ADMISSION_POLICY,
-  })
-}
-
-function defineOperatorGraphProject(project: VoyantProjectManifest) {
-  const managedProject = defineProjectFromManagedProfile(project)
-  return defineProject({
-    presetLineage: managedProject.presetLineage,
-    modules: [
-      ...managedProject.modules,
-      ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.modules,
-      ...OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST.modules,
-    ],
-    plugins: [...managedProject.plugins, ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.plugins],
-    meta: managedProject.meta,
   })
 }
 
@@ -322,12 +301,12 @@ function toPosixRelativePath(fromDir: string, toPath: string, pathModule: typeof
 function printHelp(): void {
   console.log(`Usage: tsx scripts/emit-deployment-graph.ts [--emit]
 
-Resolves the operator managed profile into committed generated graph artifacts.
+Resolves the operator graph declarations into committed generated graph artifacts.
 
 Options:
   --emit                 write generated artifacts instead of checking staleness
   --json                 print the graph doctor report JSON contract
-  --profile <path>       managed profile JSON path
+  --profile <path>       managed-profile compatibility snapshot path
   --manifest-output <path> deployment artifact manifest output path
   --graph-output <path>  resolved graph JSON output path
   --entry-output <path>  runtime entry metadata module output path

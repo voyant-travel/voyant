@@ -20,6 +20,8 @@ import {
   OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS,
 } from "../starters/operator/deployment-graph.local.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
+import { OPERATOR_VOYANT_DEPLOYMENT } from "../starters/operator/voyant.deployment.ts"
+import { OPERATOR_VOYANT_PROJECT } from "../starters/operator/voyant.project.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
   OPERATOR_GRAPH_ADMISSION_POLICY,
@@ -157,6 +159,36 @@ async function main(): Promise<void> {
   const operatorGraph = await readOperatorGeneratedGraph()
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
   const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
+  const declaredOperatorModuleIds = new Set(OPERATOR_VOYANT_PROJECT.modules.map((unit) => unit.id))
+  const declaredOperatorPluginIds = new Set(OPERATOR_VOYANT_PROJECT.plugins.map((unit) => unit.id))
+  if (OPERATOR_VOYANT_DEPLOYMENT.project !== OPERATOR_VOYANT_PROJECT) {
+    failures.push(
+      "expected operator deployment declaration to bind the operator project declaration",
+    )
+  }
+  if (operatorGraph.project?.presetLineage !== OPERATOR_VOYANT_PROJECT.presetLineage) {
+    failures.push("expected generated operator graph to preserve declared preset lineage")
+  }
+  for (const id of declaredOperatorModuleIds) {
+    if (!operatorModuleIds.has(id)) {
+      failures.push(`expected generated operator graph to include declared module ${id}`)
+    }
+  }
+  for (const id of declaredOperatorPluginIds) {
+    if (!operatorPluginIds.has(id)) {
+      failures.push(`expected generated operator graph to include declared plugin ${id}`)
+    }
+  }
+  for (const id of operatorModuleIds) {
+    if (!declaredOperatorModuleIds.has(id)) {
+      failures.push(`expected generated operator graph module ${id} to come from the declaration`)
+    }
+  }
+  for (const id of operatorPluginIds) {
+    if (!declaredOperatorPluginIds.has(id)) {
+      failures.push(`expected generated operator graph plugin ${id} to come from the declaration`)
+    }
+  }
   const operatorPackageRecords = new Map(
     operatorGraph.packageRecords.map((record) => [record.packageName, record]),
   )
@@ -287,6 +319,7 @@ async function main(): Promise<void> {
 }
 
 async function readOperatorGeneratedGraph(): Promise<{
+  project?: { presetLineage?: string }
   modules: Array<{
     id: string
     workflows?: Array<{ id: string }>
