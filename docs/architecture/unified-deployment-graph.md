@@ -817,6 +817,13 @@ diagnostic-code registry. The public `voyant doctor --json` command remains the
 CLI follow-up; it should consume this report contract rather than inventing a
 separate diagnostic model.
 
+The reference operator now owns checked-in `voyant.project.ts` and
+`voyant.deployment.ts` declarations. The managed-profile snapshot remains a
+runtime compatibility input for the generated managed Node entry and legacy
+scheduled-job derivation, but it does not select graph units, providers, or the
+deployment target. Phase 2 replaces that remaining compatibility derivation
+with graph-derived requirements and provisioning.
+
 The operator graph also runs an explicit source-admission policy for generated
 artifacts: selected packages must resolve to admitted lockfile/workspace
 provenance, deployment-local operator units get an explicit local workspace
