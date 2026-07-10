@@ -38,6 +38,16 @@ export {
   subsetStandardManifest,
 } from "./manifest.js"
 export {
+  assertPortConforms,
+  type DefineVoyantPortInput,
+  definePort,
+  providePort,
+  type RequireVoyantPortOptions,
+  requirePort,
+  type VoyantPort,
+  type VoyantPortConformanceTest,
+} from "./ports.js"
+export {
   type DefineVoyantProjectInput,
   defineVoyantProject,
   getVoyantProjectMigrationMetadata,

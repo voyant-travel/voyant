@@ -18,6 +18,7 @@ import {
   VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
   validateGraphUnitManifest,
 } from "./deployment-graph.js"
+import { assertPortConforms, definePort, providePort, requirePort } from "./ports.js"
 import { defineVoyantProject } from "./profile.js"
 
 describe("deployment graph v1", () => {
@@ -771,6 +772,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
       "VOYANT_GRAPH_INVALID_SCOPE",
       "VOYANT_GRAPH_MISSING_CAPABILITY",
+      "VOYANT_GRAPH_MISSING_PORT",
       "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE",
       "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
       "VOYANT_GRAPH_UNKNOWN_FACET",
@@ -800,6 +802,75 @@ describe("deployment graph v1", () => {
     expect(() => deployment.migrations.expectReplayParity()).not.toThrow()
     expect(deployment.routes.list()).toEqual(["/v1/admin/loyalty"])
     expect(() => deployment.routes.expectMounted("/v1/admin/loyalty")).not.toThrow()
+  })
+
+  it("closes required typed ports from selected providers", async () => {
+    expect(() => definePort({ id: "booking", test: () => {} })).toThrow(/dot-case/)
+    expect(() => definePort({ id: "booking.read-model", test: undefined as never })).toThrow(
+      /conformance test kit/,
+    )
+
+    const bookingReadModel = definePort<{ getBooking: (id: string) => string }>({
+      id: "booking.read-model",
+      test: (provider) => {
+        if (provider.getBooking("booking_1") !== "booking_1") {
+          throw new Error("getBooking must return the requested booking.")
+        }
+      },
+    })
+
+    await expect(
+      assertPortConforms(bookingReadModel, { getBooking: (id) => id }),
+    ).resolves.toBeUndefined()
+    await expect(
+      assertPortConforms(bookingReadModel, { getBooking: () => "wrong" }),
+    ).rejects.toThrow(/requested booking/)
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/voyant-bookings",
+            provides: { ports: [providePort(bookingReadModel)] },
+          }),
+          defineModule({
+            id: "@acme/voyant-loyalty",
+            requires: { ports: [requirePort(bookingReadModel)] },
+          }),
+        ],
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual([])
+    expect(graph.modules[1]?.requires.ports).toEqual([{ id: "booking.read-model" }])
+  })
+
+  it("reports missing required ports while allowing optional ports", async () => {
+    const peopleDirectory = definePort({ id: "identity.people-directory", test: () => {} })
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/voyant-loyalty",
+            requires: {
+              ports: [
+                requirePort(peopleDirectory),
+                requirePort(peopleDirectory, { optional: true }),
+              ],
+            },
+          }),
+        ],
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_MISSING_PORT",
+        source: "@acme/voyant-loyalty",
+        facet: "requires.ports",
+      }),
+    ])
   })
 
   it("surfaces graph diagnostics through the author test harness", async () => {

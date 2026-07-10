@@ -912,6 +912,9 @@ that build on the same graph contract.
 
 ### Phase 4: typed ports and adapter conformance
 
+- **Shipped first slice:** public ports now carry mandatory conformance kits,
+  lower to serializable graph declarations, and participate in required-port
+  closure diagnostics. The first-party provider container remains unchanged.
 - migrate `FrameworkProviders` toward typed ports where there are real
   replacements
 - provide conformance test kits for public ports
