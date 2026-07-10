@@ -238,6 +238,7 @@ function runtimePackageReferences(
   }
 
   for (const unit of units) {
+    add(unit, unit.runtime)
     for (const route of unit.api) add(unit, route.runtime)
     for (const config of unit.config ?? []) add(unit, config.validator)
     for (const secret of unit.secrets ?? []) add(unit, secret.validator)

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import { canonicalJson } from "./deployment-graph.js"
 import { defineProject, resolveProject } from "./project.js"
+import { runtimeReferencePackageNames } from "./project-resolver.js"
 
 const roots: string[] = []
 
@@ -396,6 +397,36 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     ).rejects.toThrow(/VOYANT_GRAPH_PACKAGE_INCOMPATIBLE.*@acme\/loyalty-tools/s)
   })
 
+  it("materializes external unit runtime packages in the runtime reference closure", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@acme/loyalty"),
+        runtime: {
+          entry: "@acme/loyalty-runtime/factory",
+          export: "createLoyaltyModule",
+        },
+      })}\n`,
+    })
+    writePackage(root, {
+      name: "@acme/loyalty-runtime",
+      manifest: "",
+      voyant: null,
+      extraExports: { "./factory": "./factory.mjs" },
+    })
+
+    const resolution = await resolve(root, defineProject({ modules: ["@acme/loyalty"] }))
+
+    expect(runtimeReferencePackageNames(resolution.graph.modules)).toEqual([
+      "@acme/loyalty-runtime",
+    ])
+    expect(
+      resolution.artifacts.files.find((file) => file.path === resolution.artifacts.runtimeEntry)
+        ?.contents,
+    ).toContain('"@acme/loyalty-runtime/factory": () => import("@acme/loyalty-runtime/factory")')
+  })
+
   it("rejects runtime subpaths that are absent from the referenced package exports", async () => {
     const root = projectRoot()
     writePackage(root, {
@@ -432,6 +463,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
       name: "@fixture/loyalty",
       manifest: `export default ${JSON.stringify({
         ...moduleManifest("@fixture/loyalty", { runtimeEntry: "./runtime" }),
+        runtime: { entry: "./module-runtime", export: "createLoyaltyModule" },
         tools: [
           {
             id: "@fixture/loyalty#tool.members",
@@ -441,8 +473,16 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
           },
         ],
       })}\n`,
-      extraExports: { "./runtime": "./runtime.mjs", "./tools": "./tools.mjs" },
+      extraExports: {
+        "./module-runtime": "./module-runtime.mjs",
+        "./runtime": "./runtime.mjs",
+        "./tools": "./tools.mjs",
+      },
     })
+    writeFileSync(
+      path.join(localDirectory, "module-runtime.mjs"),
+      "export const createLoyaltyModule = () => ({})\n",
+    )
     writeFileSync(path.join(localDirectory, "runtime.mjs"), "export const routes = {}\n")
     writeFileSync(path.join(localDirectory, "tools.mjs"), "export const listMembers = {}\n")
 
@@ -459,6 +499,9 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
       kind: "file",
       reference: "./src/modules/loyalty",
     })
+    expect(runtimeSource).toContain(
+      '"../../src/modules/loyalty/module-runtime.mjs": () => import("../../src/modules/loyalty/module-runtime.mjs")',
+    )
     expect(runtimeSource).toContain(
       '"../../src/modules/loyalty/runtime.mjs": () => import("../../src/modules/loyalty/runtime.mjs")',
     )

@@ -327,6 +327,7 @@ export interface ResolvedVoyantGraphUnit {
   order: number
   /** JSON-safe values authored on this unit's project selection. */
   projectConfig?: VoyantGraphJsonObject
+  runtime?: VoyantGraphRuntimeReference
   provides: {
     capabilities: readonly string[]
     ports: readonly VoyantGraphPortDeclaration[]
@@ -410,6 +411,7 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "id",
   "localId",
   "packageName",
+  "runtime",
   "provides",
   "requires",
   "api",
@@ -587,6 +589,9 @@ export function validateGraphUnitManifest(
   diagnostics.push(
     ...validateCapabilityDeclaration(input.requires, "requires", source, packageName),
   )
+  if (input.runtime !== undefined) {
+    validateRuntimeReference(input.runtime, "runtime", source, diagnostics)
+  }
   diagnostics.push(...validateRouteBundles(input.api, source))
   diagnostics.push(...validateFacetEntities(input.schema, "schema", source))
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
@@ -1143,6 +1148,7 @@ function resolveUnit(
     ...(unit.localId ? { localId: unit.localId } : {}),
     order: 0,
     ...(projectConfig ? { projectConfig } : {}),
+    ...(unit.runtime ? { runtime: unit.runtime } : {}),
     provides: {
       capabilities: sortedUnique(unit.provides?.capabilities ?? []),
       ports: sortPorts(unit.provides?.ports ?? []),
@@ -2318,6 +2324,7 @@ function validateRuntimeReferenceAdmission(
     const add = (facet: string, runtime?: { entry: string }) => {
       if (runtime) references.push({ entry: runtime.entry, facet })
     }
+    add("runtime.entry", unit.runtime)
     for (const route of unit.api) add(`api.${route.id}.runtime.entry`, route.runtime)
     for (const config of unit.config ?? []) {
       add(`config.validator.${config.id}.entry`, config.validator)

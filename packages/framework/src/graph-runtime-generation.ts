@@ -27,6 +27,7 @@ export interface GeneratedRuntimeUnitDefinition {
   packageName: string
   order: number
   projectConfig?: ResolvedVoyantGraphUnit["projectConfig"]
+  runtimeReferenceId?: string
   references: VoyantGraphRuntimeReferenceDefinition[]
   config: VoyantGraphRuntimeConfigDefinition[]
   secrets: VoyantGraphRuntimeSecretDefinition[]
@@ -143,6 +144,9 @@ export function lowerGraphRuntimeUnits(
         packageName: unit.packageName,
         order: unit.order,
         ...(unit.projectConfig ? { projectConfig: unit.projectConfig } : {}),
+        ...(unit.runtime
+          ? { runtimeReferenceId: runtimeReferenceId(unit.id, "runtime", unit.id) }
+          : {}),
         references,
         config,
         secrets,
@@ -211,6 +215,7 @@ function collectRuntimeReferences(
     })
   }
 
+  if (unit.runtime) add("runtime", unit.id, unit.runtime)
   for (const route of unit.api) if (route.runtime) add("api", route.id, route.runtime)
   for (const config of unit.config ?? []) {
     if (config.validator) add("config.validator", config.id, config.validator)

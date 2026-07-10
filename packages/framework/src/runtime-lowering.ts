@@ -20,6 +20,7 @@ import type {
 } from "./deployment-graph.js"
 
 export type VoyantGraphRuntimeReferenceFacet =
+  | "runtime"
   | "api"
   | "config.validator"
   | "secrets.validator"
@@ -146,6 +147,7 @@ export interface VoyantGraphRuntimeUnitDefinition {
   packageName: string
   order: number
   projectConfig?: VoyantGraphJsonObject
+  runtimeReferenceId?: string
   references?: readonly VoyantGraphRuntimeReferenceDefinition[]
   config?: readonly VoyantGraphRuntimeConfigDefinition[]
   secrets?: readonly VoyantGraphRuntimeSecretDefinition[]
@@ -199,7 +201,7 @@ export interface VoyantGraphRuntimeUnitLoader
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteLoader[]
-  /** Load each distinct package entry/export reference in this unit once. */
+  /** Load the unit runtime, or each distinct route runtime for legacy units. */
   load: () => Promise<readonly unknown[]>
 }
 
@@ -413,6 +415,15 @@ function createRuntimeUnitLoader(
     createRuntimeReferenceLoader(definition, entries),
   )
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
+  const unitRuntime = unit.runtimeReferenceId
+    ? requireDeclarationReference(
+        unit.id,
+        unit.id,
+        unit.runtimeReferenceId,
+        "runtime",
+        referenceById,
+      )
+    : undefined
   const config = unit.config.map((definition) =>
     createRuntimeValueDeclarationLoader(definition, "config.validator", referenceById),
   )
@@ -464,6 +475,7 @@ function createRuntimeUnitLoader(
     packageName: unit.packageName,
     order: unit.order,
     ...(unit.projectConfig ? { projectConfig: unit.projectConfig } : {}),
+    ...(unit.runtimeReferenceId ? { runtimeReferenceId: unit.runtimeReferenceId } : {}),
     references,
     config,
     secrets,
@@ -476,7 +488,9 @@ function createRuntimeUnitLoader(
     selectedIds: unit.selectedIds,
     routes,
     load: memoizePromise(() =>
-      Promise.all(uniqueRuntimeRouteLoaders(routes).map((route) => route.load())),
+      unitRuntime
+        ? unitRuntime.load().then((runtimeExport) => [runtimeExport])
+        : Promise.all(uniqueRuntimeRouteLoaders(routes).map((route) => route.load())),
     ),
   }
 }
