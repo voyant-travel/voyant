@@ -5,6 +5,17 @@ export const workflowRunsVoyantModule = defineModule({
   id: "@voyant-travel/workflow-runs",
   packageName: "@voyant-travel/workflow-runs",
   localId: "workflow-runs",
+  api: [
+    {
+      id: "@voyant-travel/workflow-runs#api.admin",
+      surface: "admin",
+      mount: "workflow-runs",
+      runtime: {
+        entry: "@voyant-travel/workflow-runs/hono-module",
+        export: "createWorkflowRunsHonoModule",
+      },
+    },
+  ],
   schema: [
     {
       id: "@voyant-travel/workflow-runs#schema",

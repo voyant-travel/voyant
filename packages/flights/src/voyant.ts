@@ -9,7 +9,7 @@ export const flightsVoyantModule = defineModule({
     {
       id: "@voyant-travel/flights#api",
       surface: "admin",
-      mount: "@voyant-travel/flights",
+      mount: "flights",
       runtime: {
         entry: "@voyant-travel/flights/hono",
         export: "createFlightsHonoModule",

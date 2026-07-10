@@ -9,7 +9,7 @@ export const miceVoyantModule = defineModule({
     {
       id: "@voyant-travel/mice#api.admin",
       surface: "admin",
-      mount: "@voyant-travel/mice",
+      mount: "mice",
       transactional: true,
       runtime: {
         entry: "@voyant-travel/mice",
@@ -53,7 +53,7 @@ export const miceBookingVoyantPlugin = definePlugin({
     {
       id: "@voyant-travel/mice#booking-extension.api.admin",
       surface: "admin",
-      mount: "@voyant-travel/mice/booking-extension",
+      mount: "bookings",
       runtime: {
         entry: "@voyant-travel/mice/booking-extension",
         export: "miceBookingExtension",

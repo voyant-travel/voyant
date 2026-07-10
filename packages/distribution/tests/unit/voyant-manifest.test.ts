@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
+  createChannelPushExtension,
+  distributionBookingExtension,
+  distributionHonoModule,
+  externalRefsHonoModule,
+  suppliersHonoModule,
+} from "../../src/index.js"
+import {
   distributionBookingVoyantPlugin,
   distributionChannelPushVoyantPlugin,
   distributionVoyantModule,
@@ -13,12 +20,30 @@ describe("distribution deployment manifests", () => {
       packageName: "@voyant-travel/distribution",
       api: [
         {
-          id: "@voyant-travel/distribution#api",
+          id: "@voyant-travel/distribution#api.external-refs",
           surface: "admin",
-          mount: "@voyant-travel/distribution",
+          mount: "external-refs",
           runtime: {
             entry: "@voyant-travel/distribution",
-            export: "distributionHonoModules",
+            export: "externalRefsHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/distribution#api",
+          surface: "admin",
+          mount: "distribution",
+          runtime: {
+            entry: "@voyant-travel/distribution",
+            export: "distributionHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/distribution#api.suppliers",
+          surface: "admin",
+          mount: "suppliers",
+          runtime: {
+            entry: "@voyant-travel/distribution",
+            export: "suppliersHonoModule",
           },
         },
       ],
@@ -36,7 +61,8 @@ describe("distribution deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/distribution#extension.api",
-          mount: "@voyant-travel/distribution",
+          surface: "admin",
+          mount: "bookings",
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "distributionBookingExtension",
@@ -52,7 +78,8 @@ describe("distribution deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/distribution#channel-push-extension.api",
-          mount: "@voyant-travel/distribution/channel-push-extension",
+          surface: "admin",
+          mount: "distribution",
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "createChannelPushExtension",
@@ -60,5 +87,13 @@ describe("distribution deployment manifests", () => {
         },
       ],
     })
+  })
+
+  it("references exported runtimes with matching mounts", () => {
+    expect(externalRefsHonoModule.module.name).toBe("external-refs")
+    expect(distributionHonoModule.module.name).toBe("distribution")
+    expect(suppliersHonoModule.module.name).toBe("suppliers")
+    expect(distributionBookingExtension.extension.module).toBe("bookings")
+    expect(createChannelPushExtension).toBeTypeOf("function")
   })
 })

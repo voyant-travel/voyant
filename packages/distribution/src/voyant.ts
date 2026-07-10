@@ -7,12 +7,30 @@ export const distributionVoyantModule = defineModule({
   localId: "distribution",
   api: [
     {
-      id: "@voyant-travel/distribution#api",
+      id: "@voyant-travel/distribution#api.external-refs",
       surface: "admin",
-      mount: "@voyant-travel/distribution",
+      mount: "external-refs",
       runtime: {
         entry: "@voyant-travel/distribution",
-        export: "distributionHonoModules",
+        export: "externalRefsHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/distribution#api",
+      surface: "admin",
+      mount: "distribution",
+      runtime: {
+        entry: "@voyant-travel/distribution",
+        export: "distributionHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/distribution#api.suppliers",
+      surface: "admin",
+      mount: "suppliers",
+      runtime: {
+        entry: "@voyant-travel/distribution",
+        export: "suppliersHonoModule",
       },
     },
   ],
@@ -47,7 +65,7 @@ export const distributionBookingVoyantPlugin = definePlugin({
     {
       id: "@voyant-travel/distribution#extension.api",
       surface: "admin",
-      mount: "@voyant-travel/distribution",
+      mount: "bookings",
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "distributionBookingExtension",
@@ -67,7 +85,7 @@ export const distributionChannelPushVoyantPlugin = definePlugin({
     {
       id: "@voyant-travel/distribution#channel-push-extension.api",
       surface: "admin",
-      mount: "@voyant-travel/distribution/channel-push-extension",
+      mount: "distribution",
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "createChannelPushExtension",

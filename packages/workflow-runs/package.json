@@ -9,6 +9,7 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
+    "./hono-module": "./src/hono-module.ts",
     "./recorder": "./src/recorder.ts",
     "./workflows": "./src/workflows.ts",
     "./voyant": "./src/voyant.ts"
@@ -90,6 +91,11 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
+      },
+      "./hono-module": {
+        "types": "./dist/hono-module.d.ts",
+        "import": "./dist/hono-module.js",
+        "default": "./dist/hono-module.js"
       },
       "./recorder": {
         "types": "./dist/recorder.d.ts",

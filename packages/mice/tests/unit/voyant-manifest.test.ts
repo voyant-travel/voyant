@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { miceBookingExtension } from "../../src/booking-extension.js"
+import { createMiceHonoModule } from "../../src/index.js"
 import { miceBookingVoyantPlugin, miceVoyantModule } from "../../src/voyant.js"
 
 describe("MICE deployment manifests", () => {
@@ -11,7 +13,7 @@ describe("MICE deployment manifests", () => {
         {
           id: "@voyant-travel/mice#api.admin",
           surface: "admin",
-          mount: "@voyant-travel/mice",
+          mount: "mice",
           transactional: true,
           runtime: { entry: "@voyant-travel/mice", export: "createMiceHonoModule" },
         },
@@ -37,7 +39,8 @@ describe("MICE deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/mice#booking-extension.api.admin",
-          mount: "@voyant-travel/mice/booking-extension",
+          surface: "admin",
+          mount: "bookings",
           runtime: {
             entry: "@voyant-travel/mice/booking-extension",
             export: "miceBookingExtension",
@@ -45,5 +48,10 @@ describe("MICE deployment manifests", () => {
         },
       ],
     })
+  })
+
+  it("references exported runtimes with matching mounts", () => {
+    expect(createMiceHonoModule().module.name).toBe("mice")
+    expect(miceBookingExtension.extension.module).toBe("bookings")
   })
 })
