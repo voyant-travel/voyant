@@ -207,6 +207,16 @@ describe("deployment graph v1", () => {
         enabled: false,
       },
     ])
+    expect(graph.provisioning.scheduledJobs).toEqual([
+      {
+        id: "@acme/voyant-automation#schedule.daily-rollup.hourly",
+        cron: "0 * * * *",
+        description:
+          "Triggers workflow daily-rollup from graph schedule @acme/voyant-automation#schedule.daily-rollup.hourly.",
+        route: "/__voyant/scheduled",
+        module: "@acme/voyant-automation",
+      },
+    ])
     expect(graph.diagnostics).toEqual([])
   })
 
