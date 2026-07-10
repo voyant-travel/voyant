@@ -160,6 +160,7 @@ import {
   resolveManagedCustomExtensions,
   resolveManagedCustomModules,
 } from "./custom-source-resolution.js"
+import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
 import { type ManagedPlugin, resolveManagedPlugins } from "./plugin-resolution.js"
 import {
   getVoyantProjectRequirements,
@@ -242,6 +243,11 @@ type ManagedProfileAppExtensions = Record<string, ExtensionFactory<FrameworkProv
 
 export interface ManagedProfileRuntimeOptions {
   profileSnapshotPath: string
+  /**
+   * Resolved deployment requirements supplied by a checked graph artifact.
+   * Omit this only for legacy snapshot-only callers.
+   */
+  deploymentRequirements?: VoyantGraphDeploymentRequirements
   env?: Record<string, unknown> | ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
   providers?: Partial<FrameworkProviders>
@@ -323,7 +329,13 @@ export async function loadManagedProfileRuntime(
 ): Promise<ManagedProfileRuntime> {
   const project = await loadManagedProfileSnapshot(options.profileSnapshotPath)
   const env = createManagedProfileNodeEnv(options.env ?? process.env)
-  const requirements = getVoyantProjectRequirements(project)
+  const profileRequirements = getVoyantProjectRequirements(project)
+  const requirements: VoyantProfileRequirements = {
+    ...profileRequirements,
+    ...(options.deploymentRequirements
+      ? { resources: options.deploymentRequirements.resources }
+      : {}),
+  }
   const auth = resolveManagedProfileAuthIntegration({
     env,
     auth: options.app?.auth ?? options.auth,
