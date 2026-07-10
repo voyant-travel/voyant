@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.30.0
+
+### Minor Changes
+
+- 560155a: Derive deployment graph resource requirements from declared standard providers.
+- ea82216: Allow graph resource requirements to declare compatible environment aliases, including `DATABASE_URL_DIRECT` for Postgres runtime validation.
+- 03ccb9c: Allow managed runtime startup to validate requirements supplied by a resolved deployment graph.
+
 ## 0.29.5
 
 ### Patch Changes
