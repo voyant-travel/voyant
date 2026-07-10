@@ -519,6 +519,24 @@ describe("deployment graph v1", () => {
     })
 
     expect(compatibleGraph.diagnostics).toEqual([])
+
+    const lowerBoundGraph = await resolveDeploymentGraph({
+      project,
+      frameworkVersion: "0.32.0",
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "registry", reference: "npm:@acme/voyant-loyalty@1.0.0" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            compatibleWith: { framework: ">=0.26.0" },
+          },
+        },
+      ],
+    })
+
+    expect(lowerBoundGraph.diagnostics).toEqual([])
   })
 
   it("bridges managed operator snapshots into explicit graph units", async () => {
