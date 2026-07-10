@@ -19,6 +19,7 @@ export interface OperatorDeploymentGraphArtifactSummary {
   moduleIds: readonly string[]
   pluginIds: readonly string[]
   packageNames: readonly string[]
+  providers: Readonly<Record<string, string>>
   resourceRequirements: readonly OperatorDeploymentGraphResourceRequirement[]
   scheduledJobs: readonly OperatorDeploymentGraphScheduledJob[]
 }
@@ -212,6 +213,7 @@ export function loadOperatorDeploymentGraphArtifacts(
       "deployment graph packageRecords",
       "packageName",
     ),
+    providers: collectDeploymentProviders(graph.deployment),
     resourceRequirements: collectResourceRequirements(graph.requirements),
     scheduledJobs: collectScheduledJobs(graph.provisioning),
   }
@@ -337,6 +339,25 @@ function collectResourceRequirements(value: unknown): OperatorDeploymentGraphRes
       ...(notes ? { notes } : {}),
     }
   })
+}
+
+function collectDeploymentProviders(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("deployment graph deployment must be an object")
+  }
+  const providers = (value as Record<string, unknown>).providers
+  if (!providers || typeof providers !== "object" || Array.isArray(providers)) {
+    throw new Error("deployment graph deployment.providers must be an object")
+  }
+
+  const collected: Record<string, string> = {}
+  for (const [role, provider] of Object.entries(providers)) {
+    if (typeof provider !== "string" || provider.length === 0) {
+      throw new Error(`deployment graph deployment.providers.${role} must be a non-empty string`)
+    }
+    collected[role] = provider
+  }
+  return collected
 }
 
 function readJsonFile<T>(url: URL, label: string): T {

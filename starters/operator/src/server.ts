@@ -26,6 +26,13 @@ import {
   loadOperatorDeploymentGraphArtifacts,
 } from "./deployment-graph-artifacts"
 import { fetch as appFetch, scheduled } from "./entry"
+import {
+  type OperatorNodeKvProvider,
+  type OperatorNodeObjectStorageProvider,
+  type OperatorNodeProviderPlan,
+  resolveOperatorNodeProviderPlan,
+  validateOperatorNodeProviderPlanEnv,
+} from "./operator-node-provider-plan"
 
 /**
  * Node entry for the operator (voyant#2966). This file is also TanStack Start's
@@ -41,35 +48,36 @@ import { fetch as appFetch, scheduled } from "./entry"
  *      `scheduled()` hook for Cloud Scheduler, graceful drain, and static asset
  *      serving for the client build.
  *
- * Bindings are real Node providers, not Cloudflare emulation: in-process KV for
- * `CACHE`/`RATE_LIMIT`, and an S3-backed (or, offline, in-process) object store
- * for `MEDIA_BUCKET`/`DOCUMENTS_BUCKET`.
+ * Bindings are real Node providers selected by the deployment graph, not
+ * Cloudflare emulation: in-process KV for memory `CACHE`/`RATE_LIMIT`,
+ * Postgres/Redis when the graph selects them, and S3/R2-backed object storage
+ * only when graph providers require it.
  */
 
 /** Built client assets (`dist/client`), served for `/assets/*` and public files. */
 const CLIENT_DIR =
   process.env.CLIENT_ASSETS_DIR ?? fileURLToPath(new URL("../client", import.meta.url))
 const deploymentGraphArtifacts = loadOperatorDeploymentGraphArtifacts()
+const deploymentProviderPlan = resolveOperatorNodeProviderPlan(deploymentGraphArtifacts.providers)
+assertOperatorNodeProviderPlanEnv(deploymentProviderPlan, process.env)
 
-/**
- * Build an object-store binding: S3-backed when R2 credentials are present,
- * otherwise an in-process store so local/dev/self-host runs work offline.
- */
-function objectStore(bucketEnv: string | undefined): R2BucketShim {
-  if (
-    process.env.R2_S3_ENDPOINT &&
-    process.env.R2_ACCESS_KEY_ID &&
-    process.env.R2_SECRET_ACCESS_KEY &&
-    bucketEnv
-  ) {
-    return createR2BucketShim({
-      endpoint: process.env.R2_S3_ENDPOINT,
-      bucket: bucketEnv,
-      accessKeyId: process.env.R2_ACCESS_KEY_ID,
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    })
+function objectStore(
+  bucketEnvName: string,
+  bucketEnv: string | undefined,
+  provider: OperatorNodeObjectStorageProvider = deploymentProviderPlan.storage,
+): R2BucketShim {
+  switch (provider) {
+    case "memory":
+      return createMemoryR2Bucket()
+    case "r2":
+    case "s3":
+      return createR2BucketShim({
+        endpoint: requiredStringEnv("R2_S3_ENDPOINT", `storage provider ${provider}`),
+        bucket: requiredStringValue(bucketEnvName, bucketEnv, `storage provider ${provider}`),
+        accessKeyId: requiredStringEnv("R2_ACCESS_KEY_ID", `storage provider ${provider}`),
+        secretAccessKey: requiredStringEnv("R2_SECRET_ACCESS_KEY", `storage provider ${provider}`),
+      })
   }
-  return createMemoryR2Bucket()
 }
 
 function dbUrl(): string | undefined {
@@ -88,44 +96,76 @@ function isPostgresConnectionUrl(value: string): boolean {
 
 let sharedStoreDb: ReturnType<typeof createDbClient> | undefined
 
-function resolveSharedStoreDb() {
+function resolveSharedStoreDb(role: string) {
   const url = dbUrl()
-  if (!url) return undefined
+  if (!url) {
+    throw new Error(
+      `DATABASE_URL or DATABASE_URL_DIRECT must be a postgres URL for graph-selected ${role}`,
+    )
+  }
   sharedStoreDb ??= createDbClient(url, { adapter: "node" })
   return sharedStoreDb
 }
 
-function createRuntimeStores(): {
+function createRuntimeStores(plan: OperatorNodeProviderPlan = deploymentProviderPlan): {
   CACHE: KVStore
   RATE_LIMIT: KVStore
   RATE_LIMIT_STORE: NonNullable<AppBindings["RATE_LIMIT_STORE"]>
 } {
   const l1Cache = createMemoryKvNamespace()
   const l1RateLimit = createMemoryKvNamespace()
-  const redisUrl = process.env.REDIS_URL?.trim()
-
-  if (redisUrl) {
-    return {
-      CACHE: createTieredKvStore(l1Cache, createRedisKvStore(redisUrl)),
-      RATE_LIMIT: createTieredKvStore(l1RateLimit, createRedisKvStore(redisUrl)),
-      RATE_LIMIT_STORE: createRedisRateLimitStore(redisUrl),
-    }
-  }
-
-  const db = resolveSharedStoreDb()
-  if (db) {
-    return {
-      CACHE: createTieredKvStore(l1Cache, createPostgresKvStore(db)),
-      RATE_LIMIT: createTieredKvStore(l1RateLimit, createPostgresKvStore(db)),
-      RATE_LIMIT_STORE: createPostgresFixedWindowRateLimitStore(db),
-    }
-  }
 
   return {
-    CACHE: l1Cache,
-    RATE_LIMIT: l1RateLimit,
-    RATE_LIMIT_STORE: createMemoryRateLimitStore(),
+    CACHE: createKvStoreForProvider("cache", plan.cache, l1Cache),
+    RATE_LIMIT: createKvStoreForProvider("rateLimit", plan.rateLimit, l1RateLimit),
+    RATE_LIMIT_STORE: createRateLimitStoreForProvider(plan.rateLimit),
   }
+}
+
+function createKvStoreForProvider(
+  role: "cache" | "rateLimit",
+  provider: OperatorNodeKvProvider,
+  l1Store: KVStore,
+): KVStore {
+  switch (provider) {
+    case "memory":
+      return l1Store
+    case "redis":
+      return createTieredKvStore(
+        l1Store,
+        createRedisKvStore(requiredStringEnv("REDIS_URL", `${role} provider redis`)),
+      )
+    case "postgres":
+      return createTieredKvStore(
+        l1Store,
+        createPostgresKvStore(resolveSharedStoreDb(`${role} provider postgres`)),
+      )
+  }
+}
+
+function createRateLimitStoreForProvider(
+  provider: OperatorNodeKvProvider,
+): NonNullable<AppBindings["RATE_LIMIT_STORE"]> {
+  switch (provider) {
+    case "memory":
+      return createMemoryRateLimitStore()
+    case "redis":
+      return createRedisRateLimitStore(requiredStringEnv("REDIS_URL", "rateLimit provider redis"))
+    case "postgres":
+      return createPostgresFixedWindowRateLimitStore(
+        resolveSharedStoreDb("rateLimit provider postgres"),
+      )
+  }
+}
+
+function requiredStringEnv(name: string, context: string): string {
+  return requiredStringValue(name, process.env[name], context)
+}
+
+function requiredStringValue(name: string, value: string | undefined, context: string): string {
+  const trimmed = value?.trim()
+  if (trimmed) return trimmed
+  throw new Error(`${name} is required for graph-selected ${context}`)
 }
 
 const stores = createRuntimeStores()
@@ -137,8 +177,8 @@ const env = composeNodeEnv<AppBindings>(process.env, {
     RATE_LIMIT: stores.RATE_LIMIT,
   },
   r2: {
-    MEDIA_BUCKET: objectStore(process.env.R2_BUCKET_MEDIA),
-    DOCUMENTS_BUCKET: objectStore(process.env.R2_BUCKET_DOCUMENTS),
+    MEDIA_BUCKET: objectStore("R2_BUCKET_MEDIA", process.env.R2_BUCKET_MEDIA),
+    DOCUMENTS_BUCKET: objectStore("R2_BUCKET_DOCUMENTS", process.env.R2_BUCKET_DOCUMENTS),
   },
   extra: {
     RATE_LIMIT_STORE: stores.RATE_LIMIT_STORE,
@@ -199,4 +239,21 @@ if (isMainModule) {
   console.info(
     `[operator] Node runtime listening on :${handle.port} (${deploymentGraphArtifacts.graphHash})`,
   )
+}
+
+function assertOperatorNodeProviderPlanEnv(
+  plan: OperatorNodeProviderPlan,
+  envValues: Record<string, unknown>,
+): void {
+  const issues = validateOperatorNodeProviderPlanEnv(plan, envValues)
+  if (issues.length === 0) return
+  throw new Error(
+    `Operator deployment graph provider plan requirements are not satisfied:\n${formatIssues(
+      issues,
+    )}`,
+  )
+}
+
+function formatIssues(issues: readonly string[]): string {
+  return issues.map((issue) => `- ${issue}`).join("\n")
 }
