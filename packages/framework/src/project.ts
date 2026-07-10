@@ -5,6 +5,18 @@ export type {
   SetupMigrationHandler,
 } from "./node-migration-runner.js"
 export type {
+  DiscoverProjectConventionsInput,
+  DiscoverProjectConventionsOptions,
+  ProjectConventionApiRoute,
+  ProjectConventionContribution,
+  ProjectConventionDiagnostic,
+  ProjectConventionDiagnosticCode,
+  ProjectConventionDiscovery,
+  ProjectConventionFileContribution,
+  ProjectConventionKind,
+  ProjectConventionRouteSurface,
+} from "./project-conventions.js"
+export type {
   FrameworkGeneratedProjectFile,
   ResolvedProjectArtifacts,
   ResolvedVoyantProject,
@@ -15,6 +27,13 @@ export type {
   VoyantProjectSchemaMigration,
   VoyantProjectSetupMigration,
 } from "./project-resolver.js"
+
+export async function discoverProjectConventions(
+  input: import("./project-conventions.js").DiscoverProjectConventionsInput,
+): Promise<import("./project-conventions.js").ProjectConventionDiscovery> {
+  const conventions = await import("./project-conventions.js")
+  return conventions.discoverProjectConventions(input)
+}
 
 export async function executeNodeMigrationPlan(
   plan: import("./project-resolver.js").VoyantProjectMigrationPlan,
