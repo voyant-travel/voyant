@@ -34,9 +34,6 @@ import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
-import { invitationsModule } from "../modules/invitations"
-import { mcpModule } from "../modules/mcp"
-import { teamModule } from "../modules/team"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
@@ -343,12 +340,6 @@ function createLazyCatalogIndexer(
   }
 }
 
-export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabilities>> = {
-  "@voyant-travel/operator#mcp": mcpModule,
-  "@voyant-travel/operator#invitations": invitationsModule,
-  "@voyant-travel/operator#team": teamModule,
-}
-
 /**
  * Custom extensions dropped into `src/extensions/<name>/index.ts` are
  * auto-discovered and mounted onto an EXISTING module's surface (the "custom
@@ -423,7 +414,6 @@ export const operatorGraphCompatibilityExtensions: Record<
 
 export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCapabilities> = {
   ...bindingsFromModuleFactories({
-    ...deploymentLocalModules,
     ...operatorGraphCompatibilityModules,
   }),
   ...bindingsFromExtensionFactories({

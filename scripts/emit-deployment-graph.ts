@@ -65,7 +65,15 @@ async function main(): Promise<void> {
   )
   const runtimeText = formatGeneratedText(
     options.runtimeOutputPath,
-    buildGraphRuntimeModule({ graph, command }),
+    buildGraphRuntimeModule({
+      graph,
+      command,
+      runtimeEntryOverrides: projectRuntimeEntryOverrides(
+        graph,
+        defaultOperatorRoot,
+        options.runtimeOutputPath,
+      ),
+    }),
   )
   const manifestDirectory = dirname(options.manifestOutputPath)
   const manifest = buildDeploymentArtifactManifest({
@@ -252,7 +260,7 @@ function parseArgs(args: readonly string[]): CliOptions {
     manifestOutputPath: join(generatedRoot, "deployment-artifacts.generated.json"),
     graphOutputPath: join(generatedRoot, "deployment-graph.generated.json"),
     entryOutputPath: join(generatedRoot, "runtime-entry.generated.ts"),
-    runtimeOutputPath: join(generatedRoot, "graph-runtime.generated.ts"),
+    runtimeOutputPath: join(generatedRoot, "runtime", "graph-runtime.generated.ts"),
   }
 
   for (let index = 0; index < args.length; index += 1) {
@@ -320,6 +328,31 @@ function toPosixRelativePath(fromDir: string, toPath: string): string {
   let relative = path.relative(fromDir, toPath).replaceAll(path.sep, "/")
   if (!relative.startsWith(".")) relative = `./${relative}`
   return relative
+}
+
+function projectRuntimeEntryOverrides(
+  graph: ResolvedVoyantDeploymentGraph,
+  projectRoot: string,
+  runtimeOutputPath: string,
+): Record<string, string> {
+  const projectPackages = new Set(
+    graph.packageRecords
+      .filter((record) => record.source.kind === "file" && record.source.reference === ".")
+      .map((record) => record.packageName),
+  )
+  const overrides: Record<string, string> = {}
+  for (const unit of [...graph.modules, ...graph.extensions, ...graph.plugins]) {
+    if (!projectPackages.has(unit.packageName) || !unit.runtime?.entry.startsWith("./")) continue
+    const target = resolve(projectRoot, unit.runtime.entry)
+    const relativeTarget = path.relative(projectRoot, target)
+    if (relativeTarget.startsWith("..") || path.isAbsolute(relativeTarget)) {
+      throw new Error(`Project runtime entry ${unit.runtime.entry} escapes ${projectRoot}`)
+    }
+    let relativeImport = path.relative(dirname(runtimeOutputPath), target).replaceAll(path.sep, "/")
+    if (!relativeImport.startsWith(".")) relativeImport = `./${relativeImport}`
+    overrides[`${unit.packageName}/${unit.runtime.entry.slice(2)}`] = relativeImport
+  }
+  return overrides
 }
 
 function printHelp(): void {

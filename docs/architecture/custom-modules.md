@@ -7,9 +7,9 @@ RFC (the "20%"). Three mechanisms cooperate, all **build-time**, so the resolved
 graph lowers to one deterministic Node application artifact with no runtime
 package discovery:
 
-1. **Graph activation** — `voyant.config.ts` selects `./src/modules/<name>`.
-2. **Declaration and runtime** — `voyant.ts` owns graph facets and `index.ts`
-   exports the runtime factory.
+1. **Graph activation** — `src/modules/<name>/index.ts` is discovered at build time.
+2. **Declaration and runtime** — the resolver synthesizes the project-owned graph
+   unit and `index.ts` exports its runtime factory.
 3. **Migrations** — `src/modules/<name>/schema.ts` is migrated as a *deployment*
    source, applied by the D.1 collector after the framework bundle.
 
@@ -17,8 +17,7 @@ package discovery:
 
 ```sh
 voyant generate module loyalty --dir src/modules   # scaffold
-# edit src/modules/loyalty/{voyant,index,schema,routes,service}.ts
-# add "./src/modules/loyalty" to voyant.config.ts
+# edit src/modules/loyalty/{index,schema,routes,service}.ts
 pnpm db:generate:deployment                         # emit the migration → migrations/
 pnpm db:migrate                                     # collector applies it
 ```
@@ -29,16 +28,15 @@ No edits to `app.ts`, the framework, or any generated file.
 
 ```
 src/modules/loyalty/
-  voyant.ts    # import-cheap graph manifest → selected by voyant.config.ts
-  index.ts     # default-exports the runtime module
+  index.ts     # default-exports the runtime module and activates the convention
   schema.ts    # Drizzle tables (optional)    → auto-migrated
   routes.ts    # Hono routes
   service.ts   # business logic
   validation.ts
 ```
 
-The manifest id is the composition key; the directory name is only the stable
-project-relative selection path.
+The graph id is derived deterministically from the root `package.json` name and
+the module directory name.
 
 ## Mounting (`index.ts`)
 
@@ -69,19 +67,10 @@ export default defineDeploymentModule((ctx) => ({
 
 ### How activation works
 
-`voyant.config.ts` activates local modules by project-relative path. Until the
-framework-generated local runtime binder replaces the compatibility map,
-`src/api/composition.ts` binds the selected manifest id to its `index.ts`
-factory:
-
-```ts
-export const deploymentLocalModules = {
-  "@voyant-travel/operator#loyalty": loyaltyModule,
-}
-```
-
-The generated graph decides whether the binding is mounted. Merely adding a
-directory does not alter the graph; explicit config selection is required.
+The project resolver discovers each direct `src/modules/<name>/index.ts`, admits
+one project-root source using the root package name, and emits a static relative
+import from `.voyant/runtime`. No nested `package.json`, package export, local
+`voyant.ts`, config selection, or deployment binding is required.
 
 ## Migrations (`schema.ts`)
 

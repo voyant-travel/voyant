@@ -24,11 +24,6 @@ const DEFAULT_ENTRY_SURFACES = [
     id: "operator-project",
     file: "starters/operator/voyant.config.ts",
   },
-  ...["invitations", "mcp", "team"].map((name) => ({
-    id: `operator-local-${name}`,
-    file: `starters/operator/src/modules/${name}/voyant.ts`,
-    packageManifest: true,
-  })),
   ...discoverPackageManifestEntries(repoRoot),
 ]
 

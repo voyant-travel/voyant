@@ -9,7 +9,7 @@ import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-tr
 import {
   createGeneratedGraphRuntime,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
-} from "../../.voyant/graph-runtime.generated"
+} from "../../.voyant/runtime/graph-runtime.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
   hasAuthPermission,

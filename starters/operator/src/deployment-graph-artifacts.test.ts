@@ -562,8 +562,9 @@ function writeGeneratedGraphRuntimeSource(
   graph: FixtureDeploymentGraph,
   options: { graphHash: string },
 ): void {
+  mkdirSync(join(root, ".voyant", "runtime"), { recursive: true })
   writeFileSync(
-    join(root, ".voyant", "graph-runtime.generated.ts"),
+    join(root, ".voyant", "runtime", "graph-runtime.generated.ts"),
     [
       `export const GENERATED_GRAPH_RUNTIME_HASH = ${JSON.stringify(options.graphHash)} as const`,
       `export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = ${stringArrayLiteral(

@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest"
 
 import {
   createGeneratedGraphRuntime,
+  GENERATED_GRAPH_RUNTIME_EXTENSION_IDS,
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
-} from "../../.voyant/graph-runtime.generated"
+} from "../../.voyant/runtime/graph-runtime.generated"
 import {
   buildOperatorProviders,
   deploymentLocalExtensions,
-  deploymentLocalModules,
   operatorGraphCompatibilityExtensions,
   operatorGraphCompatibilityModules,
   operatorGraphRuntimeBindings,
@@ -49,7 +49,7 @@ describe("operator graph runtime composition", () => {
     expect(new Set(extensionNames).size).toBe(extensionNames.length)
   })
 
-  it("selects package-owned bridge units directly and keeps only genuine operator-local ids", () => {
+  it("selects package-owned bridge units and discovered project modules directly", () => {
     const moduleIds = new Set(GENERATED_GRAPH_RUNTIME_MODULE_IDS)
     const pluginIds = new Set(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS)
 
@@ -61,19 +61,20 @@ describe("operator graph runtime composition", () => {
     ]) {
       expect(moduleIds).toContain(id)
     }
-    expect(pluginIds).toContain("@voyant-travel/mice#booking-extension")
+    expect(GENERATED_GRAPH_RUNTIME_EXTENSION_IDS).toContain("@voyant-travel/mice#booking-extension")
 
-    const operatorIds = [...moduleIds, ...pluginIds].filter((id) =>
-      id.startsWith("@voyant-travel/operator#"),
-    )
-    expect(operatorIds.sort()).toEqual(Object.keys(deploymentLocalModules).sort())
+    expect(pluginIds).not.toContain("npm/operator#mcp")
+    expect([...moduleIds].filter((id) => id.startsWith("npm/operator#")).sort()).toEqual([
+      "npm/operator#invitations",
+      "npm/operator#mcp",
+      "npm/operator#team",
+    ])
   })
 
-  it("keeps invitations, team, and MCP explicitly deployment-local and graph-keyed", async () => {
-    expect(deploymentLocalModules).toHaveProperty("@voyant-travel/operator#invitations")
-    expect(deploymentLocalModules).toHaveProperty("@voyant-travel/operator#team")
-    expect(deploymentLocalModules).toHaveProperty("@voyant-travel/operator#mcp")
-
+  it("composes index-only invitations, team, and MCP modules from generated imports", async () => {
+    for (const id of ["npm/operator#invitations", "npm/operator#team", "npm/operator#mcp"]) {
+      expect(operatorGraphRuntimeBindings).not.toHaveProperty(id)
+    }
     const composed = await composeOperatorGraph()
     const byName = (name: string) => composed.modules.find((module) => module.module.name === name)
 

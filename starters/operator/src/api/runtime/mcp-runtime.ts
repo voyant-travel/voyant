@@ -36,7 +36,7 @@ import type { RelationshipsToolServices } from "@voyant-travel/relationships/too
 import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
 import { type TripsToolServices, tripsService } from "@voyant-travel/trips"
 import type { Context, Hono } from "hono"
-import { createGeneratedGraphRuntime } from "../../../.voyant/graph-runtime.generated"
+import { createGeneratedGraphRuntime } from "../../../.voyant/runtime/graph-runtime.generated"
 import { resolveNotificationProviders } from "../../lib/notifications"
 import { buildCatalogContext } from "../lib/catalog-context"
 import { DEFAULT_SLICES } from "../lib/catalog-runtime"
