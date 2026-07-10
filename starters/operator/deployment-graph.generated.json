@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:3d53ce2597059201397cec93ab0c0e4bea18a538f35368da56b475f7ad31175c",
+  "contentHash": "sha256:eed73644c7277f9dc91d9e8fb81eff7a192251eac2e992205e4404edc1bcca58",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -2349,6 +2349,7 @@
       {
         "env": [
           {
+            "aliases": ["DATABASE_URL_DIRECT"],
             "description": "Primary Postgres connection URL used by migrations and fallback DB clients.",
             "kind": "secret",
             "name": "DATABASE_URL",

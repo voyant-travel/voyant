@@ -146,7 +146,12 @@ describe("managed profile contract", () => {
       requirements.resources.find((resource) => resource.roles.includes("database"))?.env,
     ).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: "DATABASE_URL", kind: "secret", required: true }),
+        expect.objectContaining({
+          name: "DATABASE_URL",
+          aliases: ["DATABASE_URL_DIRECT"],
+          kind: "secret",
+          required: true,
+        }),
         expect.objectContaining({ name: "DATABASE_URL_DIRECT", kind: "secret", required: false }),
       ]),
     )

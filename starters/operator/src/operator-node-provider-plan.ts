@@ -26,6 +26,7 @@ export function validateOperatorNodeProviderPlanEnv(
   env: Record<string, unknown>,
 ): string[] {
   const required = new Set<string>()
+  let requiresPostgresUrl = false
   if (plan.storage === "r2" || plan.storage === "s3") {
     required.add("R2_S3_ENDPOINT")
     required.add("R2_ACCESS_KEY_ID")
@@ -36,12 +37,18 @@ export function validateOperatorNodeProviderPlanEnv(
 
   for (const role of KV_PROVIDER_ROLES) {
     if (plan[role] === "redis") required.add("REDIS_URL")
-    if (plan[role] === "postgres") required.add("DATABASE_URL")
+    if (plan[role] === "postgres") requiresPostgresUrl = true
   }
 
-  return Array.from(required)
+  const issues = Array.from(required)
     .filter((name) => !present(env[name]))
     .map((name) => `env ${name} is required by the operator Node provider plan`)
+  if (requiresPostgresUrl && !present(env.DATABASE_URL) && !present(env.DATABASE_URL_DIRECT)) {
+    issues.push(
+      "env DATABASE_URL or DATABASE_URL_DIRECT is required by the operator Node provider plan",
+    )
+  }
+  return issues
 }
 
 function objectStorageProvider(

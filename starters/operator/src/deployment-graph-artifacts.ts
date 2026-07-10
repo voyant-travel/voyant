@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: operator; graph artifact parsing and pre-boot validation stay co-located so the generated deployment contract has one trusted reader.
 import { createHash } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -51,6 +52,7 @@ export interface OperatorDeploymentGraphMigrationSource {
 
 export interface OperatorDeploymentGraphEnvRequirement {
   name: string
+  aliases?: readonly string[]
   kind: string
   required: boolean
   description: string
@@ -244,9 +246,9 @@ export function validateOperatorDeploymentGraphResourceEnv(
   for (const resource of summary.resourceRequirements) {
     for (const requirement of resource.env) {
       if (!requirement.required) continue
-      const value = env[requirement.name]
-      const present =
-        typeof value === "string" ? value.trim().length > 0 : value !== null && value !== undefined
+      const present = [requirement.name, ...(requirement.aliases ?? [])].some((name) =>
+        hasEnvValue(env, name),
+      )
       if (!present) {
         issues.push(
           `${requirement.kind} ${requirement.name} is required for ${resource.resourceKey}`,
@@ -355,6 +357,14 @@ function collectResourceRequirements(value: unknown): OperatorDeploymentGraphRes
         entry.name,
         `deployment graph requirements.resources[${index}].env[${envIndex}].name`,
       ),
+      ...(entry.aliases === undefined
+        ? {}
+        : {
+            aliases: collectStringArray(
+              entry.aliases,
+              `deployment graph requirements.resources[${index}].env[${envIndex}].aliases`,
+            ),
+          }),
       kind: requireString(
         entry.kind,
         `deployment graph requirements.resources[${index}].env[${envIndex}].kind`,
@@ -406,6 +416,11 @@ function readJsonFile<T>(url: URL, label: string): T {
   } catch (error) {
     throw new Error(`could not read ${label} at ${file}: ${reason(error)}`)
   }
+}
+
+function hasEnvValue(env: OperatorDeploymentGraphEnv, name: string): boolean {
+  const value = env[name]
+  return typeof value === "string" ? value.trim().length > 0 : value !== null && value !== undefined
 }
 
 function relativeArtifactUrl(value: string, baseUrl: URL): URL {

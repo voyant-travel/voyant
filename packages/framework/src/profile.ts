@@ -362,7 +362,18 @@ function mergeEnvRequirements(
   for (const env of [...left, ...right]) {
     const key = `${env.kind}:${env.name}`
     const existing = merged.get(key)
-    merged.set(key, existing ? { ...existing, required: existing.required || env.required } : env)
+    merged.set(
+      key,
+      existing
+        ? {
+            ...existing,
+            required: existing.required || env.required,
+            ...(existing.aliases || env.aliases
+              ? { aliases: unique([...(existing.aliases ?? []), ...(env.aliases ?? [])]) }
+              : {}),
+          }
+        : env,
+    )
   }
   return [...merged.values()]
 }

@@ -375,6 +375,7 @@ describe("deployment graph v1", () => {
               },
               {
                 name: "DATABASE_URL",
+                aliases: ["DATABASE_URL_DIRECT", "POSTGRES_URL"],
                 kind: "secret",
                 required: true,
                 description: "Primary database.",
@@ -398,6 +399,7 @@ describe("deployment graph v1", () => {
             env: [
               {
                 name: "DATABASE_URL",
+                aliases: ["POSTGRES_URL", "DATABASE_URL_DIRECT"],
                 kind: "secret",
                 required: true,
                 description: "Primary database.",
@@ -426,6 +428,10 @@ describe("deployment graph v1", () => {
     })
 
     expect(first.requirements.resources).toEqual(second.requirements.resources)
+    expect(first.requirements.resources[0]?.env[0]).toMatchObject({
+      name: "DATABASE_URL",
+      aliases: ["DATABASE_URL_DIRECT", "POSTGRES_URL"],
+    })
     expect(JSON.stringify(first.requirements)).not.toContain('"notes":null')
     expect(second.contentHash).toBe(first.contentHash)
   })

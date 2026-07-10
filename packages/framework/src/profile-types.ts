@@ -109,6 +109,8 @@ export interface VoyantProfileValidationResult {
 
 export interface VoyantProfileEnvRequirement {
   name: string
+  /** Alternate environment names that satisfy the canonical requirement. */
+  aliases?: readonly string[]
   kind: "secret" | "variable" | "binding"
   required: boolean
   description: string
