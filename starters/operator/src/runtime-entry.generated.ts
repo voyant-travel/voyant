@@ -4,7 +4,7 @@
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:339550f7938d98d5a93aef8be863cd33c521a22980f8dbf86fa61f4cda66a7d0" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:56062c2d62a4459d273f1bef99cf3abd64ffb7beeef2097e83099181bec18b07" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const
@@ -44,6 +44,7 @@ export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = [
   "@voyant-travel/operator#payment-link",
   "@voyant-travel/operator#realtime",
   "@voyant-travel/operator#team",
+  "@voyant-travel/operator#workflows",
   "@voyant-travel/public-document-delivery",
   "@voyant-travel/quotes",
   "@voyant-travel/relationships",

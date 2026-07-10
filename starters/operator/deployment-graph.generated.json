@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:339550f7938d98d5a93aef8be863cd33c521a22980f8dbf86fa61f4cda66a7d0",
+  "contentHash": "sha256:56062c2d62a4459d273f1bef99cf3abd64ffb7beeef2097e83099181bec18b07",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -1026,6 +1026,82 @@
       "workflows": []
     },
     {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/operator#workflows",
+      "kind": "module",
+      "links": [],
+      "localId": "operator.workflows",
+      "migrations": [],
+      "order": 33,
+      "packageName": "@voyant-travel/operator",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": [
+        {
+          "config": {
+            "defaultRuntime": "node",
+            "schedule": {
+              "cron": "*/5 * * * *",
+              "name": "every-5-minutes"
+            }
+          },
+          "id": "bookings.expire-stale-holds",
+          "schedules": [
+            {
+              "cron": "*/5 * * * *",
+              "id": "@voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes",
+              "name": "every-5-minutes",
+              "workflowId": "bookings.expire-stale-holds"
+            }
+          ]
+        },
+        {
+          "config": {
+            "defaultRuntime": "node",
+            "retry": {
+              "backoff": "exponential",
+              "max": 3,
+              "maxDelay": "300s"
+            }
+          },
+          "id": "notifications.deliver-reminder"
+        },
+        {
+          "config": {
+            "defaultRuntime": "node",
+            "schedule": {
+              "cron": "0 * * * *",
+              "name": "hourly"
+            }
+          },
+          "id": "notifications.send-due-reminders",
+          "schedules": [
+            {
+              "cron": "0 * * * *",
+              "id": "@voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly",
+              "name": "hourly",
+              "workflowId": "notifications.send-due-reminders"
+            }
+          ]
+        },
+        {
+          "config": {
+            "defaultRuntime": "node"
+          },
+          "id": "products.generate-pdf"
+        }
+      ]
+    },
+    {
       "api": [
         {
           "id": "@voyant-travel/public-document-delivery#api",
@@ -1039,7 +1115,7 @@
       "links": [],
       "localId": "public-document-delivery",
       "migrations": [],
-      "order": 33,
+      "order": 34,
       "packageName": "@voyant-travel/public-document-delivery",
       "provides": {
         "capabilities": [],
@@ -1067,7 +1143,7 @@
       "links": [],
       "localId": "quotes",
       "migrations": [],
-      "order": 34,
+      "order": 35,
       "packageName": "@voyant-travel/quotes",
       "provides": {
         "capabilities": [],
@@ -1095,7 +1171,7 @@
       "links": [],
       "localId": "relationships",
       "migrations": [],
-      "order": 35,
+      "order": 36,
       "packageName": "@voyant-travel/relationships",
       "provides": {
         "capabilities": [],
@@ -1121,7 +1197,7 @@
           "id": "@voyant-travel/storefront#migrations"
         }
       ],
-      "order": 36,
+      "order": 37,
       "packageName": "@voyant-travel/storefront",
       "provides": {
         "capabilities": [],
@@ -1153,7 +1229,7 @@
       "links": [],
       "localId": "trips",
       "migrations": [],
-      "order": 37,
+      "order": 38,
       "packageName": "@voyant-travel/trips",
       "provides": {
         "capabilities": [],
@@ -1179,7 +1255,7 @@
           "id": "@voyant-travel/workflow-runs#migrations"
         }
       ],
-      "order": 38,
+      "order": 39,
       "packageName": "@voyant-travel/workflow-runs",
       "provides": {
         "capabilities": [],
@@ -1883,6 +1959,22 @@
   },
   "provisioning": {
     "scheduledJobs": [
+      {
+        "cron": "*/5 * * * *",
+        "description": "Triggers workflow bookings.expire-stale-holds from graph schedule @voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes.",
+        "id": "@voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes",
+        "module": "operator.workflows",
+        "route": "/__voyant/scheduled",
+        "workflowId": "bookings.expire-stale-holds"
+      },
+      {
+        "cron": "0 * * * *",
+        "description": "Triggers workflow notifications.send-due-reminders from graph schedule @voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly.",
+        "id": "@voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly",
+        "module": "operator.workflows",
+        "route": "/__voyant/scheduled",
+        "workflowId": "notifications.send-due-reminders"
+      },
       {
         "cron": "0 * * * *",
         "description": "Channel-push availability reconciler (hourly).",

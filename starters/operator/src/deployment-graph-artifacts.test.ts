@@ -36,6 +36,20 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       "database:postgres",
     )
     expect(summary.scheduledJobs.map((job) => job.id)).toContain("external-cruise-catalog-refresh")
+    expect(summary.scheduledJobs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes",
+          cron: "*/5 * * * *",
+          workflowId: "bookings.expire-stale-holds",
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly",
+          cron: "0 * * * *",
+          workflowId: "notifications.send-due-reminders",
+        }),
+      ]),
+    )
   })
 
   it("fails when the artifact graph hash does not match the graph content hash", () => {
