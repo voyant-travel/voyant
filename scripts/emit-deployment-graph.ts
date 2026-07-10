@@ -33,6 +33,7 @@ import {
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
   OPERATOR_GRAPH_ADMISSION_POLICY,
+  OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
   withOperatorDeploymentLocalPackageRecords,
 } from "./lib/operator-deployment-graph-package-records.ts"
 
@@ -176,6 +177,7 @@ async function resolveGraph(profilePath: string) {
         "@voyant-travel/framework-migrations",
         ...discoveredGraph.packageRecords.map((record) => record.packageName),
       ],
+      packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
     }),
   )
   return resolveOperatorDeploymentGraph(project, { packageRecords })

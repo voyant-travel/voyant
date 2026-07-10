@@ -167,6 +167,45 @@ describe("deployment graph package provenance", () => {
     ])
   })
 
+  it("attaches explicit v1 metadata overrides to registry package records", () => {
+    const records = packageRecordsFromPnpmLockfile(lockfile, {
+      packageNames: ["@voyant-travel/plugin-netopia"],
+      packageMetadata: {
+        "@voyant-travel/plugin-netopia": {
+          schemaVersion: "voyant.package.v1",
+          kind: "plugin",
+          compatibleWith: {
+            framework: ">=0.26.0",
+            targets: ["node", "voyant-cloud"],
+            modes: ["local", "managed-cloud", "self-hosted"],
+          },
+        },
+      },
+    })
+
+    assert.deepEqual(records, [
+      {
+        packageName: "@voyant-travel/plugin-netopia",
+        version: "0.105.18",
+        source: {
+          kind: "registry",
+          reference:
+            "pnpm-lock:@voyant-travel/plugin-netopia@0.105.18(@types/pg@8.20.0)(postgres@3.4.9)",
+          integrity: "sha512-netopia",
+        },
+        metadata: {
+          schemaVersion: "voyant.package.v1",
+          kind: "plugin",
+          compatibleWith: {
+            framework: ">=0.26.0",
+            targets: ["node", "voyant-cloud"],
+            modes: ["local", "managed-cloud", "self-hosted"],
+          },
+        },
+      },
+    ])
+  })
+
   it("reads v1 voyant package metadata from package.json files", () => {
     const repoRoot = mkdtempSync(path.join(tmpdir(), "voyant-provenance-"))
     mkdirSync(path.join(repoRoot, "packages", "v1-module"), { recursive: true })
@@ -249,6 +288,66 @@ importers:
           },
           requires: {
             capabilities: ["identity.people"],
+          },
+        },
+      },
+    ])
+  })
+
+  it("reads substrate package metadata kinds from package.json files", () => {
+    const repoRoot = mkdtempSync(path.join(tmpdir(), "voyant-provenance-"))
+    mkdirSync(path.join(repoRoot, "packages", "framework"), { recursive: true })
+    writeFileSync(
+      path.join(repoRoot, "pnpm-lock.yaml"),
+      `
+lockfileVersion: '9.0'
+
+importers:
+  starters/operator:
+    dependencies:
+      '@voyant-travel/framework':
+        specifier: workspace:*
+        version: link:../../packages/framework
+`,
+    )
+    writeFileSync(
+      path.join(repoRoot, "packages", "framework", "package.json"),
+      JSON.stringify(
+        {
+          name: "@voyant-travel/framework",
+          version: "0.29.4",
+          voyant: {
+            schemaVersion: "voyant.package.v1",
+            kind: "framework",
+            compatibleWith: {
+              framework: ">=0.26.0",
+              targets: ["node"],
+              modes: ["local"],
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    )
+
+    const records = readPnpmLockfilePackageRecords({
+      repoRoot,
+      packageNames: ["@voyant-travel/framework"],
+    })
+
+    assert.deepEqual(records, [
+      {
+        packageName: "@voyant-travel/framework",
+        version: "0.29.4",
+        source: { kind: "workspace", reference: "link:../../packages/framework" },
+        metadata: {
+          schemaVersion: "voyant.package.v1",
+          kind: "framework",
+          compatibleWith: {
+            framework: ">=0.26.0",
+            targets: ["node"],
+            modes: ["local"],
           },
         },
       },

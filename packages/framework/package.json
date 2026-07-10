@@ -15,6 +15,22 @@
   "files": [
     "dist"
   ],
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "framework",
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": [
+        "node",
+        "voyant-cloud"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    }
+  },
   "scripts": {
     "build": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.build.json",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.typecheck.json",

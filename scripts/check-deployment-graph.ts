@@ -23,6 +23,7 @@ import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.sche
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
   OPERATOR_GRAPH_ADMISSION_POLICY,
+  OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
   withOperatorDeploymentLocalPackageRecords,
 } from "./lib/operator-deployment-graph-package-records.ts"
 
@@ -35,11 +36,19 @@ const project = defineVoyantProject({
   plugins: ["@voyant-travel/plugin-netopia"],
 })
 
+const OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS = new Map<string, string>([
+  ["@voyant-travel/framework", "framework"],
+  ["@voyant-travel/framework-migrations", "library"],
+  ["@voyant-travel/hono", "library"],
+  ["@voyant-travel/plugin-netopia", "plugin"],
+])
+
 async function main(): Promise<void> {
   const discoveredGraph = await resolveManagedProfileDeploymentGraph(project)
   const packageRecords = withOperatorDeploymentLocalPackageRecords(
     readPnpmLockfilePackageRecords({
       packageNames: discoveredGraph.packageRecords.map((record) => record.packageName),
+      packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
     }),
   )
   const first = await resolveManagedProfileDeploymentGraph(project, {
@@ -158,6 +167,23 @@ async function main(): Promise<void> {
     if (record.source?.kind === "unknown") {
       failures.push(`expected operator graph package record ${record.packageName} to be admitted`)
     }
+    const expectedKind =
+      OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS.get(record.packageName) ?? "module"
+    const metadata = record.metadata
+    if (
+      metadata?.schemaVersion !== "voyant.package.v1" ||
+      metadata.kind !== expectedKind ||
+      typeof metadata.compatibleWith?.framework !== "string" ||
+      !metadata.compatibleWith.targets?.includes("node") ||
+      !metadata.compatibleWith.targets?.includes("voyant-cloud") ||
+      !metadata.compatibleWith.modes?.includes("local") ||
+      !metadata.compatibleWith.modes?.includes("managed-cloud") ||
+      !metadata.compatibleWith.modes?.includes("self-hosted")
+    ) {
+      failures.push(
+        `expected operator graph package record ${record.packageName} to include voyant.package.v1 ${expectedKind} compatibility metadata`,
+      )
+    }
   }
   if (!operatorPackageNames.has("@voyant-travel/hono")) {
     failures.push("expected operator graph package records to include @voyant-travel/hono")
@@ -203,26 +229,9 @@ async function main(): Promise<void> {
     if (!operatorPluginIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
   for (const packageName of operatorMigrationSourcePackageNames()) {
-    const record = operatorPackageRecords.get(packageName)
-    if (!record) {
+    if (!operatorPackageRecords.has(packageName)) {
       failures.push(
         `expected operator graph package records to include migration source ${packageName}`,
-      )
-      continue
-    }
-    const metadata = record.metadata
-    if (
-      metadata?.schemaVersion !== "voyant.package.v1" ||
-      metadata.kind !== "module" ||
-      typeof metadata.compatibleWith?.framework !== "string" ||
-      !metadata.compatibleWith.targets?.includes("node") ||
-      !metadata.compatibleWith.targets?.includes("voyant-cloud") ||
-      !metadata.compatibleWith.modes?.includes("local") ||
-      !metadata.compatibleWith.modes?.includes("managed-cloud") ||
-      !metadata.compatibleWith.modes?.includes("self-hosted")
-    ) {
-      failures.push(
-        `expected migration source package ${packageName} to include voyant.package.v1 module compatibility metadata`,
       )
     }
   }

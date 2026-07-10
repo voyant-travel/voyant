@@ -6,7 +6,7 @@ import { parse } from "yaml"
 const dependencySections = ["dependencies", "optionalDependencies", "devDependencies"]
 const ignoredWorkspaceDirs = new Set([".audit", ".git", ".turbo", "build", "dist", "node_modules"])
 const voyantPackageMetadataSchemaVersion = "voyant.package.v1"
-const voyantPackageKinds = new Set(["module", "plugin"])
+const voyantPackageKinds = new Set(["framework", "library", "module", "plugin"])
 const voyantDeploymentModes = new Set(["managed-cloud", "self-hosted", "local"])
 
 export function readPnpmLockfilePackageRecords(options) {
@@ -18,6 +18,7 @@ export function readPnpmLockfilePackageRecords(options) {
     importerPaths: options.importerPaths,
     workspacePackageVersions: options.workspacePackageVersions ?? workspacePackageInfo.versions,
     workspacePackageMetadata: options.workspacePackageMetadata ?? workspacePackageInfo.metadata,
+    packageMetadata: options.packageMetadata,
   })
 }
 
@@ -29,8 +30,11 @@ export function packageRecordsFromPnpmLockfile(lockfileText, options) {
       left.localeCompare(right),
     ),
   )
-  const workspacePackageMetadata = new Map(
-    Object.entries(options.workspacePackageMetadata ?? {})
+  const packageMetadata = new Map(
+    Object.entries({
+      ...(options.workspacePackageMetadata ?? {}),
+      ...(options.packageMetadata ?? {}),
+    })
       .map(([packageName, metadata]) => [packageName, normalizeVoyantPackageMetadata(metadata)])
       .filter(([, metadata]) => metadata),
   )
@@ -42,7 +46,7 @@ export function packageRecordsFromPnpmLockfile(lockfileText, options) {
         lockfile,
         dependencies: dependencies.get(packageName) ?? [],
         workspacePackageVersions,
-        workspacePackageMetadata,
+        packageMetadata,
       }),
     )
 }
@@ -141,7 +145,7 @@ function packageRecordForPackage(packageName, context) {
 }
 
 function withPackageMetadata(record, packageName, context) {
-  const metadata = context.workspacePackageMetadata.get(packageName)
+  const metadata = context.packageMetadata.get(packageName)
   if (!metadata) return record
   return {
     ...record,
