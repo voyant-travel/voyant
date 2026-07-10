@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest"
 import type { VoyantGraphJsonObject } from "@voyant-travel/core/project"
+import { describe, expect, it, vi } from "vitest"
 
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 import { resolveVoyantGraphRuntimeValues, VoyantGraphRuntimeValueError } from "./runtime-values.js"
