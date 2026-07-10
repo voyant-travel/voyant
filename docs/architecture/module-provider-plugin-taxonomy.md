@@ -160,6 +160,13 @@ Rule:
 Use plugins when you want to ship a reusable bundle across projects. Do not use
 plugins as the default answer to every customization problem.
 
+Package-owned extensions remain extension contributions in the resolved graph.
+They do not become plugins merely because the runtime lowers them to an
+extension factory. A standard application does not list these contributions in
+its authored `plugins` array; the selected product distribution and package
+manifests provide them. Authored `plugins` entries identify reusable
+distribution packages such as an external adapter bundle.
+
 ## Decision Rules
 
 ### 7. Start with the narrowest category that fits

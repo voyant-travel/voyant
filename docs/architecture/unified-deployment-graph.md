@@ -71,17 +71,21 @@ while package-owned facets remain absent.
 
 ## Core Decisions
 
-### 1. Use an explicit graph, not runtime profile modes
+### 1. Keep the resolved graph explicit without exposing it as application config
 
-Profiles such as `operator-standard` or `pms-standard` should be scaffolding
-presets, not runtime modes.
+The resolved deployment graph is explicit and deterministic. The authored
+application configuration records only differences from the standard Operator,
+as decided by [ADR-0012](../adr/0012-application-authoring-and-product-defaults.md).
+Standard product closure belongs to a framework-owned distribution rather than
+being copied into every project.
 
 ```sh
 voyant new --preset pms-standard
 ```
 
-The scaffold writes a project declaration with concrete selected modules and
-plugins. After that point, the deployment is just a graph.
+The scaffold writes a minimal project declaration. The resolver expands the
+standard distribution, explicit custom modules and external plugins, and
+conventional local contributions into the complete graph.
 
 The resolved graph must not admit packages or choose runtime behavior based on
 profile names. Existing managed snapshots still carry `profile: "operator"` in
@@ -89,15 +93,10 @@ profile names. Existing managed snapshots still carry `profile: "operator"` in
 should treat that as a compatibility bridge and translate it into selected
 modules, capabilities, product surfaces, and substrate requirements.
 
-If a project records a scaffold source, that field is diagnostic only:
-
-```ts
-presetLineage: "operator-standard" // optional; never used for graph closure
-```
-
 Package compatibility should target framework version, the Node runtime
 contract, deployment mode, and required capabilities/surfaces. It should not
-target `profiles: ["operator"]` or treat a hosting provider as a runtime.
+target `profiles: ["operator"]`, expose `presetLineage` as authored runtime
+behavior, or treat a hosting provider as a runtime.
 
 ### 2. Default to Voyant Cloud, but keep Node substrate lowering separate
 
@@ -378,16 +377,10 @@ import { defineProject } from "@voyant-travel/framework/project"
 
 export default defineProject({
   schemaVersion: "voyant.project.v1",
-  presetLineage: "operator-standard",
-  modules: [
-    "@voyant-travel/bookings",
-    "@voyant-travel/inventory",
-    "@voyant-travel/finance",
-    {
-      resolve: "./src/modules/loyalty",
-      config: { tiers: ["silver", "gold", "platinum"] },
-    },
-  ],
+  modules: [{
+    resolve: "./src/modules/loyalty",
+    config: { tiers: ["silver", "gold", "platinum"] },
+  }],
   plugins: ["@acme/voyant-smartbill"],
   deployment: {
     target: "node",
@@ -400,12 +393,12 @@ export default defineProject({
 })
 ```
 
-Package specifiers and `{ resolve, config }` selections are the normal authoring
-forms. The resolver reads package metadata and performs admission before it
-imports `./voyant`. Trusted deployment-local declarations may be imported by an
-advanced project, but registry package imports must not become a path around
-pre-admission. A preset writes explicit selections and may record
-`presetLineage`, but the preset is never consulted after scaffolding.
+Package specifiers and `{ resolve, config }` selections remain the normal
+authoring forms for reusable custom modules and external plugins. The resolver
+reads package metadata and performs admission before it imports `./voyant`.
+The framework-owned standard Operator distribution and conventional local
+contributions are expanded during resolution and are explicit in generated
+artifacts, not repeated in authored config.
 
 ### Clean project ergonomics
 
@@ -437,13 +430,13 @@ acme-voyant/
   .voyant/                     # generated, disposable, gitignored
 ```
 
-Conventions apply **inside an explicitly selected unit**. They may provide
-defaults for `schema.ts`, `migrations/`, `api/`, `admin/`, `workflows/`, and
-`subscribers/`, but dropping a file in `src/` must not silently change the graph.
-`index.ts` owns the manifest, and `voyant.config.ts` activates the unit. A
-project-level link or cross-module workflow remains explicit because no one
-package owns it; it should be declared in `links/` or in a small
-deployment-local module selected by the project.
+Package conventions apply inside package-owned units. Application conventions
+also discover local routes, workflows, jobs, subscribers, links, admin
+contributions, and module manifests from the directories defined by ADR-0012.
+Adding such a file is authored intent and changes the graph at build time; it
+never triggers runtime scanning. Reusable local modules remain explicitly
+selected until their `src/modules/*/voyant.ts` manifests are admitted by the
+local convention compiler.
 
 The ordinary workflow is:
 
