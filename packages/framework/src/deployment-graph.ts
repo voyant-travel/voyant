@@ -539,11 +539,11 @@ export async function resolveDeploymentGraph(
   const mode = input.mode ?? input.deployment?.mode
   const providers = { ...(input.deployment?.providers ?? {}) }
   const requirements = normalizeDeploymentRequirements(input.deployment?.requirements)
-  const selectedModules = input.project.modules.map((unit, index) =>
-    resolveUnit(unit, "module", index),
+  const selectedModules = sortResolvedUnits(
+    input.project.modules.map((unit) => resolveUnit(unit, "module")),
   )
-  const selectedPlugins = input.project.plugins.map((unit, index) =>
-    resolveUnit(unit, "plugin", index),
+  const selectedPlugins = sortResolvedUnits(
+    input.project.plugins.map((unit) => resolveUnit(unit, "plugin")),
   )
   const selectedUnits = [...selectedModules, ...selectedPlugins]
 
@@ -926,7 +926,6 @@ function defineGraphUnit(
 function resolveUnit(
   unit: VoyantGraphUnitManifest,
   kind: VoyantGraphUnitKind,
-  order: number,
 ): ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest } {
   const packageName = unit.packageName ?? packageNameFromGraphId(unit.id)
   return {
@@ -935,7 +934,7 @@ function resolveUnit(
     kind,
     packageName,
     ...(unit.localId ? { localId: unit.localId } : {}),
-    order,
+    order: 0,
     provides: {
       capabilities: sortedUnique(unit.provides?.capabilities ?? []),
       ports: sortPorts(unit.provides?.ports ?? []),
@@ -952,6 +951,19 @@ function resolveUnit(
     events: sortFacetEntities(unit.events ?? []) as VoyantGraphEvent[],
     workflows: sortWorkflows(normalizeWorkflowScheduleFacets(unit.id, unit.workflows ?? [])),
   }
+}
+
+function sortResolvedUnits<
+  T extends ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest },
+>(units: readonly T[]): T[] {
+  return [...units]
+    .sort(
+      (left, right) =>
+        left.id.localeCompare(right.id) ||
+        left.kind.localeCompare(right.kind) ||
+        left.packageName.localeCompare(right.packageName),
+    )
+    .map((unit, index) => ({ ...unit, order: index }))
 }
 
 function lowerManagedWorkflowFacets(moduleSpecifier: string): VoyantGraphWorkflow[] {
