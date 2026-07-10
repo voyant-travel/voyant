@@ -5,9 +5,10 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
+import type { ManagedProfileRuntimeDeployment } from "@voyant-travel/framework/managed-runtime"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:eed73644c7277f9dc91d9e8fb81eff7a192251eac2e992205e4404edc1bcca58" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:10f57840772bca7458d07bd130958aabd9b0d3ed9054f0377d170e7075f44d60" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const
@@ -167,10 +168,64 @@ export function resolveGeneratedDeploymentRequirements(): VoyantGraphDeploymentR
   return candidate as VoyantGraphDeploymentRequirements
 }
 
+export function resolveGeneratedRuntimeDeployment(): ManagedProfileRuntimeDeployment {
+  const deployment = readGeneratedDeploymentGraph().deployment
+  if (!deployment || typeof deployment !== "object" || Array.isArray(deployment)) {
+    throw new Error("Generated deployment graph deployment is missing or invalid")
+  }
+  const candidate = deployment as { mode?: unknown; providers?: unknown }
+  if (
+    candidate.mode !== "local" &&
+    candidate.mode !== "managed-cloud" &&
+    candidate.mode !== "self-hosted"
+  ) {
+    throw new Error("Generated deployment graph deployment.mode is invalid")
+  }
+  if (!isGeneratedRecord(candidate.providers)) {
+    throw new Error("Generated deployment graph deployment.providers is missing or invalid")
+  }
+  const providers: ManagedProfileRuntimeDeployment["providers"] = {
+    database: requireGeneratedDeploymentProvider(candidate.providers, "database"),
+    storage: requireGeneratedDeploymentProvider(candidate.providers, "storage"),
+    cache: requireGeneratedDeploymentProvider(candidate.providers, "cache"),
+    sharedState: requireGeneratedDeploymentProvider(candidate.providers, "sharedState"),
+    rateLimit: requireGeneratedDeploymentProvider(candidate.providers, "rateLimit"),
+    search: requireGeneratedDeploymentProvider(candidate.providers, "search"),
+    email: requireGeneratedDeploymentProvider(candidate.providers, "email"),
+    sms: requireGeneratedDeploymentProvider(candidate.providers, "sms"),
+    auth: requireGeneratedDeploymentProvider(candidate.providers, "auth"),
+    scheduledJobs: requireGeneratedDeploymentProvider(candidate.providers, "scheduledJobs"),
+    workflows: requireGeneratedDeploymentProvider(candidate.providers, "workflows"),
+  }
+  return {
+    mode: candidate.mode,
+    providers,
+  }
+}
+
+function requireGeneratedDeploymentProvider<
+  Role extends keyof ManagedProfileRuntimeDeployment["providers"],
+>(
+  providers: Record<string, unknown>,
+  role: Role,
+): ManagedProfileRuntimeDeployment["providers"][Role] {
+  const provider = providers[role]
+  if (typeof provider !== "string" || provider.trim().length === 0) {
+    throw new Error(
+      `Generated deployment graph deployment.providers.${role} must be a non-empty string`,
+    )
+  }
+  return provider as ManagedProfileRuntimeDeployment["providers"][Role]
+}
+
+function isGeneratedRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
 function readGeneratedDeploymentGraph(): {
   schemaVersion?: unknown
   contentHash?: unknown
-  deployment?: { target?: unknown; mode?: unknown }
+  deployment?: { target?: unknown; mode?: unknown; providers?: unknown }
   requirements?: unknown
   diagnostics?: unknown
 } {
@@ -182,7 +237,7 @@ function readGeneratedDeploymentGraph(): {
   ) as {
     schemaVersion?: unknown
     contentHash?: unknown
-    deployment?: { target?: unknown; mode?: unknown }
+    deployment?: { target?: unknown; mode?: unknown; providers?: unknown }
     requirements?: unknown
     diagnostics?: unknown
   }
@@ -194,6 +249,7 @@ if (isMainModule) {
   const { startManagedProfileRuntime } = await import("@voyant-travel/framework/managed-runtime")
   const handle = await startManagedProfileRuntime({
     profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
+    deployment: resolveGeneratedRuntimeDeployment(),
     deploymentRequirements: resolveGeneratedDeploymentRequirements(),
   })
   console.info(

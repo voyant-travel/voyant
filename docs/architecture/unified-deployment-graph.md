@@ -823,8 +823,9 @@ runtime compatibility input for the generated managed Node entry and legacy
 scheduled-job derivation, but it does not select graph units, providers, or the
 deployment target. Deployment requirements derive from the graph's declared
 provider bindings using the existing v1 provider contract, and generated Node
-runtime entries pass those resolved requirements into boot validation. Phase 2
-also models compatible environment aliases on canonical resource requirements:
+runtime entries pass both the resolved requirements and deployment mode/provider
+bindings into boot validation. Phase 2 also models compatible environment aliases
+on canonical resource requirements:
 for example, either `DATABASE_URL` or the Node-pool `DATABASE_URL_DIRECT`
 satisfies the graph's Postgres requirement. Phase 2 continues the remaining
 runtime compatibility and provisioning migration.
