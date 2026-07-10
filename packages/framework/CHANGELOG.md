@@ -1,5 +1,15 @@
 # @voyant-travel/framework
 
+## 0.33.0
+
+### Minor Changes
+
+- f0e8e5c: Add typed provider port declarations, conformance kits, and deployment graph validation for required ports.
+
+### Patch Changes
+
+- e2d6bfe: Respect lower-bound framework compatibility ranges such as `>=0.26.0` when resolving deployment graphs.
+
 ## 0.32.0
 
 ### Minor Changes
