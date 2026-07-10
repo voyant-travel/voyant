@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.29.2
+
+### Patch Changes
+
+- f6ff1a9: Make resolved deployment graph module and plugin ordering deterministic.
+- cc4e55e: Project cron-backed workflow schedules into deployment graph provisioning metadata.
+
 ## 0.29.1
 
 ### Patch Changes
