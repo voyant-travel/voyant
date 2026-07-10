@@ -30,6 +30,11 @@ export {
   modulesFromGlob,
 } from "./discover-modules.js"
 export {
+  type LowerVoyantGraphActionsOptions,
+  lowerVoyantGraphActionsToActionLedgerRegistry,
+  type VoyantGraphActionRiskEvaluator,
+} from "./graph-action-ledger.js"
+export {
   FRAMEWORK_CAPABILITY_GRAPH,
   FRAMEWORK_EXTENSION_OWNERSHIP,
   FRAMEWORK_RUNTIME_MANIFEST,
@@ -96,6 +101,7 @@ export {
   registerVoyantGraphTools,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,
   type VoyantGraphRuntime,
+  type VoyantGraphRuntimeActionDefinition,
   type VoyantGraphRuntimeConfigDefinition,
   type VoyantGraphRuntimeConfigLoader,
   VoyantGraphRuntimeLoadError,
@@ -107,6 +113,7 @@ export {
   type VoyantGraphRuntimeRouteLoader,
   type VoyantGraphRuntimeSecretDefinition,
   type VoyantGraphRuntimeSecretLoader,
+  type VoyantGraphRuntimeSelectedIds,
   type VoyantGraphRuntimeToolDefinition,
   type VoyantGraphRuntimeToolLoader,
   type VoyantGraphRuntimeUnitDefinition,

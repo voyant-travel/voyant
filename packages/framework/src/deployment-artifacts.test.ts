@@ -259,6 +259,32 @@ describe("deployment graph artifacts", () => {
             runtime: { entry: "./runtime", export: "reconcileWorkflow" },
           },
         ],
+        events: [{ id: "loyalty.event", eventType: "loyalty.changed" }],
+        webhooks: [
+          {
+            id: "loyalty.webhook",
+            direction: "inbound",
+            apiId: "loyalty.api",
+          },
+        ],
+        actions: [
+          {
+            id: "loyalty.points.adjust",
+            version: "v1",
+            kind: "execute",
+            targetType: "loyalty_account",
+            requiredScopes: ["loyalty:write"],
+            risk: "medium",
+            ledger: "required",
+            from: {
+              routes: ["loyalty.api"],
+              tools: ["loyalty.adjust"],
+              workflows: ["loyalty.reconcile"],
+              events: ["loyalty.event"],
+              webhooks: ["loyalty.webhook"],
+            },
+          },
+        ],
         subscribers: [
           {
             id: "loyalty.changed",
@@ -297,6 +323,11 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"resources": [')
     expect(source).toContain('"kind": "http-service"')
     expect(source).toContain('"providers": [')
+    expect(source).toContain('"actions": [')
+    expect(source).toContain('"id": "loyalty.points.adjust"')
+    expect(source).toContain('"selectedIds": {')
+    expect(source).toContain('"loyalty.event"')
+    expect(source).toContain('"loyalty.webhook"')
   })
 
   it("builds one target-neutral whole-application runtime", async () => {

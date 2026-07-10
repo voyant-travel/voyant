@@ -4,6 +4,7 @@ import {
   type ResolvedVoyantGraphUnit,
 } from "./deployment-graph.js"
 import type {
+  VoyantGraphRuntimeActionDefinition,
   VoyantGraphRuntimeConfigDefinition,
   VoyantGraphRuntimeProviderDefinition,
   VoyantGraphRuntimeReferenceDefinition,
@@ -33,6 +34,14 @@ export interface GeneratedRuntimeUnitDefinition {
   providers: VoyantGraphRuntimeProviderDefinition[]
   accessScopes: string[]
   tools: VoyantGraphRuntimeToolDefinition[]
+  actions: VoyantGraphRuntimeActionDefinition[]
+  selectedIds: {
+    routes: string[]
+    tools: string[]
+    workflows: string[]
+    events: string[]
+    webhooks: string[]
+  }
   routes: GeneratedRuntimeRouteDefinition[]
 }
 
@@ -107,6 +116,24 @@ export function lowerGraphRuntimeUnits(
           ...(tool.risk ? { risk: tool.risk } : {}),
         }))
         .sort((left, right) => left.id.localeCompare(right.id))
+      const actions = (unit.actions ?? [])
+        .map((action) => ({
+          ...action,
+          unitId: unit.id,
+          requiredScopes: sortedUnique(action.requiredScopes ?? []),
+          from: {
+            routes: sortedUnique(action.from?.routes ?? []),
+            tools: sortedUnique(action.from?.tools ?? []),
+            workflows: sortedUnique(action.from?.workflows ?? []),
+            events: sortedUnique(action.from?.events ?? []),
+            webhooks: sortedUnique(action.from?.webhooks ?? []),
+          },
+          ...(action.copy ? { copy: [...action.copy].sort(compareCopyReferences) } : {}),
+        }))
+        .sort(
+          (left, right) =>
+            left.id.localeCompare(right.id) || left.version.localeCompare(right.version),
+        )
 
       return {
         id: unit.id,
@@ -122,10 +149,29 @@ export function lowerGraphRuntimeUnits(
         providers,
         accessScopes,
         tools,
+        actions,
+        selectedIds: {
+          routes: unit.api.map(({ id }) => id).sort(),
+          tools: (unit.tools ?? []).map(({ id }) => id).sort(),
+          workflows: unit.workflows.map(({ id }) => id).sort(),
+          events: unit.events.map(({ id }) => id).sort(),
+          webhooks: (unit.webhooks ?? []).map(({ id }) => id).sort(),
+        },
         routes,
       }
     })
     .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id))
+}
+
+function sortedUnique(values: readonly string[]): string[] {
+  return [...new Set(values)].sort((left, right) => left.localeCompare(right))
+}
+
+function compareCopyReferences(
+  left: { namespace: string; key: string },
+  right: { namespace: string; key: string },
+): number {
+  return left.namespace.localeCompare(right.namespace) || left.key.localeCompare(right.key)
 }
 
 function collectRuntimeReferences(

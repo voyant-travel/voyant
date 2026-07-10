@@ -1,5 +1,8 @@
 import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
-import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
+import {
+  composeVoyantGraphRuntime,
+  lowerVoyantGraphActionsToActionLedgerRegistry,
+} from "@voyant-travel/framework"
 import { defineLazyHonoBundle, mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import {
@@ -39,8 +42,11 @@ import { smartbillOperatorBundle } from "./subscribers/smartbill-bundle"
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
 const operatorProviders = buildOperatorProviders()
+const graphRuntime = createGeneratedGraphRuntime()
+export const operatorActionLedgerCapabilityRegistry =
+  lowerVoyantGraphActionsToActionLedgerRegistry(graphRuntime)
 const graphComposition = await composeVoyantGraphRuntime({
-  runtime: createGeneratedGraphRuntime(),
+  runtime: graphRuntime,
   capabilities: operatorProviders,
   bindings: operatorGraphRuntimeBindings,
 })

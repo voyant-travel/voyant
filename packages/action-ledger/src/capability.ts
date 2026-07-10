@@ -33,7 +33,7 @@ export interface ActionLedgerCapabilityDefinition<TContext = unknown> {
 }
 
 export interface ActionLedgerCapabilityRegistry<
-  TDefinition extends ActionLedgerCapabilityDefinition = ActionLedgerCapabilityDefinition,
+  TDefinition extends ActionLedgerCapabilityDefinition<never> = ActionLedgerCapabilityDefinition,
 > {
   definitions: readonly TDefinition[]
   byKey: ReadonlyMap<string, TDefinition>
@@ -108,7 +108,7 @@ const riskRank: Record<ActionLedgerCapabilityRisk, number> = {
 }
 
 export function createActionLedgerCapabilityRegistry<
-  const TDefinition extends ActionLedgerCapabilityDefinition,
+  const TDefinition extends ActionLedgerCapabilityDefinition<never>,
 >(definitions: readonly TDefinition[]): ActionLedgerCapabilityRegistry<TDefinition> {
   const byKey = new Map<string, TDefinition>()
 
@@ -125,7 +125,9 @@ export function createActionLedgerCapabilityRegistry<
   return { definitions, byKey }
 }
 
-export function getActionLedgerCapability<TDefinition extends ActionLedgerCapabilityDefinition>(
+export function getActionLedgerCapability<
+  TDefinition extends ActionLedgerCapabilityDefinition<never>,
+>(
   registry: ActionLedgerCapabilityRegistry<TDefinition>,
   id: string,
   version: string,

@@ -853,6 +853,27 @@ generation. Their schedules are provisioned from the owning package ids while
 the generated runtime imports the owning package exports. The operator keeps
 only graph-id-keyed bindings for deployment capabilities and local units.
 
+## Action-Ledger Runtime Lowering
+
+Generated `VoyantGraphRuntime` units carry deterministic action declarations and
+the selected route, tool, workflow, event, and webhook ids those actions may
+bind. `lowerVoyantGraphActionsToActionLedgerRegistry(...)` revalidates every
+required scope and binding against that selected runtime before producing the
+shared action-ledger capability registry. Required scopes lower to required
+grants; action risk, ledger, approval, and reversibility policy remain
+package-owned metadata.
+
+Risk evaluation may depend on request or package runtime state and therefore
+cannot be serialized in the graph. The lowering API exposes only a keyed
+`riskEvaluators` override (`<action-id>@<version>`); it does not allow a runtime
+to replace graph-owned identity, grants, policy, or bindings.
+
+The managed and operator runtimes instantiate this generic selected-graph
+registry. Existing route-local booking and person-document capability constants
+remain compatibility authorities until their persisted capability ids and
+resource/action fields have proven parity with graph declarations. They must not
+be removed merely because equivalent-looking graph metadata exists.
+
 ## Events And Webhooks
 
 V1 should include subscribers and workflow event filters that already map to

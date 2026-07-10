@@ -129,8 +129,37 @@ describe("managed profile runtime entry", () => {
       ),
     )
 
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:managed-actions",
+      entries: {},
+      modules: [
+        {
+          id: "@voyant-travel/bookings",
+          kind: "module",
+          packageName: "@voyant-travel/bookings",
+          order: 0,
+          accessScopes: ["bookings:write"],
+          actions: [
+            {
+              id: "booking.status.confirm",
+              unitId: "@voyant-travel/bookings",
+              version: "v1",
+              kind: "execute",
+              targetType: "booking",
+              requiredScopes: ["bookings:write"],
+              risk: "medium",
+              ledger: "required",
+              from: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
+      graphRuntime,
       env: {
         DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL,
       },
@@ -138,6 +167,9 @@ describe("managed profile runtime entry", () => {
 
     expect(runtime.project.profile).toBe("operator")
     expect(runtime.requirements.modules.createVoyantAppExclude).toContain("@voyant-travel/flights")
+    expect(runtime.actionLedgerCapabilities.definitions.map(({ id }) => id)).toEqual([
+      "booking.status.confirm",
+    ])
     expect(runtime.app.fetch).toEqual(expect.any(Function))
   })
 

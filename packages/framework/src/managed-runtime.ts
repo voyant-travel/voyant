@@ -6,6 +6,10 @@ import { readFile } from "node:fs/promises"
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { createAccommodationContentRoutes } from "@voyant-travel/accommodations/routes-content"
 import {
+  type ActionLedgerCapabilityRegistry,
+  createActionLedgerCapabilityRegistry,
+} from "@voyant-travel/action-ledger/capability"
+import {
   createVoyantCloudAdminAuthPlugin,
   revalidateVoyantCloudAdminAuthSession,
   revalidateVoyantCloudAdminAuthUser,
@@ -153,6 +157,7 @@ import {
   resolveManagedCustomModules,
 } from "./custom-source-resolution.js"
 import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
+import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
 import { type ManagedPlugin, resolveManagedPlugins } from "./plugin-resolution.js"
 import {
   getVoyantProjectRequirements,
@@ -291,6 +296,7 @@ export interface ManagedProfileRuntime {
   env: ManagedProfileRuntimeEnv
   graphValues?: ResolvedVoyantGraphRuntimeValues
   app: ReturnType<typeof createManagedProfileApp>
+  actionLedgerCapabilities: ActionLedgerCapabilityRegistry
   fetch: (
     request: Request,
     env?: ManagedProfileRuntimeEnv,
@@ -380,6 +386,9 @@ export async function loadManagedProfileRuntime(
   const graphFacetModules = options.graphRuntime
     ? await composeVoyantGraphRuntimeFacetModules(options.graphRuntime)
     : []
+  const actionLedgerCapabilities = options.graphRuntime
+    ? lowerVoyantGraphActionsToActionLedgerRegistry(options.graphRuntime)
+    : createActionLedgerCapabilityRegistry([])
   for (const [index, module] of graphFacetModules.entries()) {
     customModules[`graph-runtime:${index}:${module.module.name}`] = () => module
   }
@@ -415,6 +424,7 @@ export async function loadManagedProfileRuntime(
     env,
     ...(graphValues ? { graphValues } : {}),
     app,
+    actionLedgerCapabilities,
     fetch: (request, bindings = env, ctx = createNoopExecutionContext()) =>
       app.fetch(request, bindings, toHonoExecutionContext(ctx)),
     start: (serverOptions = {}) =>

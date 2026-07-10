@@ -1,4 +1,6 @@
 import type {
+  VoyantGraphActionBindings,
+  VoyantGraphActionDeclaration,
   VoyantGraphConfigDeclaration,
   VoyantGraphJsonObject,
   VoyantGraphProviderDeclaration,
@@ -115,6 +117,21 @@ export interface VoyantGraphRuntimeProviderDefinition {
   referenceId: string
 }
 
+export interface VoyantGraphRuntimeSelectedIds {
+  routes: readonly string[]
+  tools: readonly string[]
+  workflows: readonly string[]
+  events: readonly string[]
+  webhooks: readonly string[]
+}
+
+export interface VoyantGraphRuntimeActionDefinition
+  extends Omit<VoyantGraphActionDeclaration, "requiredScopes" | "from"> {
+  unitId: string
+  requiredScopes: readonly string[]
+  from: Required<VoyantGraphActionBindings>
+}
+
 export interface VoyantGraphRuntimeUnitDefinition {
   id: string
   localId?: string
@@ -129,6 +146,8 @@ export interface VoyantGraphRuntimeUnitDefinition {
   providers?: readonly VoyantGraphRuntimeProviderDefinition[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
+  actions?: readonly VoyantGraphRuntimeActionDefinition[]
+  selectedIds?: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteDefinition[]
 }
 
@@ -168,6 +187,8 @@ export interface VoyantGraphRuntimeUnitLoader
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
+  actions: readonly VoyantGraphRuntimeActionDefinition[]
+  selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteLoader[]
   /** Load each distinct package entry/export reference in this unit once. */
   load: () => Promise<readonly unknown[]>
@@ -184,6 +205,8 @@ export interface VoyantGraphRuntime {
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
+  actions: readonly VoyantGraphRuntimeActionDefinition[]
+  selectedIds: VoyantGraphRuntimeSelectedIds
   loadReference: <T = unknown>(referenceId: string) => Promise<T>
 }
 
@@ -222,6 +245,8 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const providers = [...modules, ...plugins].flatMap((unit) => unit.providers)
   const accessScopes = sortedUnique([...modules, ...plugins].flatMap((unit) => unit.accessScopes))
   const tools = [...modules, ...plugins].flatMap((unit) => unit.tools)
+  const actions = [...modules, ...plugins].flatMap((unit) => unit.actions)
+  const selectedIds = mergeSelectedIds([...modules, ...plugins].map((unit) => unit.selectedIds))
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
 
   return {
@@ -235,6 +260,8 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     providers,
     accessScopes,
     tools,
+    actions,
+    selectedIds,
     loadReference: async <T = unknown>(referenceId: string): Promise<T> => {
       const reference = referenceById.get(referenceId)
       if (!reference) {
@@ -252,7 +279,15 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
 interface NormalizedVoyantGraphRuntimeUnitDefinition
   extends Omit<
     VoyantGraphRuntimeUnitDefinition,
-    "config" | "providers" | "references" | "resources" | "routes" | "secrets" | "tools"
+    | "actions"
+    | "config"
+    | "providers"
+    | "references"
+    | "resources"
+    | "routes"
+    | "secrets"
+    | "selectedIds"
+    | "tools"
   > {
   references: readonly VoyantGraphRuntimeReferenceDefinition[]
   config: readonly VoyantGraphRuntimeConfigDefinition[]
@@ -261,6 +296,8 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   providers: readonly VoyantGraphRuntimeProviderDefinition[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
+  actions: readonly VoyantGraphRuntimeActionDefinition[]
+  selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly (VoyantGraphRuntimeRouteDefinition & { referenceId: string })[]
 }
 
@@ -319,6 +356,8 @@ function normalizeRuntimeUnitDefinition(
     providers: [...(unit.providers ?? [])],
     accessScopes: sortedUnique(unit.accessScopes ?? []),
     tools: [...(unit.tools ?? [])],
+    actions: [...(unit.actions ?? [])],
+    selectedIds: normalizeSelectedIds(unit.selectedIds),
     routes,
   }
 }
@@ -389,6 +428,8 @@ function createRuntimeUnitLoader(
     providers,
     accessScopes: unit.accessScopes,
     tools,
+    actions: unit.actions,
+    selectedIds: unit.selectedIds,
     routes,
     load: memoizePromise(() =>
       Promise.all(uniqueRuntimeRouteLoaders(routes).map((route) => route.load())),
@@ -691,6 +732,30 @@ function sameStringSet(left: readonly string[], right: readonly string[]): boole
 
 function sortedUnique(values: readonly string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right))
+}
+
+function normalizeSelectedIds(
+  selectedIds: VoyantGraphRuntimeSelectedIds | undefined,
+): VoyantGraphRuntimeSelectedIds {
+  return {
+    routes: sortedUnique(selectedIds?.routes ?? []),
+    tools: sortedUnique(selectedIds?.tools ?? []),
+    workflows: sortedUnique(selectedIds?.workflows ?? []),
+    events: sortedUnique(selectedIds?.events ?? []),
+    webhooks: sortedUnique(selectedIds?.webhooks ?? []),
+  }
+}
+
+function mergeSelectedIds(
+  selectedIds: readonly VoyantGraphRuntimeSelectedIds[],
+): VoyantGraphRuntimeSelectedIds {
+  return normalizeSelectedIds({
+    routes: selectedIds.flatMap((ids) => ids.routes),
+    tools: selectedIds.flatMap((ids) => ids.tools),
+    workflows: selectedIds.flatMap((ids) => ids.workflows),
+    events: selectedIds.flatMap((ids) => ids.events),
+    webhooks: selectedIds.flatMap((ids) => ids.webhooks),
+  })
 }
 
 function legacyRouteReferenceId(unitId: string, routeId: string): string {
