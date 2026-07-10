@@ -290,6 +290,54 @@ describe("deployment graph v1", () => {
     expect(second.contentHash).toBe(first.contentHash)
   })
 
+  it("keeps resolved module and plugin ordering independent of declaration order", async () => {
+    const crm = defineModule({
+      id: "@acme/voyant-crm",
+      provides: { capabilities: ["acme.crm.people"] },
+    })
+    const loyalty = defineModule({
+      id: "@acme/voyant-loyalty",
+      provides: { capabilities: ["acme.loyalty.points"] },
+      requires: { capabilities: ["acme.crm.people"] },
+    })
+    const fiscal = definePlugin({
+      id: "@acme/voyant-fiscal#smartbill",
+      provides: { capabilities: ["acme.fiscal.invoice"] },
+    })
+    const webhook = definePlugin({
+      id: "@acme/voyant-webhooks#hubspot",
+      provides: { capabilities: ["acme.webhooks.hubspot"] },
+    })
+
+    const first = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [loyalty, crm],
+        plugins: [webhook, fiscal],
+      }),
+      target: "node",
+      mode: "self-hosted",
+    })
+    const second = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [crm, loyalty],
+        plugins: [fiscal, webhook],
+      }),
+      target: "node",
+      mode: "self-hosted",
+    })
+
+    expect(first.diagnostics).toEqual([])
+    expect(first.modules.map((unit) => [unit.id, unit.order])).toEqual([
+      ["@acme/voyant-crm", 0],
+      ["@acme/voyant-loyalty", 1],
+    ])
+    expect(first.plugins.map((unit) => [unit.id, unit.order])).toEqual([
+      ["@acme/voyant-fiscal#smartbill", 0],
+      ["@acme/voyant-webhooks#hubspot", 1],
+    ])
+    expect(second).toEqual(first)
+  })
+
   it("normalizes deployment resource requirements before hashing", async () => {
     const project = defineProject({
       modules: [],
