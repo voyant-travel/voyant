@@ -61,7 +61,13 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
     ) as {
       exports: Record<string, string>
       publishConfig: { exports: Record<string, unknown> }
-      voyant: { schema: string; requiresSchemas: string[] }
+      voyant: {
+        schemaVersion: string
+        kind: string
+        compatibleWith: { framework: string; targets: string[]; modes: string[] }
+        schema: string
+        requiresSchemas: string[]
+      }
     }
 
     expect(getTableName(storefrontVerificationChallenges)).toBe(
@@ -72,9 +78,16 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
       import: "./dist/verification/schema.js",
       types: "./dist/verification/schema.d.ts",
     })
-    expect(packageJson.voyant).toEqual({
-      schema: "./verification/schema",
-      requiresSchemas: ["@voyant-travel/db"],
-    })
+    expect(packageJson.voyant.schemaVersion).toBe("voyant.package.v1")
+    expect(packageJson.voyant.kind).toBe("module")
+    expect(packageJson.voyant.compatibleWith.framework).toBe(">=0.26.0")
+    expect(packageJson.voyant.compatibleWith.targets).toEqual(["node", "voyant-cloud"])
+    expect(packageJson.voyant.compatibleWith.modes).toEqual([
+      "local",
+      "managed-cloud",
+      "self-hosted",
+    ])
+    expect(packageJson.voyant.schema).toBe("./verification/schema")
+    expect(packageJson.voyant.requiresSchemas).toEqual(["@voyant-travel/db"])
   })
 })

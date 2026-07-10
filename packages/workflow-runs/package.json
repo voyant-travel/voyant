@@ -13,6 +13,20 @@
     "./workflows": "./src/workflows.ts"
   },
   "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "module",
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": [
+        "node",
+        "voyant-cloud"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    },
     "schema": "./schema",
     "requiresSchemas": [
       "@voyant-travel/db"

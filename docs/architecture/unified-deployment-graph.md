@@ -824,6 +824,12 @@ record, and virtual graph units point package provenance at the real package
 that ships them. Generated managed runtime entries validate graph artifacts and
 graph diagnostics before importing the managed runtime package.
 
+Schema-owning first-party package manifests publish `voyant.package.v1`
+compatibility metadata alongside the existing migration-facing `schema` and
+`requiresSchemas` declarations. Graph checks require every package-backed
+operator migration source to expose that normalized module metadata before the
+package can remain in generated operator graph artifacts.
+
 ## Implementation Phases
 
 Phases 0-2 are the complete v1 deployment-graph program. Phase 1 is the first

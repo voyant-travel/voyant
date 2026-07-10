@@ -30,7 +30,7 @@ const failures: string[] = []
 
 const project = defineVoyantProject({
   profile: "operator",
-  frameworkVersion: "0.0.0-check",
+  frameworkVersion: "0.26.0",
   modules: ["bookings", "finance", "relationships"],
   plugins: ["@voyant-travel/plugin-netopia"],
 })
@@ -148,6 +148,9 @@ async function main(): Promise<void> {
   const operatorGraph = await readOperatorGeneratedGraph()
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
   const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
+  const operatorPackageRecords = new Map(
+    operatorGraph.packageRecords.map((record) => [record.packageName, record]),
+  )
   const operatorPackageNames = new Set(
     operatorGraph.packageRecords.map((record) => record.packageName),
   )
@@ -200,9 +203,26 @@ async function main(): Promise<void> {
     if (!operatorPluginIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
   for (const packageName of operatorMigrationSourcePackageNames()) {
-    if (!operatorPackageNames.has(packageName)) {
+    const record = operatorPackageRecords.get(packageName)
+    if (!record) {
       failures.push(
         `expected operator graph package records to include migration source ${packageName}`,
+      )
+      continue
+    }
+    const metadata = record.metadata
+    if (
+      metadata?.schemaVersion !== "voyant.package.v1" ||
+      metadata.kind !== "module" ||
+      typeof metadata.compatibleWith?.framework !== "string" ||
+      !metadata.compatibleWith.targets?.includes("node") ||
+      !metadata.compatibleWith.targets?.includes("voyant-cloud") ||
+      !metadata.compatibleWith.modes?.includes("local") ||
+      !metadata.compatibleWith.modes?.includes("managed-cloud") ||
+      !metadata.compatibleWith.modes?.includes("self-hosted")
+    ) {
+      failures.push(
+        `expected migration source package ${packageName} to include voyant.package.v1 module compatibility metadata`,
       )
     }
   }
@@ -263,7 +283,19 @@ async function readOperatorGeneratedGraph(): Promise<{
     workflows?: Array<{ id: string }>
   }>
   plugins: Array<{ id: string }>
-  packageRecords: Array<{ packageName: string; source?: { kind?: string } }>
+  packageRecords: Array<{
+    packageName: string
+    source?: { kind?: string }
+    metadata?: {
+      schemaVersion?: string
+      kind?: string
+      compatibleWith?: {
+        framework?: string
+        targets?: string[]
+        modes?: string[]
+      }
+    }
+  }>
   provisioning?: {
     scheduledJobs?: Array<{ id: string; workflowId?: string }>
   }
@@ -279,7 +311,19 @@ async function readOperatorGeneratedGraph(): Promise<{
       workflows?: Array<{ id: string }>
     }>
     plugins: Array<{ id: string }>
-    packageRecords: Array<{ packageName: string; source?: { kind?: string } }>
+    packageRecords: Array<{
+      packageName: string
+      source?: { kind?: string }
+      metadata?: {
+        schemaVersion?: string
+        kind?: string
+        compatibleWith?: {
+          framework?: string
+          targets?: string[]
+          modes?: string[]
+        }
+      }
+    }>
     provisioning?: {
       scheduledJobs?: Array<{ id: string; workflowId?: string }>
     }
