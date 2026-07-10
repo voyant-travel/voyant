@@ -1,4 +1,7 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
+import { dirname, join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 
 import {
   buildDeploymentArtifactManifest,
@@ -13,28 +16,43 @@ import {
   resolveManagedProfileDeploymentGraph,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
 } from "../packages/framework/src/deployment-graph.ts"
+import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import { defineVoyantProject } from "../packages/framework/src/profile.ts"
-import {
-  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
-  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-  OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-  OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS,
-} from "../starters/operator/deployment-graph.local.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
-import { OPERATOR_VOYANT_DEPLOYMENT } from "../starters/operator/voyant.deployment.ts"
-import {
-  OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS,
-  OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS,
-  OPERATOR_VOYANT_PROJECT,
-} from "../starters/operator/voyant.project.ts"
+import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
+import operatorProject from "../starters/operator/voyant.config.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
   OPERATOR_GRAPH_ADMISSION_POLICY,
   OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
+  type OperatorAuthoredProject,
+  resolveOperatorDeploymentGraph,
   withOperatorDeploymentLocalPackageRecords,
 } from "./lib/operator-deployment-graph-package-records.ts"
 
 const failures: string[] = []
+const scriptDirectory = dirname(fileURLToPath(import.meta.url))
+const repoRoot = resolve(scriptDirectory, "..")
+const operatorRoot = join(repoRoot, "starters", "operator")
+
+const OPERATOR_LOCAL_MODULE_IDS = [
+  "@voyant-travel/operator#mcp",
+  "@voyant-travel/operator#invitations",
+  "@voyant-travel/operator#team",
+] as const
+const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
+  "@voyant-travel/db",
+  "@voyant-travel/availability",
+  "@voyant-travel/catalog-authoring",
+  "@voyant-travel/workflow-runs",
+] as const
+const OPERATOR_BRIDGE_MODULE_SPECIFIERS = [
+  "@voyant-travel/charters",
+  "@voyant-travel/cruises",
+  "@voyant-travel/realtime",
+  "@voyant-travel/mice",
+] as const
+const OPERATOR_BRIDGE_PLUGIN_SPECIFIERS = ["@voyant-travel/mice/booking-extension"] as const
 
 const project = defineVoyantProject({
   profile: "operator",
@@ -94,8 +112,8 @@ async function main(): Promise<void> {
 
   const runtimeEntry = buildManagedNodeRuntimeEntry({
     graph: first,
-    graphArtifactPath: "../deployment-graph.generated.json",
-    profileSnapshotPath: "../managed-profile.json",
+    graphArtifactPath: "./deployment-graph.generated.json",
+    profileSnapshotPath: "./managed-profile.json",
   })
   if (!runtimeEntry.includes(first.contentHash)) {
     failures.push("expected generated runtime entry to reference the resolved graph hash")
@@ -106,12 +124,12 @@ async function main(): Promise<void> {
 
   const artifactManifest = buildDeploymentArtifactManifest({
     graph: first,
-    graphArtifactPath: "deployment-graph.generated.json",
+    graphArtifactPath: "./deployment-graph.generated.json",
     runtimeEntries: [
       buildManagedNodeRuntimeEntryArtifact({
         graph: first,
-        file: "src/runtime-entry.generated.ts",
-        profileSnapshot: "managed-profile.json",
+        file: "./runtime-entry.generated.ts",
+        profileSnapshot: "./managed-profile.json",
       }),
     ],
     migrationSources: operatorMigrationSources(),
@@ -161,37 +179,53 @@ async function main(): Promise<void> {
     failures.push("expected managed graph to include selected plugin @voyant-travel/plugin-netopia")
   }
 
-  const operatorGraph = await readOperatorGeneratedGraph()
+  const frameworkPackage = JSON.parse(
+    await readFile(join(repoRoot, "packages/framework/package.json"), "utf8"),
+  ) as { version: string }
+  const authoredOperatorProject = operatorProject as OperatorAuthoredProject
+  const operatorProfile = defineVoyantProject({
+    profile: "operator",
+    frameworkVersion: frameworkPackage.version,
+    mode: authoredOperatorProject.deployment.mode,
+    modules: [],
+    providers: authoredOperatorProject.deployment.providers,
+  })
+  const resolvedOperator = await resolveOperatorDeploymentGraph({
+    project: authoredOperatorProject,
+    projectRoot: operatorRoot,
+    repoRoot,
+    frameworkVersion: frameworkPackage.version,
+    scheduledJobs: [
+      ...getManagedProfileScheduledJobs(operatorProfile),
+      ...OPERATOR_LOCAL_SCHEDULED_JOBS,
+    ],
+  })
+  const operatorGraph = resolvedOperator.graph
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
   const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
-  const declaredOperatorModuleIds = new Set(OPERATOR_VOYANT_PROJECT.modules.map((unit) => unit.id))
-  const declaredOperatorPluginIds = new Set(OPERATOR_VOYANT_PROJECT.plugins.map((unit) => unit.id))
-  if (OPERATOR_VOYANT_DEPLOYMENT.project !== OPERATOR_VOYANT_PROJECT) {
-    failures.push(
-      "expected operator deployment declaration to bind the operator project declaration",
-    )
-  }
-  if (operatorGraph.project?.presetLineage !== OPERATOR_VOYANT_PROJECT.presetLineage) {
-    failures.push("expected generated operator graph to preserve declared preset lineage")
+  const declaredOperatorModuleIds = new Set(resolvedOperator.project.modules.map((unit) => unit.id))
+  const declaredOperatorPluginIds = new Set(resolvedOperator.project.plugins.map((unit) => unit.id))
+  if (operatorGraph.project?.presetLineage !== resolvedOperator.project.presetLineage) {
+    failures.push("expected resolved operator graph to preserve declared preset lineage")
   }
   for (const id of declaredOperatorModuleIds) {
     if (!operatorModuleIds.has(id)) {
-      failures.push(`expected generated operator graph to include declared module ${id}`)
+      failures.push(`expected resolved operator graph to include declared module ${id}`)
     }
   }
   for (const id of declaredOperatorPluginIds) {
     if (!operatorPluginIds.has(id)) {
-      failures.push(`expected generated operator graph to include declared plugin ${id}`)
+      failures.push(`expected resolved operator graph to include declared plugin ${id}`)
     }
   }
   for (const id of operatorModuleIds) {
     if (!declaredOperatorModuleIds.has(id)) {
-      failures.push(`expected generated operator graph module ${id} to come from the declaration`)
+      failures.push(`expected resolved operator graph module ${id} to come from the declaration`)
     }
   }
   for (const id of operatorPluginIds) {
     if (!declaredOperatorPluginIds.has(id)) {
-      failures.push(`expected generated operator graph plugin ${id} to come from the declaration`)
+      failures.push(`expected resolved operator graph plugin ${id} to come from the declaration`)
     }
   }
   const operatorPackageRecords = new Map(
@@ -260,25 +294,62 @@ async function main(): Promise<void> {
   if (!bookingsUnit?.links?.some((entry) => entry.source === "@voyant-travel/bookings/linkables")) {
     failures.push("expected generated bookings linkables to come from its package-owned manifest")
   }
-  for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS) {
+  for (const id of OPERATOR_LOCAL_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
-  for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS) {
+  for (const id of [
+    "@voyant-travel/storefront#customer-portal",
+    "@voyant-travel/storefront#verification",
+  ]) {
+    if (!operatorModuleIds.has(id)) {
+      failures.push(`expected operator graph to preserve customer surface ${id}`)
+    }
+  }
+  for (const specifier of OPERATOR_BRIDGE_MODULE_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorModuleIds.has(id)) failures.push(`expected direct package graph module ${id}`)
   }
-  for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS) {
+  for (const specifier of OPERATOR_BRIDGE_PLUGIN_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorPluginIds.has(id)) failures.push(`expected direct package graph plugin ${id}`)
   }
-  const allowedOperatorIds = new Set([
-    ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
-    ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-  ])
+  const allowedOperatorIds = new Set<string>(OPERATOR_LOCAL_MODULE_IDS)
   for (const id of [...operatorModuleIds, ...operatorPluginIds]) {
     if (id.startsWith("@voyant-travel/operator#") && !allowedOperatorIds.has(id)) {
       failures.push(`expected no nonlocal operator graph id, found ${id}`)
     }
+  }
+  const localModulePaths = (authoredOperatorProject.selections?.modules ?? [])
+    .filter((selection) => selection.provenance.kind === "path")
+    .map((selection) => (selection.provenance.kind === "path" ? selection.provenance.path : ""))
+    .sort()
+  const expectedLocalModulePaths = [
+    "./src/modules/invitations",
+    "./src/modules/mcp",
+    "./src/modules/team",
+  ]
+  if (JSON.stringify(localModulePaths) !== JSON.stringify(expectedLocalModulePaths)) {
+    failures.push(
+      "expected voyant.config.ts to select only MCP, invitations, and team by project-relative path",
+    )
+  }
+  for (const forbidden of [
+    "voyant.project.ts",
+    "voyant.deployment.ts",
+    "deployment-graph.local.ts",
+    "managed-profile.json",
+    "deployment-artifacts.generated.json",
+    "deployment-graph.generated.json",
+    "src/runtime-entry.generated.ts",
+    "src/graph-runtime.generated.ts",
+  ]) {
+    if (existsSync(join(operatorRoot, forbidden))) {
+      failures.push(`expected obsolete operator authority/artifact ${forbidden} to stay deleted`)
+    }
+  }
+  const operatorGitignore = await readFile(join(operatorRoot, ".gitignore"), "utf8")
+  if (!operatorGitignore.split(/\r?\n/).some((line) => line === ".voyant" || line === ".voyant/")) {
+    failures.push("expected starters/operator/.gitignore to ignore .voyant/")
   }
   for (const [ownerId, workflowId] of [
     ["@voyant-travel/bookings", "bookings.expire-stale-holds"],
@@ -299,16 +370,14 @@ async function main(): Promise<void> {
   if (operatorModuleIds.has("@voyant-travel/operator#workflows")) {
     failures.push("expected package-owned workflows to replace the operator workflow aggregate")
   }
-  for (const id of OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS) {
+  for (const specifier of OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS) {
+    const id = graphIdFromSpecifier(specifier)
     if (!operatorModuleIds.has(id)) {
       failures.push(`expected operator graph to include schema-only module ${id}`)
     }
   }
-  for (const id of [
-    ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-    ...OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-  ]) {
-    if (!operatorPluginIds.has(id)) failures.push(`expected operator graph to include ${id}`)
+  if (!operatorPluginIds.has("@voyant-travel/plugin-netopia")) {
+    failures.push("expected operator graph to include @voyant-travel/plugin-netopia")
   }
   for (const packageName of operatorMigrationSourcePackageNames()) {
     if (!operatorPackageRecords.has(packageName)) {
@@ -366,78 +435,6 @@ async function main(): Promise<void> {
   console.log(
     `check-deployment-graph: OK (${first.modules.length} modules, ${first.plugins.length} plugins, ${first.contentHash})`,
   )
-}
-
-async function readOperatorGeneratedGraph(): Promise<{
-  project?: { presetLineage?: string }
-  modules: Array<{
-    id: string
-    api?: Array<{
-      surface: string
-      transactional?: boolean
-      runtime?: { entry?: string; export?: string }
-    }>
-    schema?: Array<{ source?: string }>
-    migrations?: Array<{ source?: string }>
-    links?: Array<{ source?: string }>
-    workflows?: Array<{ id: string }>
-  }>
-  plugins: Array<{ id: string }>
-  packageRecords: Array<{
-    packageName: string
-    source?: { kind?: string }
-    metadata?: {
-      schemaVersion?: string
-      kind?: string
-      manifest?: string
-      compatibleWith?: {
-        framework?: string
-        targets?: string[]
-        modes?: string[]
-      }
-    }
-  }>
-  provisioning?: {
-    scheduledJobs?: Array<{ id: string; workflowId?: string }>
-  }
-}> {
-  return JSON.parse(
-    await readFile(
-      new URL("../starters/operator/deployment-graph.generated.json", import.meta.url),
-      "utf8",
-    ),
-  ) as {
-    modules: Array<{
-      id: string
-      api?: Array<{
-        surface: string
-        transactional?: boolean
-        runtime?: { entry?: string; export?: string }
-      }>
-      schema?: Array<{ source?: string }>
-      migrations?: Array<{ source?: string }>
-      links?: Array<{ source?: string }>
-      workflows?: Array<{ id: string }>
-    }>
-    plugins: Array<{ id: string }>
-    packageRecords: Array<{
-      packageName: string
-      source?: { kind?: string }
-      metadata?: {
-        schemaVersion?: string
-        kind?: string
-        manifest?: string
-        compatibleWith?: {
-          framework?: string
-          targets?: string[]
-          modes?: string[]
-        }
-      }
-    }>
-    provisioning?: {
-      scheduledJobs?: Array<{ id: string; workflowId?: string }>
-    }
-  }
 }
 
 function operatorMigrationSourcePackageNames(): string[] {

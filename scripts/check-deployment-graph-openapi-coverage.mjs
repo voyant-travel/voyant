@@ -17,7 +17,7 @@ import {
   formatDeploymentGraphOpenApiCoverageFailure,
 } from "./lib/deployment-graph-openapi-coverage-report.mjs"
 
-const DEFAULT_GRAPH = "starters/operator/deployment-graph.generated.json"
+const DEFAULT_GRAPH = "starters/operator/.voyant/deployment-graph.generated.json"
 const DEFAULT_OPENAPI_DIR = "starters/operator/openapi"
 const CHECKED_SURFACES = new Set(["admin", "storefront"])
 const HTTP_METHODS = new Set([
@@ -80,10 +80,6 @@ const DEFAULT_ALLOWLIST = new Map([
   [
     "@voyant-travel/accommodations#content-extension.api.public",
     "accommodation public content routes do not yet expose a package OpenAPI registry",
-  ],
-  [
-    "@voyant-travel/plugin-netopia#api",
-    "the external Netopia plugin does not yet publish an operator OpenAPI registry",
   ],
   [
     "@voyant-travel/quotes#proposal-extension.api.public",

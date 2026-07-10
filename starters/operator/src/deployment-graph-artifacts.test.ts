@@ -21,7 +21,7 @@ afterEach(() => {
 })
 
 describe("loadOperatorDeploymentGraphArtifacts", () => {
-  it("loads the committed operator graph artifacts", () => {
+  it("loads the generated operator graph artifacts", () => {
     const summary = loadOperatorDeploymentGraphArtifacts()
 
     expect(summary.graphHash).toMatch(/^sha256:[a-f0-9]{64}$/)
@@ -71,7 +71,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
   it("fails when the graph content hash does not match the canonical graph body", () => {
     const root = fixtureRoot()
     writeFixture(root)
-    const graphPath = join(root, "deployment-graph.generated.json")
+    const graphPath = join(root, ".voyant", "deployment-graph.generated.json")
     const graph = JSON.parse(readFileSync(graphPath, "utf8")) as FixtureDeploymentGraph
     graph.modules.push({ id: "@voyant-travel/catalog" })
     writeJson(graphPath, graph)
@@ -431,7 +431,8 @@ function writeFixture(
   } = {},
 ): string {
   mkdirSync(join(root, "src"), { recursive: true })
-  writeFileSync(join(root, "managed-profile.json"), "{}\n")
+  mkdirSync(join(root, ".voyant"), { recursive: true })
+  writeFileSync(join(root, ".voyant", "managed-profile.json"), "{}\n")
   const graphWithoutHash: Omit<FixtureDeploymentGraph, "contentHash"> = {
     schemaVersion: "voyant.resolved-graph.v1",
     diagnostics: options.diagnostics ?? [],
@@ -499,19 +500,19 @@ function writeFixture(
   }
   const graphHash = options.graphHash ?? computeGraphContentHash(graphWithoutHash)
   const graph: FixtureDeploymentGraph = { ...graphWithoutHash, contentHash: graphHash }
-  writeJson(join(root, "deployment-artifacts.generated.json"), {
+  writeJson(join(root, ".voyant", "deployment-artifacts.generated.json"), {
     schemaVersion: "voyant.deployment-artifacts.v1",
     graphHash: options.manifestGraphHash ?? graphHash,
-    graph: "deployment-graph.generated.json",
+    graph: "./deployment-graph.generated.json",
     runtimeEntries: [
       {
         ...{
           id: "@voyant-travel/framework#runtime.node",
           target: "node",
-          file: "src/runtime-entry.generated.ts",
+          file: "./runtime-entry.generated.ts",
           graphHash,
           kind: "managed-profile-node",
-          profileSnapshot: "managed-profile.json",
+          profileSnapshot: "./managed-profile.json",
         },
         ...options.runtimeEntry,
       },
@@ -523,7 +524,7 @@ function writeFixture(
       },
     ],
   })
-  writeJson(join(root, "deployment-graph.generated.json"), graph)
+  writeJson(join(root, ".voyant", "deployment-graph.generated.json"), graph)
   if (options.writeRuntimeEntrySource !== false) {
     writeGeneratedRuntimeEntrySource(root, graph, {
       graphHash: options.runtimeEntrySource?.graphHash ?? graphHash,
@@ -541,7 +542,7 @@ function writeGeneratedGraphRuntimeSource(
   options: { graphHash: string },
 ): void {
   writeFileSync(
-    join(root, "src", "graph-runtime.generated.ts"),
+    join(root, ".voyant", "graph-runtime.generated.ts"),
     [
       `export const GENERATED_GRAPH_RUNTIME_HASH = ${JSON.stringify(options.graphHash)} as const`,
       `export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = ${stringArrayLiteral(
@@ -606,7 +607,7 @@ function writeGeneratedRuntimeEntrySource(
   options: { graphHash: string },
 ): void {
   writeFileSync(
-    join(root, "src", "runtime-entry.generated.ts"),
+    join(root, ".voyant", "runtime-entry.generated.ts"),
     [
       `export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = ${JSON.stringify(
         graph.schemaVersion,
@@ -618,8 +619,8 @@ function writeGeneratedRuntimeEntrySource(
       `export const GENERATED_DEPLOYMENT_GRAPH_MODE = ${JSON.stringify(
         graph.deployment.mode,
       )} as const`,
-      'export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const',
-      'export const GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH = "../managed-profile.json" as const',
+      'export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "./deployment-graph.generated.json" as const',
+      'export const GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH = "./managed-profile.json" as const',
       `export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = ${stringArrayLiteral(
         graph.modules.map((module) => module.id),
       )} as const`,

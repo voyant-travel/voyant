@@ -356,12 +356,12 @@ Rules:
 This buys reproducible deploys, graph diff reviews, doctor drift detection, and
 Cloud fast paths such as "this graph hash matches the standard operator graph."
 
-## Project And Deployment Declarations
+## Project And Deployment Declaration
 
-Use one common project declaration and one optional deployment declaration:
-
-- `voyant.config.ts` / `defineProject` describes the target-neutral desired graph.
-- `defineDeployment` binds that graph to a runtime target and substrate.
+The source-backed operator has one authored declaration: `voyant.config.ts`.
+`defineProject` owns package/local selections and the deployment's mode,
+provider, and target bindings. Target adapters may override substrate policy at
+deploy time, but no second checked-in file may repeat the product graph.
 
 ```ts
 // voyant.config.ts
@@ -380,21 +380,13 @@ export default defineProject({
     },
   ],
   plugins: ["@acme/voyant-smartbill"],
-})
-```
-
-```ts
-// voyant.deployment.ts
-export default defineDeployment({
-  schemaVersion: "voyant.deployment.v1",
-  project: "./voyant.config.ts",
-  target: "self-hosted-node",
-  secrets: {
-    "smartbill.apiToken": secret.fromEnv("SMARTBILL_API_TOKEN"),
-  },
-  bindings: {
-    "app.db": resource.postgres.fromEnv("DATABASE_URL"),
-    "app.cache": resource.redis.fromEnv("REDIS_URL"),
+  deployment: {
+    target: "node",
+    mode: "self-hosted",
+    providers: {
+      database: "postgres",
+      cache: "redis",
+    },
   },
 })
 ```
@@ -420,10 +412,10 @@ files:
 acme-voyant/
   package.json
   voyant.config.ts
-  voyant.deployment.ts        # optional; absent for default Voyant Cloud deploy
   src/
     modules/loyalty/
-      index.ts                 # defineModule; explicit project selection
+      voyant.ts                # import-cheap graph manifest
+      index.ts                 # runtime factory
       schema.ts
       migrations/
       api/
@@ -903,7 +895,7 @@ Example:
   "severity": "error",
   "source": "@acme/voyant-plugin-loyalty",
   "facet": "requires.capabilities",
-  "location": "voyant.project.ts:12",
+  "location": "voyant.config.ts:12",
   "message": "Required capability identity.people is not provided by the selected graph.",
   "hint": "Select the relationships module or another module that provides identity.people."
 }
@@ -986,15 +978,17 @@ diagnostic-code registry. The public `voyant doctor --json` command remains the
 CLI follow-up; it should consume this report contract rather than inventing a
 separate diagnostic model.
 
-The reference operator now owns checked-in `voyant.project.ts` and
-`voyant.deployment.ts` declarations. It is a reference consumer and compatibility
-host, not the canonical package catalog. The managed-profile snapshot remains a
-runtime compatibility input for the generated managed Node entry and legacy
-scheduled-job derivation, but it does not select graph units, providers, or the
-deployment target. Deployment requirements derive from the graph's declared
-provider bindings using the existing v1 provider contract, and generated Node
-runtime entries pass both the resolved requirements and deployment mode/provider
-bindings into boot validation. The foundational substrate also models compatible
+The reference operator owns one checked-in `voyant.config.ts`. It is a reference
+consumer and compatibility host, not the canonical package catalog. Its
+managed-profile compatibility snapshot and all deployment graph/runtime
+artifacts are regenerated beneath the gitignored `.voyant/` directory. They do
+not select graph units, providers, or the deployment target. The architecture
+checker forbids `voyant.project.ts`, `voyant.deployment.ts`,
+`deployment-graph.local.ts`, and root/`src` graph artifacts from returning.
+Deployment requirements derive from the graph's declared provider bindings
+using the existing v1 provider contract, and generated Node runtime entries pass
+both the resolved requirements and deployment mode/provider bindings into boot
+validation. The foundational substrate also models compatible
 environment aliases and value formats on canonical resource requirements:
 for example, either `DATABASE_URL` or the Node-pool `DATABASE_URL_DIRECT`
 satisfies the graph's Postgres requirement, and the resolved value must be a
@@ -1007,6 +1001,15 @@ provenance, deployment-local operator units get an explicit local workspace
 record, and virtual graph units point package provenance at the real package
 that ships them. Generated managed runtime entries validate graph artifacts and
 graph diagnostics before importing the managed runtime package.
+
+The coordinated framework resolver integration must accept app-local selections
+whose import-cheap manifest is `src/modules/<name>/voyant.ts` without requiring
+each module directory to impersonate a standalone npm package. It must preserve
+the manifest's `@voyant-travel/operator#<name>` id and expose enough resolved
+project data for the operator to add target admission, lockfile provenance, and
+runtime-maintenance schedules. The operator resolver adapter uses the framework
+`resolveProject({ project, projectRoot, configPath })` entry point when present
+and retains a narrow local-manifest fallback for the pre-integration base.
 
 Schema-owning first-party package manifests publish `voyant.package.v1`
 compatibility metadata alongside the existing migration-facing `schema` and

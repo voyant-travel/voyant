@@ -1,14 +1,15 @@
 # Custom deployment modules
 
-Drop a custom module here to extend this deployment **without forking the
-framework**. A module in `src/modules/<name>/` is auto-discovered and mounted —
-no edit to any framework-owned file, and it survives `voyant upgrade`.
+Add a custom module here to extend this deployment **without forking the
+framework**. Select `./src/modules/<name>` in `voyant.config.ts`; unselected
+directories do not change the graph. The module survives `voyant upgrade`.
 
 ## Shape
 
 ```
 src/modules/loyalty/
-  index.ts     # default-exports the module (mounted automatically)
+  voyant.ts    # import-cheap graph manifest (selected by voyant.config.ts)
+  index.ts     # default-exports the runtime module
   schema.ts    # optional: Drizzle tables (migrated automatically)
   routes.ts    # your Hono routes
   service.ts   # your business logic
@@ -32,10 +33,9 @@ export default defineDeploymentModule({
 })
 ```
 
-The directory name (`loyalty`) becomes the module's composition key. It mounts
-through the same path as every standard module — `src/api/composition.ts` discovers
-it with `import.meta.glob` (compiled to static imports at build time, so it works
-on Cloudflare Workers).
+The graph manifest owns API/schema/workflow facets. The runtime factory is bound
+to that manifest id in `src/api/composition.ts` until generated local runtime
+binding replaces the compatibility map.
 
 ## schema.ts — migrations
 

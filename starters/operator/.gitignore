@@ -10,7 +10,9 @@ count.txt
 .wrangler
 .output
 .vinxi
-.voyant
+# Disposable project graph, runtime, and deployment artifacts.
+.voyant/
+.voyant-admin-graph.generated.json
 __unconfig*
 todos.json
 

@@ -2,7 +2,7 @@
  * Validates the reference operator Docker/Node deploy target.
  *
  * The Docker image must be built through the operator package build lane so it
- * inherits graph:check and copies the generated graph artifacts into dist. The
+ * generates `.voyant/` and copies the generated graph artifacts into dist. The
  * runtime image must then boot the checked Node server from dist.
  */
 import { existsSync, readFileSync } from "node:fs"
@@ -41,7 +41,7 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
     typeof scripts["copy:deployment-artifacts"] === "string"
       ? scripts["copy:deployment-artifacts"]
       : ""
-  const graphCheckIndex = commandIndex(buildScript, "pnpm run graph:check")
+  const graphCheckIndex = commandIndex(buildScript, "pnpm run graph:emit")
   const viteBuildIndex = commandIndex(buildScript, "vite build")
   const copyArtifactsIndex = commandIndex(buildScript, "pnpm run copy:deployment-artifacts")
 
@@ -49,7 +49,7 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
       check: "operator-build-graph-check-missing",
-      message: "The operator build script must run graph:check before Vite.",
+      message: "The operator build script must generate .voyant artifacts before Vite.",
     })
   }
   if (viteBuildIndex === null) {
@@ -70,7 +70,8 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
       check: "operator-build-graph-check-after-vite",
-      message: "The operator build script must run graph:check before Vite creates dist.",
+      message:
+        "The operator build script must generate .voyant artifacts before Vite creates dist.",
     })
   }
   if (
@@ -85,19 +86,12 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
         "The operator build script must copy deployment graph artifacts after Vite creates dist.",
     })
   }
-  if (
-    !includesAll(copyScript, [
-      "managed-profile.json",
-      "deployment-artifacts.generated.json",
-      "deployment-graph.generated.json",
-      "dist/",
-    ])
-  ) {
+  if (!includesAll(copyScript, [".voyant", "dist/.voyant"])) {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
       check: "operator-deployment-artifact-copy-incomplete",
       message:
-        "copy:deployment-artifacts must copy the profile, artifact manifest, and graph into dist.",
+        "copy:deployment-artifacts must copy the disposable .voyant artifact bundle into dist/.voyant.",
     })
   }
 }
@@ -121,7 +115,7 @@ if (!existsSync(join(ROOT, DOCKERFILE))) {
     violations.push({
       file: DOCKERFILE,
       check: "docker-build-bypasses-package-build",
-      message: "The Dockerfile must not bypass graph:check with a raw Vite build.",
+      message: "The Dockerfile must not bypass the operator build with a raw Vite build.",
     })
   }
   if (!source.includes("COPY --from=build /repo/starters/operator/dist ./dist")) {
@@ -150,4 +144,4 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log("check-operator-docker-target: OK (Docker/Node target consumes graph build artifacts)")
+console.log("check-operator-docker-target: OK (Docker/Node target consumes .voyant artifacts)")

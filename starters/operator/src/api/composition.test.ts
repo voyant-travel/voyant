@@ -1,17 +1,11 @@
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { describe, expect, it } from "vitest"
 
-import { graphIdFromSpecifier } from "../../../../packages/framework/src/deployment-graph"
 import {
-  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
-  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-} from "../../deployment-graph.local"
-import { createGeneratedGraphRuntime } from "../graph-runtime.generated"
-import {
-  OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS,
-  OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS,
-  OPERATOR_VOYANT_PROJECT,
-} from "../../voyant.project"
+  createGeneratedGraphRuntime,
+  GENERATED_GRAPH_RUNTIME_MODULE_IDS,
+  GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
+} from "../../.voyant/graph-runtime.generated"
 import {
   buildOperatorProviders,
   deploymentLocalExtensions,
@@ -56,25 +50,23 @@ describe("operator graph runtime composition", () => {
   })
 
   it("selects package-owned bridge units directly and keeps only genuine operator-local ids", () => {
-    const moduleIds = new Set(OPERATOR_VOYANT_PROJECT.modules.map((unit) => unit.id))
-    const pluginIds = new Set(OPERATOR_VOYANT_PROJECT.plugins.map((unit) => unit.id))
+    const moduleIds = new Set(GENERATED_GRAPH_RUNTIME_MODULE_IDS)
+    const pluginIds = new Set(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS)
 
-    for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS) {
-      expect(moduleIds).toContain(graphIdFromSpecifier(specifier))
+    for (const id of [
+      "@voyant-travel/charters",
+      "@voyant-travel/cruises",
+      "@voyant-travel/realtime",
+      "@voyant-travel/mice",
+    ]) {
+      expect(moduleIds).toContain(id)
     }
-    for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS) {
-      expect(pluginIds).toContain(graphIdFromSpecifier(specifier))
-    }
+    expect(pluginIds).toContain("@voyant-travel/mice#booking-extension")
 
     const operatorIds = [...moduleIds, ...pluginIds].filter((id) =>
       id.startsWith("@voyant-travel/operator#"),
     )
-    expect(operatorIds.sort()).toEqual(
-      [
-        ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
-        ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-      ].sort(),
-    )
+    expect(operatorIds.sort()).toEqual(Object.keys(deploymentLocalModules).sort())
   })
 
   it("keeps invitations, team, and MCP explicitly deployment-local and graph-keyed", async () => {

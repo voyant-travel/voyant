@@ -21,13 +21,14 @@ const DEFAULT_ENTRY_SURFACES = [
     file: "packages/framework/src/deployment-artifacts.ts",
   },
   {
-    id: "operator-local-deployment-graph",
-    file: "starters/operator/deployment-graph.local.ts",
+    id: "operator-project",
+    file: "starters/operator/voyant.config.ts",
   },
-  {
-    id: "operator-generated-runtime-entry",
-    file: "starters/operator/src/runtime-entry.generated.ts",
-  },
+  ...["invitations", "mcp", "team"].map((name) => ({
+    id: `operator-local-${name}`,
+    file: `starters/operator/src/modules/${name}/voyant.ts`,
+    packageManifest: true,
+  })),
   ...discoverPackageManifestEntries(repoRoot),
 ]
 
