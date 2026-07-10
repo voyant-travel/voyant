@@ -10,7 +10,7 @@ const deployment = {
   providers: {
     database: "postgres",
     storage: "memory",
-    cache: "memory",
+    cache: "postgres",
     sharedState: "memory",
     rateLimit: "memory",
     search: "none",
