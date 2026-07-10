@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:485c0519ec4b246a318c8db0f4012b0668060b859ca24ad9ac27f49734feac9d",
+  "contentHash": "sha256:19de30bcd0b47215823fe44577cd937f9048bebf4b28c08924a589bb23830e9e",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -2011,7 +2011,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/accommodations"
       },
-      "version": "0.111.5"
+      "version": "0.111.6"
     },
     {
       "metadata": {
@@ -2029,7 +2029,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/action-ledger"
       },
-      "version": "0.105.14"
+      "version": "0.105.15"
     },
     {
       "metadata": {
@@ -2065,7 +2065,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/bookings"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -2083,7 +2083,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/catalog"
       },
-      "version": "0.147.1"
+      "version": "0.148.0"
     },
     {
       "metadata": {
@@ -2101,7 +2101,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/catalog-authoring"
       },
-      "version": "0.106.29"
+      "version": "0.106.30"
     },
     {
       "metadata": {
@@ -2119,7 +2119,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/charters"
       },
-      "version": "0.147.1"
+      "version": "0.148.0"
     },
     {
       "metadata": {
@@ -2137,7 +2137,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/commerce"
       },
-      "version": "0.31.1"
+      "version": "0.32.0"
     },
     {
       "metadata": {
@@ -2155,7 +2155,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/cruises"
       },
-      "version": "0.148.1"
+      "version": "0.149.0"
     },
     {
       "metadata": {
@@ -2173,7 +2173,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/db"
       },
-      "version": "0.110.1"
+      "version": "0.110.2"
     },
     {
       "metadata": {
@@ -2191,7 +2191,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/distribution"
       },
-      "version": "0.139.1"
+      "version": "0.140.0"
     },
     {
       "metadata": {
@@ -2209,7 +2209,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/finance"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -2227,7 +2227,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/flights"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -2244,7 +2244,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/framework"
       },
-      "version": "0.33.0"
+      "version": "0.34.0"
     },
     {
       "metadata": {
@@ -2279,7 +2279,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/identity"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -2297,7 +2297,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/inventory"
       },
-      "version": "0.7.10"
+      "version": "0.7.11"
     },
     {
       "metadata": {
@@ -2315,7 +2315,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/legal"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -2333,7 +2333,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/mice"
       },
-      "version": "0.6.9"
+      "version": "0.6.10"
     },
     {
       "metadata": {
@@ -2351,7 +2351,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/notifications"
       },
-      "version": "0.122.1"
+      "version": "0.122.2"
     },
     {
       "metadata": {
@@ -2369,7 +2369,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/operations"
       },
-      "version": "0.5.22"
+      "version": "0.5.23"
     },
     {
       "metadata": {
@@ -2403,7 +2403,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/operator-settings"
       },
-      "version": "0.2.34"
+      "version": "0.2.35"
     },
     {
       "metadata": {
@@ -2457,7 +2457,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/quotes"
       },
-      "version": "0.125.8"
+      "version": "0.125.9"
     },
     {
       "metadata": {
@@ -2475,7 +2475,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/realtime"
       },
-      "version": "0.1.8"
+      "version": "0.1.9"
     },
     {
       "metadata": {
@@ -2493,7 +2493,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/relationships"
       },
-      "version": "0.122.11"
+      "version": "0.122.12"
     },
     {
       "metadata": {
@@ -2529,7 +2529,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/storefront"
       },
-      "version": "0.151.1"
+      "version": "0.152.0"
     },
     {
       "metadata": {
@@ -2547,7 +2547,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/trips"
       },
-      "version": "0.140.1"
+      "version": "0.141.0"
     },
     {
       "metadata": {

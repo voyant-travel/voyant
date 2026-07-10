@@ -6,7 +6,7 @@ import {
   type VoyantGraphRuntime,
 } from "@voyant-travel/framework/deployment-artifacts"
 
-export const GENERATED_GRAPH_RUNTIME_HASH = "sha256:485c0519ec4b246a318c8db0f4012b0668060b859ca24ad9ac27f49734feac9d" as const
+export const GENERATED_GRAPH_RUNTIME_HASH = "sha256:19de30bcd0b47215823fe44577cd937f9048bebf4b28c08924a589bb23830e9e" as const
 export const GENERATED_GRAPH_RUNTIME_ENTRY_SPECIFIERS = [
   "@voyant-travel/accommodations",
   "@voyant-travel/accommodations/routes-content",
