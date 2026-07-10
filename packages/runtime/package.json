@@ -97,7 +97,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@hono/node-server": "^2.0.6",
+    "@hono/node-server": "^2.0.8",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^"
   },
