@@ -44,6 +44,34 @@ export const storefrontVoyantModule = defineModule({
       source: "@voyant-travel/storefront/verification",
     },
   ],
+  events: [
+    {
+      id: "@voyant-travel/storefront#event.customer-signal-created",
+      eventType: "customer.signal.created",
+    },
+    {
+      id: "@voyant-travel/storefront#event.booking-bootstrap-requested",
+      eventType: "storefront.booking.bootstrap.requested",
+    },
+  ],
+  subscribers: [
+    {
+      id: "@voyant-travel/storefront#subscriber.booking-bootstrap",
+      eventType: "storefront.booking.bootstrap.requested",
+      source: "@voyant-travel/storefront",
+    },
+  ],
+  resources: [
+    {
+      id: "@voyant-travel/storefront#resource.database",
+      kind: "database",
+      required: true,
+      config: { engine: "postgres" },
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

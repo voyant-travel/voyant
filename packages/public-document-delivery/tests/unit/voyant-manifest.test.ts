@@ -9,6 +9,7 @@ describe("public document delivery deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/public-document-delivery",
       packageName: "@voyant-travel/public-document-delivery",
+      requires: { ports: [{ id: "database.client" }, { id: "storage.object" }] },
       api: [
         {
           id: "@voyant-travel/public-document-delivery#api.public",
@@ -21,6 +22,14 @@ describe("public document delivery deployment manifest", () => {
           },
         },
       ],
+      resources: [
+        { id: "@voyant-travel/public-document-delivery#resource.database", kind: "database" },
+        {
+          id: "@voyant-travel/public-document-delivery#resource.documents",
+          kind: "object-storage",
+        },
+      ],
+      lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
     expect(createPublicDocumentDeliveryHonoModule().module.name).toBe("documents")
   })

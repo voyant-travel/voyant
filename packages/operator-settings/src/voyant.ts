@@ -44,6 +44,17 @@ export const operatorSettingsVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  resources: [
+    {
+      id: "@voyant-travel/operator-settings#resource.database",
+      kind: "database",
+      required: true,
+      config: { engine: "postgres" },
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

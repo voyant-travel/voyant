@@ -5,6 +5,9 @@ export const storageVoyantModule = defineModule({
   id: "@voyant-travel/storage",
   packageName: "@voyant-travel/storage",
   localId: "storage",
+  provides: {
+    ports: [{ id: "storage.object" }],
+  },
   api: [
     {
       id: "@voyant-travel/storage#api.admin.uploads",
@@ -34,6 +37,34 @@ export const storageVoyantModule = defineModule({
       },
     },
   ],
+  resources: [
+    {
+      id: "@voyant-travel/storage#resource.object-storage",
+      kind: "object-storage",
+      required: false,
+    },
+  ],
+  providers: [
+    {
+      id: "@voyant-travel/storage#provider.local",
+      port: "storage.object",
+      runtime: {
+        entry: "@voyant-travel/storage/providers/local",
+        export: "createLocalStorageProvider",
+      },
+    },
+    {
+      id: "@voyant-travel/storage#provider.s3",
+      port: "storage.object",
+      runtime: {
+        entry: "@voyant-travel/storage/providers/s3",
+        export: "createS3Provider",
+      },
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },
