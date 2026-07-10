@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- reason: project authoring validation stays import-cheap and centralized with its public serializable contracts.
 /**
  * Import-cheap authoring contracts for package-owned deployment manifests.
  * Executable route, schema, UI, workflow, and provider code is referenced by
@@ -171,6 +172,13 @@ export interface VoyantGraphProjectSelections {
 
 export type VoyantGraphProjectDeploymentMode = "local" | "managed-cloud" | "self-hosted"
 
+/** A migration folder owned by the deployment rather than an installed package. */
+export interface VoyantGraphProjectDeploymentMigration {
+  id: string
+  /** Project-relative path to a committed Drizzle migration folder. */
+  source: string
+}
+
 /**
  * Unified application graphs always compile to the Node runtime. Hosting
  * choices such as Voyant Cloud, Docker, Fly, or Railway are CLI target adapters
@@ -180,6 +188,7 @@ export interface VoyantGraphProjectDeployment {
   target?: "node"
   mode?: VoyantGraphProjectDeploymentMode
   providers?: Readonly<Record<string, string>>
+  migrations?: readonly VoyantGraphProjectDeploymentMigration[]
 }
 
 export interface DefineVoyantGraphProjectInput {
@@ -282,12 +291,59 @@ function normalizeProjectDeployment(
     }
   }
 
-  if (!target && input.mode === undefined && Object.keys(providers).length === 0) return undefined
+  const migrations = (input.migrations ?? [])
+    .map((migration, index) => ({
+      id: normalizeOptionalString(migration.id, `deployment.migrations[${index}].id`)!,
+      source: normalizeProjectRelativePath(
+        migration.source,
+        `deployment.migrations[${index}].source`,
+      ),
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id))
+  const duplicateMigration = migrations.find(
+    (migration, index) => index > 0 && migrations[index - 1]?.id === migration.id,
+  )
+  if (duplicateMigration) {
+    throw new Error(
+      `defineProject: deployment.migrations contains duplicate id "${duplicateMigration.id}".`,
+    )
+  }
+
+  if (
+    !target &&
+    input.mode === undefined &&
+    Object.keys(providers).length === 0 &&
+    migrations.length === 0
+  ) {
+    return undefined
+  }
   return {
     ...(target ? { target } : {}),
     ...(input.mode ? { mode: input.mode } : {}),
     ...(Object.keys(providers).length > 0 ? { providers } : {}),
+    ...(migrations.length > 0 ? { migrations } : {}),
   }
+}
+
+function normalizeProjectRelativePath(value: unknown, label: string): string {
+  const normalized = normalizeOptionalString(value, label)?.replaceAll("\\", "/")
+  if (!normalized?.startsWith("./") || normalized.includes("#")) {
+    throw new Error(`defineProject: ${label} must be a project-relative path starting with "./".`)
+  }
+  const segments: string[] = []
+  for (const segment of normalized.slice(2).split("/")) {
+    if (segment === "" || segment === ".") continue
+    if (segment === "..") {
+      if (segments.length === 0) {
+        throw new Error(`defineProject: ${label} must not escape the project.`)
+      }
+      segments.pop()
+      continue
+    }
+    segments.push(segment)
+  }
+  if (segments.length === 0) throw new Error(`defineProject: ${label} must identify a directory.`)
+  return `./${segments.join("/")}`
 }
 
 function normalizeOptionalString(value: unknown, label: string): string | undefined {

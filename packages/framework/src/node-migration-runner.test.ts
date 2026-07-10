@@ -1,7 +1,11 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import path from "node:path"
 import { describe, expect, it } from "vitest"
 
 import {
   executeNodeMigrationPlan,
+  loadNodeSchemaMigrationSource,
   type NodeMigrationRunnerDependencies,
   type SetupMigrationHandler,
 } from "./node-migration-runner.js"
@@ -83,6 +87,40 @@ describe("Node migration runner", () => {
     expect(events).toEqual([])
     expect(result.skipped).toHaveLength(2)
     expect(result.skipped.every((entry) => entry.detail === "dry_run")).toBe(true)
+  })
+
+  it("loads deployment migration folders relative to the deployment package root", async () => {
+    const root = mkdtempSync(path.join(tmpdir(), "voyant-deployment-migrations-"))
+    try {
+      mkdirSync(path.join(root, "src"), { recursive: true })
+      mkdirSync(path.join(root, "migrations", "meta"), { recursive: true })
+      writeFileSync(path.join(root, "package.json"), '{"name":"deployment"}\n')
+      writeFileSync(
+        path.join(root, "migrations", "meta", "_journal.json"),
+        JSON.stringify({ entries: [{ tag: "0000_links", when: 1 }] }),
+      )
+      writeFileSync(path.join(root, "migrations", "0000_links.sql"), "create table links ();\n")
+
+      const source = await loadNodeSchemaMigrationSource(
+        {
+          id: "deployment",
+          migrationKind: "schema",
+          order: 4,
+          idempotencyKey: "schema:deployment",
+          owner: "deployment",
+          source: { kind: "deployment", path: "./migrations" },
+        },
+        path.join(root, "src", "migrate.mjs"),
+      )
+
+      expect(source).toEqual({
+        name: "deployment",
+        priority: 4,
+        migrations: [{ tag: "0000_links", sql: "create table links ();\n" }],
+      })
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 })
 

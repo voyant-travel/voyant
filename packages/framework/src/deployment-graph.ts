@@ -18,6 +18,7 @@ import {
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
+  type VoyantGraphProjectDeploymentMigration,
   type VoyantGraphProjectSelections,
   type VoyantGraphProviderDeclaration,
   type VoyantGraphResourceDeclaration,
@@ -227,6 +228,7 @@ export interface DefineVoyantGraphDeploymentInput {
   project: VoyantGraphProject
   target: VoyantGraphRuntimeTarget
   providers?: Partial<Record<VoyantProjectProviderRole | string, string>>
+  migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   mode?: VoyantProjectDeploymentMode
   requirements?: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
@@ -244,6 +246,7 @@ export interface VoyantGraphDeployment {
   project: VoyantGraphProject
   target: VoyantGraphRuntimeTarget
   providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+  migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   mode?: VoyantProjectDeploymentMode
   requirements: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
@@ -260,6 +263,9 @@ export interface VoyantGraphPackageMetadata {
     modes?: readonly VoyantProjectDeploymentMode[]
   }
   requires?: VoyantGraphCapabilityDeclaration
+  /** Package schema export and its package-level migration dependencies. */
+  schema?: string
+  requiresSchemas?: readonly string[]
 }
 
 export interface VoyantGraphPackageRecord {
@@ -354,6 +360,7 @@ export interface ResolvedVoyantDeploymentGraph {
     target?: VoyantGraphRuntimeTarget
     mode?: VoyantProjectDeploymentMode
     providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+    migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   }
   requirements: VoyantGraphDeploymentRequirements
   modules: readonly ResolvedVoyantGraphUnit[]
@@ -456,6 +463,7 @@ export function defineDeployment(input: DefineVoyantGraphDeploymentInput): Voyan
     project: input.project,
     target: input.target,
     providers: { ...(input.providers ?? {}) },
+    ...(input.migrations?.length ? { migrations: [...input.migrations] } : {}),
     ...(input.mode ? { mode: input.mode } : {}),
     requirements: normalizeDeploymentRequirements(
       input.requirements ?? deriveDeploymentRequirements(input.providers),
@@ -590,6 +598,7 @@ export async function resolveDeploymentGraph(
   const mode = input.mode ?? input.deployment?.mode
   const providers = { ...(input.deployment?.providers ?? {}) }
   const requirements = normalizeDeploymentRequirements(input.deployment?.requirements)
+  const migrations = input.deployment?.migrations ?? input.project.deployment?.migrations
   const selectionConfigById = new Map(
     [...(input.project.selections?.modules ?? []), ...(input.project.selections?.plugins ?? [])]
       .filter((selection) => selection.config !== undefined)
@@ -644,6 +653,7 @@ export async function resolveDeploymentGraph(
       ...(target ? { target } : {}),
       ...(mode ? { mode } : {}),
       providers,
+      ...(migrations?.length ? { migrations: [...migrations] } : {}),
     },
     requirements,
     modules,

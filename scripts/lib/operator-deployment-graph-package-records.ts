@@ -32,6 +32,7 @@ export interface OperatorAuthoredProject extends VoyantGraphProject {
     target: VoyantGraphRuntimeTarget
     mode: "local" | "managed-cloud" | "self-hosted"
     providers: VoyantProjectProviders
+    migrations?: NonNullable<VoyantGraphProject["deployment"]>["migrations"]
   }
 }
 
@@ -280,6 +281,7 @@ function projectFromResolvedGraph(
     ...(presetLineage ? { presetLineage } : {}),
     modules: graph.modules.map((unit) => manifestFromResolvedUnit(unit, "voyant.module.v1")),
     plugins: graph.plugins.map((unit) => manifestFromResolvedUnit(unit, "voyant.plugin.v1")),
+    deployment: authored.deployment,
   }
 }
 
@@ -404,6 +406,9 @@ function deploymentFromSettings(
     target: "node",
     mode: settings.mode,
     providers: settings.providers,
+    ...(project.deployment?.migrations?.length
+      ? { migrations: project.deployment.migrations }
+      : {}),
   })
   return {
     ...deployment,

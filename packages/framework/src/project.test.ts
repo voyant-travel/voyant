@@ -146,6 +146,76 @@ describe("framework project resolver", () => {
     expect(runner?.contents).toContain('import("@acme/loyalty/setup")')
   })
 
+  it("includes deployment-owned migration folders after package schema migrations", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
+    })
+
+    const resolution = await resolve(
+      root,
+      defineProject({
+        modules: ["@acme/loyalty"],
+        deployment: {
+          migrations: [{ id: "deployment", source: "./migrations" }],
+        },
+      }),
+    )
+
+    expect(resolution.graph.deployment.migrations).toEqual([
+      { id: "deployment", source: "./migrations" },
+    ])
+    expect(resolution.artifacts.migrationPlan.migrations).toEqual([
+      expect.objectContaining({
+        id: "@acme/loyalty#migrations",
+        migrationKind: "schema",
+        order: 0,
+        source: {
+          kind: "package",
+          packageName: "@acme/loyalty",
+          path: "./migrations",
+        },
+      }),
+      {
+        id: "deployment",
+        migrationKind: "schema",
+        order: 1,
+        idempotencyKey: "schema:deployment",
+        owner: "deployment",
+        source: { kind: "deployment", path: "./migrations" },
+      },
+    ])
+  })
+
+  it("topologically orders package migrations from voyant.requiresSchemas", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/a-dependent",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/a-dependent"))}\n`,
+      voyant: packageMetadata({ requiresSchemas: ["@acme/z-foundation"] }),
+    })
+    writePackage(root, {
+      name: "@acme/z-foundation",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/z-foundation"))}\n`,
+      voyant: packageMetadata(),
+    })
+
+    const resolution = await resolve(
+      root,
+      defineProject({ modules: ["@acme/a-dependent", "@acme/z-foundation"] }),
+    )
+
+    expect(resolution.artifacts.migrationPlan.migrations.map((migration) => migration.id)).toEqual([
+      "@acme/z-foundation#migrations",
+      "@acme/a-dependent#migrations",
+    ])
+    expect(
+      resolution.graph.packageRecords.find((record) => record.packageName === "@acme/a-dependent")
+        ?.metadata?.requiresSchemas,
+    ).toEqual(["@acme/z-foundation"])
+  })
+
   it("rejects non-Node application runtime targets", async () => {
     const root = projectRoot()
     writePackage(root, {
@@ -425,6 +495,16 @@ interface WritePackageOptions {
   voyant?: Record<string, unknown> | null
   compatibleWith?: Record<string, unknown>
   extraExports?: Record<string, string>
+}
+
+function packageMetadata(options: { requiresSchemas?: string[] } = {}): Record<string, unknown> {
+  return {
+    schemaVersion: "voyant.package.v1",
+    kind: "module",
+    manifest: "./voyant",
+    schema: "./schema",
+    requiresSchemas: options.requiresSchemas ?? [],
+  }
 }
 
 function writePackage(root: string, options: WritePackageOptions): void {

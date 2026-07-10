@@ -1,4 +1,7 @@
+import { existsSync } from "node:fs"
 import { createRequire } from "node:module"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 
 import type {
   MigrationClient,
@@ -147,31 +150,64 @@ const defaultDependencies: NodeMigrationRunnerDependencies = {
     await client.connect()
     return client
   },
-  async loadSchemaSource(migration, resolveFrom) {
-    if (migration.source.kind !== "package" || migration.source.path !== "./migrations") {
-      throw new Error(
-        `Unsupported schema migration source ${migration.source.packageName}:${migration.source.path}`,
-      )
-    }
-    const { loadModuleBundleSource } = await import("@voyant-travel/framework-migrations")
-    const source = await loadModuleBundleSource(migration.source.packageName, {
-      name: migration.idempotencyKey,
-      priority: migration.order,
-      resolveFrom,
-    })
-    if (!source) {
-      throw new Error(
-        `Package ${migration.source.packageName} does not publish migrations/meta/_journal.json`,
-      )
-    }
-    return source
-  },
+  loadSchemaSource: loadNodeSchemaMigrationSource,
   async runSchema(client, source) {
     const { loadCutline, runDeploymentMigrations } = await import(
       "@voyant-travel/framework-migrations"
     )
     return runDeploymentMigrations(client, [source], await loadCutline())
   },
+}
+
+export async function loadNodeSchemaMigrationSource(
+  migration: VoyantProjectSchemaMigration,
+  resolveFrom: string | URL,
+): Promise<MigrationSource> {
+  const { loadMigrationFolder, loadModuleBundleSource } = await import(
+    "@voyant-travel/framework-migrations"
+  )
+  if (migration.source.kind === "deployment") {
+    return {
+      name: migration.owner,
+      priority: migration.order,
+      migrations: await loadMigrationFolder(
+        path.resolve(deploymentPackageRoot(resolveFrom), migration.source.path),
+      ),
+    }
+  }
+  if (migration.source.path !== "./migrations") {
+    throw new Error(
+      `Unsupported schema migration source ${migration.source.packageName}:${migration.source.path}`,
+    )
+  }
+  const source = await loadModuleBundleSource(migration.source.packageName, {
+    name: migration.idempotencyKey,
+    priority: migration.order,
+    resolveFrom,
+  })
+  if (!source) {
+    throw new Error(
+      `Package ${migration.source.packageName} does not publish migrations/meta/_journal.json`,
+    )
+  }
+  return source
+}
+
+function deploymentPackageRoot(resolveFrom: string | URL): string {
+  const resolved =
+    resolveFrom instanceof URL ||
+    (typeof resolveFrom === "string" && resolveFrom.startsWith("file:"))
+      ? fileURLToPath(resolveFrom)
+      : path.resolve(resolveFrom)
+  let directory = path.dirname(resolved)
+  for (;;) {
+    if (existsSync(path.join(directory, "package.json"))) return directory
+    const parent = path.dirname(directory)
+    if (parent === directory) {
+      throw new Error(`Could not find deployment package root from ${String(resolveFrom)}`)
+    }
+    directory = parent
+  }
 }
 
 function assertOrderedPlan(plan: VoyantProjectMigrationPlan): void {

@@ -20,10 +20,12 @@ const deployment = {
     scheduledJobs: "none",
     workflows: "none",
   },
+  migrations: [{ id: "deployment", source: "./migrations" }],
 } as const satisfies {
   target: "node"
   mode: VoyantProjectDeploymentMode
   providers: VoyantProjectProviders
+  migrations: readonly [{ id: "deployment"; source: "./migrations" }]
 }
 
 const definition = {

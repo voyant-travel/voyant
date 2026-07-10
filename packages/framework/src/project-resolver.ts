@@ -44,12 +44,17 @@ export interface VoyantProjectSchemaMigration {
   order: number
   idempotencyKey: string
   owner: string
-  packageName: string
-  source: {
-    kind: "package"
-    packageName: string
-    path: string
-  }
+  packageName?: string
+  source:
+    | {
+        kind: "package"
+        packageName: string
+        path: string
+      }
+    | {
+        kind: "deployment"
+        path: string
+      }
 }
 
 export interface VoyantProjectSetupMigration {
@@ -126,6 +131,9 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       project: materialized.project,
       deployment: {
         providers,
+        ...(project.deployment?.migrations?.length
+          ? { migrations: project.deployment.migrations }
+          : {}),
         ...(mode ? { mode } : {}),
         requirements: deriveDeploymentRequirements(providers),
       },
@@ -505,27 +513,49 @@ export function buildMigrationPlan(
   graph: ResolvedVoyantDeploymentGraph,
 ): VoyantProjectMigrationPlan {
   const units = [...graph.modules, ...graph.plugins]
-  const schemaMigrations = units
-    .flatMap((unit) =>
-      unit.migrations
-        .filter((migration): migration is typeof migration & { source: string } =>
-          Boolean(migration.source),
-        )
-        .map((migration) => ({
-          id: migration.id,
-          migrationKind: "schema" as const,
-          order: 0,
-          idempotencyKey: `schema:${migration.id}`,
-          owner: unit.id,
+  const packageSchemaMigrations = units.flatMap((unit) =>
+    unit.migrations
+      .filter((migration): migration is typeof migration & { source: string } =>
+        Boolean(migration.source),
+      )
+      .map((migration) => ({
+        id: migration.id,
+        migrationKind: "schema" as const,
+        order: 0,
+        idempotencyKey: `schema:${migration.id}`,
+        owner: unit.id,
+        packageName: unit.packageName,
+        source: {
+          kind: "package" as const,
           packageName: unit.packageName,
-          source: {
-            kind: "package" as const,
-            packageName: unit.packageName,
-            path: migration.source,
-          },
-        })),
-    )
-    .sort((left, right) => left.owner.localeCompare(right.owner) || left.id.localeCompare(right.id))
+          path: migration.source,
+        },
+      })),
+  )
+  const schemaDependencies = new Map(
+    graph.packageRecords.map((record) => [
+      record.packageName,
+      record.metadata?.requiresSchemas ?? [],
+    ]),
+  )
+  const orderedPackageMigrations = orderPackageSchemaMigrations(
+    packageSchemaMigrations,
+    schemaDependencies,
+  )
+  const deploymentMigrations: VoyantProjectSchemaMigration[] = (
+    graph.deployment.migrations ?? []
+  ).map((migration) => ({
+    id: migration.id,
+    migrationKind: "schema",
+    order: 0,
+    idempotencyKey: `schema:${migration.id}`,
+    owner: migration.id,
+    source: {
+      kind: "deployment",
+      path: migration.source,
+    },
+  }))
+  const schemaMigrations = [...orderedPackageMigrations, ...deploymentMigrations]
   const setupMigrations = units
     .flatMap((unit) =>
       (unit.setupMigrations ?? []).map((migration) => ({
@@ -554,6 +584,43 @@ export function buildMigrationPlan(
     contentHash: graph.contentHash,
     migrations,
   }
+}
+
+function orderPackageSchemaMigrations(
+  migrations: readonly VoyantProjectSchemaMigration[],
+  dependencies: ReadonlyMap<string, readonly string[]>,
+): VoyantProjectSchemaMigration[] {
+  const byPackage = new Map<string, VoyantProjectSchemaMigration[]>()
+  for (const migration of migrations) {
+    if (!migration.packageName) continue
+    const packageMigrations = byPackage.get(migration.packageName) ?? []
+    packageMigrations.push(migration)
+    byPackage.set(migration.packageName, packageMigrations)
+  }
+  for (const packageMigrations of byPackage.values()) {
+    packageMigrations.sort((left, right) => left.id.localeCompare(right.id))
+  }
+
+  const pending = [...byPackage.keys()].sort()
+  const completed = new Set<string>()
+  const ordered: VoyantProjectSchemaMigration[] = []
+  while (pending.length > 0) {
+    const index = pending.findIndex((packageName) =>
+      (dependencies.get(packageName) ?? []).every(
+        (dependency) => !byPackage.has(dependency) || completed.has(dependency),
+      ),
+    )
+    if (index === -1) {
+      throw new Error(
+        `buildMigrationPlan: package schema dependencies are cyclic: ${pending.join(", ")}`,
+      )
+    }
+    const [packageName] = pending.splice(index, 1)
+    if (!packageName) continue
+    ordered.push(...(byPackage.get(packageName) ?? []))
+    completed.add(packageName)
+  }
+  return ordered
 }
 
 function orderSetupMigrations(
@@ -720,12 +787,27 @@ function parsePackageMetadata(
   }
   const compatibleWith = parseCompatibleWith(value.compatibleWith, packageName)
   const requires = parseCapabilityDeclaration(value.requires, packageName)
+  if (value.schema !== undefined && typeof value.schema !== "string") {
+    throw new Error(`resolveProject: ${packageName} package schema must be a string.`)
+  }
+  if (value.requiresSchemas !== undefined && !isStringArray(value.requiresSchemas)) {
+    throw new Error(`resolveProject: ${packageName} required schemas must be a string array.`)
+  }
+  const requiresSchemas = (value.requiresSchemas ?? []) as string[]
+  const invalidRequiredSchema = requiresSchemas.find((dependency) => !isPackageName(dependency))
+  if (invalidRequiredSchema) {
+    throw new Error(
+      `resolveProject: ${packageName} required schema ${invalidRequiredSchema} must be a canonical package name.`,
+    )
+  }
   return {
     schemaVersion: "voyant.package.v1",
     kind: value.kind,
     ...(value.manifest === "./voyant" ? { manifest: "./voyant" as const } : {}),
     ...(compatibleWith ? { compatibleWith } : {}),
     ...(requires ? { requires } : {}),
+    ...(typeof value.schema === "string" ? { schema: value.schema } : {}),
+    ...(requiresSchemas.length > 0 ? { requiresSchemas: [...requiresSchemas].sort() } : {}),
   }
 }
 
