@@ -36,7 +36,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(summary.providers).toMatchObject({
       database: "postgres",
       storage: "memory",
-      cache: "memory",
+      cache: "postgres",
       rateLimit: "memory",
     })
     expect(summary.resourceRequirements.map((resource) => resource.resourceKey)).toContain(
