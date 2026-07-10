@@ -9,6 +9,7 @@
     "./deployment-artifacts": "./src/deployment-artifacts.ts",
     "./deployment-graph": "./src/deployment-graph.ts",
     "./operator-distribution": "./src/operator-distribution.ts",
+    "./project-api-conventions": "./src/project-api-conventions.ts",
     "./project": "./src/project.ts",
     "./profile": "./src/profile.ts",
     "./managed-jobs": "./src/managed-jobs.ts",
@@ -76,7 +77,8 @@
     "@voyant-travel/workflows": "workspace:*",
     "@voyant-travel/workflows-orchestrator": "workspace:*",
     "drizzle-orm": "catalog:",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",
@@ -90,7 +92,6 @@
     "@types/node": "catalog:",
     "@types/pg": "^8.15.6",
     "hono": "catalog:",
-    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {
@@ -115,6 +116,11 @@
       "./operator-distribution": {
         "types": "./dist/operator-distribution.d.ts",
         "import": "./dist/operator-distribution.js"
+      },
+      "./project-api-conventions": {
+        "types": "./dist/project-api-conventions.d.ts",
+        "import": "./dist/project-api-conventions.js",
+        "default": "./dist/project-api-conventions.js"
       },
       "./project": {
         "types": "./dist/project.d.ts",

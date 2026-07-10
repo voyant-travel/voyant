@@ -77,6 +77,7 @@ describe("deployment graph v1", () => {
         {
           id: "@acme/voyant-loyalty#api.admin",
           surface: "admin",
+          methods: ["POST", "GET"],
           requiredScopes: ["loyalty:read"],
           runtime: { entry: "@acme/voyant-loyalty/routes", export: "adminRoutes" },
         },
@@ -214,6 +215,7 @@ describe("deployment graph v1", () => {
     expect(graph.diagnostics).toEqual([])
     expect(graph.modules[0]).toMatchObject({
       id: "@acme/voyant-loyalty",
+      api: [{ id: "@acme/voyant-loyalty#api.admin", methods: ["GET", "POST"] }],
       tools: [{ id: "@acme/voyant-loyalty#tool.adjust-points" }],
       admin: { routes: [{ id: "@acme/voyant-loyalty#admin.route.index" }] },
       lifecycle: { uninstall: { default: "retain-data" } },
@@ -653,6 +655,7 @@ describe("deployment graph v1", () => {
           {
             id: "@acme/voyant-loyalty#api.admin",
             surface: "admin",
+            methods: ["POST", "GET"],
             mount: "/v1/admin/loyalty",
             resource: "loyalty.points",
             requiredScopes: ["loyalty:read", "loyalty-points:write"],
@@ -670,6 +673,7 @@ describe("deployment graph v1", () => {
           {
             id: "@acme/voyant-loyalty#api.invalid",
             surface: "worker",
+            methods: ["get", "GET", "GET"],
             mount: "",
             resource: "Loyalty Points",
             requiredScopes: ["loyalty.points.read", "loyalty:Read"],
@@ -682,6 +686,10 @@ describe("deployment graph v1", () => {
         expect.objectContaining({
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
           facet: "api[0].surface",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].methods",
         }),
         expect.objectContaining({
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",

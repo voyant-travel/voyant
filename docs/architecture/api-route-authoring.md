@@ -43,6 +43,46 @@ Rule:
 Every new package route should declare whether it belongs to the admin or
 public surface.
 
+### Application-local route files
+
+Applications may author deployment-local API routes in these directories:
+
+- `src/api/admin/**/route.ts` for the authenticated admin surface
+- `src/api/store/**/route.ts` for the authenticated public surface
+
+Each route file exports at least one named uppercase HTTP handler: `GET`,
+`POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, or `OPTIONS`. Route files
+must not use a default export or expose other runtime exports. Type-only exports
+are allowed.
+
+```ts
+import {
+  parseJsonBody,
+  parseQuery,
+  type VoyantRouteHandler,
+} from "@voyant-travel/hono"
+
+export const GET: VoyantRouteHandler = (c) => {
+  const query = parseQuery(c, listOrdersQuerySchema)
+  return c.json({ query })
+}
+
+export const POST: VoyantRouteHandler = async (c) => {
+  const body = await parseJsonBody(c, createOrderSchema)
+  return c.json(body, 201)
+}
+```
+
+Directory names map to Hono paths. Route groups such as `(internal)` do not
+add a URL segment, `[orderId]` maps to `:orderId`, `[...slug]` maps to
+`*slug`, and `[[...slug]]` maps to `*slug?`.
+
+The build-time convention compiler inspects exports with the TypeScript AST and
+emits `.voyant/runtime/project-api.generated.ts`. It rejects duplicate
+surface, method, and canonical-path combinations. Auth is inherited from the
+admin or public surface; application-local anonymous overrides are not
+supported.
+
 ### 2. Keep `storefront` as a package concept, not an HTTP namespace
 
 Voyant should keep `storefront` as the customer-facing package/runtime term:

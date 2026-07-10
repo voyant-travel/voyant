@@ -15,6 +15,15 @@ export type {
   SetupMigrationHandler,
 } from "./node-migration-runner.js"
 export type {
+  ProjectApiConventionAnalysis,
+  ProjectApiConventionCompilation,
+  ProjectApiConventionDiagnostic,
+  ProjectApiConventionDiagnosticCode,
+  ProjectApiConventionRoute,
+  ProjectApiConventionsOptions,
+  ProjectApiGeneratedFile,
+} from "./project-api-conventions.js"
+export type {
   DiscoverProjectConventionsInput,
   DiscoverProjectConventionsOptions,
   ProjectConventionApiRoute,
@@ -60,6 +69,20 @@ export async function discoverProjectConventions(
 ): Promise<import("./project-conventions.js").ProjectConventionDiscovery> {
   const conventions = await import("./project-conventions.js")
   return conventions.discoverProjectConventions(input)
+}
+
+export async function analyzeProjectApiConventions(
+  options: import("./project-api-conventions.js").ProjectApiConventionsOptions,
+): Promise<import("./project-api-conventions.js").ProjectApiConventionAnalysis> {
+  const conventions = await import("./project-api-conventions.js")
+  return conventions.analyzeProjectApiConventions(options)
+}
+
+export async function compileProjectApiConventions(
+  options: import("./project-api-conventions.js").ProjectApiConventionsOptions,
+): Promise<import("./project-api-conventions.js").ProjectApiConventionCompilation> {
+  const conventions = await import("./project-api-conventions.js")
+  return conventions.compileProjectApiConventions(options)
 }
 
 export async function executeNodeMigrationPlan(

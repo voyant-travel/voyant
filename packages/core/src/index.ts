@@ -110,6 +110,7 @@ export type {
   VoyantGraphProjectSelectionProvenance,
   VoyantGraphProjectSelections,
   VoyantGraphRouteBundle,
+  VoyantGraphRouteMethod,
   VoyantGraphRouteSurface,
   VoyantGraphRuntimeReference,
   VoyantGraphSubscriber,
