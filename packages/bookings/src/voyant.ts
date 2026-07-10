@@ -1,5 +1,10 @@
 import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
+const bookingsAdminRuntime = {
+  entry: "@voyant-travel/bookings-react/admin",
+  export: "createBookingsAdminExtension",
+} as const
+
 /**
  * Import-cheap deployment declaration owned by the bookings package.
  * Executable package surfaces stay behind symbolic package export references.
@@ -193,6 +198,56 @@ export const bookingsVoyantModule = defineModule({
       from: { routes: ["@voyant-travel/bookings#api.admin"] },
     },
   ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/bookings#admin.route.index",
+        path: "/bookings",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.detail",
+        path: "/bookings/$id",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.new",
+        path: "/bookings/new",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.compose",
+        path: "/bookings/compose",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.journey",
+        path: "/catalog/journey/$entityModule/$entityId",
+        runtime: bookingsAdminRuntime,
+      },
+    ],
+    slots: [
+      {
+        id: "booking.details.invoices-tab",
+        routeId: "@voyant-travel/bookings#admin.route.detail",
+      },
+      {
+        id: "booking.details.finance-start",
+        routeId: "@voyant-travel/bookings#admin.route.detail",
+      },
+      {
+        id: "booking.details.finance-end",
+        routeId: "@voyant-travel/bookings#admin.route.detail",
+      },
+    ],
+    contributions: [
+      {
+        id: "@voyant-travel/bookings#admin.contribution.person-bookings",
+        slotId: "person.details.bookings-tab",
+        runtime: bookingsAdminRuntime,
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

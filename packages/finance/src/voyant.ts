@@ -1,5 +1,10 @@
 import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
+const financeAdminRuntime = {
+  entry: "@voyant-travel/finance-react/admin",
+  export: "createFinanceAdminExtension",
+} as const
+
 /** Import-cheap deployment declaration owned by the finance package. */
 export const financeVoyantModule = defineModule({
   id: "@voyant-travel/finance",
@@ -134,6 +139,37 @@ export const financeVoyantModule = defineModule({
       requiredScopes: ["finance:void"],
     },
   ],
+  admin: {
+    routes: (
+      [
+        ["index", "/finance"],
+        ["invoices-index", "/finance/invoices"],
+        ["invoices-detail", "/finance/invoices/$id"],
+        ["invoice-number-series", "/finance/invoice-number-series"],
+        ["payments-index", "/finance/payments"],
+        ["payments-detail", "/finance/payments/$id"],
+        ["supplier-invoices-index", "/finance/supplier-invoices"],
+        ["supplier-invoices-detail", "/finance/supplier-invoices/$id"],
+        ["profitability", "/finance/profitability"],
+      ] as const
+    ).map(([id, path]) => ({
+      id: `@voyant-travel/finance#admin.route.${id}`,
+      path,
+      runtime: financeAdminRuntime,
+    })),
+    contributions: (
+      [
+        ["booking-invoices", "booking.details.invoices-tab"],
+        ["booking-pending-payment-sessions", "booking.details.finance-start"],
+        ["booking-payment-policy", "booking.details.finance-end"],
+        ["supplier-payment-policy", "supplier.details.payment-policy"],
+      ] as const
+    ).map(([id, slotId]) => ({
+      id: `@voyant-travel/finance#admin.contribution.${id}`,
+      slotId,
+      runtime: financeAdminRuntime,
+    })),
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

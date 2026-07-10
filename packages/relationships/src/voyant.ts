@@ -1,5 +1,10 @@
 import { defineModule } from "@voyant-travel/core/project"
 
+const relationshipsAdminRuntime = {
+  entry: "@voyant-travel/relationships-react/admin",
+  export: "createRelationshipsAdminExtension",
+} as const
+
 /** Import-cheap deployment declaration owned by the relationships package. */
 export const relationshipsVoyantModule = defineModule({
   id: "@voyant-travel/relationships",
@@ -111,6 +116,37 @@ export const relationshipsVoyantModule = defineModule({
       from: { routes: ["@voyant-travel/relationships#api.admin"] },
     },
   ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/relationships#admin.route.people-index",
+        path: "/people",
+        runtime: relationshipsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/relationships#admin.route.people-detail",
+        path: "/people/$id",
+        runtime: relationshipsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/relationships#admin.route.organizations-index",
+        path: "/organizations",
+        runtime: relationshipsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/relationships#admin.route.organizations-detail",
+        path: "/organizations/$id",
+        runtime: relationshipsAdminRuntime,
+      },
+    ],
+    slots: [
+      {
+        id: "person.details.bookings-tab",
+        routeId: "@voyant-travel/relationships#admin.route.people-detail",
+        contract: { personId: "string" },
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

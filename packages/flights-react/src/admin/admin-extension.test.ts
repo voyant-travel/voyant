@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { flightsVoyantModule } from "../../../flights/src/voyant.js"
 import {
   createFlightsAdminExtension,
   flightsBookSearchSchema,
@@ -8,6 +9,30 @@ import {
 } from "./index.js"
 
 describe("createFlightsAdminExtension", () => {
+  it("keeps the package-owned deployment facets aligned with the admin extension", () => {
+    const extension = createFlightsAdminExtension()
+    expect(flightsVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
+      extension.routes?.map((route) => route.path),
+    )
+    expect(flightsVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual(
+      extension.routes?.map(() => ({
+        entry: "@voyant-travel/flights-react/admin",
+        export: "createFlightsAdminExtension",
+      })),
+    )
+    expect(flightsVoyantModule.admin?.copy).toEqual([
+      {
+        id: "@voyant-travel/flights#admin.copy",
+        namespace: "flights.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/flights-react/i18n",
+          export: "flightsUiMessageDefinitions",
+        },
+      },
+    ])
+  })
+
   it("contributes no navigation (the flights item is base-nav-owned)", () => {
     const extension = createFlightsAdminExtension()
     expect(extension.id).toBe("flights")

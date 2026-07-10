@@ -135,4 +135,47 @@ describe("commerce deployment manifest", () => {
       ],
     })
   })
+
+  it("declares the promotions route, navigation, and existing copy catalog", () => {
+    expect(commerceVoyantModule.admin).toEqual({
+      copy: [
+        {
+          id: "@voyant-travel/commerce#admin.copy.promotions",
+          namespace: "commerce.admin",
+          fallbackLocale: "en",
+          runtime: {
+            entry: "@voyant-travel/commerce-react/promotions/i18n",
+            export: "promotionsUiMessageDefinitions",
+          },
+        },
+      ],
+      routes: [
+        {
+          id: "@voyant-travel/commerce#admin.route.promotions-index",
+          path: "/promotions",
+          runtime: {
+            entry: "@voyant-travel/commerce-react/admin",
+            export: "createCommerceAdminExtension",
+          },
+          copy: [
+            {
+              namespace: "commerce.admin",
+              key: "promotionsPage.title",
+            },
+          ],
+        },
+      ],
+      nav: [
+        {
+          id: "@voyant-travel/commerce#admin.nav.promotions",
+          routeId: "@voyant-travel/commerce#admin.route.promotions-index",
+          label: {
+            namespace: "commerce.admin",
+            key: "promotionsPage.title",
+          },
+          order: 50,
+        },
+      ],
+    })
+  })
 })

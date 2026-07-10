@@ -116,6 +116,26 @@ export const tripsVoyantModule = defineModule({
       from: { tools: ["@voyant-travel/trips#tool.price-trip"] },
     },
   ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/trips#admin.route.trips-index",
+        path: "/trips",
+        runtime: {
+          entry: "@voyant-travel/trips-react/admin",
+          export: "createTripsAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/trips#admin.route.trips-detail",
+        path: "/trips/$id",
+        runtime: {
+          entry: "@voyant-travel/trips-react/admin",
+          export: "createTripsAdminExtension",
+        },
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

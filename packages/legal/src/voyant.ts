@@ -1,5 +1,10 @@
 import { defineModule } from "@voyant-travel/core/project"
 
+const legalAdminRuntime = {
+  entry: "@voyant-travel/legal-react/admin",
+  export: "createLegalAdminExtension",
+} as const
+
 const linkableSource = "@voyant-travel/legal/linkables"
 
 /** Import-cheap deployment declaration owned by the legal package. */
@@ -69,6 +74,24 @@ export const legalVoyantModule = defineModule({
         actions: ["read", "write"],
       },
     ],
+  },
+  admin: {
+    routes: (
+      [
+        ["index", "/legal"],
+        ["contracts-index", "/legal/contracts"],
+        ["contracts-detail", "/legal/contracts/$id"],
+        ["templates-index", "/legal/templates"],
+        ["templates-detail", "/legal/templates/$id"],
+        ["policies-index", "/legal/policies"],
+        ["policies-detail", "/legal/policies/$id"],
+        ["number-series", "/legal/number-series"],
+      ] as const
+    ).map(([id, path]) => ({
+      id: `@voyant-travel/legal#admin.route.${id}`,
+      path,
+      runtime: legalAdminRuntime,
+    })),
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },

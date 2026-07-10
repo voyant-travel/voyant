@@ -1,5 +1,10 @@
 import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
+const catalogAdminRuntime = {
+  entry: "@voyant-travel/catalog-react/admin",
+  export: "createCatalogAdminExtension",
+} as const
+
 /** Import-cheap deployment declaration owned by the catalog package. */
 export const catalogVoyantModule = defineModule({
   id: "@voyant-travel/catalog",
@@ -160,6 +165,27 @@ export const catalogVoyantModule = defineModule({
       eventId: "@voyant-travel/catalog#event.source.reconnected",
     },
   ],
+  admin: {
+    routes: (
+      [
+        ["index", "/catalog"],
+        ["products-index", "/catalog/products"],
+        ["products-detail", "/catalog/products/$productId"],
+        ["excursions-index", "/catalog/excursions"],
+        ["excursions-detail", "/catalog/excursions/$id"],
+        ["tours-index", "/catalog/tours"],
+        ["tours-detail", "/catalog/tours/$id"],
+        ["cruises-index", "/catalog/cruises"],
+        ["cruises-detail", "/catalog/cruises/$id"],
+        ["accommodations-index", "/catalog/accommodations"],
+        ["accommodations-detail", "/catalog/accommodations/$id"],
+      ] as const
+    ).map(([id, path]) => ({
+      id: `@voyant-travel/catalog#admin.route.${id}`,
+      path,
+      runtime: catalogAdminRuntime,
+    })),
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

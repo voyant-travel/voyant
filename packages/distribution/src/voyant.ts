@@ -70,6 +70,52 @@ export const distributionVoyantModule = defineModule({
       eventType: "supplier.deleted",
     },
   ],
+  admin: {
+    copy: [
+      {
+        id: "@voyant-travel/distribution#admin.copy",
+        namespace: "distribution.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/distribution-react/i18n",
+          export: "distributionUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/distribution#admin.route.channel-sync",
+        path: "/channel-sync",
+        runtime: {
+          entry: "@voyant-travel/distribution-react/admin",
+          export: "createDistributionAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/distribution#admin.route.suppliers-index",
+        path: "/suppliers",
+        runtime: {
+          entry: "@voyant-travel/distribution-react/admin",
+          export: "createDistributionAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/distribution#admin.route.suppliers-detail",
+        path: "/suppliers/$id",
+        runtime: {
+          entry: "@voyant-travel/distribution-react/admin",
+          export: "createDistributionAdminExtension",
+        },
+      },
+    ],
+    slots: [
+      {
+        id: "supplier.details.payment-policy",
+        routeId: "@voyant-travel/distribution#admin.route.suppliers-detail",
+        contract: { supplierId: "string" },
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

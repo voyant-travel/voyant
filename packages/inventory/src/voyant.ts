@@ -125,6 +125,45 @@ export const inventoryVoyantModule = defineModule({
       from: { tools: ["@voyant-travel/inventory#tool.get-product"] },
     },
   ],
+  admin: {
+    copy: [
+      {
+        id: "@voyant-travel/inventory#admin.copy",
+        namespace: "inventory.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/i18n",
+          export: "productsUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/inventory#admin.route.products-index",
+        path: "/products",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/admin",
+          export: "createInventoryAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/inventory#admin.route.products-categories",
+        path: "/products/categories",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/admin",
+          export: "createInventoryAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/inventory#admin.route.products-detail",
+        path: "/products/$id",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/admin",
+          export: "createInventoryAdminExtension",
+        },
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

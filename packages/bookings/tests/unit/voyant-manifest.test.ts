@@ -85,6 +85,45 @@ describe("bookings deployment manifest", () => {
     })
   })
 
+  it("declares the packaged booking routes, slots, and CRM contribution", () => {
+    expect(bookingsVoyantModule.admin).toMatchObject({
+      routes: [
+        { id: "@voyant-travel/bookings#admin.route.index", path: "/bookings" },
+        { id: "@voyant-travel/bookings#admin.route.detail", path: "/bookings/$id" },
+        { id: "@voyant-travel/bookings#admin.route.new", path: "/bookings/new" },
+        { id: "@voyant-travel/bookings#admin.route.compose", path: "/bookings/compose" },
+        {
+          id: "@voyant-travel/bookings#admin.route.journey",
+          path: "/catalog/journey/$entityModule/$entityId",
+        },
+      ],
+      slots: [
+        { id: "booking.details.invoices-tab" },
+        { id: "booking.details.finance-start" },
+        { id: "booking.details.finance-end" },
+      ],
+      contributions: [
+        {
+          id: "@voyant-travel/bookings#admin.contribution.person-bookings",
+          slotId: "person.details.bookings-tab",
+        },
+      ],
+    })
+
+    const runtimeReferences = [
+      ...(bookingsVoyantModule.admin?.routes ?? []),
+      ...(bookingsVoyantModule.admin?.contributions ?? []),
+    ].map((facet) => facet.runtime)
+    expect(new Set(runtimeReferences.map((runtime) => JSON.stringify(runtime)))).toEqual(
+      new Set([
+        JSON.stringify({
+          entry: "@voyant-travel/bookings-react/admin",
+          export: "createBookingsAdminExtension",
+        }),
+      ]),
+    )
+  })
+
   it("exposes the scheduled stale-hold workflow factory", () => {
     const definition = createBookingsExpireStaleHoldsWorkflow({
       resolveDb: () => ({}) as never,

@@ -1,5 +1,11 @@
 import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
+const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-index"
+const commerceAdminRuntime = {
+  entry: "@voyant-travel/commerce-react/admin",
+  export: "createCommerceAdminExtension",
+} as const
+
 const promotionAffectedAllFilter = {
   eventType: "promotion.changed",
   id: "ef_6f8e4b4ce409d04c",
@@ -123,6 +129,43 @@ export const commerceVoyantModule = defineModule({
       source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
     },
   ],
+  admin: {
+    copy: [
+      {
+        id: "@voyant-travel/commerce#admin.copy.promotions",
+        namespace: "commerce.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/commerce-react/promotions/i18n",
+          export: "promotionsUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: commerceAdminRouteId,
+        path: "/promotions",
+        runtime: commerceAdminRuntime,
+        copy: [
+          {
+            namespace: "commerce.admin",
+            key: "promotionsPage.title",
+          },
+        ],
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/commerce#admin.nav.promotions",
+        routeId: commerceAdminRouteId,
+        label: {
+          namespace: "commerce.admin",
+          key: "promotionsPage.title",
+        },
+        order: 50,
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

@@ -46,6 +46,26 @@ export const miceVoyantModule = defineModule({
       eventType: "mice.rfp.awarded",
     },
   ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/mice#admin.route.programs-index",
+        path: "/mice",
+        runtime: {
+          entry: "@voyant-travel/mice-react/admin",
+          export: "createMiceAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/mice#admin.route.programs-detail",
+        path: "/mice/$id",
+        runtime: {
+          entry: "@voyant-travel/mice-react/admin",
+          export: "createMiceAdminExtension",
+        },
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

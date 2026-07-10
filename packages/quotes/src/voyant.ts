@@ -110,6 +110,37 @@ export const quotesVoyantModule = defineModule({
       from: { tools: ["@voyant-travel/quotes#tool.accept-quote-version"] },
     },
   ],
+  admin: {
+    copy: [
+      {
+        id: "@voyant-travel/quotes#admin.copy",
+        namespace: "quotes.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/quotes-react/i18n",
+          export: "crmUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/quotes#admin.route.quotes-index",
+        path: "/quotes",
+        runtime: {
+          entry: "@voyant-travel/quotes-react/admin",
+          export: "createQuotesAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/quotes#admin.route.quotes-detail",
+        path: "/quotes/$id",
+        runtime: {
+          entry: "@voyant-travel/quotes-react/admin",
+          export: "createQuotesAdminExtension",
+        },
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

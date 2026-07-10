@@ -1,0 +1,30 @@
+import { describe, expect, it } from "vitest"
+
+import { quotesVoyantModule } from "../../../quotes/src/voyant.js"
+import { createQuotesAdminExtension } from "./index.js"
+
+describe("quotes admin deployment facets", () => {
+  it("tracks the package-owned extension routes and copy provider", () => {
+    const extension = createQuotesAdminExtension()
+    expect(quotesVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
+      extension.routes?.map((route) => route.path),
+    )
+    expect(quotesVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual(
+      extension.routes?.map(() => ({
+        entry: "@voyant-travel/quotes-react/admin",
+        export: "createQuotesAdminExtension",
+      })),
+    )
+    expect(quotesVoyantModule.admin?.copy).toEqual([
+      {
+        id: "@voyant-travel/quotes#admin.copy",
+        namespace: "quotes.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/quotes-react/i18n",
+          export: "crmUiMessageDefinitions",
+        },
+      },
+    ])
+  })
+})
