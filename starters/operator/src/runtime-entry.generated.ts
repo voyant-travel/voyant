@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
-export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:561dbc3b80b539d4b21d31492fbf574961b7e2a1a957b96ec2109ecfbe73f260" as const
+export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:0ab105edd445671dca7c1afd0db9b3ec3a3b6cf60e870491b46d4d2dd8887659" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
 export const GENERATED_DEPLOYMENT_GRAPH_MODE = "self-hosted" as const
 export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json" as const

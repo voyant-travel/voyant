@@ -4,7 +4,7 @@ import path from "node:path"
 import { parse } from "yaml"
 
 const dependencySections = ["dependencies", "optionalDependencies", "devDependencies"]
-const ignoredWorkspaceDirs = new Set([".git", ".turbo", "build", "dist", "node_modules"])
+const ignoredWorkspaceDirs = new Set([".audit", ".git", ".turbo", "build", "dist", "node_modules"])
 const voyantPackageMetadataSchemaVersion = "voyant.package.v1"
 const voyantPackageKinds = new Set(["module", "plugin"])
 const voyantDeploymentModes = new Set(["managed-cloud", "self-hosted", "local"])
