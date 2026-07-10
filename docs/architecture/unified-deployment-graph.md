@@ -30,8 +30,8 @@ orders the work so it can ship incrementally.
 The rule is:
 
 **Voyant deployments are built from an explicit, versioned, declarative graph.
-The graph is validated by doctor/build tooling, then lowered into target-specific
-runtime artifacts.**
+The graph is validated by doctor/build tooling, then lowered into
+hosting-specific Node artifacts.**
 
 For this document, the application runtime is **Node only**. "Target-neutral"
 means neutral across Node hosting substrates, not neutral across JavaScript
@@ -95,9 +95,9 @@ If a project records a scaffold source, that field is diagnostic only:
 presetLineage: "operator-standard" // optional; never used for graph closure
 ```
 
-Package compatibility should target framework version, runtime target,
-deployment mode, and required capabilities/surfaces. It should not target
-`profiles: ["operator"]`.
+Package compatibility should target framework version, the Node runtime
+contract, deployment mode, and required capabilities/surfaces. It should not
+target `profiles: ["operator"]` or treat a hosting provider as a runtime.
 
 ### 2. Default to Voyant Cloud, but keep Node substrate lowering separate
 
@@ -223,8 +223,8 @@ Specifically:
   but doctor must identify the owning package and the bridge used
 - the bridge is removable only when direct package resolution produces the same
   graph; parity, not continued central generation, is its exit criterion
-- target bootstraps consume a resolved graph and target bindings; they do not
-  decide product composition
+- Node host bootstraps consume a resolved graph and provider bindings; they do
+  not decide product composition
 
 ## Identity
 
@@ -1076,7 +1076,7 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | Setup/data migrations | Ad hoc seed/setup behavior and ordinary migrations | Package owns versioned, idempotent setup/data migrations with applied-work ids; project owns optional explicit seed scripts | Schema/migrations, lifecycle ledger | Install/upgrade replay is idempotent and no lifecycle hook is needed | #3080 |
 | Linkables and links | Existing `defineLink`, generated schema inputs, deployment-local link migrations | Package exposes linkables; package/project explicitly declares neutral pair links; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and generated DDL resolve without starter link lists | #3080 |
 | Runtime config | Managed profile settings and deployment config bridges | Package declares typed config contract; project supplies portable non-secret values | Package manifests | Defaults/values validate before build and package code no longer reads profile settings directly | #3080 |
-| Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds target-specific sources; runtime receives typed redacted handles | Runtime config, target adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no target env names | #3080 |
+| Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds provider-specific sources; runtime receives typed redacted handles | Runtime config, Node host adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no provider env names | #3080 |
 | API routes and route posture | Existing Hono modules/extensions, generated entries, starter `publicPaths` and transactional fallbacks | Package `api.admin`, `api.public`, `api.webhooks`, and `api.internal` own lazy factories, stable ids, anonymous posture, transaction need, mounts, and operation metadata | Package manifests, runtime bindings | Standard `publicPaths`, transactional paths, and route-family lists are derived and starter fallbacks are empty | #3080 |
 | OpenAPI | Route-owned schemas plus shipped graph coverage report and allowlists | Package API bundle opts into documents and owns operation metadata; selected graph emits deployment-specific documents | API routes | Coverage has no unexplained allowlist and no operator OpenAPI catalog | #3080 |
 | Access resources and grants | Pass-through route scopes and existing Better Auth `Record<string, string[]>` permissions | Package owns `access.resources`; routes, tools, admin, workflows, and actions reference one `resource:action` catalog; project owns role presets | Identity, API operation ids | All references validate against one selected catalog; no central first-party permission catalog remains | #3080 |
@@ -1200,12 +1200,12 @@ tools, and audited action metadata without parallel operator catalogs.
 - harden managed admission as needed without requiring the broader supply-chain
   platform
 - delete each central generator input after direct package parity passes; keep
-  only target-neutral generated outputs and target bootstraps
+  only hosting-neutral generated outputs and Node host bootstraps
 - run an issue-completion audit against every `#3080` matrix exit test
 
-Exit: `starters/operator` can be replaced by another target bootstrap without
-reconstructing product composition. No selected package surface is known only to
-the starter, and every `#3080` matrix row is package/project-owned.
+Exit: `starters/operator` can be replaced by another Node host bootstrap without
+reconstructing product composition. No selected package surface is known only
+to the starter, and every `#3080` matrix row is package/project-owned.
 
 ## Completion Criteria
 

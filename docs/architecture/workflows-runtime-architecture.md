@@ -23,10 +23,11 @@ The supported deployment shapes are:
   Cloud. Workflow bundles execute in the hosted Node runner implementation in
   `/Users/mihai/builds/internal/voyant-all/voyant-cloud`.
 
-Cloudflare Workers may still host application/API code, but the workflow
-runtime itself is Node-only. The old Cloudflare Worker/Durable Object workflow
-adapter, tenant-worker adapter, and external step-server package have been
-removed from the workspace package surface.
+The application/API deployment and workflow runtime are both Node-only. The old
+Cloudflare Worker/Durable Object workflow adapter, tenant-worker adapter, and
+external step-server package have been removed from the workspace package
+surface. A separate edge client may call the deployment, but it is not a Voyant
+runtime target.
 
 ## Evidence From `voyant-cloud`
 

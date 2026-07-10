@@ -3,8 +3,9 @@
 A deployment can add its own domain modules **on top of** the standard framework
 set without editing a single framework-owned file, and the module survives
 `voyant upgrade`. This is the "custom module" seam from the consolidated-deployments
-RFC (the "20%"). Three mechanisms cooperate, all **build-time** (Cloudflare
-Workers compose statically — no runtime `require`):
+RFC (the "20%"). Three mechanisms cooperate, all **build-time**, so the resolved
+graph lowers to one deterministic Node application artifact with no runtime
+package discovery:
 
 1. **Graph activation** — `voyant.config.ts` selects `./src/modules/<name>`.
 2. **Declaration and runtime** — `voyant.ts` owns graph facets and `index.ts`
@@ -188,8 +189,9 @@ never re-runs or collides with your deployment migrations.
 - **Standard profile.** A custom module *adds* tables; it doesn't remove or
   re-shape framework tables. Arbitrary add/remove of *framework* modules is the
   D.2 (package-owned migrations) story — out of scope here.
-- **Discovery is build-time.** A new module requires a rebuild/redeploy (it's
-  compiled in), which is exactly what you want on Workers.
+- **Discovery is build-time.** A new module requires rebuilding and redeploying
+  the Node application artifact. Unified Voyant deployments do not target
+  Cloudflare Workers.
 - **Table names are global.** A custom table can't reuse a framework table name
   (e.g. `booking_notes` already exists) — `pnpm db:migrate` fails fast with
   `relation "…" already exists`. Prefix deployment-owned tables (`acme_*`) to stay

@@ -78,10 +78,12 @@ agents, HTTP) is a thin adapter over them.**
 
 - **Keep the bespoke trips `POST /tools/:tool`.** Rejected: not real MCP, no scopes/risk,
   not reusable across domains.
-- **A separate MCP worker (Durable-Object `McpAgent`, as in the sibling Voyant Cloud
-  repo).** Rejected for the operator: it adds a deployment + binding and splits tenancy;
-  the stateless in-deployment route group fits the single-worker, per-tenant model.
-- **`@modelcontextprotocol/sdk`'s Node-`http` `StreamableHTTPServerTransport`.** Rejected:
-  Node-oriented and fragile on Workers; `@hono/mcp` gives a web-standard transport.
+- **A separate MCP service (such as a Durable-Object `McpAgent`).** Rejected for
+  the operator: it adds a deployment boundary and splits tenancy; the stateless
+  in-deployment route group fits the one-application-per-tenant model.
+- **`@modelcontextprotocol/sdk`'s Node-`http`
+  `StreamableHTTPServerTransport`.** Rejected because it bypasses the
+  deployment's existing Hono routing and middleware; `@hono/mcp` preserves that
+  web-standard transport boundary.
 - **Full-SDK per-request statefulness.** Deferred: stateless JSON responses cover the
   request/response tool surface; SSE streaming can be added later if needed.

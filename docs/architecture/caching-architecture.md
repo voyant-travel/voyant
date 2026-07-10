@@ -1,7 +1,8 @@
 # Voyant Caching Architecture
 
-This guide defines how Voyant should treat caching across Cloudflare-first and
-self-hosted deployments.
+This guide defines how Node-hosted Voyant deployments should select and use
+cache providers. Edge applications outside the unified deployment graph own
+their caching independently.
 
 The goal is simple:
 
@@ -36,21 +37,25 @@ Rule:
 If stale or lost cache state would break correctness, it does not belong in the
 cache.
 
-### 2. Cloudflare-first templates should default to KV
+### 2. Cache providers come from the deployment graph
 
-For Cloudflare-worker Voyant templates, the default cache backend should stay
-KV.
+The resolved deployment graph selects the cache provider. A managed Node host
+may supply a remote KV-compatible provider; a self-hosted deployment may select
+Redis, Postgres-backed cache, or in-memory storage for local development.
 
 Reasons:
 
-- it matches the deployment model
+- it keeps runtime wiring consistent with the resolved graph
 - it keeps the default operationally simple
-- it is cheap and good for read-heavy reference caching
-- it avoids forcing Redis into edge-first templates that do not need it
+- it permits cheap, read-heavy reference caching without coupling application
+  code to one vendor
+- it avoids treating the mere presence of provider environment variables as
+  runtime selection
 
 Rule:
 
-For Cloudflare-first templates, KV should be the default cache backend.
+The graph-selected provider is authoritative; application code targets the
+shared cache contract.
 
 ### 3. Redis should be a first-class alternative, not the only answer
 
@@ -193,8 +198,9 @@ Voyant should not force one universal cache default across every template.
 
 A reasonable default split is:
 
-- Cloudflare worker templates: KV
-- Node/container templates: choose KV or Redis based on deployment assumptions
+- local Node development: in-memory
+- managed or self-hosted Node: choose a remote KV-compatible, Redis, or
+  Postgres-backed provider based on deployment assumptions
 
 Rule:
 

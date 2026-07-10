@@ -710,13 +710,17 @@ The cascade when a single thing changes:
 
 The key discipline: **invalidation is asymmetric — sources invalidate broadly (all `(locale, audience, market)` combinations for the affected entity), overlays invalidate narrowly (one `(locale, audience, market)` triple).** That asymmetry keeps overlay edits fast and cheap; source updates are rarer and warrant the broader sweep. The reverse-lookup index applies in both directions: any entity that references the changed one also reindexes.
 
-#### 5.7.4. Edge / Workers considerations
+#### 5.7.4. Edge cache considerations
 
-Voyant deployments often run on Cloudflare Workers. The Workers runtime brings its own cache surfaces — KV, the Cache API, R2 fronted with signed URLs. The catalog plane does not prescribe how these are used; it only requires that:
+Voyant deployments run on Node. Separate storefronts and other edge clients may
+place KV, CDN cache, or R2-backed delivery in front of the deployment. The
+catalog plane does not prescribe those external cache surfaces; it only
+requires that:
 
 - ETags are computed deterministically from the entity-version-token, so any edge cache that respects HTTP semantics invalidates correctly.
 - The source adapter contract supports a `freshness_check` operation (HEAD-equivalent) so edge caches can revalidate without full payload reads.
-- KV / Cache API usage is per-deployment; this document does not standardize a key schema for them.
+- External KV / CDN cache usage is owned by the edge application; this document
+  does not standardize a key schema for it.
 
 ### 5.8. Outbound change events and webhooks
 

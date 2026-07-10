@@ -152,9 +152,15 @@ If deployments need arbitrary module add/remove (not just the standard profile),
 
 **Effort:** D.1 medium (move ownership of the existing bundle into the framework package + framework-first apply order). D.2 high (standalone ADR + multi-source runner + replay test).
 
-### E. Workers / build-time composition — *cross-cutting constraint*
+### E. Node artifact / build-time composition — *cross-cutting constraint*
 
-The reference framework resolves modules dynamically at Node boot. Voyant runs on Cloudflare Workers (edge isolates) and must compose at **build time** — which the manifest/registry + generated routes + the lazy-route context-bridging already lean into. `createOperatorApp` therefore assembles from a statically-known, config-derived registry (no runtime `require` of arbitrary modules). Lazy loading stays the tool for cold-start weight. No change in direction; an explicit constraint the design must honor.
+Voyant deployments run as Node applications but still compose at **build time**
+to produce deterministic, inspectable artifacts. The manifest/registry,
+generated routes, and lazy-route context bridging already lean into this model.
+`createOperatorApp` therefore assembles from a statically known, config-derived
+registry with no runtime discovery of arbitrary packages. Lazy loading remains
+useful for boot weight, but Cloudflare Worker constraints are not part of this
+deployment model.
 
 ## The 20% — extension seam catalog
 

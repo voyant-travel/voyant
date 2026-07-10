@@ -11,9 +11,9 @@ products, finance, transactions, etc. — runs against a single Postgres
 database and is mounted into a single Hono app at deploy time.
 
 Customers buy Voyant per organization. Voyant Cloud's commercial offering
-provisions **one Postgres database + one Worker (or one Node runtime)
-per customer organization**. Customers self-hosting Voyant own their own
-infra and run the same one-DB-per-org topology.
+provisions **one Postgres database + one Node application runtime per customer
+organization**. Customers self-hosting Voyant own their own infra and run the
+same one-DB-per-org topology.
 
 There is no shared-tier today. There has never been one in the framework's
 history. There are no schema columns named `organizationId` whose purpose
@@ -54,7 +54,7 @@ inherit the same model.
   forgotten filter could leak across tenants — there's literally no
   cross-tenant data in the same database to leak to.
 - **Deploy-time enforcement is hard to bypass accidentally.** A
-  misconfigured Worker can't accidentally read another customer's DB
+  misconfigured Node application can't accidentally read another customer's DB
   unless someone hard-codes the wrong connection string.
 - **Module authors don't carry tenancy concerns.** A bookings package author
   writes a list query and ships it; tenancy is somebody else's problem
