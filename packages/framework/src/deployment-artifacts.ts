@@ -35,6 +35,18 @@ export {
   type VoyantGraphRuntimeWebhookPlan,
 } from "./runtime-lowering.js"
 export {
+  type ResolvedVoyantGraphRuntimeProviders,
+  type ResolveVoyantGraphRuntimeProvidersInput,
+  resolveVoyantGraphRuntimeProviders,
+  type SelectedVoyantGraphRuntimeProvider,
+  VOYANT_GRAPH_RUNTIME_PROVIDER_ERROR_CODES,
+  type VoyantGraphProviderFactory,
+  type VoyantGraphProviderFactoryContext,
+  VoyantGraphRuntimeProviderError,
+  type VoyantGraphRuntimeProviderErrorCode,
+  type VoyantGraphRuntimeProviderIssue,
+} from "./runtime-providers.js"
+export {
   type ResolvedVoyantGraphRuntimeConfig,
   type ResolvedVoyantGraphRuntimeSecret,
   type ResolvedVoyantGraphRuntimeValues,
@@ -158,6 +170,7 @@ const GENERATED_GRAPH_RUNTIME_IMPORTERS = ${formatRuntimeImporters(entries)}
 export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
   return createVoyantGraphRuntime({
     graphHash: GENERATED_GRAPH_RUNTIME_HASH,
+    providerSelections: ${formatGeneratedValue(input.graph.deployment.providers, 4)},
     entries: GENERATED_GRAPH_RUNTIME_IMPORTERS,
     modules: ${formatGeneratedValue(modules, 4)},
     plugins: ${formatGeneratedValue(plugins, 4)},

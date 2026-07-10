@@ -32,6 +32,7 @@ export interface GeneratedRuntimeUnitDefinition {
   secrets: VoyantGraphRuntimeSecretDefinition[]
   resources: VoyantGraphRuntimeResourceDefinition[]
   providers: VoyantGraphRuntimeProviderDefinition[]
+  requiredPorts: string[]
   accessScopes: string[]
   tools: VoyantGraphRuntimeToolDefinition[]
   actions: VoyantGraphRuntimeActionDefinition[]
@@ -147,6 +148,10 @@ export function lowerGraphRuntimeUnits(
         secrets,
         resources,
         providers,
+        requiredPorts: unit.requires.ports
+          .filter((port) => !port.optional)
+          .map((port) => port.id)
+          .sort(),
         accessScopes,
         tools,
         actions,

@@ -8,6 +8,9 @@ export const dbVoyantModule = defineModule({
   provides: {
     ports: [{ id: "database.client" }],
   },
+  requires: {
+    ports: [{ id: "database.client" }],
+  },
   schema: [
     {
       id: "@voyant-travel/db#schema",
@@ -47,9 +50,10 @@ export const dbVoyantModule = defineModule({
     {
       id: "@voyant-travel/db#provider.postgres-node",
       port: "database.client",
+      selection: { role: "database", value: "postgres" },
       runtime: {
         entry: "@voyant-travel/db/runtime",
-        export: "createDbClient",
+        export: "createGraphDbProvider",
       },
       config: { adapter: "node" },
     },

@@ -1057,6 +1057,19 @@ satisfies the graph's Postgres requirement, and the resolved value must be a
 valid Postgres URL. Phase 2 continues the remaining runtime compatibility and
 provisioning migration.
 
+Provider runtime selection is an explicit equality match between a provider
+declaration's `selection: { role, value }` and
+`deployment.providers[role]`. Runtime code must not derive that match from
+environment presence or provider ids. Before importing a provider body, the
+Node resolver proves that every non-optional required port has exactly one
+selected declaration. It then memoizes factory invocation and supplies only
+the owning unit's resolved config, secrets, resources, and static provider
+config. Composition receives typed provider values through `getProvider<T>()`
+and enumerable selection metadata contains no config, secret, resource, or
+provider instance values. The first migrated family is
+`database.client`/`database: postgres`; replacing the operator's remaining
+legacy database composition with this resolved value is a follow-up.
+
 The operator graph also runs an explicit source-admission policy for generated
 artifacts: selected packages must resolve to admitted lockfile/workspace
 provenance, deployment-local operator units get an explicit local workspace

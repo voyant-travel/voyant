@@ -1414,6 +1414,24 @@ function validatePromotedFacets(
   })
   validateEntityArray(input.providers, "providers", source, diagnostics, (entry, facet) => {
     requireNonEmptyString(entry.port, `${facet}.port`, source, diagnostics)
+    if (entry.selection !== undefined) {
+      if (!isRecord(entry.selection)) {
+        invalidFacet(
+          `${facet}.selection`,
+          source,
+          diagnostics,
+          "Provider selection must declare a role/value object.",
+        )
+      } else {
+        requireNonEmptyString(entry.selection.role, `${facet}.selection.role`, source, diagnostics)
+        requireNonEmptyString(
+          entry.selection.value,
+          `${facet}.selection.value`,
+          source,
+          diagnostics,
+        )
+      }
+    }
     validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
   })
   validateEntityArray(

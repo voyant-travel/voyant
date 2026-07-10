@@ -29,6 +29,11 @@ export interface VoyantGraphResourceDeclaration extends VoyantGraphFacetEntity {
 
 export interface VoyantGraphProviderDeclaration extends VoyantGraphFacetEntity {
   port: string
+  /** Explicit deployment.providers match. Provider ids and env never select implementations. */
+  selection?: {
+    role: string
+    value: string
+  }
   runtime: VoyantGraphRuntimeReference
   config?: VoyantGraphJsonObject
 }

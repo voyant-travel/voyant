@@ -9,6 +9,7 @@ describe("database deployment manifest", () => {
       id: "@voyant-travel/db",
       packageName: "@voyant-travel/db",
       provides: { ports: [{ id: "database.client" }] },
+      requires: { ports: [{ id: "database.client" }] },
       schema: [{ id: "@voyant-travel/db#schema", source: "@voyant-travel/db/schema" }],
       migrations: [{ id: "@voyant-travel/db#migrations", source: "./migrations" }],
       config: [{ id: "@voyant-travel/db#config.adapter", key: "DB_ADAPTER" }],
@@ -24,7 +25,8 @@ describe("database deployment manifest", () => {
         {
           id: "@voyant-travel/db#provider.postgres-node",
           port: "database.client",
-          runtime: { entry: "@voyant-travel/db/runtime", export: "createDbClient" },
+          selection: { role: "database", value: "postgres" },
+          runtime: { entry: "@voyant-travel/db/runtime", export: "createGraphDbProvider" },
           config: { adapter: "node" },
         },
       ],

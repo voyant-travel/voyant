@@ -150,6 +150,7 @@ export interface VoyantGraphRuntimeUnitDefinition {
   secrets?: readonly VoyantGraphRuntimeSecretDefinition[]
   resources?: readonly VoyantGraphRuntimeResourceDefinition[]
   providers?: readonly VoyantGraphRuntimeProviderDefinition[]
+  requiredPorts?: readonly string[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
   actions?: readonly VoyantGraphRuntimeActionDefinition[]
@@ -191,6 +192,7 @@ export interface VoyantGraphRuntimeUnitLoader
   secrets: readonly VoyantGraphRuntimeSecretLoader[]
   resources: readonly VoyantGraphRuntimeResourceDefinition[]
   providers: readonly VoyantGraphRuntimeProviderLoader[]
+  requiredPorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
@@ -209,6 +211,7 @@ export interface VoyantGraphRuntimeWebhookPlan extends VoyantGraphWebhookPlan {
 
 export interface VoyantGraphRuntime {
   graphHash: string
+  providerSelections: Readonly<Record<string, string>>
   modules: readonly VoyantGraphRuntimeUnitLoader[]
   plugins: readonly VoyantGraphRuntimeUnitLoader[]
   references: readonly VoyantGraphRuntimeReferenceLoader[]
@@ -216,6 +219,7 @@ export interface VoyantGraphRuntime {
   secrets: readonly VoyantGraphRuntimeSecretLoader[]
   resources: readonly VoyantGraphRuntimeResourceDefinition[]
   providers: readonly VoyantGraphRuntimeProviderLoader[]
+  requiredPorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
@@ -226,6 +230,7 @@ export interface VoyantGraphRuntime {
 
 export interface CreateVoyantGraphRuntimeInput {
   graphHash: string
+  providerSelections?: Readonly<Record<string, string>>
   entries: Readonly<Record<string, () => Promise<unknown>>>
   modules: readonly VoyantGraphRuntimeUnitDefinition[]
   plugins: readonly VoyantGraphRuntimeUnitDefinition[]
@@ -258,6 +263,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const secrets = [...modules, ...plugins].flatMap((unit) => unit.secrets)
   const resources = [...modules, ...plugins].flatMap((unit) => unit.resources)
   const providers = [...modules, ...plugins].flatMap((unit) => unit.providers)
+  const requiredPorts = sortedUnique([...modules, ...plugins].flatMap((unit) => unit.requiredPorts))
   const accessScopes = sortedUnique([...modules, ...plugins].flatMap((unit) => unit.accessScopes))
   const tools = [...modules, ...plugins].flatMap((unit) => unit.tools)
   const actions = [...modules, ...plugins].flatMap((unit) => unit.actions)
@@ -267,6 +273,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
 
   return {
     graphHash: input.graphHash,
+    providerSelections: { ...(input.providerSelections ?? {}) },
     modules,
     plugins,
     references,
@@ -274,6 +281,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     secrets,
     resources,
     providers,
+    requiredPorts,
     accessScopes,
     tools,
     actions,
@@ -373,6 +381,7 @@ function normalizeRuntimeUnitDefinition(
     secrets: [...(unit.secrets ?? [])],
     resources: [...(unit.resources ?? [])],
     providers: [...(unit.providers ?? [])],
+    requiredPorts: sortedUnique(unit.requiredPorts ?? []),
     accessScopes: sortedUnique(unit.accessScopes ?? []),
     tools: [...(unit.tools ?? [])],
     actions: [...(unit.actions ?? [])],
@@ -445,6 +454,7 @@ function createRuntimeUnitLoader(
     secrets,
     resources: unit.resources,
     providers,
+    requiredPorts: unit.requiredPorts,
     accessScopes: unit.accessScopes,
     tools,
     actions: unit.actions,
