@@ -82,7 +82,20 @@ const REGISTRY: Map<string, WorkflowDefinition> =
   globalRef[REGISTRY_KEY] ?? new Map<string, WorkflowDefinition>()
 globalRef[REGISTRY_KEY] = REGISTRY
 
-/** Declare a workflow. See docs/sdk-surface.md §2.1. */
+/**
+ * Define a workflow without registering it in the process-local registry.
+ * Use this for definitions that are collected explicitly by a project or plugin.
+ */
+export function defineWorkflow<TInput = unknown, TOutput = unknown>(
+  config: WorkflowConfig<TInput, TOutput>,
+): WorkflowDefinition<TInput, TOutput> {
+  return {
+    id: config.id,
+    config,
+  }
+}
+
+/** Declare and register a workflow. See docs/sdk-surface.md §2.1. */
 export function workflow<TInput = unknown, TOutput = unknown>(
   config: WorkflowConfig<TInput, TOutput>,
 ): WorkflowDefinition<TInput, TOutput> {
@@ -100,10 +113,7 @@ export function workflow<TInput = unknown, TOutput = unknown>(
         `If this is a real duplicate, \`voyant workflows build\` will reject the bundle.`,
     )
   }
-  const def: WorkflowDefinition<TInput, TOutput> = {
-    id: config.id,
-    config,
-  }
+  const def = defineWorkflow(config)
   REGISTRY.set(config.id, def as WorkflowDefinition)
   return def
 }
