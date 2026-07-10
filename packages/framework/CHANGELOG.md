@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.29.1
+
+### Patch Changes
+
+- 67f7a84: Validate deployment graph API route bundle metadata and required scope syntax.
+
 ## 0.29.0
 
 ### Minor Changes
