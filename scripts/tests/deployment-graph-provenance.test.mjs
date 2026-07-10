@@ -1,7 +1,13 @@
 import assert from "node:assert/strict"
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import path from "node:path"
 import { describe, it } from "node:test"
 
-import { packageRecordsFromPnpmLockfile } from "../lib/deployment-graph-provenance.mjs"
+import {
+  packageRecordsFromPnpmLockfile,
+  readPnpmLockfilePackageRecords,
+} from "../lib/deployment-graph-provenance.mjs"
 
 const lockfile = `
 lockfileVersion: '9.0'
@@ -74,6 +80,177 @@ describe("deployment graph package provenance", () => {
       {
         packageName: "@voyant-travel/plugin-netopia",
         source: { kind: "unknown" },
+      },
+    ])
+  })
+
+  it("attaches normalized v1 workspace package metadata and ignores legacy voyant blocks", () => {
+    const records = packageRecordsFromPnpmLockfile(lockfile, {
+      packageNames: [
+        "@voyant-travel/bookings",
+        "@voyant-travel/legacy",
+        "@voyant-travel/plugin-netopia",
+      ],
+      workspacePackageVersions: {
+        "@voyant-travel/bookings": "0.149.0",
+        "@voyant-travel/legacy": "0.1.0",
+      },
+      workspacePackageMetadata: {
+        "@voyant-travel/bookings": {
+          schemaVersion: "voyant.package.v1",
+          kind: "module",
+          compatibleWith: {
+            framework: " ^0.24.0 ",
+            targets: " node ",
+            modes: ["self-hosted", "invalid", 42, "managed-cloud", "self-hosted"],
+          },
+          requires: {
+            capabilities: ["booking.records", "", "booking.records", 42],
+            ports: [
+              "db.transaction",
+              { id: "payment.provider", optional: true },
+              { id: "ignored.optional", optional: "yes" },
+              { id: "" },
+            ],
+          },
+        },
+        "@voyant-travel/legacy": {
+          schema: "./schema",
+          requiresSchemas: ["@voyant-travel/db"],
+        },
+        "@voyant-travel/plugin-netopia": {
+          schemaVersion: "voyant.package.v1",
+          kind: "adapter",
+          compatibleWith: { targets: ["node"] },
+        },
+      },
+    })
+
+    assert.deepEqual(records, [
+      {
+        packageName: "@voyant-travel/bookings",
+        version: "0.149.0",
+        source: { kind: "workspace", reference: "link:../bookings" },
+        metadata: {
+          schemaVersion: "voyant.package.v1",
+          kind: "module",
+          compatibleWith: {
+            framework: "^0.24.0",
+            targets: ["node"],
+            modes: ["self-hosted", "managed-cloud"],
+          },
+          requires: {
+            capabilities: ["booking.records"],
+            ports: [
+              { id: "db.transaction" },
+              { id: "payment.provider", optional: true },
+              { id: "ignored.optional" },
+            ],
+          },
+        },
+      },
+      {
+        packageName: "@voyant-travel/legacy",
+        version: "0.1.0",
+        source: { kind: "unknown" },
+      },
+      {
+        packageName: "@voyant-travel/plugin-netopia",
+        version: "0.105.18",
+        source: {
+          kind: "registry",
+          reference:
+            "pnpm-lock:@voyant-travel/plugin-netopia@0.105.18(@types/pg@8.20.0)(postgres@3.4.9)",
+          integrity: "sha512-netopia",
+        },
+      },
+    ])
+  })
+
+  it("reads v1 voyant package metadata from package.json files", () => {
+    const repoRoot = mkdtempSync(path.join(tmpdir(), "voyant-provenance-"))
+    mkdirSync(path.join(repoRoot, "packages", "v1-module"), { recursive: true })
+    mkdirSync(path.join(repoRoot, "packages", "legacy-module"), { recursive: true })
+    writeFileSync(
+      path.join(repoRoot, "pnpm-lock.yaml"),
+      `
+lockfileVersion: '9.0'
+
+importers:
+  starters/operator:
+    dependencies:
+      '@acme/voyant-loyalty':
+        specifier: workspace:*
+        version: link:../../packages/v1-module
+      '@acme/legacy':
+        specifier: workspace:*
+        version: link:../../packages/legacy-module
+`,
+    )
+    writeFileSync(
+      path.join(repoRoot, "packages", "v1-module", "package.json"),
+      JSON.stringify(
+        {
+          name: "@acme/voyant-loyalty",
+          version: "1.2.3",
+          voyant: {
+            schemaVersion: "voyant.package.v1",
+            kind: "plugin",
+            compatibleWith: {
+              targets: ["node", "voyant-cloud"],
+              modes: "self-hosted",
+            },
+            requires: {
+              capabilities: "identity.people",
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    )
+    writeFileSync(
+      path.join(repoRoot, "packages", "legacy-module", "package.json"),
+      JSON.stringify(
+        {
+          name: "@acme/legacy",
+          version: "0.1.0",
+          voyant: {
+            schema: "./schema",
+            requiresSchemas: ["@voyant-travel/db"],
+          },
+        },
+        null,
+        2,
+      ),
+    )
+
+    const records = readPnpmLockfilePackageRecords({
+      repoRoot,
+      packageNames: ["@acme/legacy", "@acme/voyant-loyalty"],
+    })
+
+    assert.deepEqual(records, [
+      {
+        packageName: "@acme/legacy",
+        version: "0.1.0",
+        source: { kind: "workspace", reference: "link:../../packages/legacy-module" },
+      },
+      {
+        packageName: "@acme/voyant-loyalty",
+        version: "1.2.3",
+        source: { kind: "workspace", reference: "link:../../packages/v1-module" },
+        metadata: {
+          schemaVersion: "voyant.package.v1",
+          kind: "plugin",
+          compatibleWith: {
+            targets: ["node", "voyant-cloud"],
+            modes: ["self-hosted"],
+          },
+          requires: {
+            capabilities: ["identity.people"],
+          },
+        },
       },
     ])
   })
