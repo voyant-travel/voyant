@@ -43,7 +43,7 @@
     "verify:native-date-inputs": "node scripts/check-native-date-inputs.mjs",
     "verify:raw-minor-unit-labels": "node scripts/check-raw-minor-unit-labels.mjs",
     "verify:lockstep-membership": "node scripts/check-lockstep-membership.mjs",
-    "verify:admin-composition-drift": "node scripts/check-admin-composition-drift.mjs",
+    "verify:admin-composition-drift": "node --test scripts/tests/check-admin-composition-drift.test.mjs && node scripts/check-admin-composition-drift.mjs",
     "verify:deployment-graph-openapi-coverage": "node --test scripts/tests/check-deployment-graph-openapi-coverage.test.mjs && node scripts/check-deployment-graph-openapi-coverage.mjs",
     "verify:deployment-graph": "node --test scripts/tests/deployment-graph-provenance.test.mjs && node --import tsx --test scripts/tests/deployment-graph-doctor.test.ts && node --test scripts/tests/check-deployment-graph-import-cheap.test.mjs && node scripts/check-deployment-graph-import-cheap.mjs && pnpm verify:deployment-graph-openapi-coverage && tsx scripts/check-deployment-graph.ts && tsx scripts/emit-deployment-graph.ts",
     "verify:framework-bom": "node scripts/generate-framework-bom.mjs",
