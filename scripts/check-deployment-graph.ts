@@ -18,6 +18,7 @@ import {
 } from "../packages/framework/src/deployment-graph.ts"
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import { defineVoyantProject } from "../packages/framework/src/profile.ts"
+import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
@@ -234,19 +235,29 @@ async function main(): Promise<void> {
   const operatorPackageNames = new Set(
     operatorGraph.packageRecords.map((record) => record.packageName),
   )
+  const selectedPackageNames = new Set(
+    [...operatorGraph.modules, ...operatorGraph.plugins].map((unit) => unit.packageName),
+  )
+  const runtimeOnlyPackageNames = new Set(
+    runtimeReferencePackageNames([...operatorGraph.modules, ...operatorGraph.plugins]).filter(
+      (packageName) => !selectedPackageNames.has(packageName),
+    ),
+  )
   for (const record of operatorGraph.packageRecords) {
     if (record.source?.kind === "unknown") {
       failures.push(`expected operator graph package record ${record.packageName} to be admitted`)
     }
     const expectedKind =
-      OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS.get(record.packageName) ?? "module"
+      OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS.get(record.packageName) ??
+      (runtimeOnlyPackageNames.has(record.packageName) ? "library" : "module")
     const metadata = record.metadata
     if (
       metadata?.schemaVersion !== "voyant.package.v1" ||
       metadata.kind !== expectedKind ||
       typeof metadata.compatibleWith?.framework !== "string" ||
       !metadata.compatibleWith.targets?.includes("node") ||
-      !metadata.compatibleWith.targets?.includes("voyant-cloud") ||
+      (!runtimeOnlyPackageNames.has(record.packageName) &&
+        !metadata.compatibleWith.targets?.includes("voyant-cloud")) ||
       !metadata.compatibleWith.modes?.includes("local") ||
       !metadata.compatibleWith.modes?.includes("managed-cloud") ||
       !metadata.compatibleWith.modes?.includes("self-hosted")

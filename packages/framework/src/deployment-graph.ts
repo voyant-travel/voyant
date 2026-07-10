@@ -2014,17 +2014,40 @@ function validateRuntimeReferenceAdmission(
   const diagnostics: VoyantGraphDiagnostic[] = []
 
   for (const unit of units) {
-    for (const route of unit.api) {
-      const entry = route.runtime?.entry
-      if (!entry) continue
+    const references: Array<{ entry: string; facet: string }> = []
+    const add = (facet: string, runtime?: { entry: string }) => {
+      if (runtime) references.push({ entry: runtime.entry, facet })
+    }
+    for (const route of unit.api) add(`api.${route.id}.runtime.entry`, route.runtime)
+    for (const config of unit.config ?? []) {
+      add(`config.validator.${config.id}.entry`, config.validator)
+    }
+    for (const secret of unit.secrets ?? []) {
+      add(`secrets.validator.${secret.id}.entry`, secret.validator)
+    }
+    for (const provider of unit.providers ?? []) {
+      add(`providers.runtime.${provider.id}.entry`, provider.runtime)
+    }
+    for (const copy of unit.admin?.copy ?? []) {
+      add(`admin.copy.runtime.${copy.id}.entry`, copy.runtime)
+    }
+    for (const route of unit.admin?.routes ?? []) {
+      add(`admin.routes.runtime.${route.id}.entry`, route.runtime)
+    }
+    for (const contribution of unit.admin?.contributions ?? []) {
+      add(`admin.contributions.runtime.${contribution.id}.entry`, contribution.runtime)
+    }
+    for (const tool of unit.tools ?? []) add(`tools.runtime.${tool.id}.entry`, tool.runtime)
+
+    for (const { entry, facet } of references) {
       const packageName = entry.startsWith(".") ? unit.packageName : packageNameFromSpecifier(entry)
       if (admittedPackages.has(packageName)) continue
       diagnostics.push(
         diagnostic({
           code: "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
           source: unit.id,
-          facet: `api.${route.id}.runtime.entry`,
-          message: `Runtime entry ${entry} resolves to ${packageName}, which is not present in admitted package records.`,
+          facet,
+          message: `Runtime ${facet} entry ${entry} resolves to ${packageName}, which is not present in admitted package records.`,
           hint: "Declare runtime code from the owning package or add and admit the referenced package.",
         }),
       )

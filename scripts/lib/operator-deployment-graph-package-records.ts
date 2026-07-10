@@ -19,6 +19,10 @@ import {
 } from "../../packages/framework/src/deployment-graph.ts"
 import type { ManagedScheduledJob } from "../../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectProviders } from "../../packages/framework/src/profile-types.ts"
+import {
+  inferredNodeRuntimePackageMetadata,
+  runtimeReferencePackageNames,
+} from "../../packages/framework/src/project-resolver.ts"
 import { readPnpmLockfilePackageRecords } from "./deployment-graph-provenance.mjs"
 import { loadVoyantPackageManifests } from "./load-voyant-package-manifests.ts"
 
@@ -103,7 +107,7 @@ export async function resolveOperatorDeploymentGraph(
     admission: OPERATOR_GRAPH_ADMISSION_POLICY,
   } as const
   const discoveredGraph = await resolveDeploymentGraph(graphInput)
-  const packageRecords = withOperatorDeploymentLocalPackageRecords(
+  const selectedPackageRecords = withOperatorDeploymentLocalPackageRecords(
     readPnpmLockfilePackageRecords({
       repoRoot: options.repoRoot,
       projectRoot: options.projectRoot,
@@ -116,6 +120,34 @@ export async function resolveOperatorDeploymentGraph(
       packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
     }),
   )
+  const manifestedGraph = await resolveDeploymentGraphWithPackageManifests({
+    ...graphInput,
+    packageRecords: selectedPackageRecords,
+    loadPackageManifests: (record) =>
+      loadVoyantPackageManifests(record, {
+        projectRoot: options.projectRoot,
+        repoRoot: options.repoRoot,
+      }),
+  })
+  const referencedPackageNames = runtimeReferencePackageNames([
+    ...manifestedGraph.modules,
+    ...manifestedGraph.plugins,
+  ])
+  const packageRecords = withInferredRuntimePackageMetadata(
+    withOperatorDeploymentLocalPackageRecords(
+      readPnpmLockfilePackageRecords({
+        repoRoot: options.repoRoot,
+        projectRoot: options.projectRoot,
+        importerPaths: ["starters/operator"],
+        packageNames: [
+          ...manifestedGraph.packageRecords.map((record) => record.packageName),
+          ...referencedPackageNames,
+        ],
+        packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
+      }),
+    ),
+    referencedPackageNames,
+  )
   const graph = await resolveDeploymentGraphWithPackageManifests({
     ...graphInput,
     packageRecords,
@@ -127,6 +159,18 @@ export async function resolveOperatorDeploymentGraph(
   })
 
   return { ...resolved, graph }
+}
+
+function withInferredRuntimePackageMetadata(
+  records: readonly VoyantGraphPackageRecord[],
+  runtimePackageNames: readonly string[],
+): VoyantGraphPackageRecord[] {
+  const runtimePackages = new Set(runtimePackageNames)
+  return records.map((record) =>
+    runtimePackages.has(record.packageName) && !record.metadata
+      ? { ...record, metadata: inferredNodeRuntimePackageMetadata() }
+      : record,
+  )
 }
 
 async function resolveOperatorProject(
@@ -234,6 +278,17 @@ function manifestFromResolvedUnit(
     subscribers: unit.subscribers,
     events: unit.events,
     workflows: unit.workflows,
+    ...(unit.setupMigrations ? { setupMigrations: unit.setupMigrations } : {}),
+    ...(unit.config ? { config: unit.config } : {}),
+    ...(unit.secrets ? { secrets: unit.secrets } : {}),
+    ...(unit.resources ? { resources: unit.resources } : {}),
+    ...(unit.providers ? { providers: unit.providers } : {}),
+    ...(unit.access ? { access: unit.access } : {}),
+    ...(unit.admin ? { admin: unit.admin } : {}),
+    ...(unit.tools ? { tools: unit.tools } : {}),
+    ...(unit.webhooks ? { webhooks: unit.webhooks } : {}),
+    ...(unit.actions ? { actions: unit.actions } : {}),
+    ...(unit.lifecycle ? { lifecycle: unit.lifecycle } : {}),
   }
 }
 

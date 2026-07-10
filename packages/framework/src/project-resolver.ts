@@ -15,7 +15,9 @@ import type {
 import { buildProjectRuntimeModule } from "./deployment-artifacts.js"
 import {
   deriveDeploymentRequirements,
+  packageNameFromSpecifier,
   type ResolvedVoyantDeploymentGraph,
+  type ResolvedVoyantGraphUnit,
   resolveDeploymentGraphWithPackageManifests,
   type VoyantGraphPackageMetadata,
   type VoyantGraphPackageRecord,
@@ -71,7 +73,7 @@ interface InspectedPackage {
 
 interface MaterializedProject {
   project: VoyantGraphProject
-  packages: ReadonlyMap<string, InspectedPackage>
+  packages: Map<string, InspectedPackage>
 }
 
 interface PackageJson {
@@ -96,8 +98,9 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const materialized = await materializeProjectSelections(project, projectRoot)
   const providers = { ...(project.deployment?.providers ?? {}) }
   const mode = project.deployment?.mode
-  const graph = requireTargetNeutralGraph(
-    await resolveDeploymentGraphWithPackageManifests({
+  const frameworkVersion = await readFrameworkVersion()
+  const resolveGraph = () =>
+    resolveDeploymentGraphWithPackageManifests({
       project: materialized.project,
       deployment: {
         providers,
@@ -105,20 +108,24 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
         requirements: deriveDeploymentRequirements(providers),
       },
       packageRecords: [...materialized.packages.values()].map(({ record }) => record),
-      frameworkVersion: await readFrameworkVersion(),
+      frameworkVersion,
       loadPackageManifests: (record) => loadAdmittedPackageManifests(record, materialized.packages),
-    }),
-  )
+    })
+  let graph = await resolveGraph()
+  const packageCount = materialized.packages.size
+  await materializeRuntimeReferencePackages(graph, projectRoot, materialized.packages)
+  if (materialized.packages.size !== packageCount) graph = await resolveGraph()
+  const targetNeutralGraph = requireTargetNeutralGraph(graph)
 
   const runtimeEntry = VOYANT_PROJECT_RUNTIME_ENTRY
   const files: FrameworkGeneratedProjectFile[] = [
     {
       path: runtimeEntry,
       contents: buildProjectRuntimeModule({
-        graph,
+        graph: targetNeutralGraph,
         command: "voyant project resolve",
         runtimeEntryOverrides: await buildLocalRuntimeEntryOverrides(
-          graph,
+          targetNeutralGraph,
           materialized.packages,
           projectRoot,
           runtimeEntry,
@@ -128,12 +135,132 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   ]
 
   return {
-    graph,
+    graph: targetNeutralGraph,
     artifacts: {
       runtimeEntry,
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
-      migrationPlan: buildMigrationPlan(graph),
+      migrationPlan: buildMigrationPlan(targetNeutralGraph),
     },
+  }
+}
+
+interface RuntimePackageReference {
+  ownerPackageName: string
+  entry: string
+}
+
+/** Return the external package closure used by generated runtime facet importers. */
+export function runtimeReferencePackageNames(units: readonly ResolvedVoyantGraphUnit[]): string[] {
+  return [...new Set(runtimePackageReferences(units).map(runtimeReferencePackageName))].sort()
+}
+
+/** Metadata inferred after a package export is proven loadable by the Node resolver. */
+export function inferredNodeRuntimePackageMetadata(): VoyantGraphPackageMetadata {
+  return {
+    schemaVersion: "voyant.package.v1",
+    kind: "library",
+    compatibleWith: {
+      framework: "*",
+      targets: ["node"],
+      modes: ["local", "managed-cloud", "self-hosted"],
+    },
+  }
+}
+
+async function materializeRuntimeReferencePackages(
+  graph: ResolvedVoyantDeploymentGraph,
+  projectRoot: string,
+  packages: Map<string, InspectedPackage>,
+): Promise<void> {
+  for (const reference of runtimePackageReferences([...graph.modules, ...graph.plugins])) {
+    const packageName = runtimeReferencePackageName(reference)
+    let inspected = packages.get(packageName)
+    if (!inspected) {
+      inspected = await inspectRuntimePackage(packageName, projectRoot)
+      packages.set(packageName, inspected)
+    }
+    const packageJson = await readPackageJson(inspected.directory)
+    assertRuntimeExport(packageJson.exports, reference, packageName)
+  }
+}
+
+function runtimePackageReferences(
+  units: readonly ResolvedVoyantGraphUnit[],
+): RuntimePackageReference[] {
+  const references: RuntimePackageReference[] = []
+  const add = (unit: ResolvedVoyantGraphUnit, runtime?: { entry: string }) => {
+    if (runtime) references.push({ ownerPackageName: unit.packageName, entry: runtime.entry })
+  }
+
+  for (const unit of units) {
+    for (const route of unit.api) add(unit, route.runtime)
+    for (const config of unit.config ?? []) add(unit, config.validator)
+    for (const secret of unit.secrets ?? []) add(unit, secret.validator)
+    for (const provider of unit.providers ?? []) add(unit, provider.runtime)
+    for (const copy of unit.admin?.copy ?? []) add(unit, copy.runtime)
+    for (const route of unit.admin?.routes ?? []) add(unit, route.runtime)
+    for (const contribution of unit.admin?.contributions ?? []) add(unit, contribution.runtime)
+    for (const tool of unit.tools ?? []) add(unit, tool.runtime)
+  }
+
+  return references.sort(
+    (left, right) =>
+      runtimeReferencePackageName(left).localeCompare(runtimeReferencePackageName(right)) ||
+      left.entry.localeCompare(right.entry),
+  )
+}
+
+function runtimeReferencePackageName(reference: RuntimePackageReference): string {
+  return reference.entry.startsWith(".")
+    ? reference.ownerPackageName
+    : packageNameFromSpecifier(reference.entry)
+}
+
+async function inspectRuntimePackage(
+  packageName: string,
+  projectRoot: string,
+): Promise<InspectedPackage> {
+  let directory: string
+  try {
+    directory = resolveInstalledPackageDirectory(packageName, projectRoot)
+  } catch {
+    throw new Error(
+      `VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED: resolveProject: runtime package ${packageName} is not installed.`,
+    )
+  }
+  const packageJson = await readPackageJson(directory)
+  const actualPackageName = requirePackageName(packageJson, directory)
+  if (actualPackageName !== packageName) {
+    throw new Error(
+      `VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED: resolveProject: runtime package ${packageName} resolved package ${actualPackageName}.`,
+    )
+  }
+  const metadata =
+    parsePackageMetadata(packageJson.voyant, packageName, false) ??
+    inferredNodeRuntimePackageMetadata()
+  return {
+    directory,
+    record: {
+      packageName,
+      ...(typeof packageJson.version === "string" ? { version: packageJson.version } : {}),
+      source: { kind: "registry", reference: packageName },
+      metadata,
+    },
+  }
+}
+
+function assertRuntimeExport(
+  exports: unknown,
+  reference: RuntimePackageReference,
+  packageName: string,
+): void {
+  const entry = lowerOwnerRuntimeEntry(reference.ownerPackageName, reference.entry)
+  const exportKey = entry === packageName ? "." : `./${entry.slice(packageName.length + 1)}`
+  const targets = isRecord(exports) ? packageExportTargets(exports[exportKey]) : undefined
+  if (!targets || targets.length === 0) {
+    throw new Error(
+      `VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED: resolveProject: runtime entry ${reference.entry} resolves to ${packageName}, which does not export ${exportKey}.`,
+    )
   }
 }
 
@@ -312,9 +439,9 @@ async function buildLocalRuntimeEntryOverrides(
     const inspected = packages.get(unit.packageName)
     if (inspected?.record.source.kind !== "file") continue
     const packageJson = await readPackageJson(inspected.directory)
-    for (const route of unit.api) {
-      if (!route.runtime) continue
-      const packageEntry = lowerOwnerRuntimeEntry(unit.packageName, route.runtime.entry)
+    for (const reference of runtimePackageReferences([unit])) {
+      if (runtimeReferencePackageName(reference) !== unit.packageName) continue
+      const packageEntry = lowerOwnerRuntimeEntry(unit.packageName, reference.entry)
       const exportKey =
         packageEntry === unit.packageName
           ? "."
@@ -444,6 +571,17 @@ function requirePackageName(packageJson: PackageJson, directory: string): string
 }
 
 function requirePackageMetadata(value: unknown, packageName: string): VoyantGraphPackageMetadata {
+  const metadata = parsePackageMetadata(value, packageName, true)
+  if (!metadata) throw new Error(`resolveProject: ${packageName} package metadata is missing.`)
+  return metadata
+}
+
+function parsePackageMetadata(
+  value: unknown,
+  packageName: string,
+  requireManifest: boolean,
+): VoyantGraphPackageMetadata | undefined {
+  if (value === undefined && !requireManifest) return undefined
   if (!isRecord(value) || value.schemaVersion !== "voyant.package.v1") {
     throw new Error(
       `resolveProject: ${packageName} must declare package.json#voyant schemaVersion voyant.package.v1.`,
@@ -457,9 +595,14 @@ function requirePackageMetadata(value: unknown, packageName: string): VoyantGrap
   ) {
     throw new Error(`resolveProject: ${packageName} package.json#voyant.kind is invalid.`)
   }
-  if (value.manifest !== "./voyant") {
+  if (requireManifest && value.manifest !== "./voyant") {
     throw new Error(
       `resolveProject: ${packageName} package.json#voyant.manifest must be "./voyant".`,
+    )
+  }
+  if (value.manifest !== undefined && value.manifest !== "./voyant") {
+    throw new Error(
+      `resolveProject: ${packageName} package.json#voyant.manifest must be "./voyant" when declared.`,
     )
   }
   const compatibleWith = parseCompatibleWith(value.compatibleWith, packageName)
@@ -467,7 +610,7 @@ function requirePackageMetadata(value: unknown, packageName: string): VoyantGrap
   return {
     schemaVersion: "voyant.package.v1",
     kind: value.kind,
-    manifest: "./voyant",
+    ...(value.manifest === "./voyant" ? { manifest: "./voyant" as const } : {}),
     ...(compatibleWith ? { compatibleWith } : {}),
     ...(requires ? { requires } : {}),
   }

@@ -485,6 +485,38 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("rejects unadmitted runtime packages from non-API facets during resolution", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/voyant-loyalty",
+            admin: {
+              routes: [
+                {
+                  id: "@acme/voyant-loyalty#admin.members",
+                  path: "/members",
+                  runtime: { entry: "@unknown/loyalty-react/admin", export: "membersRoute" },
+                },
+              ],
+            },
+          }),
+        ],
+      }),
+      packageRecords: [{ packageName: "@acme/voyant-loyalty", source: { kind: "workspace" } }],
+    })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
+          facet: "admin.routes.runtime.@acme/voyant-loyalty#admin.members.entry",
+          source: "@acme/voyant-loyalty",
+        }),
+      ]),
+    )
+  })
+
   it("rejects bare legacy aliases as canonical graph ids", () => {
     expect(
       validateGraphUnitManifest({

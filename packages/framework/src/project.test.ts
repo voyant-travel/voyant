@@ -86,7 +86,7 @@ describe("framework project resolver", () => {
       resolve(root, {
         ...project,
         deployment: { target: "cloudflare-worker" },
-      } as unknown as typeof project),
+      }),
     ).rejects.toThrow("unified application deployment target must be node")
   })
 
@@ -161,17 +161,145 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     expect((globalThis as Record<string, unknown>).__voyantManifestLoaded).toBeUndefined()
   })
 
+  it("admits packages referenced by lowered runtime facets before emitting importers", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@acme/loyalty"),
+        admin: {
+          routes: [
+            {
+              id: "@acme/loyalty#admin.members",
+              path: "/members",
+              runtime: { entry: "@acme/loyalty-react/admin", export: "membersRoute" },
+            },
+          ],
+        },
+      })}\n`,
+    })
+    writePackage(root, {
+      name: "@acme/loyalty-react",
+      manifest: "",
+      voyant: null,
+      extraExports: { "./admin": "./admin.mjs" },
+    })
+    writeFileSync(
+      path.join(root, "node_modules", "@acme", "loyalty-react", "admin.mjs"),
+      "export const membersRoute = {}\n",
+    )
+
+    const resolution = await resolve(root, defineProject({ modules: ["@acme/loyalty"] }))
+
+    expect(resolution.graph.packageRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          packageName: "@acme/loyalty-react",
+          version: "1.2.3",
+          source: { kind: "registry", reference: "@acme/loyalty-react" },
+          metadata: expect.objectContaining({
+            kind: "library",
+            compatibleWith: {
+              framework: "*",
+              targets: ["node"],
+              modes: ["local", "managed-cloud", "self-hosted"],
+            },
+          }),
+        }),
+      ]),
+    )
+    expect(resolution.artifacts.files[0]?.contents).toContain(
+      '"@acme/loyalty-react/admin": () => import("@acme/loyalty-react/admin")',
+    )
+  })
+
+  it("rejects incompatible runtime-only packages before emitting importers", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@acme/loyalty"),
+        tools: [
+          {
+            id: "@acme/loyalty#tool.list-members",
+            name: "list_members",
+            description: "List loyalty members",
+            runtime: { entry: "@acme/loyalty-tools/runtime", export: "listMembers" },
+          },
+        ],
+      })}\n`,
+    })
+    writePackage(root, {
+      name: "@acme/loyalty-tools",
+      manifest: "",
+      voyant: {
+        schemaVersion: "voyant.package.v1",
+        kind: "library",
+        compatibleWith: { modes: ["managed-cloud"] },
+      },
+      extraExports: { "./runtime": "./runtime.mjs" },
+    })
+
+    await expect(
+      resolve(
+        root,
+        defineProject({
+          modules: ["@acme/loyalty"],
+          deployment: { mode: "self-hosted" },
+        }),
+      ),
+    ).rejects.toThrow(/VOYANT_GRAPH_PACKAGE_INCOMPATIBLE.*@acme\/loyalty-tools/s)
+  })
+
+  it("rejects runtime subpaths that are absent from the referenced package exports", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@acme/loyalty"),
+        admin: {
+          copy: [
+            {
+              id: "@acme/loyalty#copy.admin",
+              namespace: "loyalty",
+              runtime: { entry: "@acme/loyalty-react/i18n", export: "copy" },
+            },
+          ],
+        },
+      })}\n`,
+    })
+    writePackage(root, {
+      name: "@acme/loyalty-react",
+      manifest: "",
+      voyant: null,
+      extraExports: { ".": "./index.mjs" },
+    })
+
+    await expect(resolve(root, defineProject({ modules: ["@acme/loyalty"] }))).rejects.toThrow(
+      "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED: resolveProject: runtime entry @acme/loyalty-react/i18n resolves to @acme/loyalty-react, which does not export ./i18n.",
+    )
+  })
+
   it("loads project-relative manifests and lowers their runtime exports beneath .voyant", async () => {
     const root = projectRoot()
     const localDirectory = path.join(root, "src", "modules", "loyalty")
     writePackageAt(localDirectory, {
       name: "@fixture/loyalty",
-      manifest: `export default ${JSON.stringify(
-        moduleManifest("@fixture/loyalty", { runtimeEntry: "./runtime" }),
-      )}\n`,
-      extraExports: { "./runtime": "./runtime.mjs" },
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@fixture/loyalty", { runtimeEntry: "./runtime" }),
+        tools: [
+          {
+            id: "@fixture/loyalty#tool.members",
+            name: "list_members",
+            description: "List members",
+            runtime: { entry: "./tools", export: "listMembers" },
+          },
+        ],
+      })}\n`,
+      extraExports: { "./runtime": "./runtime.mjs", "./tools": "./tools.mjs" },
     })
     writeFileSync(path.join(localDirectory, "runtime.mjs"), "export const routes = {}\n")
+    writeFileSync(path.join(localDirectory, "tools.mjs"), "export const listMembers = {}\n")
 
     const resolution = await resolve(root, defineProject({ modules: ["./src/modules/loyalty"] }))
     const runtimeSource = resolution.artifacts.files[0]?.contents ?? ""
@@ -186,6 +314,9 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     })
     expect(runtimeSource).toContain(
       '"../../src/modules/loyalty/runtime.mjs": () => import("../../src/modules/loyalty/runtime.mjs")',
+    )
+    expect(runtimeSource).toContain(
+      '"../../src/modules/loyalty/tools.mjs": () => import("../../src/modules/loyalty/tools.mjs")',
     )
     expect(runtimeSource).not.toContain(root)
     expect(runtimeSource).not.toContain("starters/")
