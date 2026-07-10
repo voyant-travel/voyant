@@ -10,29 +10,19 @@
  */
 
 import type { Actor } from "@voyant-travel/core"
-import { createVoyantApp } from "@voyant-travel/framework"
+import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
-import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
 
-import {
-  buildOperatorProviders,
-  deploymentLocalExtensions,
-  deploymentLocalModules,
-  OPERATOR_RUNTIME_MANIFEST,
-  operatorComposition,
-} from "./composition"
+import { createGeneratedGraphRuntime } from "../graph-runtime.generated"
+import { buildOperatorProviders, operatorGraphRuntimeBindings } from "./composition"
 import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never
 
-function build() {
-  const { modules, extensions } = composeFromManifest(
-    OPERATOR_RUNTIME_MANIFEST,
-    operatorComposition,
-    buildOperatorProviders(),
-  )
+async function build() {
+  const { modules, extensions } = await buildGraphComposition()
   return mountApp({
     // Stub db — enough to be leased + bridged; handlers may 5xx using it, which
     // still proves the route is mounted and the context reached the sub-app.
@@ -51,12 +41,8 @@ function build() {
   })
 }
 
-function buildWithSessionActor(actor: Actor) {
-  const { modules, extensions } = composeFromManifest(
-    OPERATOR_RUNTIME_MANIFEST,
-    operatorComposition,
-    buildOperatorProviders(),
-  )
+async function buildWithSessionActor(actor: Actor) {
+  const { modules, extensions } = await buildGraphComposition()
   return mountApp({
     // biome-ignore lint/suspicious/noExplicitAny: stub db for auth-surface regression -- owner: operator API tests.
     db: () => ({}) as any,
@@ -68,28 +54,28 @@ function buildWithSessionActor(actor: Actor) {
   })
 }
 
-function buildWithLiveFrontDoor() {
-  return createVoyantApp({
-    providers: buildOperatorProviders(),
-    modules: deploymentLocalModules,
-    extensions: deploymentLocalExtensions,
+async function buildWithLiveFrontDoor(actor: Actor = "staff") {
+  const { modules, extensions } = await buildGraphComposition()
+  return mountApp({
+    modules,
+    extensions,
     publicPaths: [...OPERATOR_PUBLIC_PATHS],
     // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test -- owner: operator API tests.
     db: () => ({}) as any,
     auth: {
-      resolve: () => ({ userId: "u1", actor: "staff" }),
+      resolve: () => ({ userId: "u1", actor }),
     },
   })
 }
 
 async function status(path: string, method = "GET"): Promise<number> {
-  const app = build()
+  const app = await build()
   const res = await app.request(path, { method }, TEST_ENV, TEST_CTX)
   return res.status
 }
 
 async function liveFrontDoorStatus(path: string, init: RequestInit = {}): Promise<number> {
-  const app = buildWithLiveFrontDoor()
+  const app = await buildWithLiveFrontDoor()
   const res = await app.request(path, init, TEST_ENV, TEST_CTX)
   return res.status
 }
@@ -99,8 +85,16 @@ async function responseWithSessionActor(
   path: string,
   init: RequestInit,
 ): Promise<Response> {
-  const app = buildWithSessionActor(actor)
+  const app = await buildWithSessionActor(actor)
   return app.request(path, init, TEST_ENV, TEST_CTX)
+}
+
+function buildGraphComposition() {
+  return composeVoyantGraphRuntime({
+    runtime: createGeneratedGraphRuntime(),
+    capabilities: buildOperatorProviders(),
+    bindings: operatorGraphRuntimeBindings,
+  })
 }
 
 describe("operator composed route mounting (smoke)", () => {
@@ -176,7 +170,7 @@ describe("operator composed route mounting (smoke)", () => {
     expect(res.status).not.toBe(404)
   })
 
-  it("lets storefront offer detail, apply, and redeem pass the public actor gate", async () => {
+  it("mounts storefront offer routes selected by the deployment graph", async () => {
     const offerPayload = {
       productId: "prod_123",
       pax: 2,
@@ -184,27 +178,34 @@ describe("operator composed route mounting (smoke)", () => {
       currency: "EUR",
     }
 
-    const detail = await liveFrontDoorStatus("/v1/public/offers/summer-sale")
-    const apply = await liveFrontDoorStatus("/v1/public/offers/summer-sale/apply", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(offerPayload),
-    })
-    const redeem = await liveFrontDoorStatus("/v1/public/offers/redeem", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...offerPayload, code: "SAVE10" }),
-    })
+    const app = await buildWithLiveFrontDoor("customer")
+    const detail = await app.request("/v1/public/offers/summer-sale", {}, TEST_ENV, TEST_CTX)
+    const apply = await app.request(
+      "/v1/public/offers/summer-sale/apply",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(offerPayload),
+      },
+      TEST_ENV,
+      TEST_CTX,
+    )
+    const redeem = await app.request(
+      "/v1/public/offers/redeem",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...offerPayload, code: "SAVE10" }),
+      },
+      TEST_ENV,
+      TEST_CTX,
+    )
 
-    expect(detail).not.toBe(401)
-    expect(detail).not.toBe(403)
-    expect(detail).not.toBe(404)
-    expect(apply).not.toBe(401)
-    expect(apply).not.toBe(403)
-    expect(apply).not.toBe(404)
-    expect(redeem).not.toBe(401)
-    expect(redeem).not.toBe(403)
-    expect(redeem).not.toBe(404)
+    for (const response of [detail, apply, redeem]) {
+      expect(response.status).not.toBe(401)
+      expect(response.status).not.toBe(403)
+      expect(response.status).not.toBe(404)
+    }
   })
 
   it("lets public operator settings pass the starter public actor gate", async () => {

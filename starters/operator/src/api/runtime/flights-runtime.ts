@@ -15,8 +15,10 @@ import { createOrderPaymentSessions } from "@voyant-travel/finance/order-payment
 import {
   createFlightAdminRoutes,
   createFlightOrderPaymentIntegration,
+  type createFlightsHonoModule,
   type FlightCardBilling,
 } from "@voyant-travel/flights"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import { createDemoFlightAdapter } from "@voyant-travel/plugin-flights-demo"
 import type { Context } from "hono"
 
@@ -53,9 +55,20 @@ async function startCardPayment(c: Context, sessionId: string, billing: FlightCa
 
 /** Build the flights admin routes wired with this deployment's options. */
 export function buildFlightAdminRoutes() {
+  return createFlightAdminRoutes(createOperatorFlightOptions())
+}
+
+/** Configure the graph-selected package factory with operator-owned adapters. */
+export function createOperatorFlightsHonoModule(
+  createModule: typeof createFlightsHonoModule,
+): HonoModule {
+  return createModule(createOperatorFlightOptions())
+}
+
+function createOperatorFlightOptions() {
   const payment = createFlightOrderPaymentIntegration({
     orderPaymentSessions: createOrderPaymentSessions({ targetType: "flight_order" }),
     startCardPayment,
   })
-  return createFlightAdminRoutes({ resolveAdapter, payment })
+  return { resolveAdapter, payment }
 }

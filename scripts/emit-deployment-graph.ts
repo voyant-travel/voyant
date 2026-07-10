@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
+  buildGraphRuntimeModule,
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
 } from "../packages/framework/src/deployment-artifacts.ts"
@@ -41,6 +42,7 @@ interface CliOptions {
   manifestOutputPath: string
   graphOutputPath: string
   entryOutputPath: string
+  runtimeOutputPath: string
 }
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
@@ -71,6 +73,10 @@ async function main(): Promise<void> {
       command,
     }),
   )
+  const runtimeText = formatGeneratedText(
+    options.runtimeOutputPath,
+    buildGraphRuntimeModule({ graph, command }),
+  )
   const manifest = buildDeploymentArtifactManifest({
     graph,
     graphArtifactPath: relativeToOperator(options.graphOutputPath),
@@ -92,6 +98,7 @@ async function main(): Promise<void> {
     await writeGeneratedFile(options.manifestOutputPath, manifestText)
     await writeGeneratedFile(options.graphOutputPath, graphText)
     await writeGeneratedFile(options.entryOutputPath, entryText)
+    await writeGeneratedFile(options.runtimeOutputPath, runtimeText)
     const report = buildDeploymentGraphDoctorReport({ graph })
     if (options.json) {
       process.stdout.write(buildDeploymentGraphDoctorJson(report))
@@ -106,11 +113,14 @@ async function main(): Promise<void> {
       process.exit(1)
     }
     console.log(
-      `emit-deployment-graph: wrote ${relativeToRepo(
+      `emit-deployment-graph: wrote ${[
         options.manifestOutputPath,
-      )}, ${relativeToRepo(options.graphOutputPath)}, and ${relativeToRepo(
+        options.graphOutputPath,
         options.entryOutputPath,
-      )} (${graph.contentHash})`,
+        options.runtimeOutputPath,
+      ]
+        .map(relativeToRepo)
+        .join(", ")} (${graph.contentHash})`,
     )
     return
   }
@@ -133,6 +143,12 @@ async function main(): Promise<void> {
         path: options.entryOutputPath,
         expected: entryText,
         facet: "runtime-entry",
+        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
+      },
+      {
+        path: options.runtimeOutputPath,
+        expected: runtimeText,
+        facet: "graph-runtime",
         hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
       },
     ],
@@ -268,6 +284,7 @@ function parseArgs(args: readonly string[]): CliOptions {
     manifestOutputPath: join(defaultOperatorRoot, "deployment-artifacts.generated.json"),
     graphOutputPath: join(defaultOperatorRoot, "deployment-graph.generated.json"),
     entryOutputPath: join(defaultOperatorRoot, "src", "runtime-entry.generated.ts"),
+    runtimeOutputPath: join(defaultOperatorRoot, "src", "graph-runtime.generated.ts"),
   }
 
   for (let index = 0; index < args.length; index += 1) {
@@ -297,6 +314,11 @@ function parseArgs(args: readonly string[]): CliOptions {
     }
     if (arg === "--entry-output") {
       options.entryOutputPath = resolvePath(readValue(args, index, arg))
+      index += 1
+      continue
+    }
+    if (arg === "--runtime-output") {
+      options.runtimeOutputPath = resolvePath(readValue(args, index, arg))
       index += 1
       continue
     }
@@ -346,6 +368,7 @@ Options:
   --manifest-output <path> deployment artifact manifest output path
   --graph-output <path>  resolved graph JSON output path
   --entry-output <path>  runtime entry metadata module output path
+  --runtime-output <path> selected graph runtime loader module output path
 `)
 }
 

@@ -1,18 +1,18 @@
 import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
-import { createVoyantApp } from "@voyant-travel/framework"
-import { defineLazyHonoBundle } from "@voyant-travel/hono"
+import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
+import { defineLazyHonoBundle, mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
+import {
+  createGeneratedGraphRuntime,
+  GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
+} from "../graph-runtime.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
   hasAuthPermission,
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import {
-  buildOperatorProviders,
-  deploymentLocalExtensions,
-  deploymentLocalModules,
-} from "./composition"
+import { buildOperatorProviders, operatorGraphRuntimeBindings } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
@@ -38,16 +38,16 @@ import { smartbillOperatorBundle } from "./subscribers/smartbill-bundle"
  */
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
-// The standard module/extension set is owned by @voyant-travel/framework;
-// `createVoyantApp` assembles it (FRAMEWORK_RUNTIME_MANIFEST + frameworkComposition)
-// with this deployment's injected `providers` and its two deployment-local module
-// families (`deploymentLocalModules`), then composes + mounts. The deployment no
-// longer hand-maintains a manifest or registry. See the consolidated-deployments
-// RFC (Workstream B) + voyant#1608 / #1620.
-export const app = createVoyantApp<AppBindings, ReturnType<typeof buildOperatorProviders>>({
-  providers: buildOperatorProviders(),
-  modules: deploymentLocalModules,
-  extensions: deploymentLocalExtensions,
+const operatorProviders = buildOperatorProviders()
+const graphComposition = await composeVoyantGraphRuntime({
+  runtime: createGeneratedGraphRuntime(),
+  capabilities: operatorProviders,
+  bindings: operatorGraphRuntimeBindings,
+})
+
+export const app = mountApp<AppBindings>({
+  modules: graphComposition.modules,
+  extensions: graphComposition.extensions,
   // Observability seam (RFC voyant#1553): stamp this app's name on emitted
   // error events and forward unhandled 5xx exceptions — each tagged with the
   // same `requestId` shown to the user on `X-Request-Id` — to the Workers log
@@ -120,13 +120,21 @@ export const app = createVoyantApp<AppBindings, ReturnType<typeof buildOperatorP
     tripsPaymentBundle,
     smartbillOperatorBundle,
     channelPushBundle,
-    defineLazyHonoBundle({
-      name: "netopia",
-      routes: ["/v1/admin/finance/providers/netopia/*", "/v1/finance/providers/netopia/callback"],
-      anonymous: ["/v1/finance/providers/netopia/callback"],
-      transactionalModules: ["finance"],
-      load: async () => import("@voyant-travel/plugin-netopia").then((m) => m.netopiaHonoBundle()),
-    }),
+    ...(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS.includes("@voyant-travel/plugin-netopia")
+      ? [
+          defineLazyHonoBundle({
+            name: "netopia",
+            routes: [
+              "/v1/admin/finance/providers/netopia/*",
+              "/v1/finance/providers/netopia/callback",
+            ],
+            anonymous: ["/v1/finance/providers/netopia/callback"],
+            transactionalModules: ["finance"],
+            load: async () =>
+              import("@voyant-travel/plugin-netopia").then((m) => m.netopiaHonoBundle()),
+          }),
+        ]
+      : []),
   ],
   auth: {
     handler: () => ({

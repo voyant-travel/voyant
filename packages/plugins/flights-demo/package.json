@@ -11,7 +11,8 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -23,6 +24,9 @@
   },
   "peerDependencies": {
     "@voyant-travel/flights": "workspace:^"
+  },
+  "dependencies": {
+    "@voyant-travel/core": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/flights": "workspace:^",
@@ -40,9 +44,19 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "plugin",
+    "manifest": "./voyant"
   }
 }

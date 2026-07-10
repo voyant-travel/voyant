@@ -34,15 +34,7 @@ const HTTP_METHODS = new Set([
 
 const DEFAULT_ALLOWLIST = new Map([
   [
-    "@voyant-travel/commerce#api",
-    "commerce routes are currently documented under commerce subdomains such as pricing, products, promotions, sellability, and storefront",
-  ],
-  [
-    "@voyant-travel/inventory#api",
-    "inventory routes are currently documented under inventory subdomains such as markets, suppliers, external-refs, and products",
-  ],
-  [
-    "@voyant-travel/public-document-delivery#api",
+    "@voyant-travel/public-document-delivery#api.public",
     "public document delivery routes are currently documented through the operator contract-document surface",
   ],
   [
@@ -50,12 +42,8 @@ const DEFAULT_ALLOWLIST = new Map([
     "flights declares a graph API bundle before committed operator OpenAPI paths are emitted for it",
   ],
   [
-    "@voyant-travel/operator#mcp.api",
+    "@voyant-travel/operator#mcp.api.admin",
     "operator MCP routes are intentionally not part of the committed operator OpenAPI reference yet",
-  ],
-  [
-    "@voyant-travel/operator#payment-link.api",
-    "payment-link routes are currently documented on the storefront surface only",
   ],
   [
     "@voyant-travel/operator#invitations.api.admin",
@@ -70,48 +58,36 @@ const DEFAULT_ALLOWLIST = new Map([
     "operator team routes are not yet emitted as a per-module OpenAPI document",
   ],
   [
-    "@voyant-travel/operator#realtime.api.admin",
-    "operator realtime admin routes are not yet emitted as a per-module OpenAPI document",
+    "@voyant-travel/realtime#api.admin",
+    "realtime admin routes are not yet emitted as a per-module OpenAPI document",
   ],
   [
-    "@voyant-travel/operator#realtime.api.public",
-    "operator realtime public routes are not yet emitted as a storefront OpenAPI document",
+    "@voyant-travel/realtime#api.public",
+    "realtime public routes are not yet emitted as a storefront OpenAPI document",
   ],
   [
-    "@voyant-travel/inventory#booking-extension.api",
-    "inventory booking extension operations are currently documented under the owning bookings/inventory surfaces",
+    "@voyant-travel/storage#api.admin.media",
+    "storage media routes do not yet expose a package OpenAPI registry",
   ],
   [
-    "@voyant-travel/inventory#authoring.extension.api",
-    "inventory authoring extension operations are currently documented under inventory subdomain surfaces",
+    "@voyant-travel/storage#api.admin.uploads",
+    "storage upload routes do not yet expose a package OpenAPI registry",
   ],
   [
-    "@voyant-travel/operator#booking-schedule-extension.api",
-    "operator booking-schedule extension operations are currently documented under the owning bookings surface",
+    "@voyant-travel/storage#api.admin.video-upload-ticket",
+    "storage video upload ticket routes do not yet expose a package OpenAPI registry",
   ],
   [
-    "@voyant-travel/operator#quote-version-snapshot-extension.api",
-    "operator quote-version snapshot extension operations are currently documented under the quotes surface",
+    "@voyant-travel/accommodations#content-extension.api.public",
+    "accommodation public content routes do not yet expose a package OpenAPI registry",
   ],
   [
-    "@voyant-travel/operator#booking-maintenance-extension.api",
-    "operator booking-maintenance extension operations are currently documented under the bookings surface",
+    "@voyant-travel/plugin-netopia#api",
+    "the external Netopia plugin does not yet publish an operator OpenAPI registry",
   ],
   [
-    "@voyant-travel/operator#action-ledger-health-extension.api",
-    "operator action-ledger health extension operations are currently documented under the action-ledger/workflow surfaces",
-  ],
-  [
-    "@voyant-travel/operator#proposal-extension.api",
-    "operator proposal extension operations are currently documented under the quotes/bookings surfaces",
-  ],
-  [
-    "@voyant-travel/operator#catalog-offers-extension.api",
-    "operator catalog-offers extension operations are currently documented under the catalog/storefront surfaces",
-  ],
-  [
-    "@voyant-travel/operator#catalog-checkout-extension.api",
-    "operator catalog-checkout extension operations are currently documented under the catalog/storefront surfaces",
+    "@voyant-travel/quotes#proposal-extension.api.public",
+    "public proposal routes do not yet expose a package OpenAPI registry",
   ],
 ])
 

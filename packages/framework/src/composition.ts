@@ -185,23 +185,30 @@ const CATALOG_BOOKING_TRANSACTIONAL_PATHS = [
   "/v1/public/catalog/holds",
 ] as const
 
-const CATALOG_CONTENT_ROUTE_PATHS = [
+const INVENTORY_CONTENT_ROUTE_PATHS = [
   "/v1/admin/products/:id/content",
   "/v1/public/products/:id/content",
+] as const
+
+const CRUISES_CONTENT_ROUTE_PATHS = [
   "/v1/admin/cruises/:id/content",
   "/v1/public/cruises/:id/content",
   "/v1/admin/cruises/:id/sailings/:sailingExternalId/pricing",
   "/v1/public/cruises/:id/sailings/:sailingExternalId/pricing",
+] as const
+
+const ACCOMMODATIONS_CONTENT_ROUTE_PATHS = [
   "/v1/admin/accommodations/:id/content",
   "/v1/public/accommodations/:id/content",
 ] as const
 
-const MEDIA_ROUTE_PATHS = [
-  "/v1/admin/products/:id/brochure/generate",
+const STORAGE_ROUTE_PATHS = [
   "/v1/admin/uploads",
   "/v1/admin/uploads/video",
   "/v1/admin/media/*",
 ] as const
+
+const INVENTORY_BROCHURE_ROUTE_PATHS = ["/v1/admin/products/:id/brochure/generate"] as const
 
 const PAYMENT_LINK_ROUTE_PATHS = [
   "/v1/public/payment-link-config",
@@ -377,14 +384,20 @@ export interface FrameworkProviders {
   // returns the sub-app; the framework owns the manifest entry + path matchers.
   /** Loads the flights admin routes (connector + payment wiring). */
   loadFlightAdminRoutes: LazyRoutesLoader
-  /** Loads the trips/MCP admin routes (tool context + trips service). */
+  /** Deployment-local MCP loader retained for operator compatibility. */
   loadMcpAdminRoutes: LazyRoutesLoader
   /** Loads the catalog booking-engine routes (connect client, source registry). */
   loadCatalogBookingRoutes: LazyRoutesLoader
-  /** Loads the catalog content routes (connect client, Typesense). */
-  loadCatalogContentRoutes: LazyRoutesLoader
-  /** Loads the media routes (R2 storage, video signer, brochure printer). */
-  loadMediaRoutes: LazyRoutesLoader
+  /** Loads inventory sourced-content routes. */
+  loadInventoryContentRoutes: LazyRoutesLoader
+  /** Loads cruise sourced-content and pricing routes. */
+  loadCruisesContentRoutes: LazyRoutesLoader
+  /** Loads accommodation sourced-content routes. */
+  loadAccommodationsContentRoutes: LazyRoutesLoader
+  /** Loads storage upload, serve, and video-ticket routes. */
+  loadStorageRoutes: LazyRoutesLoader
+  /** Loads inventory brochure generation routes. */
+  loadInventoryBrochureRoutes: LazyRoutesLoader
   /** Loads the storefront payment-link routes (card seam, bank transfer). */
   loadPaymentLinkRoutes: LazyRoutesLoader
   /** Loads the legal contract-document routes (PDF engine, doc storage, PII). */
@@ -697,18 +710,13 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     // providers (reads its own tables). Stage 2 of the operator-settings
     // extraction; previously a deployment-local module.
     "@voyant-travel/operator-settings": () => createOperatorSettingsHonoModule(),
-    // Tier 4 — lazy `operator/*` standard families. The framework owns the
-    // manifest entry + path matchers; the deployment injects the `load` closure
-    // that wires its providers into the package-owned route bundle.
+    // Provider-wired package compatibility factories. The canonical package
+    // keys match graph ownership while deployments still inject route loaders.
     "@voyant-travel/flights": ({ capabilities }) => ({
       module: { name: "flights" },
       lazyAdminRoutes: capabilities.loadFlightAdminRoutes,
     }),
-    "operator/mcp": ({ capabilities }) => ({
-      module: { name: "mcp" },
-      lazyAdminRoutes: capabilities.loadMcpAdminRoutes,
-    }),
-    "operator/catalog-booking": ({ capabilities }) => ({
+    "@voyant-travel/catalog/booking-engine": ({ capabilities }) => ({
       module: { name: "catalog-booking" },
       lazyRoutes: {
         paths: CATALOG_BOOKING_ROUTE_PATHS,
@@ -718,24 +726,17 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       // here so the deployment's `dbTransactionalPaths` can be empty (ADR-0008).
       transactionalPaths: CATALOG_BOOKING_TRANSACTIONAL_PATHS,
     }),
-    "operator/catalog-content": ({ capabilities }) => ({
-      module: { name: "catalog-content" },
-      lazyRoutes: {
-        paths: CATALOG_CONTENT_ROUTE_PATHS,
-        load: capabilities.loadCatalogContentRoutes,
-      },
-    }),
-    "operator/media": ({ capabilities }) => ({
+    "@voyant-travel/storage": ({ capabilities }) => ({
       module: { name: "media" },
-      lazyRoutes: { paths: MEDIA_ROUTE_PATHS, load: capabilities.loadMediaRoutes },
+      lazyRoutes: { paths: STORAGE_ROUTE_PATHS, load: capabilities.loadStorageRoutes },
     }),
-    "operator/payment-link": ({ capabilities }) => ({
+    "@voyant-travel/storefront/payment-link": ({ capabilities }) => ({
       module: { name: "payment-link" },
       publicPath: "/",
       lazyRoutes: { paths: PAYMENT_LINK_ROUTE_PATHS, load: capabilities.loadPaymentLinkRoutes },
       anonymous: ["payment-link-config", "payment-link"],
     }),
-    "operator/contract-document": ({ capabilities }) => ({
+    "@voyant-travel/legal/contract-document": ({ capabilities }) => ({
       module: { name: "contract-document" },
       lazyRoutes: {
         paths: CONTRACT_DOCUMENT_ROUTE_PATHS,
@@ -758,21 +759,47 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     // @voyant-travel/operator-settings package — no per-deployment injection.
     "@voyant-travel/finance/booking-tax-extension": () =>
       createBookingTaxHonoExtension({ resolveBookingTaxSettings, updateBookingTaxSettings }),
-    // Tier 4 — lazy `operator/*` standard extensions. The framework owns the
-    // `extension` metadata + publicPath; the deployment injects builders/loaders.
-    "operator/booking-schedule-extension": ({ capabilities }) =>
+    "@voyant-travel/inventory/content-extension": ({ capabilities }) => ({
+      extension: { name: "inventory-content", module: "products" },
+      lazyRoutes: {
+        paths: INVENTORY_CONTENT_ROUTE_PATHS,
+        load: capabilities.loadInventoryContentRoutes,
+      },
+    }),
+    "@voyant-travel/cruises/content-extension": ({ capabilities }) => ({
+      extension: { name: "cruises-content", module: "cruises" },
+      lazyRoutes: {
+        paths: CRUISES_CONTENT_ROUTE_PATHS,
+        load: capabilities.loadCruisesContentRoutes,
+      },
+    }),
+    "@voyant-travel/accommodations/content-extension": ({ capabilities }) => ({
+      extension: { name: "accommodations-content", module: "accommodations" },
+      lazyRoutes: {
+        paths: ACCOMMODATIONS_CONTENT_ROUTE_PATHS,
+        load: capabilities.loadAccommodationsContentRoutes,
+      },
+    }),
+    "@voyant-travel/inventory/brochure-extension": ({ capabilities }) => ({
+      extension: { name: "inventory-brochure", module: "products" },
+      lazyRoutes: {
+        paths: INVENTORY_BROCHURE_ROUTE_PATHS,
+        load: capabilities.loadInventoryBrochureRoutes,
+      },
+    }),
+    "@voyant-travel/finance/booking-schedule-extension": ({ capabilities }) =>
       capabilities.createBookingScheduleExtension(),
-    "operator/quote-version-snapshot-extension": ({ capabilities }) =>
+    "@voyant-travel/quotes/quote-version-snapshot-extension": ({ capabilities }) =>
       capabilities.createQuoteVersionSnapshotExtension(),
-    "operator/booking-maintenance-extension": ({ capabilities }) => ({
+    "@voyant-travel/commerce/booking-maintenance-extension": ({ capabilities }) => ({
       extension: { name: "booking-maintenance", module: "bookings" },
       lazyAdminRoutes: capabilities.loadBookingMaintenanceRoutes,
     }),
-    "operator/action-ledger-health-extension": ({ capabilities }) => ({
+    "@voyant-travel/action-ledger/health-extension": ({ capabilities }) => ({
       extension: { name: "action-ledger-health", module: "action-ledger" },
       lazyAdminRoutes: capabilities.loadActionLedgerHealthRoutes,
     }),
-    "operator/proposal-extension": ({ capabilities }) => ({
+    "@voyant-travel/quotes/proposal-extension": ({ capabilities }) => ({
       extension: { name: "proposal", module: "quote-versions" },
       publicPath: "proposals",
       lazyAdminRoutes: capabilities.loadProposalAdminRoutes,
@@ -781,11 +808,11 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       // emailed link before any session — anonymous, customer-safe DTO only.
       anonymous: true,
     }),
-    "operator/catalog-offers-extension": ({ capabilities }) => ({
+    "@voyant-travel/catalog/offers-extension": ({ capabilities }) => ({
       extension: { name: "catalog-offers", module: "catalog" },
       lazyAdminRoutes: capabilities.loadCatalogOffersRoutes,
     }),
-    "operator/catalog-checkout-extension": ({ capabilities }) => ({
+    "@voyant-travel/commerce/catalog-checkout-extension": ({ capabilities }) => ({
       extension: { name: "catalog-checkout", module: "catalog" },
       lazyPublicRoutes: capabilities.loadCatalogCheckoutRoutes,
     }),

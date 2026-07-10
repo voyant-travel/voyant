@@ -16,6 +16,7 @@
  */
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import { Hono } from "hono"
 import { z } from "zod"
 
@@ -208,4 +209,14 @@ export function createActionLedgerHealthRoutes(options: ActionLedgerHealthRoutes
   })
 
   return hono
+}
+
+/** Package-owned descriptor; domain-specific drift checks remain injected. */
+export function createActionLedgerHealthHonoExtension(
+  options: ActionLedgerHealthRoutesOptions,
+): HonoExtension {
+  return {
+    extension: { name: "action-ledger-health", module: "action-ledger" },
+    adminRoutes: createActionLedgerHealthRoutes(options),
+  }
 }

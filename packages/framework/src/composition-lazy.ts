@@ -89,8 +89,11 @@ export interface FrameworkProviders {
   loadFlightAdminRoutes?: LazyRoutesLoader
   loadMcpAdminRoutes: LazyRoutesLoader
   loadCatalogBookingRoutes: LazyRoutesLoader
-  loadCatalogContentRoutes: LazyRoutesLoader
-  loadMediaRoutes: LazyRoutesLoader
+  loadInventoryContentRoutes: LazyRoutesLoader
+  loadCruisesContentRoutes: LazyRoutesLoader
+  loadAccommodationsContentRoutes: LazyRoutesLoader
+  loadStorageRoutes: LazyRoutesLoader
+  loadInventoryBrochureRoutes: LazyRoutesLoader
   loadPaymentLinkRoutes: LazyRoutesLoader
   loadContractDocumentRoutes: LazyRoutesLoader
   loadBookingScheduleAdminRoutes: LazyRoutesLoader
@@ -202,23 +205,30 @@ const CATALOG_BOOKING_TRANSACTIONAL_PATHS = [
   "/v1/public/catalog/holds",
 ] as const
 
-const CATALOG_CONTENT_ROUTE_PATHS = [
+const INVENTORY_CONTENT_ROUTE_PATHS = [
   "/v1/admin/products/:id/content",
   "/v1/public/products/:id/content",
+] as const
+
+const CRUISES_CONTENT_ROUTE_PATHS = [
   "/v1/admin/cruises/:id/content",
   "/v1/public/cruises/:id/content",
   "/v1/admin/cruises/:id/sailings/:sailingExternalId/pricing",
   "/v1/public/cruises/:id/sailings/:sailingExternalId/pricing",
+] as const
+
+const ACCOMMODATIONS_CONTENT_ROUTE_PATHS = [
   "/v1/admin/accommodations/:id/content",
   "/v1/public/accommodations/:id/content",
 ] as const
 
-const MEDIA_ROUTE_PATHS = [
-  "/v1/admin/products/:id/brochure/generate",
+const STORAGE_ROUTE_PATHS = [
   "/v1/admin/uploads",
   "/v1/admin/uploads/video",
   "/v1/admin/media/*",
 ] as const
+
+const INVENTORY_BROCHURE_ROUTE_PATHS = ["/v1/admin/products/:id/brochure/generate"] as const
 
 const PAYMENT_LINK_ROUTE_PATHS = [
   "/v1/public/payment-link-config",
@@ -800,11 +810,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         lazyAdminRoutes: capabilities.loadFlightAdminRoutes,
       }
     },
-    "operator/mcp": ({ capabilities }) => ({
-      module: { name: "mcp" },
-      lazyAdminRoutes: capabilities.loadMcpAdminRoutes,
-    }),
-    "operator/catalog-booking": ({ capabilities }) => ({
+    "@voyant-travel/catalog/booking-engine": ({ capabilities }) => ({
       module: { name: "catalog-booking" },
       lazyRoutes: {
         paths: CATALOG_BOOKING_ROUTE_PATHS,
@@ -812,24 +818,17 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       },
       transactionalPaths: CATALOG_BOOKING_TRANSACTIONAL_PATHS,
     }),
-    "operator/catalog-content": ({ capabilities }) => ({
-      module: { name: "catalog-content" },
-      lazyRoutes: {
-        paths: CATALOG_CONTENT_ROUTE_PATHS,
-        load: capabilities.loadCatalogContentRoutes,
-      },
-    }),
-    "operator/media": ({ capabilities }) => ({
+    "@voyant-travel/storage": ({ capabilities }) => ({
       module: { name: "media" },
-      lazyRoutes: { paths: MEDIA_ROUTE_PATHS, load: capabilities.loadMediaRoutes },
+      lazyRoutes: { paths: STORAGE_ROUTE_PATHS, load: capabilities.loadStorageRoutes },
     }),
-    "operator/payment-link": ({ capabilities }) => ({
+    "@voyant-travel/storefront/payment-link": ({ capabilities }) => ({
       module: { name: "payment-link" },
       publicPath: "/",
       lazyRoutes: { paths: PAYMENT_LINK_ROUTE_PATHS, load: capabilities.loadPaymentLinkRoutes },
       anonymous: ["payment-link-config", "payment-link"],
     }),
-    "operator/contract-document": ({ capabilities }) => ({
+    "@voyant-travel/legal/contract-document": ({ capabilities }) => ({
       module: { name: "contract-document" },
       lazyRoutes: {
         paths: ["/v1/admin/bookings/:bookingId/generate-contract", "/v1/admin/documents/files/*"],
@@ -916,36 +915,64 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         lazyAdminRoutes: unit.route((m) => m.adminRoutes),
       }
     },
-    "operator/booking-schedule-extension": ({ capabilities }) => ({
+    "@voyant-travel/inventory/content-extension": ({ capabilities }) => ({
+      extension: { name: "inventory-content", module: "products" },
+      lazyRoutes: {
+        paths: INVENTORY_CONTENT_ROUTE_PATHS,
+        load: capabilities.loadInventoryContentRoutes,
+      },
+    }),
+    "@voyant-travel/cruises/content-extension": ({ capabilities }) => ({
+      extension: { name: "cruises-content", module: "cruises" },
+      lazyRoutes: {
+        paths: CRUISES_CONTENT_ROUTE_PATHS,
+        load: capabilities.loadCruisesContentRoutes,
+      },
+    }),
+    "@voyant-travel/accommodations/content-extension": ({ capabilities }) => ({
+      extension: { name: "accommodations-content", module: "accommodations" },
+      lazyRoutes: {
+        paths: ACCOMMODATIONS_CONTENT_ROUTE_PATHS,
+        load: capabilities.loadAccommodationsContentRoutes,
+      },
+    }),
+    "@voyant-travel/inventory/brochure-extension": ({ capabilities }) => ({
+      extension: { name: "inventory-brochure", module: "products" },
+      lazyRoutes: {
+        paths: INVENTORY_BROCHURE_ROUTE_PATHS,
+        load: capabilities.loadInventoryBrochureRoutes,
+      },
+    }),
+    "@voyant-travel/finance/booking-schedule-extension": ({ capabilities }) => ({
       extension: { name: "booking-schedule", module: "bookings" },
       publicPath: "payment-policy",
       lazyAdminRoutes: capabilities.loadBookingScheduleAdminRoutes,
       lazyPublicRoutes: capabilities.loadPaymentPolicyPublicRoutes,
     }),
-    "operator/quote-version-snapshot-extension": ({ capabilities }) => ({
+    "@voyant-travel/quotes/quote-version-snapshot-extension": ({ capabilities }) => ({
       extension: { name: "quote-version-snapshot", module: "trips" },
       lazyAdminRoutes: capabilities.loadQuoteVersionSnapshotRoutes,
     }),
-    "operator/booking-maintenance-extension": ({ capabilities }) => ({
+    "@voyant-travel/commerce/booking-maintenance-extension": ({ capabilities }) => ({
       extension: { name: "booking-maintenance", module: "bookings" },
       lazyAdminRoutes: capabilities.loadBookingMaintenanceRoutes,
     }),
-    "operator/action-ledger-health-extension": ({ capabilities }) => ({
+    "@voyant-travel/action-ledger/health-extension": ({ capabilities }) => ({
       extension: { name: "action-ledger-health", module: "action-ledger" },
       lazyAdminRoutes: capabilities.loadActionLedgerHealthRoutes,
     }),
-    "operator/proposal-extension": ({ capabilities }) => ({
+    "@voyant-travel/quotes/proposal-extension": ({ capabilities }) => ({
       extension: { name: "proposal", module: "quote-versions" },
       publicPath: "proposals",
       lazyAdminRoutes: capabilities.loadProposalAdminRoutes,
       lazyPublicRoutes: capabilities.loadProposalPublicRoutes,
       anonymous: true,
     }),
-    "operator/catalog-offers-extension": ({ capabilities }) => ({
+    "@voyant-travel/catalog/offers-extension": ({ capabilities }) => ({
       extension: { name: "catalog-offers", module: "catalog" },
       lazyAdminRoutes: capabilities.loadCatalogOffersRoutes,
     }),
-    "operator/catalog-checkout-extension": ({ capabilities }) => ({
+    "@voyant-travel/commerce/catalog-checkout-extension": ({ capabilities }) => ({
       extension: { name: "catalog-checkout", module: "catalog" },
       lazyPublicRoutes: capabilities.loadCatalogCheckoutRoutes,
     }),

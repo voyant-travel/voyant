@@ -59,6 +59,9 @@ export * from "./adapter/schemas.js"
 // used by the vertical packages while keeping the ./booking-engine subpath.
 export {
   type CatalogBookingRouteModuleOptions,
+  catalogBookingRoutePaths,
+  catalogBookingTransactionalPaths,
+  createCatalogBookingEngineHonoModule,
   createCatalogBookingOrdersRoutes,
   mountCatalogBookingRoutes,
 } from "./booking-engine/operator-routes.js"
@@ -196,6 +199,7 @@ export {
   type CatalogOffersRouteModuleOptions,
   type CatalogOffersSearchDestination,
   createCatalogOffersAdminRoutes,
+  createCatalogOffersHonoExtension,
 } from "./offers/operator-routes.js"
 export {
   applyMerge,

@@ -37,11 +37,13 @@
     "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts",
     "./booking-engine/contracts": "./src/booking-engine/contracts.ts",
     "./booking-engine/drafts-schema": "./src/booking-engine/drafts-schema.ts",
-    "./offers": "./src/offers/operator-routes.ts"
+    "./offers": "./src/offers/operator-routes.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -245,6 +247,11 @@
         "types": "./dist/offers/operator-routes.d.ts",
         "import": "./dist/offers/operator-routes.js",
         "default": "./dist/offers/operator-routes.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",

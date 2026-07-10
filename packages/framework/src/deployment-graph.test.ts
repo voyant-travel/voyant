@@ -74,11 +74,11 @@ describe("deployment graph v1", () => {
       api: [
         {
           id: "@voyant-travel/bookings#api.admin",
-          runtime: { entry: "@voyant-travel/bookings", export: "bookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
         {
           id: "@voyant-travel/bookings#api.public",
-          runtime: { entry: "@voyant-travel/bookings", export: "bookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
       ],
       schema: [{ id: "@voyant-travel/bookings#schema" }],
@@ -122,6 +122,71 @@ describe("deployment graph v1", () => {
     expect(loaded).toBe(true)
     expect(graph.modules[0]?.schema).toEqual([
       { id: "@acme/voyant-loyalty#schema", source: "./schema" },
+    ])
+    expect(graph.diagnostics).toEqual([])
+  })
+
+  it("derives pre-admission provenance from clean project selections", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: ["@acme/voyant-suite/loyalty"],
+        plugins: ["./src/plugins/smartbill"],
+      }),
+    })
+
+    expect(graph.modules.map((unit) => unit.id)).toEqual(["@acme/voyant-suite#loyalty"])
+    expect(graph.plugins.map((unit) => unit.id)).toEqual(["local/src.plugins.smartbill"])
+    expect(graph.packageRecords).toEqual([
+      {
+        packageName: "@acme/voyant-suite",
+        source: { kind: "unknown", reference: "@acme/voyant-suite" },
+      },
+      {
+        packageName: "local/src.plugins.smartbill",
+        source: { kind: "file", reference: "./src/plugins/smartbill" },
+      },
+    ])
+    expect(graph.diagnostics).toEqual([])
+  })
+
+  it("replaces a clean package selection with its admitted voyant manifest", async () => {
+    const project = defineProject({
+      modules: [
+        {
+          resolve: "@acme/voyant-suite/loyalty",
+          config: { tiers: ["silver", "gold"] },
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraphWithPackageManifests({
+      project,
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-suite",
+          source: { kind: "workspace" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            manifest: "./voyant",
+          },
+        },
+      ],
+      admission: { allowedSourceKinds: ["workspace"] },
+      loadPackageManifests: async (record) => {
+        expect(record.packageName).toBe("@acme/voyant-suite")
+        return [
+          defineModule({
+            id: "@acme/voyant-suite#loyalty",
+            packageName: "@acme/voyant-suite",
+            schema: [{ id: "@acme/voyant-suite#loyalty.schema", source: "./schema" }],
+          }),
+        ]
+      },
+    })
+
+    expect(project.selections?.modules[0]?.config).toEqual({ tiers: ["silver", "gold"] })
+    expect(graph.modules[0]?.schema).toEqual([
+      { id: "@acme/voyant-suite#loyalty.schema", source: "./schema" },
     ])
     expect(graph.diagnostics).toEqual([])
   })
@@ -914,14 +979,12 @@ describe("deployment graph v1", () => {
     expect(graphIdFromSpecifier("@voyant-travel/inventory/extras")).toBe(
       "@voyant-travel/inventory#extras",
     )
-    expect(graphIdFromSpecifier("operator/payment-link")).toBe(
-      "@voyant-travel/operator#payment-link",
-    )
+    expect(graphIdFromSpecifier("operator/mcp")).toBe("@voyant-travel/operator#mcp")
     expect(graphIdFromSpecifier("@voyant-travel/public-document-delivery")).toBe(
       "@voyant-travel/public-document-delivery",
     )
     expect(packageNameFromSpecifier("@voyant-travel/public-document-delivery")).toBe(
-      "@voyant-travel/hono",
+      "@voyant-travel/public-document-delivery",
     )
   })
 

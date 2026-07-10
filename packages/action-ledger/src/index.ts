@@ -41,6 +41,7 @@ export {
   type ActionLedgerDriftCheckRow,
   type ActionLedgerHealthResponse,
   type ActionLedgerHealthRoutesOptions,
+  createActionLedgerHealthHonoExtension,
   createActionLedgerHealthRoutes,
   type RunActionLedgerHealthCheckInput,
   runActionLedgerHealthCheck,

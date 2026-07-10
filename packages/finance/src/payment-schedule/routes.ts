@@ -28,6 +28,7 @@ import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-led
 import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
 import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -486,4 +487,17 @@ export function createPaymentPolicyPublicRoutes(options: BookingScheduleRoutesOp
   return new OpenAPIHono({ defaultHook: openApiValidationHook }).openapi(resolvePolicyRoute, (c) =>
     asRouteResponse(handleResolvePolicy(c, options, c.req.valid("json"))),
   )
+}
+
+/** Package-owned extension descriptor; deployments inject the policy cascade readers. */
+export function createBookingScheduleHonoExtension(
+  options: BookingScheduleRoutesOptions,
+): HonoExtension {
+  return {
+    extension: { name: "booking-schedule", module: "bookings" },
+    lazyAdminRoutes: async () => createBookingScheduleAdminRoutes(options),
+    lazyPublicRoutes: async () => createPaymentPolicyPublicRoutes(options),
+    publicPath: "payment-policy",
+    anonymous: true,
+  }
 }

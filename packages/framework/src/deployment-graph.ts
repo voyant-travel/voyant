@@ -12,6 +12,7 @@ import {
   type VoyantGraphJsonValue,
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
+  type VoyantGraphProjectSelections,
   type VoyantGraphRouteBundle,
   type VoyantGraphRouteSurface,
   type VoyantGraphSubscriber,
@@ -57,6 +58,8 @@ export type VoyantGraphPackageSourceKind = "registry" | "workspace" | "file" | "
 
 export {
   type DefineVoyantGraphProjectInput,
+  type DefineVoyantGraphProjectSelection,
+  type DefineVoyantGraphProjectUnitInput,
   type DefineVoyantGraphUnitInput,
   defineModule,
   definePlugin,
@@ -71,6 +74,9 @@ export {
   type VoyantGraphJsonValue,
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
+  type VoyantGraphProjectSelection,
+  type VoyantGraphProjectSelectionProvenance,
+  type VoyantGraphProjectSelections,
   type VoyantGraphRouteBundle,
   type VoyantGraphRouteSurface,
   type VoyantGraphRuntimeReference,
@@ -500,7 +506,11 @@ export async function resolveDeploymentGraph(
   )
   const selectedUnits = [...selectedModules, ...selectedPlugins]
 
-  const packageRecords = mergePackageRecords(selectedUnits, input.packageRecords ?? [])
+  const packageRecords = mergePackageRecords(
+    selectedUnits,
+    input.project.selections,
+    input.packageRecords ?? [],
+  )
   const scheduledJobs = normalizeScheduledJobs([
     ...deriveWorkflowScheduledJobs(selectedUnits),
     ...(input.scheduledJobs ?? []),
@@ -585,7 +595,7 @@ export async function resolveDeploymentGraphWithPackageManifests(
         const idOwner = packageNameFromGraphId(manifest.id)
         const declaredOwner = manifest.packageName
         if (
-          idOwner !== record.packageName ||
+          !isPackageGraphNamespace(idOwner, record.packageName) ||
           (declaredOwner !== undefined && declaredOwner !== record.packageName)
         ) {
           diagnostics.push(
@@ -623,11 +633,11 @@ export async function resolveDeploymentGraphWithPackageManifests(
     }
   }
 
-  const project = defineProject({
+  const project: VoyantGraphProject = {
     ...resolveInput.project,
     modules: resolveInput.project.modules.map((unit) => replacements.get(unit.id) ?? unit),
     plugins: resolveInput.project.plugins.map((unit) => replacements.get(unit.id) ?? unit),
-  })
+  }
   const resolved = await resolveDeploymentGraph({ ...resolveInput, project })
   return diagnostics.length > 0 ? graphWithDiagnostics(resolved, diagnostics) : resolved
 }
@@ -842,7 +852,7 @@ export function graphIdFromSpecifier(specifier: string): string {
 }
 
 export function packageNameFromSpecifier(specifier: string): string {
-  return SPECIFIER_PACKAGE_OWNERS[specifier] ?? splitPackageSpecifier(specifier).packageName
+  return splitPackageSpecifier(specifier).packageName
 }
 
 export function childGraphEntityId(parentId: string, childId: string): string {
@@ -1696,13 +1706,29 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
 
 function mergePackageRecords(
   units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+  selections: VoyantGraphProjectSelections | undefined,
   input: readonly VoyantGraphPackageRecord[],
 ): VoyantGraphPackageRecord[] {
+  const selectionsById = new Map(
+    [...(selections?.modules ?? []), ...(selections?.plugins ?? [])].map((selection) => [
+      selection.id,
+      selection,
+    ]),
+  )
   const records = new Map<string, VoyantGraphPackageRecord>()
   for (const unit of units) {
+    const selection = selectionsById.get(unit.id)
     records.set(unit.packageName, {
       packageName: unit.packageName,
-      source: { kind: "unknown" },
+      source:
+        selection?.provenance.kind === "path"
+          ? { kind: "file", reference: selection.provenance.path }
+          : {
+              kind: "unknown",
+              ...(selection?.provenance.kind === "package"
+                ? { reference: selection.provenance.packageName }
+                : {}),
+            },
     })
   }
   for (const record of input) {
@@ -1831,12 +1857,15 @@ function splitPackageSpecifier(specifier: string): { packageName: string; subpat
   }
 }
 
-const SPECIFIER_PACKAGE_OWNERS: Record<string, string> = {
-  "@voyant-travel/public-document-delivery": "@voyant-travel/hono",
-}
-
 function packageNameFromGraphId(id: string): string {
   return id.split("#")[0] ?? id
+}
+
+function isPackageGraphNamespace(graphPackageId: string, packageName: string): boolean {
+  return (
+    graphPackageId === packageName ||
+    (!packageName.includes("/") && graphPackageId === `npm/${packageName}`)
+  )
 }
 
 function isCanonicalGraphId(id: string): boolean {

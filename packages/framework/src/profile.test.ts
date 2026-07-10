@@ -166,11 +166,13 @@ describe("managed profile contract", () => {
     expect(bridge.exclude).toContain("@voyant-travel/storefront")
     expect(bridge.exclude).toContain("@voyant-travel/storefront/customer-portal")
     expect(bridge.exclude).toContain("@voyant-travel/storefront/verification")
-    expect(bridge.exclude).toContain("operator/quote-version-snapshot-extension")
+    expect(bridge.exclude).toContain("@voyant-travel/quotes/quote-version-snapshot-extension")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/flights")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront")
-    expect(bridge.manifest.extensions).not.toContain("operator/quote-version-snapshot-extension")
-    expect(bridge.manifest.extensions).not.toContain("operator/proposal-extension")
+    expect(bridge.manifest.extensions).not.toContain(
+      "@voyant-travel/quotes/quote-version-snapshot-extension",
+    )
+    expect(bridge.manifest.extensions).not.toContain("@voyant-travel/quotes/proposal-extension")
     expect(bridge.manifest.modules).toContain("@voyant-travel/bookings")
     expect(bridge.plugins).toEqual(["@voyant-travel/plugin-netopia"])
     expect(bridge.settings).toEqual({ finance: { fiscalRegion: "RO" } })
@@ -215,8 +217,10 @@ describe("managed profile contract", () => {
         ),
       ),
     )
-    expect(bridge.manifest.extensions).not.toContain("operator/quote-version-snapshot-extension")
-    expect(bridge.manifest.extensions).not.toContain("operator/proposal-extension")
+    expect(bridge.manifest.extensions).not.toContain(
+      "@voyant-travel/quotes/quote-version-snapshot-extension",
+    )
+    expect(bridge.manifest.extensions).not.toContain("@voyant-travel/quotes/proposal-extension")
   })
 
   it("surfaces actionable validation errors for unknown modules", () => {
@@ -246,26 +250,32 @@ describe("managed profile contract", () => {
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront/customer-portal")
     expect(bridge.manifest.modules).not.toContain("@voyant-travel/storefront/verification")
-    expect(bridge.manifest.modules).toContain("operator/media")
-    expect(bridge.manifest.modules).toContain("operator/payment-link")
-    expect(bridge.manifest.modules).toContain("operator/contract-document")
-    expect(bridge.manifest.modules).toContain("operator/catalog-booking")
-    expect(bridge.manifest.modules).toContain("operator/catalog-content")
-    expect(bridge.exclude).not.toContain("operator/catalog-booking")
-    expect(bridge.exclude).not.toContain("operator/catalog-content")
-    expect(bridge.manifest.extensions).toContain("operator/booking-maintenance-extension")
-    expect(bridge.manifest.extensions).toContain("operator/action-ledger-health-extension")
-    expect(bridge.manifest.extensions).toContain("operator/catalog-offers-extension")
-    expect(bridge.manifest.extensions).toContain("operator/catalog-checkout-extension")
-    expect(bridge.manifest.extensions).toContain("operator/proposal-extension")
-    expect(bridge.manifest.extensions).toContain("operator/quote-version-snapshot-extension")
-    expect(bridge.manifest.extensions).toContain("operator/booking-schedule-extension")
+    expect(bridge.manifest.modules).toContain("@voyant-travel/storage")
+    expect(bridge.manifest.modules).toContain("@voyant-travel/storefront/payment-link")
+    expect(bridge.manifest.modules).toContain("@voyant-travel/legal/contract-document")
+    expect(bridge.manifest.modules).toContain("@voyant-travel/catalog/booking-engine")
+    expect(bridge.exclude).not.toContain("@voyant-travel/catalog/booking-engine")
+    expect(bridge.manifest.extensions).toContain(
+      "@voyant-travel/commerce/booking-maintenance-extension",
+    )
+    expect(bridge.manifest.extensions).toContain("@voyant-travel/action-ledger/health-extension")
+    expect(bridge.manifest.extensions).toContain("@voyant-travel/catalog/offers-extension")
+    expect(bridge.manifest.extensions).toContain(
+      "@voyant-travel/commerce/catalog-checkout-extension",
+    )
+    expect(bridge.manifest.extensions).toContain("@voyant-travel/quotes/proposal-extension")
+    expect(bridge.manifest.extensions).toContain(
+      "@voyant-travel/quotes/quote-version-snapshot-extension",
+    )
+    expect(bridge.manifest.extensions).toContain(
+      "@voyant-travel/finance/booking-schedule-extension",
+    )
     expect(bridge.manifest.extensions).toContain(
       "@voyant-travel/distribution/channel-push-extension",
     )
     expect(bridge.exclude).not.toContain("@voyant-travel/distribution/channel-push-extension")
     expect(bridge.manifest.modules).toContain("@voyant-travel/flights")
-    expect(bridge.manifest.modules).toContain("operator/mcp")
+    expect(bridge.manifest.modules).not.toContain("operator/mcp")
     for (const specifier of FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS) {
       expect([...bridge.manifest.modules, ...bridge.manifest.extensions]).not.toContain(specifier)
       expect(bridge.exclude).toContain(specifier)

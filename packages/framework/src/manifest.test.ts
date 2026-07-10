@@ -60,15 +60,15 @@ describe("subsetStandardManifest (ADR-0007 module subsetting)", () => {
         }
       }
       // A path-mounted extension whose owner survives stays mounted.
-      expect(extensions).toContain("operator/catalog-offers-extension")
+      expect(extensions).toContain("@voyant-travel/catalog/offers-extension")
     })
 
     it("cascades path-mounted extensions with no same-named module", () => {
-      // `operator/proposal-extension` mounts under `quote-versions` and is owned
+      // The proposal extension mounts under `quote-versions` and is owned
       // by quotes — a name-match check would never catch it.
       const { extensions } = subsetStandardManifest({ exclude: ["@voyant-travel/quotes"] })
-      expect(extensions).not.toContain("operator/proposal-extension")
-      expect(extensions).not.toContain("operator/quote-version-snapshot-extension")
+      expect(extensions).not.toContain("@voyant-travel/quotes/proposal-extension")
+      expect(extensions).not.toContain("@voyant-travel/quotes/quote-version-snapshot-extension")
     })
 
     it("does not drop extensions when no owner is excluded", () => {
@@ -78,7 +78,7 @@ describe("subsetStandardManifest (ADR-0007 module subsetting)", () => {
 
     it("ownedExtensionsForExcludedModules is declaration-driven, not name-matched", () => {
       const owned = ownedExtensionsForExcludedModules(["@voyant-travel/quotes"])
-      expect(owned).toContain("operator/proposal-extension")
+      expect(owned).toContain("@voyant-travel/quotes/proposal-extension")
       expect(ownedExtensionsForExcludedModules([])).toEqual([])
     })
   })

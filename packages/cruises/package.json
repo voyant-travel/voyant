@@ -22,7 +22,8 @@
     "./routes-content": "./src/routes-content.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
-    "./service-pricing": "./src/service-pricing.ts"
+    "./service-pricing": "./src/service-pricing.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -155,6 +156,11 @@
         "types": "./dist/service-pricing.d.ts",
         "import": "./dist/service-pricing.js",
         "default": "./dist/service-pricing.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -168,6 +174,7 @@
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

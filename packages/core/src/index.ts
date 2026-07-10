@@ -96,6 +96,8 @@ export type {
 export { definePlugin, registerPlugins } from "./plugin.js"
 export type {
   DefineVoyantGraphProjectInput,
+  DefineVoyantGraphProjectSelection,
+  DefineVoyantGraphProjectUnitInput,
   DefineVoyantGraphUnitInput,
   VoyantGraphCapabilityDeclaration,
   VoyantGraphEvent,
@@ -104,6 +106,9 @@ export type {
   VoyantGraphJsonValue,
   VoyantGraphPortDeclaration,
   VoyantGraphProject,
+  VoyantGraphProjectSelection,
+  VoyantGraphProjectSelectionProvenance,
+  VoyantGraphProjectSelections,
   VoyantGraphRouteBundle,
   VoyantGraphRouteSurface,
   VoyantGraphRuntimeReference,

@@ -38,7 +38,12 @@ interface CatalogContentMountTarget {
 }
 
 export function mountCatalogContentRoutes(hono: CatalogContentMountTarget): void {
-  // ── Products ─────────────────────────────────────────────────
+  mountInventoryContentRoutes(hono)
+  mountCruisesContentRoutes(hono)
+  mountAccommodationsContentRoutes(hono)
+}
+
+export function mountInventoryContentRoutes(hono: CatalogContentMountTarget): void {
   const adminProductContentRoutes = createProductContentRoutes({
     resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
     // Operator-side default: false — ops sees authored content from
@@ -56,8 +61,9 @@ export function mountCatalogContentRoutes(hono: CatalogContentMountTarget): void
 
   hono.route("/v1/admin/products", adminProductContentRoutes)
   hono.route("/v1/public/products", publicProductContentRoutes)
+}
 
-  // ── Cruises ──────────────────────────────────────────────────
+export function mountCruisesContentRoutes(hono: CatalogContentMountTarget): void {
   const adminCruiseContentRoutes = createCruiseContentRoutes({
     resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
     defaultAcceptMachineTranslated: false,
@@ -72,8 +78,9 @@ export function mountCatalogContentRoutes(hono: CatalogContentMountTarget): void
 
   hono.route("/v1/admin/cruises", adminCruiseContentRoutes)
   hono.route("/v1/public/cruises", publicCruiseContentRoutes)
+}
 
-  // ── Accommodations ─────────────────────────────────────────────
+export function mountAccommodationsContentRoutes(hono: CatalogContentMountTarget): void {
   const adminAccommodationContentRoutes = createAccommodationContentRoutes({
     resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
     defaultAcceptMachineTranslated: false,

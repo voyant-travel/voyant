@@ -1,8 +1,10 @@
 import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { externalRefsHonoModule } from "./external-refs/index.js"
 import { distributionRoutes } from "./routes.js"
 import { distributionService } from "./service.js"
+import { suppliersHonoModule } from "./suppliers/index.js"
 
 export type { DistributionRoutes } from "./routes.js"
 
@@ -14,6 +16,12 @@ export const distributionHonoModule: HonoModule = {
   module: distributionModule,
   adminRoutes: distributionRoutes,
 }
+
+export const distributionHonoModules = [
+  externalRefsHonoModule,
+  distributionHonoModule,
+  suppliersHonoModule,
+] as const
 
 export * from "./booking-extension.js"
 export * from "./channel-push/index.js"

@@ -182,10 +182,10 @@ describe("frameworkComposition policy injection", () => {
   })
 
   it("registers all cruise catalog-content lazy route shapes", () => {
-    const catalogContent = frameworkComposition.modules["operator/catalog-content"]?.(
-      compositionContext(),
-    )
-    if (Array.isArray(catalogContent)) throw new Error("expected a single catalog-content module")
+    const catalogContent = frameworkComposition.extensions?.[
+      "@voyant-travel/cruises/content-extension"
+    ]?.(compositionContext())
+    if (Array.isArray(catalogContent)) throw new Error("expected one cruises content extension")
 
     expect(catalogContent?.lazyRoutes?.paths).toEqual(
       expect.arrayContaining([

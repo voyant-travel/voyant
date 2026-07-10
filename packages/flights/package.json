@@ -15,11 +15,13 @@
     "./reference/local-postgres": "./src/reference/local-postgres.ts",
     "./reference/static-bundle": "./src/reference/static-bundle.ts",
     "./hono": "./src/hono.ts",
-    "./payment-integration": "./src/payment-integration.ts"
+    "./payment-integration": "./src/payment-integration.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -113,12 +115,18 @@
         "types": "./dist/payment-integration.d.ts",
         "import": "./dist/payment-integration.js",
         "default": "./dist/payment-integration.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",

@@ -46,12 +46,12 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(summary.scheduledJobs).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: "@voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes",
+          id: "@voyant-travel/bookings#schedule.bookings.expire-stale-holds.every-5-minutes",
           cron: "*/5 * * * *",
           workflowId: "bookings.expire-stale-holds",
         }),
         expect.objectContaining({
-          id: "@voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly",
+          id: "@voyant-travel/notifications#schedule.notifications.send-due-reminders.hourly",
           cron: "0 * * * *",
           workflowId: "notifications.send-due-reminders",
         }),
@@ -395,6 +395,15 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/GENERATED_DEPLOYMENT_GRAPH_HASH/)
   })
+
+  it("fails when the generated graph runtime module drifts from the graph", () => {
+    const root = fixtureRoot()
+    writeFixture(root, { graphRuntimeSource: { graphHash: OTHER_HASH } })
+
+    expect(() =>
+      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+    ).toThrow(/GENERATED_GRAPH_RUNTIME_HASH/)
+  })
 })
 
 function fixtureRoot(): string {
@@ -416,6 +425,7 @@ function writeFixture(
     omitProvisioning?: boolean
     runtimeEntry?: Record<string, unknown>
     runtimeEntrySource?: { graphHash?: string }
+    graphRuntimeSource?: { graphHash?: string }
     writeRuntimeEntrySource?: boolean
     migrationSources?: Array<{ packageName: string; schema: string }>
   } = {},
@@ -518,8 +528,31 @@ function writeFixture(
     writeGeneratedRuntimeEntrySource(root, graph, {
       graphHash: options.runtimeEntrySource?.graphHash ?? graphHash,
     })
+    writeGeneratedGraphRuntimeSource(root, graph, {
+      graphHash: options.graphRuntimeSource?.graphHash ?? graphHash,
+    })
   }
   return graphHash
+}
+
+function writeGeneratedGraphRuntimeSource(
+  root: string,
+  graph: FixtureDeploymentGraph,
+  options: { graphHash: string },
+): void {
+  writeFileSync(
+    join(root, "src", "graph-runtime.generated.ts"),
+    [
+      `export const GENERATED_GRAPH_RUNTIME_HASH = ${JSON.stringify(options.graphHash)} as const`,
+      `export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = ${stringArrayLiteral(
+        graph.modules.map((module) => module.id),
+      )} as const`,
+      `export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${stringArrayLiteral(
+        graph.plugins.map((plugin) => plugin.id),
+      )} as const`,
+      "",
+    ].join("\n"),
+  )
 }
 
 function writeJson(path: string, value: unknown): void {

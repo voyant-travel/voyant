@@ -10,7 +10,9 @@
  */
 
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -90,6 +92,27 @@ export function createAccommodationContentRoutes(
       currency,
       acceptMachineTranslated,
     }
+  }
+}
+
+export interface AccommodationContentHonoExtensionOptions {
+  admin: CreateAccommodationContentRoutesOptions
+  public: CreateAccommodationContentRoutesOptions
+}
+
+export const accommodationContentExtension: Extension = {
+  name: "content",
+  module: "accommodations",
+}
+
+/** Build accommodation content routes for operator and storefront callers. */
+export function createAccommodationContentHonoExtension(
+  options: AccommodationContentHonoExtensionOptions,
+): HonoExtension {
+  return {
+    extension: accommodationContentExtension,
+    adminRoutes: createAccommodationContentRoutes(options.admin),
+    publicRoutes: createAccommodationContentRoutes(options.public),
   }
 }
 

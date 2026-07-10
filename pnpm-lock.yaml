@@ -781,6 +781,9 @@ importers:
 
   packages/availability:
     dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -830,6 +833,9 @@ importers:
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
+      '@voyant-travel/workflows':
+        specifier: workspace:^
+        version: link:../workflows
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -1851,6 +1857,9 @@ importers:
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
         version: link:../catalog-contracts
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -2119,9 +2128,9 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
-      '@voyant-travel/storage':
+      '@voyant-travel/public-document-delivery':
         specifier: workspace:^
-        version: link:../storage
+        version: link:../public-document-delivery
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -2348,6 +2357,9 @@ importers:
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
+      '@voyant-travel/workflows':
+        specifier: workspace:^
+        version: link:../workflows
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -2794,6 +2806,9 @@ importers:
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
+      '@voyant-travel/workflows':
+        specifier: workspace:^
+        version: link:../workflows
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -3087,6 +3102,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -3176,6 +3194,9 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../../catalog
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../../core
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
@@ -3188,6 +3209,10 @@ importers:
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/flights-demo:
+    dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../../core
     devDependencies:
       '@voyant-travel/flights':
         specifier: workspace:^
@@ -3235,6 +3260,34 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+
+  packages/public-document-delivery:
+    dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../db
+      '@voyant-travel/storage':
+        specifier: workspace:^
+        version: link:../storage
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
@@ -3619,6 +3672,10 @@ importers:
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/storage:
+    dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
@@ -4172,6 +4229,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -4714,6 +4774,9 @@ importers:
       '@voyant-travel/plugin-voyant-connect':
         specifier: ^0.3.2
         version: 0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.7.1)
+      '@voyant-travel/public-document-delivery':
+        specifier: workspace:^
+        version: link:../../packages/public-document-delivery
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes

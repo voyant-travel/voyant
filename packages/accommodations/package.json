@@ -16,7 +16,8 @@
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
-    "./routes-content": "./src/routes-content.ts"
+    "./routes-content": "./src/routes-content.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -119,6 +120,11 @@
         "types": "./dist/routes-content.d.ts",
         "import": "./dist/routes-content.js",
         "default": "./dist/routes-content.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -132,6 +138,7 @@
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

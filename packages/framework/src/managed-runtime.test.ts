@@ -751,7 +751,7 @@ describe("managed profile runtime entry", () => {
     await env.MEDIA_BUCKET?.put("uploads/test.txt", "hello", {
       httpMetadata: { contentType: "text/plain" },
     })
-    const app = await createManagedProfileProviders().loadMediaRoutes()
+    const app = await createManagedProfileProviders().loadStorageRoutes()
 
     const response = await app.request("/v1/admin/media/uploads/test.txt", {}, env)
 
@@ -833,7 +833,7 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned catalog content routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadCatalogContentRoutes()
+    const app = await createManagedProfileProviders().loadCruisesContentRoutes()
     const response = await app.request("/v1/admin/cruises/!!!invalid/content")
 
     expect(app.fetch).toEqual(expect.any(Function))

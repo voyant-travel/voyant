@@ -32,11 +32,23 @@ import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import { openApiValidationHook } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+
+/** Absolute path matchers for the deployment's lazy route composition. */
+export const PAYMENT_LINK_ROUTE_PATHS = [
+  "/v1/public/payment-link-config",
+  "/v1/public/payment-link/:sessionId/retry",
+  "/v1/public/payment-link/resolve",
+  "/v1/public/payment-link/:sessionId/start-card",
+  "/v1/public/payment-link/:sessionId/trip-summary",
+  "/v1/public/payment-link/:sessionId/booking-summary",
+  "/v1/public/bookings/:bookingId/checkout-status",
+] as const
 
 // ─────────────────────────────────────────────────────────────────
 // Injected deployment surface (structural — no inventory / trips /
@@ -848,6 +860,19 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
   return new OpenAPIHono({ defaultHook: openApiValidationHook })
     .route("/", sessionActionRoutes)
     .route("/", summaryRoutes)
+}
+
+/** Package-owned module descriptor; deployments inject provider and projection adapters. */
+export function createPaymentLinkHonoModule(options: PaymentLinkRoutesOptions): HonoModule {
+  return {
+    module: { name: "payment-link" },
+    publicPath: "/",
+    lazyRoutes: {
+      paths: PAYMENT_LINK_ROUTE_PATHS,
+      load: async () => createPaymentLinkRoutes(options),
+    },
+    anonymous: ["payment-link-config", "payment-link"],
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────

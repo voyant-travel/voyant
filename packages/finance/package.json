@@ -22,7 +22,8 @@
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
-    "./tools": "./src/tools.ts"
+    "./tools": "./src/tools.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "NODE_OPTIONS=--max-old-space-size=4096 tsc -p tsconfig.typecheck.json",
@@ -159,6 +160,11 @@
         "types": "./dist/tools.d.ts",
         "import": "./dist/tools.js",
         "default": "./dist/tools.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -172,6 +178,7 @@
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

@@ -42,7 +42,7 @@
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
-    "@voyant-travel/storage": "workspace:^",
+    "@voyant-travel/public-document-delivery": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",

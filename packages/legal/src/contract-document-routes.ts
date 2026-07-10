@@ -20,6 +20,7 @@
  */
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 
 /** Minimal structural view of the deployment's document storage backend. */
@@ -267,4 +268,17 @@ export function createContractDocumentRoutes(options: ContractDocumentRoutesOpti
   })
 
   return hono
+}
+
+/** Package-owned module descriptor; deployments inject document generation and storage. */
+export function createContractDocumentHonoModule(
+  options: ContractDocumentRoutesOptions,
+): HonoModule {
+  return {
+    module: { name: "contract-document" },
+    lazyRoutes: {
+      paths: CONTRACT_DOCUMENT_ROUTE_PATHS,
+      load: async () => createContractDocumentRoutes(options),
+    },
+  }
 }

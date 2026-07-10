@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:acee3b0a6b3d4751d1621b5515739a13a79f03865596e073187051686cdbf780",
+  "contentHash": "sha256:19de30bcd0b47215823fe44577cd937f9048bebf4b28c08924a589bb23830e9e",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -27,16 +27,31 @@
       "api": [
         {
           "id": "@voyant-travel/accommodations#api",
-          "mount": "@voyant-travel/accommodations",
-          "surface": "admin"
+          "mount": "accommodations",
+          "runtime": {
+            "entry": "@voyant-travel/accommodations",
+            "export": "accommodationsHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/accommodations",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/accommodations#linkable.roomBlock",
+          "source": "@voyant-travel/accommodations/linkables"
+        }
+      ],
       "localId": "accommodations",
-      "migrations": [],
+      "migrations": [
+        {
+          "id": "@voyant-travel/accommodations#migrations",
+          "source": "./migrations"
+        }
+      ],
       "order": 0,
       "packageName": "@voyant-travel/accommodations",
       "provides": {
@@ -47,15 +62,24 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/accommodations#schema",
+          "source": "@voyant-travel/accommodations/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
     {
       "api": [
         {
-          "id": "@voyant-travel/action-ledger#api",
-          "mount": "@voyant-travel/action-ledger",
+          "id": "@voyant-travel/action-ledger#api.admin",
+          "mount": "action-ledger",
+          "runtime": {
+            "entry": "@voyant-travel/action-ledger",
+            "export": "actionLedgerHonoModule"
+          },
           "surface": "admin"
         }
       ],
@@ -64,7 +88,12 @@
       "kind": "module",
       "links": [],
       "localId": "action-ledger",
-      "migrations": [],
+      "migrations": [
+        {
+          "id": "@voyant-travel/action-ledger#migrations",
+          "source": "./migrations"
+        }
+      ],
       "order": 1,
       "packageName": "@voyant-travel/action-ledger",
       "provides": {
@@ -75,7 +104,12 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/action-ledger#schema",
+          "source": "@voyant-travel/action-ledger/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
@@ -88,7 +122,8 @@
       "localId": "availability",
       "migrations": [
         {
-          "id": "@voyant-travel/availability#migrations"
+          "id": "@voyant-travel/availability#migrations",
+          "source": "./migrations"
         }
       ],
       "order": 2,
@@ -103,7 +138,8 @@
       },
       "schema": [
         {
-          "id": "@voyant-travel/availability#schema"
+          "id": "@voyant-travel/availability#schema",
+          "source": "@voyant-travel/availability/schema"
         }
       ],
       "subscribers": [],
@@ -116,17 +152,18 @@
           "mount": "bookings",
           "runtime": {
             "entry": "@voyant-travel/bookings",
-            "export": "bookingsHonoModule"
+            "export": "createBookingsHonoModule"
           },
           "surface": "admin",
           "transactional": true
         },
         {
+          "anonymous": true,
           "id": "@voyant-travel/bookings#api.public",
           "mount": "bookings",
           "runtime": {
             "entry": "@voyant-travel/bookings",
-            "export": "bookingsHonoModule"
+            "export": "createBookingsHonoModule"
           },
           "surface": "public",
           "transactional": true
@@ -165,14 +202,47 @@
         }
       ],
       "subscribers": [],
-      "workflows": []
+      "workflows": [
+        {
+          "config": {
+            "defaultRuntime": "node",
+            "schedule": {
+              "cron": "*/5 * * * *",
+              "name": "every-5-minutes"
+            }
+          },
+          "id": "bookings.expire-stale-holds",
+          "schedules": [
+            {
+              "cron": "*/5 * * * *",
+              "id": "@voyant-travel/bookings#schedule.bookings.expire-stale-holds.every-5-minutes",
+              "name": "every-5-minutes",
+              "workflowId": "bookings.expire-stale-holds"
+            }
+          ],
+          "source": "@voyant-travel/bookings/workflows"
+        }
+      ]
     },
     {
       "api": [
         {
           "id": "@voyant-travel/bookings#requirements.api",
-          "mount": "@voyant-travel/bookings/requirements",
+          "mount": "booking-requirements",
+          "runtime": {
+            "entry": "@voyant-travel/bookings/requirements",
+            "export": "createBookingRequirementsHonoModule"
+          },
           "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/bookings#requirements.api.public",
+          "mount": "booking-requirements",
+          "runtime": {
+            "entry": "@voyant-travel/bookings/requirements",
+            "export": "createBookingRequirementsHonoModule"
+          },
+          "surface": "public"
         }
       ],
       "events": [],
@@ -198,9 +268,23 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/catalog#api",
-          "mount": "@voyant-travel/catalog",
+          "id": "@voyant-travel/catalog#api.admin",
+          "mount": "catalog",
+          "runtime": {
+            "entry": "@voyant-travel/catalog",
+            "export": "createCatalogSearchHonoModule"
+          },
           "surface": "admin"
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/catalog#api.public",
+          "mount": "catalog",
+          "runtime": {
+            "entry": "@voyant-travel/catalog",
+            "export": "createCatalogSearchHonoModule"
+          },
+          "surface": "public"
         }
       ],
       "events": [],
@@ -208,7 +292,12 @@
       "kind": "module",
       "links": [],
       "localId": "catalog",
-      "migrations": [],
+      "migrations": [
+        {
+          "id": "@voyant-travel/catalog#migrations",
+          "source": "./migrations"
+        }
+      ],
       "order": 5,
       "packageName": "@voyant-travel/catalog",
       "provides": {
@@ -219,7 +308,12 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/catalog#schema",
+          "source": "@voyant-travel/catalog/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
@@ -232,7 +326,8 @@
       "localId": "catalog-authoring",
       "migrations": [
         {
-          "id": "@voyant-travel/catalog-authoring#migrations"
+          "id": "@voyant-travel/catalog-authoring#migrations",
+          "source": "./migrations"
         }
       ],
       "order": 6,
@@ -247,25 +342,103 @@
       },
       "schema": [
         {
-          "id": "@voyant-travel/catalog-authoring#schema"
+          "id": "@voyant-travel/catalog-authoring#schema",
+          "source": "@voyant-travel/catalog-authoring/schema"
         }
       ],
       "subscribers": [],
       "workflows": []
     },
     {
-      "api": [],
+      "api": [
+        {
+          "id": "@voyant-travel/catalog#booking-engine.api.admin",
+          "mount": "catalog",
+          "runtime": {
+            "entry": "@voyant-travel/catalog/booking-engine",
+            "export": "createCatalogBookingEngineHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/catalog#booking-engine.api.public",
+          "mount": "catalog",
+          "runtime": {
+            "entry": "@voyant-travel/catalog/booking-engine",
+            "export": "createCatalogBookingEngineHonoModule"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/catalog#booking-engine",
+      "kind": "module",
+      "links": [],
+      "localId": "catalog.booking-engine",
+      "migrations": [],
+      "order": 7,
+      "packageName": "@voyant-travel/catalog",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/charters#api.admin",
+          "mount": "charters",
+          "runtime": {
+            "entry": "@voyant-travel/charters",
+            "export": "createChartersHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/charters#api.public",
+          "mount": "charters",
+          "runtime": {
+            "entry": "@voyant-travel/charters",
+            "export": "createChartersHonoModule"
+          },
+          "surface": "public",
+          "transactional": true
+        }
+      ],
       "events": [],
       "id": "@voyant-travel/charters",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/charters#linkable.charter_product",
+          "source": "@voyant-travel/charters"
+        },
+        {
+          "id": "@voyant-travel/charters#linkable.charter_voyage",
+          "source": "@voyant-travel/charters"
+        },
+        {
+          "id": "@voyant-travel/charters#linkable.charter_yacht",
+          "source": "@voyant-travel/charters"
+        }
+      ],
       "localId": "charters",
       "migrations": [
         {
-          "id": "@voyant-travel/charters#migrations"
+          "id": "@voyant-travel/charters#migrations",
+          "source": "./migrations"
         }
       ],
-      "order": 7,
+      "order": 8,
       "packageName": "@voyant-travel/charters",
       "provides": {
         "capabilities": [],
@@ -277,7 +450,8 @@
       },
       "schema": [
         {
-          "id": "@voyant-travel/charters#schema"
+          "id": "@voyant-travel/charters#schema",
+          "source": "@voyant-travel/charters/schema"
         }
       ],
       "subscribers": [],
@@ -286,8 +460,58 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/commerce#api",
-          "mount": "@voyant-travel/commerce",
+          "id": "@voyant-travel/commerce#api.markets.admin",
+          "mount": "markets",
+          "runtime": {
+            "entry": "@voyant-travel/commerce",
+            "export": "marketsHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/commerce#api.markets.public",
+          "mount": "markets",
+          "runtime": {
+            "entry": "@voyant-travel/commerce",
+            "export": "marketsHonoModule"
+          },
+          "surface": "public"
+        },
+        {
+          "id": "@voyant-travel/commerce#api.pricing.admin",
+          "mount": "pricing",
+          "runtime": {
+            "entry": "@voyant-travel/commerce",
+            "export": "pricingHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/commerce#api.pricing.public",
+          "mount": "pricing",
+          "runtime": {
+            "entry": "@voyant-travel/commerce",
+            "export": "pricingHonoModule"
+          },
+          "surface": "public"
+        },
+        {
+          "id": "@voyant-travel/commerce#api.promotions.admin",
+          "mount": "promotions",
+          "runtime": {
+            "entry": "@voyant-travel/commerce",
+            "export": "promotionsHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/commerce#api.sellability.admin",
+          "mount": "sellability",
+          "runtime": {
+            "entry": "@voyant-travel/commerce",
+            "export": "sellabilityHonoModule"
+          },
           "surface": "admin"
         }
       ],
@@ -301,8 +525,13 @@
       "kind": "module",
       "links": [],
       "localId": "commerce",
-      "migrations": [],
-      "order": 8,
+      "migrations": [
+        {
+          "id": "@voyant-travel/commerce#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 9,
       "packageName": "@voyant-travel/commerce",
       "provides": {
         "capabilities": [],
@@ -312,7 +541,12 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/commerce#schema",
+          "source": "@voyant-travel/commerce/schema"
+        }
+      ],
       "subscribers": [
         {
           "eventFilterId": "ef_6f8e4b4ce409d04c",
@@ -344,6 +578,7 @@
             }
           },
           "id": "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
+          "source": "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest",
           "workflowId": "promotions.reindex-all-products"
         }
       ],
@@ -352,23 +587,64 @@
           "config": {
             "defaultRuntime": "node"
           },
-          "id": "promotions.reindex-all-products"
+          "id": "promotions.reindex-all-products",
+          "source": "@voyant-travel/commerce/promotions/workflow-bulk-reindex"
         }
       ]
     },
     {
-      "api": [],
+      "api": [
+        {
+          "id": "@voyant-travel/cruises#api.admin",
+          "mount": "cruises",
+          "runtime": {
+            "entry": "@voyant-travel/cruises",
+            "export": "createCruisesHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/cruises#api.public",
+          "mount": "cruises",
+          "runtime": {
+            "entry": "@voyant-travel/cruises",
+            "export": "createCruisesHonoModule"
+          },
+          "surface": "public",
+          "transactional": true
+        }
+      ],
       "events": [],
       "id": "@voyant-travel/cruises",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/cruises#linkable.cruise",
+          "source": "@voyant-travel/cruises"
+        },
+        {
+          "id": "@voyant-travel/cruises#linkable.cruise_sailing",
+          "source": "@voyant-travel/cruises"
+        },
+        {
+          "id": "@voyant-travel/cruises#linkable.cruise_ship",
+          "source": "@voyant-travel/cruises"
+        },
+        {
+          "id": "@voyant-travel/cruises#linkable.cruise_voyage_group",
+          "source": "@voyant-travel/cruises"
+        }
+      ],
       "localId": "cruises",
       "migrations": [
         {
-          "id": "@voyant-travel/cruises#migrations"
+          "id": "@voyant-travel/cruises#migrations",
+          "source": "./migrations"
         }
       ],
-      "order": 9,
+      "order": 10,
       "packageName": "@voyant-travel/cruises",
       "provides": {
         "capabilities": [],
@@ -380,7 +656,8 @@
       },
       "schema": [
         {
-          "id": "@voyant-travel/cruises#schema"
+          "id": "@voyant-travel/cruises#schema",
+          "source": "@voyant-travel/cruises/schema"
         }
       ],
       "subscribers": [],
@@ -395,10 +672,11 @@
       "localId": "db",
       "migrations": [
         {
-          "id": "@voyant-travel/db#migrations"
+          "id": "@voyant-travel/db#migrations",
+          "source": "./migrations"
         }
       ],
-      "order": 10,
+      "order": 11,
       "packageName": "@voyant-travel/db",
       "provides": {
         "capabilities": [],
@@ -410,7 +688,8 @@
       },
       "schema": [
         {
-          "id": "@voyant-travel/db#schema"
+          "id": "@voyant-travel/db#schema",
+          "source": "@voyant-travel/db/schema"
         }
       ],
       "subscribers": [],
@@ -420,17 +699,49 @@
       "api": [
         {
           "id": "@voyant-travel/distribution#api",
-          "mount": "@voyant-travel/distribution",
+          "mount": "distribution",
+          "runtime": {
+            "entry": "@voyant-travel/distribution",
+            "export": "distributionHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/distribution#api.external-refs",
+          "mount": "external-refs",
+          "runtime": {
+            "entry": "@voyant-travel/distribution",
+            "export": "externalRefsHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/distribution#api.suppliers",
+          "mount": "suppliers",
+          "runtime": {
+            "entry": "@voyant-travel/distribution",
+            "export": "suppliersHonoModule"
+          },
           "surface": "admin"
         }
       ],
       "events": [],
       "id": "@voyant-travel/distribution",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/distribution#linkable.supplier",
+          "source": "@voyant-travel/distribution/suppliers/linkables"
+        }
+      ],
       "localId": "distribution",
-      "migrations": [],
-      "order": 11,
+      "migrations": [
+        {
+          "id": "@voyant-travel/distribution#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 12,
       "packageName": "@voyant-travel/distribution",
       "provides": {
         "capabilities": [],
@@ -440,25 +751,74 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/distribution#schema",
+          "source": "@voyant-travel/distribution/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
     {
       "api": [
         {
-          "id": "@voyant-travel/finance#api",
-          "mount": "@voyant-travel/finance",
-          "surface": "admin"
+          "id": "@voyant-travel/finance#api.admin",
+          "mount": "finance",
+          "runtime": {
+            "entry": "@voyant-travel/finance",
+            "export": "createFinanceHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "anonymous": [
+            "/bookings",
+            "/collections",
+            "/payment-sessions",
+            "/accountant",
+            "/vouchers"
+          ],
+          "id": "@voyant-travel/finance#api.public",
+          "mount": "finance",
+          "runtime": {
+            "entry": "@voyant-travel/finance",
+            "export": "createFinanceHonoModule"
+          },
+          "surface": "public",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/finance",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/finance#linkable.creditNote",
+          "source": "@voyant-travel/finance/linkables"
+        },
+        {
+          "id": "@voyant-travel/finance#linkable.invoice",
+          "source": "@voyant-travel/finance/linkables"
+        },
+        {
+          "id": "@voyant-travel/finance#linkable.invoiceTemplate",
+          "source": "@voyant-travel/finance/linkables"
+        },
+        {
+          "id": "@voyant-travel/finance#linkable.supplierInvoice",
+          "source": "@voyant-travel/finance/linkables"
+        }
+      ],
       "localId": "finance",
-      "migrations": [],
-      "order": 12,
+      "migrations": [
+        {
+          "id": "@voyant-travel/finance#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 13,
       "packageName": "@voyant-travel/finance",
       "provides": {
         "capabilities": [],
@@ -468,7 +828,12 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/finance#schema",
+          "source": "@voyant-travel/finance/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
@@ -476,7 +841,11 @@
       "api": [
         {
           "id": "@voyant-travel/flights#api",
-          "mount": "@voyant-travel/flights",
+          "mount": "flights",
+          "runtime": {
+            "entry": "@voyant-travel/flights/hono",
+            "export": "createFlightsHonoModule"
+          },
           "surface": "admin"
         }
       ],
@@ -485,8 +854,13 @@
       "kind": "module",
       "links": [],
       "localId": "flights",
-      "migrations": [],
-      "order": 13,
+      "migrations": [
+        {
+          "id": "@voyant-travel/flights#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 14,
       "packageName": "@voyant-travel/flights",
       "provides": {
         "capabilities": [],
@@ -496,15 +870,24 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/flights#schema",
+          "source": "@voyant-travel/flights/reference/local-postgres"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
     {
       "api": [
         {
-          "id": "@voyant-travel/identity#api",
-          "mount": "@voyant-travel/identity",
+          "id": "@voyant-travel/identity#api.admin",
+          "mount": "identity",
+          "runtime": {
+            "entry": "@voyant-travel/identity",
+            "export": "identityHonoModule"
+          },
           "surface": "admin"
         }
       ],
@@ -513,8 +896,13 @@
       "kind": "module",
       "links": [],
       "localId": "identity",
-      "migrations": [],
-      "order": 14,
+      "migrations": [
+        {
+          "id": "@voyant-travel/identity#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 15,
       "packageName": "@voyant-travel/identity",
       "provides": {
         "capabilities": [],
@@ -524,52 +912,52 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/identity#schema",
+          "source": "@voyant-travel/identity/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
     {
       "api": [
         {
-          "id": "@voyant-travel/inventory#api",
-          "mount": "@voyant-travel/inventory",
+          "id": "@voyant-travel/inventory#api.admin",
+          "mount": "products",
+          "runtime": {
+            "entry": "@voyant-travel/inventory",
+            "export": "inventoryHonoModule"
+          },
           "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/inventory#api.public",
+          "mount": "products",
+          "runtime": {
+            "entry": "@voyant-travel/inventory",
+            "export": "inventoryHonoModule"
+          },
+          "surface": "public"
         }
       ],
       "events": [],
       "id": "@voyant-travel/inventory",
       "kind": "module",
-      "links": [],
-      "localId": "inventory",
-      "migrations": [],
-      "order": 15,
-      "packageName": "@voyant-travel/inventory",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
+      "links": [
         {
-          "id": "@voyant-travel/inventory#extras.api",
-          "mount": "@voyant-travel/inventory/extras",
-          "surface": "admin"
+          "id": "@voyant-travel/inventory#linkable.product",
+          "source": "@voyant-travel/inventory/linkables"
         }
       ],
-      "events": [],
-      "id": "@voyant-travel/inventory#extras",
-      "kind": "module",
-      "links": [],
-      "localId": "inventory.extras",
-      "migrations": [],
+      "localId": "inventory",
+      "migrations": [
+        {
+          "id": "@voyant-travel/inventory#migrations",
+          "source": "./migrations"
+        }
+      ],
       "order": 16,
       "packageName": "@voyant-travel/inventory",
       "provides": {
@@ -580,6 +968,51 @@
         "capabilities": [],
         "ports": []
       },
+      "schema": [
+        {
+          "id": "@voyant-travel/inventory#schema",
+          "source": "@voyant-travel/inventory/schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": [
+        {
+          "config": {
+            "defaultRuntime": "node"
+          },
+          "id": "products.generate-pdf",
+          "source": "@voyant-travel/inventory/workflows"
+        }
+      ]
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/inventory#extras.api",
+          "mount": "extras",
+          "runtime": {
+            "entry": "@voyant-travel/inventory/extras",
+            "export": "inventoryExtrasHonoModule"
+          },
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/inventory#extras",
+      "kind": "module",
+      "links": [],
+      "localId": "inventory.extras",
+      "migrations": [],
+      "order": 17,
+      "packageName": "@voyant-travel/inventory",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
       "schema": [],
       "subscribers": [],
       "workflows": []
@@ -587,18 +1020,100 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/legal#api",
-          "mount": "@voyant-travel/legal",
-          "surface": "admin"
+          "id": "@voyant-travel/legal#api.admin",
+          "mount": "legal",
+          "runtime": {
+            "entry": "@voyant-travel/legal",
+            "export": "createLegalHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/legal#api.public",
+          "mount": "legal",
+          "runtime": {
+            "entry": "@voyant-travel/legal",
+            "export": "createLegalHonoModule"
+          },
+          "surface": "public",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/legal",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/legal#linkable.contract",
+          "source": "@voyant-travel/legal/linkables"
+        },
+        {
+          "id": "@voyant-travel/legal#linkable.contractTemplate",
+          "source": "@voyant-travel/legal/linkables"
+        },
+        {
+          "id": "@voyant-travel/legal#linkable.policy",
+          "source": "@voyant-travel/legal/linkables"
+        },
+        {
+          "id": "@voyant-travel/legal#linkable.policyAcceptance",
+          "source": "@voyant-travel/legal/linkables"
+        },
+        {
+          "id": "@voyant-travel/legal#linkable.policyVersion",
+          "source": "@voyant-travel/legal/linkables"
+        },
+        {
+          "id": "@voyant-travel/legal#linkable.term",
+          "source": "@voyant-travel/legal/linkables"
+        }
+      ],
       "localId": "legal",
+      "migrations": [
+        {
+          "id": "@voyant-travel/legal#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 18,
+      "packageName": "@voyant-travel/legal",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/legal#schema",
+          "source": "@voyant-travel/legal/schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/legal#contract-document.api",
+          "runtime": {
+            "entry": "@voyant-travel/legal/contract-document-routes",
+            "export": "createContractDocumentHonoModule"
+          },
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/legal#contract-document",
+      "kind": "module",
+      "links": [],
+      "localId": "legal.contract-document",
       "migrations": [],
-      "order": 17,
+      "order": 19,
       "packageName": "@voyant-travel/legal",
       "provides": {
         "capabilities": [],
@@ -616,17 +1131,52 @@
       "api": [
         {
           "id": "@voyant-travel/mice#api.admin",
-          "mount": "@voyant-travel/mice",
-          "surface": "admin"
+          "mount": "mice",
+          "runtime": {
+            "entry": "@voyant-travel/mice",
+            "export": "createMiceHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/mice",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/mice#linkable.bid",
+          "source": "@voyant-travel/mice/linkables"
+        },
+        {
+          "id": "@voyant-travel/mice#linkable.delegate",
+          "source": "@voyant-travel/mice/linkables"
+        },
+        {
+          "id": "@voyant-travel/mice#linkable.program",
+          "source": "@voyant-travel/mice/linkables"
+        },
+        {
+          "id": "@voyant-travel/mice#linkable.rfp",
+          "source": "@voyant-travel/mice/linkables"
+        },
+        {
+          "id": "@voyant-travel/mice#linkable.roomingAssignment",
+          "source": "@voyant-travel/mice/linkables"
+        },
+        {
+          "id": "@voyant-travel/mice#linkable.session",
+          "source": "@voyant-travel/mice/linkables"
+        }
+      ],
       "localId": "mice",
-      "migrations": [],
-      "order": 18,
+      "migrations": [
+        {
+          "id": "@voyant-travel/mice#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 20,
       "packageName": "@voyant-travel/mice",
       "provides": {
         "capabilities": [],
@@ -636,25 +1186,69 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/mice#schema",
+          "source": "@voyant-travel/mice/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
     {
       "api": [
         {
-          "id": "@voyant-travel/notifications#api",
-          "mount": "@voyant-travel/notifications",
-          "surface": "admin"
+          "id": "@voyant-travel/notifications#api.admin",
+          "mount": "notifications",
+          "runtime": {
+            "entry": "@voyant-travel/notifications",
+            "export": "createNotificationsHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/notifications",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/notifications#linkable.notification-delivery",
+          "source": "@voyant-travel/notifications/schema"
+        },
+        {
+          "id": "@voyant-travel/notifications#linkable.notification-reminder-rule",
+          "source": "@voyant-travel/notifications/schema"
+        },
+        {
+          "id": "@voyant-travel/notifications#linkable.notification-reminder-rule-stage",
+          "source": "@voyant-travel/notifications/schema"
+        },
+        {
+          "id": "@voyant-travel/notifications#linkable.notification-reminder-run",
+          "source": "@voyant-travel/notifications/schema"
+        },
+        {
+          "id": "@voyant-travel/notifications#linkable.notification-reminder-stage-channel",
+          "source": "@voyant-travel/notifications/schema"
+        },
+        {
+          "id": "@voyant-travel/notifications#linkable.notification-settings",
+          "source": "@voyant-travel/notifications/schema"
+        },
+        {
+          "id": "@voyant-travel/notifications#linkable.notification-template",
+          "source": "@voyant-travel/notifications/schema"
+        }
+      ],
       "localId": "notifications",
-      "migrations": [],
-      "order": 19,
+      "migrations": [
+        {
+          "id": "@voyant-travel/notifications#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 21,
       "packageName": "@voyant-travel/notifications",
       "provides": {
         "capabilities": [],
@@ -664,25 +1258,93 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/notifications#schema",
+          "source": "@voyant-travel/notifications/schema"
+        }
+      ],
       "subscribers": [],
-      "workflows": []
+      "workflows": [
+        {
+          "config": {
+            "defaultRuntime": "node",
+            "retry": {
+              "backoff": "exponential",
+              "max": 3,
+              "maxDelay": "300s"
+            }
+          },
+          "id": "notifications.deliver-reminder",
+          "source": "@voyant-travel/notifications/workflows"
+        },
+        {
+          "config": {
+            "defaultRuntime": "node",
+            "schedule": {
+              "cron": "0 * * * *",
+              "name": "hourly"
+            }
+          },
+          "id": "notifications.send-due-reminders",
+          "schedules": [
+            {
+              "cron": "0 * * * *",
+              "id": "@voyant-travel/notifications#schedule.notifications.send-due-reminders.hourly",
+              "name": "hourly",
+              "workflowId": "notifications.send-due-reminders"
+            }
+          ],
+          "source": "@voyant-travel/notifications/workflows"
+        }
+      ]
     },
     {
       "api": [
         {
-          "id": "@voyant-travel/operations#api",
-          "mount": "@voyant-travel/operations",
-          "surface": "admin"
+          "id": "@voyant-travel/operations#api.admin",
+          "mount": "operations",
+          "runtime": {
+            "entry": "@voyant-travel/operations",
+            "export": "operationsHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/operations",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/operations#linkable.departure",
+          "source": "@voyant-travel/operations/availability"
+        },
+        {
+          "id": "@voyant-travel/operations#linkable.facility",
+          "source": "@voyant-travel/operations/places/linkables"
+        },
+        {
+          "id": "@voyant-travel/operations#linkable.functionSpace",
+          "source": "@voyant-travel/operations/places/linkables"
+        },
+        {
+          "id": "@voyant-travel/operations#linkable.property",
+          "source": "@voyant-travel/operations/places/linkables"
+        },
+        {
+          "id": "@voyant-travel/operations#linkable.spaceBlock",
+          "source": "@voyant-travel/operations/places/linkables"
+        }
+      ],
       "localId": "operations",
-      "migrations": [],
-      "order": 20,
+      "migrations": [
+        {
+          "id": "@voyant-travel/operations#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 22,
       "packageName": "@voyant-travel/operations",
       "provides": {
         "capabilities": [],
@@ -692,16 +1354,45 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/operations#schema",
+          "source": "@voyant-travel/operations/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
     {
       "api": [
         {
-          "id": "@voyant-travel/operator-settings#api",
-          "mount": "@voyant-travel/operator-settings",
+          "id": "@voyant-travel/operator-settings#api.admin",
+          "mount": "settings",
+          "runtime": {
+            "entry": "@voyant-travel/operator-settings/hono-module",
+            "export": "createOperatorSettingsHonoModule"
+          },
           "surface": "admin"
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/operator-settings#api.public.operator-profile",
+          "mount": "operator-profile",
+          "runtime": {
+            "entry": "@voyant-travel/operator-settings/hono-module",
+            "export": "createOperatorSettingsHonoModule"
+          },
+          "surface": "public"
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/operator-settings#api.public.settings",
+          "mount": "settings/operator",
+          "runtime": {
+            "entry": "@voyant-travel/operator-settings/hono-module",
+            "export": "createOperatorSettingsHonoModule"
+          },
+          "surface": "public"
         }
       ],
       "events": [],
@@ -709,8 +1400,13 @@
       "kind": "module",
       "links": [],
       "localId": "operator-settings",
-      "migrations": [],
-      "order": 21,
+      "migrations": [
+        {
+          "id": "@voyant-travel/operator-settings#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 23,
       "packageName": "@voyant-travel/operator-settings",
       "provides": {
         "capabilities": [],
@@ -720,159 +1416,12 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
+      "schema": [
         {
-          "id": "@voyant-travel/operator#catalog-booking.api",
-          "mount": "operator/catalog-booking",
-          "surface": "admin"
+          "id": "@voyant-travel/operator-settings#schema",
+          "source": "@voyant-travel/operator-settings/schema"
         }
       ],
-      "events": [],
-      "id": "@voyant-travel/operator#catalog-booking",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.catalog-booking",
-      "migrations": [],
-      "order": 22,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#catalog-content.api",
-          "mount": "operator/catalog-content",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#catalog-content",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.catalog-content",
-      "migrations": [],
-      "order": 23,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#charters.api.admin",
-          "mount": "operator/charters",
-          "surface": "admin"
-        },
-        {
-          "anonymous": true,
-          "id": "@voyant-travel/operator#charters.api.public",
-          "mount": "operator/charters",
-          "surface": "public"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#charters",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.charters",
-      "migrations": [],
-      "order": 24,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#contract-document.api",
-          "mount": "operator/contract-document",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#contract-document",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.contract-document",
-      "migrations": [],
-      "order": 25,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#cruises.api.admin",
-          "mount": "operator/cruises",
-          "surface": "admin"
-        },
-        {
-          "anonymous": true,
-          "id": "@voyant-travel/operator#cruises.api.public",
-          "mount": "operator/cruises",
-          "surface": "public"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#cruises",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.cruises",
-      "migrations": [],
-      "order": 26,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
       "subscribers": [],
       "workflows": []
     },
@@ -896,7 +1445,7 @@
       "links": [],
       "localId": "operator.invitations",
       "migrations": [],
-      "order": 27,
+      "order": 24,
       "packageName": "@voyant-travel/operator",
       "provides": {
         "capabilities": [],
@@ -913,7 +1462,7 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/operator#mcp.api",
+          "id": "@voyant-travel/operator#mcp.api.admin",
           "mount": "operator/mcp",
           "surface": "admin"
         }
@@ -924,96 +1473,7 @@
       "links": [],
       "localId": "operator.mcp",
       "migrations": [],
-      "order": 28,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#media.api",
-          "mount": "operator/media",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#media",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.media",
-      "migrations": [],
-      "order": 29,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#payment-link.api",
-          "mount": "operator/payment-link",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#payment-link",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.payment-link",
-      "migrations": [],
-      "order": 30,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#realtime.api.admin",
-          "mount": "operator/realtime",
-          "surface": "admin"
-        },
-        {
-          "id": "@voyant-travel/operator#realtime.api.public",
-          "mount": "operator/realtime",
-          "surface": "public"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#realtime",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.realtime",
-      "migrations": [],
-      "order": 31,
+      "order": 25,
       "packageName": "@voyant-travel/operator",
       "provides": {
         "capabilities": [],
@@ -1041,7 +1501,7 @@
       "links": [],
       "localId": "operator.team",
       "migrations": [],
-      "order": 32,
+      "order": 26,
       "packageName": "@voyant-travel/operator",
       "provides": {
         "capabilities": [],
@@ -1056,87 +1516,16 @@
       "workflows": []
     },
     {
-      "api": [],
-      "events": [],
-      "id": "@voyant-travel/operator#workflows",
-      "kind": "module",
-      "links": [],
-      "localId": "operator.workflows",
-      "migrations": [],
-      "order": 33,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": [
-        {
-          "config": {
-            "defaultRuntime": "node",
-            "schedule": {
-              "cron": "*/5 * * * *",
-              "name": "every-5-minutes"
-            }
-          },
-          "id": "bookings.expire-stale-holds",
-          "schedules": [
-            {
-              "cron": "*/5 * * * *",
-              "id": "@voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes",
-              "name": "every-5-minutes",
-              "workflowId": "bookings.expire-stale-holds"
-            }
-          ]
-        },
-        {
-          "config": {
-            "defaultRuntime": "node",
-            "retry": {
-              "backoff": "exponential",
-              "max": 3,
-              "maxDelay": "300s"
-            }
-          },
-          "id": "notifications.deliver-reminder"
-        },
-        {
-          "config": {
-            "defaultRuntime": "node",
-            "schedule": {
-              "cron": "0 * * * *",
-              "name": "hourly"
-            }
-          },
-          "id": "notifications.send-due-reminders",
-          "schedules": [
-            {
-              "cron": "0 * * * *",
-              "id": "@voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly",
-              "name": "hourly",
-              "workflowId": "notifications.send-due-reminders"
-            }
-          ]
-        },
-        {
-          "config": {
-            "defaultRuntime": "node"
-          },
-          "id": "products.generate-pdf"
-        }
-      ]
-    },
-    {
       "api": [
         {
-          "id": "@voyant-travel/public-document-delivery#api",
-          "mount": "@voyant-travel/public-document-delivery",
-          "surface": "admin"
+          "anonymous": true,
+          "id": "@voyant-travel/public-document-delivery#api.public",
+          "mount": "documents",
+          "runtime": {
+            "entry": "@voyant-travel/public-document-delivery",
+            "export": "createPublicDocumentDeliveryHonoModule"
+          },
+          "surface": "public"
         }
       ],
       "events": [],
@@ -1145,8 +1534,8 @@
       "links": [],
       "localId": "public-document-delivery",
       "migrations": [],
-      "order": 34,
-      "packageName": "@voyant-travel/hono",
+      "order": 27,
+      "packageName": "@voyant-travel/public-document-delivery",
       "provides": {
         "capabilities": [],
         "ports": []
@@ -1163,18 +1552,83 @@
       "api": [
         {
           "id": "@voyant-travel/quotes#api",
-          "mount": "@voyant-travel/quotes",
-          "surface": "admin"
+          "mount": "quotes",
+          "runtime": {
+            "entry": "@voyant-travel/quotes",
+            "export": "createQuotesHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/quotes",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/quotes#linkable.quote",
+          "source": "@voyant-travel/quotes/linkables"
+        },
+        {
+          "id": "@voyant-travel/quotes#linkable.quoteVersion",
+          "source": "@voyant-travel/quotes/linkables"
+        }
+      ],
       "localId": "quotes",
-      "migrations": [],
-      "order": 35,
+      "migrations": [
+        {
+          "id": "@voyant-travel/quotes#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 28,
       "packageName": "@voyant-travel/quotes",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/quotes#schema",
+          "source": "@voyant-travel/quotes/schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/realtime#api.admin",
+          "mount": "realtime",
+          "runtime": {
+            "entry": "@voyant-travel/realtime",
+            "export": "createRealtimeHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/realtime#api.public",
+          "mount": "realtime",
+          "runtime": {
+            "entry": "@voyant-travel/realtime",
+            "export": "createRealtimeHonoModule"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/realtime",
+      "kind": "module",
+      "links": [],
+      "localId": "realtime",
+      "migrations": [],
+      "order": 29,
+      "packageName": "@voyant-travel/realtime",
       "provides": {
         "capabilities": [],
         "ports": []
@@ -1190,19 +1644,93 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/relationships#api",
-          "mount": "@voyant-travel/relationships",
-          "surface": "admin"
+          "id": "@voyant-travel/relationships#api.admin",
+          "mount": "relationships",
+          "runtime": {
+            "entry": "@voyant-travel/relationships",
+            "export": "createRelationshipsHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/relationships",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/relationships#linkable.organization",
+          "source": "@voyant-travel/relationships/linkables"
+        },
+        {
+          "id": "@voyant-travel/relationships#linkable.person",
+          "source": "@voyant-travel/relationships/linkables"
+        }
+      ],
       "localId": "relationships",
-      "migrations": [],
-      "order": 36,
+      "migrations": [
+        {
+          "id": "@voyant-travel/relationships#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 30,
       "packageName": "@voyant-travel/relationships",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/relationships#schema",
+          "source": "@voyant-travel/relationships/schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/storage#api.admin.media",
+          "mount": "media",
+          "runtime": {
+            "entry": "@voyant-travel/storage/routes",
+            "export": "createMediaHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/storage#api.admin.uploads",
+          "mount": "uploads",
+          "runtime": {
+            "entry": "@voyant-travel/storage/routes",
+            "export": "createMediaHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/storage#api.admin.video-upload-ticket",
+          "mount": "uploads/video",
+          "runtime": {
+            "entry": "@voyant-travel/storage/routes",
+            "export": "createMediaHonoModule"
+          },
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/storage",
+      "kind": "module",
+      "links": [],
+      "localId": "storage",
+      "migrations": [],
+      "order": 31,
+      "packageName": "@voyant-travel/storage",
       "provides": {
         "capabilities": [],
         "ports": []
@@ -1216,18 +1744,44 @@
       "workflows": []
     },
     {
-      "api": [],
+      "api": [
+        {
+          "id": "@voyant-travel/storefront#api.admin",
+          "mount": "storefront",
+          "runtime": {
+            "entry": "@voyant-travel/storefront",
+            "export": "createStorefrontHonoModule"
+          },
+          "surface": "admin"
+        },
+        {
+          "anonymous": ["/leads", "/newsletter", "/offers"],
+          "id": "@voyant-travel/storefront#api.public",
+          "mount": "/",
+          "runtime": {
+            "entry": "@voyant-travel/storefront",
+            "export": "createStorefrontHonoModule"
+          },
+          "surface": "public"
+        }
+      ],
       "events": [],
       "id": "@voyant-travel/storefront",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/storefront#linkable.storefrontVerificationChallenge",
+          "source": "@voyant-travel/storefront/verification"
+        }
+      ],
       "localId": "storefront",
       "migrations": [
         {
-          "id": "@voyant-travel/storefront#migrations"
+          "id": "@voyant-travel/storefront#migrations",
+          "source": "./migrations"
         }
       ],
-      "order": 37,
+      "order": 32,
       "packageName": "@voyant-travel/storefront",
       "provides": {
         "capabilities": [],
@@ -1239,7 +1793,8 @@
       },
       "schema": [
         {
-          "id": "@voyant-travel/storefront#schema"
+          "id": "@voyant-travel/storefront#schema",
+          "source": "@voyant-travel/storefront/verification/schema"
         }
       ],
       "subscribers": [],
@@ -1248,19 +1803,24 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/trips#api",
-          "mount": "@voyant-travel/trips",
-          "surface": "admin"
+          "anonymous": ["/contact-exists"],
+          "id": "@voyant-travel/storefront#customer-portal.api",
+          "mount": "customer-portal",
+          "runtime": {
+            "entry": "@voyant-travel/storefront/customer-portal",
+            "export": "createCustomerPortalHonoModule"
+          },
+          "surface": "public"
         }
       ],
       "events": [],
-      "id": "@voyant-travel/trips",
+      "id": "@voyant-travel/storefront#customer-portal",
       "kind": "module",
       "links": [],
-      "localId": "trips",
+      "localId": "storefront.customer-portal",
       "migrations": [],
-      "order": 38,
-      "packageName": "@voyant-travel/trips",
+      "order": 33,
+      "packageName": "@voyant-travel/storefront",
       "provides": {
         "capabilities": [],
         "ports": []
@@ -1274,7 +1834,135 @@
       "workflows": []
     },
     {
-      "api": [],
+      "api": [
+        {
+          "anonymous": ["payment-link-config", "payment-link"],
+          "id": "@voyant-travel/storefront#payment-link.api",
+          "runtime": {
+            "entry": "@voyant-travel/storefront/payment-link",
+            "export": "createPaymentLinkHonoModule"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/storefront#payment-link",
+      "kind": "module",
+      "links": [],
+      "localId": "storefront.payment-link",
+      "migrations": [],
+      "order": 34,
+      "packageName": "@voyant-travel/storefront",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/storefront#verification.api",
+          "mount": "storefront-verification",
+          "runtime": {
+            "entry": "@voyant-travel/storefront/verification",
+            "export": "createStorefrontVerificationHonoModule"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/storefront#verification",
+      "kind": "module",
+      "links": [],
+      "localId": "storefront.verification",
+      "migrations": [],
+      "order": 35,
+      "packageName": "@voyant-travel/storefront",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/trips#api.admin",
+          "mount": "trips",
+          "runtime": {
+            "entry": "@voyant-travel/trips",
+            "export": "createTripsHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "id": "@voyant-travel/trips#api.public",
+          "mount": "trips",
+          "runtime": {
+            "entry": "@voyant-travel/trips",
+            "export": "createTripsHonoModule"
+          },
+          "surface": "public",
+          "transactional": true
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/trips",
+      "kind": "module",
+      "links": [],
+      "localId": "trips",
+      "migrations": [
+        {
+          "id": "@voyant-travel/trips#migrations",
+          "source": "./migrations"
+        }
+      ],
+      "order": 36,
+      "packageName": "@voyant-travel/trips",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [
+        {
+          "id": "@voyant-travel/trips#schema",
+          "source": "@voyant-travel/trips/schema"
+        }
+      ],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/workflow-runs#api.admin",
+          "mount": "workflow-runs",
+          "runtime": {
+            "entry": "@voyant-travel/workflow-runs/hono-module",
+            "export": "createWorkflowRunsHonoModule"
+          },
+          "surface": "admin"
+        }
+      ],
       "events": [],
       "id": "@voyant-travel/workflow-runs",
       "kind": "module",
@@ -1282,10 +1970,11 @@
       "localId": "workflow-runs",
       "migrations": [
         {
-          "id": "@voyant-travel/workflow-runs#migrations"
+          "id": "@voyant-travel/workflow-runs#migrations",
+          "source": "./migrations"
         }
       ],
-      "order": 39,
+      "order": 37,
       "packageName": "@voyant-travel/workflow-runs",
       "provides": {
         "capabilities": [],
@@ -1297,7 +1986,8 @@
       },
       "schema": [
         {
-          "id": "@voyant-travel/workflow-runs#schema"
+          "id": "@voyant-travel/workflow-runs#schema",
+          "source": "@voyant-travel/workflow-runs/schema"
         }
       ],
       "subscribers": [],
@@ -1313,6 +2003,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/accommodations",
@@ -1320,7 +2011,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/accommodations"
       },
-      "version": "0.111.5"
+      "version": "0.111.6"
     },
     {
       "metadata": {
@@ -1330,6 +2021,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/action-ledger",
@@ -1337,7 +2029,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/action-ledger"
       },
-      "version": "0.105.14"
+      "version": "0.105.15"
     },
     {
       "metadata": {
@@ -1347,6 +2039,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/availability",
@@ -1372,7 +2065,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/bookings"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -1382,6 +2075,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/catalog",
@@ -1389,7 +2083,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/catalog"
       },
-      "version": "0.147.1"
+      "version": "0.148.0"
     },
     {
       "metadata": {
@@ -1399,6 +2093,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/catalog-authoring",
@@ -1406,7 +2101,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/catalog-authoring"
       },
-      "version": "0.106.29"
+      "version": "0.106.30"
     },
     {
       "metadata": {
@@ -1416,6 +2111,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/charters",
@@ -1423,7 +2119,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/charters"
       },
-      "version": "0.147.1"
+      "version": "0.148.0"
     },
     {
       "metadata": {
@@ -1433,6 +2129,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/commerce",
@@ -1440,7 +2137,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/commerce"
       },
-      "version": "0.31.1"
+      "version": "0.32.0"
     },
     {
       "metadata": {
@@ -1450,6 +2147,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/cruises",
@@ -1457,7 +2155,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/cruises"
       },
-      "version": "0.148.1"
+      "version": "0.149.0"
     },
     {
       "metadata": {
@@ -1467,6 +2165,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/db",
@@ -1474,7 +2173,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/db"
       },
-      "version": "0.110.1"
+      "version": "0.110.2"
     },
     {
       "metadata": {
@@ -1484,6 +2183,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/distribution",
@@ -1491,7 +2191,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/distribution"
       },
-      "version": "0.139.1"
+      "version": "0.140.0"
     },
     {
       "metadata": {
@@ -1501,6 +2201,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/finance",
@@ -1508,7 +2209,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/finance"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -1518,6 +2219,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/flights",
@@ -1525,7 +2227,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/flights"
       },
-      "version": "0.149.1"
+      "version": "0.150.0"
     },
     {
       "metadata": {
@@ -1542,7 +2244,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/framework"
       },
-      "version": "0.33.0"
+      "version": "0.34.0"
     },
     {
       "metadata": {
@@ -1568,13 +2270,86 @@
           "modes": ["local", "managed-cloud", "self-hosted"],
           "targets": ["node", "voyant-cloud"]
         },
-        "kind": "library",
+        "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
-      "packageName": "@voyant-travel/hono",
+      "packageName": "@voyant-travel/identity",
       "source": {
         "kind": "workspace",
-        "reference": "link:../../packages/hono"
+        "reference": "link:../../packages/identity"
+      },
+      "version": "0.150.0"
+    },
+    {
+      "metadata": {
+        "compatibleWith": {
+          "framework": ">=0.26.0",
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "manifest": "./voyant",
+        "schemaVersion": "voyant.package.v1"
+      },
+      "packageName": "@voyant-travel/inventory",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/inventory"
+      },
+      "version": "0.7.11"
+    },
+    {
+      "metadata": {
+        "compatibleWith": {
+          "framework": ">=0.26.0",
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "manifest": "./voyant",
+        "schemaVersion": "voyant.package.v1"
+      },
+      "packageName": "@voyant-travel/legal",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/legal"
+      },
+      "version": "0.150.0"
+    },
+    {
+      "metadata": {
+        "compatibleWith": {
+          "framework": ">=0.26.0",
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "manifest": "./voyant",
+        "schemaVersion": "voyant.package.v1"
+      },
+      "packageName": "@voyant-travel/mice",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/mice"
+      },
+      "version": "0.6.10"
+    },
+    {
+      "metadata": {
+        "compatibleWith": {
+          "framework": ">=0.26.0",
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "manifest": "./voyant",
+        "schemaVersion": "voyant.package.v1"
+      },
+      "packageName": "@voyant-travel/notifications",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/notifications"
       },
       "version": "0.122.2"
     },
@@ -1586,91 +2361,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
-        "schemaVersion": "voyant.package.v1"
-      },
-      "packageName": "@voyant-travel/identity",
-      "source": {
-        "kind": "workspace",
-        "reference": "link:../../packages/identity"
-      },
-      "version": "0.149.1"
-    },
-    {
-      "metadata": {
-        "compatibleWith": {
-          "framework": ">=0.26.0",
-          "modes": ["local", "managed-cloud", "self-hosted"],
-          "targets": ["node", "voyant-cloud"]
-        },
-        "kind": "module",
-        "schemaVersion": "voyant.package.v1"
-      },
-      "packageName": "@voyant-travel/inventory",
-      "source": {
-        "kind": "workspace",
-        "reference": "link:../../packages/inventory"
-      },
-      "version": "0.7.10"
-    },
-    {
-      "metadata": {
-        "compatibleWith": {
-          "framework": ">=0.26.0",
-          "modes": ["local", "managed-cloud", "self-hosted"],
-          "targets": ["node", "voyant-cloud"]
-        },
-        "kind": "module",
-        "schemaVersion": "voyant.package.v1"
-      },
-      "packageName": "@voyant-travel/legal",
-      "source": {
-        "kind": "workspace",
-        "reference": "link:../../packages/legal"
-      },
-      "version": "0.149.1"
-    },
-    {
-      "metadata": {
-        "compatibleWith": {
-          "framework": ">=0.26.0",
-          "modes": ["local", "managed-cloud", "self-hosted"],
-          "targets": ["node", "voyant-cloud"]
-        },
-        "kind": "module",
-        "schemaVersion": "voyant.package.v1"
-      },
-      "packageName": "@voyant-travel/mice",
-      "source": {
-        "kind": "workspace",
-        "reference": "link:../../packages/mice"
-      },
-      "version": "0.6.9"
-    },
-    {
-      "metadata": {
-        "compatibleWith": {
-          "framework": ">=0.26.0",
-          "modes": ["local", "managed-cloud", "self-hosted"],
-          "targets": ["node", "voyant-cloud"]
-        },
-        "kind": "module",
-        "schemaVersion": "voyant.package.v1"
-      },
-      "packageName": "@voyant-travel/notifications",
-      "source": {
-        "kind": "workspace",
-        "reference": "link:../../packages/notifications"
-      },
-      "version": "0.122.1"
-    },
-    {
-      "metadata": {
-        "compatibleWith": {
-          "framework": ">=0.26.0",
-          "modes": ["local", "managed-cloud", "self-hosted"],
-          "targets": ["node", "voyant-cloud"]
-        },
-        "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/operations",
@@ -1678,7 +2369,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/operations"
       },
-      "version": "0.5.22"
+      "version": "0.5.23"
     },
     {
       "metadata": {
@@ -1704,6 +2395,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/operator-settings",
@@ -1711,7 +2403,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/operator-settings"
       },
-      "version": "0.2.34"
+      "version": "0.2.35"
     },
     {
       "metadata": {
@@ -1739,6 +2431,25 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
+        "schemaVersion": "voyant.package.v1"
+      },
+      "packageName": "@voyant-travel/public-document-delivery",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/public-document-delivery"
+      },
+      "version": "0.1.0"
+    },
+    {
+      "metadata": {
+        "compatibleWith": {
+          "framework": ">=0.26.0",
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/quotes",
@@ -1746,7 +2457,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/quotes"
       },
-      "version": "0.125.8"
+      "version": "0.125.9"
     },
     {
       "metadata": {
@@ -1756,6 +2467,25 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
+        "schemaVersion": "voyant.package.v1"
+      },
+      "packageName": "@voyant-travel/realtime",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/realtime"
+      },
+      "version": "0.1.9"
+    },
+    {
+      "metadata": {
+        "compatibleWith": {
+          "framework": ">=0.26.0",
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/relationships",
@@ -1763,7 +2493,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/relationships"
       },
-      "version": "0.122.11"
+      "version": "0.122.12"
     },
     {
       "metadata": {
@@ -1773,6 +2503,25 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
+        "schemaVersion": "voyant.package.v1"
+      },
+      "packageName": "@voyant-travel/storage",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../../packages/storage"
+      },
+      "version": "0.106.0"
+    },
+    {
+      "metadata": {
+        "compatibleWith": {
+          "framework": ">=0.26.0",
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/storefront",
@@ -1780,7 +2529,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/storefront"
       },
-      "version": "0.151.1"
+      "version": "0.152.0"
     },
     {
       "metadata": {
@@ -1790,6 +2539,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/trips",
@@ -1797,7 +2547,7 @@
         "kind": "workspace",
         "reference": "link:../../packages/trips"
       },
-      "version": "0.140.1"
+      "version": "0.141.0"
     },
     {
       "metadata": {
@@ -1807,6 +2557,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/workflow-runs",
@@ -1821,8 +2572,85 @@
     {
       "api": [
         {
+          "id": "@voyant-travel/accommodations#content-extension.api.admin",
+          "mount": "accommodations",
+          "runtime": {
+            "entry": "@voyant-travel/accommodations/routes-content",
+            "export": "createAccommodationContentHonoExtension"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/accommodations#content-extension.api.public",
+          "mount": "accommodations",
+          "runtime": {
+            "entry": "@voyant-travel/accommodations/routes-content",
+            "export": "createAccommodationContentHonoExtension"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/accommodations#content-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "accommodations.content-extension",
+      "migrations": [],
+      "order": 0,
+      "packageName": "@voyant-travel/accommodations",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/action-ledger#health-extension.api",
+          "mount": "action-ledger",
+          "runtime": {
+            "entry": "@voyant-travel/action-ledger/health",
+            "export": "createActionLedgerHealthHonoExtension"
+          },
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/action-ledger#health-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "action-ledger.health-extension",
+      "migrations": [],
+      "order": 1,
+      "packageName": "@voyant-travel/action-ledger",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
           "id": "@voyant-travel/bookings#booking-supplier-extension.api",
-          "mount": "@voyant-travel/bookings/booking-supplier-extension",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/bookings/extensions/suppliers",
+            "export": "bookingsSupplierExtension"
+          },
           "surface": "admin"
         }
       ],
@@ -1832,7 +2660,7 @@
       "links": [],
       "localId": "bookings.booking-supplier-extension",
       "migrations": [],
-      "order": 0,
+      "order": 2,
       "packageName": "@voyant-travel/bookings",
       "provides": {
         "capabilities": [],
@@ -1849,8 +2677,149 @@
     {
       "api": [
         {
+          "id": "@voyant-travel/catalog#offers-extension.api",
+          "mount": "catalog",
+          "runtime": {
+            "entry": "@voyant-travel/catalog/offers",
+            "export": "createCatalogOffersHonoExtension"
+          },
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/catalog#offers-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "catalog.offers-extension",
+      "migrations": [],
+      "order": 3,
+      "packageName": "@voyant-travel/catalog",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/commerce#booking-maintenance-extension.api",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/commerce/checkout",
+            "export": "createBookingMaintenanceHonoExtension"
+          },
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/commerce#booking-maintenance-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "commerce.booking-maintenance-extension",
+      "migrations": [],
+      "order": 4,
+      "packageName": "@voyant-travel/commerce",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/commerce#catalog-checkout-extension.api",
+          "mount": "catalog",
+          "runtime": {
+            "entry": "@voyant-travel/commerce/checkout",
+            "export": "createCatalogCheckoutHonoExtension"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/commerce#catalog-checkout-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "commerce.catalog-checkout-extension",
+      "migrations": [],
+      "order": 5,
+      "packageName": "@voyant-travel/commerce",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/cruises#content-extension.api.admin",
+          "mount": "cruises",
+          "runtime": {
+            "entry": "@voyant-travel/cruises/routes-content",
+            "export": "createCruiseContentHonoExtension"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/cruises#content-extension.api.public",
+          "mount": "cruises",
+          "runtime": {
+            "entry": "@voyant-travel/cruises/routes-content",
+            "export": "createCruiseContentHonoExtension"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/cruises#content-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "cruises.content-extension",
+      "migrations": [],
+      "order": 6,
+      "packageName": "@voyant-travel/cruises",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
           "id": "@voyant-travel/distribution#channel-push-extension.api",
-          "mount": "@voyant-travel/distribution/channel-push-extension",
+          "mount": "distribution",
+          "runtime": {
+            "entry": "@voyant-travel/distribution",
+            "export": "createChannelPushExtension"
+          },
           "surface": "admin"
         }
       ],
@@ -1860,7 +2829,7 @@
       "links": [],
       "localId": "distribution.channel-push-extension",
       "migrations": [],
-      "order": 1,
+      "order": 7,
       "packageName": "@voyant-travel/distribution",
       "provides": {
         "capabilities": [],
@@ -1878,7 +2847,11 @@
       "api": [
         {
           "id": "@voyant-travel/distribution#extension.api",
-          "mount": "@voyant-travel/distribution",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/distribution",
+            "export": "distributionBookingExtension"
+          },
           "surface": "admin"
         }
       ],
@@ -1888,7 +2861,7 @@
       "links": [],
       "localId": "distribution",
       "migrations": [],
-      "order": 2,
+      "order": 8,
       "packageName": "@voyant-travel/distribution",
       "provides": {
         "capabilities": [],
@@ -1905,9 +2878,57 @@
     {
       "api": [
         {
+          "id": "@voyant-travel/finance#booking-schedule-extension.api.admin",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/finance",
+            "export": "createBookingScheduleHonoExtension"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/finance#booking-schedule-extension.api.public",
+          "mount": "payment-policy",
+          "runtime": {
+            "entry": "@voyant-travel/finance",
+            "export": "createBookingScheduleHonoExtension"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/finance#booking-schedule-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "finance.booking-schedule-extension",
+      "migrations": [],
+      "order": 9,
+      "packageName": "@voyant-travel/finance",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
           "id": "@voyant-travel/finance#booking-tax-extension.api",
-          "mount": "@voyant-travel/finance/booking-tax-extension",
-          "surface": "admin"
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/finance",
+            "export": "createBookingTaxHonoExtension"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
@@ -1916,7 +2937,7 @@
       "links": [],
       "localId": "finance.booking-tax-extension",
       "migrations": [],
-      "order": 3,
+      "order": 10,
       "packageName": "@voyant-travel/finance",
       "provides": {
         "capabilities": [],
@@ -1934,8 +2955,13 @@
       "api": [
         {
           "id": "@voyant-travel/finance#bookings-create-extension.api",
-          "mount": "@voyant-travel/finance/bookings-create-extension",
-          "surface": "admin"
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/finance",
+            "export": "bookingsCreateExtension"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
@@ -1944,7 +2970,7 @@
       "links": [],
       "localId": "finance.bookings-create-extension",
       "migrations": [],
-      "order": 4,
+      "order": 11,
       "packageName": "@voyant-travel/finance",
       "provides": {
         "capabilities": [],
@@ -1962,8 +2988,13 @@
       "api": [
         {
           "id": "@voyant-travel/inventory#authoring.extension.api",
-          "mount": "@voyant-travel/inventory/authoring/extension",
-          "surface": "admin"
+          "mount": "products",
+          "runtime": {
+            "entry": "@voyant-travel/inventory/authoring/extension",
+            "export": "inventoryAuthoringExtension"
+          },
+          "surface": "admin",
+          "transactional": true
         }
       ],
       "events": [],
@@ -1972,7 +3003,7 @@
       "links": [],
       "localId": "inventory.authoring.extension",
       "migrations": [],
-      "order": 5,
+      "order": 12,
       "packageName": "@voyant-travel/inventory",
       "provides": {
         "capabilities": [],
@@ -1990,7 +3021,11 @@
       "api": [
         {
           "id": "@voyant-travel/inventory#booking-extension.api",
-          "mount": "@voyant-travel/inventory/booking-extension",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/inventory/booking-extension",
+            "export": "productsBookingExtension"
+          },
           "surface": "admin"
         }
       ],
@@ -2000,7 +3035,80 @@
       "links": [],
       "localId": "inventory.booking-extension",
       "migrations": [],
-      "order": 6,
+      "order": 13,
+      "packageName": "@voyant-travel/inventory",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/inventory#brochure-extension.api.admin",
+          "mount": "products",
+          "runtime": {
+            "entry": "@voyant-travel/inventory/routes-brochure",
+            "export": "createProductBrochureHonoExtension"
+          },
+          "surface": "admin"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/inventory#brochure-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "inventory.brochure-extension",
+      "migrations": [],
+      "order": 14,
+      "packageName": "@voyant-travel/inventory",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/inventory#content-extension.api.admin",
+          "mount": "products",
+          "runtime": {
+            "entry": "@voyant-travel/inventory/routes-content",
+            "export": "createProductContentHonoExtension"
+          },
+          "surface": "admin"
+        },
+        {
+          "id": "@voyant-travel/inventory#content-extension.api.public",
+          "mount": "products",
+          "runtime": {
+            "entry": "@voyant-travel/inventory/routes-content",
+            "export": "createProductContentHonoExtension"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/inventory#content-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "inventory.content-extension",
+      "migrations": [],
+      "order": 15,
       "packageName": "@voyant-travel/inventory",
       "provides": {
         "capabilities": [],
@@ -2018,7 +3126,11 @@
       "api": [
         {
           "id": "@voyant-travel/mice#booking-extension.api.admin",
-          "mount": "@voyant-travel/mice/booking-extension",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/mice/booking-extension",
+            "export": "miceBookingExtension"
+          },
           "surface": "admin"
         }
       ],
@@ -2028,7 +3140,7 @@
       "links": [],
       "localId": "mice.booking-extension",
       "migrations": [],
-      "order": 7,
+      "order": 16,
       "packageName": "@voyant-travel/mice",
       "provides": {
         "capabilities": [],
@@ -2045,208 +3157,18 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/operator#action-ledger-health-extension.api",
-          "mount": "operator/action-ledger-health-extension",
+          "id": "@voyant-travel/plugin-netopia#api",
+          "mount": "@voyant-travel/plugin-netopia",
           "surface": "admin"
         }
       ],
-      "events": [],
-      "id": "@voyant-travel/operator#action-ledger-health-extension",
-      "kind": "plugin",
-      "links": [],
-      "localId": "operator.action-ledger-health-extension",
-      "migrations": [],
-      "order": 8,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#booking-maintenance-extension.api",
-          "mount": "operator/booking-maintenance-extension",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#booking-maintenance-extension",
-      "kind": "plugin",
-      "links": [],
-      "localId": "operator.booking-maintenance-extension",
-      "migrations": [],
-      "order": 9,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#booking-schedule-extension.api",
-          "mount": "operator/booking-schedule-extension",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#booking-schedule-extension",
-      "kind": "plugin",
-      "links": [],
-      "localId": "operator.booking-schedule-extension",
-      "migrations": [],
-      "order": 10,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#catalog-checkout-extension.api",
-          "mount": "operator/catalog-checkout-extension",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#catalog-checkout-extension",
-      "kind": "plugin",
-      "links": [],
-      "localId": "operator.catalog-checkout-extension",
-      "migrations": [],
-      "order": 11,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#catalog-offers-extension.api",
-          "mount": "operator/catalog-offers-extension",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#catalog-offers-extension",
-      "kind": "plugin",
-      "links": [],
-      "localId": "operator.catalog-offers-extension",
-      "migrations": [],
-      "order": 12,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#proposal-extension.api",
-          "mount": "operator/proposal-extension",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#proposal-extension",
-      "kind": "plugin",
-      "links": [],
-      "localId": "operator.proposal-extension",
-      "migrations": [],
-      "order": 13,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [
-        {
-          "id": "@voyant-travel/operator#quote-version-snapshot-extension.api",
-          "mount": "operator/quote-version-snapshot-extension",
-          "surface": "admin"
-        }
-      ],
-      "events": [],
-      "id": "@voyant-travel/operator#quote-version-snapshot-extension",
-      "kind": "plugin",
-      "links": [],
-      "localId": "operator.quote-version-snapshot-extension",
-      "migrations": [],
-      "order": 14,
-      "packageName": "@voyant-travel/operator",
-      "provides": {
-        "capabilities": [],
-        "ports": []
-      },
-      "requires": {
-        "capabilities": [],
-        "ports": []
-      },
-      "schema": [],
-      "subscribers": [],
-      "workflows": []
-    },
-    {
-      "api": [],
       "events": [],
       "id": "@voyant-travel/plugin-netopia",
       "kind": "plugin",
       "links": [],
       "localId": "plugin-netopia",
       "migrations": [],
-      "order": 15,
+      "order": 17,
       "packageName": "@voyant-travel/plugin-netopia",
       "provides": {
         "capabilities": [],
@@ -2264,7 +3186,11 @@
       "api": [
         {
           "id": "@voyant-travel/quotes#booking-extension.api",
-          "mount": "@voyant-travel/quotes/booking-extension",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/quotes/booking-extension",
+            "export": "quotesBookingExtension"
+          },
           "surface": "admin"
         }
       ],
@@ -2274,7 +3200,84 @@
       "links": [],
       "localId": "quotes.booking-extension",
       "migrations": [],
-      "order": 16,
+      "order": 18,
+      "packageName": "@voyant-travel/quotes",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/quotes#proposal-extension.api.admin",
+          "mount": "quote-versions",
+          "runtime": {
+            "entry": "@voyant-travel/quotes",
+            "export": "createQuoteProposalHonoExtension"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/quotes#proposal-extension.api.public",
+          "mount": "proposals",
+          "runtime": {
+            "entry": "@voyant-travel/quotes",
+            "export": "createQuoteProposalHonoExtension"
+          },
+          "surface": "public",
+          "transactional": true
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/quotes#proposal-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "quotes.proposal-extension",
+      "migrations": [],
+      "order": 19,
+      "packageName": "@voyant-travel/quotes",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "id": "@voyant-travel/quotes#quote-version-snapshot-extension.api",
+          "mount": "trips",
+          "runtime": {
+            "entry": "@voyant-travel/quotes",
+            "export": "createQuoteVersionSnapshotHonoExtension"
+          },
+          "surface": "admin",
+          "transactional": true
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/quotes#quote-version-snapshot-extension",
+      "kind": "plugin",
+      "links": [],
+      "localId": "quotes.quote-version-snapshot-extension",
+      "migrations": [],
+      "order": 20,
       "packageName": "@voyant-travel/quotes",
       "provides": {
         "capabilities": [],
@@ -2296,17 +3299,17 @@
     "scheduledJobs": [
       {
         "cron": "*/5 * * * *",
-        "description": "Triggers workflow bookings.expire-stale-holds from graph schedule @voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes.",
-        "id": "@voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes",
-        "module": "operator.workflows",
+        "description": "Triggers workflow bookings.expire-stale-holds from graph schedule @voyant-travel/bookings#schedule.bookings.expire-stale-holds.every-5-minutes.",
+        "id": "@voyant-travel/bookings#schedule.bookings.expire-stale-holds.every-5-minutes",
+        "module": "bookings",
         "route": "/__voyant/scheduled",
         "workflowId": "bookings.expire-stale-holds"
       },
       {
         "cron": "0 * * * *",
-        "description": "Triggers workflow notifications.send-due-reminders from graph schedule @voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly.",
-        "id": "@voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly",
-        "module": "operator.workflows",
+        "description": "Triggers workflow notifications.send-due-reminders from graph schedule @voyant-travel/notifications#schedule.notifications.send-due-reminders.hourly.",
+        "id": "@voyant-travel/notifications#schedule.notifications.send-due-reminders.hourly",
+        "module": "notifications",
         "route": "/__voyant/scheduled",
         "workflowId": "notifications.send-due-reminders"
       },

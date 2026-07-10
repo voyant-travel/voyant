@@ -91,6 +91,36 @@ export interface MediaRoutesOptions {
   guessServedMimeType?(key: string): string
 }
 
+/** Absolute paths contributed by the storage-owned media route family. */
+export const STORAGE_MEDIA_ROUTE_PATHS = [
+  "/v1/admin/uploads",
+  "/v1/admin/uploads/video",
+  "/v1/admin/media/*",
+] as const
+
+/** Structural module shape kept local so storage does not depend on the Hono adapter package. */
+export interface MediaHonoModule {
+  module: { name: "media" }
+  lazyRoutes: {
+    paths: typeof STORAGE_MEDIA_ROUTE_PATHS
+    load: () => Promise<Hono>
+  }
+}
+
+/**
+ * Package-owned media module. Deployments inject storage and video signing;
+ * inventory brochure generation composes as a separate extension.
+ */
+export function createMediaHonoModule(options: MediaRoutesOptions): MediaHonoModule {
+  return {
+    module: { name: "media" },
+    lazyRoutes: {
+      paths: STORAGE_MEDIA_ROUTE_PATHS,
+      load: async () => createMediaRoutes(options),
+    },
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Default MIME guessing (so a deployment can omit `guessServedMimeType`)
 // ─────────────────────────────────────────────────────────────────

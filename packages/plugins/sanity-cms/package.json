@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./plugin": "./src/plugin.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -52,6 +53,11 @@
         "types": "./dist/types.d.ts",
         "import": "./dist/types.js",
         "default": "./dist/types.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -61,5 +67,10 @@
     "type": "git",
     "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/plugins/sanity-cms"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "plugin",
+    "manifest": "./voyant"
   }
 }

@@ -579,8 +579,11 @@ export function createManagedProfileProviders(
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
     loadMcpAdminRoutes: createManagedMcpAdminRoutes,
     loadCatalogBookingRoutes: createManagedCatalogBookingRoutes,
-    loadCatalogContentRoutes: createManagedCatalogContentRoutes,
-    loadMediaRoutes: createManagedMediaRoutes,
+    loadInventoryContentRoutes: createManagedInventoryContentRoutes,
+    loadCruisesContentRoutes: createManagedCruisesContentRoutes,
+    loadAccommodationsContentRoutes: createManagedAccommodationsContentRoutes,
+    loadStorageRoutes: createManagedStorageRoutes,
+    loadInventoryBrochureRoutes: createManagedInventoryBrochureRoutes,
     loadPaymentLinkRoutes: async () =>
       createManagedPaymentLinkRoutes(providers.resolveCardPaymentStarter),
     loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
@@ -1902,7 +1905,7 @@ function createManagedCatalogBookingRouteModuleOptions(): CatalogBookingRouteMod
   }
 }
 
-async function createManagedCatalogContentRoutes() {
+async function createManagedInventoryContentRoutes() {
   const app = new OpenAPIHono()
   app.route(
     "/v1/admin/products",
@@ -1918,13 +1921,11 @@ async function createManagedCatalogContentRoutes() {
       defaultAcceptMachineTranslated: true,
     }),
   )
-  app.route(
-    "/v1/admin/accommodations",
-    createAccommodationContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: false,
-    }),
-  )
+  return app
+}
+
+async function createManagedCruisesContentRoutes() {
+  const app = new OpenAPIHono()
   app.route(
     "/v1/admin/cruises",
     createCruiseContentRoutes({
@@ -1934,18 +1935,30 @@ async function createManagedCatalogContentRoutes() {
     }),
   )
   app.route(
-    "/v1/public/accommodations",
-    createAccommodationContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: true,
-    }),
-  )
-  app.route(
     "/v1/public/cruises",
     createCruiseContentRoutes({
       resolveRegistry: resolveManagedSourceAdapterRegistry,
       defaultAcceptMachineTranslated: true,
       allowOwnedKeys: true,
+    }),
+  )
+  return app
+}
+
+async function createManagedAccommodationsContentRoutes() {
+  const app = new OpenAPIHono()
+  app.route(
+    "/v1/admin/accommodations",
+    createAccommodationContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: false,
+    }),
+  )
+  app.route(
+    "/v1/public/accommodations",
+    createAccommodationContentRoutes({
+      resolveRegistry: resolveManagedSourceAdapterRegistry,
+      defaultAcceptMachineTranslated: true,
     }),
   )
   return app
@@ -2606,12 +2619,8 @@ function metadataRecord(value: unknown): Record<string, unknown> | null {
   return null
 }
 
-async function createManagedMediaRoutes() {
-  const [{ createProductBrochureRoutes }, { createMediaRoutes }] = await Promise.all([
-    import("@voyant-travel/inventory/routes-brochure"),
-    import("@voyant-travel/storage/routes"),
-  ])
-
+async function createManagedStorageRoutes() {
+  const { createMediaRoutes } = await import("@voyant-travel/storage/routes")
   const app = new OpenAPIHono()
   app.route(
     "/",
@@ -2621,6 +2630,12 @@ async function createManagedMediaRoutes() {
       signVideoUploadTicket: createManagedVideoUploadTicket,
     }),
   )
+  return app
+}
+
+async function createManagedInventoryBrochureRoutes() {
+  const { createProductBrochureRoutes } = await import("@voyant-travel/inventory/routes-brochure")
+  const app = new OpenAPIHono()
   app.route(
     "/v1/admin/products",
     createProductBrochureRoutes({

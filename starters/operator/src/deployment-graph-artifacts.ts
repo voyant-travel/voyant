@@ -9,6 +9,7 @@ const ARTIFACT_MANIFEST_FILENAME = "../deployment-artifacts.generated.json"
 const EXPECTED_GRAPH_ARTIFACT = "deployment-graph.generated.json"
 const EXPECTED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node"
 const EXPECTED_NODE_RUNTIME_ENTRY_FILE = "src/runtime-entry.generated.ts"
+const EXPECTED_GRAPH_RUNTIME_FILE = "src/graph-runtime.generated.ts"
 const EXPECTED_NODE_RUNTIME_ENTRY_KIND = "managed-profile-node"
 const EXPECTED_PROFILE_SNAPSHOT = "managed-profile.json"
 const EXPECTED_RUNTIME_ENTRY_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json"
@@ -235,6 +236,7 @@ export function loadOperatorDeploymentGraphArtifacts(
   }
 
   validateGeneratedRuntimeEntrySource({ graphHash, manifestUrl, mode, summary, target })
+  validateGeneratedGraphRuntimeSource({ graphHash, manifestUrl, summary })
 
   return summary
 }
@@ -559,6 +561,29 @@ function validateGeneratedRuntimeEntrySource(input: {
     source,
     "GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES",
     input.summary.packageNames,
+  )
+}
+
+function validateGeneratedGraphRuntimeSource(input: {
+  graphHash: string
+  manifestUrl: URL
+  summary: OperatorDeploymentGraphArtifactSummary
+}): void {
+  const runtimeUrl = relativeArtifactUrl(EXPECTED_GRAPH_RUNTIME_FILE, input.manifestUrl)
+  const runtimeFile = fileURLToPath(runtimeUrl)
+  if (!existsSync(runtimeFile)) return
+
+  const source = readFileSync(runtimeFile, "utf8")
+  assertGeneratedStringConst(source, "GENERATED_GRAPH_RUNTIME_HASH", input.graphHash)
+  assertGeneratedStringArrayConst(
+    source,
+    "GENERATED_GRAPH_RUNTIME_MODULE_IDS",
+    input.summary.moduleIds,
+  )
+  assertGeneratedStringArrayConst(
+    source,
+    "GENERATED_GRAPH_RUNTIME_PLUGIN_IDS",
+    input.summary.pluginIds,
   )
 }
 
