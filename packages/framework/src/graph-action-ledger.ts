@@ -27,8 +27,9 @@ export interface LowerVoyantGraphActionsOptions<TContext = unknown> {
 /**
  * Lower exactly the actions selected by a generated graph into the shared
  * action-ledger registry contract. Graph scopes become required grants; the
- * target type and terminal action-id segment provide the registry resource and
- * action metadata.
+ * Explicit capability identity and resource/action metadata are preferred,
+ * with graph identity, target type, and the terminal action-id segment retained
+ * as compatibility fallbacks.
  */
 export function lowerVoyantGraphActionsToActionLedgerRegistry<TContext = unknown>(
   runtime: VoyantGraphRuntime,
@@ -49,12 +50,13 @@ function lowerAction<TContext>(
   action: VoyantGraphRuntimeActionDefinition,
   riskEvaluators: LowerVoyantGraphActionsOptions<TContext>["riskEvaluators"],
 ): ActionLedgerCapabilityDefinition<TContext> {
-  const evaluator = riskEvaluators?.[actionLedgerCapabilityKey(action.id, action.version)]
+  const capabilityId = action.capabilityId ?? action.id
+  const evaluator = riskEvaluators?.[actionLedgerCapabilityKey(capabilityId, action.version)]
   return {
-    id: action.id,
+    id: capabilityId,
     version: action.version,
-    resource: action.targetType,
-    action: actionOperation(action),
+    resource: action.resource ?? action.targetType,
+    action: action.action ?? actionOperation(action),
     risk: action.risk,
     ledgerPolicy: action.ledger,
     approvalPolicy:
@@ -62,6 +64,7 @@ function lowerAction<TContext>(
         ? action.approval
         : "none",
     ...(action.reversible !== undefined ? { reversible: action.reversible } : {}),
+    ...(action.allowedActorTypes?.length ? { allowedActorTypes: action.allowedActorTypes } : {}),
     ...(action.requiredScopes.length > 0
       ? { requiredGrants: action.requiredScopes.map(scopeToGrant) }
       : {}),

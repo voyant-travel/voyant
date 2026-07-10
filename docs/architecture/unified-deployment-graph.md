@@ -865,14 +865,23 @@ package-owned metadata.
 
 Risk evaluation may depend on request or package runtime state and therefore
 cannot be serialized in the graph. The lowering API exposes only a keyed
-`riskEvaluators` override (`<action-id>@<version>`); it does not allow a runtime
-to replace graph-owned identity, grants, policy, or bindings.
+`riskEvaluators` override (`<capability-id>@<version>`); it does not allow a
+runtime to replace graph-owned identity, grants, policy, or bindings.
 
 The managed and operator runtimes instantiate this generic selected-graph
-registry. Existing route-local booking and person-document capability constants
-remain compatibility authorities until their persisted capability ids and
-resource/action fields have proven parity with graph declarations. They must not
-be removed merely because equivalent-looking graph metadata exists.
+registry. Bookings now owns one import-cheap action declaration source from
+which both its graph manifest and canonical request-path capability registry are
+derived. Its parity test preserves persisted capability ids, explicit
+resource/action metadata, grants, actor restrictions, risk, approval, ledger,
+and reversibility behavior. Graph action ids remain the established action
+names; the explicit `capabilityId` carries the separately persisted
+action-ledger identity. The route/request path continues to use the package's
+canonical registry.
+
+The relationships person-document capability remains a parallel catalog and a
+compatibility authority until the same package-owned declaration and parity
+test exist. Equivalent-looking graph metadata alone is not sufficient reason to
+remove it.
 
 ## Events And Webhooks
 

@@ -1470,8 +1470,25 @@ function validatePromotedFacets(
     }
   })
   validateEntityArray(input.actions, "actions", source, diagnostics, (entry, facet) => {
+    if (entry.capabilityId !== undefined) {
+      requireNonEmptyString(entry.capabilityId, `${facet}.capabilityId`, source, diagnostics)
+    }
     requireNonEmptyString(entry.version, `${facet}.version`, source, diagnostics)
     requireNonEmptyString(entry.targetType, `${facet}.targetType`, source, diagnostics)
+    if (entry.resource !== undefined) {
+      requireNonEmptyString(entry.resource, `${facet}.resource`, source, diagnostics)
+    }
+    if (entry.action !== undefined) {
+      requireNonEmptyString(entry.action, `${facet}.action`, source, diagnostics)
+    }
+    if (entry.allowedActorTypes !== undefined && !isStringArray(entry.allowedActorTypes)) {
+      invalidFacet(
+        `${facet}.allowedActorTypes`,
+        source,
+        diagnostics,
+        "Action allowedActorTypes must be an array of strings.",
+      )
+    }
     validateScopeArray(entry.requiredScopes, `${facet}.requiredScopes`, source, diagnostics)
     if ((entry.risk === "high" || entry.risk === "critical") && entry.ledger !== "required") {
       invalidFacet(

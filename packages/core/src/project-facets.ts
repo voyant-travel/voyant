@@ -116,15 +116,19 @@ export interface VoyantGraphActionBindings {
 }
 
 export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
+  capabilityId?: string
   version: string
   kind: "execute" | "read" | "sensitive-read"
   targetType: string
+  resource?: string
+  action?: string
   requiredScopes?: readonly string[]
   risk: "low" | "medium" | "high" | "critical"
   ledger: "required" | "optional"
   approval?: "never" | "conditional" | "required"
   policy?: string
   reversible?: boolean
+  allowedActorTypes?: readonly string[]
   from?: VoyantGraphActionBindings
   copy?: readonly VoyantGraphMessageReference[]
 }
