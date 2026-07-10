@@ -4,6 +4,8 @@
 import { readFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
+import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
+
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
 export const GENERATED_DEPLOYMENT_GRAPH_HASH = "sha256:3d53ce2597059201397cec93ab0c0e4bea18a538f35368da56b475f7ad31175c" as const
 export const GENERATED_DEPLOYMENT_GRAPH_TARGET = "node" as const
@@ -112,17 +114,7 @@ export function resolveGeneratedProfileSnapshotPath(): string {
 }
 
 export function assertGeneratedDeploymentGraphArtifact(): void {
-  const graph = JSON.parse(
-    readFileSync(
-      fileURLToPath(new URL(GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH, import.meta.url)),
-      "utf8",
-    ),
-  ) as {
-    schemaVersion?: unknown
-    contentHash?: unknown
-    deployment?: { target?: unknown; mode?: unknown }
-    diagnostics?: unknown
-  }
+  const graph = readGeneratedDeploymentGraph()
   if (graph.schemaVersion !== GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION) {
     throw new Error(
       `Generated deployment graph schemaVersion ${String(
@@ -163,12 +155,46 @@ export function assertGeneratedDeploymentGraphArtifact(): void {
   }
 }
 
+export function resolveGeneratedDeploymentRequirements(): VoyantGraphDeploymentRequirements {
+  const requirements = readGeneratedDeploymentGraph().requirements
+  if (!requirements || typeof requirements !== "object" || Array.isArray(requirements)) {
+    throw new Error("Generated deployment graph requirements are missing or invalid")
+  }
+  const candidate = requirements as { resources?: unknown }
+  if (!Array.isArray(candidate.resources)) {
+    throw new Error("Generated deployment graph requirements.resources must be an array")
+  }
+  return candidate as VoyantGraphDeploymentRequirements
+}
+
+function readGeneratedDeploymentGraph(): {
+  schemaVersion?: unknown
+  contentHash?: unknown
+  deployment?: { target?: unknown; mode?: unknown }
+  requirements?: unknown
+  diagnostics?: unknown
+} {
+  return JSON.parse(
+    readFileSync(
+      fileURLToPath(new URL(GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH, import.meta.url)),
+      "utf8",
+    ),
+  ) as {
+    schemaVersion?: unknown
+    contentHash?: unknown
+    deployment?: { target?: unknown; mode?: unknown }
+    requirements?: unknown
+    diagnostics?: unknown
+  }
+}
+
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
   assertGeneratedDeploymentGraphArtifact()
   const { startManagedProfileRuntime } = await import("@voyant-travel/framework/managed-runtime")
   const handle = await startManagedProfileRuntime({
     profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
+    deploymentRequirements: resolveGeneratedDeploymentRequirements(),
   })
   console.info(
     `[managed-runtime] Node runtime listening on :${handle.port} (${GENERATED_DEPLOYMENT_GRAPH_HASH})`,

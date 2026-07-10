@@ -106,11 +106,13 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('import { readFileSync } from "node:fs"')
     expect(source).toContain('from "node:url"')
     expect(source).toContain("assertGeneratedDeploymentGraphArtifact()")
+    expect(source).toContain("resolveGeneratedDeploymentRequirements")
     expect(source).toContain('await import("@voyant-travel/framework/managed-runtime")')
     expect(
       source.indexOf("if (isMainModule) {\n  assertGeneratedDeploymentGraphArtifact()"),
     ).toBeLessThan(source.indexOf('await import("@voyant-travel/framework/managed-runtime")'))
     expect(source).toContain("startManagedProfileRuntime")
+    expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
     expect(source).not.toContain("starters/")
   })
 

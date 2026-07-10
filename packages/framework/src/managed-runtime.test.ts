@@ -138,6 +138,48 @@ describe("managed profile runtime entry", () => {
     expect(runtime.app.fetch).toEqual(expect.any(Function))
   })
 
+  it("validates the graph-supplied deployment requirements at startup", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          providers: localProviders,
+        }),
+      ),
+    )
+
+    await expect(
+      loadManagedProfileRuntime({
+        profileSnapshotPath: snapshotPath,
+        env: { DATABASE_URL: "managed-profile-test-db" },
+        deploymentRequirements: {
+          resources: [
+            {
+              resourceKey: "graph:runtime",
+              roles: ["database"],
+              provider: "postgres",
+              required: true,
+              env: [
+                {
+                  name: "GRAPH_RUNTIME_SECRET",
+                  kind: "secret",
+                  required: true,
+                  description: "Required by the resolved deployment graph.",
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    ).rejects.toThrow(/GRAPH_RUNTIME_SECRET is required for graph:runtime/)
+  })
+
   it("fails fast when a managed-cloud profile is missing required runtime substrate", async () => {
     const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
     const snapshotPath = join(dir, "managed-profile.json")
