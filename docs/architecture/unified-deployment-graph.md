@@ -821,8 +821,9 @@ The reference operator now owns checked-in `voyant.project.ts` and
 `voyant.deployment.ts` declarations. The managed-profile snapshot remains a
 runtime compatibility input for the generated managed Node entry and legacy
 scheduled-job derivation, but it does not select graph units, providers, or the
-deployment target. Phase 2 replaces that remaining compatibility derivation
-with graph-derived requirements and provisioning.
+deployment target. Deployment requirements derive from the graph's declared
+provider bindings using the existing v1 provider contract; Phase 2 continues
+the remaining runtime compatibility and provisioning migration.
 
 The operator graph also runs an explicit source-admission policy for generated
 artifacts: selected packages must resolve to admitted lockfile/workspace

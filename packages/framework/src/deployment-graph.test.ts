@@ -430,6 +430,39 @@ describe("deployment graph v1", () => {
     expect(second.contentHash).toBe(first.contentHash)
   })
 
+  it("derives resource requirements from declared deployment providers", () => {
+    const deployment = defineDeployment({
+      project: defineProject({ modules: [] }),
+      target: "node",
+      mode: "self-hosted",
+      providers: {
+        database: "postgres",
+        cache: "redis",
+        search: "none",
+      },
+    })
+
+    expect(deployment.requirements.resources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          resourceKey: "database:postgres",
+          provider: "postgres",
+          roles: ["database"],
+        }),
+        expect.objectContaining({
+          resourceKey: "redis",
+          provider: "redis",
+          roles: ["cache"],
+        }),
+        expect.objectContaining({
+          resourceKey: "search:none",
+          provider: "none",
+          required: false,
+        }),
+      ]),
+    )
+  })
+
   it("detects package framework incompatibility from metadata", async () => {
     const project = defineProject({
       modules: [

@@ -15,7 +15,7 @@ import {
 } from "./manifest.js"
 import {
   getVoyantProjectProviders,
-  getVoyantProjectRequirements,
+  PROVIDER_ROLES,
   toCreateVoyantAppProfileConfig,
   type VoyantProfileEnvRequirement,
   type VoyantProfileResourceRequirement,
@@ -23,6 +23,7 @@ import {
   type VoyantProjectManifest,
   type VoyantProjectProviderRole,
 } from "./profile.js"
+import { resourceRequirementsForProvider } from "./profile-requirements.js"
 import { moduleIdFromSpecifier } from "./profile-types.js"
 
 export const VOYANT_GRAPH_PROJECT_SCHEMA_VERSION = "voyant.project.v1" as const
@@ -429,7 +430,9 @@ export function defineDeployment(input: DefineVoyantGraphDeploymentInput): Voyan
     target: input.target,
     providers: { ...(input.providers ?? {}) },
     ...(input.mode ? { mode: input.mode } : {}),
-    requirements: normalizeDeploymentRequirements(input.requirements),
+    requirements: normalizeDeploymentRequirements(
+      input.requirements ?? deriveDeploymentRequirements(input.providers),
+    ),
     ...(input.meta ? { meta: input.meta } : {}),
   } satisfies VoyantGraphDeployment
 
@@ -439,6 +442,19 @@ export function defineDeployment(input: DefineVoyantGraphDeploymentInput): Voyan
     )
   }
   return deployment
+}
+
+export function deriveDeploymentRequirements(
+  providers: Partial<Record<VoyantProjectProviderRole | string, string>> = {},
+): VoyantGraphDeploymentRequirements {
+  return normalizeDeploymentRequirements({
+    resources: PROVIDER_ROLES.flatMap((role) => {
+      const provider = providers[role]
+      return typeof provider === "string" && provider.trim().length > 0
+        ? resourceRequirementsForProvider(role, provider)
+        : []
+    }),
+  })
 }
 
 export function validateGraphUnitManifest(
@@ -633,17 +649,15 @@ export function defineProjectFromManagedProfile(
 export function defineDeploymentFromManagedProfile(
   project: VoyantProjectManifest,
 ): VoyantGraphDeployment {
-  const requirements = getVoyantProjectRequirements(project)
   const providers = getVoyantProjectProviders(project)
   return defineDeployment({
     project: defineProjectFromManagedProfile(project),
     target: project.mode === "managed-cloud" ? "voyant-cloud" : "node",
     mode: project.mode,
     providers: { ...providers },
-    requirements: { resources: requirements.resources },
     meta: {
-      compatibilityProfile: requirements.profile,
-      frameworkVersion: requirements.frameworkVersion,
+      compatibilityProfile: project.profile,
+      frameworkVersion: project.frameworkVersion,
     },
   })
 }
