@@ -771,6 +771,7 @@
       "@voyant-travel/finance/public-validation": ["../finance/dist/validation-public.d.ts"],
       "@voyant-travel/finance/routes": ["../finance/dist/routes.d.ts"],
       "@voyant-travel/finance/schema": ["../finance/dist/schema.d.ts"],
+      "@voyant-travel/finance/setup/vouchers": ["../finance/dist/service-vouchers-migration.d.ts"],
       "@voyant-travel/finance/tools": ["../finance/dist/tools.d.ts"],
       "@voyant-travel/finance/validation": ["../finance/dist/validation.d.ts"],
       "@voyant-travel/finance/voyant": ["../finance/dist/voyant.d.ts"],
