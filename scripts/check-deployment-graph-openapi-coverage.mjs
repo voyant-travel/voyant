@@ -34,14 +34,6 @@ const HTTP_METHODS = new Set([
 
 const DEFAULT_ALLOWLIST = new Map([
   [
-    "@voyant-travel/commerce#api",
-    "commerce routes are currently documented under commerce subdomains such as pricing, products, promotions, sellability, and storefront",
-  ],
-  [
-    "@voyant-travel/inventory#api",
-    "inventory routes are currently documented under inventory subdomains such as markets, suppliers, external-refs, and products",
-  ],
-  [
     "@voyant-travel/public-document-delivery#api",
     "public document delivery routes are currently documented through the operator contract-document surface",
   ],
@@ -76,14 +68,6 @@ const DEFAULT_ALLOWLIST = new Map([
   [
     "@voyant-travel/operator#realtime.api.public",
     "operator realtime public routes are not yet emitted as a storefront OpenAPI document",
-  ],
-  [
-    "@voyant-travel/inventory#booking-extension.api",
-    "inventory booking extension operations are currently documented under the owning bookings/inventory surfaces",
-  ],
-  [
-    "@voyant-travel/inventory#authoring.extension.api",
-    "inventory authoring extension operations are currently documented under inventory subdomain surfaces",
   ],
   [
     "@voyant-travel/operator#booking-schedule-extension.api",

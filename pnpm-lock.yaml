@@ -781,6 +781,9 @@ importers:
 
   packages/availability:
     dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -1851,6 +1854,9 @@ importers:
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
         version: link:../catalog-contracts
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -3087,6 +3093,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -3176,6 +3185,9 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../../catalog
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../../core
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
@@ -3188,6 +3200,10 @@ importers:
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/plugins/flights-demo:
+    dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../../core
     devDependencies:
       '@voyant-travel/flights':
         specifier: workspace:^
@@ -4172,6 +4188,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db

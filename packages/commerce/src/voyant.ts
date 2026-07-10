@@ -23,21 +23,58 @@ export const commerceVoyantModule = defineModule({
   localId: "commerce",
   api: [
     {
-      id: "@voyant-travel/commerce#api.admin",
+      id: "@voyant-travel/commerce#api.pricing.admin",
       surface: "admin",
-      mount: "@voyant-travel/commerce",
+      mount: "pricing",
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "createCommerceHonoModules",
+        export: "pricingHonoModule",
       },
     },
     {
-      id: "@voyant-travel/commerce#api.public",
+      id: "@voyant-travel/commerce#api.pricing.public",
       surface: "public",
-      mount: "@voyant-travel/commerce",
+      mount: "pricing",
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "createCommerceHonoModules",
+        export: "pricingHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/commerce#api.markets.admin",
+      surface: "admin",
+      mount: "markets",
+      runtime: {
+        entry: "@voyant-travel/commerce",
+        export: "marketsHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/commerce#api.markets.public",
+      surface: "public",
+      mount: "markets",
+      anonymous: true,
+      runtime: {
+        entry: "@voyant-travel/commerce",
+        export: "marketsHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/commerce#api.sellability.admin",
+      surface: "admin",
+      mount: "sellability",
+      runtime: {
+        entry: "@voyant-travel/commerce",
+        export: "sellabilityHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/commerce#api.promotions.admin",
+      surface: "admin",
+      mount: "promotions",
+      runtime: {
+        entry: "@voyant-travel/commerce",
+        export: "promotionsHonoModule",
       },
     },
   ],

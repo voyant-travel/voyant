@@ -9,19 +9,52 @@ describe("commerce deployment manifest", () => {
       packageName: "@voyant-travel/commerce",
       api: [
         {
-          id: "@voyant-travel/commerce#api.admin",
+          id: "@voyant-travel/commerce#api.pricing.admin",
           surface: "admin",
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "createCommerceHonoModules",
+            export: "pricingHonoModule",
           },
         },
         {
-          id: "@voyant-travel/commerce#api.public",
+          id: "@voyant-travel/commerce#api.pricing.public",
           surface: "public",
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "createCommerceHonoModules",
+            export: "pricingHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/commerce#api.markets.admin",
+          surface: "admin",
+          runtime: {
+            entry: "@voyant-travel/commerce",
+            export: "marketsHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/commerce#api.markets.public",
+          surface: "public",
+          anonymous: true,
+          runtime: {
+            entry: "@voyant-travel/commerce",
+            export: "marketsHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/commerce#api.sellability.admin",
+          surface: "admin",
+          runtime: {
+            entry: "@voyant-travel/commerce",
+            export: "sellabilityHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/commerce#api.promotions.admin",
+          surface: "admin",
+          runtime: {
+            entry: "@voyant-travel/commerce",
+            export: "promotionsHonoModule",
           },
         },
       ],
