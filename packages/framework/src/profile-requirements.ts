@@ -14,7 +14,13 @@ export function resourceRequirementsFor(
   role: VoyantProjectProviderRole,
   providers: VoyantProjectProviders,
 ): VoyantProfileResourceRequirement[] {
-  const provider = providers[role]
+  return resourceRequirementsForProvider(role, providers[role])
+}
+
+export function resourceRequirementsForProvider(
+  role: VoyantProjectProviderRole,
+  provider: string,
+): VoyantProfileResourceRequirement[] {
   if (provider === "none") {
     return [
       {
