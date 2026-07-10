@@ -26,6 +26,7 @@ import {
   type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
   type VoyantGraphRouteSurface,
+  type VoyantGraphRuntimeReference,
   type VoyantGraphSecretDeclaration,
   type VoyantGraphSetupMigration,
   type VoyantGraphSubscriber,
