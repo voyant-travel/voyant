@@ -1,12 +1,15 @@
 import { createHash } from "node:crypto"
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { canonicalJson } from "./deployment-graph.js"
+import type { VoyantGraphRuntime } from "./deployment-artifacts.js"
 import { defineProject, resolveProject } from "./project.js"
 import { runtimeReferencePackageNames } from "./project-resolver.js"
+import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 
 const roots: string[] = []
 
@@ -511,6 +514,94 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     expect(runtimeSource).not.toContain(root)
     expect(runtimeSource).not.toContain("starters/")
   })
+
+  it("lowers index-only project modules with deterministic ids, ownership, and imports", async () => {
+    const root = projectRoot()
+    writeProjectModule(root, "zeta", 'export default { module: { name: "zeta" } }\n')
+    writeProjectModule(root, "alpha", 'export default { module: { name: "alpha" } }\n')
+
+    const first = await resolve(root, defineProject({ modules: [] }))
+    const second = await resolve(root, defineProject({ modules: [] }))
+
+    expect(first.graph.contentHash).toBe(second.graph.contentHash)
+    expect(first.graph.modules.map((unit) => unit.id)).toEqual([
+      "npm/fixture#alpha",
+      "npm/fixture#zeta",
+    ])
+    expect(first.graph.modules.map((unit) => unit.runtime)).toEqual([
+      { entry: "./src/modules/alpha/index.ts", export: "default" },
+      { entry: "./src/modules/zeta/index.ts", export: "default" },
+    ])
+    expect(first.graph.packageRecords).toContainEqual(
+      expect.objectContaining({
+        packageName: "fixture",
+        source: { kind: "file", reference: "." },
+      }),
+    )
+    expect(first.conventions.contributions.filter(({ kind }) => kind === "module")).toEqual([
+      {
+        id: "project.module.alpha",
+        kind: "module",
+        sourcePath: "src/modules/alpha/index.ts",
+      },
+      {
+        id: "project.module.zeta",
+        kind: "module",
+        sourcePath: "src/modules/zeta/index.ts",
+      },
+    ])
+    const runtimeSource = first.artifacts.files.find(
+      (file) => file.path === first.artifacts.runtimeEntry,
+    )?.contents
+    expect(runtimeSource).toContain(
+      '"../../src/modules/alpha/index.ts": () => import("../../src/modules/alpha/index.ts")',
+    )
+    expect(runtimeSource).not.toContain(`${root}/src/modules`)
+  })
+
+  it("composes an actual index-only project module without nested package metadata", async () => {
+    const root = projectRoot()
+    const scope = path.join(root, "node_modules", "@voyant-travel")
+    mkdirSync(scope, { recursive: true })
+    symlinkSync(fileURLToPath(new URL("..", import.meta.url)), path.join(scope, "framework"), "dir")
+    writeProjectModule(root, "concierge", 'export default { module: { name: "concierge" } }\n')
+    const resolution = await resolve(root, defineProject({ modules: [] }))
+    const runtimeFile = resolution.artifacts.files.find(
+      (file) => file.path === resolution.artifacts.runtimeEntry,
+    )
+    expect(runtimeFile).toBeDefined()
+    const outputPath = path.join(root, ".voyant", resolution.artifacts.runtimeEntry)
+    mkdirSync(path.dirname(outputPath), { recursive: true })
+    writeFileSync(outputPath, runtimeFile!.contents)
+
+    const generated = (await import(`${pathToFileURL(outputPath).href}?test=${Date.now()}`)) as {
+      createGeneratedProjectRuntime: () => { graphRuntime: VoyantGraphRuntime }
+    }
+    const composed = await composeVoyantGraphRuntime({
+      runtime: generated.createGeneratedProjectRuntime().graphRuntime,
+      capabilities: {},
+    })
+
+    expect(composed.modules.map((module) => module.module.name)).toEqual(["concierge"])
+  })
+
+  it("rejects convention diagnostics and config paths outside the project root", async () => {
+    const collisionRoot = projectRoot()
+    writeFile(collisionRoot, "src/api/admin/members/[id]/route.ts", "export default {}\n")
+    writeFile(collisionRoot, "src/api/admin/members/[slug]/route.ts", "export default {}\n")
+    await expect(resolve(collisionRoot, defineProject({ modules: [] }))).rejects.toThrow(
+      /PROJECT_CONVENTION_ROUTE_COLLISION/,
+    )
+
+    const containedRoot = projectRoot()
+    await expect(
+      resolveProject({
+        project: defineProject({ modules: [] }),
+        projectRoot: containedRoot,
+        configPath: path.join(containedRoot, "..", "voyant.config.mjs"),
+      }),
+    ).rejects.toThrow(/configPath must stay inside/)
+  })
 })
 
 function projectRoot(): string {
@@ -522,6 +613,16 @@ function projectRoot(): string {
   )
   writeFileSync(path.join(root, "voyant.config.mjs"), "export default {}\n")
   return root
+}
+
+function writeProjectModule(root: string, name: string, source: string): void {
+  writeFile(root, `src/modules/${name}/index.ts`, source)
+}
+
+function writeFile(root: string, relativePath: string, source: string): void {
+  const filePath = path.join(root, relativePath)
+  mkdirSync(path.dirname(filePath), { recursive: true })
+  writeFileSync(filePath, source)
 }
 
 async function resolve(root: string, project: unknown) {

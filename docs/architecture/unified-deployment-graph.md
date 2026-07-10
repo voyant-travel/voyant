@@ -416,8 +416,7 @@ acme-voyant/
   voyant.config.ts
   src/
     modules/loyalty/
-      voyant.ts                # import-cheap graph manifest
-      index.ts                 # runtime factory
+      index.ts                 # discovered runtime factory
       schema.ts
       migrations/
       api/
@@ -434,9 +433,8 @@ Package conventions apply inside package-owned units. Application conventions
 also discover local routes, workflows, jobs, subscribers, links, admin
 contributions, and module manifests from the directories defined by ADR-0012.
 Adding such a file is authored intent and changes the graph at build time; it
-never triggers runtime scanning. Reusable local modules remain explicitly
-selected until their `src/modules/*/voyant.ts` manifests are admitted by the
-local convention compiler.
+never triggers runtime scanning. Direct `src/modules/<name>/index.ts` entries
+are admitted as project-owned modules and lowered to static generated imports.
 
 The ordinary workflow is:
 
@@ -1065,19 +1063,17 @@ legacy database composition with this resolved value is a follow-up.
 
 The operator graph also runs an explicit source-admission policy for generated
 artifacts: selected packages must resolve to admitted lockfile/workspace
-provenance, deployment-local operator units get an explicit local workspace
+provenance, deployment-local operator units get one explicit project source
 record, and virtual graph units point package provenance at the real package
 that ships them. Generated managed runtime entries validate graph artifacts and
 graph diagnostics before importing the managed runtime package.
 
-The coordinated framework resolver integration must accept app-local selections
-whose import-cheap manifest is `src/modules/<name>/voyant.ts` without requiring
-each module directory to impersonate a standalone npm package. It must preserve
-the manifest's `@voyant-travel/operator#<name>` id and expose enough resolved
-project data for the operator to add target admission, lockfile provenance, and
-runtime-maintenance schedules. The operator resolver adapter uses the framework
-`resolveProject({ project, projectRoot, configPath })` entry point when present
-and retains a narrow local-manifest fallback for the pre-integration base.
+The framework resolver admits each app-local `src/modules/<name>/index.ts`
+through the root package without requiring nested package metadata or exports.
+The graph keeps the project-relative runtime entry while generated code receives
+a resolver-private relative import. The operator resolver adapter requires
+`resolveProject({ project, projectRoot, configPath })` and then adds target
+admission, lockfile provenance, and runtime-maintenance schedules.
 
 Schema-owning first-party package manifests publish `voyant.package.v1`
 compatibility metadata alongside the existing migration-facing `schema` and

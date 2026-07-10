@@ -1,15 +1,15 @@
 # Custom deployment modules
 
 Add a custom module here to extend this deployment **without forking the
-framework**. Select `./src/modules/<name>` in `voyant.config.ts`; unselected
-directories do not change the graph. The module survives `voyant upgrade`.
+framework**. Every `src/modules/<name>/index.ts` is discovered at build time,
+added to the graph, and loaded by the generated runtime. The module survives
+`voyant upgrade`.
 
 ## Shape
 
 ```
 src/modules/loyalty/
-  voyant.ts    # import-cheap graph manifest (selected by voyant.config.ts)
-  index.ts     # default-exports the runtime module
+  index.ts     # default-exports the runtime module; activates the convention
   schema.ts    # optional: Drizzle tables (migrated automatically)
   routes.ts    # your Hono routes
   service.ts   # your business logic
@@ -33,9 +33,8 @@ export default defineDeploymentModule({
 })
 ```
 
-The graph manifest owns API/schema/workflow facets. The runtime factory is bound
-to that manifest id in `src/api/composition.ts` until generated local runtime
-binding replaces the compatibility map.
+The resolver creates the graph unit from the project package name and directory
+name, then emits a project-relative static import under `.voyant/runtime`.
 
 ## schema.ts — migrations
 

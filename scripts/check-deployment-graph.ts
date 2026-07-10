@@ -37,9 +37,9 @@ const repoRoot = resolve(scriptDirectory, "..")
 const operatorRoot = join(repoRoot, "starters", "operator")
 
 const OPERATOR_LOCAL_MODULE_IDS = [
-  "@voyant-travel/operator#mcp",
-  "@voyant-travel/operator#invitations",
-  "@voyant-travel/operator#team",
+  "npm/operator#mcp",
+  "npm/operator#invitations",
+  "npm/operator#team",
 ] as const
 const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
   "@voyant-travel/db",
@@ -339,9 +339,8 @@ async function main(): Promise<void> {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorPluginIds.has(id)) failures.push(`expected direct package graph plugin ${id}`)
   }
-  const allowedOperatorIds = new Set<string>(OPERATOR_LOCAL_MODULE_IDS)
   for (const id of [...operatorModuleIds, ...operatorPluginIds]) {
-    if (id.startsWith("@voyant-travel/operator#") && !allowedOperatorIds.has(id)) {
+    if (id.startsWith("@voyant-travel/operator#")) {
       failures.push(`expected no nonlocal operator graph id, found ${id}`)
     }
   }
@@ -349,14 +348,9 @@ async function main(): Promise<void> {
     .filter((selection) => selection.provenance.kind === "path")
     .map((selection) => (selection.provenance.kind === "path" ? selection.provenance.path : ""))
     .sort()
-  const expectedLocalModulePaths = [
-    "./src/modules/invitations",
-    "./src/modules/mcp",
-    "./src/modules/team",
-  ]
-  if (JSON.stringify(localModulePaths) !== JSON.stringify(expectedLocalModulePaths)) {
+  if (localModulePaths.length !== 0) {
     failures.push(
-      "expected voyant.config.ts to select only MCP, invitations, and team by project-relative path",
+      "expected voyant.config.ts to leave project-local modules to convention discovery",
     )
   }
   for (const forbidden of [

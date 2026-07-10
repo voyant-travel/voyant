@@ -1,5 +1,4 @@
 import path from "node:path"
-import { pathToFileURL } from "node:url"
 
 import * as frameworkProject from "@voyant-travel/framework/project"
 
@@ -13,7 +12,6 @@ import {
   type VoyantGraphDeployment,
   type VoyantGraphPackageRecord,
   type VoyantGraphProject,
-  type VoyantGraphProjectSelection,
   type VoyantGraphRuntimeTarget,
   type VoyantGraphUnitManifest,
   type VoyantPackageMetadata,
@@ -50,7 +48,7 @@ interface ResolveOperatorDeploymentGraphOptions {
 }
 
 export const OPERATOR_GRAPH_ADMISSION_POLICY = {
-  allowedSourceKinds: ["registry", "workspace"],
+  allowedSourceKinds: ["file", "registry", "workspace"],
 } as const satisfies VoyantGraphAdmissionPolicy
 
 const OPERATOR_GRAPH_COMPATIBILITY = {
@@ -69,10 +67,10 @@ export const OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES = {
 
 const OPERATOR_LOCAL_PACKAGE_RECORDS = [
   {
-    packageName: "@voyant-travel/operator",
+    packageName: "operator",
     source: {
-      kind: "workspace",
-      reference: "starters/operator",
+      kind: "file",
+      reference: ".",
     },
     metadata: {
       schemaVersion: VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION,
@@ -203,38 +201,27 @@ async function resolveOperatorProject(
   project: OperatorAuthoredProject,
   projectRoot: string,
 ): Promise<ResolvedOperatorProject> {
-  const frameworkResolver = (
-    frameworkProject as typeof frameworkProject & {
-      resolveProject?: (input: {
-        project: OperatorAuthoredProject
-        projectRoot: string
-        configPath: string
-      }) => unknown
-    }
-  ).resolveProject
+  const frameworkProjectInput = withoutCompatibilityMetadataSelections(project)
+  return normalizeFrameworkResolution(
+    await frameworkProject.resolveProject({
+      project: frameworkProjectInput,
+      projectRoot,
+      configPath: path.join(projectRoot, "voyant.config.ts"),
+    }),
+    project,
+  )
+}
 
-  if (frameworkResolver) {
-    try {
-      return normalizeFrameworkResolution(
-        await frameworkResolver({
-          project,
-          projectRoot,
-          configPath: path.join(projectRoot, "voyant.config.ts"),
-        }),
-        project,
-      )
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      if (!message.includes("local selection") || !message.includes("package.json")) throw error
-    }
-  }
-
-  // Integration fallback for the project-selection base commit. The framework
-  // resolver worker replaces this path once resolveProject is available.
-  const resolvedProject = await loadLocalProjectSelections(project, projectRoot)
+function withoutCompatibilityMetadataSelections(
+  project: OperatorAuthoredProject,
+): OperatorAuthoredProject {
+  if (!project.selections) return project
+  const plugins = project.selections.plugins.filter(
+    (selection) => !(selection.packageName in OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES),
+  )
   return {
-    project: resolvedProject,
-    deployment: deploymentFromProject(project, resolvedProject),
+    ...project,
+    selections: { ...project.selections, plugins },
   }
 }
 
@@ -299,6 +286,7 @@ function manifestFromResolvedUnit(
     id: unit.id,
     packageName: unit.packageName,
     ...(unit.localId ? { localId: unit.localId } : {}),
+    ...(unit.runtime ? { runtime: unit.runtime } : {}),
     provides: unit.provides,
     requires: unit.requires,
     api: unit.api,
@@ -320,93 +308,6 @@ function manifestFromResolvedUnit(
     ...(unit.actions ? { actions: unit.actions } : {}),
     ...(unit.lifecycle ? { lifecycle: unit.lifecycle } : {}),
   }
-}
-
-async function loadLocalProjectSelections(
-  project: OperatorAuthoredProject,
-  projectRoot: string,
-): Promise<VoyantGraphProject> {
-  const localModules = await localManifestReplacements(
-    project.selections?.modules ?? [],
-    projectRoot,
-    "voyant.module.v1",
-  )
-  const localExtensions = await localManifestReplacements(
-    project.selections?.extensions ?? [],
-    projectRoot,
-    "voyant.extension.v1",
-  )
-  const localPlugins = await localManifestReplacements(
-    project.selections?.plugins ?? [],
-    projectRoot,
-    "voyant.plugin.v1",
-  )
-
-  return {
-    ...project,
-    modules: project.modules.map((unit) => localModules.get(unit.id) ?? unit),
-    extensions: project.extensions.map((unit) => localExtensions.get(unit.id) ?? unit),
-    plugins: project.plugins.map((unit) => localPlugins.get(unit.id) ?? unit),
-    ...(project.selections
-      ? {
-          selections: {
-            modules: resolvedSelections(project.selections.modules, localModules),
-            extensions: resolvedSelections(project.selections.extensions, localExtensions),
-            plugins: resolvedSelections(project.selections.plugins, localPlugins),
-          },
-        }
-      : {}),
-  }
-}
-
-async function localManifestReplacements(
-  selections: readonly VoyantGraphProjectSelection[],
-  projectRoot: string,
-  schemaVersion: VoyantGraphUnitManifest["schemaVersion"],
-): Promise<Map<string, VoyantGraphUnitManifest>> {
-  const replacements = new Map<string, VoyantGraphUnitManifest>()
-  for (const selection of selections) {
-    if (selection.provenance.kind !== "path") continue
-    const manifestPath = path.join(projectRoot, selection.provenance.path, "voyant.ts")
-    const namespace = (await import(pathToFileURL(manifestPath).href)) as Record<string, unknown>
-    const manifest = Object.values(namespace).find((value): value is VoyantGraphUnitManifest =>
-      Boolean(
-        value &&
-          typeof value === "object" &&
-          (value as VoyantGraphUnitManifest).schemaVersion === schemaVersion,
-      ),
-    )
-    if (!manifest) {
-      throw new Error(
-        `${selection.resolve} must export one ${schemaVersion} manifest from voyant.ts`,
-      )
-    }
-    replacements.set(selection.id, manifest)
-  }
-  return replacements
-}
-
-function resolvedSelections(
-  selections: readonly VoyantGraphProjectSelection[],
-  replacements: ReadonlyMap<string, VoyantGraphUnitManifest>,
-): VoyantGraphProjectSelection[] {
-  return selections.map((selection) => {
-    const manifest = replacements.get(selection.id)
-    return manifest
-      ? {
-          ...selection,
-          id: manifest.id,
-          packageName: manifest.packageName ?? selection.packageName,
-        }
-      : selection
-  })
-}
-
-function deploymentFromProject(
-  authored: OperatorAuthoredProject,
-  project: VoyantGraphProject,
-): Omit<VoyantGraphDeployment, "project"> {
-  return deploymentFromSettings(project, authored.deployment)
 }
 
 function deploymentFromSettings(

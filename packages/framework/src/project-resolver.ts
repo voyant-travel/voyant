@@ -22,6 +22,11 @@ import {
   type VoyantGraphPackageMetadata,
   type VoyantGraphPackageRecord,
 } from "./deployment-graph.js"
+import {
+  discoverProjectConventions,
+  type ProjectConventionDiscovery,
+  type ProjectConventionFileContribution,
+} from "./project-conventions.js"
 
 export const VOYANT_MIGRATION_PLAN_SCHEMA_VERSION = "voyant.migration-plan.v1" as const
 export const VOYANT_PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts" as const
@@ -91,6 +96,7 @@ export type ResolvedVoyantProjectGraph = Omit<ResolvedVoyantDeploymentGraph, "de
 export interface ResolvedVoyantProject {
   graph: ResolvedVoyantProjectGraph
   artifacts: ResolvedProjectArtifacts
+  conventions: ProjectConventionDiscovery
 }
 
 interface InspectedPackage {
@@ -121,8 +127,11 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const projectRoot = path.resolve(requireNonEmptyString(input.projectRoot, "projectRoot"))
   const configPath = path.resolve(requireNonEmptyString(input.configPath, "configPath"))
   assertPathInside(projectRoot, configPath, "configPath")
+  const conventions = await discoverProjectConventions({ projectRoot })
+  assertProjectConventionDiagnostics(conventions)
 
   const materialized = await materializeProjectSelections(project, projectRoot)
+  await materializeProjectModuleConventions(materialized, conventions, projectRoot)
   const providers = { ...(project.deployment?.providers ?? {}) }
   const mode = project.deployment?.mode
   const frameworkVersion = await readFrameworkVersion()
@@ -176,11 +185,76 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
 
   return {
     graph: targetNeutralGraph,
+    conventions,
     artifacts: {
       runtimeEntry,
       migrationRunner,
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,
+    },
+  }
+}
+
+function assertProjectConventionDiagnostics(discovery: ProjectConventionDiscovery): void {
+  if (discovery.diagnostics.length === 0) return
+  throw new Error(
+    `resolveProject: project convention discovery produced ${discovery.diagnostics.length} error diagnostic(s):\n${discovery.diagnostics
+      .map((diagnostic) => `${diagnostic.code}: ${diagnostic.message}`)
+      .join("\n")}`,
+  )
+}
+
+async function materializeProjectModuleConventions(
+  materialized: MaterializedProject,
+  discovery: ProjectConventionDiscovery,
+  projectRoot: string,
+): Promise<void> {
+  const modules = discovery.contributions.filter(
+    (contribution): contribution is ProjectConventionFileContribution =>
+      contribution.kind === "module",
+  )
+  if (modules.length === 0) return
+
+  const packageJson = await readPackageJson(projectRoot)
+  const packageName = requirePackageName(packageJson, projectRoot)
+  const inspected: InspectedPackage = {
+    directory: projectRoot,
+    record: {
+      packageName,
+      ...(typeof packageJson.version === "string" ? { version: packageJson.version } : {}),
+      source: { kind: "file", reference: "." },
+      metadata: { ...inferredNodeRuntimePackageMetadata(), kind: "module" },
+    },
+  }
+  const previous = materialized.packages.get(packageName)
+  if (previous && previous.directory !== projectRoot) {
+    throw new Error(`resolveProject: package ${packageName} resolves from more than one source.`)
+  }
+  materialized.packages.set(packageName, inspected)
+  materialized.project = {
+    ...materialized.project,
+    modules: [
+      ...materialized.project.modules,
+      ...modules.map((module) => syntheticProjectModule(packageName, module)),
+    ],
+  }
+}
+
+function syntheticProjectModule(
+  packageName: string,
+  contribution: ProjectConventionFileContribution,
+): VoyantGraphUnitManifest {
+  const name = path.basename(path.dirname(contribution.sourcePath))
+  return {
+    schemaVersion: "voyant.module.v1",
+    id: graphIdForSelection(packageName, `${packageName}#${name}`),
+    packageName,
+    localId: name,
+    runtime: { entry: `./${contribution.sourcePath}`, export: "default" },
+    meta: {
+      conventionId: contribution.id,
+      source: "project-convention",
+      sourcePath: contribution.sourcePath,
     },
   }
 }
@@ -224,6 +298,7 @@ async function materializeRuntimeReferencePackages(
       inspected = await inspectRuntimePackage(packageName, projectRoot)
       packages.set(packageName, inspected)
     }
+    if (isProjectSourceRuntimeReference(reference, inspected, projectRoot)) continue
     const packageJson = await readPackageJson(inspected.directory)
     assertRuntimeExport(packageJson.exports, reference, packageName)
   }
@@ -496,25 +571,53 @@ async function buildLocalRuntimeEntryOverrides(
   for (const unit of [...graph.modules, ...graph.extensions, ...graph.plugins]) {
     const inspected = packages.get(unit.packageName)
     if (inspected?.record.source.kind !== "file") continue
-    const packageJson = await readPackageJson(inspected.directory)
+    const projectSource =
+      inspected.directory === projectRoot && inspected.record.source.reference === "."
+    const packageJson = projectSource ? undefined : await readPackageJson(inspected.directory)
     for (const reference of runtimePackageReferences([unit])) {
       if (runtimeReferencePackageName(reference) !== unit.packageName) continue
       const packageEntry = lowerOwnerRuntimeEntry(unit.packageName, reference.entry)
-      const exportKey =
-        packageEntry === unit.packageName
-          ? "."
-          : `./${packageEntry.slice(unit.packageName.length + 1)}`
-      const target = resolvePackageExportTarget(
-        inspected.directory,
-        packageJson.exports,
-        exportKey,
-        unit.packageName,
-      )
+      const target = projectSource
+        ? resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
+        : resolvePackageExportTarget(
+            inspected.directory,
+            packageJson!.exports,
+            packageEntry === unit.packageName
+              ? "."
+              : `./${packageEntry.slice(unit.packageName.length + 1)}`,
+            unit.packageName,
+          )
       const relative = path.relative(runtimeDirectory, target).replaceAll("\\", "/")
       overrides[packageEntry] = relative.startsWith(".") ? relative : `./${relative}`
     }
   }
   return overrides
+}
+
+function isProjectSourceRuntimeReference(
+  reference: RuntimePackageReference,
+  inspected: InspectedPackage,
+  projectRoot: string,
+): boolean {
+  if (
+    inspected.directory !== projectRoot ||
+    inspected.record.source.kind !== "file" ||
+    inspected.record.source.reference !== "." ||
+    !reference.entry.startsWith("./")
+  ) {
+    return false
+  }
+  resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
+  return true
+}
+
+function resolveProjectSourceRuntimeTarget(projectRoot: string, entry: string): string {
+  const target = path.resolve(projectRoot, entry)
+  assertPathInside(projectRoot, target, `project runtime entry ${entry}`)
+  if (!existsSync(target)) {
+    throw new Error(`resolveProject: project runtime entry ${entry} does not exist.`)
+  }
+  return target
 }
 
 function lowerOwnerRuntimeEntry(packageName: string, entry: string): string {
