@@ -1,5 +1,15 @@
 # @voyant-travel/availability
 
+## 0.1.3
+
+### Patch Changes
+
+- 5e1d221: Publish `voyant.package.v1` compatibility metadata from first-party
+  schema-owning packages so deployment graph package admission can validate their
+  framework, target, and deployment-mode compatibility before runtime imports.
+- Updated dependencies [5e1d221]
+  - @voyant-travel/db@0.110.1
+
 ## 0.1.2
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @voyant-travel/hono
 
+## 0.122.2
+
+### Patch Changes
+
+- 682d7d0: Publish `voyant.package.v1` compatibility metadata from graph substrate packages
+  and allow package metadata records to distinguish framework and library packages
+  from selectable modules and plugins.
+- Updated dependencies [5e1d221]
+  - @voyant-travel/db@0.110.1
+  - @voyant-travel/workflows@0.111.19
+
 ## 0.122.1
 
 ### Patch Changes

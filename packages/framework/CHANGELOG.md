@@ -1,5 +1,42 @@
 # @voyant-travel/framework
 
+## 0.29.5
+
+### Patch Changes
+
+- ec36232: Resolve public document delivery provenance to the package that ships it and
+  make generated managed runtime entries validate graph artifacts before importing
+  the managed runtime package.
+- 682d7d0: Publish `voyant.package.v1` compatibility metadata from graph substrate packages
+  and allow package metadata records to distinguish framework and library packages
+  from selectable modules and plugins.
+- Updated dependencies [5e1d221]
+- Updated dependencies [682d7d0]
+  - @voyant-travel/accommodations@0.111.5
+  - @voyant-travel/action-ledger@0.105.14
+  - @voyant-travel/bookings@0.149.1
+  - @voyant-travel/catalog@0.147.1
+  - @voyant-travel/commerce@0.31.1
+  - @voyant-travel/cruises@0.148.1
+  - @voyant-travel/db@0.110.1
+  - @voyant-travel/distribution@0.139.1
+  - @voyant-travel/finance@0.149.1
+  - @voyant-travel/flights@0.149.1
+  - @voyant-travel/identity@0.149.1
+  - @voyant-travel/inventory@0.7.10
+  - @voyant-travel/legal@0.149.1
+  - @voyant-travel/mice@0.6.9
+  - @voyant-travel/notifications@0.122.1
+  - @voyant-travel/operations@0.5.22
+  - @voyant-travel/operator-settings@0.2.34
+  - @voyant-travel/quotes@0.125.8
+  - @voyant-travel/relationships@0.122.11
+  - @voyant-travel/storefront@0.151.1
+  - @voyant-travel/trips@0.140.1
+  - @voyant-travel/hono@0.122.2
+  - @voyant-travel/workflows@0.111.19
+  - @voyant-travel/workflows-orchestrator@0.111.19
+
 ## 0.29.4
 
 ### Patch Changes

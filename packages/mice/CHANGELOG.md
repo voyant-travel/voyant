@@ -1,5 +1,19 @@
 # @voyant-travel/mice
 
+## 0.6.9
+
+### Patch Changes
+
+- 5e1d221: Publish `voyant.package.v1` compatibility metadata from first-party
+  schema-owning packages so deployment graph package admission can validate their
+  framework, target, and deployment-mode compatibility before runtime imports.
+- Updated dependencies [5e1d221]
+- Updated dependencies [682d7d0]
+  - @voyant-travel/accommodations@0.111.5
+  - @voyant-travel/db@0.110.1
+  - @voyant-travel/operations@0.5.22
+  - @voyant-travel/hono@0.122.2
+
 ## 0.6.8
 
 ### Patch Changes

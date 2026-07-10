@@ -1,5 +1,13 @@
 # @voyant-travel/framework-migrations
 
+## 0.7.2
+
+### Patch Changes
+
+- 682d7d0: Publish `voyant.package.v1` compatibility metadata from graph substrate packages
+  and allow package metadata records to distinguish framework and library packages
+  from selectable modules and plugins.
+
 ## 0.7.1
 
 ### Patch Changes
