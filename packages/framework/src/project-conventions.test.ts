@@ -22,6 +22,7 @@ describe("discoverProjectConventions", () => {
       "src/jobs/reconcile.ts",
       "src/subscribers/booking/created.ts",
       "src/links/booking-person.ts",
+      "src/admin/dashboard/index.tsx",
       "src/admin/dashboard/page.tsx",
       "src/admin/dashboard/styles.css",
       "src/modules/loyalty/index.ts",
@@ -30,14 +31,9 @@ describe("discoverProjectConventions", () => {
     await expect(discoverProjectConventions({ projectRoot: root })).resolves.toEqual({
       contributions: [
         {
-          id: "project.admin.dashboard.page",
+          id: "project.admin.dashboard",
           kind: "admin",
-          sourcePath: "src/admin/dashboard/page.tsx",
-        },
-        {
-          id: "project.admin.dashboard.styles",
-          kind: "admin",
-          sourcePath: "src/admin/dashboard/styles.css",
+          sourcePath: "src/admin/dashboard/index.tsx",
         },
         {
           id: "project.api.admin.orders.by-orderid",
@@ -94,8 +90,8 @@ describe("discoverProjectConventions", () => {
     const root = await projectFixture([
       "src/workflows/z-last.ts",
       "src/workflows/a-first.ts",
-      "src/admin/z/page.tsx",
-      "src/admin/a/page.tsx",
+      "src/admin/z/index.tsx",
+      "src/admin/a/index.ts",
       "src/jobs/middle.ts",
     ])
 
@@ -104,8 +100,8 @@ describe("discoverProjectConventions", () => {
 
     expect(fromString).toEqual(fromOptions)
     expect(fromString.contributions.map((contribution) => contribution.sourcePath)).toEqual([
-      "src/admin/a/page.tsx",
-      "src/admin/z/page.tsx",
+      "src/admin/a/index.ts",
+      "src/admin/z/index.tsx",
       "src/jobs/middle.ts",
       "src/workflows/a-first.ts",
       "src/workflows/z-last.ts",
@@ -133,7 +129,7 @@ describe("discoverProjectConventions", () => {
       "src/modules/kept/index.ts",
       ...ignoredDirectories.flatMap((directory) => [
         `src/workflows/${directory}/ignored.ts`,
-        `src/admin/${directory}/ignored.tsx`,
+        `src/admin/${directory}/ignored/index.tsx`,
         `src/api/admin/${directory}/route.ts`,
         `src/modules/${directory}/index.ts`,
       ]),
@@ -206,10 +202,50 @@ describe("discoverProjectConventions", () => {
     ])
   })
 
+  it("discovers only one-level index entries and ignores supporting files", async () => {
+    const root = await projectFixture([
+      "src/admin/accepted/index.tsx",
+      "src/admin/accepted/page.tsx",
+      "src/admin/accepted/styles.css",
+      "src/admin/file.ts",
+      "src/admin/nested/group/index.ts",
+      "src/admin/no-index/page.tsx",
+    ])
+
+    await expect(discoverProjectConventions(root)).resolves.toEqual({
+      contributions: [
+        {
+          id: "project.admin.accepted",
+          kind: "admin",
+          sourcePath: "src/admin/accepted/index.tsx",
+        },
+      ],
+      diagnostics: [],
+    })
+  })
+
+  it("reports both admin index variants as an ID collision", async () => {
+    const root = await projectFixture(["src/admin/orders/index.ts", "src/admin/orders/index.tsx"])
+
+    const result = await discoverProjectConventions(root)
+
+    expect(result.contributions).toHaveLength(2)
+    expect(result.diagnostics).toEqual([
+      {
+        code: "PROJECT_CONVENTION_ID_COLLISION",
+        id: "project.admin.orders",
+        message:
+          'Convention ID "project.admin.orders" is produced by "src/admin/orders/index.ts", "src/admin/orders/index.tsx".',
+        severity: "error",
+        sourcePaths: ["src/admin/orders/index.ts", "src/admin/orders/index.tsx"],
+      },
+    ])
+  })
+
   it("reports stable ID collisions without discarding either contribution", async () => {
     const root = await projectFixture([
-      "src/admin/order-history.ts",
-      "src/admin/order_history.tsx",
+      "src/admin/order-history/index.ts",
+      "src/admin/order_history/index.tsx",
       "src/workflows/send-email.ts",
       "src/workflows/send_email.ts",
     ])
@@ -222,9 +258,9 @@ describe("discoverProjectConventions", () => {
         code: "PROJECT_CONVENTION_ID_COLLISION",
         id: "project.admin.order-history",
         message:
-          'Convention ID "project.admin.order-history" is produced by "src/admin/order-history.ts", "src/admin/order_history.tsx".',
+          'Convention ID "project.admin.order-history" is produced by "src/admin/order-history/index.ts", "src/admin/order_history/index.tsx".',
         severity: "error",
-        sourcePaths: ["src/admin/order-history.ts", "src/admin/order_history.tsx"],
+        sourcePaths: ["src/admin/order-history/index.ts", "src/admin/order_history/index.tsx"],
       },
       {
         code: "PROJECT_CONVENTION_ID_COLLISION",

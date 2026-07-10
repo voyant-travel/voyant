@@ -152,6 +152,14 @@ export default defineAdminExtension({
 })
 ```
 
+Each entry has exactly one `index.ts` or `index.tsx`; having both is an error.
+Other files in the entry directory are supporting implementation and are not
+discovered independently. Build-time analysis parses the entry without running
+it, requires a default export, and emits the client-only
+`.voyant/admin/project-admin.generated.ts` module with deterministic static
+imports. The generated array is checked against `AdminExtension`, and duplicate
+extension IDs are reported when their string values can be read statically.
+
 - **nav + widgets** merge via `adminExtensionsFromGlob` in
   `src/lib/admin-extensions.tsx` and resolve through the shared
   `resolveAdminNavigation` / `resolveAdminWidgets`.

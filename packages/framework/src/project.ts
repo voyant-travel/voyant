@@ -14,6 +14,18 @@ export type {
   NodeMigrationRunnerOptions,
   SetupMigrationHandler,
 } from "./node-migration-runner.js"
+export {
+  type AnalyzeProjectAdminConventionsInput,
+  type CompiledProjectAdminConventions,
+  PROJECT_ADMIN_CONVENTION_DIAGNOSTIC_CODES,
+  type ProjectAdminConventionAnalysis,
+  type ProjectAdminConventionDiagnostic,
+  type ProjectAdminConventionDiagnosticCode,
+  type ProjectAdminConventionEntry,
+  ProjectAdminConventionError,
+  type ProjectAdminGeneratedFile,
+  VOYANT_PROJECT_ADMIN_GENERATED_FILE,
+} from "./project-admin-conventions.js"
 export type {
   ProjectApiConventionAnalysis,
   ProjectApiConventionCompilation,
@@ -83,6 +95,20 @@ export async function compileProjectApiConventions(
 ): Promise<import("./project-api-conventions.js").ProjectApiConventionCompilation> {
   const conventions = await import("./project-api-conventions.js")
   return conventions.compileProjectApiConventions(options)
+}
+
+export async function analyzeProjectAdminConventions(
+  input: import("./project-admin-conventions.js").AnalyzeProjectAdminConventionsInput,
+): Promise<import("./project-admin-conventions.js").ProjectAdminConventionAnalysis> {
+  const conventions = await import("./project-admin-conventions.js")
+  return conventions.analyzeProjectAdminConventions(input)
+}
+
+export async function compileProjectAdminConventions(
+  input: import("./project-admin-conventions.js").AnalyzeProjectAdminConventionsInput,
+): Promise<import("./project-admin-conventions.js").CompiledProjectAdminConventions> {
+  const conventions = await import("./project-admin-conventions.js")
+  return conventions.compileProjectAdminConventions(input)
 }
 
 export async function executeNodeMigrationPlan(
