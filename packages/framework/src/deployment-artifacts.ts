@@ -1,5 +1,5 @@
 import { canonicalJson, type ResolvedVoyantDeploymentGraph } from "./deployment-graph.js"
-import type { VoyantProjectDeploymentMode } from "./profile.js"
+import { PROVIDER_ROLES, type VoyantProjectDeploymentMode } from "./profile.js"
 
 export const VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION = "voyant.deployment-artifacts.v1" as const
 export const VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node" as const
@@ -105,6 +105,7 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
+import type { ManagedProfileRuntimeDeployment } from "@voyant-travel/framework/managed-runtime"
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = ${quote(input.graph.schemaVersion)} as const
 export const GENERATED_DEPLOYMENT_GRAPH_HASH = ${quote(input.graph.contentHash)} as const
@@ -183,10 +184,52 @@ export function resolveGeneratedDeploymentRequirements(): VoyantGraphDeploymentR
   return candidate as VoyantGraphDeploymentRequirements
 }
 
+export function resolveGeneratedRuntimeDeployment(): ManagedProfileRuntimeDeployment {
+  const deployment = readGeneratedDeploymentGraph().deployment
+  if (!deployment || typeof deployment !== "object" || Array.isArray(deployment)) {
+    throw new Error("Generated deployment graph deployment is missing or invalid")
+  }
+  const candidate = deployment as { mode?: unknown; providers?: unknown }
+  if (
+    candidate.mode !== "local" &&
+    candidate.mode !== "managed-cloud" &&
+    candidate.mode !== "self-hosted"
+  ) {
+    throw new Error("Generated deployment graph deployment.mode is invalid")
+  }
+  if (!isGeneratedRecord(candidate.providers)) {
+    throw new Error("Generated deployment graph deployment.providers is missing or invalid")
+  }
+  const providers: ManagedProfileRuntimeDeployment["providers"] = ${formatRuntimeDeploymentProviders()}
+  return {
+    mode: candidate.mode,
+    providers,
+  }
+}
+
+function requireGeneratedDeploymentProvider<
+  Role extends keyof ManagedProfileRuntimeDeployment["providers"],
+>(
+  providers: Record<string, unknown>,
+  role: Role,
+): ManagedProfileRuntimeDeployment["providers"][Role] {
+  const provider = providers[role]
+  if (typeof provider !== "string" || provider.trim().length === 0) {
+    throw new Error(
+      \`Generated deployment graph deployment.providers.\${role} must be a non-empty string\`,
+    )
+  }
+  return provider as ManagedProfileRuntimeDeployment["providers"][Role]
+}
+
+function isGeneratedRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
 function readGeneratedDeploymentGraph(): {
   schemaVersion?: unknown
   contentHash?: unknown
-  deployment?: { target?: unknown; mode?: unknown }
+  deployment?: { target?: unknown; mode?: unknown; providers?: unknown }
   requirements?: unknown
   diagnostics?: unknown
 } {
@@ -198,7 +241,7 @@ function readGeneratedDeploymentGraph(): {
   ) as {
     schemaVersion?: unknown
     contentHash?: unknown
-    deployment?: { target?: unknown; mode?: unknown }
+    deployment?: { target?: unknown; mode?: unknown; providers?: unknown }
     requirements?: unknown
     diagnostics?: unknown
   }
@@ -210,6 +253,7 @@ if (isMainModule) {
   const { startManagedProfileRuntime } = await import("@voyant-travel/framework/managed-runtime")
   const handle = await startManagedProfileRuntime({
     profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
+    deployment: resolveGeneratedRuntimeDeployment(),
     deploymentRequirements: resolveGeneratedDeploymentRequirements(),
   })
   console.info(
@@ -243,6 +287,13 @@ function formatGeneratedDiagnostic(value: unknown): string {
 function formatConstArray(values: readonly string[]): string {
   if (values.length === 0) return "[] as const"
   return `[\n${values.map((value) => `  ${quote(value)},`).join("\n")}\n] as const`
+}
+
+function formatRuntimeDeploymentProviders(): string {
+  return `{\n${PROVIDER_ROLES.map(
+    (role) =>
+      `    ${role}: requireGeneratedDeploymentProvider(candidate.providers, ${quote(role)}),`,
+  ).join("\n")}\n  }`
 }
 
 function quote(value: string | VoyantProjectDeploymentMode | undefined): string {

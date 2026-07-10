@@ -204,6 +204,52 @@ describe("managed profile runtime entry", () => {
     ).rejects.toThrow(/GRAPH_RUNTIME_SECRET is required for graph:runtime/)
   })
 
+  it("uses graph deployment providers instead of snapshot compatibility providers", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          providers: localProviders,
+        }),
+      ),
+    )
+
+    const runtime = await loadManagedProfileRuntime({
+      profileSnapshotPath: snapshotPath,
+      env: { DATABASE_URL: "managed-profile-test-db" },
+      deployment: {
+        mode: "self-hosted",
+        providers: {
+          ...localProviders,
+          cache: "postgres",
+          sharedState: "postgres",
+          rateLimit: "postgres",
+        },
+      },
+    })
+
+    expect(runtime.project.mode).toBe("self-hosted")
+    expect(runtime.project.providers).toMatchObject({
+      cache: "postgres",
+      sharedState: "postgres",
+      rateLimit: "postgres",
+    })
+    expect(runtime.requirements.resources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          resourceKey: "postgres-shared-state",
+          roles: ["cache", "sharedState", "rateLimit"],
+        }),
+      ]),
+    )
+  })
+
   it("fails fast when a managed-cloud profile is missing required runtime substrate", async () => {
     const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
     const snapshotPath = join(dir, "managed-profile.json")

@@ -167,7 +167,9 @@ import {
   resolveActiveModuleIds,
   toCreateVoyantAppProfileConfig,
   type VoyantProfileRequirements,
+  type VoyantProjectDeploymentMode,
   type VoyantProjectManifest,
+  type VoyantProjectProviders,
   validateVoyantProject,
 } from "./profile.js"
 
@@ -244,6 +246,11 @@ type ManagedProfileAppExtensions = Record<string, ExtensionFactory<FrameworkProv
 export interface ManagedProfileRuntimeOptions {
   profileSnapshotPath: string
   /**
+   * Resolved deployment mode and providers supplied by a checked graph artifact.
+   * Omit this only for legacy snapshot-only callers.
+   */
+  deployment?: ManagedProfileRuntimeDeployment
+  /**
    * Resolved deployment requirements supplied by a checked graph artifact.
    * Omit this only for legacy snapshot-only callers.
    */
@@ -270,6 +277,11 @@ export interface ManagedProfileRuntimeOptions {
    * instead of node resolution.
    */
   importCustomSourceModule?: (specifier: string) => Promise<Record<string, unknown>>
+}
+
+export interface ManagedProfileRuntimeDeployment {
+  mode: VoyantProjectDeploymentMode
+  providers: VoyantProjectProviders
 }
 
 export interface ManagedProfileRuntime {
@@ -327,7 +339,10 @@ interface ManagedSharedStores {
 export async function loadManagedProfileRuntime(
   options: ManagedProfileRuntimeOptions,
 ): Promise<ManagedProfileRuntime> {
-  const project = await loadManagedProfileSnapshot(options.profileSnapshotPath)
+  const project = applyManagedRuntimeDeployment(
+    await loadManagedProfileSnapshot(options.profileSnapshotPath),
+    options.deployment,
+  )
   const env = createManagedProfileNodeEnv(options.env ?? process.env)
   const profileRequirements = getVoyantProjectRequirements(project)
   const requirements: VoyantProfileRequirements = {
@@ -421,6 +436,29 @@ export async function loadManagedProfileSnapshot(
     )
   }
   return parsed as VoyantProjectManifest
+}
+
+function applyManagedRuntimeDeployment(
+  snapshot: VoyantProjectManifest,
+  deployment: ManagedProfileRuntimeDeployment | undefined,
+): VoyantProjectManifest {
+  if (!deployment) return snapshot
+
+  const { providers: _snapshotProviders, ...projectWithoutSnapshotProviders } = snapshot
+  const project: VoyantProjectManifest = {
+    ...projectWithoutSnapshotProviders,
+    mode: deployment.mode,
+    ...(deployment.mode === "managed-cloud" ? {} : { providers: deployment.providers }),
+  }
+  const validation = validateVoyantProject(project)
+  if (!validation.ok) {
+    throw new Error(
+      `Invalid graph runtime deployment:\n${validation.issues
+        .map((issue) => `- ${issue.path || "<root>"}: ${issue.message}`)
+        .join("\n")}`,
+    )
+  }
+  return project
 }
 
 export function createManagedProfileApp(options: {

@@ -19,6 +19,12 @@ is missing instead of silently falling back to process-local storage. Local and
 self-hosted profiles may still use explicit memory providers for offline/dev
 execution.
 
+When a checked deployment graph is available, the generated runtime entry
+supplies its deployment mode and complete provider map alongside the resolved
+resource requirements. The JSON snapshot remains a compatibility input for
+profile/module metadata, but cannot override graph-selected self-hosted
+providers.
+
 The source-free managed runtime is not yet a complete managed Cloud image by
 itself. Redis-backed `CACHE`/`RATE_LIMIT` bindings, Voyant Cloud admin auth
 broker integration, snapshot plugin resolution, and route families still backed
