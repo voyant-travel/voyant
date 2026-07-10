@@ -420,8 +420,13 @@ async function main(): Promise<void> {
   if (operatorMigrateSource.includes("drizzle.schemas.generated")) {
     failures.push("expected operator db:migrate to avoid importing drizzle.schemas.generated.ts")
   }
-  if (!operatorMigrateSource.includes("deploymentGraphArtifacts.migrationSources")) {
-    failures.push("expected operator db:migrate to consume graph artifact migration sources")
+  if (
+    !operatorMigrateSource.includes("createProjectMigrationPlan(options.graph)") ||
+    !operatorMigrateSource.includes("executeNodeMigrationPlan(")
+  ) {
+    failures.push(
+      "expected operator db:migrate to derive and execute the admitted graph migration plan",
+    )
   }
 
   const frameworkRecord = first.packageRecords.find(
