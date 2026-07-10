@@ -12,6 +12,11 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import path from "node:path"
 
+import {
+  buildDeploymentGraphOpenApiCoverageReport,
+  formatDeploymentGraphOpenApiCoverageFailure,
+} from "./lib/deployment-graph-openapi-coverage-report.mjs"
+
 const DEFAULT_GRAPH = "starters/operator/deployment-graph.generated.json"
 const DEFAULT_OPENAPI_DIR = "starters/operator/openapi"
 const CHECKED_SURFACES = new Set(["admin", "storefront"])
@@ -124,9 +129,8 @@ const graph = readJson(graphPath)
 const docs = readOpenApiCoverage(openapiDir)
 const bundles = readApiBundles(graph)
 const failures = []
-const warnings = []
 const coveredBundles = []
-const allowedBundleIds = new Set()
+const allowlistedGaps = []
 
 for (const bundle of bundles) {
   if (!CHECKED_SURFACES.has(bundle.surface)) continue
@@ -137,33 +141,39 @@ for (const bundle of bundles) {
   if (matched) {
     coveredBundles.push(bundle)
     if (allowlist.has(bundle.apiId)) {
-      failures.push(
-        `[deployment-graph-openapi-coverage:stale-allowlist] ${bundle.apiId} is allowlisted but now has documented ${bundle.surface} paths for one of: ${bundle.candidateModules.join(", ")}`,
-      )
+      failures.push({ kind: "stale-allowlist", bundle })
     }
     continue
   }
 
   const reason = allowlist.get(bundle.apiId)
   if (reason) {
-    allowedBundleIds.add(bundle.apiId)
-    warnings.push(formatGap(bundle, reason))
+    allowlistedGaps.push({ bundle, reason })
   } else {
-    failures.push(formatGap(bundle, undefined))
+    failures.push({ kind: "missing-docs", bundle })
   }
 }
 
 for (const id of allowlist.keys()) {
   if (!bundles.some((bundle) => bundle.apiId === id)) {
-    failures.push(
-      `[deployment-graph-openapi-coverage:stale-allowlist] ${id} is allowlisted but no longer appears in the deployment graph`,
-    )
+    failures.push({ kind: "stale-allowlist", apiId: id })
   }
 }
 
-if (warnings.length > 0) {
+const report = buildDeploymentGraphOpenApiCoverageReport(
+  { graph, graphPath, openapiDir, docs, coveredBundles, allowlistedGaps, failures },
+  relativeToRepo,
+)
+
+if (options.json) {
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`)
+  if (!report.ok) process.exit(1)
+  process.exit(0)
+}
+
+if (allowlistedGaps.length > 0) {
   console.warn("Deployment graph OpenAPI coverage warnings.")
-  for (const warning of warnings) console.warn(warning)
+  for (const gap of allowlistedGaps) console.warn(formatGap(gap.bundle, gap.reason))
 }
 
 if (failures.length > 0) {
@@ -171,12 +181,13 @@ if (failures.length > 0) {
   console.error(
     `Checked graph ${relativeToRepo(graphPath)} against OpenAPI docs in ${relativeToRepo(openapiDir)}.\n`,
   )
-  for (const failure of failures) console.error(failure)
+  for (const failure of failures)
+    console.error(formatDeploymentGraphOpenApiCoverageFailure(failure))
   process.exit(1)
 }
 
 console.log(
-  `check-deployment-graph-openapi-coverage: OK (${coveredBundles.length} covered graph API bundles, ${allowedBundleIds.size} allowlisted gaps, ${docs.keys.size} documented surface/module pairs)`,
+  `check-deployment-graph-openapi-coverage: OK (${coveredBundles.length} covered graph API bundles, ${allowlistedGaps.length} allowlisted gaps, ${docs.keys.size} documented surface/module pairs)`,
 )
 
 function readApiBundles(resolvedGraph) {
@@ -387,6 +398,7 @@ function parseArgs(args) {
     openapiDir: DEFAULT_OPENAPI_DIR,
     allowlistFiles: [],
     useDefaultAllowlist: true,
+    json: false,
   }
 
   for (let index = 0; index < args.length; index += 1) {
@@ -398,6 +410,7 @@ Options:
   --graph <path>            Resolved graph JSON path. Default: ${DEFAULT_GRAPH}
   --openapi-dir <path>      Directory containing openapi/<surface>/*.json. Default: ${DEFAULT_OPENAPI_DIR}
   --allowlist <path>        JSON object or array of { "id", "reason" } entries to merge.
+  --json                    Emit the stable OpenAPI coverage report as JSON.
   --no-default-allowlist    Disable the repository's temporary allowlist, useful for fixture tests.`)
       process.exit(0)
     }
@@ -412,6 +425,8 @@ Options:
       options.allowlistFiles.push(requireValue(args, index, arg))
     } else if (arg === "--no-default-allowlist") {
       options.useDefaultAllowlist = false
+    } else if (arg === "--json") {
+      options.json = true
     } else {
       throw new Error(`Unknown argument: ${arg}`)
     }

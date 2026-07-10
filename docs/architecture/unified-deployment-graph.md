@@ -928,7 +928,10 @@ Candidate follow-ups:
   capabilities
 - graph-derived tools/MCP/agent manifests
 - action-ledger action metadata
-- graph-derived OpenAPI reports
+- **Shipped:** graph-derived OpenAPI coverage reports are available through
+  `scripts/check-deployment-graph-openapi-coverage.mjs --json`, including
+  covered bundles, allowlisted gaps, missing documentation, and stable errors
+- graph-derived admin copy
 - graph-derived admin copy
 - admin slots and UI extension points
 - package admission policy hardening for managed Cloud
