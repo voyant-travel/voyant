@@ -56,6 +56,10 @@ export {
   routeCounterpartyEvent,
 } from "./interface.js"
 export {
+  type EnqueueGraphWebhookEventOptions,
+  enqueueGraphWebhookEvent,
+} from "./outbound-webhooks.js"
+export {
   type AcquireTokenAcquired,
   type AcquireTokenDenied,
   type AcquireTokenResult,
@@ -211,6 +215,7 @@ export {
   updateChannelWebhookEventSchema,
 } from "./validation.js"
 export {
+  enqueueOutboundEnvelope,
   type OutboundEnvelopeInput,
   type OutboundEnvelopeResultInput,
   type PreparedEnvelope,

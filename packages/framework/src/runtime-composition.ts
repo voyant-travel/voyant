@@ -1,4 +1,4 @@
-import type { EventFilterDescriptor, WorkflowDescriptor } from "@voyant-travel/core"
+import type { EventEnvelope, EventFilterDescriptor, WorkflowDescriptor } from "@voyant-travel/core"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
@@ -33,6 +33,10 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
    * id. A binding only runs when its unit is selected by the generated graph.
    */
   bindings?: VoyantGraphRuntimeBindings<TCapabilities>
+  /** Node-owned durable boundary for graph-selected outbound webhook events. */
+  outboundWebhooks?: {
+    enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
+  }
 }
 
 export interface VoyantGraphRuntimeComposition {
@@ -86,8 +90,29 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   }
 
   modules.push(...(await composeVoyantGraphRuntimeFacetModules(input.runtime)))
+  const outboundWebhookModule = createGraphOutboundWebhookModule(input)
+  if (outboundWebhookModule) modules.push(outboundWebhookModule)
 
   return { modules, extensions }
+}
+
+function createGraphOutboundWebhookModule<TCapabilities>(
+  input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
+): HonoModule | undefined {
+  const enqueue = input.outboundWebhooks?.enqueue
+  const eventTypes = input.runtime.webhooks.outboundEventTypes
+  if (!enqueue || eventTypes.length === 0) return undefined
+
+  return {
+    module: {
+      name: "graph-outbound-webhooks",
+      bootstrap: ({ bindings, eventBus }) => {
+        for (const eventType of eventTypes) {
+          eventBus.subscribe(eventType, (event) => enqueue(event, bindings))
+        }
+      },
+    },
+  }
 }
 
 function assertWebhookRoutePosture(

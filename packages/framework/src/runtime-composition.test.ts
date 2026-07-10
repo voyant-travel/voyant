@@ -1,3 +1,4 @@
+import { createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
@@ -34,6 +35,59 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime composition", () => {
+  it("registers outbound subscribers from graph selections without a deployment event catalog", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:webhook-runtime",
+      entries: {},
+      modules: [
+        {
+          id: "@acme/catalog",
+          kind: "module",
+          packageName: "@acme/catalog",
+          order: 0,
+          routes: [],
+        },
+      ],
+      plugins: [],
+      webhookPlan: {
+        inbound: [],
+        outbound: [
+          {
+            id: "@acme/catalog#webhook.updated",
+            unitId: "@acme/catalog",
+            packageName: "@acme/catalog",
+            eventId: "@acme/catalog#event.updated",
+            eventUnitId: "@acme/catalog",
+            eventType: "catalog.entity.updated",
+            secretIds: [],
+          },
+        ],
+      },
+    })
+    const enqueue = vi.fn(async () => {})
+    const composition = await composeVoyantGraphRuntime({
+      runtime,
+      capabilities: {},
+      outboundWebhooks: { enqueue },
+    })
+    const module = composition.modules.find(
+      (candidate) => candidate.module.name === "graph-outbound-webhooks",
+    )
+    const eventBus = createEventBus()
+    await module?.module.bootstrap?.({ bindings: { deployment: "node" }, eventBus } as never)
+
+    await eventBus.emit("catalog.entity.updated", { entity_id: "prod_1" })
+    await eventBus.emit("catalog.entity.deleted", { entity_id: "prod_1" })
+
+    expect(enqueue).toHaveBeenCalledOnce()
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "catalog.entity.updated",
+        metadata: expect.objectContaining({ eventId: expect.stringMatching(/^evt_/) }),
+      }),
+      { deployment: "node" },
+    )
+  })
   it("requires selected inbound webhook APIs to execute through webhookRoutes", async () => {
     const createRuntime = (webhookRoutes: unknown) =>
       createVoyantGraphRuntime({

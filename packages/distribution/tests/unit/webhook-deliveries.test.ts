@@ -1,6 +1,67 @@
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { describe, expect, it } from "vitest"
 
-import { redactBodyPii, redactHeaders, redactStringPii } from "../../src/webhook-deliveries.js"
+import {
+  enqueueOutboundEnvelope,
+  redactBodyPii,
+  redactHeaders,
+  redactStringPii,
+} from "../../src/webhook-deliveries.js"
+
+describe("enqueueOutboundEnvelope", () => {
+  it("persists a redacted pending record without claiming an HTTP attempt", async () => {
+    let values: Record<string, unknown> | undefined
+    const db = {
+      select: () => ({
+        from: () => ({ where: () => ({ limit: async () => [] }) }),
+      }),
+      insert: () => ({
+        values: (input: Record<string, unknown>) => {
+          values = input
+          return {
+            returning: async () => [
+              {
+                ...input,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                responseStatus: null,
+                responseHeaders: null,
+                responseBodyExcerpt: null,
+                finishedAt: null,
+                durationMs: null,
+                errorClass: null,
+                errorMessage: null,
+              },
+            ],
+          }
+        },
+      }),
+    } as unknown as AnyDrizzleDb
+
+    const delivery = await enqueueOutboundEnvelope(db, {
+      sourceModule: "operator-webhooks",
+      sourceEvent: "catalog.entity.updated",
+      subscriptionId: newId("webhook_subscriptions"),
+      targetUrl: "https://partner.example.test/hooks",
+      requestMethod: "POST",
+      requestHeaders: { Authorization: "Bearer private" },
+      requestBody: { entity_id: "prod_1", email: "private@example.test" },
+      idempotencyKey: "graph-webhook:evt_1:hksub_1",
+    })
+
+    expect(delivery.status).toBe("pending")
+    expect(delivery.startedAt).toBeNull()
+    expect(values).toMatchObject({
+      status: "pending",
+      startedAt: null,
+      requestHeaders: { Authorization: "[REDACTED]" },
+      idempotencyKey: "graph-webhook:evt_1:hksub_1",
+    })
+    expect(values?.requestBodyExcerpt).toContain("[REDACTED]")
+    expect(values?.scheduledFor).toBeInstanceOf(Date)
+  })
+})
 
 describe("redactHeaders", () => {
   it("returns null for undefined", () => {

@@ -1,4 +1,5 @@
 import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
+import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import {
   composeVoyantGraphRuntime,
   lowerVoyantGraphActionsToActionLedgerRegistry,
@@ -23,6 +24,7 @@ import { channelPushBundle } from "./routes/channel-push"
 import {
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
+  resolveOperatorDb,
 } from "./runtime/operator-runtime-adapter"
 import { tripsPaymentBundle } from "./runtime/trips-runtime"
 import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
@@ -49,6 +51,9 @@ const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   capabilities: operatorProviders,
   bindings: operatorGraphRuntimeBindings,
+  outboundWebhooks: {
+    enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
+  },
 })
 
 export const app = mountApp<AppBindings>({

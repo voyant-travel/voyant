@@ -176,6 +176,28 @@ Rule:
 Promote durable delivery family by family, not by turning every event into a
 queue message at once.
 
+#### Graph outbound webhook intake
+
+Node deployments register outbound webhook subscribers from the selected graph
+webhook plan. A deployment supplies one database-backed enqueue callback; it
+does not maintain a second event catalog. For each selected event, the intake
+loads active `webhook_subscriptions` rows containing that event name and writes
+one `webhook_deliveries` row per subscription through the distribution
+redaction boundary.
+
+The intake row is truthful about its lifecycle: it is `pending`, has no
+`started_at`, and uses `graph-webhook:<eventId>:<subscriptionId>` as its stable
+idempotency key. Event-outbox replay therefore reuses the existing first
+attempt instead of claiming that another HTTP call occurred.
+
+This is a durable intake boundary, not HTTP delivery. The current delivery row
+stores a redacted, bounded request excerpt and body hash, not a complete queue
+payload. The remaining worker must define durable full-payload storage and
+retention, atomically claim pending rows, reload subscription secrets, sign and
+send requests, create retry attempts, and finalize delivery/subscription state.
+Until that worker exists, pending graph webhook rows are observable delivery
+intents and no external request is made.
+
 ### 9. Defer event priority until durable queued delivery exists
 
 Priority only matters once there is a real queued execution surface where work
