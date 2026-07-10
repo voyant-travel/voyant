@@ -63,7 +63,7 @@ describe("catalog deployment manifest", () => {
     })
 
     expect(catalogOffersVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/catalog#offers-extension",
       packageName: "@voyant-travel/catalog",
       api: [

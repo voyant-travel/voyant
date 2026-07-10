@@ -35,7 +35,7 @@ describe("charters deployment manifest", () => {
 
   it("owns the bookings extension and preserves injected lazy bridges", () => {
     expect(chartersBookingVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/charters#booking-extension",
       api: [
         { surface: "admin", mount: "bookings", runtime: { export: "chartersBookingExtension" } },

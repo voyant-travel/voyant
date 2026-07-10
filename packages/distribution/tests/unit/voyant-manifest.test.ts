@@ -55,7 +55,7 @@ describe("distribution deployment manifests", () => {
 
   it("owns the booking and channel-push extensions", () => {
     expect(distributionBookingVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/distribution#extension",
       localId: "distribution",
       api: [
@@ -72,7 +72,7 @@ describe("distribution deployment manifests", () => {
     })
 
     expect(distributionChannelPushVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/distribution#channel-push-extension",
       localId: "distribution.channel-push-extension",
       api: [

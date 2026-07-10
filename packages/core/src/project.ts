@@ -23,9 +23,10 @@ export type * from "./project-facets.js"
 
 export const VOYANT_GRAPH_PROJECT_SCHEMA_VERSION = "voyant.project.v1" as const
 export const VOYANT_GRAPH_MODULE_SCHEMA_VERSION = "voyant.module.v1" as const
+export const VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION = "voyant.extension.v1" as const
 export const VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION = "voyant.plugin.v1" as const
 
-export type VoyantGraphUnitKind = "module" | "plugin"
+export type VoyantGraphUnitKind = "module" | "extension" | "plugin"
 export type VoyantGraphRouteSurface = "admin" | "public" | "webhook" | "internal"
 
 export type VoyantGraphJsonValue =
@@ -104,6 +105,7 @@ export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {
 export interface VoyantGraphUnitManifest {
   schemaVersion:
     | typeof VOYANT_GRAPH_MODULE_SCHEMA_VERSION
+    | typeof VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION
     | typeof VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION
   id: string
   localId?: string
@@ -167,6 +169,7 @@ export interface VoyantGraphProjectSelection {
 
 export interface VoyantGraphProjectSelections {
   modules: readonly VoyantGraphProjectSelection[]
+  extensions: readonly VoyantGraphProjectSelection[]
   plugins: readonly VoyantGraphProjectSelection[]
 }
 
@@ -195,6 +198,7 @@ export interface DefineVoyantGraphProjectInput {
   schemaVersion?: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
   presetLineage?: string
   modules: readonly DefineVoyantGraphProjectUnitInput[]
+  extensions?: readonly DefineVoyantGraphProjectUnitInput[]
   plugins?: readonly DefineVoyantGraphProjectUnitInput[]
   deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
@@ -204,6 +208,7 @@ export interface VoyantGraphProject {
   schemaVersion: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
   presetLineage?: string
   modules: readonly VoyantGraphUnitManifest[]
+  extensions: readonly VoyantGraphUnitManifest[]
   plugins: readonly VoyantGraphUnitManifest[]
   selections?: VoyantGraphProjectSelections
   deployment?: VoyantGraphProjectDeployment
@@ -212,6 +217,10 @@ export interface VoyantGraphProject {
 
 export function defineModule(input: DefineVoyantGraphUnitInput): VoyantGraphUnitManifest {
   return defineGraphUnit(VOYANT_GRAPH_MODULE_SCHEMA_VERSION, input)
+}
+
+export function defineExtension(input: DefineVoyantGraphUnitInput): VoyantGraphUnitManifest {
+  return defineGraphUnit(VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION, input)
 }
 
 export function definePlugin(input: DefineVoyantGraphUnitInput): VoyantGraphUnitManifest {
@@ -227,19 +236,25 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
   }
 
   const modules = normalizeProjectUnits(input.modules, "module")
+  const extensions = normalizeProjectUnits(input.extensions ?? [], "extension")
   const plugins = normalizeProjectUnits(input.plugins ?? [], "plugin")
-  const hasSelections = modules.selections.length > 0 || plugins.selections.length > 0
+  const hasSelections =
+    modules.selections.length > 0 ||
+    extensions.selections.length > 0 ||
+    plugins.selections.length > 0
   const deployment = normalizeProjectDeployment(input.deployment)
 
   return {
     schemaVersion,
     ...(input.presetLineage ? { presetLineage: input.presetLineage } : {}),
     modules: modules.units,
+    extensions: extensions.units,
     plugins: plugins.units,
     ...(hasSelections
       ? {
           selections: {
             modules: modules.selections,
+            extensions: extensions.selections,
             plugins: plugins.selections,
           },
         }
@@ -370,7 +385,7 @@ function normalizeProjectUnits(
       continue
     }
 
-    const label = `${kind === "module" ? "modules" : "plugins"}[${index}]`
+    const label = `${kind === "module" ? "modules" : kind === "extension" ? "extensions" : "plugins"}[${index}]`
     if (typeof input !== "string") {
       const unsupportedKeys = Object.keys(input).filter(
         (key) => key !== "resolve" && key !== "config",
@@ -388,7 +403,11 @@ function normalizeProjectUnits(
     )
     units.push(
       defineGraphUnit(
-        kind === "module" ? VOYANT_GRAPH_MODULE_SCHEMA_VERSION : VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
+        kind === "module"
+          ? VOYANT_GRAPH_MODULE_SCHEMA_VERSION
+          : kind === "extension"
+            ? VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION
+            : VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
         { id: selection.id, packageName: selection.packageName },
       ),
     )

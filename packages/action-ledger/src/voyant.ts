@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the action-ledger package. */
 export const actionLedgerVoyantModule = defineModule({
@@ -48,7 +48,7 @@ export const actionLedgerVoyantModule = defineModule({
   },
 })
 
-export const actionLedgerHealthVoyantPlugin = definePlugin({
+export const actionLedgerHealthVoyantPlugin = defineExtension({
   id: "@voyant-travel/action-ledger#health-extension",
   packageName: "@voyant-travel/action-ledger",
   localId: "action-ledger.health-extension",

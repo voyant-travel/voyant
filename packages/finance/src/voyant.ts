@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 const financeAdminRuntime = {
   entry: "@voyant-travel/finance-react/admin",
@@ -183,7 +183,7 @@ export const financeVoyantModule = defineModule({
   },
 })
 
-export const financeBookingTaxVoyantPlugin = definePlugin({
+export const financeBookingTaxVoyantPlugin = defineExtension({
   id: "@voyant-travel/finance#booking-tax-extension",
   packageName: "@voyant-travel/finance",
   localId: "finance.booking-tax-extension",
@@ -204,7 +204,7 @@ export const financeBookingTaxVoyantPlugin = definePlugin({
   },
 })
 
-export const financeBookingsCreateVoyantPlugin = definePlugin({
+export const financeBookingsCreateVoyantPlugin = defineExtension({
   id: "@voyant-travel/finance#bookings-create-extension",
   packageName: "@voyant-travel/finance",
   localId: "finance.bookings-create-extension",
@@ -225,7 +225,7 @@ export const financeBookingsCreateVoyantPlugin = definePlugin({
   },
 })
 
-export const financeBookingScheduleVoyantPlugin = definePlugin({
+export const financeBookingScheduleVoyantPlugin = defineExtension({
   id: "@voyant-travel/finance#booking-schedule-extension",
   packageName: "@voyant-travel/finance",
   localId: "finance.booking-schedule-extension",

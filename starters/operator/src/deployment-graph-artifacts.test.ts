@@ -480,6 +480,7 @@ function writeFixture(
           }
         : {}),
     modules: [{ id: "@voyant-travel/bookings" }],
+    extensions: [{ id: "@voyant-travel/bookings#booking-supplier-extension" }],
     plugins: [{ id: "@voyant-travel/plugin-smartbill" }],
     packageRecords: [{ packageName: "@voyant-travel/framework" }],
     ...(!options.omitProvisioning
@@ -548,6 +549,9 @@ function writeGeneratedGraphRuntimeSource(
       `export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = ${stringArrayLiteral(
         graph.modules.map((module) => module.id),
       )} as const`,
+      `export const GENERATED_GRAPH_RUNTIME_EXTENSION_IDS = ${stringArrayLiteral(
+        graph.extensions.map((extension) => extension.id),
+      )} as const`,
       `export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${stringArrayLiteral(
         graph.plugins.map((plugin) => plugin.id),
       )} as const`,
@@ -586,6 +590,7 @@ interface FixtureDeploymentGraph {
     }>
   }
   modules: Array<{ id: string }>
+  extensions: Array<{ id: string }>
   plugins: Array<{ id: string }>
   packageRecords: Array<{ packageName: string }>
   provisioning?: {
@@ -623,6 +628,9 @@ function writeGeneratedRuntimeEntrySource(
       'export const GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH = "./managed-profile.json" as const',
       `export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = ${stringArrayLiteral(
         graph.modules.map((module) => module.id),
+      )} as const`,
+      `export const GENERATED_DEPLOYMENT_GRAPH_EXTENSION_IDS = ${stringArrayLiteral(
+        graph.extensions.map((extension) => extension.id),
       )} as const`,
       `export const GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS = ${stringArrayLiteral(
         graph.plugins.map((plugin) => plugin.id),

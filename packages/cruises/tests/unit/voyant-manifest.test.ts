@@ -41,7 +41,7 @@ describe("cruises deployment manifest", () => {
 
   it("owns content and booking extensions", () => {
     expect(cruisesContentVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/cruises#content-extension",
       api: [
         {
@@ -57,7 +57,7 @@ describe("cruises deployment manifest", () => {
       ],
     })
     expect(cruisesBookingVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/cruises#booking-extension",
       api: [
         { surface: "admin", mount: "bookings", runtime: { export: "cruisesBookingExtension" } },

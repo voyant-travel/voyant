@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 const catalogAdminRuntime = {
   entry: "@voyant-travel/catalog-react/admin",
@@ -223,7 +223,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
   },
 })
 
-export const catalogOffersVoyantPlugin = definePlugin({
+export const catalogOffersVoyantPlugin = defineExtension({
   id: "@voyant-travel/catalog#offers-extension",
   packageName: "@voyant-travel/catalog",
   localId: "catalog.offers-extension",

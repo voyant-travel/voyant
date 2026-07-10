@@ -68,7 +68,7 @@ describe("bookings deployment manifest", () => {
     })
 
     expect(bookingsSupplierVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/bookings#booking-supplier-extension",
       packageName: "@voyant-travel/bookings",
       api: [

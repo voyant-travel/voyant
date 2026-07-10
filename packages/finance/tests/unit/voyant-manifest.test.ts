@@ -49,7 +49,7 @@ describe("finance deployment manifest", () => {
   it("owns the finance extensions", () => {
     expect([financeBookingTaxVoyantPlugin, financeBookingsCreateVoyantPlugin]).toMatchObject([
       {
-        schemaVersion: "voyant.plugin.v1",
+        schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/finance#booking-tax-extension",
         api: [
           {
@@ -61,7 +61,7 @@ describe("finance deployment manifest", () => {
         ],
       },
       {
-        schemaVersion: "voyant.plugin.v1",
+        schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/finance#bookings-create-extension",
         api: [
           {
@@ -74,7 +74,7 @@ describe("finance deployment manifest", () => {
 
   it("owns the booking schedule bridge with package runtime references", () => {
     expect(financeBookingScheduleVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/finance#booking-schedule-extension",
       packageName: "@voyant-travel/finance",
       api: [

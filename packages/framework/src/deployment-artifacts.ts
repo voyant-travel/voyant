@@ -130,6 +130,11 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
     input.graph,
     input.runtimeEntryOverrides,
   )
+  const extensions = lowerGraphRuntimeUnits(
+    input.graph.extensions,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
   const plugins = lowerGraphRuntimeUnits(
     input.graph.plugins,
     input.graph,
@@ -137,7 +142,7 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
   )
   const entries = [
     ...new Set(
-      [...modules, ...plugins].flatMap((unit) =>
+      [...modules, ...extensions, ...plugins].flatMap((unit) =>
         unit.references.map((definition) => definition.importEntry),
       ),
     ),
@@ -157,6 +162,9 @@ export const GENERATED_GRAPH_RUNTIME_ENTRY_SPECIFIERS = ${formatConstArray(entri
 export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = ${formatConstArray(
     modules.map((unit) => unit.id),
   )}
+export const GENERATED_GRAPH_RUNTIME_EXTENSION_IDS = ${formatConstArray(
+    extensions.map((unit) => unit.id),
+  )}
 export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${formatConstArray(
     plugins.map((unit) => unit.id),
   )}
@@ -173,6 +181,7 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
     providerSelections: ${formatGeneratedValue(input.graph.deployment.providers, 4)},
     entries: GENERATED_GRAPH_RUNTIME_IMPORTERS,
     modules: ${formatGeneratedValue(modules, 4)},
+    extensions: ${formatGeneratedValue(extensions, 4)},
     plugins: ${formatGeneratedValue(plugins, 4)},
     webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN,
   })
@@ -279,6 +288,9 @@ export const GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH = ${quote(input.profileSnap
 
 export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = ${formatConstArray(
     input.graph.modules.map((unit) => unit.id),
+  )}
+export const GENERATED_DEPLOYMENT_GRAPH_EXTENSION_IDS = ${formatConstArray(
+    input.graph.extensions.map((unit) => unit.id),
   )}
 export const GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS = ${formatConstArray(
     input.graph.plugins.map((unit) => unit.id),

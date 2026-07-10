@@ -57,7 +57,7 @@ describe("inventory deployment manifests", () => {
 
   it("owns the authoring and booking plugin surfaces", () => {
     expect(inventoryAuthoringVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/inventory#authoring.extension",
       api: [
         {
@@ -72,7 +72,7 @@ describe("inventory deployment manifests", () => {
     })
 
     expect(inventoryBookingVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/inventory#booking-extension",
       api: [
         {
@@ -88,7 +88,7 @@ describe("inventory deployment manifests", () => {
 
   it("owns the split content and brochure extensions", () => {
     expect(inventoryContentVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/inventory#content-extension",
       api: [
         {
@@ -104,7 +104,7 @@ describe("inventory deployment manifests", () => {
       ],
     })
     expect(inventoryBrochureVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/inventory#brochure-extension",
       api: [
         {

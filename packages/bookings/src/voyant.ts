@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 import { BOOKING_VOYANT_ACTIONS } from "./action-declarations.js"
 
@@ -201,7 +201,7 @@ export const bookingRequirementsVoyantModule = defineModule({
   },
 })
 
-export const bookingsSupplierVoyantPlugin = definePlugin({
+export const bookingsSupplierVoyantPlugin = defineExtension({
   id: "@voyant-travel/bookings#booking-supplier-extension",
   packageName: "@voyant-travel/bookings",
   localId: "bookings.booking-supplier-extension",

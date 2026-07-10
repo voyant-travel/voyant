@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
   defineDeployment,
+  defineExtension,
   defineModule,
   definePlugin,
   defineProject,
@@ -21,7 +22,7 @@ import { assertPortConforms, definePort, providePort, requirePort } from "./port
 import { defineVoyantProject } from "./profile.js"
 
 describe("deployment graph v1", () => {
-  it("defines closed module and plugin manifests", () => {
+  it("defines closed module, extension, and plugin manifests", () => {
     const module = defineModule({
       id: "@acme/voyant-loyalty",
       provides: { capabilities: ["acme.loyalty.points"] },
@@ -31,8 +32,10 @@ describe("deployment graph v1", () => {
       id: "@acme/voyant-fiscal#smartbill",
       provides: { capabilities: ["acme.fiscal.invoice"] },
     })
+    const extension = defineExtension({ id: "@acme/voyant-loyalty#admin-extension" })
 
     expect(module.schemaVersion).toBe("voyant.module.v1")
+    expect(extension.schemaVersion).toBe("voyant.extension.v1")
     expect(plugin.schemaVersion).toBe("voyant.plugin.v1")
 
     expect(
@@ -54,6 +57,17 @@ describe("deployment graph v1", () => {
       ]),
     )
     expect(validateGraphUnitManifest(module)).toEqual([])
+  })
+
+  it("normalizes legacy v1 projects without an extension lane", async () => {
+    const plugin = definePlugin({ id: "@acme/voyant-fiscal#smartbill" })
+    const project = defineProject({ modules: [], plugins: [plugin] })
+    Reflect.deleteProperty(project, "extensions")
+
+    const graph = await resolveDeploymentGraph({ project })
+
+    expect(graph.extensions).toEqual([])
+    expect(graph.plugins.map((unit) => unit.id)).toEqual(["@acme/voyant-fiscal#smartbill"])
   })
 
   it("resolves the full package-owned facet contract without starter catalogs", async () => {
@@ -864,7 +878,7 @@ describe("deployment graph v1", () => {
     expect(second.contentHash).toBe(first.contentHash)
   })
 
-  it("keeps resolved module and plugin ordering independent of declaration order", async () => {
+  it("keeps resolved unit ordering independent of declaration order", async () => {
     const crm = defineModule({
       id: "@acme/voyant-crm",
       provides: { capabilities: ["acme.crm.people"] },
@@ -882,10 +896,13 @@ describe("deployment graph v1", () => {
       id: "@acme/voyant-webhooks#hubspot",
       provides: { capabilities: ["acme.webhooks.hubspot"] },
     })
+    const admin = defineExtension({ id: "@acme/voyant-loyalty#admin-extension" })
+    const checkout = defineExtension({ id: "@acme/voyant-loyalty#checkout-extension" })
 
     const first = await resolveDeploymentGraph({
       project: defineProject({
         modules: [loyalty, crm],
+        extensions: [checkout, admin],
         plugins: [webhook, fiscal],
       }),
       target: "node",
@@ -894,6 +911,7 @@ describe("deployment graph v1", () => {
     const second = await resolveDeploymentGraph({
       project: defineProject({
         modules: [crm, loyalty],
+        extensions: [admin, checkout],
         plugins: [fiscal, webhook],
       }),
       target: "node",
@@ -904,6 +922,10 @@ describe("deployment graph v1", () => {
     expect(first.modules.map((unit) => [unit.id, unit.order])).toEqual([
       ["@acme/voyant-crm", 0],
       ["@acme/voyant-loyalty", 1],
+    ])
+    expect(first.extensions.map((unit) => [unit.id, unit.order])).toEqual([
+      ["@acme/voyant-loyalty#admin-extension", 0],
+      ["@acme/voyant-loyalty#checkout-extension", 1],
     ])
     expect(first.plugins.map((unit) => [unit.id, unit.order])).toEqual([
       ["@acme/voyant-fiscal#smartbill", 0],
@@ -1171,9 +1193,8 @@ describe("deployment graph v1", () => {
     expect(commerce?.workflows).toEqual([])
     expect(commerce?.events).toEqual([])
     expect(commerce?.subscribers).toEqual([])
-    expect(graph.plugins.map((unit) => unit.id)).toEqual(
-      expect.arrayContaining(["@voyant-travel/plugin-netopia", "@acme/voyant-loyalty-admin"]),
-    )
+    expect(graph.extensions.map((unit) => unit.id)).toContain("@acme/voyant-loyalty-admin")
+    expect(graph.plugins.map((unit) => unit.id)).toEqual(["@voyant-travel/plugin-netopia"])
     expect(graph.packageRecords).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

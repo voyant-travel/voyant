@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: framework; runtime metadata normalization, validation, and lazy loader construction share one contract boundary.
 import type {
   VoyantGraphActionBindings,
   VoyantGraphActionDeclaration,
@@ -213,6 +214,7 @@ export interface VoyantGraphRuntime {
   graphHash: string
   providerSelections: Readonly<Record<string, string>>
   modules: readonly VoyantGraphRuntimeUnitLoader[]
+  extensions: readonly VoyantGraphRuntimeUnitLoader[]
   plugins: readonly VoyantGraphRuntimeUnitLoader[]
   references: readonly VoyantGraphRuntimeReferenceLoader[]
   config: readonly VoyantGraphRuntimeConfigLoader[]
@@ -233,6 +235,7 @@ export interface CreateVoyantGraphRuntimeInput {
   providerSelections?: Readonly<Record<string, string>>
   entries: Readonly<Record<string, () => Promise<unknown>>>
   modules: readonly VoyantGraphRuntimeUnitDefinition[]
+  extensions?: readonly VoyantGraphRuntimeUnitDefinition[]
   plugins: readonly VoyantGraphRuntimeUnitDefinition[]
   webhookPlan?: VoyantGraphWebhookPlan
 }
@@ -257,17 +260,21 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   }
 
   const modules = definitions.modules.map((unit) => createRuntimeUnitLoader(unit, importEntries))
+  const extensions = definitions.extensions.map((unit) =>
+    createRuntimeUnitLoader(unit, importEntries),
+  )
   const plugins = definitions.plugins.map((unit) => createRuntimeUnitLoader(unit, importEntries))
-  const references = [...modules, ...plugins].flatMap((unit) => unit.references)
-  const config = [...modules, ...plugins].flatMap((unit) => unit.config)
-  const secrets = [...modules, ...plugins].flatMap((unit) => unit.secrets)
-  const resources = [...modules, ...plugins].flatMap((unit) => unit.resources)
-  const providers = [...modules, ...plugins].flatMap((unit) => unit.providers)
-  const requiredPorts = sortedUnique([...modules, ...plugins].flatMap((unit) => unit.requiredPorts))
-  const accessScopes = sortedUnique([...modules, ...plugins].flatMap((unit) => unit.accessScopes))
-  const tools = [...modules, ...plugins].flatMap((unit) => unit.tools)
-  const actions = [...modules, ...plugins].flatMap((unit) => unit.actions)
-  const selectedIds = mergeSelectedIds([...modules, ...plugins].map((unit) => unit.selectedIds))
+  const units = [...modules, ...extensions, ...plugins]
+  const references = units.flatMap((unit) => unit.references)
+  const config = units.flatMap((unit) => unit.config)
+  const secrets = units.flatMap((unit) => unit.secrets)
+  const resources = units.flatMap((unit) => unit.resources)
+  const providers = units.flatMap((unit) => unit.providers)
+  const requiredPorts = sortedUnique(units.flatMap((unit) => unit.requiredPorts))
+  const accessScopes = sortedUnique(units.flatMap((unit) => unit.accessScopes))
+  const tools = units.flatMap((unit) => unit.tools)
+  const actions = units.flatMap((unit) => unit.actions)
+  const selectedIds = mergeSelectedIds(units.map((unit) => unit.selectedIds))
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
   const webhooks = createRuntimeWebhookPlan(definitions.webhookPlan)
 
@@ -275,6 +282,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     graphHash: input.graphHash,
     providerSelections: { ...(input.providerSelections ?? {}) },
     modules,
+    extensions,
     plugins,
     references,
     config,
@@ -329,8 +337,12 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
 }
 
 interface NormalizedVoyantGraphRuntimeInput
-  extends Omit<CreateVoyantGraphRuntimeInput, "modules" | "plugins" | "webhookPlan"> {
+  extends Omit<
+    CreateVoyantGraphRuntimeInput,
+    "modules" | "extensions" | "plugins" | "webhookPlan"
+  > {
   modules: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
+  extensions: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   plugins: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   webhookPlan: VoyantGraphWebhookPlan
 }
@@ -342,6 +354,7 @@ function normalizeRuntimeDefinition(
     ...input,
     webhookPlan: normalizeWebhookPlan(input.webhookPlan),
     modules: input.modules.map(normalizeRuntimeUnitDefinition),
+    extensions: (input.extensions ?? []).map(normalizeRuntimeUnitDefinition),
     plugins: input.plugins.map(normalizeRuntimeUnitDefinition),
   }
 }
@@ -605,10 +618,11 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
   const toolIds = new Set<string>()
   const toolNames = new Set<string>()
   const accessScopes = new Set(
-    [...input.modules, ...input.plugins].flatMap((unit) => unit.accessScopes),
+    [...input.modules, ...input.extensions, ...input.plugins].flatMap((unit) => unit.accessScopes),
   )
   for (const [expectedKind, units] of [
     ["module", input.modules],
+    ["extension", input.extensions],
     ["plugin", input.plugins],
   ] as const) {
     for (const unit of units) {
@@ -709,7 +723,7 @@ function normalizeWebhookPlan(plan: VoyantGraphWebhookPlan | undefined): VoyantG
 }
 
 function validateRuntimeWebhookPlan(input: NormalizedVoyantGraphRuntimeInput): void {
-  const units = [...input.modules, ...input.plugins]
+  const units = [...input.modules, ...input.extensions, ...input.plugins]
   const unitById = new Map(units.map((unit) => [unit.id, unit]))
   const routeById = new Map(
     units.flatMap((unit) => unit.routes.map((route) => [route.route.id, { route, unit }] as const)),

@@ -19,6 +19,7 @@ const SHA256_CONTENT_HASH_PATTERN = /^sha256:[a-f0-9]{64}$/
 export interface OperatorDeploymentGraphArtifactSummary {
   graphHash: string
   moduleIds: readonly string[]
+  extensionIds: readonly string[]
   pluginIds: readonly string[]
   packageNames: readonly string[]
   providers: Readonly<Record<string, string>>
@@ -87,6 +88,7 @@ interface ResolvedDeploymentGraph {
   requirements?: unknown
   provisioning?: unknown
   modules?: unknown
+  extensions?: unknown
   plugins?: unknown
   packageRecords?: unknown
 }
@@ -227,6 +229,10 @@ export function loadOperatorDeploymentGraphArtifacts(
   const summary = {
     graphHash,
     moduleIds: collectStringField(graph.modules, "deployment graph modules", "id"),
+    extensionIds:
+      graph.extensions === undefined
+        ? []
+        : collectStringField(graph.extensions, "deployment graph extensions", "id"),
     pluginIds: collectStringField(graph.plugins, "deployment graph plugins", "id"),
     packageNames,
     providers: collectDeploymentProviders(graph.deployment),
@@ -552,6 +558,11 @@ function validateGeneratedRuntimeEntrySource(input: {
     "GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS",
     input.summary.moduleIds,
   )
+  assertGeneratedExtensionIds(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_EXTENSION_IDS",
+    input.summary.extensionIds,
+  )
   assertGeneratedStringArrayConst(
     source,
     "GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS",
@@ -580,6 +591,11 @@ function validateGeneratedGraphRuntimeSource(input: {
     "GENERATED_GRAPH_RUNTIME_MODULE_IDS",
     input.summary.moduleIds,
   )
+  assertGeneratedExtensionIds(
+    source,
+    "GENERATED_GRAPH_RUNTIME_EXTENSION_IDS",
+    input.summary.extensionIds,
+  )
   assertGeneratedStringArrayConst(
     source,
     "GENERATED_GRAPH_RUNTIME_PLUGIN_IDS",
@@ -593,6 +609,15 @@ function assertGeneratedStringConst(source: string, name: string, expected: stri
   throw new Error(
     `generated runtime entry ${name} must be ${String(expected)}, got ${String(actual)}`,
   )
+}
+
+function assertGeneratedExtensionIds(
+  source: string,
+  name: string,
+  expected: readonly string[],
+): void {
+  if (expected.length === 0 && !source.includes(name)) return
+  assertGeneratedStringArrayConst(source, name, expected)
 }
 
 function parseGeneratedStringConst(source: string, name: string): string | undefined {

@@ -102,7 +102,7 @@ describe("commerce deployment manifest", () => {
 
   it("owns the catalog checkout and booking maintenance bridges", () => {
     expect(commerceCatalogCheckoutVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/commerce#catalog-checkout-extension",
       packageName: "@voyant-travel/commerce",
       api: [
@@ -119,7 +119,7 @@ describe("commerce deployment manifest", () => {
     })
 
     expect(commerceBookingMaintenanceVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/commerce#booking-maintenance-extension",
       packageName: "@voyant-travel/commerce",
       api: [
