@@ -1,5 +1,13 @@
 # @voyant-travel/core
 
+## 0.113.0
+
+### Minor Changes
+
+- 496f2ef: Add the dependency-light package-owned deployment manifest authoring interface,
+  publish the bookings manifest through `./voyant`, and let framework graph
+  resolution consume the same contract.
+
 ## 0.112.3
 
 ### Patch Changes
