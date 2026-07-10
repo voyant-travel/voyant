@@ -23,6 +23,10 @@ export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS = [
   "@voyant-travel/mice/booking-extension",
 ] as const
 
+export const OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS = [
+  "@voyant-travel/plugin-netopia",
+] as const
+
 export const OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS = [
   "@voyant-travel/db",
   "@voyant-travel/availability",
@@ -38,6 +42,9 @@ export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS =
 
 export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS =
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS.map(graphIdFromSpecifier)
+
+export const OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_IDS =
+  OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS.map(graphIdFromSpecifier)
 
 export const OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS =
   OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS.map(graphIdFromSpecifier)
@@ -58,7 +65,10 @@ export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST = {
     localModule("operator/realtime", [{ surface: "admin" }, { surface: "public" }]),
     localModule("@voyant-travel/mice", [{ surface: "admin" }]),
   ],
-  plugins: [localPlugin("@voyant-travel/mice/booking-extension", [{ surface: "admin" }])],
+  plugins: [
+    localPlugin("@voyant-travel/mice/booking-extension", [{ surface: "admin" }]),
+    ...OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS.map(runtimePlugin),
+  ],
 } satisfies {
   modules: readonly VoyantGraphUnitManifest[]
   plugins: readonly VoyantGraphUnitManifest[]
@@ -95,6 +105,15 @@ function localPlugin(
     localId: moduleIdFromSpecifier(specifier),
     api: routeBundles(id, specifier, api),
     meta: { source: "operator-local" },
+  })
+}
+
+function runtimePlugin(specifier: string): VoyantGraphUnitManifest {
+  return definePlugin({
+    id: graphIdFromSpecifier(specifier),
+    packageName: packageNameFromSpecifier(specifier),
+    localId: moduleIdFromSpecifier(specifier),
+    meta: { source: "operator-runtime-plugin" },
   })
 }
 

@@ -817,6 +817,13 @@ diagnostic-code registry. The public `voyant doctor --json` command remains the
 CLI follow-up; it should consume this report contract rather than inventing a
 separate diagnostic model.
 
+The operator graph also runs an explicit source-admission policy for generated
+artifacts: selected packages must resolve to admitted lockfile/workspace
+provenance, deployment-local operator units get an explicit local workspace
+record, and virtual graph units point package provenance at the real package
+that ships them. Generated managed runtime entries validate graph artifacts and
+graph diagnostics before importing the managed runtime package.
+
 ## Implementation Phases
 
 Phases 0-2 are the complete v1 deployment-graph program. Phase 1 is the first

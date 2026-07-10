@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:36248162ea2a96b48ec42e9aaaf511cc9c1cad47586114a9130e598f8a37801f",
+  "contentHash": "sha256:561dbc3b80b539d4b21d31492fbf574961b7e2a1a957b96ec2109ecfbe73f260",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -1116,7 +1116,7 @@
       "localId": "public-document-delivery",
       "migrations": [],
       "order": 34,
-      "packageName": "@voyant-travel/public-document-delivery",
+      "packageName": "@voyant-travel/hono",
       "provides": {
         "capabilities": [],
         "ports": []
@@ -1396,6 +1396,14 @@
       "version": "0.7.1"
     },
     {
+      "packageName": "@voyant-travel/hono",
+      "source": {
+        "kind": "workspace",
+        "reference": "link:../hono"
+      },
+      "version": "0.122.1"
+    },
+    {
       "packageName": "@voyant-travel/identity",
       "source": {
         "kind": "workspace",
@@ -1444,9 +1452,18 @@
       "version": "0.5.21"
     },
     {
+      "metadata": {
+        "compatibleWith": {
+          "modes": ["local", "managed-cloud", "self-hosted"],
+          "targets": ["node", "voyant-cloud"]
+        },
+        "kind": "module",
+        "schemaVersion": "voyant.package.v1"
+      },
       "packageName": "@voyant-travel/operator",
       "source": {
-        "kind": "unknown"
+        "kind": "workspace",
+        "reference": "starters/operator"
       }
     },
     {
@@ -1458,10 +1475,13 @@
       "version": "0.2.33"
     },
     {
-      "packageName": "@voyant-travel/public-document-delivery",
+      "packageName": "@voyant-travel/plugin-netopia",
       "source": {
-        "kind": "unknown"
-      }
+        "integrity": "sha512-HlchshFZnOWJtn8OXh9bjs+VM9QHMD925SuLL3fTuazbaV/e2ZU8PeCAeclKlXSI4ujBAfsZzNAi2Ucz46/6JQ==",
+        "kind": "registry",
+        "reference": "pnpm-lock:@voyant-travel/plugin-netopia@0.105.18(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))"
+      },
+      "version": "0.105.18"
     },
     {
       "packageName": "@voyant-travel/quotes",
@@ -1926,6 +1946,28 @@
       "workflows": []
     },
     {
+      "api": [],
+      "events": [],
+      "id": "@voyant-travel/plugin-netopia",
+      "kind": "plugin",
+      "links": [],
+      "localId": "plugin-netopia",
+      "migrations": [],
+      "order": 15,
+      "packageName": "@voyant-travel/plugin-netopia",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
       "api": [
         {
           "id": "@voyant-travel/quotes#booking-extension.api",
@@ -1939,7 +1981,7 @@
       "links": [],
       "localId": "quotes.booking-extension",
       "migrations": [],
-      "order": 15,
+      "order": 16,
       "packageName": "@voyant-travel/quotes",
       "provides": {
         "capabilities": [],

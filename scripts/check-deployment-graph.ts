@@ -16,10 +16,15 @@ import { defineVoyantProject } from "../packages/framework/src/profile.ts"
 import {
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
+  OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_IDS,
   OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS,
 } from "../starters/operator/deployment-graph.local.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
+import {
+  OPERATOR_GRAPH_ADMISSION_POLICY,
+  withOperatorDeploymentLocalPackageRecords,
+} from "./lib/operator-deployment-graph-package-records.ts"
 
 const failures: string[] = []
 
@@ -32,11 +37,19 @@ const project = defineVoyantProject({
 
 async function main(): Promise<void> {
   const discoveredGraph = await resolveManagedProfileDeploymentGraph(project)
-  const packageRecords = readPnpmLockfilePackageRecords({
-    packageNames: discoveredGraph.packageRecords.map((record) => record.packageName),
+  const packageRecords = withOperatorDeploymentLocalPackageRecords(
+    readPnpmLockfilePackageRecords({
+      packageNames: discoveredGraph.packageRecords.map((record) => record.packageName),
+    }),
+  )
+  const first = await resolveManagedProfileDeploymentGraph(project, {
+    packageRecords,
+    admission: OPERATOR_GRAPH_ADMISSION_POLICY,
   })
-  const first = await resolveManagedProfileDeploymentGraph(project, { packageRecords })
-  const second = await resolveManagedProfileDeploymentGraph(project, { packageRecords })
+  const second = await resolveManagedProfileDeploymentGraph(project, {
+    packageRecords,
+    admission: OPERATOR_GRAPH_ADMISSION_POLICY,
+  })
 
   if (first.schemaVersion !== "voyant.resolved-graph.v1") {
     failures.push(`expected resolved graph schema v1, got ${first.schemaVersion}`)
@@ -138,6 +151,24 @@ async function main(): Promise<void> {
   const operatorPackageNames = new Set(
     operatorGraph.packageRecords.map((record) => record.packageName),
   )
+  for (const record of operatorGraph.packageRecords) {
+    if (record.source?.kind === "unknown") {
+      failures.push(`expected operator graph package record ${record.packageName} to be admitted`)
+    }
+  }
+  if (!operatorPackageNames.has("@voyant-travel/hono")) {
+    failures.push("expected operator graph package records to include @voyant-travel/hono")
+  }
+  if (operatorPackageNames.has("@voyant-travel/public-document-delivery")) {
+    failures.push(
+      "expected public document delivery graph unit provenance to resolve to @voyant-travel/hono",
+    )
+  }
+  if (!operatorPackageNames.has("@voyant-travel/plugin-netopia")) {
+    failures.push(
+      "expected operator graph package records to include @voyant-travel/plugin-netopia",
+    )
+  }
   for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
@@ -162,7 +193,10 @@ async function main(): Promise<void> {
       failures.push(`expected operator graph to include schema-only module ${id}`)
     }
   }
-  for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS) {
+  for (const id of [
+    ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
+    ...OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_IDS,
+  ]) {
     if (!operatorPluginIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
   for (const packageName of operatorMigrationSourcePackageNames()) {
@@ -229,7 +263,7 @@ async function readOperatorGeneratedGraph(): Promise<{
     workflows?: Array<{ id: string }>
   }>
   plugins: Array<{ id: string }>
-  packageRecords: Array<{ packageName: string }>
+  packageRecords: Array<{ packageName: string; source?: { kind?: string } }>
   provisioning?: {
     scheduledJobs?: Array<{ id: string; workflowId?: string }>
   }
@@ -245,7 +279,7 @@ async function readOperatorGeneratedGraph(): Promise<{
       workflows?: Array<{ id: string }>
     }>
     plugins: Array<{ id: string }>
-    packageRecords: Array<{ packageName: string }>
+    packageRecords: Array<{ packageName: string; source?: { kind?: string } }>
     provisioning?: {
       scheduledJobs?: Array<{ id: string; workflowId?: string }>
     }
