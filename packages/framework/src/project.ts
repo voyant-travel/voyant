@@ -1,3 +1,13 @@
+import {
+  type DefineVoyantGraphProjectInput,
+  defineProject,
+  type VoyantGraphProject,
+} from "@voyant-travel/core/project"
+import {
+  mergeOperatorDistributionDefaults,
+  type OperatorDistributionDifferences,
+} from "./operator-distribution.js"
+
 export * from "@voyant-travel/core/project"
 export type {
   NodeMigrationExecutionReport,
@@ -27,6 +37,23 @@ export type {
   VoyantProjectSchemaMigration,
   VoyantProjectSetupMigration,
 } from "./project-resolver.js"
+
+/** Application-owned differences from the standard Operator distribution. */
+export interface DefineVoyantConfigInput extends OperatorDistributionDifferences {
+  deployment?: DefineVoyantGraphProjectInput["deployment"]
+  meta?: DefineVoyantGraphProjectInput["meta"]
+}
+
+/** Expand framework defaults into the explicit project consumed by resolvers. */
+export function defineConfig(input: DefineVoyantConfigInput = {}): VoyantGraphProject {
+  const distribution = mergeOperatorDistributionDefaults(input)
+
+  return defineProject({
+    ...distribution,
+    ...(input.deployment ? { deployment: input.deployment } : {}),
+    ...(input.meta ? { meta: input.meta } : {}),
+  })
+}
 
 export async function discoverProjectConventions(
   input: import("./project-conventions.js").DiscoverProjectConventionsInput,
