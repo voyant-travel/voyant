@@ -21,7 +21,7 @@ const deployment = {
     workflows: "none",
   },
 } as const satisfies {
-  target: string
+  target: "node"
   mode: VoyantProjectDeploymentMode
   providers: VoyantProjectProviders
 }

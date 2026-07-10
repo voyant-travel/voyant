@@ -199,12 +199,15 @@ export interface VoyantGraphScheduledJob {
 export interface DefineVoyantGraphDeploymentInput {
   schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
-  target: string
+  target: VoyantGraphRuntimeTarget
   providers?: Partial<Record<VoyantProjectProviderRole | string, string>>
   mode?: VoyantProjectDeploymentMode
   requirements?: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
 }
+
+/** Unified Voyant applications always execute as resident Node processes. */
+export type VoyantGraphRuntimeTarget = "node"
 
 export interface VoyantGraphDeploymentRequirements {
   resources: readonly VoyantProfileResourceRequirement[]
@@ -213,7 +216,7 @@ export interface VoyantGraphDeploymentRequirements {
 export interface VoyantGraphDeployment {
   schemaVersion: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
-  target: "node"
+  target: VoyantGraphRuntimeTarget
   providers: Partial<Record<VoyantProjectProviderRole | string, string>>
   mode?: VoyantProjectDeploymentMode
   requirements: VoyantGraphDeploymentRequirements
@@ -254,12 +257,12 @@ export interface ResolveDeploymentGraphInput {
   project: VoyantGraphProject
   deployment?: Omit<VoyantGraphDeployment, "project" | "schemaVersion" | "target"> & {
     schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
-    target?: string
+    target?: VoyantGraphRuntimeTarget
   }
   packageRecords?: readonly VoyantGraphPackageRecord[]
   scheduledJobs?: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[]
   frameworkVersion?: string
-  target?: string
+  target?: VoyantGraphRuntimeTarget
   mode?: VoyantProjectDeploymentMode
   admission?: VoyantGraphAdmissionPolicy
 }
@@ -274,7 +277,7 @@ export interface ResolveDeploymentGraphWithPackageManifestsInput
 export interface CreateTestDeploymentInput {
   modules: readonly VoyantGraphUnitManifest[]
   plugins?: readonly VoyantGraphUnitManifest[]
-  target?: string
+  target?: VoyantGraphRuntimeTarget
   mode?: VoyantProjectDeploymentMode
   packageRecords?: readonly VoyantGraphPackageRecord[]
 }
@@ -320,7 +323,7 @@ export interface ResolvedVoyantDeploymentGraph {
     presetLineage?: string
   }
   deployment: {
-    target?: string
+    target?: VoyantGraphRuntimeTarget
     mode?: VoyantProjectDeploymentMode
     providers: Partial<Record<VoyantProjectProviderRole | string, string>>
   }
@@ -552,6 +555,9 @@ export async function resolveDeploymentGraph(
   input: ResolveDeploymentGraphInput,
 ): Promise<ResolvedVoyantDeploymentGraph> {
   const target = input.target ?? input.deployment?.target
+  if (target !== undefined && target !== "node") {
+    throw new Error('resolveDeploymentGraph: target must be "node".')
+  }
   const mode = input.mode ?? input.deployment?.mode
   const providers = { ...(input.deployment?.providers ?? {}) }
   const requirements = normalizeDeploymentRequirements(input.deployment?.requirements)
@@ -1971,7 +1977,7 @@ function validatePackageAdmission(
   packageRecords: readonly VoyantGraphPackageRecord[],
   context: {
     frameworkVersion?: string
-    target?: string
+    target?: VoyantGraphRuntimeTarget
     mode?: VoyantProjectDeploymentMode
     admission?: VoyantGraphAdmissionPolicy
   },

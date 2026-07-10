@@ -931,38 +931,19 @@ describe("deployment graph v1", () => {
     expect(() =>
       defineDeployment({
         project: defineProject({ modules: [] }),
-        target: "voyant-cloud",
+        target: "voyant-cloud" as never,
         mode: "managed-cloud",
       }),
     ).toThrow('defineDeployment: target must be "node".')
   })
 
-  it("preserves target incompatibility diagnostics for direct resolver inputs", async () => {
-    const graph = await resolveDeploymentGraph({
-      project: defineProject({
-        modules: [defineModule({ id: "@acme/voyant-loyalty" })],
+  it("rejects non-node direct resolver targets", async () => {
+    await expect(
+      resolveDeploymentGraph({
+        project: defineProject({ modules: [] }),
+        target: "workers" as never,
       }),
-      target: "workers",
-      packageRecords: [
-        {
-          packageName: "@acme/voyant-loyalty",
-          source: { kind: "registry" },
-          metadata: {
-            schemaVersion: "voyant.package.v1",
-            kind: "module",
-            compatibleWith: { targets: ["node"] },
-          },
-        },
-      ],
-    })
-
-    expect(graph.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE",
-        facet: "package.compatibleWith.targets",
-        message: expect.stringContaining('target "workers"'),
-      }),
-    ])
+    ).rejects.toThrow('resolveDeploymentGraph: target must be "node".')
   })
 
   it("detects package framework incompatibility from metadata", async () => {

@@ -14,6 +14,7 @@ import {
   type VoyantGraphPackageRecord,
   type VoyantGraphProject,
   type VoyantGraphProjectSelection,
+  type VoyantGraphRuntimeTarget,
   type VoyantGraphUnitManifest,
   type VoyantPackageMetadata,
 } from "../../packages/framework/src/deployment-graph.ts"
@@ -28,7 +29,7 @@ import { loadVoyantPackageManifests } from "./load-voyant-package-manifests.ts"
 
 export interface OperatorAuthoredProject extends VoyantGraphProject {
   deployment: {
-    target: string
+    target: VoyantGraphRuntimeTarget
     mode: "local" | "managed-cloud" | "self-hosted"
     providers: VoyantProjectProviders
   }

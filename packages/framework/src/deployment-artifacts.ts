@@ -1,4 +1,8 @@
-import { canonicalJson, type ResolvedVoyantDeploymentGraph } from "./deployment-graph.js"
+import {
+  canonicalJson,
+  type ResolvedVoyantDeploymentGraph,
+  type VoyantGraphRuntimeTarget,
+} from "./deployment-graph.js"
 import { lowerGraphRuntimeUnits } from "./graph-runtime-generation.js"
 import { PROVIDER_ROLES, type VoyantProjectDeploymentMode } from "./profile.js"
 
@@ -28,7 +32,7 @@ export type VoyantDeploymentRuntimeEntryKind = "managed-profile-node"
 
 export interface VoyantDeploymentRuntimeEntryArtifact {
   id: string
-  target: string
+  target: VoyantGraphRuntimeTarget
   file: string
   graphHash: string
   kind: VoyantDeploymentRuntimeEntryKind
