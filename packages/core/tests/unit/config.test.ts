@@ -12,13 +12,13 @@ describe("defineVoyantConfig", () => {
     const config = defineVoyantConfig({
       modules: ["crm", "bookings"],
       plugins: ["payload-cms"],
-      deployment: "cloudflare-worker",
+      deployment: "node",
       admin: { enabled: true, path: "/app" },
     })
 
     expect(config.modules).toEqual(["crm", "bookings"])
     expect(config.plugins).toEqual(["payload-cms"])
-    expect(config.deployment).toBe("cloudflare-worker")
+    expect(config.deployment).toBe("node")
     expect(config.admin).toEqual({ enabled: true, path: "/app" })
   })
 
@@ -68,7 +68,7 @@ describe("validateVoyantConfig", () => {
       modules: ["crm", { resolve: "custom", options: {} }],
       plugins: ["payload-cms", { resolve: "bokun" }],
       featureFlags: { links_enabled: true, query_graph: false },
-      deployment: "cloudflare-worker",
+      deployment: "node",
     }
     const result = validateVoyantConfig(config)
     expect(result.ok).toBe(true)
@@ -166,10 +166,14 @@ describe("validateVoyantConfig", () => {
     })
   })
 
-  it("rejects deployment that is not a string", () => {
+  it("rejects non-Node deployment targets", () => {
     const result = validateVoyantConfig({ deployment: 123 })
     expect(result.ok).toBe(false)
-    expect(result.issues).toContainEqual({ path: "deployment", message: "Expected a string." })
+    expect(result.issues).toContainEqual({ path: "deployment", message: 'Expected "node".' })
+
+    const worker = validateVoyantConfig({ deployment: "cloudflare-worker" })
+    expect(worker.ok).toBe(false)
+    expect(worker.issues).toContainEqual({ path: "deployment", message: 'Expected "node".' })
   })
 
   it("surfaces multiple issues at once", () => {
