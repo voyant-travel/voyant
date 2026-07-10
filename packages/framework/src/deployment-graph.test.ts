@@ -204,6 +204,108 @@ describe("deployment graph v1", () => {
       admin: { routes: [{ id: "@acme/voyant-loyalty#admin.route.index" }] },
       lifecycle: { uninstall: { default: "retain-data" } },
     })
+    expect(graph.webhookPlan.outbound).toEqual([
+      {
+        id: "@acme/voyant-loyalty#webhook.points-adjusted",
+        unitId: "@acme/voyant-loyalty",
+        packageName: "@acme/voyant-loyalty",
+        eventId: "@acme/voyant-loyalty#event.points-adjusted",
+        eventUnitId: "@acme/voyant-loyalty",
+        eventType: "points.adjusted",
+        secretIds: ["@acme/voyant-loyalty#secret.webhook"],
+      },
+    ])
+  })
+
+  it("compiles cross-unit inbound routes and outbound events into a deterministic plan", async () => {
+    const routes = defineModule({
+      id: "@acme/voyant-hooks",
+      localId: "hooks",
+      api: [
+        {
+          id: "@acme/voyant-hooks#api.inbound",
+          surface: "webhook",
+          mount: "partner-hooks",
+          runtime: { entry: "@acme/voyant-hooks", export: "createHooksModule" },
+        },
+      ],
+      events: [{ id: "@acme/voyant-hooks#event.changed", eventType: "partner.changed" }],
+    })
+    const delivery = definePlugin({
+      id: "@acme/voyant-delivery",
+      webhooks: [
+        {
+          id: "@acme/voyant-delivery#webhook.outbound",
+          direction: "outbound",
+          eventId: "@acme/voyant-hooks#event.changed",
+        },
+        {
+          id: "@acme/voyant-delivery#webhook.inbound",
+          direction: "inbound",
+          apiId: "@acme/voyant-hooks#api.inbound",
+        },
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [routes], plugins: [delivery] }),
+    })
+
+    expect(graph.diagnostics).toEqual([])
+    expect(graph.webhookPlan).toEqual({
+      inbound: [
+        expect.objectContaining({
+          id: "@acme/voyant-delivery#webhook.inbound",
+          apiId: "@acme/voyant-hooks#api.inbound",
+          apiUnitId: "@acme/voyant-hooks",
+          mountPath: "/v1/partner-hooks",
+        }),
+      ],
+      outbound: [
+        expect.objectContaining({
+          id: "@acme/voyant-delivery#webhook.outbound",
+          eventId: "@acme/voyant-hooks#event.changed",
+          eventUnitId: "@acme/voyant-hooks",
+          eventType: "partner.changed",
+        }),
+      ],
+    })
+  })
+
+  it("rejects webhook references to the wrong selected graph entity kinds", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-hooks",
+      api: [{ id: "@acme/voyant-hooks#api.admin", surface: "admin" }],
+      events: [{ id: "@acme/voyant-hooks#event.untyped" }],
+      webhooks: [
+        {
+          id: "@acme/voyant-hooks#webhook.inbound",
+          direction: "inbound",
+          apiId: "@acme/voyant-hooks#api.admin",
+        },
+        {
+          id: "@acme/voyant-hooks#webhook.outbound",
+          direction: "outbound",
+          eventId: "@acme/voyant-hooks#event.untyped",
+        },
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+          facet: "@acme/voyant-hooks#webhook.inbound.apiId",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "@acme/voyant-hooks#webhook.outbound.eventId",
+        }),
+      ]),
+    )
+    expect(graph.webhookPlan).toEqual({ inbound: [], outbound: [] })
   })
 
   it("fails closed for invalid promoted facets and unresolved references", async () => {

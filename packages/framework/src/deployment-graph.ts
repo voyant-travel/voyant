@@ -196,6 +196,32 @@ export interface VoyantGraphScheduledJob {
   input?: VoyantGraphJsonValue
 }
 
+export interface VoyantGraphInboundWebhookPlanEntry {
+  id: string
+  unitId: string
+  packageName: string
+  apiId: string
+  apiUnitId: string
+  mountPath: string
+  secretIds: readonly string[]
+}
+
+export interface VoyantGraphOutboundWebhookPlanEntry {
+  id: string
+  unitId: string
+  packageName: string
+  eventId: string
+  eventUnitId: string
+  eventType: string
+  secretIds: readonly string[]
+}
+
+/** Executable webhook posture compiled from only the selected graph units. */
+export interface VoyantGraphWebhookPlan {
+  inbound: readonly VoyantGraphInboundWebhookPlanEntry[]
+  outbound: readonly VoyantGraphOutboundWebhookPlanEntry[]
+}
+
 export interface DefineVoyantGraphDeploymentInput {
   schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
@@ -337,6 +363,7 @@ export interface ResolvedVoyantDeploymentGraph {
     required: readonly string[]
   }
   packageRecords: readonly VoyantGraphPackageRecord[]
+  webhookPlan: VoyantGraphWebhookPlan
   provisioning: {
     scheduledJobs: readonly VoyantGraphScheduledJob[]
   }
@@ -589,6 +616,7 @@ export async function resolveDeploymentGraph(
     ...deriveWorkflowScheduledJobs(selectedUnits),
     ...(input.scheduledJobs ?? []),
   ])
+  const webhookPlan = compileWebhookPlan(selectedUnits)
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
@@ -625,6 +653,7 @@ export async function resolveDeploymentGraph(
       required: sortedUnique(selectedUnits.flatMap((unit) => unit.requires.capabilities)),
     },
     packageRecords,
+    webhookPlan,
     provisioning: {
       scheduledJobs,
     },
@@ -1412,8 +1441,32 @@ function validatePromotedFacets(
       )
     } else if (entry.direction === "inbound") {
       requireNonEmptyString(entry.apiId, `${facet}.apiId`, source, diagnostics)
+      if (entry.eventId !== undefined) {
+        invalidFacet(
+          `${facet}.eventId`,
+          source,
+          diagnostics,
+          "Inbound webhooks cannot reference outbound events.",
+        )
+      }
     } else {
       requireNonEmptyString(entry.eventId, `${facet}.eventId`, source, diagnostics)
+      if (entry.apiId !== undefined) {
+        invalidFacet(
+          `${facet}.apiId`,
+          source,
+          diagnostics,
+          "Outbound webhooks cannot reference inbound APIs.",
+        )
+      }
+    }
+    if (entry.secretIds !== undefined && !isStringArray(entry.secretIds)) {
+      invalidFacet(
+        `${facet}.secretIds`,
+        source,
+        diagnostics,
+        "Webhook secretIds must be an array of graph entity ids.",
+      )
     }
   })
   validateEntityArray(input.actions, "actions", source, diagnostics, (entry, facet) => {
@@ -1810,6 +1863,10 @@ function validateFacetReferences(
   units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
 ): VoyantGraphDiagnostic[] {
   const entityIds = new Set(units.flatMap(unitEntityIds))
+  const apiById = new Map(units.flatMap((unit) => unit.api.map((api) => [api.id, api] as const)))
+  const eventById = new Map(
+    units.flatMap((unit) => unit.events.map((event) => [event.id, event] as const)),
+  )
   const scopes = new Set(
     units.flatMap((unit) =>
       (unit.access?.resources ?? []).flatMap((resource) =>
@@ -1895,8 +1952,59 @@ function validateFacetReferences(
       }
     }
     for (const webhook of unit.webhooks ?? []) {
-      if (webhook.apiId) reference(unit.id, `${webhook.id}.apiId`, webhook.apiId)
-      if (webhook.eventId) reference(unit.id, `${webhook.id}.eventId`, webhook.eventId)
+      if (webhook.direction === "inbound" && webhook.apiId) {
+        const api = apiById.get(webhook.apiId)
+        if (!api) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${webhook.id}.apiId`,
+              message: `Inbound webhook API reference "${webhook.apiId}" is not an API bundle in the selected graph.`,
+            }),
+          )
+        } else if (api.surface !== "webhook") {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${webhook.id}.apiId`,
+              message: `Inbound webhook API reference "${webhook.apiId}" must select an API bundle with surface "webhook".`,
+            }),
+          )
+        } else if (!api.runtime) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_FACET",
+              source: unit.id,
+              facet: `${webhook.id}.apiId`,
+              message: `Inbound webhook API reference "${webhook.apiId}" must select an executable API bundle with a runtime reference.`,
+            }),
+          )
+        }
+      }
+      if (webhook.direction === "outbound" && webhook.eventId) {
+        const event = eventById.get(webhook.eventId)
+        if (!event) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${webhook.id}.eventId`,
+              message: `Outbound webhook event reference "${webhook.eventId}" is not an event in the selected graph.`,
+            }),
+          )
+        } else if (!event.eventType?.trim()) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_FACET",
+              source: unit.id,
+              facet: `${webhook.id}.eventId`,
+              message: `Outbound webhook event reference "${webhook.eventId}" must select an event with a concrete eventType.`,
+            }),
+          )
+        }
+      }
       for (const id of webhook.secretIds ?? []) {
         reference(unit.id, `${webhook.id}.secretIds`, id)
       }
@@ -1917,6 +2025,66 @@ function validateFacetReferences(
     }
   }
   return diagnostics
+}
+
+function compileWebhookPlan(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphWebhookPlan {
+  const apiById = new Map(
+    units.flatMap((unit) => unit.api.map((api) => [api.id, { api, unit }] as const)),
+  )
+  const eventById = new Map(
+    units.flatMap((unit) => unit.events.map((event) => [event.id, { event, unit }] as const)),
+  )
+  const inbound: VoyantGraphInboundWebhookPlanEntry[] = []
+  const outbound: VoyantGraphOutboundWebhookPlanEntry[] = []
+
+  for (const unit of units) {
+    for (const webhook of unit.webhooks ?? []) {
+      const secretIds = sortedUnique(webhook.secretIds ?? [])
+      if (webhook.direction === "inbound" && webhook.apiId) {
+        const target = apiById.get(webhook.apiId)
+        if (target?.api.surface === "webhook" && target.api.runtime) {
+          inbound.push({
+            id: webhook.id,
+            unitId: unit.id,
+            packageName: unit.packageName,
+            apiId: webhook.apiId,
+            apiUnitId: target.unit.id,
+            mountPath: webhookRouteMountPath(target.unit, target.api),
+            secretIds,
+          })
+        }
+      }
+      if (webhook.direction === "outbound" && webhook.eventId) {
+        const target = eventById.get(webhook.eventId)
+        if (target?.event.eventType?.trim()) {
+          outbound.push({
+            id: webhook.id,
+            unitId: unit.id,
+            packageName: unit.packageName,
+            eventId: webhook.eventId,
+            eventUnitId: target.unit.id,
+            eventType: target.event.eventType,
+            secretIds,
+          })
+        }
+      }
+    }
+  }
+
+  const byIdentity = <T extends { id: string; unitId: string }>(left: T, right: T) =>
+    left.id.localeCompare(right.id) || left.unitId.localeCompare(right.unitId)
+  return { inbound: inbound.sort(byIdentity), outbound: outbound.sort(byIdentity) }
+}
+
+function webhookRouteMountPath(
+  unit: ResolvedVoyantGraphUnit,
+  route: VoyantGraphRouteBundle,
+): string {
+  if (route.mount?.startsWith("/")) return route.mount
+  const segment = route.mount ?? unit.localId ?? unit.id.split("#").at(-1) ?? unit.id
+  return `/v1/${segment.replace(/^\/+|\/+$/g, "")}`
 }
 
 function validateCapabilityClosure(

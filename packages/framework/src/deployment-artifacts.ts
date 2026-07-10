@@ -32,6 +32,7 @@ export {
   type VoyantGraphRuntimeToolLoader,
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
+  type VoyantGraphRuntimeWebhookPlan,
 } from "./runtime-lowering.js"
 export {
   type ResolvedVoyantGraphRuntimeConfig,
@@ -68,6 +69,7 @@ export interface VoyantDeploymentArtifactManifest {
   schemaVersion: typeof VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION
   graphHash: string
   graph: string
+  webhookPlan: ResolvedVoyantDeploymentGraph["webhookPlan"]
   runtimeEntries: readonly VoyantDeploymentRuntimeEntryArtifact[]
   migrationSources: readonly VoyantDeploymentMigrationSourceArtifact[]
 }
@@ -146,6 +148,10 @@ export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = ${formatConstArray(
 export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${formatConstArray(
     plugins.map((unit) => unit.id),
   )}
+export const GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN = ${formatGeneratedValue(
+    input.graph.webhookPlan,
+    0,
+  )} as const
 
 const GENERATED_GRAPH_RUNTIME_IMPORTERS = ${formatRuntimeImporters(entries)}
 
@@ -155,6 +161,7 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
     entries: GENERATED_GRAPH_RUNTIME_IMPORTERS,
     modules: ${formatGeneratedValue(modules, 4)},
     plugins: ${formatGeneratedValue(plugins, 4)},
+    webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN,
   })
 }
 `
@@ -209,6 +216,7 @@ export function buildDeploymentArtifactManifest(
     schemaVersion: VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
     graphHash: input.graph.contentHash,
     graph: input.graphArtifactPath,
+    webhookPlan: input.graph.webhookPlan,
     runtimeEntries: [...input.runtimeEntries].sort((left, right) =>
       left.id.localeCompare(right.id),
     ),

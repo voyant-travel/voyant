@@ -12,6 +12,12 @@ import type {
 } from "@voyant-travel/core/project"
 import type { ToolRegistry } from "@voyant-travel/tools"
 
+import type {
+  VoyantGraphInboundWebhookPlanEntry,
+  VoyantGraphOutboundWebhookPlanEntry,
+  VoyantGraphWebhookPlan,
+} from "./deployment-graph.js"
+
 export type VoyantGraphRuntimeReferenceFacet =
   | "api"
   | "config.validator"
@@ -194,6 +200,13 @@ export interface VoyantGraphRuntimeUnitLoader
   load: () => Promise<readonly unknown[]>
 }
 
+export interface VoyantGraphRuntimeWebhookPlan extends VoyantGraphWebhookPlan {
+  inboundApiIds: readonly string[]
+  outboundEventTypes: readonly string[]
+  isInboundApi: (apiId: string) => boolean
+  isOutboundEventEligible: (eventType: string) => boolean
+}
+
 export interface VoyantGraphRuntime {
   graphHash: string
   modules: readonly VoyantGraphRuntimeUnitLoader[]
@@ -207,6 +220,7 @@ export interface VoyantGraphRuntime {
   tools: readonly VoyantGraphRuntimeToolLoader[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
+  webhooks: VoyantGraphRuntimeWebhookPlan
   loadReference: <T = unknown>(referenceId: string) => Promise<T>
 }
 
@@ -215,6 +229,7 @@ export interface CreateVoyantGraphRuntimeInput {
   entries: Readonly<Record<string, () => Promise<unknown>>>
   modules: readonly VoyantGraphRuntimeUnitDefinition[]
   plugins: readonly VoyantGraphRuntimeUnitDefinition[]
+  webhookPlan?: VoyantGraphWebhookPlan
 }
 
 /**
@@ -248,6 +263,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const actions = [...modules, ...plugins].flatMap((unit) => unit.actions)
   const selectedIds = mergeSelectedIds([...modules, ...plugins].map((unit) => unit.selectedIds))
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
+  const webhooks = createRuntimeWebhookPlan(definitions.webhookPlan)
 
   return {
     graphHash: input.graphHash,
@@ -262,6 +278,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     tools,
     actions,
     selectedIds,
+    webhooks,
     loadReference: async <T = unknown>(referenceId: string): Promise<T> => {
       const reference = referenceById.get(referenceId)
       if (!reference) {
@@ -302,9 +319,10 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
 }
 
 interface NormalizedVoyantGraphRuntimeInput
-  extends Omit<CreateVoyantGraphRuntimeInput, "modules" | "plugins"> {
+  extends Omit<CreateVoyantGraphRuntimeInput, "modules" | "plugins" | "webhookPlan"> {
   modules: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   plugins: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
+  webhookPlan: VoyantGraphWebhookPlan
 }
 
 function normalizeRuntimeDefinition(
@@ -312,6 +330,7 @@ function normalizeRuntimeDefinition(
 ): NormalizedVoyantGraphRuntimeInput {
   return {
     ...input,
+    webhookPlan: normalizeWebhookPlan(input.webhookPlan),
     modules: input.modules.map(normalizeRuntimeUnitDefinition),
     plugins: input.plugins.map(normalizeRuntimeUnitDefinition),
   }
@@ -660,7 +679,82 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
       }
     }
   }
+  validateRuntimeWebhookPlan(input)
   return [...usedEntries].sort((left, right) => left.localeCompare(right))
+}
+
+function normalizeWebhookPlan(plan: VoyantGraphWebhookPlan | undefined): VoyantGraphWebhookPlan {
+  const byIdentity = <T extends { id: string; unitId: string }>(left: T, right: T) =>
+    left.id.localeCompare(right.id) || left.unitId.localeCompare(right.unitId)
+  return {
+    inbound: [...(plan?.inbound ?? [])]
+      .map((entry) => ({ ...entry, secretIds: sortedUnique(entry.secretIds) }))
+      .sort(byIdentity),
+    outbound: [...(plan?.outbound ?? [])]
+      .map((entry) => ({ ...entry, secretIds: sortedUnique(entry.secretIds) }))
+      .sort(byIdentity),
+  }
+}
+
+function validateRuntimeWebhookPlan(input: NormalizedVoyantGraphRuntimeInput): void {
+  const units = [...input.modules, ...input.plugins]
+  const unitById = new Map(units.map((unit) => [unit.id, unit]))
+  const routeById = new Map(
+    units.flatMap((unit) => unit.routes.map((route) => [route.route.id, { route, unit }] as const)),
+  )
+  const webhookIds = new Set<string>()
+
+  const validateOwner = (
+    entry: VoyantGraphInboundWebhookPlanEntry | VoyantGraphOutboundWebhookPlanEntry,
+  ) => {
+    const owner = unitById.get(entry.unitId)
+    if (!owner || owner.packageName !== entry.packageName) {
+      throw new Error(
+        `createVoyantGraphRuntime: webhook "${entry.id}" owner "${entry.unitId}" is not present with package "${entry.packageName}".`,
+      )
+    }
+    if (webhookIds.has(entry.id)) {
+      throw new Error(`createVoyantGraphRuntime: duplicate webhook plan id "${entry.id}".`)
+    }
+    webhookIds.add(entry.id)
+  }
+
+  for (const entry of input.webhookPlan.inbound) {
+    validateOwner(entry)
+    const target = routeById.get(entry.apiId)
+    if (
+      !target ||
+      target.unit.id !== entry.apiUnitId ||
+      target.route.route.surface !== "webhook" ||
+      !target.route.route.runtime
+    ) {
+      throw new Error(
+        `createVoyantGraphRuntime: inbound webhook "${entry.id}" selects invalid webhook API "${entry.apiId}".`,
+      )
+    }
+  }
+  for (const entry of input.webhookPlan.outbound) {
+    validateOwner(entry)
+    if (!unitById.has(entry.eventUnitId) || !entry.eventType.trim()) {
+      throw new Error(
+        `createVoyantGraphRuntime: outbound webhook "${entry.id}" selects an invalid event target.`,
+      )
+    }
+  }
+}
+
+function createRuntimeWebhookPlan(plan: VoyantGraphWebhookPlan): VoyantGraphRuntimeWebhookPlan {
+  const inboundApiIds = sortedUnique(plan.inbound.map((entry) => entry.apiId))
+  const outboundEventTypes = sortedUnique(plan.outbound.map((entry) => entry.eventType))
+  const inbound = new Set(inboundApiIds)
+  const outbound = new Set(outboundEventTypes)
+  return {
+    ...plan,
+    inboundApiIds,
+    outboundEventTypes,
+    isInboundApi: (apiId) => inbound.has(apiId),
+    isOutboundEventEligible: (eventType) => outbound.has(eventType),
+  }
 }
 
 type RegisteredTool = Parameters<ToolRegistry["register"]>[0]

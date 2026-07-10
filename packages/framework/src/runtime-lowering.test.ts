@@ -49,6 +49,62 @@ function runtimeInput(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime lowering", () => {
+  it("exposes only selected outbound webhook event types as delivery-eligible", () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:webhooks",
+      entries: { "@acme/hooks": async () => ({ createHooksModule: () => ({}) }) },
+      modules: [
+        {
+          id: "@acme/hooks",
+          kind: "module",
+          packageName: "@acme/hooks",
+          order: 0,
+          routes: [
+            {
+              route: {
+                id: "@acme/hooks#api.inbound",
+                surface: "webhook",
+                runtime: { entry: "@acme/hooks", export: "createHooksModule" },
+              },
+              importEntry: "@acme/hooks",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+      webhookPlan: {
+        inbound: [
+          {
+            id: "@acme/hooks#webhook.inbound",
+            unitId: "@acme/hooks",
+            packageName: "@acme/hooks",
+            apiId: "@acme/hooks#api.inbound",
+            apiUnitId: "@acme/hooks",
+            mountPath: "/v1/hooks",
+            secretIds: [],
+          },
+        ],
+        outbound: [
+          {
+            id: "@acme/hooks#webhook.changed",
+            unitId: "@acme/hooks",
+            packageName: "@acme/hooks",
+            eventId: "@acme/hooks#event.changed",
+            eventUnitId: "@acme/hooks",
+            eventType: "hooks.changed",
+            secretIds: [],
+          },
+        ],
+      },
+    })
+
+    expect(runtime.webhooks.inboundApiIds).toEqual(["@acme/hooks#api.inbound"])
+    expect(runtime.webhooks.isInboundApi("@acme/hooks#api.inbound")).toBe(true)
+    expect(runtime.webhooks.outboundEventTypes).toEqual(["hooks.changed"])
+    expect(runtime.webhooks.isOutboundEventEligible("hooks.changed")).toBe(true)
+    expect(runtime.webhooks.isOutboundEventEligible("hooks.deleted")).toBe(false)
+  })
+
   it("keeps package imports lazy and memoized across route and unit loaders", async () => {
     const factory = () => ({ module: { name: "loyalty" } })
     const importRuntime = vi.fn(async () => ({ createLoyaltyModule: factory }))

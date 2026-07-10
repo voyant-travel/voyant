@@ -34,6 +34,58 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime composition", () => {
+  it("requires selected inbound webhook APIs to execute through webhookRoutes", async () => {
+    const createRuntime = (webhookRoutes: unknown) =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:webhook-posture",
+        entries: {
+          "@acme/hooks": async () => ({
+            createHooksModule: () => ({ module: { name: "hooks" }, webhookRoutes }),
+          }),
+        },
+        modules: [
+          {
+            id: "@acme/hooks",
+            kind: "module",
+            packageName: "@acme/hooks",
+            order: 0,
+            routes: [
+              {
+                route: {
+                  id: "@acme/hooks#api.inbound",
+                  surface: "webhook",
+                  runtime: { entry: "@acme/hooks", export: "createHooksModule" },
+                },
+                importEntry: "@acme/hooks",
+              },
+            ],
+          },
+        ],
+        plugins: [],
+        webhookPlan: {
+          inbound: [
+            {
+              id: "@acme/hooks#webhook.inbound",
+              unitId: "@acme/hooks",
+              packageName: "@acme/hooks",
+              apiId: "@acme/hooks#api.inbound",
+              apiUnitId: "@acme/hooks",
+              mountPath: "/v1/hooks",
+              secretIds: [],
+            },
+          ],
+          outbound: [],
+        },
+      })
+
+    await expect(
+      composeVoyantGraphRuntime({ runtime: createRuntime({}), capabilities: {} }),
+    ).resolves.toMatchObject({ modules: [{ module: { name: "hooks" } }] })
+    await expect(
+      composeVoyantGraphRuntime({ runtime: createRuntime(undefined), capabilities: {} }),
+    ).rejects.toThrow(/inbound webhook plan.*no webhookRoutes/)
+  })
+
   it("registers graph-selected workflow and subscriber runtime exports", async () => {
     const workflow = {
       id: "promotions.reindex-all-products",

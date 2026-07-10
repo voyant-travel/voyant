@@ -82,7 +82,30 @@ describe("deployment graph artifacts", () => {
     expect(JSON.parse(first)).toMatchObject({
       schemaVersion: "voyant.resolved-graph.v1",
       contentHash: graph.contentHash,
+      webhookPlan: { inbound: [], outbound: [] },
     })
+  })
+
+  it("lowers the selected webhook plan into generated runtime source", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/hooks",
+        events: [{ id: "@acme/hooks#event.changed", eventType: "hooks.changed" }],
+        webhooks: [
+          {
+            id: "@acme/hooks#webhook.changed",
+            direction: "outbound",
+            eventId: "@acme/hooks#event.changed",
+          },
+        ],
+      }),
+    ])
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain("GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
+    expect(source).toContain('"eventType": "hooks.changed"')
+    expect(source).toContain("webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
   })
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {
@@ -109,6 +132,7 @@ describe("deployment graph artifacts", () => {
       schemaVersion: VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
       graphHash: graph.contentHash,
       graph: "deployment-graph.generated.json",
+      webhookPlan: { inbound: [], outbound: [] },
       runtimeEntries: [
         {
           id: VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
@@ -178,7 +202,7 @@ describe("deployment graph artifacts", () => {
         api: [
           {
             id: "loyalty.api",
-            surface: "public",
+            surface: "webhook",
             runtime: { entry: "./runtime", export: "createRoutes" },
           },
         ],

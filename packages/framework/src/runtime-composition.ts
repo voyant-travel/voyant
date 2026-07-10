@@ -65,6 +65,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
 
   for (const unit of input.runtime.modules) {
     const outputs = await resolveRuntimeUnit(input, unit)
+    assertWebhookRoutePosture(input.runtime, unit, outputs)
     for (const output of outputs) {
       if (!isHonoModule(output)) {
         throw invalidRuntimeOutput(unit, "HonoModule", output)
@@ -75,6 +76,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
 
   for (const unit of input.runtime.plugins) {
     const outputs = await resolveRuntimeUnit(input, unit)
+    assertWebhookRoutePosture(input.runtime, unit, outputs)
     for (const output of outputs) {
       if (!isHonoExtension(output)) {
         throw invalidRuntimeOutput(unit, "HonoExtension", output)
@@ -86,6 +88,24 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   modules.push(...(await composeVoyantGraphRuntimeFacetModules(input.runtime)))
 
   return { modules, extensions }
+}
+
+function assertWebhookRoutePosture(
+  runtime: VoyantGraphRuntime,
+  unit: VoyantGraphRuntimeUnitLoader,
+  outputs: readonly unknown[],
+): void {
+  const declared = runtime.webhooks.inbound.some((entry) => entry.apiUnitId === unit.id)
+  const executable = outputs.some(
+    (output) => isRecord(output) && output.webhookRoutes !== undefined,
+  )
+  if (declared === executable) return
+
+  throw new Error(
+    declared
+      ? `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" declares an inbound webhook plan but its runtime output has no webhookRoutes.`
+      : `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" returned webhookRoutes without an inbound webhook declaration in the selected graph.`,
+  )
 }
 
 async function resolveRuntimeFacetModule(
