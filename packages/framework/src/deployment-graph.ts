@@ -66,7 +66,11 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
     "A provides/requires capability token does not match v1 namespace rules.",
   VOYANT_GRAPH_INVALID_ENTITY_ID: "A v1 facet entity is missing a stable id or uses an invalid id.",
   VOYANT_GRAPH_INVALID_ID: "A graph unit id is missing or is not a canonical package graph id.",
+  VOYANT_GRAPH_INVALID_ROUTE_BUNDLE:
+    "An API route bundle declaration does not match the v1 route metadata contract.",
   VOYANT_GRAPH_INVALID_SCHEMA_VERSION: "A graph declaration uses an unsupported schema version.",
+  VOYANT_GRAPH_INVALID_SCOPE:
+    "An API route bundle required scope does not match v1 resource:action syntax.",
   VOYANT_GRAPH_MISSING_CAPABILITY:
     "A selected graph unit requires a capability that no selected graph unit provides.",
   VOYANT_GRAPH_PACKAGE_INCOMPATIBLE:
@@ -368,6 +372,9 @@ const RESERVED_GRAPH_UNIT_KEYS = new Set<string>(VOYANT_GRAPH_RESERVED_FACETS)
 const CAPABILITY_TOKEN_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/
 const GRAPH_ID_PATTERN =
   /^(?:@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*|[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*)(?:#[a-zA-Z0-9][a-zA-Z0-9._-]*)?$/
+const ROUTE_RESOURCE_PATTERN = /^[a-z][a-z0-9-]*(?:[.-][a-z][a-z0-9-]*)*$/
+const ROUTE_SCOPE_PATTERN =
+  /^[a-z][a-z0-9-]*(?:[.-][a-z][a-z0-9-]*)*:[a-z][a-z0-9-]*(?:-[a-z][a-z0-9-]*)*$/
 const STANDARD_CAPABILITY_PREFIXES = new Set([
   "action-ledger",
   "booking",
@@ -514,7 +521,7 @@ export function validateGraphUnitManifest(
   diagnostics.push(
     ...validateCapabilityDeclaration(input.requires, "requires", source, packageName),
   )
-  diagnostics.push(...validateFacetEntities(input.api, "api", source))
+  diagnostics.push(...validateRouteBundles(input.api, source))
   diagnostics.push(...validateFacetEntities(input.schema, "schema", source))
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
   diagnostics.push(...validateFacetEntities(input.links, "links", source))
@@ -1126,6 +1133,109 @@ function validateFacetEntities(
   }
 
   return value.flatMap((entry, index) => validateEntityId(entry, `${facet}[${index}]`, source))
+}
+
+function validateRouteBundles(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
+  const diagnostics = validateFacetEntities(value, "api", source)
+  if (value == null || !Array.isArray(value)) return diagnostics
+
+  for (let index = 0; index < value.length; index += 1) {
+    const route = value[index]
+    const facet = `api[${index}]`
+    if (!isRecord(route)) continue
+
+    if (!isRouteSurface(route.surface)) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          source,
+          facet: `${facet}.surface`,
+          message: `Route bundle "${route.id ?? index}" must declare surface as admin, public, webhook, or internal.`,
+        }),
+      )
+    }
+
+    if (
+      route.mount !== undefined &&
+      (typeof route.mount !== "string" || route.mount.length === 0)
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          source,
+          facet: `${facet}.mount`,
+          message: `Route bundle "${route.id ?? index}" mount must be a non-empty string when present.`,
+        }),
+      )
+    }
+
+    if (
+      route.resource !== undefined &&
+      (typeof route.resource !== "string" || !ROUTE_RESOURCE_PATTERN.test(route.resource))
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          source,
+          facet: `${facet}.resource`,
+          message: `Route bundle "${route.id ?? index}" resource must use dot/hyphen namespace syntax.`,
+        }),
+      )
+    }
+
+    if (route.requiredScopes !== undefined) {
+      if (!Array.isArray(route.requiredScopes)) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+            source,
+            facet: `${facet}.requiredScopes`,
+            message: `Route bundle "${route.id ?? index}" requiredScopes must be an array of resource:action strings.`,
+          }),
+        )
+      } else {
+        for (let scopeIndex = 0; scopeIndex < route.requiredScopes.length; scopeIndex += 1) {
+          const scope = route.requiredScopes[scopeIndex]
+          if (typeof scope === "string" && ROUTE_SCOPE_PATTERN.test(scope)) continue
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_SCOPE",
+              source,
+              facet: `${facet}.requiredScopes[${scopeIndex}]`,
+              message: `Route bundle "${route.id ?? index}" required scope "${String(
+                scope,
+              )}" must use resource:action syntax.`,
+            }),
+          )
+        }
+      }
+    }
+
+    if (
+      route.anonymous !== undefined &&
+      typeof route.anonymous !== "boolean" &&
+      !isStringArray(route.anonymous)
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          source,
+          facet: `${facet}.anonymous`,
+          message: `Route bundle "${route.id ?? index}" anonymous metadata must be a boolean or string array.`,
+        }),
+      )
+    }
+  }
+
+  return diagnostics
+}
+
+function isRouteSurface(value: unknown): value is VoyantGraphRouteSurface {
+  return value === "admin" || value === "public" || value === "webhook" || value === "internal"
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string")
 }
 
 function validateWorkflows(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
