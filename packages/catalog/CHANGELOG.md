@@ -1,5 +1,35 @@
 # @voyant-travel/catalog
 
+## 0.149.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for catalog, commerce, and inventory
+  runtime, persistence, orchestration, and extension surfaces.
+- e3dc5a9: Declare the existing customer and commerce admin routes, navigation, slots, copy, and widget contributions in their package-owned Voyant manifests.
+- a370024: Publish package-owned deployment declarations and runtime descriptors for the
+  catalog booking engine, catalog offers, catalog checkout, booking maintenance,
+  and action-ledger health surfaces.
+- e3dc5a9: Move existing customer and commerce package surfaces into package-owned Voyant manifests, including Node application events, tools, access resources, action metadata, setup migrations, outbound webhooks, and retain-data lifecycle declarations.
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/hono@0.122.4
+
 ## 0.148.0
 
 ### Patch Changes

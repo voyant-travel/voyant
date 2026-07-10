@@ -1,5 +1,38 @@
 # @voyant-travel/flights
 
+## 0.151.0
+
+### Minor Changes
+
+- e3dc5a9: Declare package-owned admin route and copy facets for vertical modules with existing public admin extensions.
+- a370024: Publish package-owned deployment manifests for the travel modules.
+- e3dc5a9: Declare package-owned Node deployment facets for product events, subscribers, workflows, access resources, tools, actions, and retain-data lifecycle behavior.
+
+### Patch Changes
+
+- a370024: Correct package-owned API mounts and runtime references for distribution, MICE,
+  workflow runs, and flights deployment manifests.
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/catalog@0.149.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/hono@0.122.4
+
 ## 0.150.0
 
 ### Patch Changes

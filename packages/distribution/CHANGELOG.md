@@ -1,5 +1,47 @@
 # @voyant-travel/distribution
 
+## 0.141.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for booking requirements and the
+  bookings, distribution, MICE, and quotes extension surfaces.
+- e3dc5a9: Register graph-selected outbound webhook events in Node runtimes and enqueue enabled subscriptions as redacted, idempotent pending delivery records without claiming HTTP delivery or retry support.
+- e3dc5a9: Declare package-owned admin route and copy facets for vertical modules with existing public admin extensions.
+- e3dc5a9: Declare package-owned Node deployment facets for product events, subscribers, workflows, access resources, tools, actions, and retain-data lifecycle behavior.
+
+### Patch Changes
+
+- a370024: Correct package-owned API mounts and runtime references for distribution, MICE,
+  workflow runs, and flights deployment manifests.
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/catalog@0.149.0
+  - @voyant-travel/bookings@0.151.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/identity@0.151.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+  - @voyant-travel/workflows@0.112.0
+
 ## 0.140.0
 
 ### Patch Changes

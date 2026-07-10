@@ -1,5 +1,50 @@
 # @voyant-travel/inventory
 
+## 0.8.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for catalog, commerce, and inventory
+  runtime, persistence, orchestration, and extension surfaces.
+- a370024: Publish package-owned deployment declarations and configurable runtime factories for vertical
+  content, brochure, booking-extension, base API, and scheduled workflow surfaces.
+- e3dc5a9: Declare package-owned admin route and copy facets for vertical modules with existing public admin extensions.
+- e3dc5a9: Declare package-owned Node deployment facets for product events, subscribers, workflows, access resources, tools, actions, and retain-data lifecycle behavior.
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/catalog@0.149.0
+  - @voyant-travel/commerce@0.33.0
+  - @voyant-travel/action-ledger@0.106.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/operations@0.6.0
+  - @voyant-travel/storage@0.107.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+  - @voyant-travel/workflows@0.112.0
+
 ## 0.7.11
 
 ### Patch Changes

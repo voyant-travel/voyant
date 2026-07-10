@@ -1,5 +1,15 @@
 # flights-demo-api
 
+## 0.19.48
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/flights@0.151.0
+
 ## 0.19.47
 
 ### Patch Changes

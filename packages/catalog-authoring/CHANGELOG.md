@@ -1,5 +1,30 @@
 # @voyant-travel/catalog-authoring
 
+## 0.107.0
+
+### Minor Changes
+
+- e3dc5a9: Move existing customer and commerce package surfaces into package-owned Voyant manifests, including Node application events, tools, access resources, action metadata, setup migrations, outbound webhooks, and retain-data lifecycle declarations.
+
+### Patch Changes
+
+- a370024: Publish import-cheap package-owned Voyant deployment manifests for infrastructure and trips graph units.
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/inventory@0.8.0
+
 ## 0.106.30
 
 ### Patch Changes

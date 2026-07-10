@@ -1,5 +1,32 @@
 # @voyant-travel/identity
 
+## 0.151.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for identity, relationships, finance,
+  and operations graph surfaces.
+- e3dc5a9: Move existing customer and commerce package surfaces into package-owned Voyant manifests, including Node application events, tools, access resources, action metadata, setup migrations, outbound webhooks, and retain-data lifecycle declarations.
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+
 ## 0.150.0
 
 ### Patch Changes

@@ -1,5 +1,26 @@
 # @voyant-travel/db
 
+## 0.111.0
+
+### Minor Changes
+
+- e3dc5a9: Add explicit deployment provider selection and lazy, redacted graph provider resolution, with the Node Postgres database provider as the first end-to-end declaration and factory.
+- e3dc5a9: Declare package-owned Node application resources, providers, configuration, secrets, events, subscribers, access, and retain-data lifecycle metadata in deployment manifests.
+
+### Patch Changes
+
+- a370024: Publish import-cheap package-owned Voyant deployment manifests for infrastructure and trips graph units.
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+
 ## 0.110.2
 
 ### Patch Changes

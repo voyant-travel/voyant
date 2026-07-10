@@ -1,5 +1,36 @@
 # @voyant-travel/action-ledger
 
+## 0.106.0
+
+### Minor Changes
+
+- e3dc5a9: Emit deterministic graph action metadata and selected binding ids in generated runtimes, expose validated lowering into the action-ledger capability registry, and instantiate that registry in managed and operator runtimes.
+- e3dc5a9: Declare package-owned admin route and copy facets for vertical modules with existing public admin extensions.
+- a370024: Publish package-owned deployment declarations and runtime descriptors for the
+  catalog booking engine, catalog offers, catalog checkout, booking maintenance,
+  and action-ledger health surfaces.
+- a370024: Publish package-owned deployment manifests for action ledger, notifications,
+  operator settings, and realtime.
+- e3dc5a9: Move existing customer and commerce package surfaces into package-owned Voyant manifests, including Node application events, tools, access resources, action metadata, setup migrations, outbound webhooks, and retain-data lifecycle declarations.
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/hono@0.122.4
+
 ## 0.105.15
 
 ### Patch Changes

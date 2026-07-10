@@ -1,5 +1,13 @@
 # @voyant-travel/worker-runtime
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/storage@0.107.0
+
 ## 0.5.0
 
 ### Minor Changes

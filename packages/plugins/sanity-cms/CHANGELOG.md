@@ -1,5 +1,25 @@
 # @voyant-travel/plugin-sanity-cms
 
+## 0.105.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for legal, storefront, and first-party edge plugins.
+- e3dc5a9: Declare package-owned Node application resources, providers, configuration, secrets, events, subscribers, access, and retain-data lifecycle metadata in deployment manifests.
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+
 ## 0.104.13
 
 ### Patch Changes

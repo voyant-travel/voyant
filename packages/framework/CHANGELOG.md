@@ -1,5 +1,104 @@
 # @voyant-travel/framework
 
+## 0.35.0
+
+### Minor Changes
+
+- a370024: Lower selected deployment graph API runtime references into deterministic lazy package module and plugin loaders for generated runtime artifacts.
+- a370024: Replace synthetic standard operator ownership keys with canonical package modules and extensions.
+
+  Keep provider-wired runtime compatibility factories while deployment graphs select package-owned
+  catalog, content, storage, storefront, legal, workflow, and vertical units directly.
+
+- a370024: Accept package, package-subpath, and local-path project selections, retain
+  serializable selection config and provenance, and replace admitted selections
+  with package-owned `./voyant` manifests.
+- e3dc5a9: Generate executable Node schema and setup migration plans with idempotency ledgers, and run the finance voucher backfill through its package-owned setup migration reference.
+- e3dc5a9: Add the import-cheap project deployment authoring contract and framework-owned
+  project resolver with deterministic target-neutral graph, runtime, and migration
+  artifacts for CLI lifecycle commands.
+- e3dc5a9: Lower every admitted package-owned runtime reference into the generated Node
+  runtime and expose lazy typed loading by stable graph reference ID.
+- e3dc5a9: Emit deterministic graph action metadata and selected binding ids in generated runtimes, expose validated lowering into the action-ledger capability registry, and instantiate that registry in managed and operator runtimes.
+- e3dc5a9: Expose graph-selected tools and access scopes through the generated Node runtime, validate tool scope and export metadata before registration, and use the same graph-derived registry in self-hosted and managed MCP transports.
+- e3dc5a9: Register graph-selected outbound webhook events in Node runtimes and enqueue enabled subscriptions as redacted, idempotent pending delivery records without claiming HTTP delivery or retry support.
+- e3dc5a9: Load package-owned workflow and subscriber runtime references from the selected Node deployment graph, and move the commerce promotion reindex workflow and event filter out of framework-owned catalogs.
+- a370024: Add an ID-bound graph runtime composition adapter for generated package loaders and deployment-local runtime overrides.
+- a370024: Add the dependency-light package-owned deployment manifest authoring interface,
+  publish the bookings manifest through `./voyant`, and let framework graph
+  resolution consume the same contract.
+- e3dc5a9: Promote package-owned config, secrets, resources, providers, access, admin, tools, webhooks, actions, setup migrations, and lifecycle metadata into the deployment graph contract.
+- e3dc5a9: Add explicit deployment provider selection and lazy, redacted graph provider resolution, with the Node Postgres database provider as the first end-to-end declaration and factory.
+- e3dc5a9: Derive the bookings graph action manifest and canonical action-ledger registry
+  from one package-owned declaration source, preserving persisted capability
+  identity, established graph action names, and policy metadata with an end-to-end
+  parity test.
+- e3dc5a9: Carry graph config, secret, resource, and provider declarations into generated
+  Node runtimes, resolve and validate project/deployment values before managed
+  boot, and expose redacted secret accessors plus lazy admitted provider loaders.
+- e3dc5a9: Compile selected graph webhook declarations into generated deployment/runtime plans, validate typed inbound API and outbound event references, enforce inbound route posture, and expose outbound webhook event eligibility at runtime.
+
+### Patch Changes
+
+- e3dc5a9: Admit and validate the complete Node runtime-reference package closure before generating project importers.
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/catalog@0.149.0
+  - @voyant-travel/commerce@0.33.0
+  - @voyant-travel/inventory@0.8.0
+  - @voyant-travel/legal@0.151.0
+  - @voyant-travel/storefront@0.153.0
+  - @voyant-travel/finance@0.151.0
+  - @voyant-travel/bookings@0.151.0
+  - @voyant-travel/distribution@0.141.0
+  - @voyant-travel/mice@0.7.0
+  - @voyant-travel/quotes@0.126.0
+  - @voyant-travel/action-ledger@0.106.0
+  - @voyant-travel/flights@0.151.0
+  - @voyant-travel/accommodations@0.112.0
+  - @voyant-travel/cruises@0.150.0
+  - @voyant-travel/notifications@0.123.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/trips@0.142.0
+  - @voyant-travel/relationships@0.123.0
+  - @voyant-travel/operations@0.6.0
+  - @voyant-travel/identity@0.151.0
+  - @voyant-travel/operator-settings@0.3.0
+  - @voyant-travel/storage@0.107.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/auth@0.124.1
+  - @voyant-travel/types@0.107.2
+  - @voyant-travel/runtime@0.5.1
+  - @voyant-travel/workflows@0.112.0
+  - @voyant-travel/workflows-orchestrator@0.112.0
+
 ## 0.34.0
 
 ### Minor Changes

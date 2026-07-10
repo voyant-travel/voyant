@@ -1,5 +1,37 @@
 # @voyant-travel/crm
 
+## 0.126.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for booking requirements and the
+  bookings, distribution, MICE, and quotes extension surfaces.
+- e3dc5a9: Declare package-owned admin route and copy facets for vertical modules with existing public admin extensions.
+- e3dc5a9: Declare package-owned Node deployment facets for product events, subscribers, workflows, access resources, tools, actions, and retain-data lifecycle behavior.
+
+### Patch Changes
+
+- a370024: Rehome finance, quote, legal, and storefront bridge graph declarations into their owning packages with executable runtime descriptors.
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/trips@0.142.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+
 ## 0.125.9
 
 ### Patch Changes
