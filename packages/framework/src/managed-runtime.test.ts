@@ -2,7 +2,7 @@
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-
+import { listInvoicesTool } from "@voyant-travel/finance/tools"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -15,6 +15,7 @@ import {
   type ManagedProfileRuntimeEnv,
 } from "./managed-runtime.js"
 import { defineVoyantProject, type VoyantProjectProviders } from "./profile.js"
+import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 const localProviders = {
   database: "postgres",
@@ -807,6 +808,68 @@ describe("managed profile runtime entry", () => {
         version: expect.any(String),
         serverInfo: expect.objectContaining({ name: "voyant-mcp" }),
         tools: [],
+      }),
+    )
+  }, 10000)
+
+  it("registers managed MCP tools from the admitted graph runtime", async () => {
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:managed-tools",
+      entries: {
+        "@voyant-travel/finance/tools": async () => ({ listInvoicesTool }),
+      },
+      modules: [
+        {
+          id: "@voyant-travel/finance",
+          kind: "module",
+          packageName: "@voyant-travel/finance",
+          order: 0,
+          accessScopes: ["finance:read"],
+          references: [
+            {
+              id: "finance-list-invoices-runtime",
+              unitId: "@voyant-travel/finance",
+              facet: "tools.runtime",
+              entityId: "@voyant-travel/finance#tool.list-invoices",
+              runtime: {
+                entry: "@voyant-travel/finance/tools",
+                export: "listInvoicesTool",
+              },
+              importEntry: "@voyant-travel/finance/tools",
+            },
+          ],
+          tools: [
+            {
+              id: "@voyant-travel/finance#tool.list-invoices",
+              unitId: "@voyant-travel/finance",
+              name: "list_invoices",
+              referenceId: "finance-list-invoices-runtime",
+              requiredScopes: ["finance:read"],
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+    const app = await createManagedProfileProviders({}, graphRuntime).loadMcpAdminRoutes()
+    const authorized = new Hono<{ Variables: { scopes: string[] } }>()
+    authorized.use("*", async (c, next) => {
+      c.set("scopes", ["finance:read"])
+      await next()
+    })
+    authorized.route("/", app)
+    const response = await authorized.request("/manifest")
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        tools: [
+          expect.objectContaining({
+            name: "list_invoices",
+            requiredScopes: ["finance:read"],
+          }),
+        ],
       }),
     )
   }, 10000)

@@ -536,7 +536,7 @@ export function validateGraphUnitManifest(
   diagnostics.push(...validateFacetEntities(input.schema, "schema", source))
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
   diagnostics.push(...validateFacetEntities(input.links, "links", source))
-  diagnostics.push(...validateFacetEntities(input.subscribers, "subscribers", source))
+  diagnostics.push(...validateSubscribers(input.subscribers, source))
   diagnostics.push(...validateFacetEntities(input.events, "events", source))
   diagnostics.push(...validateWorkflows(input.workflows, source))
   diagnostics.push(...validatePromotedFacets(input, source))
@@ -1371,6 +1371,7 @@ function validatePromotedFacets(
     diagnostics,
     (entry, facet) => {
       requireNonEmptyString(entry.source, `${facet}.source`, source, diagnostics)
+      validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
     },
   )
   validateEntityArray(input.tools, "tools", source, diagnostics, (entry, facet) => {
@@ -1704,7 +1705,16 @@ function validateWorkflows(value: unknown, source: string | undefined): VoyantGr
   if (!Array.isArray(value)) return diagnostics
   for (let workflowIndex = 0; workflowIndex < value.length; workflowIndex++) {
     const workflow = value[workflowIndex]
-    if (!isRecord(workflow) || !Array.isArray(workflow.schedules)) continue
+    if (!isRecord(workflow)) continue
+    if (workflow.runtime !== undefined) {
+      validateRuntimeReference(
+        workflow.runtime,
+        `workflows[${workflowIndex}].runtime`,
+        source,
+        diagnostics,
+      )
+    }
+    if (!Array.isArray(workflow.schedules)) continue
     for (let scheduleIndex = 0; scheduleIndex < workflow.schedules.length; scheduleIndex++) {
       diagnostics.push(
         ...validateEntityId(
@@ -1714,6 +1724,22 @@ function validateWorkflows(value: unknown, source: string | undefined): VoyantGr
         ),
       )
     }
+  }
+  return diagnostics
+}
+
+function validateSubscribers(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
+  const diagnostics = validateFacetEntities(value, "subscribers", source)
+  if (!Array.isArray(value)) return diagnostics
+  for (let index = 0; index < value.length; index++) {
+    const subscriber = value[index]
+    if (!isRecord(subscriber) || subscriber.runtime === undefined) continue
+    validateRuntimeReference(
+      subscriber.runtime,
+      `subscribers[${index}].runtime`,
+      source,
+      diagnostics,
+    )
   }
   return diagnostics
 }
@@ -2038,6 +2064,12 @@ function validateRuntimeReferenceAdmission(
       add(`admin.contributions.runtime.${contribution.id}.entry`, contribution.runtime)
     }
     for (const tool of unit.tools ?? []) add(`tools.runtime.${tool.id}.entry`, tool.runtime)
+    for (const workflow of unit.workflows) {
+      add(`workflows.runtime.${workflow.id}.entry`, workflow.runtime)
+    }
+    for (const subscriber of unit.subscribers) {
+      add(`subscribers.runtime.${subscriber.id}.entry`, subscriber.runtime)
+    }
 
     for (const { entry, facet } of references) {
       const packageName = entry.startsWith(".") ? unit.packageName : packageNameFromSpecifier(entry)

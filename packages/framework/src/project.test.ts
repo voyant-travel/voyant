@@ -50,28 +50,100 @@ describe("framework project resolver", () => {
     })
     expect(first.graph.deployment).not.toHaveProperty("target")
     expect(first.artifacts.runtimeEntry).toBe("runtime/project-runtime.generated.ts")
+    expect(first.artifacts.migrationRunner).toBe("runtime/project-migrations.generated.mjs")
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
+      "runtime/project-migrations.generated.mjs",
       "runtime/project-runtime.generated.ts",
     ])
-    expect(first.artifacts.files[0]?.contents).toContain(expectedHash)
-    expect(first.artifacts.files[0]?.contents).toContain(
-      'GENERATED_PROJECT_RUNTIME_KIND = "application"',
-    )
-    expect(first.artifacts.files[0]?.contents).toContain('"database": "postgres"')
-    expect(first.artifacts.files[0]?.contents).not.toContain('"target"')
+    const runtimeSource = first.artifacts.files.find(
+      (file) => file.path === first.artifacts.runtimeEntry,
+    )?.contents
+    expect(runtimeSource).toContain(expectedHash)
+    expect(runtimeSource).toContain('GENERATED_PROJECT_RUNTIME_KIND = "application"')
+    expect(runtimeSource).toContain('"database": "postgres"')
+    expect(runtimeSource).not.toContain('"target"')
     expect(first.artifacts.migrationPlan).toEqual({
       schemaVersion: "voyant.migration-plan.v1",
       contentHash: expectedHash,
       migrations: [
         {
           id: "@acme/loyalty#migrations",
+          idempotencyKey: "schema:@acme/loyalty#migrations",
+          migrationKind: "schema",
+          order: 0,
           owner: "@acme/loyalty",
-          kind: "module",
           packageName: "@acme/loyalty",
-          source: "./migrations",
+          source: {
+            kind: "package",
+            packageName: "@acme/loyalty",
+            path: "./migrations",
+          },
         },
       ],
     })
+    const migrationSource = first.artifacts.files.find(
+      (file) => file.path === first.artifacts.migrationRunner,
+    )?.contents
+    expect(migrationSource).toContain(expectedHash)
+    expect(migrationSource).toContain("runVoyantMigrations")
+  })
+
+  it("orders setup migrations after every schema migration and emits admitted static loaders", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@acme/loyalty"),
+        setupMigrations: [
+          {
+            id: "@acme/loyalty#setup.a-finalize.v1",
+            source: "@acme/loyalty/setup",
+            runtime: { entry: "@acme/loyalty/setup", export: "finalizeLoyalty" },
+            dependsOn: ["@acme/loyalty#setup.z-backfill.v1"],
+          },
+          {
+            id: "@acme/loyalty#setup.z-backfill.v1",
+            source: "@acme/loyalty/setup",
+            runtime: { entry: "@acme/loyalty/setup", export: "backfillLoyalty" },
+            dependsOn: ["@acme/loyalty#migrations"],
+          },
+        ],
+      })}\n`,
+      extraExports: { "./setup": "./setup.mjs" },
+    })
+    writeFileSync(
+      path.join(root, "node_modules", "@acme", "loyalty", "setup.mjs"),
+      "export async function backfillLoyalty() {}\nexport async function finalizeLoyalty() {}\n",
+    )
+
+    const resolution = await resolve(root, defineProject({ modules: ["@acme/loyalty"] }))
+
+    expect(resolution.artifacts.migrationPlan.migrations).toEqual([
+      expect.objectContaining({
+        id: "@acme/loyalty#migrations",
+        migrationKind: "schema",
+        order: 0,
+      }),
+      expect.objectContaining({
+        id: "@acme/loyalty#setup.z-backfill.v1",
+        migrationKind: "setup",
+        order: 1,
+        idempotencyKey: "setup:@acme/loyalty#setup.z-backfill.v1",
+        runtime: { entry: "@acme/loyalty/setup", export: "backfillLoyalty" },
+      }),
+      expect.objectContaining({
+        id: "@acme/loyalty#setup.a-finalize.v1",
+        migrationKind: "setup",
+        order: 2,
+        idempotencyKey: "setup:@acme/loyalty#setup.a-finalize.v1",
+        runtime: { entry: "@acme/loyalty/setup", export: "finalizeLoyalty" },
+      }),
+    ])
+    const runner = resolution.artifacts.files.find(
+      (file) => file.path === resolution.artifacts.migrationRunner,
+    )
+    expect(runner?.contents).toContain('"@acme/loyalty#setup.z-backfill.v1": async () => {')
+    expect(runner?.contents).toContain('import("@acme/loyalty/setup")')
   })
 
   it("rejects non-Node application runtime targets", async () => {
@@ -208,7 +280,10 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
         }),
       ]),
     )
-    expect(resolution.artifacts.files[0]?.contents).toContain(
+    const runtimeSource = resolution.artifacts.files.find(
+      (file) => file.path === resolution.artifacts.runtimeEntry,
+    )?.contents
+    expect(runtimeSource).toContain(
       '"@acme/loyalty-react/admin": () => import("@acme/loyalty-react/admin")',
     )
   })
@@ -302,7 +377,9 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     writeFileSync(path.join(localDirectory, "tools.mjs"), "export const listMembers = {}\n")
 
     const resolution = await resolve(root, defineProject({ modules: ["./src/modules/loyalty"] }))
-    const runtimeSource = resolution.artifacts.files[0]?.contents ?? ""
+    const runtimeSource =
+      resolution.artifacts.files.find((file) => file.path === resolution.artifacts.runtimeEntry)
+        ?.contents ?? ""
 
     expect(resolution.graph.modules[0]).toMatchObject({
       id: "@fixture/loyalty",

@@ -118,6 +118,10 @@ export const commerceVoyantModule = defineModule({
       workflowId: "promotions.reindex-all-products",
       filter: promotionAffectedAllFilter,
       source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest",
+      runtime: {
+        entry: "./promotions/workflow-bulk-reindex-manifest",
+        export: "promotionAffectedAllFilter",
+      },
     },
   ],
   workflows: [
@@ -127,6 +131,10 @@ export const commerceVoyantModule = defineModule({
         defaultRuntime: "node",
       },
       source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
+      runtime: {
+        entry: "./promotions/workflow-bulk-reindex",
+        export: "bulkReindexProductsWorkflow",
+      },
     },
   ],
   admin: {

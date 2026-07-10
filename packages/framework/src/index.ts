@@ -84,6 +84,7 @@ export {
 export {
   type ComposeVoyantGraphRuntimeInput,
   composeVoyantGraphRuntime,
+  composeVoyantGraphRuntimeFacetModules,
   type VoyantGraphRuntimeBinding,
   type VoyantGraphRuntimeBindingContext,
   type VoyantGraphRuntimeBindings,
@@ -92,12 +93,15 @@ export {
 export {
   type CreateVoyantGraphRuntimeInput,
   createVoyantGraphRuntime,
+  registerVoyantGraphTools,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,
   type VoyantGraphRuntime,
   VoyantGraphRuntimeLoadError,
   type VoyantGraphRuntimeLoadErrorCode,
   type VoyantGraphRuntimeRouteDefinition,
   type VoyantGraphRuntimeRouteLoader,
+  type VoyantGraphRuntimeToolDefinition,
+  type VoyantGraphRuntimeToolLoader,
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
 } from "./runtime-lowering.js"

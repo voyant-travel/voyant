@@ -27,6 +27,16 @@ describe("finance deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/finance#schema" }],
       migrations: [{ id: "@voyant-travel/finance#migrations" }],
+      setupMigrations: [
+        {
+          id: "@voyant-travel/finance#setup.vouchers-from-payment-instruments.v1",
+          runtime: {
+            entry: "@voyant-travel/finance/setup/vouchers",
+            export: "runVoucherSetupMigration",
+          },
+          dependsOn: ["@voyant-travel/finance#migrations"],
+        },
+      ],
       links: [
         { id: "@voyant-travel/finance#linkable.creditNote" },
         { id: "@voyant-travel/finance#linkable.invoice" },

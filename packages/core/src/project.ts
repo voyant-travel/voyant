@@ -78,11 +78,13 @@ export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
   eventFilterId?: string
   workflowId?: string
   filter?: VoyantGraphJsonObject
+  runtime?: VoyantGraphRuntimeReference
 }
 
 export interface VoyantGraphWorkflow extends VoyantGraphFacetEntity {
   config?: VoyantGraphJsonObject
   schedules?: readonly VoyantGraphWorkflowSchedule[]
+  runtime?: VoyantGraphRuntimeReference
 }
 
 export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {

@@ -34,6 +34,101 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime composition", () => {
+  it("registers graph-selected workflow and subscriber runtime exports", async () => {
+    const workflow = {
+      id: "promotions.reindex-all-products",
+      config: { id: "promotions.reindex-all-products", run: vi.fn() },
+    }
+    const eventFilter = {
+      id: "ef_6f8e4b4ce409d04c",
+      eventType: "promotion.changed",
+      manifest: {
+        id: "ef_6f8e4b4ce409d04c",
+        eventType: "promotion.changed",
+        payloadHash: "6f8e4b4ce409d04c",
+        targetWorkflowId: workflow.id,
+      },
+    }
+    const importWorkflow = vi.fn(async () => ({ workflow }))
+    const importSubscriber = vi.fn(async () => ({ eventFilter }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:commerce",
+      entries: {
+        "@voyant-travel/commerce/promotions/workflow": importWorkflow,
+        "@voyant-travel/commerce/promotions/subscriber": importSubscriber,
+      },
+      modules: [
+        {
+          id: "@voyant-travel/commerce",
+          localId: "commerce",
+          kind: "module",
+          packageName: "@voyant-travel/commerce",
+          order: 0,
+          references: [
+            {
+              id: "commerce-workflow",
+              unitId: "@voyant-travel/commerce",
+              facet: "workflows.runtime",
+              entityId: workflow.id,
+              runtime: {
+                entry: "./promotions/workflow",
+                export: "workflow",
+              },
+              importEntry: "@voyant-travel/commerce/promotions/workflow",
+            },
+            {
+              id: "commerce-subscriber",
+              unitId: "@voyant-travel/commerce",
+              facet: "subscribers.runtime",
+              entityId: eventFilter.id,
+              runtime: {
+                entry: "./promotions/subscriber",
+                export: "eventFilter",
+              },
+              importEntry: "@voyant-travel/commerce/promotions/subscriber",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importWorkflow).not.toHaveBeenCalled()
+    expect(importSubscriber).not.toHaveBeenCalled()
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.modules).toContainEqual({
+      module: {
+        name: "commerce.graph-runtime",
+        workflows: [workflow],
+        eventFilters: [eventFilter],
+      },
+    })
+    expect(importWorkflow).toHaveBeenCalledTimes(1)
+    expect(importSubscriber).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not import or register workflow facets for an unselected package", async () => {
+    const importCommerce = vi.fn(async () => ({
+      bulkReindexProductsWorkflow: { id: "promotions.reindex-all-products" },
+    }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:without-commerce",
+      entries: {
+        "@voyant-travel/commerce/promotions/workflow-bulk-reindex": importCommerce,
+      },
+      modules: [],
+      plugins: [],
+    })
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.modules).toEqual([])
+    expect(importCommerce).not.toHaveBeenCalled()
+  })
+
   it("mounts a package runtime export once when multiple API facets reference it", async () => {
     const factory = vi.fn(() => ({ module: { name: "loyalty" } }))
     const importRuntime = vi.fn(async () => ({ createLoyaltyModule: factory }))

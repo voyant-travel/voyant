@@ -150,8 +150,8 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("startManagedProfileRuntime")
     expect(source).toContain("deployment: resolveGeneratedRuntimeDeployment()")
     expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
-    expect(source).toContain("managed profile boot remains snapshot-manifest based")
-    expect(source).not.toContain("createGeneratedGraphRuntime")
+    expect(source).toContain('from "./graph-runtime.generated.js"')
+    expect(source).toContain("graphRuntime: createGeneratedGraphRuntime()")
     expect(source).not.toContain("starters/")
   })
 
@@ -203,6 +203,15 @@ describe("deployment graph artifacts", () => {
             runtime: { entry: "./runtime", export: "createLedgerProvider" },
           },
         ],
+        access: {
+          resources: [
+            {
+              id: "loyalty.access",
+              resource: "loyalty",
+              actions: ["read", "write"],
+            },
+          ],
+        },
         admin: {
           copy: [
             {
@@ -233,6 +242,20 @@ describe("deployment graph artifacts", () => {
             id: "loyalty.adjust",
             name: "adjust_loyalty",
             runtime: { entry: "./runtime", export: "adjustLoyalty" },
+            requiredScopes: ["loyalty:write"],
+          },
+        ],
+        workflows: [
+          {
+            id: "loyalty.reconcile",
+            runtime: { entry: "./runtime", export: "reconcileWorkflow" },
+          },
+        ],
+        subscribers: [
+          {
+            id: "loyalty.changed",
+            eventType: "loyalty.changed",
+            runtime: { entry: "./runtime", export: "loyaltyChangedFilter" },
           },
         ],
       }),
@@ -249,11 +272,17 @@ describe("deployment graph artifacts", () => {
       "admin.routes.runtime",
       "admin.contributions.runtime",
       "tools.runtime",
+      "workflows.runtime",
+      "subscribers.runtime",
     ]) {
       expect(source).toContain(`"facet": "${facet}"`)
     }
     expect(source.match(/import\("@acme\/voyant-loyalty\/runtime"\)/g)).toHaveLength(1)
     expect(source.match(/import\("@acme\/voyant-loyalty\/admin"\)/g)).toHaveLength(1)
+    expect(source).toContain('"accessScopes": [')
+    expect(source).toContain('"loyalty:write"')
+    expect(source).toContain('"tools": [')
+    expect(source).toContain('"name": "adjust_loyalty"')
   })
 
   it("builds one target-neutral whole-application runtime", async () => {

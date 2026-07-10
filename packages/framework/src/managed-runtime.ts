@@ -21,11 +21,10 @@ import {
   shouldRevealBookingPii,
 } from "@voyant-travel/bookings"
 import { submitBookingReservationPlan } from "@voyant-travel/bookings/reservation-plans"
-import { type BookingsToolServices, bookingsTools } from "@voyant-travel/bookings/tools"
+import type { BookingsToolServices } from "@voyant-travel/bookings/tools"
 import {
   type CatalogSearchRuntime,
   type CatalogToolServices,
-  catalogTools,
   executeSemanticSearch,
 } from "@voyant-travel/catalog"
 import {
@@ -64,7 +63,7 @@ import {
   type ResolveInvoiceExchangeRate,
   readPolicySourceFromInternalNotes,
 } from "@voyant-travel/finance"
-import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/tools"
+import type { FinanceToolServices } from "@voyant-travel/finance/tools"
 import type { FlightConnectorAdapter } from "@voyant-travel/flights"
 import {
   createMemoryRateLimitStore,
@@ -79,7 +78,7 @@ import type { HonoExtension } from "@voyant-travel/hono/module"
 import { productsService } from "@voyant-travel/inventory"
 import { createProductContentRoutes } from "@voyant-travel/inventory/routes-content"
 import { getProductContent } from "@voyant-travel/inventory/service-content"
-import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
+import type { InventoryToolServices } from "@voyant-travel/inventory/tools"
 import {
   type ContractDocumentGeneratorContext,
   createContractDocumentRoutes,
@@ -95,10 +94,7 @@ import {
   type NotificationProvider,
   notificationsService,
 } from "@voyant-travel/notifications"
-import {
-  type NotificationsToolServices,
-  notificationsTools,
-} from "@voyant-travel/notifications/tools"
+import type { NotificationsToolServices } from "@voyant-travel/notifications/tools"
 import { availabilitySlots } from "@voyant-travel/operations"
 import {
   getOperatorPaymentInstructions,
@@ -114,12 +110,9 @@ import {
   type QuoteProposalRoutesOptions,
   quotesService,
 } from "@voyant-travel/quotes"
-import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
+import type { QuotesToolServices } from "@voyant-travel/quotes/tools"
 import { relationshipsService } from "@voyant-travel/relationships"
-import {
-  type RelationshipsToolServices,
-  relationshipsTools,
-} from "@voyant-travel/relationships/tools"
+import type { RelationshipsToolServices } from "@voyant-travel/relationships/tools"
 import {
   type CreateNodeServerOptions,
   composeNodeEnv,
@@ -142,7 +135,6 @@ import {
   type StartCheckoutDeps,
   type TripsToolServices,
   tripsService,
-  tripsTools,
 } from "@voyant-travel/trips"
 import { scopesForRole } from "@voyant-travel/types/member-roles"
 import type { KVStore } from "@voyant-travel/utils/cache"
@@ -173,6 +165,8 @@ import {
   type VoyantProjectProviders,
   validateVoyantProject,
 } from "./profile.js"
+import { composeVoyantGraphRuntimeFacetModules } from "./runtime-composition.js"
+import { registerVoyantGraphTools, type VoyantGraphRuntime } from "./runtime-lowering.js"
 
 export {
   type ResolveManagedCustomSourceOptions,
@@ -256,6 +250,8 @@ export interface ManagedProfileRuntimeOptions {
    * Omit this only for legacy snapshot-only callers.
    */
   deploymentRequirements?: VoyantGraphDeploymentRequirements
+  /** Admitted generated runtime for graph-owned tools and other executable facets. */
+  graphRuntime?: VoyantGraphRuntime
   env?: Record<string, unknown> | ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
   providers?: Partial<FrameworkProviders>
@@ -370,6 +366,12 @@ export async function loadManagedProfileRuntime(
     toPluginEnvRecord(env),
     customSourceOptions,
   )
+  const graphFacetModules = options.graphRuntime
+    ? await composeVoyantGraphRuntimeFacetModules(options.graphRuntime)
+    : []
+  for (const [index, module] of graphFacetModules.entries()) {
+    customModules[`graph-runtime:${index}:${module.module.name}`] = () => module
+  }
   const customExtensions = await resolveManagedCustomExtensions(
     project,
     toPluginEnvRecord(env),
@@ -393,6 +395,7 @@ export async function loadManagedProfileRuntime(
     plugins,
     modules: customModules,
     extensions: customExtensions,
+    graphRuntime: options.graphRuntime,
   })
 
   return {
@@ -467,6 +470,7 @@ export function createManagedProfileApp(options: {
   env?: ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
   providers?: Partial<FrameworkProviders>
+  graphRuntime?: VoyantGraphRuntime
   app?: Partial<
     Omit<
       CreateVoyantAppConfig<ManagedProfileRuntimeEnv, FrameworkProviders>,
@@ -542,12 +546,13 @@ export function createManagedProfileApp(options: {
     basePath: options.app?.basePath ?? "/api",
     auth,
     exclude: bridge.exclude,
-    providers: createManagedProfileProviders(options.providers),
+    providers: createManagedProfileProviders(options.providers, options.graphRuntime),
   })
 }
 
 export function createManagedProfileProviders(
   overrides: Partial<FrameworkProviders> = {},
+  graphRuntime?: VoyantGraphRuntime,
 ): FrameworkProviders {
   let providers: FrameworkProviders
   const defaults: FrameworkProviders = {
@@ -577,7 +582,7 @@ export function createManagedProfileProviders(
     resolveCardPaymentStarter: () => null,
     createChannelPushExtension: createManagedChannelPushExtension,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
-    loadMcpAdminRoutes: createManagedMcpAdminRoutes,
+    loadMcpAdminRoutes: () => createManagedMcpAdminRoutes(graphRuntime),
     loadCatalogBookingRoutes: createManagedCatalogBookingRoutes,
     loadInventoryContentRoutes: createManagedInventoryContentRoutes,
     loadCruisesContentRoutes: createManagedCruisesContentRoutes,
@@ -1490,16 +1495,9 @@ function resolveManagedCatalogRuntime(c: Context): CatalogSearchRuntime {
   }
 }
 
-async function createManagedMcpAdminRoutes(): Promise<Hono> {
+async function createManagedMcpAdminRoutes(graphRuntime?: VoyantGraphRuntime): Promise<Hono> {
   const registry = createToolRegistry()
-  registry.registerAll(catalogTools)
-  registry.registerAll(tripsTools)
-  registry.registerAll(inventoryTools)
-  registry.registerAll(bookingsTools)
-  registry.registerAll(financeTools)
-  registry.registerAll(quotesTools)
-  registry.registerAll(relationshipsTools)
-  registry.registerAll(notificationsTools)
+  if (graphRuntime) await registerVoyantGraphTools(graphRuntime, registry)
   return createMcpHonoApp({ registry, buildContext: buildManagedToolContext })
 }
 

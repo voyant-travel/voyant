@@ -1,3 +1,4 @@
+import type { EventFilterDescriptor, WorkflowDescriptor } from "@voyant-travel/core"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
@@ -39,6 +40,18 @@ export interface VoyantGraphRuntimeComposition {
   extensions: HonoExtension[]
 }
 
+/** Load graph-owned workflow/subscriber metadata without composing API routes. */
+export async function composeVoyantGraphRuntimeFacetModules(
+  runtime: VoyantGraphRuntime,
+): Promise<HonoModule[]> {
+  const modules: HonoModule[] = []
+  for (const unit of [...runtime.modules, ...runtime.plugins]) {
+    const module = await resolveRuntimeFacetModule(unit)
+    if (module) modules.push(module)
+  }
+  return modules
+}
+
 /**
  * Resolve selected graph runtime exports into the arrays consumed by mountApp.
  * Duplicate API facets are collapsed by the lowered unit loader before a
@@ -70,7 +83,36 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
+  modules.push(...(await composeVoyantGraphRuntimeFacetModules(input.runtime)))
+
   return { modules, extensions }
+}
+
+async function resolveRuntimeFacetModule(
+  unit: VoyantGraphRuntimeUnitLoader,
+): Promise<HonoModule | undefined> {
+  const workflows = await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
+  const eventFilters = await loadFacetReferences<EventFilterDescriptor>(unit, "subscribers.runtime")
+  if (workflows.length === 0 && eventFilters.length === 0) return undefined
+
+  return {
+    module: {
+      name: `${unit.localId ?? unit.id}.graph-runtime`,
+      ...(workflows.length > 0 ? { workflows } : {}),
+      ...(eventFilters.length > 0 ? { eventFilters } : {}),
+    },
+  }
+}
+
+async function loadFacetReferences<T>(
+  unit: VoyantGraphRuntimeUnitLoader,
+  facet: "workflows.runtime" | "subscribers.runtime",
+): Promise<T[]> {
+  return Promise.all(
+    unit.references
+      .filter((reference) => reference.facet === facet)
+      .map((reference) => reference.load<T>()),
+  )
 }
 
 async function resolveRuntimeUnit<TCapabilities>(

@@ -1,5 +1,10 @@
+import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
-import { createVoyantGraphRuntime, VoyantGraphRuntimeLoadError } from "./runtime-lowering.js"
+import {
+  createVoyantGraphRuntime,
+  registerVoyantGraphTools,
+  VoyantGraphRuntimeLoadError,
+} from "./runtime-lowering.js"
 
 function runtimeInput(load: () => Promise<unknown>) {
   return {
@@ -101,6 +106,113 @@ describe("graph runtime lowering", () => {
       "tools.runtime",
     ])
     expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("exposes selected access scopes and lazily registers selected graph tools", async () => {
+    const tool = {
+      name: "adjust_loyalty",
+      description: "Adjust loyalty points",
+      inputSchema: {},
+      outputSchema: {},
+      requiredScopes: ["loyalty:write"],
+      tier: "medium",
+      riskPolicy: {
+        destructive: false,
+        reversible: true,
+        dryRun: false,
+        sideEffects: ["database_write"],
+      },
+      handler: async () => ({ ok: true }),
+    }
+    const importRuntime = vi.fn(async () => ({ adjustLoyalty: tool }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: { "@acme/loyalty/tools": importRuntime },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          accessScopes: ["loyalty:read", "loyalty:write"],
+          references: [
+            {
+              id: "loyalty-tool-runtime",
+              unitId: "@acme/loyalty",
+              facet: "tools.runtime",
+              entityId: "loyalty-tool",
+              runtime: { entry: "./tools", export: "adjustLoyalty" },
+              importEntry: "@acme/loyalty/tools",
+            },
+          ],
+          tools: [
+            {
+              id: "loyalty-tool",
+              unitId: "@acme/loyalty",
+              name: "adjust_loyalty",
+              referenceId: "loyalty-tool-runtime",
+              requiredScopes: ["loyalty:write"],
+              context: ["loyalty"],
+              risk: "medium",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(runtime.accessScopes).toEqual(["loyalty:read", "loyalty:write"])
+    expect(runtime.tools.map(({ id }) => id)).toEqual(["loyalty-tool"])
+    expect(importRuntime).not.toHaveBeenCalled()
+
+    const registry = createToolRegistry()
+    await registerVoyantGraphTools(runtime, registry)
+
+    expect(registry.names()).toEqual(["adjust_loyalty"])
+    expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("rejects undeclared tool scopes before evaluating package imports", () => {
+    const importRuntime = vi.fn(async () => ({}))
+
+    expect(() =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:test",
+        entries: { "@acme/loyalty/tools": importRuntime },
+        modules: [
+          {
+            id: "@acme/loyalty",
+            kind: "module",
+            packageName: "@acme/loyalty",
+            order: 0,
+            accessScopes: ["loyalty:read"],
+            references: [
+              {
+                id: "loyalty-tool-runtime",
+                unitId: "@acme/loyalty",
+                facet: "tools.runtime",
+                entityId: "loyalty-tool",
+                runtime: { entry: "./tools", export: "adjustLoyalty" },
+                importEntry: "@acme/loyalty/tools",
+              },
+            ],
+            tools: [
+              {
+                id: "loyalty-tool",
+                unitId: "@acme/loyalty",
+                name: "adjust_loyalty",
+                referenceId: "loyalty-tool-runtime",
+                requiredScopes: ["loyalty:write"],
+              },
+            ],
+            routes: [],
+          },
+        ],
+        plugins: [],
+      }),
+    ).toThrow(/tool "loyalty-tool" requires undeclared access scope "loyalty:write"/)
+    expect(importRuntime).not.toHaveBeenCalled()
   })
 
   it("rejects unknown reference ids before evaluating package imports", async () => {

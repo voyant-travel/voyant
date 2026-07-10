@@ -108,6 +108,11 @@ export const financeVoyantModule = defineModule({
     {
       id: "@voyant-travel/finance#setup.vouchers-from-payment-instruments.v1",
       source: "@voyant-travel/finance/setup/vouchers",
+      runtime: {
+        entry: "@voyant-travel/finance/setup/vouchers",
+        export: "runVoucherSetupMigration",
+      },
+      dependsOn: ["@voyant-travel/finance#migrations"],
     },
   ],
   access: {

@@ -1,10 +1,6 @@
 // agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while the resolver, diagnostics, hashing, and managed-profile bridge share one contract harness.
 
 import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
-import {
-  bulkReindexProductsWorkflowManifest,
-  promotionAffectedAllFilter,
-} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
@@ -76,6 +72,7 @@ describe("deployment graph v1", () => {
         {
           id: "@acme/voyant-loyalty#setup.default-tiers",
           source: "./setup/default-tiers",
+          runtime: { entry: "@acme/voyant-loyalty/setup", export: "runSetup" },
           dependsOn: ["@acme/voyant-loyalty#migration.001"],
         },
       ],
@@ -1049,22 +1046,9 @@ describe("deployment graph v1", () => {
     )
     expect(graph.modules.map((unit) => unit.id)).not.toContain("@voyant-travel/flights")
     const commerce = graph.modules.find((unit) => unit.id === "@voyant-travel/commerce")
-    expect(commerce?.workflows).toEqual([bulkReindexProductsWorkflowManifest])
-    expect(commerce?.events).toEqual([
-      {
-        id: "@voyant-travel/commerce#event.promotion.changed",
-        eventType: "promotion.changed",
-      },
-    ])
-    expect(commerce?.subscribers).toEqual([
-      {
-        id: `@voyant-travel/commerce#subscriber.${promotionAffectedAllFilter.id}`,
-        eventType: "promotion.changed",
-        eventFilterId: promotionAffectedAllFilter.id,
-        workflowId: bulkReindexProductsWorkflowManifest.id,
-        filter: promotionAffectedAllFilter.manifest,
-      },
-    ])
+    expect(commerce?.workflows).toEqual([])
+    expect(commerce?.events).toEqual([])
+    expect(commerce?.subscribers).toEqual([])
     expect(graph.plugins.map((unit) => unit.id)).toEqual(
       expect.arrayContaining(["@voyant-travel/plugin-netopia", "@acme/voyant-loyalty-admin"]),
     )

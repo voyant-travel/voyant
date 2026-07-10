@@ -1,0 +1,175 @@
+import { describe, expect, it } from "vitest"
+
+import {
+  executeNodeMigrationPlan,
+  type NodeMigrationRunnerDependencies,
+  type SetupMigrationHandler,
+} from "./node-migration-runner.js"
+import type { VoyantProjectMigrationPlan } from "./project-resolver.js"
+
+const HASH = `sha256:${"a".repeat(64)}`
+
+describe("Node migration runner", () => {
+  it("applies schemas before setup work and skips both ledgers on a repeated run", async () => {
+    const events: string[] = []
+    const fixture = runnerFixture(events)
+    const setup: SetupMigrationHandler = async () => {
+      events.push("setup:run")
+    }
+
+    const first = await executeNodeMigrationPlan(
+      plan(),
+      { resolveFrom: import.meta.url, setupLoaders: { "finance#setup": async () => setup } },
+      { databaseUrl: "postgres://test" },
+      fixture.dependencies,
+    )
+    const second = await executeNodeMigrationPlan(
+      plan(),
+      { resolveFrom: import.meta.url, setupLoaders: { "finance#setup": async () => setup } },
+      { databaseUrl: "postgres://test" },
+      fixture.dependencies,
+    )
+
+    expect(events).toEqual(["schema:finance#migrations", "setup:run", "schema:finance#migrations"])
+    expect(first.applied.map((entry) => entry.id)).toEqual(["finance#migrations", "finance#setup"])
+    expect(first.failed).toEqual([])
+    expect(second.skipped.map((entry) => [entry.id, entry.detail])).toEqual([
+      ["finance#migrations", "already_applied"],
+      ["finance#setup", "already_applied"],
+    ])
+  })
+
+  it("rolls back failed setup work, reports the failure, and stops later work", async () => {
+    const events: string[] = []
+    const fixture = runnerFixture(events)
+    const loaders = {
+      "finance#setup": async () => async () => {
+        events.push("setup:fail")
+        throw new Error("voucher backfill failed")
+      },
+      "finance#later": async () => async () => {
+        events.push("setup:later")
+      },
+    }
+
+    const result = await executeNodeMigrationPlan(
+      plan(true),
+      { resolveFrom: import.meta.url, setupLoaders: loaders },
+      { databaseUrl: "postgres://test" },
+      fixture.dependencies,
+    )
+
+    expect(result.failed).toEqual([
+      expect.objectContaining({
+        id: "finance#setup",
+        status: "failed",
+        detail: "voucher backfill failed",
+      }),
+    ])
+    expect(events).toEqual(["schema:finance#migrations", "setup:fail", "rollback"])
+    expect(fixture.setupLedger).toEqual(new Set())
+  })
+
+  it("dry-runs without connecting or writing either ledger", async () => {
+    const events: string[] = []
+    const fixture = runnerFixture(events)
+    const result = await executeNodeMigrationPlan(
+      plan(),
+      { resolveFrom: import.meta.url, setupLoaders: {} },
+      { dryRun: true },
+      fixture.dependencies,
+    )
+
+    expect(events).toEqual([])
+    expect(result.skipped).toHaveLength(2)
+    expect(result.skipped.every((entry) => entry.detail === "dry_run")).toBe(true)
+  })
+})
+
+function plan(includeLater = false): VoyantProjectMigrationPlan {
+  return {
+    schemaVersion: "voyant.migration-plan.v1",
+    contentHash: HASH,
+    migrations: [
+      {
+        id: "finance#migrations",
+        migrationKind: "schema",
+        order: 0,
+        idempotencyKey: "schema:finance#migrations",
+        owner: "finance",
+        packageName: "@voyant-travel/finance",
+        source: {
+          kind: "package",
+          packageName: "@voyant-travel/finance",
+          path: "./migrations",
+        },
+      },
+      {
+        id: "finance#setup",
+        migrationKind: "setup",
+        order: 1,
+        idempotencyKey: "setup:finance#setup",
+        owner: "finance",
+        packageName: "@voyant-travel/finance",
+        source: "@voyant-travel/finance/setup/vouchers",
+        runtime: {
+          entry: "@voyant-travel/finance/setup/vouchers",
+          export: "runVoucherSetupMigration",
+        },
+        dependsOn: ["finance#migrations"],
+      },
+      ...(includeLater
+        ? [
+            {
+              id: "finance#later",
+              migrationKind: "setup" as const,
+              order: 2,
+              idempotencyKey: "setup:finance#later",
+              owner: "finance",
+              packageName: "@voyant-travel/finance",
+              source: "@voyant-travel/finance/setup/later",
+              runtime: {
+                entry: "@voyant-travel/finance/setup/later",
+                export: "runLater",
+              },
+              dependsOn: ["finance#setup"],
+            },
+          ]
+        : []),
+    ],
+  }
+}
+
+function runnerFixture(events: string[]) {
+  const schemaLedger = new Set<string>()
+  const setupLedger = new Set<string>()
+  const dependencies: NodeMigrationRunnerDependencies = {
+    async connect() {
+      return {
+        async query(sql, params = []) {
+          if (sql === "ROLLBACK") events.push("rollback")
+          if (sql.startsWith("SELECT") && sql.includes("_voyant_setup_migrations")) {
+            return {
+              rows: setupLedger.has(String(params[0])) ? [{ idempotency_key: params[0] }] : [],
+            }
+          }
+          if (sql.startsWith("INSERT INTO") && sql.includes("_voyant_setup_migrations")) {
+            setupLedger.add(String(params[0]))
+          }
+          return { rows: [] }
+        },
+        async end() {},
+      }
+    },
+    async loadSchemaSource(migration) {
+      events.push(`schema:${migration.id}`)
+      return { name: migration.idempotencyKey, priority: migration.order, migrations: [] }
+    },
+    async runSchema(_client, source) {
+      if (schemaLedger.has(source.name)) return { existing: false, executed: [], baselined: [] }
+      schemaLedger.add(source.name)
+      return { existing: false, executed: [`${source.name}/0000`], baselined: [] }
+    },
+  }
+  return { dependencies, setupLedger }
+}

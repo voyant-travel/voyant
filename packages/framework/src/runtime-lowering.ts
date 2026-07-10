@@ -3,6 +3,7 @@ import type {
   VoyantGraphRuntimeReference,
   VoyantGraphUnitKind,
 } from "@voyant-travel/core/project"
+import type { ToolRegistry } from "@voyant-travel/tools"
 
 export type VoyantGraphRuntimeReferenceFacet =
   | "api"
@@ -13,6 +14,8 @@ export type VoyantGraphRuntimeReferenceFacet =
   | "admin.routes.runtime"
   | "admin.contributions.runtime"
   | "tools.runtime"
+  | "workflows.runtime"
+  | "subscribers.runtime"
 
 export interface VoyantGraphRuntimeReferenceDefinition {
   /** Stable graph-scoped identifier used by generic runtime consumers. */
@@ -74,12 +77,25 @@ export interface VoyantGraphRuntimeRouteDefinition {
   referenceId?: string
 }
 
+export interface VoyantGraphRuntimeToolDefinition {
+  id: string
+  unitId: string
+  name: string
+  referenceId: string
+  requiredScopes: readonly string[]
+  context?: readonly string[]
+  risk?: "low" | "medium" | "high" | "critical"
+}
+
 export interface VoyantGraphRuntimeUnitDefinition {
   id: string
+  localId?: string
   kind: VoyantGraphUnitKind
   packageName: string
   order: number
   references?: readonly VoyantGraphRuntimeReferenceDefinition[]
+  accessScopes?: readonly string[]
+  tools?: readonly VoyantGraphRuntimeToolDefinition[]
   routes: readonly VoyantGraphRuntimeRouteDefinition[]
 }
 
@@ -91,9 +107,15 @@ export interface VoyantGraphRuntimeReferenceLoader extends VoyantGraphRuntimeRef
   load: <T = unknown>() => Promise<T>
 }
 
+export interface VoyantGraphRuntimeToolLoader extends VoyantGraphRuntimeToolDefinition {
+  load: <T = unknown>() => Promise<T>
+}
+
 export interface VoyantGraphRuntimeUnitLoader
-  extends Omit<VoyantGraphRuntimeUnitDefinition, "routes"> {
+  extends Omit<VoyantGraphRuntimeUnitDefinition, "routes" | "tools"> {
   references: readonly VoyantGraphRuntimeReferenceLoader[]
+  accessScopes: readonly string[]
+  tools: readonly VoyantGraphRuntimeToolLoader[]
   routes: readonly VoyantGraphRuntimeRouteLoader[]
   /** Load each distinct package entry/export reference in this unit once. */
   load: () => Promise<readonly unknown[]>
@@ -104,6 +126,8 @@ export interface VoyantGraphRuntime {
   modules: readonly VoyantGraphRuntimeUnitLoader[]
   plugins: readonly VoyantGraphRuntimeUnitLoader[]
   references: readonly VoyantGraphRuntimeReferenceLoader[]
+  accessScopes: readonly string[]
+  tools: readonly VoyantGraphRuntimeToolLoader[]
   loadReference: <T = unknown>(referenceId: string) => Promise<T>
 }
 
@@ -136,6 +160,8 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const modules = definitions.modules.map((unit) => createRuntimeUnitLoader(unit, importEntries))
   const plugins = definitions.plugins.map((unit) => createRuntimeUnitLoader(unit, importEntries))
   const references = [...modules, ...plugins].flatMap((unit) => unit.references)
+  const accessScopes = sortedUnique([...modules, ...plugins].flatMap((unit) => unit.accessScopes))
+  const tools = [...modules, ...plugins].flatMap((unit) => unit.tools)
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
 
   return {
@@ -143,6 +169,8 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     modules,
     plugins,
     references,
+    accessScopes,
+    tools,
     loadReference: async <T = unknown>(referenceId: string): Promise<T> => {
       const reference = referenceById.get(referenceId)
       if (!reference) {
@@ -158,8 +186,10 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
 }
 
 interface NormalizedVoyantGraphRuntimeUnitDefinition
-  extends Omit<VoyantGraphRuntimeUnitDefinition, "references" | "routes"> {
+  extends Omit<VoyantGraphRuntimeUnitDefinition, "references" | "routes" | "tools"> {
   references: readonly VoyantGraphRuntimeReferenceDefinition[]
+  accessScopes: readonly string[]
+  tools: readonly VoyantGraphRuntimeToolDefinition[]
   routes: readonly (VoyantGraphRuntimeRouteDefinition & { referenceId: string })[]
 }
 
@@ -209,7 +239,13 @@ function normalizeRuntimeUnitDefinition(
     return { ...definition, referenceId }
   })
 
-  return { ...unit, references, routes }
+  return {
+    ...unit,
+    references,
+    accessScopes: sortedUnique(unit.accessScopes ?? []),
+    tools: [...(unit.tools ?? [])],
+    routes,
+  }
 }
 
 function createRuntimeUnitLoader(
@@ -232,13 +268,28 @@ function createRuntimeUnitLoader(
       load: reference.load,
     }
   })
+  const tools = unit.tools.map((definition) => {
+    const reference = referenceById.get(definition.referenceId)
+    if (reference?.facet !== "tools.runtime") {
+      throw new Error(
+        `createVoyantGraphRuntime: tool "${definition.id}" selects unknown tools.runtime reference "${definition.referenceId}".`,
+      )
+    }
+    return {
+      ...definition,
+      load: <T = unknown>() => loadDeclaredTool<T>(definition, reference),
+    }
+  })
 
   return {
     id: unit.id,
+    ...(unit.localId ? { localId: unit.localId } : {}),
     kind: unit.kind,
     packageName: unit.packageName,
     order: unit.order,
     references,
+    accessScopes: unit.accessScopes,
+    tools,
     routes,
     load: memoizePromise(() =>
       Promise.all(uniqueRuntimeRouteLoaders(routes).map((route) => route.load())),
@@ -337,6 +388,11 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
 
   const usedEntries = new Set<string>()
   const referenceIds = new Set<string>()
+  const toolIds = new Set<string>()
+  const toolNames = new Set<string>()
+  const accessScopes = new Set(
+    [...input.modules, ...input.plugins].flatMap((unit) => unit.accessScopes),
+  )
   for (const [expectedKind, units] of [
     ["module", input.modules],
     ["plugin", input.plugins],
@@ -368,9 +424,102 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
           )
         }
       }
+      for (const tool of unit.tools) {
+        if (tool.unitId !== unit.id) {
+          throw new Error(
+            `createVoyantGraphRuntime: tool "${tool.id}" belongs to unit "${tool.unitId}", not "${unit.id}".`,
+          )
+        }
+        if (toolIds.has(tool.id)) {
+          throw new Error(`createVoyantGraphRuntime: duplicate tool id "${tool.id}".`)
+        }
+        if (toolNames.has(tool.name)) {
+          throw new Error(`createVoyantGraphRuntime: duplicate tool name "${tool.name}".`)
+        }
+        toolIds.add(tool.id)
+        toolNames.add(tool.name)
+        for (const scope of tool.requiredScopes) {
+          if (!accessScopes.has(scope)) {
+            throw new Error(
+              `createVoyantGraphRuntime: tool "${tool.id}" requires undeclared access scope "${scope}".`,
+            )
+          }
+        }
+      }
     }
   }
   return [...usedEntries].sort((left, right) => left.localeCompare(right))
+}
+
+type RegisteredTool = Parameters<ToolRegistry["register"]>[0]
+
+/** Load and register exactly the tool definitions selected by the admitted graph. */
+export async function registerVoyantGraphTools(
+  runtime: VoyantGraphRuntime,
+  registry: ToolRegistry,
+): Promise<void> {
+  for (const tool of runtime.tools) {
+    registry.register(await tool.load<RegisteredTool>())
+  }
+}
+
+async function loadDeclaredTool<T>(
+  definition: VoyantGraphRuntimeToolDefinition,
+  reference: VoyantGraphRuntimeReferenceLoader,
+): Promise<T> {
+  const value = await reference.load<unknown>()
+  if (!isRecord(value) || value.name !== definition.name) {
+    throw invalidToolExport(
+      definition,
+      reference,
+      `loaded tool must declare name "${definition.name}"`,
+    )
+  }
+  const requiredScopes = value.requiredScopes
+  if (
+    !Array.isArray(requiredScopes) ||
+    requiredScopes.some((scope) => typeof scope !== "string") ||
+    !sameStringSet(requiredScopes, definition.requiredScopes)
+  ) {
+    throw invalidToolExport(
+      definition,
+      reference,
+      `loaded tool requiredScopes must match [${definition.requiredScopes.join(", ")}]`,
+    )
+  }
+  return value as T
+}
+
+function invalidToolExport(
+  definition: VoyantGraphRuntimeToolDefinition,
+  reference: VoyantGraphRuntimeReferenceLoader,
+  detail: string,
+): VoyantGraphRuntimeLoadError {
+  return new VoyantGraphRuntimeLoadError(
+    "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
+    {
+      referenceId: reference.id,
+      unitId: definition.unitId,
+      facet: "tools.runtime",
+      entityId: definition.id,
+      entry: reference.importEntry,
+      ...(reference.runtime.export ? { exportName: reference.runtime.export } : {}),
+    },
+    detail,
+  )
+}
+
+function sameStringSet(left: readonly string[], right: readonly string[]): boolean {
+  const normalizedLeft = sortedUnique(left)
+  const normalizedRight = sortedUnique(right)
+  return (
+    normalizedLeft.length === normalizedRight.length &&
+    normalizedLeft.every((value, index) => value === normalizedRight[index])
+  )
+}
+
+function sortedUnique(values: readonly string[]): string[] {
+  return [...new Set(values)].sort((left, right) => left.localeCompare(right))
 }
 
 function legacyRouteReferenceId(unitId: string, routeId: string): string {

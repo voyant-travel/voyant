@@ -63,6 +63,7 @@
     "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/connect-sdk": "0.9.1",
     "@voyant-travel/core": "workspace:*",
+    "@voyant-travel/framework-migrations": "workspace:*",
     "@voyant-travel/cruises": "workspace:*",
     "@voyant-travel/db": "workspace:*",
     "@voyant-travel/mcp": "workspace:*",
@@ -74,7 +75,8 @@
     "@voyant-travel/utils": "workspace:*",
     "@voyant-travel/workflows": "workspace:*",
     "@voyant-travel/workflows-orchestrator": "workspace:*",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "pg": "^8.22.0"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",
@@ -86,6 +88,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "@types/node": "catalog:",
+    "@types/pg": "^8.15.6",
     "hono": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

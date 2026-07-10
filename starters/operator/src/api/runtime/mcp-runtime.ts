@@ -3,9 +3,9 @@
  *
  * The framework tool contract (`@voyant-travel/tools`) and the MCP transport
  * (`@voyant-travel/mcp`) are generic; this file supplies the deployment
- * specifics: which tools to register, and how to build the per-request
- * `ToolContext` — including binding the trips service to this request's `db` +
- * dependency wiring.
+ * specifics: how to build the per-request `ToolContext`, including binding the
+ * trips service to this request's `db` and dependency wiring. Tool membership
+ * and access scopes come exclusively from the generated deployment graph.
  *
  * The route mounts at `/v1/admin/mcp` via the `"operator/mcp"` composition entry.
  */
@@ -15,33 +15,28 @@ import {
   redactBookingContact,
   shouldRevealBookingPii,
 } from "@voyant-travel/bookings"
-import { type BookingsToolServices, bookingsTools } from "@voyant-travel/bookings/tools"
-import {
-  type CatalogToolServices,
-  catalogTools,
-  executeSemanticSearch,
-} from "@voyant-travel/catalog"
+import type { BookingsToolServices } from "@voyant-travel/bookings/tools"
+import { type CatalogToolServices, executeSemanticSearch } from "@voyant-travel/catalog"
 import { financeService } from "@voyant-travel/finance"
-import { type FinanceToolServices, financeTools } from "@voyant-travel/finance/tools"
+import type { FinanceToolServices } from "@voyant-travel/finance/tools"
+import {
+  registerVoyantGraphTools,
+  type VoyantGraphRuntime,
+} from "@voyant-travel/framework/deployment-artifacts"
 import { isStaffRbacEnforced } from "@voyant-travel/hono"
 import { productsService } from "@voyant-travel/inventory"
-import { type InventoryToolServices, inventoryTools } from "@voyant-travel/inventory/tools"
+import type { InventoryToolServices } from "@voyant-travel/inventory/tools"
 import { createMcpHonoApp } from "@voyant-travel/mcp"
 import { createNotificationService, notificationsService } from "@voyant-travel/notifications"
-import {
-  type NotificationsToolServices,
-  notificationsTools,
-} from "@voyant-travel/notifications/tools"
+import type { NotificationsToolServices } from "@voyant-travel/notifications/tools"
 import { quotesService } from "@voyant-travel/quotes"
-import { type QuotesToolServices, quotesTools } from "@voyant-travel/quotes/tools"
+import type { QuotesToolServices } from "@voyant-travel/quotes/tools"
 import { relationshipsService } from "@voyant-travel/relationships"
-import {
-  type RelationshipsToolServices,
-  relationshipsTools,
-} from "@voyant-travel/relationships/tools"
+import type { RelationshipsToolServices } from "@voyant-travel/relationships/tools"
 import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
-import { type TripsToolServices, tripsService, tripsTools } from "@voyant-travel/trips"
+import { type TripsToolServices, tripsService } from "@voyant-travel/trips"
 import type { Context, Hono } from "hono"
+import { createGeneratedGraphRuntime } from "../../../.voyant/graph-runtime.generated"
 import { resolveNotificationProviders } from "../../lib/notifications"
 import { buildCatalogContext } from "../lib/catalog-context"
 import { DEFAULT_SLICES } from "../lib/catalog-runtime"
@@ -72,16 +67,11 @@ type BookingContactRow = {
 }
 
 /** Build the MCP admin routes wired with this deployment's tools + context. */
-export function buildMcpAdminRoutes(): Hono {
+export async function buildMcpAdminRoutes(
+  graphRuntime: VoyantGraphRuntime = createGeneratedGraphRuntime(),
+): Promise<Hono> {
   const registry = createToolRegistry()
-  registry.registerAll(catalogTools)
-  registry.registerAll(tripsTools)
-  registry.registerAll(inventoryTools)
-  registry.registerAll(bookingsTools)
-  registry.registerAll(financeTools)
-  registry.registerAll(quotesTools)
-  registry.registerAll(relationshipsTools)
-  registry.registerAll(notificationsTools)
+  await registerVoyantGraphTools(graphRuntime, registry)
   return createMcpHonoApp({ registry, buildContext: buildToolContext })
 }
 

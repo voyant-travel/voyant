@@ -131,6 +131,7 @@ export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
 
 export interface VoyantGraphSetupMigration extends VoyantGraphFacetEntity {
   source: string
+  runtime: VoyantGraphRuntimeReference
   dependsOn?: readonly string[]
 }
 

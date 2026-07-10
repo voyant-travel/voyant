@@ -25,6 +25,7 @@ import {
 
 export const VOYANT_MIGRATION_PLAN_SCHEMA_VERSION = "voyant.migration-plan.v1" as const
 export const VOYANT_PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts" as const
+export const VOYANT_PROJECT_MIGRATION_RUNNER = "runtime/project-migrations.generated.mjs" as const
 
 export interface ResolveProjectInput {
   project: unknown
@@ -37,13 +38,33 @@ export interface FrameworkGeneratedProjectFile {
   contents: string
 }
 
-export interface VoyantProjectMigration {
+export interface VoyantProjectSchemaMigration {
   id: string
+  migrationKind: "schema"
+  order: number
+  idempotencyKey: string
   owner: string
-  kind: VoyantGraphUnitKind
   packageName: string
-  source?: string
+  source: {
+    kind: "package"
+    packageName: string
+    path: string
+  }
 }
+
+export interface VoyantProjectSetupMigration {
+  id: string
+  migrationKind: "setup"
+  order: number
+  idempotencyKey: string
+  owner: string
+  packageName: string
+  source: string
+  runtime: { entry: string; export: string }
+  dependsOn: readonly string[]
+}
+
+export type VoyantProjectMigration = VoyantProjectSchemaMigration | VoyantProjectSetupMigration
 
 export interface VoyantProjectMigrationPlan {
   schemaVersion: typeof VOYANT_MIGRATION_PLAN_SCHEMA_VERSION
@@ -53,6 +74,7 @@ export interface VoyantProjectMigrationPlan {
 
 export interface ResolvedProjectArtifacts {
   runtimeEntry: string
+  migrationRunner: string
   files: readonly FrameworkGeneratedProjectFile[]
   migrationPlan: VoyantProjectMigrationPlan
 }
@@ -118,18 +140,28 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const targetNeutralGraph = requireTargetNeutralGraph(graph)
 
   const runtimeEntry = VOYANT_PROJECT_RUNTIME_ENTRY
+  const migrationRunner = VOYANT_PROJECT_MIGRATION_RUNNER
+  const migrationPlan = buildMigrationPlan(targetNeutralGraph)
+  const runtimeEntryOverrides = await buildLocalRuntimeEntryOverrides(
+    targetNeutralGraph,
+    materialized.packages,
+    projectRoot,
+    runtimeEntry,
+  )
   const files: FrameworkGeneratedProjectFile[] = [
     {
       path: runtimeEntry,
       contents: buildProjectRuntimeModule({
         graph: targetNeutralGraph,
         command: "voyant project resolve",
-        runtimeEntryOverrides: await buildLocalRuntimeEntryOverrides(
-          targetNeutralGraph,
-          materialized.packages,
-          projectRoot,
-          runtimeEntry,
-        ),
+        runtimeEntryOverrides,
+      }),
+    },
+    {
+      path: migrationRunner,
+      contents: buildProjectMigrationRunnerModule({
+        migrationPlan,
+        runtimeEntryOverrides,
       }),
     },
   ]
@@ -138,8 +170,9 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     graph: targetNeutralGraph,
     artifacts: {
       runtimeEntry,
+      migrationRunner,
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
-      migrationPlan: buildMigrationPlan(targetNeutralGraph),
+      migrationPlan,
     },
   }
 }
@@ -201,6 +234,9 @@ function runtimePackageReferences(
     for (const route of unit.admin?.routes ?? []) add(unit, route.runtime)
     for (const contribution of unit.admin?.contributions ?? []) add(unit, contribution.runtime)
     for (const tool of unit.tools ?? []) add(unit, tool.runtime)
+    for (const migration of unit.setupMigrations ?? []) add(unit, migration.runtime)
+    for (const workflow of unit.workflows) add(unit, workflow.runtime)
+    for (const subscriber of unit.subscribers) add(unit, subscriber.runtime)
   }
 
   return references.sort(
@@ -465,23 +501,100 @@ function lowerOwnerRuntimeEntry(packageName: string, entry: string): string {
   return `${packageName}/${entry.slice(2)}`
 }
 
-function buildMigrationPlan(graph: ResolvedVoyantDeploymentGraph): VoyantProjectMigrationPlan {
-  const migrations = [...graph.modules, ...graph.plugins]
+export function buildMigrationPlan(
+  graph: ResolvedVoyantDeploymentGraph,
+): VoyantProjectMigrationPlan {
+  const units = [...graph.modules, ...graph.plugins]
+  const schemaMigrations = units
     .flatMap((unit) =>
-      unit.migrations.map((migration) => ({
+      unit.migrations
+        .filter((migration): migration is typeof migration & { source: string } =>
+          Boolean(migration.source),
+        )
+        .map((migration) => ({
+          id: migration.id,
+          migrationKind: "schema" as const,
+          order: 0,
+          idempotencyKey: `schema:${migration.id}`,
+          owner: unit.id,
+          packageName: unit.packageName,
+          source: {
+            kind: "package" as const,
+            packageName: unit.packageName,
+            path: migration.source,
+          },
+        })),
+    )
+    .sort((left, right) => left.owner.localeCompare(right.owner) || left.id.localeCompare(right.id))
+  const setupMigrations = units
+    .flatMap((unit) =>
+      (unit.setupMigrations ?? []).map((migration) => ({
         id: migration.id,
+        migrationKind: "setup" as const,
+        order: 0,
+        idempotencyKey: `setup:${migration.id}`,
         owner: unit.id,
-        kind: unit.kind,
         packageName: unit.packageName,
-        ...(migration.source ? { source: migration.source } : {}),
+        source: migration.source,
+        runtime: {
+          entry: lowerOwnerRuntimeEntry(unit.packageName, migration.runtime.entry),
+          export: migration.runtime.export ?? "default",
+        },
+        dependsOn: [...(migration.dependsOn ?? [])].sort(),
       })),
     )
     .sort((left, right) => left.owner.localeCompare(right.owner) || left.id.localeCompare(right.id))
+  const orderedSetupMigrations = orderSetupMigrations(setupMigrations, schemaMigrations)
+  const migrations = [...schemaMigrations, ...orderedSetupMigrations].map((migration, order) => ({
+    ...migration,
+    order,
+  }))
   return {
     schemaVersion: VOYANT_MIGRATION_PLAN_SCHEMA_VERSION,
     contentHash: graph.contentHash,
     migrations,
   }
+}
+
+function orderSetupMigrations(
+  setupMigrations: readonly VoyantProjectSetupMigration[],
+  schemaMigrations: readonly VoyantProjectSchemaMigration[],
+): VoyantProjectSetupMigration[] {
+  const completed = new Set(schemaMigrations.map((migration) => migration.id))
+  const pending = [...setupMigrations]
+  const ordered: VoyantProjectSetupMigration[] = []
+  while (pending.length > 0) {
+    const index = pending.findIndex((migration) =>
+      migration.dependsOn.every((dependency) => completed.has(dependency)),
+    )
+    if (index === -1) {
+      throw new Error(
+        `buildMigrationPlan: setup migration dependencies are cyclic or do not reference an earlier migration: ${pending.map((migration) => migration.id).join(", ")}`,
+      )
+    }
+    const [migration] = pending.splice(index, 1)
+    if (!migration) continue
+    ordered.push(migration)
+    completed.add(migration.id)
+  }
+  return ordered
+}
+
+export function buildProjectMigrationRunnerModule(input: {
+  migrationPlan: VoyantProjectMigrationPlan
+  runtimeEntryOverrides?: Readonly<Record<string, string>>
+}): string {
+  const setupMigrations = input.migrationPlan.migrations.filter(
+    (migration): migration is VoyantProjectSetupMigration => migration.migrationKind === "setup",
+  )
+  const loaders = setupMigrations
+    .map((migration) => {
+      const entry =
+        input.runtimeEntryOverrides?.[migration.runtime.entry] ?? migration.runtime.entry
+      return `${JSON.stringify(migration.id)}: async () => {\n    const module = await import(${JSON.stringify(entry)})\n    const handler = module[${JSON.stringify(migration.runtime.export)}]\n    if (typeof handler !== "function") throw new Error(${JSON.stringify(`Setup migration ${migration.id} must export ${migration.runtime.export} as a function.`)})\n    return handler\n  }`
+    })
+    .join(",\n  ")
+  return `// Generated by @voyant-travel/framework. Do not edit.\nimport { executeNodeMigrationPlan } from "@voyant-travel/framework/project"\n\nexport const schemaVersion = "voyant.node-migration-runner.v1"\nexport const contentHash = ${JSON.stringify(input.migrationPlan.contentHash)}\nexport const migrationPlan = ${JSON.stringify(input.migrationPlan, null, 2)}\n\nconst setupLoaders = {\n  ${loaders}\n}\n\nexport async function runVoyantMigrations(options = {}) {\n  return executeNodeMigrationPlan(migrationPlan, { setupLoaders, resolveFrom: import.meta.url }, options)\n}\n`
 }
 
 function graphIdForSelection(packageName: string, authoredId: string): string {
