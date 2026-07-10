@@ -131,6 +131,22 @@ async function main(): Promise<void> {
   for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
+  const operatorWorkflowModule = operatorGraph.modules.find(
+    (unit) => unit.id === "@voyant-travel/operator#workflows",
+  )
+  const operatorWorkflowIds = new Set(operatorWorkflowModule?.workflows?.map((entry) => entry.id))
+  for (const workflowId of ["bookings.expire-stale-holds", "notifications.send-due-reminders"]) {
+    if (!operatorWorkflowIds.has(workflowId)) {
+      failures.push(`expected operator workflow graph module to include ${workflowId}`)
+    }
+    if (
+      !operatorGraph.provisioning?.scheduledJobs?.some(
+        (job) => job.workflowId === workflowId && job.id.includes(`#workflows.schedule.`),
+      )
+    ) {
+      failures.push(`expected operator graph provisioning to schedule ${workflowId}`)
+    }
+  }
   for (const id of OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) {
       failures.push(`expected operator graph to include schema-only module ${id}`)
@@ -187,9 +203,15 @@ async function main(): Promise<void> {
 }
 
 async function readOperatorGeneratedGraph(): Promise<{
-  modules: Array<{ id: string }>
+  modules: Array<{
+    id: string
+    workflows?: Array<{ id: string }>
+  }>
   plugins: Array<{ id: string }>
   packageRecords: Array<{ packageName: string }>
+  provisioning?: {
+    scheduledJobs?: Array<{ id: string; workflowId?: string }>
+  }
 }> {
   return JSON.parse(
     await readFile(
@@ -197,9 +219,15 @@ async function readOperatorGeneratedGraph(): Promise<{
       "utf8",
     ),
   ) as {
-    modules: Array<{ id: string }>
+    modules: Array<{
+      id: string
+      workflows?: Array<{ id: string }>
+    }>
     plugins: Array<{ id: string }>
     packageRecords: Array<{ packageName: string }>
+    provisioning?: {
+      scheduledJobs?: Array<{ id: string; workflowId?: string }>
+    }
   }
 }
 
