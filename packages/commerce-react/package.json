@@ -75,10 +75,10 @@
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.24.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.80.0",
+    "react-hook-form": "^7.81.0",
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
@@ -117,10 +117,10 @@
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-hook-form": "^7.80.0",
+    "react-hook-form": "^7.81.0",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
