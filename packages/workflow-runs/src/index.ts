@@ -19,11 +19,16 @@
  */
 
 export {
+  createWorkflowRunsHonoModule,
+  WORKFLOW_RUNS_ADMIN_ROUTE_PATHS,
+} from "./hono-module.js"
+export {
   type BeginWorkflowRunInput,
   beginWorkflowRun,
   type WorkflowRunRecorder,
 } from "./recorder.js"
 export {
+  type MountWorkflowRunsAdminRoutesOptions,
   mountWorkflowRunsAdminRoutes,
   resolveWorkflowAdminSurface,
   type WorkflowAdminSurface,

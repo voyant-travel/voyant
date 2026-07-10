@@ -5,6 +5,7 @@ import {
   type CatalogOffersConnectClient,
   type CatalogOffersRouteModuleOptions,
   createCatalogOffersAdminRoutes,
+  createCatalogOffersHonoExtension,
 } from "./operator-routes.js"
 
 // A db stub whose `.select().from().where().limit()` chain resolves to the
@@ -60,6 +61,13 @@ const validOffersBody = {
 }
 
 describe("createCatalogOffersAdminRoutes", () => {
+  it("publishes a package-owned extension descriptor", () => {
+    const extension = createCatalogOffersHonoExtension(makeOptions())
+
+    expect(extension.extension).toEqual({ name: "catalog-offers", module: "catalog" })
+    expect(extension.adminRoutes).toBeDefined()
+  })
+
   it("returns connect_not_configured + empty list (200) when no client", async () => {
     const hono = app(makeOptions())
     const res = await post(hono, "/package-offers", validOffersBody)

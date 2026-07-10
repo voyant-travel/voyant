@@ -9,12 +9,15 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
+    "./hono-module": "./src/hono-module.ts",
     "./recorder": "./src/recorder.ts",
-    "./workflows": "./src/workflows.ts"
+    "./workflows": "./src/workflows.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -43,6 +46,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/types": "workspace:^",
@@ -88,6 +92,11 @@
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
       },
+      "./hono-module": {
+        "types": "./dist/hono-module.d.ts",
+        "import": "./dist/hono-module.js",
+        "default": "./dist/hono-module.js"
+      },
       "./recorder": {
         "types": "./dist/recorder.d.ts",
         "import": "./dist/recorder.js",
@@ -97,6 +106,11 @@
         "types": "./dist/workflows.d.ts",
         "import": "./dist/workflows.js",
         "default": "./dist/workflows.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     }
   },

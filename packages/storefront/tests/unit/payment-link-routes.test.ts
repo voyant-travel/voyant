@@ -2,7 +2,9 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  createPaymentLinkHonoModule,
   createPaymentLinkRoutes,
+  PAYMENT_LINK_ROUTE_PATHS,
   type PaymentLinkRoutesOptions,
 } from "../../src/payment-link/routes.js"
 
@@ -62,6 +64,18 @@ function stubOptions(overrides: Partial<PaymentLinkRoutesOptions> = {}): Payment
 }
 
 describe("createPaymentLinkRoutes", () => {
+  it("describes the package-owned anonymous lazy route module", () => {
+    const module = createPaymentLinkHonoModule(stubOptions())
+
+    expect(module).toMatchObject({
+      module: { name: "payment-link" },
+      publicPath: "/",
+      anonymous: ["payment-link-config", "payment-link"],
+    })
+    expect(module.lazyRoutes?.paths).toBe(PAYMENT_LINK_ROUTE_PATHS)
+    expect(module.lazyRoutes?.load).toBeTypeOf("function")
+  })
+
   it("payment-link-config returns instructions + checkout base url with cache header", async () => {
     const options = stubOptions()
     const app = mountApp(options, makeDb([]))

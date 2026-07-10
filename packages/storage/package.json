@@ -8,6 +8,7 @@
     "./types": "./src/types.ts",
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
+    "./voyant": "./src/voyant.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/r2": "./src/providers/r2.ts",
     "./providers/s3": "./src/providers/s3.ts",
@@ -47,6 +48,11 @@
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
       },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
+      },
       "./providers/local": {
         "types": "./dist/providers/local.d.ts",
         "import": "./dist/providers/local.js",
@@ -71,7 +77,9 @@
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@voyant-travel/core": "workspace:^"
+  },
   "peerDependencies": {
     "hono": "^4.12.25",
     "zod": "^4.0.0"
@@ -87,5 +95,22 @@
     "type": "git",
     "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/storage"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "module",
+    "manifest": "./voyant",
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": [
+        "node",
+        "voyant-cloud"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    }
   }
 }

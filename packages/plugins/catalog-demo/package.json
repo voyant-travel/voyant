@@ -5,7 +5,8 @@
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -16,7 +17,8 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyant-travel/catalog": "workspace:^"
+    "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/core": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -33,6 +35,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -42,5 +49,10 @@
     "type": "git",
     "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/plugins/catalog-demo"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "plugin",
+    "manifest": "./voyant"
   }
 }

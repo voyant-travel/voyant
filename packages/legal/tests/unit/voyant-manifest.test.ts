@@ -1,0 +1,63 @@
+import { describe, expect, it } from "vitest"
+import { legalContractDocumentVoyantModule, legalVoyantModule } from "../../src/voyant.js"
+
+describe("legal deployment manifest", () => {
+  it("owns the selected legal package surfaces", () => {
+    expect(legalVoyantModule).toMatchObject({
+      schemaVersion: "voyant.module.v1",
+      id: "@voyant-travel/legal",
+      packageName: "@voyant-travel/legal",
+      api: [
+        {
+          id: "@voyant-travel/legal#api.admin",
+          surface: "admin",
+          mount: "legal",
+          transactional: true,
+          runtime: {
+            entry: "@voyant-travel/legal",
+            export: "createLegalHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/legal#api.public",
+          surface: "public",
+          mount: "legal",
+          anonymous: true,
+          transactional: true,
+          runtime: {
+            entry: "@voyant-travel/legal",
+            export: "createLegalHonoModule",
+          },
+        },
+      ],
+      schema: [{ id: "@voyant-travel/legal#schema" }],
+      migrations: [{ id: "@voyant-travel/legal#migrations" }],
+    })
+    expect(legalVoyantModule.links?.map((link) => link.id)).toEqual([
+      "@voyant-travel/legal#linkable.contract",
+      "@voyant-travel/legal#linkable.contractTemplate",
+      "@voyant-travel/legal#linkable.policy",
+      "@voyant-travel/legal#linkable.policyVersion",
+      "@voyant-travel/legal#linkable.policyAcceptance",
+      "@voyant-travel/legal#linkable.term",
+    ])
+  })
+
+  it("owns the contract-document bridge", () => {
+    expect(legalContractDocumentVoyantModule).toMatchObject({
+      schemaVersion: "voyant.module.v1",
+      id: "@voyant-travel/legal#contract-document",
+      packageName: "@voyant-travel/legal",
+      api: [
+        {
+          id: "@voyant-travel/legal#contract-document.api",
+          surface: "admin",
+          runtime: {
+            entry: "@voyant-travel/legal/contract-document-routes",
+            export: "createContractDocumentHonoModule",
+          },
+        },
+      ],
+    })
+  })
+})

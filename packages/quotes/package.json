@@ -11,7 +11,8 @@
     "./routes": "./src/routes/index.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./proposal-routes": "./src/proposal-routes.ts",
-    "./tools": "./src/tools.ts"
+    "./tools": "./src/tools.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -87,6 +88,11 @@
         "types": "./dist/tools.d.ts",
         "import": "./dist/tools.js",
         "default": "./dist/tools.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -100,6 +106,7 @@
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

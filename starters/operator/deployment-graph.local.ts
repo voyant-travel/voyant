@@ -10,7 +10,6 @@ import {
 import { moduleIdFromSpecifier } from "../../packages/framework/src/profile-types.ts"
 
 export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS = [
-  "operator/workflows",
   "operator/invitations",
   "operator/team",
   "operator/cruises",
@@ -51,7 +50,6 @@ export const OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_IDS =
 
 export const OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST = {
   modules: [
-    operatorWorkflowBundleModule(),
     localModule("operator/invitations", [
       { surface: "admin" },
       { surface: "public", anonymous: true },
@@ -114,50 +112,6 @@ function runtimePlugin(specifier: string): VoyantGraphUnitManifest {
     packageName: packageNameFromSpecifier(specifier),
     localId: moduleIdFromSpecifier(specifier),
     meta: { source: "operator-runtime-plugin" },
-  })
-}
-
-function operatorWorkflowBundleModule(): VoyantGraphUnitManifest {
-  const specifier = "operator/workflows"
-  const id = graphIdFromSpecifier(specifier)
-  return defineModule({
-    id,
-    packageName: packageNameFromSpecifier(specifier),
-    localId: moduleIdFromSpecifier(specifier),
-    workflows: [
-      {
-        id: "products.generate-pdf",
-        config: {
-          defaultRuntime: "node",
-        },
-      },
-      {
-        id: "bookings.expire-stale-holds",
-        config: {
-          defaultRuntime: "node",
-          schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
-        },
-      },
-      {
-        id: "notifications.deliver-reminder",
-        config: {
-          defaultRuntime: "node",
-          retry: {
-            max: 3,
-            backoff: "exponential",
-            maxDelay: "300s",
-          },
-        },
-      },
-      {
-        id: "notifications.send-due-reminders",
-        config: {
-          defaultRuntime: "node",
-          schedule: { cron: "0 * * * *", name: "hourly" },
-        },
-      },
-    ],
-    meta: { source: "operator-local" },
   })
 }
 

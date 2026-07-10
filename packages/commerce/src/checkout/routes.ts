@@ -21,6 +21,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core"
 import { openApiValidationHook } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { rebuildBookingItemTaxLines } from "./materialization-tax.js"
@@ -205,6 +206,26 @@ export function createBookingMaintenanceRoutes(
       return c.json({ data: result }, 200)
     },
   )
+}
+
+/** Package-owned checkout descriptor; payment and product providers stay injected. */
+export function createCatalogCheckoutHonoExtension(
+  options: CheckoutStartOptions | ((c: Context) => CheckoutStartOptions),
+): HonoExtension {
+  return {
+    extension: { name: "catalog-checkout", module: "catalog" },
+    publicRoutes: createCatalogCheckoutRoutes(options),
+  }
+}
+
+/** Package-owned maintenance descriptor; tax settings stay deployment-supplied. */
+export function createBookingMaintenanceHonoExtension(
+  options: BookingMaintenanceRoutesOptions,
+): HonoExtension {
+  return {
+    extension: { name: "booking-maintenance", module: "bookings" },
+    adminRoutes: createBookingMaintenanceRoutes(options),
+  }
 }
 
 function checkoutRequestMeta(c: Context): CheckoutStartRequestMeta {

@@ -6,6 +6,9 @@ import { cancelEntity } from "./cancel.js"
 import { BookingEngineError } from "./errors.js"
 import {
   type CatalogBookingRouteModuleOptions,
+  catalogBookingRoutePaths,
+  catalogBookingTransactionalPaths,
+  createCatalogBookingEngineHonoModule,
   createCatalogBookingOrdersRoutes,
   mountCatalogBookingRoutes,
 } from "./operator-routes.js"
@@ -210,6 +213,18 @@ describe("createCatalogBookingOrdersRoutes", () => {
 })
 
 describe("mountCatalogBookingRoutes", () => {
+  it("publishes a lazy package runtime descriptor with the complete route contract", async () => {
+    const descriptor = createCatalogBookingEngineHonoModule(makeOptions())
+
+    expect(descriptor.module).toEqual({ name: "catalog-booking" })
+    expect(descriptor.lazyRoutes?.paths).toBe(catalogBookingRoutePaths)
+    expect(descriptor.transactionalPaths).toBe(catalogBookingTransactionalPaths)
+
+    const routes = await descriptor.lazyRoutes?.load()
+    const response = await routes?.request("/v1/public/catalog/quote", { method: "POST" })
+    expect(response?.status).toBe(200)
+  })
+
   it("mounts the booking-engine surface on both admin and public prefixes", async () => {
     const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions())

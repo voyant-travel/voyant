@@ -212,6 +212,23 @@ describe("quote proposal routes", () => {
     mocks.expireQuoteVersionIfPastValidUntil.mockResolvedValue(null)
   })
 
+  it("describes the package-owned proposal and snapshot extensions", () => {
+    const proposal = proposalRoutes.createQuoteProposalHonoExtension(options as never)
+    const snapshot = proposalRoutes.createQuoteVersionSnapshotHonoExtension(options)
+
+    expect(proposal).toMatchObject({
+      extension: { name: "proposal", module: "quote-versions" },
+      publicPath: "proposals",
+      anonymous: true,
+    })
+    expect(proposal.lazyAdminRoutes).toBeTypeOf("function")
+    expect(proposal.lazyPublicRoutes).toBeTypeOf("function")
+    expect(snapshot).toMatchObject({
+      extension: { name: "quote-version-snapshot", module: "trips" },
+    })
+    expect(snapshot.lazyAdminRoutes).toBeTypeOf("function")
+  })
+
   it("builds root-relative and absolute proposal URLs", () => {
     expect(proposalRoutes.buildQuoteVersionProposalUrl("qver_123")).toBe("/proposal/qver_123")
     expect(

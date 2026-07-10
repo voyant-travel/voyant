@@ -828,12 +828,10 @@ operator scheduled entrypoint can route them through the workflow runtime by
 stable schedule id. Runtime maintenance jobs remain explicit scheduled-job
 metadata.
 
-Implementation note: the source-backed operator starter declares its local
-workflow bundle as `@voyant-travel/operator#workflows`, including scheduled
-workflow descriptors for booking hold expiry and due notification reminders.
-Those schedules are provisioned from the graph like package-owned workflow
-schedules, while the workflow handler bodies remain in the operator workflow
-bundle.
+Implementation note: booking hold expiry, product PDF generation, and
+notification reminder workflows are declared by their owning package manifests.
+The operator keeps only deployment adapter wiring for their handler bodies; it
+does not declare an aggregate workflow graph unit.
 
 ## Events And Webhooks
 

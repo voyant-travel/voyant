@@ -268,6 +268,7 @@ export {
 export {
   type BookingScheduleRoutesOptions,
   createBookingScheduleAdminRoutes,
+  createBookingScheduleHonoExtension,
   createPaymentPolicyPublicRoutes,
   generatePaymentScheduleForBooking,
   type PaymentPolicyEntityContext,

@@ -74,11 +74,11 @@ describe("deployment graph v1", () => {
       api: [
         {
           id: "@voyant-travel/bookings#api.admin",
-          runtime: { entry: "@voyant-travel/bookings", export: "bookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
         {
           id: "@voyant-travel/bookings#api.public",
-          runtime: { entry: "@voyant-travel/bookings", export: "bookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
       ],
       schema: [{ id: "@voyant-travel/bookings#schema" }],

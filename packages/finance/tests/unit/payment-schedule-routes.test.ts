@@ -6,6 +6,7 @@ import { noDepositPolicy, type PaymentPolicy } from "../../src/payment-policy.js
 import {
   type BookingScheduleRoutesOptions,
   createBookingScheduleAdminRoutes,
+  createBookingScheduleHonoExtension,
   createPaymentPolicyPublicRoutes,
   generatePaymentScheduleForBooking,
 } from "../../src/payment-schedule/routes.js"
@@ -123,6 +124,20 @@ describe("generatePaymentScheduleForBooking", () => {
     expect(options.resolveCategoryPolicy).toHaveBeenCalledWith(stub.db, "bk_2")
     expect(options.resolveListingPolicy).toHaveBeenCalledWith(stub.db, "bk_2")
     expect(options.stampPolicySourceOnBooking).toHaveBeenCalled()
+  })
+})
+
+describe("createBookingScheduleHonoExtension", () => {
+  it("describes both injected booking schedule route surfaces", () => {
+    const extension = createBookingScheduleHonoExtension(baseOptions())
+
+    expect(extension).toMatchObject({
+      extension: { name: "booking-schedule", module: "bookings" },
+      publicPath: "payment-policy",
+      anonymous: true,
+    })
+    expect(extension.lazyAdminRoutes).toBeTypeOf("function")
+    expect(extension.lazyPublicRoutes).toBeTypeOf("function")
   })
 })
 

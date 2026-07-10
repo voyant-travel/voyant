@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   CONTRACT_DOCUMENT_ROUTE_PATHS,
   type ContractDocumentRoutesOptions,
+  createContractDocumentHonoModule,
   createContractDocumentRoutes,
 } from "./contract-document-routes.js"
 
@@ -46,6 +47,14 @@ describe("contract document routes", () => {
       "/v1/admin/bookings/:bookingId/generate-contract",
       "/v1/admin/documents/files/*",
     ])
+  })
+
+  it("describes the package-owned lazy route module", () => {
+    const module = createContractDocumentHonoModule(stubOptions())
+
+    expect(module.module.name).toBe("contract-document")
+    expect(module.lazyRoutes?.paths).toBe(CONTRACT_DOCUMENT_ROUTE_PATHS)
+    expect(module.lazyRoutes?.load).toBeTypeOf("function")
   })
 
   it("generate-contract delegates and returns the data", async () => {

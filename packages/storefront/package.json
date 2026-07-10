@@ -19,11 +19,13 @@
     "./verification/schema": "./src/verification/schema.ts",
     "./verification/public-routes": "./src/verification/routes-public.ts",
     "./verification/service": "./src/verification/service.ts",
-    "./verification/validation": "./src/verification/validation.ts"
+    "./verification/validation": "./src/verification/validation.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -178,6 +180,11 @@
         "types": "./dist/verification/validation.d.ts",
         "import": "./dist/verification/validation.js",
         "default": "./dist/verification/validation.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",

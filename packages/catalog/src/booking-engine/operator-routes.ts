@@ -40,6 +40,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
@@ -397,6 +398,39 @@ export interface CatalogBookingMountTarget {
   openapi(route: any, handler: any): unknown
 }
 
+export const catalogBookingRoutePaths = [
+  "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/quotes/batch",
+  "/v1/admin/catalog/book",
+  "/v1/admin/catalog/drafts/:id",
+  "/v1/admin/catalog/holds/place",
+  "/v1/admin/catalog/holds/release",
+  "/v1/admin/catalog/slots",
+  "/v1/admin/catalog/orders",
+  "/v1/admin/catalog/orders/:id",
+  "/v1/admin/catalog/orders/:id/cancel",
+  "/v1/admin/bookings/:id/catalog-snapshot",
+  "/v1/public/catalog/quote",
+  "/v1/public/catalog/quotes/batch",
+  "/v1/public/catalog/book",
+  "/v1/public/catalog/drafts/:id",
+  "/v1/public/catalog/holds/place",
+  "/v1/public/catalog/holds/release",
+  "/v1/public/catalog/slots",
+] as const
+
+export const catalogBookingTransactionalPaths = [
+  "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/quotes/batch",
+  "/v1/admin/catalog/book",
+  "/v1/admin/catalog/holds",
+  "/v1/admin/catalog/orders",
+  "/v1/public/catalog/quote",
+  "/v1/public/catalog/quotes/batch",
+  "/v1/public/catalog/book",
+  "/v1/public/catalog/holds",
+] as const
+
 export function mountCatalogBookingRoutes(
   hono: CatalogBookingMountTarget,
   options: CatalogBookingRouteModuleOptions,
@@ -458,6 +492,24 @@ export function mountCatalogBookingRoutes(
   hono.openapi(catalogSnapshotRoute, (c: Context) =>
     asRouteResponse(handleGetBookingSnapshot(c, options)),
   )
+}
+
+/** Package-owned descriptor for deployments that inject booking runtime dependencies. */
+export function createCatalogBookingEngineHonoModule(
+  options: CatalogBookingRouteModuleOptions,
+): HonoModule {
+  return {
+    module: { name: "catalog-booking" },
+    lazyRoutes: {
+      paths: catalogBookingRoutePaths,
+      load: async () => {
+        const hono = new OpenAPIHono()
+        mountCatalogBookingRoutes(hono, options)
+        return hono
+      },
+    },
+    transactionalPaths: catalogBookingTransactionalPaths,
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────

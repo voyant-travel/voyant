@@ -46,12 +46,12 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(summary.scheduledJobs).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: "@voyant-travel/operator#workflows.schedule.bookings.expire-stale-holds.every-5-minutes",
+          id: "@voyant-travel/bookings#schedule.bookings.expire-stale-holds.every-5-minutes",
           cron: "*/5 * * * *",
           workflowId: "bookings.expire-stale-holds",
         }),
         expect.objectContaining({
-          id: "@voyant-travel/operator#workflows.schedule.notifications.send-due-reminders.hourly",
+          id: "@voyant-travel/notifications#schedule.notifications.send-due-reminders.hourly",
           cron: "0 * * * *",
           workflowId: "notifications.send-due-reminders",
         }),

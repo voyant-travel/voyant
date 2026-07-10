@@ -16,6 +16,7 @@
     "./public-routes": "./src/public-routes.ts",
     "./public-validation": "./src/public-validation.ts",
     "./tasks": "./src/tasks.ts",
+    "./workflows": "./src/workflow-entry.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
     "./catalog-policy-destinations": "./src/catalog-policy-destinations.ts",
@@ -37,7 +38,8 @@
     "./authoring": "./src/authoring.ts",
     "./authoring/schema": "./src/authoring/schema.ts",
     "./authoring/spec": "./src/authoring/spec.ts",
-    "./authoring/extension": "./src/authoring/extension.ts"
+    "./authoring/extension": "./src/authoring/extension.ts",
+    "./voyant": "./src/voyant.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -62,6 +64,7 @@
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "marked": "^18.0.5",
@@ -144,6 +147,11 @@
         "types": "./dist/tasks.d.ts",
         "import": "./dist/tasks.js",
         "default": "./dist/tasks.js"
+      },
+      "./workflows": {
+        "types": "./dist/workflow-entry.d.ts",
+        "import": "./dist/workflow-entry.js",
+        "default": "./dist/workflow-entry.js"
       },
       "./booking-extension": {
         "types": "./dist/booking-extension.d.ts",
@@ -254,6 +262,11 @@
         "types": "./dist/authoring/extension.d.ts",
         "import": "./dist/authoring/extension.js",
         "default": "./dist/authoring/extension.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -267,6 +280,7 @@
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
