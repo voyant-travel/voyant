@@ -96,17 +96,14 @@ jobs:
         run: pnpm verify:architecture
 
       - name: Migration drift check (operator)
-        # Fails the build if the operator starter's migrations drift from its
-        # voyant.config manifest: missing/extra schemas, a stale generated
-        # manifest, a new duplicate migration prefix (vs the baseline), or a
-        # link table missing from the latest Drizzle snapshot. See
-        # docs/architecture/schema-discipline.md and voyant#1608.
+        # Fails the build if the operator starter's generated managed profile
+        # drifts from the installed framework or resolved deployment graph.
         #
         # Runs through the operator workspace's own @voyant-travel/cli devDependency
         # (a public package, already installed) — no extra root dependency.
         env:
           NODE_OPTIONS: --conditions=development --max-old-space-size=8192
-        run: pnpm --filter operator exec voyant db doctor --fail-on-drift
+        run: pnpm --filter operator db:doctor
 
       - name: i18n checks
         run: pnpm i18n:check

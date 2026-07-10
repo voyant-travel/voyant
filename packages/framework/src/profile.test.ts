@@ -351,7 +351,7 @@ describe("managed profile contract", () => {
       cutlineExport: "loadCutline",
       moduleSources: [],
       doctor: {
-        command: "voyant db doctor --fail-on-drift",
+        command: "voyant db doctor --snapshot .voyant/managed-profile.json --fail-on-drift",
         parity: expect.arrayContaining(["schema drift"]),
       },
     })

@@ -137,7 +137,8 @@ identity:
 - package: `@voyant-travel/framework-migrations`
 - bundle: `operator-standard-profile`
 - cutline export: `loadCutline`
-- doctor command: `voyant db doctor --fail-on-drift`
+- doctor command:
+  `voyant db doctor --snapshot .voyant/managed-profile.json --fail-on-drift`
 
 Cloud should apply the framework bundle/cutline before deployment-owned
 migrations and should use the doctor command as the profile/database parity

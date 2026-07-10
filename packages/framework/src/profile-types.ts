@@ -155,7 +155,7 @@ export interface VoyantProfileMigrationMetadata {
    */
   moduleSources: readonly VoyantProfileModuleMigrationSource[]
   doctor: {
-    command: "voyant db doctor --fail-on-drift"
+    command: "voyant db doctor --snapshot .voyant/managed-profile.json --fail-on-drift"
     parity: readonly string[]
   }
 }

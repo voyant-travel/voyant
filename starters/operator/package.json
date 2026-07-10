@@ -24,6 +24,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.deployment-migrations.config.ts",
     "db:generate:deployment": "drizzle-kit generate --config=drizzle.deployment-migrations.config.ts",
     "db:migrate": "pnpm run graph:emit && tsx scripts/migrate.ts",
+    "db:doctor": "pnpm run graph:emit && voyant db doctor --snapshot .voyant/managed-profile.json --fail-on-drift",
     "db:push": "drizzle-kit push",
     "db:check": "drizzle-kit check --config=drizzle.deployment-migrations.config.ts",
     "db:studio": "drizzle-kit studio",
