@@ -4,8 +4,12 @@ import {
   type ResolvedVoyantGraphUnit,
 } from "./deployment-graph.js"
 import type {
+  VoyantGraphRuntimeConfigDefinition,
+  VoyantGraphRuntimeProviderDefinition,
   VoyantGraphRuntimeReferenceDefinition,
   VoyantGraphRuntimeReferenceFacet,
+  VoyantGraphRuntimeResourceDefinition,
+  VoyantGraphRuntimeSecretDefinition,
   VoyantGraphRuntimeToolDefinition,
 } from "./runtime-lowering.js"
 
@@ -21,7 +25,12 @@ export interface GeneratedRuntimeUnitDefinition {
   kind: ResolvedVoyantGraphUnit["kind"]
   packageName: string
   order: number
+  projectConfig?: ResolvedVoyantGraphUnit["projectConfig"]
   references: VoyantGraphRuntimeReferenceDefinition[]
+  config: VoyantGraphRuntimeConfigDefinition[]
+  secrets: VoyantGraphRuntimeSecretDefinition[]
+  resources: VoyantGraphRuntimeResourceDefinition[]
+  providers: VoyantGraphRuntimeProviderDefinition[]
   accessScopes: string[]
   tools: VoyantGraphRuntimeToolDefinition[]
   routes: GeneratedRuntimeRouteDefinition[]
@@ -35,6 +44,37 @@ export function lowerGraphRuntimeUnits(
   return units
     .map((unit) => {
       const references = collectRuntimeReferences(unit, graph, runtimeEntryOverrides)
+      const config = (unit.config ?? []).map((declaration) => ({
+        unitId: unit.id,
+        declaration,
+        ...(declaration.validator
+          ? {
+              validatorReferenceId: runtimeReferenceId(unit.id, "config.validator", declaration.id),
+            }
+          : {}),
+      }))
+      const secrets = (unit.secrets ?? []).map((declaration) => ({
+        unitId: unit.id,
+        declaration,
+        ...(declaration.validator
+          ? {
+              validatorReferenceId: runtimeReferenceId(
+                unit.id,
+                "secrets.validator",
+                declaration.id,
+              ),
+            }
+          : {}),
+      }))
+      const resources = (unit.resources ?? []).map((declaration) => ({
+        unitId: unit.id,
+        declaration,
+      }))
+      const providers = (unit.providers ?? []).map((declaration) => ({
+        unitId: unit.id,
+        declaration,
+        referenceId: runtimeReferenceId(unit.id, "providers.runtime", declaration.id),
+      }))
       const routes = unit.api
         .filter((route) => route.runtime !== undefined)
         .map((route) => {
@@ -74,7 +114,12 @@ export function lowerGraphRuntimeUnits(
         kind: unit.kind,
         packageName: unit.packageName,
         order: unit.order,
+        ...(unit.projectConfig ? { projectConfig: unit.projectConfig } : {}),
         references,
+        config,
+        secrets,
+        resources,
+        providers,
         accessScopes,
         tools,
         routes,

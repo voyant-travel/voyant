@@ -157,12 +157,92 @@ describe("managed profile runtime entry", () => {
       ),
     )
 
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: {},
+      modules: [
+        {
+          id: "@voyant-travel/db",
+          kind: "module",
+          packageName: "@voyant-travel/db",
+          order: 0,
+          secrets: [
+            {
+              unitId: "@voyant-travel/db",
+              declaration: {
+                id: "@voyant-travel/db#secret.database-url",
+                key: "DATABASE_URL",
+                required: true,
+              },
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
       env: { DATABASE_URL_DIRECT: MANAGED_PROFILE_TEST_DATABASE_URL },
+      graphRuntime,
     })
 
     expect(runtime.app.fetch).toEqual(expect.any(Function))
+    expect(runtime.graphValues?.getSecret("@voyant-travel/db#secret.database-url")).toBe(
+      MANAGED_PROFILE_TEST_DATABASE_URL,
+    )
+  })
+
+  it("rejects missing required graph values before loading managed plugins", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          providers: localProviders,
+        }),
+      ),
+    )
+    const importPluginModule = vi.fn(async () => ({}))
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: {},
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          config: [
+            {
+              unitId: "@acme/loyalty",
+              declaration: {
+                id: "@acme/loyalty#config.endpoint",
+                key: "LOYALTY_ENDPOINT",
+                required: true,
+              },
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(
+      loadManagedProfileRuntime({
+        profileSnapshotPath: snapshotPath,
+        env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
+        graphRuntime,
+        importPluginModule,
+      }),
+    ).rejects.toThrow(/VOYANT_GRAPH_RUNTIME_VALUE_REQUIRED.*LOYALTY_ENDPOINT/)
+    expect(importPluginModule).not.toHaveBeenCalled()
   })
 
   it("rejects malformed graph-derived Postgres configuration before startup", async () => {

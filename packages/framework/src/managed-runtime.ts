@@ -167,6 +167,10 @@ import {
 } from "./profile.js"
 import { composeVoyantGraphRuntimeFacetModules } from "./runtime-composition.js"
 import { registerVoyantGraphTools, type VoyantGraphRuntime } from "./runtime-lowering.js"
+import {
+  type ResolvedVoyantGraphRuntimeValues,
+  resolveVoyantGraphRuntimeValues,
+} from "./runtime-values.js"
 
 export {
   type ResolveManagedCustomSourceOptions,
@@ -285,6 +289,7 @@ export interface ManagedProfileRuntime {
   project: VoyantProjectManifest
   requirements: VoyantProfileRequirements
   env: ManagedProfileRuntimeEnv
+  graphValues?: ResolvedVoyantGraphRuntimeValues
   app: ReturnType<typeof createManagedProfileApp>
   fetch: (
     request: Request,
@@ -348,6 +353,12 @@ export async function loadManagedProfileRuntime(
       ? { resources: options.deploymentRequirements.resources }
       : {}),
   }
+  const graphValues = options.graphRuntime
+    ? await resolveVoyantGraphRuntimeValues(options.graphRuntime, {
+        deploymentValues: toPluginEnvRecord(env),
+        deploymentValueAliases: deploymentValueAliases(requirements),
+      })
+    : undefined
   const auth = resolveManagedProfileAuthIntegration({
     env,
     auth: options.app?.auth ?? options.auth,
@@ -402,6 +413,7 @@ export async function loadManagedProfileRuntime(
     project,
     requirements,
     env,
+    ...(graphValues ? { graphValues } : {}),
     app,
     fetch: (request, bindings = env, ctx = createNoopExecutionContext()) =>
       app.fetch(request, bindings, toHonoExecutionContext(ctx)),
@@ -415,6 +427,21 @@ export async function loadManagedProfileRuntime(
         ...serverOptions,
       }),
   }
+}
+
+function deploymentValueAliases(
+  requirements: Pick<VoyantGraphDeploymentRequirements, "resources"> | undefined,
+): Record<string, string[]> {
+  const aliases: Record<string, string[]> = {}
+  for (const resource of requirements?.resources ?? []) {
+    for (const requirement of resource.env) {
+      if (!requirement.aliases?.length) continue
+      aliases[requirement.name] = [
+        ...new Set([...(aliases[requirement.name] ?? []), ...requirement.aliases]),
+      ]
+    }
+  }
+  return aliases
 }
 
 export async function startManagedProfileRuntime(

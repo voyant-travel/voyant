@@ -1,6 +1,11 @@
 import type {
+  VoyantGraphConfigDeclaration,
+  VoyantGraphJsonObject,
+  VoyantGraphProviderDeclaration,
+  VoyantGraphResourceDeclaration,
   VoyantGraphRouteBundle,
   VoyantGraphRuntimeReference,
+  VoyantGraphSecretDeclaration,
   VoyantGraphUnitKind,
 } from "@voyant-travel/core/project"
 import type { ToolRegistry } from "@voyant-travel/tools"
@@ -87,13 +92,41 @@ export interface VoyantGraphRuntimeToolDefinition {
   risk?: "low" | "medium" | "high" | "critical"
 }
 
+export interface VoyantGraphRuntimeConfigDefinition {
+  unitId: string
+  declaration: VoyantGraphConfigDeclaration
+  validatorReferenceId?: string
+}
+
+export interface VoyantGraphRuntimeSecretDefinition {
+  unitId: string
+  declaration: VoyantGraphSecretDeclaration
+  validatorReferenceId?: string
+}
+
+export interface VoyantGraphRuntimeResourceDefinition {
+  unitId: string
+  declaration: VoyantGraphResourceDeclaration
+}
+
+export interface VoyantGraphRuntimeProviderDefinition {
+  unitId: string
+  declaration: VoyantGraphProviderDeclaration
+  referenceId: string
+}
+
 export interface VoyantGraphRuntimeUnitDefinition {
   id: string
   localId?: string
   kind: VoyantGraphUnitKind
   packageName: string
   order: number
+  projectConfig?: VoyantGraphJsonObject
   references?: readonly VoyantGraphRuntimeReferenceDefinition[]
+  config?: readonly VoyantGraphRuntimeConfigDefinition[]
+  secrets?: readonly VoyantGraphRuntimeSecretDefinition[]
+  resources?: readonly VoyantGraphRuntimeResourceDefinition[]
+  providers?: readonly VoyantGraphRuntimeProviderDefinition[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
   routes: readonly VoyantGraphRuntimeRouteDefinition[]
@@ -111,9 +144,28 @@ export interface VoyantGraphRuntimeToolLoader extends VoyantGraphRuntimeToolDefi
   load: <T = unknown>() => Promise<T>
 }
 
+export interface VoyantGraphRuntimeConfigLoader extends VoyantGraphRuntimeConfigDefinition {
+  loadValidator?: <T = unknown>() => Promise<T>
+}
+
+export interface VoyantGraphRuntimeSecretLoader extends VoyantGraphRuntimeSecretDefinition {
+  loadValidator?: <T = unknown>() => Promise<T>
+}
+
+export interface VoyantGraphRuntimeProviderLoader extends VoyantGraphRuntimeProviderDefinition {
+  load: <T = unknown>() => Promise<T>
+}
+
 export interface VoyantGraphRuntimeUnitLoader
-  extends Omit<VoyantGraphRuntimeUnitDefinition, "routes" | "tools"> {
+  extends Omit<
+    VoyantGraphRuntimeUnitDefinition,
+    "config" | "providers" | "references" | "routes" | "secrets" | "tools"
+  > {
   references: readonly VoyantGraphRuntimeReferenceLoader[]
+  config: readonly VoyantGraphRuntimeConfigLoader[]
+  secrets: readonly VoyantGraphRuntimeSecretLoader[]
+  resources: readonly VoyantGraphRuntimeResourceDefinition[]
+  providers: readonly VoyantGraphRuntimeProviderLoader[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   routes: readonly VoyantGraphRuntimeRouteLoader[]
@@ -126,6 +178,10 @@ export interface VoyantGraphRuntime {
   modules: readonly VoyantGraphRuntimeUnitLoader[]
   plugins: readonly VoyantGraphRuntimeUnitLoader[]
   references: readonly VoyantGraphRuntimeReferenceLoader[]
+  config: readonly VoyantGraphRuntimeConfigLoader[]
+  secrets: readonly VoyantGraphRuntimeSecretLoader[]
+  resources: readonly VoyantGraphRuntimeResourceDefinition[]
+  providers: readonly VoyantGraphRuntimeProviderLoader[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   loadReference: <T = unknown>(referenceId: string) => Promise<T>
@@ -160,6 +216,10 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const modules = definitions.modules.map((unit) => createRuntimeUnitLoader(unit, importEntries))
   const plugins = definitions.plugins.map((unit) => createRuntimeUnitLoader(unit, importEntries))
   const references = [...modules, ...plugins].flatMap((unit) => unit.references)
+  const config = [...modules, ...plugins].flatMap((unit) => unit.config)
+  const secrets = [...modules, ...plugins].flatMap((unit) => unit.secrets)
+  const resources = [...modules, ...plugins].flatMap((unit) => unit.resources)
+  const providers = [...modules, ...plugins].flatMap((unit) => unit.providers)
   const accessScopes = sortedUnique([...modules, ...plugins].flatMap((unit) => unit.accessScopes))
   const tools = [...modules, ...plugins].flatMap((unit) => unit.tools)
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
@@ -169,6 +229,10 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     modules,
     plugins,
     references,
+    config,
+    secrets,
+    resources,
+    providers,
     accessScopes,
     tools,
     loadReference: async <T = unknown>(referenceId: string): Promise<T> => {
@@ -186,8 +250,15 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
 }
 
 interface NormalizedVoyantGraphRuntimeUnitDefinition
-  extends Omit<VoyantGraphRuntimeUnitDefinition, "references" | "routes" | "tools"> {
+  extends Omit<
+    VoyantGraphRuntimeUnitDefinition,
+    "config" | "providers" | "references" | "resources" | "routes" | "secrets" | "tools"
+  > {
   references: readonly VoyantGraphRuntimeReferenceDefinition[]
+  config: readonly VoyantGraphRuntimeConfigDefinition[]
+  secrets: readonly VoyantGraphRuntimeSecretDefinition[]
+  resources: readonly VoyantGraphRuntimeResourceDefinition[]
+  providers: readonly VoyantGraphRuntimeProviderDefinition[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
   routes: readonly (VoyantGraphRuntimeRouteDefinition & { referenceId: string })[]
@@ -242,6 +313,10 @@ function normalizeRuntimeUnitDefinition(
   return {
     ...unit,
     references,
+    config: [...(unit.config ?? [])],
+    secrets: [...(unit.secrets ?? [])],
+    resources: [...(unit.resources ?? [])],
+    providers: [...(unit.providers ?? [])],
     accessScopes: sortedUnique(unit.accessScopes ?? []),
     tools: [...(unit.tools ?? [])],
     routes,
@@ -256,6 +331,25 @@ function createRuntimeUnitLoader(
     createRuntimeReferenceLoader(definition, entries),
   )
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
+  const config = unit.config.map((definition) =>
+    createRuntimeValueDeclarationLoader(definition, "config.validator", referenceById),
+  )
+  const secrets = unit.secrets.map((definition) =>
+    createRuntimeValueDeclarationLoader(definition, "secrets.validator", referenceById),
+  )
+  const providers = unit.providers.map((definition) => {
+    const reference = requireDeclarationReference(
+      definition.unitId,
+      definition.declaration.id,
+      definition.referenceId,
+      "providers.runtime",
+      referenceById,
+    )
+    return {
+      ...definition,
+      load: <T = unknown>() => reference.load<T>(),
+    }
+  })
   const routes = unit.routes.map((definition) => {
     const reference = definition.referenceId ? referenceById.get(definition.referenceId) : undefined
     if (!reference) {
@@ -287,7 +381,12 @@ function createRuntimeUnitLoader(
     kind: unit.kind,
     packageName: unit.packageName,
     order: unit.order,
+    ...(unit.projectConfig ? { projectConfig: unit.projectConfig } : {}),
     references,
+    config,
+    secrets,
+    resources: unit.resources,
+    providers,
     accessScopes: unit.accessScopes,
     tools,
     routes,
@@ -295,6 +394,48 @@ function createRuntimeUnitLoader(
       Promise.all(uniqueRuntimeRouteLoaders(routes).map((route) => route.load())),
     ),
   }
+}
+
+function createRuntimeValueDeclarationLoader<
+  T extends VoyantGraphRuntimeConfigDefinition | VoyantGraphRuntimeSecretDefinition,
+>(
+  definition: T,
+  facet: "config.validator" | "secrets.validator",
+  references: ReadonlyMap<string, VoyantGraphRuntimeReferenceLoader>,
+): T & { loadValidator?: <TValidator = unknown>() => Promise<TValidator> } {
+  if (!definition.validatorReferenceId) return { ...definition }
+  const reference = requireDeclarationReference(
+    definition.unitId,
+    definition.declaration.id,
+    definition.validatorReferenceId,
+    facet,
+    references,
+  )
+  return {
+    ...definition,
+    loadValidator: <TValidator = unknown>() => reference.load<TValidator>(),
+  }
+}
+
+function requireDeclarationReference(
+  unitId: string,
+  declarationId: string,
+  referenceId: string,
+  facet: VoyantGraphRuntimeReferenceFacet,
+  references: ReadonlyMap<string, VoyantGraphRuntimeReferenceLoader>,
+): VoyantGraphRuntimeReferenceLoader {
+  const reference = references.get(referenceId)
+  if (
+    !reference ||
+    reference.unitId !== unitId ||
+    reference.facet !== facet ||
+    reference.entityId !== declarationId
+  ) {
+    throw new Error(
+      `createVoyantGraphRuntime: declaration "${declarationId}" selects invalid ${facet} reference "${referenceId}".`,
+    )
+  }
+  return reference
 }
 
 function createRuntimeReferenceLoader(
@@ -388,6 +529,7 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
 
   const usedEntries = new Set<string>()
   const referenceIds = new Set<string>()
+  const declarationIds = new Set<string>()
   const toolIds = new Set<string>()
   const toolNames = new Set<string>()
   const accessScopes = new Set(
@@ -416,6 +558,35 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
         }
         referenceIds.add(reference.id)
         usedEntries.add(reference.importEntry)
+      }
+      for (const [facet, declarations] of [
+        ["config", unit.config],
+        ["secrets", unit.secrets],
+        ["resources", unit.resources],
+        ["providers", unit.providers],
+      ] as const) {
+        for (const definition of declarations) {
+          const declarationId = definition.declaration.id
+          if (definition.unitId !== unit.id) {
+            throw new Error(
+              `createVoyantGraphRuntime: ${facet} declaration "${declarationId}" belongs to unit "${definition.unitId}", not "${unit.id}".`,
+            )
+          }
+          if (declarationIds.has(declarationId)) {
+            throw new Error(
+              `createVoyantGraphRuntime: duplicate runtime declaration id "${declarationId}".`,
+            )
+          }
+          declarationIds.add(declarationId)
+        }
+      }
+      for (const definition of [...unit.config, ...unit.secrets]) {
+        const hasValidator = definition.declaration.validator !== undefined
+        if (hasValidator !== (definition.validatorReferenceId !== undefined)) {
+          throw new Error(
+            `createVoyantGraphRuntime: value declaration "${definition.declaration.id}" validator metadata is inconsistent.`,
+          )
+        }
       }
       for (const definition of unit.routes) {
         if (!definition.route.runtime) {

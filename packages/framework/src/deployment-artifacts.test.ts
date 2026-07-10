@@ -196,6 +196,14 @@ describe("deployment graph artifacts", () => {
             validator: { entry: "./runtime", export: "secretSchema" },
           },
         ],
+        resources: [
+          {
+            id: "loyalty.resource",
+            kind: "http-service",
+            required: true,
+            config: { service: "loyalty" },
+          },
+        ],
         providers: [
           {
             id: "loyalty.provider",
@@ -283,6 +291,12 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"loyalty:write"')
     expect(source).toContain('"tools": [')
     expect(source).toContain('"name": "adjust_loyalty"')
+    expect(source).toContain('"config": [')
+    expect(source).toContain('"declaration": {')
+    expect(source).toContain('"key": "loyalty"')
+    expect(source).toContain('"resources": [')
+    expect(source).toContain('"kind": "http-service"')
+    expect(source).toContain('"providers": [')
   })
 
   it("builds one target-neutral whole-application runtime", async () => {

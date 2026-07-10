@@ -12,18 +12,36 @@ export {
   registerVoyantGraphTools,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,
   type VoyantGraphRuntime,
+  type VoyantGraphRuntimeConfigDefinition,
+  type VoyantGraphRuntimeConfigLoader,
   VoyantGraphRuntimeLoadError,
   type VoyantGraphRuntimeLoadErrorCode,
+  type VoyantGraphRuntimeProviderDefinition,
+  type VoyantGraphRuntimeProviderLoader,
   type VoyantGraphRuntimeReferenceDefinition,
   type VoyantGraphRuntimeReferenceFacet,
   type VoyantGraphRuntimeReferenceLoader,
+  type VoyantGraphRuntimeResourceDefinition,
   type VoyantGraphRuntimeRouteDefinition,
   type VoyantGraphRuntimeRouteLoader,
+  type VoyantGraphRuntimeSecretDefinition,
+  type VoyantGraphRuntimeSecretLoader,
   type VoyantGraphRuntimeToolDefinition,
   type VoyantGraphRuntimeToolLoader,
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
 } from "./runtime-lowering.js"
+export {
+  type ResolvedVoyantGraphRuntimeConfig,
+  type ResolvedVoyantGraphRuntimeSecret,
+  type ResolvedVoyantGraphRuntimeValues,
+  type ResolveVoyantGraphRuntimeValuesInput,
+  resolveVoyantGraphRuntimeValues,
+  VOYANT_GRAPH_RUNTIME_VALUE_ERROR_CODES,
+  VoyantGraphRuntimeValueError,
+  type VoyantGraphRuntimeValueErrorCode,
+  type VoyantGraphRuntimeValueIssue,
+} from "./runtime-values.js"
 
 export const VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION = "voyant.deployment-artifacts.v1" as const
 export const VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node" as const

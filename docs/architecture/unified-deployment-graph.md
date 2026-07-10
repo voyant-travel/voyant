@@ -703,6 +703,29 @@ providers, access, admin, tools, webhooks, actions, setup migrations, and
 retain-data lifecycle metadata. Package migration and target lowering remain
 separate work; a detailed custom schema DSL remains explicitly deferred.
 
+Generated Node runtime artifacts retain each selected unit's deterministic
+project config and its config, secret, resource, and provider declarations.
+`resolveVoyantGraphRuntimeValues(...)` resolves config in this order:
+
+1. the selected unit's project config
+2. Node deployment values (including aliases declared by deployment resource
+   requirements)
+3. the declaration default
+
+Secrets resolve only from Node deployment values. Required values and admitted
+validator exports are checked before managed Node composition starts. Errors
+identify the unit, declaration, logical key, and failure code, but do not retain
+or format secret values or validator exceptions. Resolved secrets are available
+through `getSecret(declarationId)` and are not included in enumerable runtime
+metadata.
+
+Provider declarations expose admitted, memoized lazy loaders alongside their
+port and static config metadata. The generic framework does not invoke provider
+factories or choose among multiple declarations for the same port: that requires
+a separate provider-selection and port-binding contract. Resource declarations
+remain available as package metadata; existing deployment resource environment
+validation remains the authority for provider infrastructure requirements.
+
 ## Links And Linkable Entities
 
 Links are part of v1 only where they already map to existing link definitions

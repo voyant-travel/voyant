@@ -288,6 +288,8 @@ export interface ResolvedVoyantGraphUnit {
   packageName: string
   localId?: string
   order: number
+  /** JSON-safe values authored on this unit's project selection. */
+  projectConfig?: VoyantGraphJsonObject
   provides: {
     capabilities: readonly string[]
     ports: readonly VoyantGraphPortDeclaration[]
@@ -561,11 +563,20 @@ export async function resolveDeploymentGraph(
   const mode = input.mode ?? input.deployment?.mode
   const providers = { ...(input.deployment?.providers ?? {}) }
   const requirements = normalizeDeploymentRequirements(input.deployment?.requirements)
+  const selectionConfigById = new Map(
+    [...(input.project.selections?.modules ?? []), ...(input.project.selections?.plugins ?? [])]
+      .filter((selection) => selection.config !== undefined)
+      .map((selection) => [selection.id, selection.config!]),
+  )
   const selectedModules = sortResolvedUnits(
-    input.project.modules.map((unit) => resolveUnit(unit, "module")),
+    input.project.modules.map((unit) =>
+      resolveUnit(unit, "module", selectionConfigById.get(unit.id)),
+    ),
   )
   const selectedPlugins = sortResolvedUnits(
-    input.project.plugins.map((unit) => resolveUnit(unit, "plugin")),
+    input.project.plugins.map((unit) =>
+      resolveUnit(unit, "plugin", selectionConfigById.get(unit.id)),
+    ),
   )
   const selectedUnits = [...selectedModules, ...selectedPlugins]
 
@@ -1044,6 +1055,7 @@ function compareResourceRequirements(
 function resolveUnit(
   unit: VoyantGraphUnitManifest,
   kind: VoyantGraphUnitKind,
+  projectConfig?: VoyantGraphJsonObject,
 ): ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest } {
   const packageName = unit.packageName ?? packageNameFromGraphId(unit.id)
   return {
@@ -1053,6 +1065,7 @@ function resolveUnit(
     packageName,
     ...(unit.localId ? { localId: unit.localId } : {}),
     order: 0,
+    ...(projectConfig ? { projectConfig } : {}),
     provides: {
       capabilities: sortedUnique(unit.provides?.capabilities ?? []),
       ports: sortPorts(unit.provides?.ports ?? []),

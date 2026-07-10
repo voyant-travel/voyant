@@ -379,6 +379,7 @@ describe("deployment graph v1", () => {
     })
 
     expect(project.selections?.modules[0]?.config).toEqual({ tiers: ["silver", "gold"] })
+    expect(graph.modules[0]?.projectConfig).toEqual({ tiers: ["silver", "gold"] })
     expect(graph.modules[0]?.schema).toEqual([
       { id: "@acme/voyant-suite#loyalty.schema", source: "./schema" },
     ])
