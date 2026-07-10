@@ -6,6 +6,7 @@ import {
   type ManagedEventFilterEntry,
   type ManagedScheduledJob,
   type ManagedWorkflowManifestEntry,
+  SCHEDULED_JOB_ROUTE,
 } from "./managed-jobs.js"
 import {
   FRAMEWORK_CAPABILITY_GRAPH,
@@ -548,7 +549,10 @@ export async function resolveDeploymentGraph(
   const selectedUnits = [...selectedModules, ...selectedPlugins]
 
   const packageRecords = mergePackageRecords(selectedUnits, input.packageRecords ?? [])
-  const scheduledJobs = normalizeScheduledJobs(input.scheduledJobs ?? [])
+  const scheduledJobs = normalizeScheduledJobs([
+    ...deriveWorkflowScheduledJobs(selectedUnits),
+    ...(input.scheduledJobs ?? []),
+  ])
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
@@ -876,6 +880,27 @@ function normalizeScheduledJobs(
       module: job.module,
     }))
     .sort((left, right) => left.id.localeCompare(right.id))
+}
+
+function deriveWorkflowScheduledJobs(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphScheduledJob[] {
+  return units.flatMap((unit) =>
+    unit.workflows.flatMap((workflow) =>
+      (workflow.schedules ?? []).flatMap((schedule) => {
+        if (schedule.enabled === false || !schedule.cron) return []
+        return [
+          {
+            id: schedule.id,
+            cron: schedule.cron,
+            description: `Triggers workflow ${workflow.id} from graph schedule ${schedule.id}.`,
+            route: SCHEDULED_JOB_ROUTE,
+            module: unit.localId ?? unit.id,
+          },
+        ]
+      }),
+    ),
+  )
 }
 
 function compareEnvRequirements(
