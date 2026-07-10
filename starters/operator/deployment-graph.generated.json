@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:5437efbd41150df211f7218d0ac45e16f66b75a0c7519da53f16d9bf7751ced5",
+  "contentHash": "sha256:7ee85f5ddd22aa65e9e5919be3ff0031204d5c550d071b1473af439d2e64adb6",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -1511,7 +1511,7 @@
         "kind": "workspace",
         "reference": "link:../framework"
       },
-      "version": "0.31.0"
+      "version": "0.32.0"
     },
     {
       "metadata": {

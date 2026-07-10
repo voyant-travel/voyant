@@ -900,10 +900,14 @@ that build on the same graph contract.
 
 ### Phase 3: packaged admin routes
 
-- add graph-derived admin nav/routes
-- generate admin route files or equivalent entry modules
-- keep route/page imports lazy
-- add admin contribution tests
+- **Shipped:** graph-selected module/plugin packages now drive the generated
+  admin extension factories, code-assembled route module, and destination
+  resolvers. The generator reads `deployment-graph.generated.json`; its checks
+  run before the operator dev/build entrypoints and in the repository
+  architecture gate.
+- generated route/page imports remain lazy through the existing code-assembled
+  route module contract
+- graph-input coverage verifies extension factories, routes, and destinations
 - defer slots and copy until route assembly is proven
 
 ### Phase 4: typed ports and adapter conformance

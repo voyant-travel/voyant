@@ -137,11 +137,10 @@ describe("operator runtime composition", () => {
     //
     // Carve-out: modules whose API is mounted APP-LOCALLY instead of as a
     // package Hono module. `@voyant-travel/flights` exports no Hono module — its
-    // routes live in src/api/flights.ts (adapter wiring is app-specific) —
-    // but it must sit in voyant.config `modules` so `voyant admin generate`
-    // composes its package-delivered admin surface
-    // (@voyant-travel/flights-react/admin). Not migrated-but-dead: the flights
-    // reference tables are served by those app-local routes.
+    // routes live in src/api/flights.ts (adapter wiring is app-specific). The
+    // deployment graph independently selects its package-delivered admin
+    // surface. This is not migrated-but-dead: the flights reference tables are
+    // served by those app-local routes.
     const APP_LOCAL_API_MODULES = new Set(["@voyant-travel/flights"])
     const runtime = new Set(OPERATOR_RUNTIME_MANIFEST.modules)
     const schemaModules = (voyantConfig.modules ?? []).map(entryName)

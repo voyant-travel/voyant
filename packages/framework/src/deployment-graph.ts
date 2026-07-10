@@ -1475,38 +1475,40 @@ function validatePackageAdmission(
 function isFrameworkVersionCompatible(version: string, range: string): boolean {
   const parsedVersion = parseVersion(version)
   if (!parsedVersion) return version === range
-  return range
+  const clauses = range
     .split("||")
     .map((clause) => clause.trim())
     .filter(Boolean)
-    .some((clause) =>
-      clause
-        .split(/\s+/)
-        .filter(Boolean)
-        .every((token) => satisfiesVersionToken(parsedVersion, token)),
-    )
+  for (const clause of clauses) {
+    const tokens = clause.split(/\s+/).filter(Boolean)
+    if (tokens.every((token) => satisfiesVersionConstraint(parsedVersion, token))) return true
+  }
+  return false
 }
 
-function satisfiesVersionToken(version: ParsedVersion, token: string): boolean {
+function satisfiesVersionConstraint(version: ParsedVersion, token: string): boolean {
   const normalized = token.trim()
   if (normalized === "*" || normalized.toLowerCase() === "x") return true
   if (normalized.startsWith("^")) return satisfiesCaret(version, normalized.slice(1))
   if (normalized.startsWith("~")) return satisfiesTilde(version, normalized.slice(1))
 
-  const comparator = /^(>=|<=|>|<|=)?(.+)$/.exec(normalized)
-  if (!comparator) return false
-  const operator = comparator[1] ?? "="
-  const targetText = comparator[2] ?? ""
+  for (const operator of [">=", "<=", ">", "<"] as const) {
+    if (!normalized.startsWith(operator)) continue
+    const target = parseVersion(normalized.slice(operator.length))
+    if (!target) return false
+    const comparison = compareVersions(version, target)
+    if (operator === ">=") return comparison >= 0
+    if (operator === "<=") return comparison <= 0
+    if (operator === ">") return comparison > 0
+    return comparison < 0
+  }
+
+  const targetText = normalized.startsWith("=") ? normalized.slice(1) : normalized
   if (isWildcardVersion(targetText)) return satisfiesWildcard(version, targetText)
 
   const target = parseVersion(targetText)
   if (!target) return false
-  const comparison = compareVersions(version, target)
-  if (operator === ">=") return comparison >= 0
-  if (operator === ">") return comparison > 0
-  if (operator === "<=") return comparison <= 0
-  if (operator === "<") return comparison < 0
-  return comparison === 0
+  return compareVersions(version, target) === 0
 }
 
 function satisfiesCaret(version: ParsedVersion, targetText: string): boolean {
@@ -1560,7 +1562,9 @@ function parseVersion(value: string): ParsedVersion | null {
 }
 
 function compareVersions(left: ParsedVersion, right: ParsedVersion): number {
-  return left.major - right.major || left.minor - right.minor || left.patch - right.patch
+  if (left.major !== right.major) return left.major - right.major
+  if (left.minor !== right.minor) return left.minor - right.minor
+  return left.patch - right.patch
 }
 
 function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {

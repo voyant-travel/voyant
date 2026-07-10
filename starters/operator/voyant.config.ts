@@ -1,8 +1,8 @@
 import { defineVoyantConfig } from "@voyant-travel/core/config"
 
 /**
- * voyant.config.ts — manifest powering CLI tooling (generators, link-table
- * sync, schema resolution, admin composition). Standard runtime composition is
+ * voyant.config.ts — manifest powering CLI tooling (link-table sync and schema
+ * resolution). Standard runtime composition is
  * owned by `@voyant-travel/framework`; deployment-local additions are appended
  * through `createVoyantApp` in `src/api/app.ts`.
  */
