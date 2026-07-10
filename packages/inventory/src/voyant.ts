@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declarations owned by the inventory package. */
 export const inventoryVoyantModule = defineModule({
@@ -192,7 +192,7 @@ export const inventoryExtrasVoyantModule = defineModule({
   },
 })
 
-export const inventoryAuthoringVoyantPlugin = definePlugin({
+export const inventoryAuthoringVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#authoring.extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.authoring.extension",
@@ -213,7 +213,7 @@ export const inventoryAuthoringVoyantPlugin = definePlugin({
   },
 })
 
-export const inventoryBookingVoyantPlugin = definePlugin({
+export const inventoryBookingVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#booking-extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.booking-extension",
@@ -233,7 +233,7 @@ export const inventoryBookingVoyantPlugin = definePlugin({
   },
 })
 
-export const inventoryContentVoyantPlugin = definePlugin({
+export const inventoryContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#content-extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.content-extension",
@@ -262,7 +262,7 @@ export const inventoryContentVoyantPlugin = definePlugin({
   },
 })
 
-export const inventoryBrochureVoyantPlugin = definePlugin({
+export const inventoryBrochureVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#brochure-extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.brochure-extension",

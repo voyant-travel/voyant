@@ -49,7 +49,7 @@ export async function composeVoyantGraphRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
 ): Promise<HonoModule[]> {
   const modules: HonoModule[] = []
-  for (const unit of [...runtime.modules, ...runtime.plugins]) {
+  for (const unit of [...runtime.modules, ...runtime.extensions, ...runtime.plugins]) {
     const module = await resolveRuntimeFacetModule(unit)
     if (module) modules.push(module)
   }
@@ -78,7 +78,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
-  for (const unit of input.runtime.plugins) {
+  for (const unit of [...input.runtime.extensions, ...input.runtime.plugins]) {
     const outputs = await resolveRuntimeUnit(input, unit)
     assertWebhookRoutePosture(input.runtime, unit, outputs)
     for (const output of outputs) {

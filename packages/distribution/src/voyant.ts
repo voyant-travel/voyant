@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declarations owned by the distribution package. */
 export const distributionVoyantModule = defineModule({
@@ -124,7 +124,7 @@ export const distributionVoyantModule = defineModule({
   },
 })
 
-export const distributionBookingVoyantPlugin = definePlugin({
+export const distributionBookingVoyantPlugin = defineExtension({
   id: "@voyant-travel/distribution#extension",
   packageName: "@voyant-travel/distribution",
   localId: "distribution",
@@ -144,7 +144,7 @@ export const distributionBookingVoyantPlugin = definePlugin({
   },
 })
 
-export const distributionChannelPushVoyantPlugin = definePlugin({
+export const distributionChannelPushVoyantPlugin = defineExtension({
   id: "@voyant-travel/distribution#channel-push-extension",
   packageName: "@voyant-travel/distribution",
   localId: "distribution.channel-push-extension",

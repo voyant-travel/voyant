@@ -32,7 +32,7 @@ describe("quotes deployment manifests", () => {
 
   it("owns the booking extension", () => {
     expect(quotesBookingVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/quotes#booking-extension",
       packageName: "@voyant-travel/quotes",
       api: [
@@ -51,7 +51,7 @@ describe("quotes deployment manifests", () => {
   it("owns the proposal and quote-version snapshot bridges", () => {
     expect([quotesProposalVoyantPlugin, quotesVersionSnapshotVoyantPlugin]).toMatchObject([
       {
-        schemaVersion: "voyant.plugin.v1",
+        schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/quotes#proposal-extension",
         api: [
           {
@@ -74,7 +74,7 @@ describe("quotes deployment manifests", () => {
         ],
       },
       {
-        schemaVersion: "voyant.plugin.v1",
+        schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/quotes#quote-version-snapshot-extension",
         api: [
           {

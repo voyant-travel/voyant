@@ -24,7 +24,7 @@ describe("action-ledger deployment manifest", () => {
 
   it("owns the health extension bridge", () => {
     expect(actionLedgerHealthVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/action-ledger#health-extension",
       packageName: "@voyant-travel/action-ledger",
       api: [

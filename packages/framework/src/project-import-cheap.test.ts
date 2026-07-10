@@ -12,6 +12,7 @@ describe("framework project import boundary", () => {
     expect(authoring.defineProject({ modules: [] })).toEqual({
       schemaVersion: "voyant.project.v1",
       modules: [],
+      extensions: [],
       plugins: [],
     })
     expect(authoring.resolveProject).toBeTypeOf("function")

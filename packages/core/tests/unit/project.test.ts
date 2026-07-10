@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { defineModule, defineProject } from "../../src/project.js"
+import { defineExtension, defineModule, defineProject } from "../../src/project.js"
 
 describe("defineProject", () => {
   it("normalizes package strings and records to the same module selection", () => {
@@ -74,6 +74,24 @@ describe("defineProject", () => {
         provenance: { kind: "path", path: "./src/plugins/smartbill" },
       },
     ])
+  })
+
+  it("keeps package-owned extensions distinct from external plugins", () => {
+    const extension = defineExtension({
+      id: "@acme/voyant-suite#admin-extension",
+      requires: { capabilities: ["acme.loyalty.points"] },
+    })
+    const project = defineProject({
+      modules: [],
+      extensions: [extension],
+      plugins: ["@acme/voyant-tax-provider"],
+    })
+
+    expect(project.extensions).toEqual([extension])
+    expect(project.extensions[0]?.schemaVersion).toBe("voyant.extension.v1")
+    expect(project.plugins[0]?.schemaVersion).toBe("voyant.plugin.v1")
+    expect(project.selections?.extensions).toEqual([])
+    expect(project.selections?.plugins[0]?.resolve).toBe("@acme/voyant-tax-provider")
   })
 
   it("retains deterministic JSON config without turning it into a unit facet", () => {

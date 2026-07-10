@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the accommodations package. */
 export const accommodationsVoyantModule = defineModule({
@@ -43,7 +43,7 @@ export const accommodationsVoyantModule = defineModule({
   },
 })
 
-export const accommodationsContentVoyantPlugin = definePlugin({
+export const accommodationsContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/accommodations#content-extension",
   packageName: "@voyant-travel/accommodations",
   localId: "accommodations.content-extension",

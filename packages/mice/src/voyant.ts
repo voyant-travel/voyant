@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declarations owned by the MICE package. */
 export const miceVoyantModule = defineModule({
@@ -74,7 +74,7 @@ export const miceVoyantModule = defineModule({
   },
 })
 
-export const miceBookingVoyantPlugin = definePlugin({
+export const miceBookingVoyantPlugin = defineExtension({
   id: "@voyant-travel/mice#booking-extension",
   packageName: "@voyant-travel/mice",
   localId: "mice.booking-extension",

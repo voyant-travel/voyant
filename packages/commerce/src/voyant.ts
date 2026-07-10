@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-index"
 const commerceAdminRuntime = {
@@ -182,7 +182,7 @@ export const commerceVoyantModule = defineModule({
   },
 })
 
-export const commerceCatalogCheckoutVoyantPlugin = definePlugin({
+export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
   id: "@voyant-travel/commerce#catalog-checkout-extension",
   packageName: "@voyant-travel/commerce",
   localId: "commerce.catalog-checkout-extension",
@@ -202,7 +202,7 @@ export const commerceCatalogCheckoutVoyantPlugin = definePlugin({
   },
 })
 
-export const commerceBookingMaintenanceVoyantPlugin = definePlugin({
+export const commerceBookingMaintenanceVoyantPlugin = defineExtension({
   id: "@voyant-travel/commerce#booking-maintenance-extension",
   packageName: "@voyant-travel/commerce",
   localId: "commerce.booking-maintenance-extension",

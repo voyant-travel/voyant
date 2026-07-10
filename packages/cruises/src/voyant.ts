@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the cruises package. */
 export const cruisesVoyantModule = defineModule({
@@ -74,7 +74,7 @@ export const cruisesVoyantModule = defineModule({
   },
 })
 
-export const cruisesContentVoyantPlugin = definePlugin({
+export const cruisesContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/cruises#content-extension",
   packageName: "@voyant-travel/cruises",
   localId: "cruises.content-extension",
@@ -103,7 +103,7 @@ export const cruisesContentVoyantPlugin = definePlugin({
   },
 })
 
-export const cruisesBookingVoyantPlugin = definePlugin({
+export const cruisesBookingVoyantPlugin = defineExtension({
   id: "@voyant-travel/cruises#booking-extension",
   packageName: "@voyant-travel/cruises",
   localId: "cruises.booking-extension",

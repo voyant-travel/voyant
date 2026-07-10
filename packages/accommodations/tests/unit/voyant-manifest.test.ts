@@ -38,7 +38,7 @@ describe("accommodations deployment manifest", () => {
 
   it("owns its catalog content extension", () => {
     expect(accommodationsContentVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/accommodations#content-extension",
       api: [
         {

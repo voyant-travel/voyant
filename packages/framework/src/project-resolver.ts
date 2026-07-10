@@ -213,7 +213,11 @@ async function materializeRuntimeReferencePackages(
   projectRoot: string,
   packages: Map<string, InspectedPackage>,
 ): Promise<void> {
-  for (const reference of runtimePackageReferences([...graph.modules, ...graph.plugins])) {
+  for (const reference of runtimePackageReferences([
+    ...graph.modules,
+    ...graph.extensions,
+    ...graph.plugins,
+  ])) {
     const packageName = runtimeReferencePackageName(reference)
     let inspected = packages.get(packageName)
     if (!inspected) {
@@ -335,6 +339,13 @@ async function materializeProjectSelections(
     projectRoot,
     packages,
   )
+  const extensions = await materializeUnits(
+    project.extensions,
+    selections.extensions,
+    "extension",
+    projectRoot,
+    packages,
+  )
   const plugins = await materializeUnits(
     project.plugins,
     selections.plugins,
@@ -348,9 +359,11 @@ async function materializeProjectSelections(
     project: {
       ...project,
       modules: modules.units,
+      extensions: extensions.units,
       plugins: plugins.units,
       selections: {
         modules: modules.selections,
+        extensions: extensions.selections,
         plugins: plugins.selections,
       },
     },
@@ -479,7 +492,7 @@ async function buildLocalRuntimeEntryOverrides(
   const overrides: Record<string, string> = {}
   const runtimeDirectory = path.dirname(path.join(projectRoot, ".voyant", runtimeEntry))
 
-  for (const unit of [...graph.modules, ...graph.plugins]) {
+  for (const unit of [...graph.modules, ...graph.extensions, ...graph.plugins]) {
     const inspected = packages.get(unit.packageName)
     if (inspected?.record.source.kind !== "file") continue
     const packageJson = await readPackageJson(inspected.directory)
@@ -512,7 +525,7 @@ function lowerOwnerRuntimeEntry(packageName: string, entry: string): string {
 export function buildMigrationPlan(
   graph: ResolvedVoyantDeploymentGraph,
 ): VoyantProjectMigrationPlan {
-  const units = [...graph.modules, ...graph.plugins]
+  const units = [...graph.modules, ...graph.extensions, ...graph.plugins]
   const packageSchemaMigrations = units.flatMap((unit) =>
     unit.migrations
       .filter((migration): migration is typeof migration & { source: string } =>
@@ -941,7 +954,18 @@ function requireProject(value: unknown): VoyantGraphProject {
       "resolveProject: project must be the voyant.project.v1 result returned by defineProject(...).",
     )
   }
-  return value
+  return {
+    ...value,
+    extensions: value.extensions ?? [],
+    ...(value.selections
+      ? {
+          selections: {
+            ...value.selections,
+            extensions: value.selections.extensions ?? [],
+          },
+        }
+      : {}),
+  }
 }
 
 function isVoyantGraphProject(value: unknown): value is VoyantGraphProject {
@@ -950,6 +974,8 @@ function isVoyantGraphProject(value: unknown): value is VoyantGraphProject {
     value.schemaVersion !== "voyant.project.v1" ||
     !Array.isArray(value.modules) ||
     !value.modules.every(isGraphUnitManifest) ||
+    (value.extensions !== undefined &&
+      (!Array.isArray(value.extensions) || !value.extensions.every(isGraphUnitManifest))) ||
     !Array.isArray(value.plugins) ||
     !value.plugins.every(isGraphUnitManifest)
   ) {
@@ -960,6 +986,9 @@ function isVoyantGraphProject(value: unknown): value is VoyantGraphProject {
   return (
     Array.isArray(value.selections.modules) &&
     value.selections.modules.every(isProjectSelection) &&
+    (value.selections.extensions === undefined ||
+      (Array.isArray(value.selections.extensions) &&
+        value.selections.extensions.every(isProjectSelection))) &&
     Array.isArray(value.selections.plugins) &&
     value.selections.plugins.every(isProjectSelection)
   )
@@ -980,7 +1009,9 @@ function isGraphUnitManifest(value: unknown): value is VoyantGraphUnitManifest {
   return (
     isRecord(value) &&
     typeof value.id === "string" &&
-    (value.schemaVersion === "voyant.module.v1" || value.schemaVersion === "voyant.plugin.v1")
+    (value.schemaVersion === "voyant.module.v1" ||
+      value.schemaVersion === "voyant.extension.v1" ||
+      value.schemaVersion === "voyant.plugin.v1")
   )
 }
 

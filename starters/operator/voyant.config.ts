@@ -70,7 +70,7 @@ const definition = {
     { resolve: "./src/modules/invitations" },
     { resolve: "./src/modules/team" },
   ],
-  plugins: [
+  extensions: [
     "@voyant-travel/bookings/booking-supplier-extension",
     "@voyant-travel/finance/bookings-create-extension",
     "@voyant-travel/inventory/booking-extension",
@@ -91,8 +91,8 @@ const definition = {
     "@voyant-travel/catalog/offers-extension",
     "@voyant-travel/commerce/catalog-checkout-extension",
     "@voyant-travel/mice/booking-extension",
-    { resolve: "@voyant-travel/plugin-netopia" },
   ],
+  plugins: [{ resolve: "@voyant-travel/plugin-netopia" }],
   deployment,
 } as const
 

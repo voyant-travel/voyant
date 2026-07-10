@@ -1,4 +1,4 @@
-import { defineModule, definePlugin } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declarations owned by the quotes package. */
 export const quotesVoyantModule = defineModule({
@@ -149,7 +149,7 @@ export const quotesVoyantModule = defineModule({
   },
 })
 
-export const quotesBookingVoyantPlugin = definePlugin({
+export const quotesBookingVoyantPlugin = defineExtension({
   id: "@voyant-travel/quotes#booking-extension",
   packageName: "@voyant-travel/quotes",
   localId: "quotes.booking-extension",
@@ -169,7 +169,7 @@ export const quotesBookingVoyantPlugin = definePlugin({
   },
 })
 
-export const quotesProposalVoyantPlugin = definePlugin({
+export const quotesProposalVoyantPlugin = defineExtension({
   id: "@voyant-travel/quotes#proposal-extension",
   packageName: "@voyant-travel/quotes",
   localId: "quotes.proposal-extension",
@@ -201,7 +201,7 @@ export const quotesProposalVoyantPlugin = definePlugin({
   },
 })
 
-export const quotesVersionSnapshotVoyantPlugin = definePlugin({
+export const quotesVersionSnapshotVoyantPlugin = defineExtension({
   id: "@voyant-travel/quotes#quote-version-snapshot-extension",
   packageName: "@voyant-travel/quotes",
   localId: "quotes.quote-version-snapshot-extension",

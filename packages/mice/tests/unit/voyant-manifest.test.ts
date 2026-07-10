@@ -33,7 +33,7 @@ describe("MICE deployment manifests", () => {
 
   it("owns the booking extension", () => {
     expect(miceBookingVoyantPlugin).toMatchObject({
-      schemaVersion: "voyant.plugin.v1",
+      schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/mice#booking-extension",
       packageName: "@voyant-travel/mice",
       api: [
