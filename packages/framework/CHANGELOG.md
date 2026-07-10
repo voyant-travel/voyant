@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.30.0
+
+### Minor Changes
+
+- 560155a: Derive deployment graph resource requirements from declared standard providers.
+- 03ccb9c: Allow managed runtime startup to validate requirements supplied by a resolved deployment graph.
+
 ## 0.29.5
 
 ### Patch Changes
