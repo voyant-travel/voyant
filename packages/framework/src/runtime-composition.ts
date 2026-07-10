@@ -108,7 +108,9 @@ function createGraphOutboundWebhookModule<TCapabilities>(
       name: "graph-outbound-webhooks",
       bootstrap: ({ bindings, eventBus }) => {
         for (const eventType of eventTypes) {
-          eventBus.subscribe(eventType, (event) => enqueue(event, bindings))
+          eventBus.subscribe(eventType, async (event) => {
+            await enqueue(event, bindings)
+          })
         }
       },
     },

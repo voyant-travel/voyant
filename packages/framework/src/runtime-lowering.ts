@@ -308,6 +308,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
     | "config"
     | "providers"
     | "references"
+    | "requiredPorts"
     | "resources"
     | "routes"
     | "secrets"
@@ -319,6 +320,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   secrets: readonly VoyantGraphRuntimeSecretDefinition[]
   resources: readonly VoyantGraphRuntimeResourceDefinition[]
   providers: readonly VoyantGraphRuntimeProviderDefinition[]
+  requiredPorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]

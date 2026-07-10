@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it, type Mock, vi } from "vitest"
 
 import { type CreateVoyantGraphRuntimeInput, createVoyantGraphRuntime } from "./runtime-lowering.js"
 import {
@@ -9,7 +9,7 @@ import {
 function createRuntime(options: {
   selection?: string
   duplicate?: boolean
-  importProvider?: ReturnType<typeof vi.fn>
+  importProvider?: Mock<() => Promise<unknown>>
 }) {
   const importProvider =
     options.importProvider ??
