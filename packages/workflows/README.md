@@ -23,9 +23,26 @@ export const sendBookingReminders = workflow({
 });
 ```
 
+Projects and plugins that collect workflow definitions explicitly can use
+`defineWorkflow(...)`. It returns the same typed workflow definition without
+mutating the process-local legacy registry, so the definition can be exported
+directly from its module:
+
+```ts
+import { defineWorkflow } from "@voyant-travel/workflows";
+
+export default defineWorkflow({
+  id: "send-booking-reminders",
+  async run(input: { bookingId: string }, ctx) {
+    await ctx.step("send-reminder", async () => sendReminder(input.bookingId));
+  },
+});
+```
+
 ## Subpaths
 
-- `@voyant-travel/workflows` — authoring API (`workflow`, `workflows`, `trigger`, conditions, errors).
+- `@voyant-travel/workflows` — authoring API (`defineWorkflow`, `workflow`,
+  `workflows`, `trigger`, conditions, errors).
 - `@voyant-travel/workflows/client` — app/server-safe managed Cloud client and
   Cloud-mode driver. Use this from app code that only needs
   `workflows.trigger(...)` or event forwarding; it does not import workflow
