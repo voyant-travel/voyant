@@ -666,6 +666,12 @@ and the operator Cloud Scheduler emitter uses that stable id as the runtime
 dispatch key. Legacy `?cron=<expr>` URLs remain accepted as a compatibility
 fallback for already-provisioned scheduler jobs.
 
+Implementation note: graph-derived workflow schedules carry their `workflowId`
+and optional schedule `input` through `provisioning.scheduledJobs`, so the
+operator scheduled entrypoint can route them through the workflow runtime by
+stable schedule id. Runtime maintenance jobs remain explicit scheduled-job
+metadata.
+
 ## Events And Webhooks
 
 V1 should include subscribers and workflow event filters that already map to

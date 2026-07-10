@@ -130,6 +130,40 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     ])
   })
 
+  it("loads graph-derived workflow schedule metadata for dispatch", () => {
+    const root = fixtureRoot()
+    writeFixture(root, {
+      provisioning: {
+        scheduledJobs: [
+          {
+            id: "@voyant-travel/operator#schedule.notifications.send-due-reminders.hourly",
+            cron: "0 * * * *",
+            description: "Triggers due reminders.",
+            route: "/__voyant/scheduled",
+            module: "operator",
+            workflowId: "notifications.send-due-reminders",
+            input: { now: "2026-07-10T05:30:00.000Z" },
+          },
+        ],
+      },
+    })
+    const summary = loadOperatorDeploymentGraphArtifacts(
+      pathToFileURL(join(root, "src", "server.ts")).href,
+    )
+
+    expect(summary.scheduledJobs).toEqual([
+      {
+        id: "@voyant-travel/operator#schedule.notifications.send-due-reminders.hourly",
+        cron: "0 * * * *",
+        description: "Triggers due reminders.",
+        route: "/__voyant/scheduled",
+        module: "operator",
+        workflowId: "notifications.send-due-reminders",
+        input: { now: "2026-07-10T05:30:00.000Z" },
+      },
+    ])
+  })
+
   it("loads graph-derived deployment providers for runtime binding selection", () => {
     const root = fixtureRoot()
     writeFixture(root, {
@@ -419,6 +453,8 @@ interface FixtureDeploymentGraph {
       description: string
       route?: string
       module: string
+      workflowId?: string
+      input?: unknown
     }>
   }
 }

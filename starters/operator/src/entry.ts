@@ -37,6 +37,27 @@ export async function scheduled(
   }
   const scheduledEvent = { ...dispatchKey, cron: job.cron }
 
+  if (job.workflowId) {
+    ctx.waitUntil(
+      import("./api/jobs/workflow-scheduled")
+        .then((mod) => {
+          if (!mod.isGraphWorkflowScheduledJob(job)) {
+            throw new Error(`[scheduled] invalid workflow schedule ${job.id}`)
+          }
+          return mod.runScheduledWorkflow(job, scheduledEvent, env)
+        })
+        .then((result) => {
+          console.info("[scheduled-workflow] triggered", {
+            scheduleId: job.id,
+            workflowId: job.workflowId,
+          })
+          return result
+        })
+        .catch((err) => reportBackgroundFailure("scheduled-workflow", err)),
+    )
+    return
+  }
+
   if (job.id === "outbox-drain") {
     ctx.waitUntil(
       import("./api/jobs/outbox-drain-scheduled")
