@@ -166,6 +166,7 @@ import {
   getVoyantProjectRequirements,
   resolveActiveModuleIds,
   toCreateVoyantAppProfileConfig,
+  type VoyantProfileEnvRequirement,
   type VoyantProfileRequirements,
   type VoyantProjectDeploymentMode,
   type VoyantProjectManifest,
@@ -1217,13 +1218,19 @@ function managedProfileEnvIssues(
   const issues: string[] = []
   for (const resource of requirements.resources) {
     for (const requirement of resource.env) {
-      if (!requirement.required) continue
-      const present = [requirement.name, ...(requirement.aliases ?? [])].some((name) =>
-        hasEnvValue(env, name),
-      )
-      if (!present) {
+      const values = [requirement.name, ...(requirement.aliases ?? [])]
+        .map((name) => getEnvValue(env, name))
+        .filter(hasValue)
+      if (requirement.required && values.length === 0) {
         issues.push(
           `${requirement.kind} ${requirement.name} is required for ${resource.resourceKey}`,
+        )
+        continue
+      }
+      const format = requirement.format
+      if (format && values.length > 0 && !values.every((value) => hasFormat(value, format))) {
+        issues.push(
+          `${requirement.kind} ${requirement.name} must be ${formatDescription(format)} for ${resource.resourceKey}`,
         )
       }
     }
@@ -1247,9 +1254,30 @@ function getEnvValue(env: ManagedProfileRuntimeEnv, name: string): unknown {
   return Reflect.get(env, name)
 }
 
-function hasEnvValue(env: ManagedProfileRuntimeEnv, name: string): boolean {
-  const value = getEnvValue(env, name)
+function hasValue(value: unknown): boolean {
   return typeof value === "string" ? value.trim().length > 0 : value !== null && value !== undefined
+}
+
+function hasFormat(
+  value: unknown,
+  format: NonNullable<VoyantProfileEnvRequirement["format"]>,
+): boolean {
+  if (typeof value !== "string" || value.trim().length === 0) return false
+  try {
+    const parsed = new URL(value)
+    if (format === "postgres-url")
+      return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
+    if (format === "redis-url") return parsed.protocol === "redis:" || parsed.protocol === "rediss:"
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+  } catch {
+    return false
+  }
+}
+
+function formatDescription(format: NonNullable<VoyantProfileEnvRequirement["format"]>): string {
+  if (format === "postgres-url") return "a Postgres URL"
+  if (format === "redis-url") return "a Redis URL"
+  return "an HTTP(S) URL"
 }
 
 function dbUrl(env: ManagedProfileRuntimeEnv): string {

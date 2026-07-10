@@ -30,6 +30,7 @@ import {
 } from "./profile-types.js"
 import { isJsonValue, isRecord, validateVoyantProjectRecord } from "./profile-validation.js"
 
+export type { VoyantProfileEnvValueFormat } from "./profile-types.js"
 export {
   type DefineVoyantProjectInput,
   MANAGED_OPERATOR_DEFAULT_PROVIDERS,

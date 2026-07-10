@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:10f57840772bca7458d07bd130958aabd9b0d3ed9054f0377d170e7075f44d60",
+  "contentHash": "sha256:7ae3ecba924a3d1ac54d4142ab517e138740790d1c6fe459c93ed8d8c61d203f",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -2351,12 +2351,14 @@
           {
             "aliases": ["DATABASE_URL_DIRECT"],
             "description": "Primary Postgres connection URL used by migrations and fallback DB clients.",
+            "format": "postgres-url",
             "kind": "secret",
             "name": "DATABASE_URL",
             "required": true
           },
           {
             "description": "Direct Postgres URL for the resident Node pool.",
+            "format": "postgres-url",
             "kind": "secret",
             "name": "DATABASE_URL_DIRECT",
             "required": false

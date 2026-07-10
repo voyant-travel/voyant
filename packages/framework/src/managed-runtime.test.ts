@@ -30,6 +30,8 @@ const localProviders = {
   workflows: "none",
 } satisfies VoyantProjectProviders
 
+const MANAGED_PROFILE_TEST_DATABASE_URL = "postgresql://voyant:secret@localhost:5432/voyant_test"
+
 function managedCloudProject() {
   return defineVoyantProject({
     profile: "operator",
@@ -129,7 +131,7 @@ describe("managed profile runtime entry", () => {
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
       env: {
-        DATABASE_URL: "managed-profile-test-db",
+        DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL,
       },
     })
 
@@ -156,10 +158,34 @@ describe("managed profile runtime entry", () => {
 
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
-      env: { DATABASE_URL_DIRECT: "managed-profile-test-db" },
+      env: { DATABASE_URL_DIRECT: MANAGED_PROFILE_TEST_DATABASE_URL },
     })
 
     expect(runtime.app.fetch).toEqual(expect.any(Function))
+  })
+
+  it("rejects malformed graph-derived Postgres configuration before startup", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          providers: localProviders,
+        }),
+      ),
+    )
+
+    await expect(
+      loadManagedProfileRuntime({
+        profileSnapshotPath: snapshotPath,
+        env: { DATABASE_URL: "not-a-postgres-url" },
+      }),
+    ).rejects.toThrow(/DATABASE_URL must be a Postgres URL for database:postgres/)
   })
 
   it("validates the graph-supplied deployment requirements at startup", async () => {
@@ -181,7 +207,7 @@ describe("managed profile runtime entry", () => {
     await expect(
       loadManagedProfileRuntime({
         profileSnapshotPath: snapshotPath,
-        env: { DATABASE_URL: "managed-profile-test-db" },
+        env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
         deploymentRequirements: {
           resources: [
             {
@@ -222,7 +248,7 @@ describe("managed profile runtime entry", () => {
 
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
-      env: { DATABASE_URL: "managed-profile-test-db" },
+      env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
       deployment: {
         mode: "self-hosted",
         providers: {
@@ -268,7 +294,7 @@ describe("managed profile runtime entry", () => {
       loadManagedProfileRuntime({
         profileSnapshotPath: snapshotPath,
         env: {
-          DATABASE_URL: "managed-profile-test-db",
+          DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL,
         },
       }),
     ).rejects.toThrow(/REDIS_URL|R2_S3_ENDPOINT/)
@@ -423,7 +449,7 @@ describe("managed profile runtime entry", () => {
 
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
-      env: { DATABASE_URL: "managed-profile-test-db" },
+      env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
       importPluginModule: async () => ({ voyantPlugin: factory }),
     })
 
@@ -456,7 +482,7 @@ describe("managed profile runtime entry", () => {
     await expect(
       loadManagedProfileRuntime({
         profileSnapshotPath: snapshotPath,
-        env: { DATABASE_URL: "managed-profile-test-db" },
+        env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
         importPluginModule: async () => ({ notAFactory: 42 }),
       }),
     ).rejects.toThrow(/does not export a managed-plugin entry/)
@@ -501,7 +527,7 @@ describe("managed profile runtime entry", () => {
 
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
-      env: { DATABASE_URL: "managed-profile-test-db" },
+      env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
       importCustomSourceModule,
     })
 
@@ -532,7 +558,7 @@ describe("managed profile runtime entry", () => {
     await expect(
       loadManagedProfileRuntime({
         profileSnapshotPath: snapshotPath,
-        env: { DATABASE_URL: "managed-profile-test-db" },
+        env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
         importCustomSourceModule: async () => ({ notAFactory: 42 }),
       }),
     ).rejects.toThrow(/does not export a managed-module entry/)
@@ -540,7 +566,7 @@ describe("managed profile runtime entry", () => {
 
   it("builds managed Node bindings from plain env/secrets", () => {
     const env = createManagedProfileNodeEnv({
-      DATABASE_URL: "managed-profile-test-db",
+      DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL,
       R2_S3_ENDPOINT: "https://r2.example.test",
       R2_ACCESS_KEY_ID: "access",
       R2_SECRET_ACCESS_KEY: "secret",
@@ -568,7 +594,7 @@ describe("managed profile runtime entry", () => {
     }
 
     const env = createManagedProfileNodeEnv({
-      DATABASE_URL: "managed-profile-test-db",
+      DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL,
       CACHE: kv,
       RATE_LIMIT: kv,
       MEDIA_BUCKET: bucket,
@@ -706,7 +732,7 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned contract document routes in the default managed providers", async () => {
-    const env = createManagedProfileNodeEnv({ DATABASE_URL: "managed-profile-test-db" })
+    const env = createManagedProfileNodeEnv({ DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL })
     await env.DOCUMENTS_BUCKET?.put("contracts/test.pdf", new TextEncoder().encode("%PDF-1.4"))
     const app = await createManagedProfileProviders().loadContractDocumentRoutes()
 
@@ -719,7 +745,7 @@ describe("managed profile runtime entry", () => {
 
   it("wires package-owned media routes in the default managed providers", async () => {
     const env = createManagedProfileNodeEnv({
-      DATABASE_URL: "managed-profile-test-db",
+      DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL,
       APP_URL: "https://api.example.test",
     })
     await env.MEDIA_BUCKET?.put("uploads/test.txt", "hello", {

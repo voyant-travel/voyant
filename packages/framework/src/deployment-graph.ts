@@ -878,6 +878,7 @@ function normalizeResourceRequirement(
     env: [...requirement.env].sort(compareEnvRequirements).map((env) => ({
       name: env.name,
       ...(env.aliases?.length ? { aliases: [...env.aliases].sort() } : {}),
+      ...(env.format ? { format: env.format } : {}),
       kind: env.kind,
       required: env.required,
       description: env.description,
@@ -934,6 +935,7 @@ function compareEnvRequirements(
     left.kind.localeCompare(right.kind) ||
     Number(left.required) - Number(right.required) ||
     (left.aliases ?? []).join(",").localeCompare((right.aliases ?? []).join(",")) ||
+    (left.format ?? "").localeCompare(right.format ?? "") ||
     left.description.localeCompare(right.description)
   )
 }
