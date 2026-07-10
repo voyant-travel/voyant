@@ -24,6 +24,57 @@ pnpm db:migrate                                     # collector applies it
 
 No edits to `app.ts`, the framework, or any generated file.
 
+## Project workflows and jobs
+
+Application-level workflows and low-level jobs can live directly under
+`src/workflows` and `src/jobs`. The framework compiler scans these directories
+at build time, validates their export contracts without importing them, and
+emits sorted static registries. It never scans directories or registers
+definitions by side effect at runtime.
+
+A project workflow must directly default-export the pure `defineWorkflow`
+definition imported from `@voyant-travel/workflows`. Named type exports are
+allowed; named runtime exports and the registering `workflow(...)` helper are
+not convention inputs.
+
+```ts
+// src/workflows/booking/send-reminder.ts
+import { defineWorkflow } from "@voyant-travel/workflows"
+
+export interface SendReminderInput {
+  bookingId: string
+}
+
+export default defineWorkflow<SendReminderInput, void>({
+  id: "booking.send-reminder",
+  run: async (input, ctx) => {
+    await ctx.step("send", async () => {
+      // Send the reminder through an injected service.
+    })
+  },
+})
+```
+
+A project job must export a named `schedule` value and default-export its
+handler. Jobs are the explicit low-level maintenance escape hatch; public
+scheduled product work should use a workflow's `schedule` declaration.
+
+```ts
+// src/jobs/reconcile-search.ts
+export const schedule = { cron: "0 3 * * *" }
+
+export default async function reconcileSearch(): Promise<void> {
+  // Run deployment-local maintenance work.
+}
+```
+
+The compiler writes `.voyant/runtime/project-workflows.generated.ts` and
+`.voyant/runtime/project-jobs.generated.ts`. These disposable TypeScript files
+contain only deterministic static imports plus path-derived convention IDs.
+Source imports that escape the project root, normalized ID collisions, missing
+exports, indirect or registering workflow definitions, and extra runtime
+exports fail compilation with stable diagnostics.
+
 ## Folder shape
 
 ```
