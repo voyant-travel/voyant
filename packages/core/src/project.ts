@@ -4,6 +4,22 @@
  * package export, never imported from this module.
  */
 
+import type {
+  VoyantGraphAccessDeclaration,
+  VoyantGraphActionDeclaration,
+  VoyantGraphAdminDeclaration,
+  VoyantGraphConfigDeclaration,
+  VoyantGraphLifecycleDeclaration,
+  VoyantGraphProviderDeclaration,
+  VoyantGraphResourceDeclaration,
+  VoyantGraphSecretDeclaration,
+  VoyantGraphSetupMigration,
+  VoyantGraphToolDeclaration,
+  VoyantGraphWebhookDeclaration,
+} from "./project-facets.js"
+
+export type * from "./project-facets.js"
+
 export const VOYANT_GRAPH_PROJECT_SCHEMA_VERSION = "voyant.project.v1" as const
 export const VOYANT_GRAPH_MODULE_SCHEMA_VERSION = "voyant.module.v1" as const
 export const VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION = "voyant.plugin.v1" as const
@@ -98,6 +114,17 @@ export interface VoyantGraphUnitManifest {
   subscribers?: readonly VoyantGraphSubscriber[]
   events?: readonly VoyantGraphEvent[]
   workflows?: readonly VoyantGraphWorkflow[]
+  setupMigrations?: readonly VoyantGraphSetupMigration[]
+  config?: readonly VoyantGraphConfigDeclaration[]
+  secrets?: readonly VoyantGraphSecretDeclaration[]
+  resources?: readonly VoyantGraphResourceDeclaration[]
+  providers?: readonly VoyantGraphProviderDeclaration[]
+  access?: VoyantGraphAccessDeclaration
+  admin?: VoyantGraphAdminDeclaration
+  tools?: readonly VoyantGraphToolDeclaration[]
+  webhooks?: readonly VoyantGraphWebhookDeclaration[]
+  actions?: readonly VoyantGraphActionDeclaration[]
+  lifecycle?: VoyantGraphLifecycleDeclaration
   meta?: VoyantGraphJsonObject
 }
 

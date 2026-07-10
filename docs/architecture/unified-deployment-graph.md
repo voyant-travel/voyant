@@ -671,31 +671,24 @@ Separate two concerns:
 
 - resource requirements and environment validation, which v1 inherits from the
   current managed requirements contract
-- module/plugin-owned `config` and `secrets` manifest facets, which are reserved
-  until the toolchain explicitly promotes them
+- module/plugin-owned `config` and `secrets` declarations, which identify
+  logical keys and lazily reference admitted validator exports
 
-When module/plugin-owned config and secret facets are introduced after the first
-resolver slice, the current preferred direction is constrained Zod plus metadata
-wrappers:
+The manifest stores serializable metadata and symbolic validator references;
+the admitted build/doctor pass may load constrained Zod validators:
 
 ```ts
-config: defineConfigSchema({
-  schema: z.object({
-    companyVatId: z.string().min(1),
-  }),
-  visibility: {
-    companyVatId: "operator-visible",
-  },
-})
-
-secrets: defineSecretSchema({
-  schema: z.object({
-    apiToken: z.string().min(1),
-  }),
-  rotation: {
-    apiToken: "supported",
-  },
-})
+config: [{
+  id: "@acme/voyant-fiscal#config.company-vat-id",
+  key: "companyVatId",
+  validator: { entry: "@acme/voyant-fiscal/config", export: "companyVatIdSchema" },
+}],
+secrets: [{
+  id: "@acme/voyant-fiscal#secret.api-token",
+  key: "apiToken",
+  validator: { entry: "@acme/voyant-fiscal/config", export: "apiTokenSchema" },
+  rotation: "supported",
+}],
 ```
 
 If a custom DSL is introduced later, it must remain tiny and frozen. It should
@@ -704,9 +697,10 @@ not become a second general validation language.
 Secret values must not cross workflow boundaries as captured handles. Workflow
 steps should rehydrate secrets by logical binding name inside each step context.
 
-Phase 2 may promote `config` and `secrets` from reserved names into supported
-facets, but only through the constrained Zod-plus-metadata contract above. A
-detailed custom DSL remains explicitly deferred.
+The v1 graph contract now supports these logical declarations, resources,
+providers, access, admin, tools, webhooks, actions, setup migrations, and
+retain-data lifecycle metadata. Package migration and target lowering remain
+separate work; a detailed custom schema DSL remains explicitly deferred.
 
 ## Links And Linkable Entities
 

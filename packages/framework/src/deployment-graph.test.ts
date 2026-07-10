@@ -42,14 +42,14 @@ describe("deployment graph v1", () => {
     expect(
       validateGraphUnitManifest({
         ...module,
-        admin: { nav: [] },
+        audit: { actions: [] },
         unsupportedThing: true,
       }),
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           code: "VOYANT_GRAPH_UNSUPPORTED_FACET",
-          facet: "admin",
+          facet: "audit",
         }),
         expect.objectContaining({
           code: "VOYANT_GRAPH_UNKNOWN_FACET",
@@ -58,6 +58,203 @@ describe("deployment graph v1", () => {
       ]),
     )
     expect(validateGraphUnitManifest(module)).toEqual([])
+  })
+
+  it("resolves the full package-owned facet contract without starter catalogs", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-loyalty",
+      api: [
+        {
+          id: "@acme/voyant-loyalty#api.admin",
+          surface: "admin",
+          requiredScopes: ["loyalty:read"],
+          runtime: { entry: "@acme/voyant-loyalty/routes", export: "adminRoutes" },
+        },
+      ],
+      migrations: [{ id: "@acme/voyant-loyalty#migration.001", source: "./migrations" }],
+      setupMigrations: [
+        {
+          id: "@acme/voyant-loyalty#setup.default-tiers",
+          source: "./setup/default-tiers",
+          dependsOn: ["@acme/voyant-loyalty#migration.001"],
+        },
+      ],
+      config: [
+        {
+          id: "@acme/voyant-loyalty#config.tiers",
+          key: "tiers",
+          validator: { entry: "@acme/voyant-loyalty/config", export: "tiersSchema" },
+        },
+      ],
+      secrets: [
+        {
+          id: "@acme/voyant-loyalty#secret.webhook",
+          key: "webhookSecret",
+          required: true,
+        },
+      ],
+      resources: [{ id: "@acme/voyant-loyalty#resource.store", kind: "database", required: true }],
+      providers: [
+        {
+          id: "@acme/voyant-loyalty#provider.ledger",
+          port: "acme.loyalty.ledger",
+          runtime: { entry: "@acme/voyant-loyalty/provider", export: "ledgerProvider" },
+        },
+      ],
+      access: {
+        resources: [
+          {
+            id: "@acme/voyant-loyalty#access.loyalty",
+            resource: "loyalty",
+            actions: ["read", "write"],
+          },
+        ],
+        roles: [
+          {
+            id: "@acme/voyant-loyalty#role.agent",
+            grants: ["loyalty:read"],
+          },
+        ],
+      },
+      admin: {
+        copy: [
+          {
+            id: "@acme/voyant-loyalty#copy.admin",
+            namespace: "loyalty.admin",
+            fallbackLocale: "en",
+            runtime: { entry: "@acme/voyant-loyalty/admin/copy" },
+          },
+        ],
+        routes: [
+          {
+            id: "@acme/voyant-loyalty#admin.route.index",
+            path: "/loyalty",
+            runtime: { entry: "@acme/voyant-loyalty/admin", export: "LoyaltyPage" },
+            requiredScopes: ["loyalty:read"],
+            copy: [{ namespace: "loyalty.admin", key: "routes.index.title" }],
+          },
+        ],
+        nav: [
+          {
+            id: "@acme/voyant-loyalty#admin.nav",
+            routeId: "@acme/voyant-loyalty#admin.route.index",
+            label: { namespace: "loyalty.admin", key: "nav.loyalty" },
+          },
+        ],
+        slots: [
+          {
+            id: "@acme/voyant-loyalty#admin.slot.summary",
+            routeId: "@acme/voyant-loyalty#admin.route.index",
+          },
+        ],
+        contributions: [
+          {
+            id: "@acme/voyant-loyalty#admin.contribution.balance",
+            slotId: "@acme/voyant-loyalty#admin.slot.summary",
+            runtime: { entry: "@acme/voyant-loyalty/admin", export: "BalanceWidget" },
+          },
+        ],
+      },
+      tools: [
+        {
+          id: "@acme/voyant-loyalty#tool.adjust-points",
+          name: "adjust_loyalty_points",
+          runtime: { entry: "@acme/voyant-loyalty/tools", export: "adjustPoints" },
+          requiredScopes: ["loyalty:write"],
+          risk: "high",
+        },
+      ],
+      events: [{ id: "@acme/voyant-loyalty#event.points-adjusted", eventType: "points.adjusted" }],
+      webhooks: [
+        {
+          id: "@acme/voyant-loyalty#webhook.points-adjusted",
+          direction: "outbound",
+          eventId: "@acme/voyant-loyalty#event.points-adjusted",
+          secretIds: ["@acme/voyant-loyalty#secret.webhook"],
+        },
+      ],
+      actions: [
+        {
+          id: "@acme/voyant-loyalty#action.adjust-points",
+          version: "v1",
+          kind: "execute",
+          targetType: "loyalty-account",
+          requiredScopes: ["loyalty:write"],
+          risk: "high",
+          ledger: "required",
+          from: {
+            routes: ["@acme/voyant-loyalty#api.admin"],
+            tools: ["@acme/voyant-loyalty#tool.adjust-points"],
+            events: ["@acme/voyant-loyalty#event.points-adjusted"],
+            webhooks: ["@acme/voyant-loyalty#webhook.points-adjusted"],
+          },
+          copy: [{ namespace: "loyalty.admin", key: "actions.adjust" }],
+        },
+      ],
+      lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
+    })
+
+    expect(validateGraphUnitManifest(module)).toEqual([])
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [module] }),
+      target: "node",
+      mode: "self-hosted",
+    })
+    expect(graph.diagnostics).toEqual([])
+    expect(graph.modules[0]).toMatchObject({
+      id: "@acme/voyant-loyalty",
+      tools: [{ id: "@acme/voyant-loyalty#tool.adjust-points" }],
+      admin: { routes: [{ id: "@acme/voyant-loyalty#admin.route.index" }] },
+      lifecycle: { uninstall: { default: "retain-data" } },
+    })
+  })
+
+  it("fails closed for invalid promoted facets and unresolved references", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-loyalty",
+      access: {
+        resources: [
+          {
+            id: "@acme/voyant-loyalty#access.loyalty",
+            resource: "loyalty",
+            actions: ["read"],
+          },
+        ],
+      },
+      tools: [
+        {
+          id: "@acme/voyant-loyalty#tool.adjust-points",
+          name: "adjust_loyalty_points",
+          runtime: { entry: "" },
+          requiredScopes: ["loyalty:write"],
+        },
+      ],
+      actions: [
+        {
+          id: "@acme/voyant-loyalty#action.adjust-points",
+          version: "v1",
+          kind: "execute",
+          targetType: "loyalty-account",
+          risk: "critical",
+          ledger: "optional",
+          from: { routes: ["@acme/voyant-loyalty#api.missing"] },
+        },
+      ],
+    })
+
+    expect(validateGraphUnitManifest(module)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_FACET", facet: "tools[0].runtime" }),
+        expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_FACET", facet: "actions[0].ledger" }),
+      ]),
+    )
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_UNKNOWN_REFERENCE" }),
+        expect.objectContaining({ message: expect.stringContaining("loyalty:write") }),
+      ]),
+    )
   })
 
   it("resolves a package-owned module manifest without starter synthesis", async () => {
@@ -996,6 +1193,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_DUPLICATE_ID",
       "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
       "VOYANT_GRAPH_INVALID_ENTITY_ID",
+      "VOYANT_GRAPH_INVALID_FACET",
       "VOYANT_GRAPH_INVALID_ID",
       "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
       "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
@@ -1008,6 +1206,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
       "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
       "VOYANT_GRAPH_UNKNOWN_FACET",
+      "VOYANT_GRAPH_UNKNOWN_REFERENCE",
       "VOYANT_GRAPH_UNSUPPORTED_FACET",
     ])
   })
