@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.29.3
+
+### Patch Changes
+
+- 74a0b2f: Carry workflow schedule dispatch metadata through deployment graph scheduled jobs.
+- cc4e55e: Project cron-backed workflow schedules into deployment graph provisioning metadata.
+
 ## 0.29.2
 
 ### Patch Changes
