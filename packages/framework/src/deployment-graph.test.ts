@@ -68,6 +68,69 @@ describe("deployment graph v1", () => {
     ).toEqual([])
   })
 
+  it("validates API route bundle metadata without requiring the deferred permissions facet", () => {
+    expect(
+      validateGraphUnitManifest({
+        schemaVersion: "voyant.module.v1",
+        id: "@acme/voyant-loyalty",
+        api: [
+          {
+            id: "@acme/voyant-loyalty#api.admin",
+            surface: "admin",
+            mount: "/v1/admin/loyalty",
+            resource: "loyalty.points",
+            requiredScopes: ["loyalty:read", "loyalty-points:write"],
+            anonymous: ["/v1/public/loyalty/status"],
+          },
+        ],
+      }),
+    ).toEqual([])
+
+    expect(
+      validateGraphUnitManifest({
+        schemaVersion: "voyant.module.v1",
+        id: "@acme/voyant-loyalty",
+        api: [
+          {
+            id: "@acme/voyant-loyalty#api.invalid",
+            surface: "worker",
+            mount: "",
+            resource: "Loyalty Points",
+            requiredScopes: ["loyalty.points.read", "loyalty:Read"],
+            anonymous: "yes",
+          },
+        ],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].surface",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].mount",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].resource",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_SCOPE",
+          facet: "api[0].requiredScopes[0]",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_SCOPE",
+          facet: "api[0].requiredScopes[1]",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].anonymous",
+        }),
+      ]),
+    )
+  })
+
   it("detects duplicate graph ids and missing required capabilities", async () => {
     const project = defineProject({
       modules: [
@@ -580,7 +643,9 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
       "VOYANT_GRAPH_INVALID_ENTITY_ID",
       "VOYANT_GRAPH_INVALID_ID",
+      "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
       "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
+      "VOYANT_GRAPH_INVALID_SCOPE",
       "VOYANT_GRAPH_MISSING_CAPABILITY",
       "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE",
       "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
