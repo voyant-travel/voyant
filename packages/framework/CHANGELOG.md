@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.29.2
+
+### Patch Changes
+
+- f6ff1a9: Make resolved deployment graph module and plugin ordering deterministic.
+
 ## 0.29.1
 
 ### Patch Changes
