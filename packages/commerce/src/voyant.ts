@@ -1,4 +1,4 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
 const promotionAffectedAllFilter = {
   eventType: "promotion.changed",
@@ -113,6 +113,46 @@ export const commerceVoyantModule = defineModule({
         defaultRuntime: "node",
       },
       source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const commerceCatalogCheckoutVoyantPlugin = definePlugin({
+  id: "@voyant-travel/commerce#catalog-checkout-extension",
+  packageName: "@voyant-travel/commerce",
+  localId: "commerce.catalog-checkout-extension",
+  api: [
+    {
+      id: "@voyant-travel/commerce#catalog-checkout-extension.api",
+      surface: "public",
+      mount: "catalog",
+      runtime: {
+        entry: "@voyant-travel/commerce/checkout",
+        export: "createCatalogCheckoutHonoExtension",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const commerceBookingMaintenanceVoyantPlugin = definePlugin({
+  id: "@voyant-travel/commerce#booking-maintenance-extension",
+  packageName: "@voyant-travel/commerce",
+  localId: "commerce.booking-maintenance-extension",
+  api: [
+    {
+      id: "@voyant-travel/commerce#booking-maintenance-extension.api",
+      surface: "admin",
+      mount: "bookings",
+      runtime: {
+        entry: "@voyant-travel/commerce/checkout",
+        export: "createBookingMaintenanceHonoExtension",
+      },
     },
   ],
   meta: {

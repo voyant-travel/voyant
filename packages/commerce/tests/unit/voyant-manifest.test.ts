@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { commerceVoyantModule } from "../../src/voyant.js"
+import {
+  commerceBookingMaintenanceVoyantPlugin,
+  commerceCatalogCheckoutVoyantPlugin,
+  commerceVoyantModule,
+} from "../../src/voyant.js"
 
 describe("commerce deployment manifest", () => {
   it("owns runtime, persistence, and promotion orchestration facets", () => {
@@ -82,6 +86,42 @@ describe("commerce deployment manifest", () => {
             where: {
               eq: [{ path: "data.affected.kind" }, { lit: "all" }],
             },
+          },
+        },
+      ],
+    })
+  })
+
+  it("owns the catalog checkout and booking maintenance bridges", () => {
+    expect(commerceCatalogCheckoutVoyantPlugin).toMatchObject({
+      schemaVersion: "voyant.plugin.v1",
+      id: "@voyant-travel/commerce#catalog-checkout-extension",
+      packageName: "@voyant-travel/commerce",
+      api: [
+        {
+          id: "@voyant-travel/commerce#catalog-checkout-extension.api",
+          surface: "public",
+          mount: "catalog",
+          runtime: {
+            entry: "@voyant-travel/commerce/checkout",
+            export: "createCatalogCheckoutHonoExtension",
+          },
+        },
+      ],
+    })
+
+    expect(commerceBookingMaintenanceVoyantPlugin).toMatchObject({
+      schemaVersion: "voyant.plugin.v1",
+      id: "@voyant-travel/commerce#booking-maintenance-extension",
+      packageName: "@voyant-travel/commerce",
+      api: [
+        {
+          id: "@voyant-travel/commerce#booking-maintenance-extension.api",
+          surface: "admin",
+          mount: "bookings",
+          runtime: {
+            entry: "@voyant-travel/commerce/checkout",
+            export: "createBookingMaintenanceHonoExtension",
           },
         },
       ],

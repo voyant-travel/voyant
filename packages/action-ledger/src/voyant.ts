@@ -1,4 +1,4 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the action-ledger package. */
 export const actionLedgerVoyantModule = defineModule({
@@ -26,6 +26,26 @@ export const actionLedgerVoyantModule = defineModule({
     {
       id: "@voyant-travel/action-ledger#migrations",
       source: "./migrations",
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const actionLedgerHealthVoyantPlugin = definePlugin({
+  id: "@voyant-travel/action-ledger#health-extension",
+  packageName: "@voyant-travel/action-ledger",
+  localId: "action-ledger.health-extension",
+  api: [
+    {
+      id: "@voyant-travel/action-ledger#health-extension.api",
+      surface: "admin",
+      mount: "action-ledger",
+      runtime: {
+        entry: "@voyant-travel/action-ledger/health",
+        export: "createActionLedgerHealthHonoExtension",
+      },
     },
   ],
   meta: {

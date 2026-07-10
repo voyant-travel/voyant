@@ -50,7 +50,9 @@ export type {
 } from "./options.js"
 export {
   type BookingMaintenanceRoutesOptions,
+  createBookingMaintenanceHonoExtension,
   createBookingMaintenanceRoutes,
+  createCatalogCheckoutHonoExtension,
   createCatalogCheckoutRoutes,
 } from "./routes.js"
 export {

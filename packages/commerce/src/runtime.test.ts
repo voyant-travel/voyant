@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-
+import {
+  createBookingMaintenanceHonoExtension,
+  createCatalogCheckoutHonoExtension,
+} from "./checkout/index.js"
 import {
   commerceRuntimeModuleNames,
   createCommerceHonoModules,
@@ -11,6 +14,16 @@ import { promotionsHonoModule } from "./promotions/index.js"
 import { sellabilityHonoModule } from "./sellability/index.js"
 
 describe("commerce runtime", () => {
+  it("publishes checkout and booking maintenance extension descriptors", () => {
+    const checkout = createCatalogCheckoutHonoExtension({} as never)
+    const maintenance = createBookingMaintenanceHonoExtension({} as never)
+
+    expect(checkout.extension).toEqual({ name: "catalog-checkout", module: "catalog" })
+    expect(checkout.publicRoutes).toBeDefined()
+    expect(maintenance.extension).toEqual({ name: "booking-maintenance", module: "bookings" })
+    expect(maintenance.adminRoutes).toBeDefined()
+  })
+
   it("expands to the commercial runtime modules in stable order", () => {
     const modules = createCommerceHonoModules()
 
