@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm run graph:check && pnpm run admin:check && pnpm run graph:env && node -r ./scripts/env-preload.cjs node_modules/vite/bin/vite.js dev --port 3300",
     "build": "pnpm run graph:check && pnpm run admin:check && vite build && pnpm run copy:deployment-artifacts",
-    "copy:deployment-artifacts": "cp managed-profile.json deployment-artifacts.generated.json deployment-graph.generated.json dist/",
+    "copy:deployment-artifacts": "mkdir -p dist/server && cp managed-profile.json deployment-artifacts.generated.json deployment-graph.generated.json dist/ && cp managed-profile.json deployment-artifacts.generated.json deployment-graph.generated.json dist/server/",
     "preview": "pnpm run build && vite preview",
     "start": "node -r ./scripts/env-preload.cjs dist/server/server.js",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.client.json",
