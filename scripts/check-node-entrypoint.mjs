@@ -8,6 +8,8 @@
  *      share the same graph contract.
  *  1c. the operator dev and migration lanes preflight the same graph contract
  *      before serving traffic or touching the database.
+ *  1d. provider bindings are selected from graph-declared providers, not
+ *      incidental env var presence.
  *  2. `src/entry.ts` (the app's `fetch`/`scheduled` handlers) keeps SSR behind a
  *     lazy import so the React + react-dom/server graph isn't pulled into the
  *     module's top-level — imported on first render, not at boot. Heavy API and
@@ -132,6 +134,37 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
       text: "",
     })
   }
+  if (
+    !nodeEntrySource.includes("resolveOperatorNodeProviderPlan") ||
+    !nodeEntrySource.includes("deploymentGraphArtifacts.providers") ||
+    !/^const\s+\w+\s*=\s*resolveOperatorNodeProviderPlan\(\s*deploymentGraphArtifacts\.providers\s*\)/m.test(
+      nodeEntrySource,
+    )
+  ) {
+    violations.push({
+      file: NODE_ENTRY,
+      line: 0,
+      check: {
+        id: "deployment-graph-providers-not-consumed",
+        message: "The Node entry must select runtime providers from deployment graph providers.",
+      },
+      text: "",
+    })
+  }
+  if (
+    !nodeEntrySource.includes("validateOperatorNodeProviderPlanEnv") ||
+    !nodeEntrySource.includes("assertOperatorNodeProviderPlanEnv")
+  ) {
+    violations.push({
+      file: NODE_ENTRY,
+      line: 0,
+      check: {
+        id: "deployment-provider-plan-env-not-asserted",
+        message: "The Node entry must assert graph-selected provider env before binding providers.",
+      },
+      text: "",
+    })
+  }
 }
 
 // 3. Dev lane: must preflight the same graph resource env before Vite boots.
@@ -224,6 +257,20 @@ if (!existsSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK))) {
       check: {
         id: "operator-graph-env-check-not-wired",
         message: "The operator graph env script must load graph artifacts and assert resource env.",
+      },
+      text: "",
+    })
+  }
+  if (
+    !graphEnvSource.includes("resolveOperatorNodeProviderPlan") ||
+    !graphEnvSource.includes("validateOperatorNodeProviderPlanEnv")
+  ) {
+    violations.push({
+      file: OPERATOR_GRAPH_ENV_CHECK,
+      line: 0,
+      check: {
+        id: "operator-graph-env-provider-plan-not-wired",
+        message: "The operator graph env script must validate graph-selected provider env.",
       },
       text: "",
     })

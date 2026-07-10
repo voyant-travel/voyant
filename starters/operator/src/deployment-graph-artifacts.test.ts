@@ -26,6 +26,12 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(summary.graphHash).toMatch(/^sha256:[a-f0-9]{64}$/)
     expect(summary.moduleIds).toContain("@voyant-travel/bookings")
     expect(summary.packageNames).toContain("@voyant-travel/framework")
+    expect(summary.providers).toMatchObject({
+      database: "postgres",
+      storage: "memory",
+      cache: "memory",
+      rateLimit: "memory",
+    })
     expect(summary.resourceRequirements.map((resource) => resource.resourceKey)).toContain(
       "database:postgres",
     )
@@ -122,6 +128,55 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         module: "framework",
       },
     ])
+  })
+
+  it("loads graph-derived deployment providers for runtime binding selection", () => {
+    const root = fixtureRoot()
+    writeFixture(root, {
+      deployment: {
+        target: "node",
+        mode: "self-hosted",
+        providers: {
+          database: "postgres",
+          storage: "s3",
+          cache: "redis",
+          sharedState: "redis",
+          rateLimit: "postgres",
+          search: "none",
+          email: "none",
+          sms: "none",
+          auth: "better-auth",
+          scheduledJobs: "cloud-scheduler",
+          workflows: "none",
+        },
+      },
+    })
+    const summary = loadOperatorDeploymentGraphArtifacts(
+      pathToFileURL(join(root, "src", "server.ts")).href,
+    )
+
+    expect(summary.providers).toEqual({
+      database: "postgres",
+      storage: "s3",
+      cache: "redis",
+      sharedState: "redis",
+      rateLimit: "postgres",
+      search: "none",
+      email: "none",
+      sms: "none",
+      auth: "better-auth",
+      scheduledJobs: "cloud-scheduler",
+      workflows: "none",
+    })
+  })
+
+  it("fails when graph-derived deployment providers are missing", () => {
+    const root = fixtureRoot()
+    writeFixture(root, { deployment: { target: "node", mode: "self-hosted" } })
+
+    expect(() =>
+      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+    ).toThrow(/deployment graph deployment\.providers must be an object/)
   })
 
   it("fails when graph-derived scheduler provisioning metadata is missing", () => {
@@ -228,6 +283,7 @@ function writeFixture(
     manifestGraphHash?: string
     graphHash?: string
     diagnostics?: Array<{ code: string; message: string }>
+    deployment?: FixtureDeploymentGraph["deployment"]
     requirements?: FixtureDeploymentGraph["requirements"]
     provisioning?: FixtureDeploymentGraph["provisioning"]
     omitRequirements?: boolean
@@ -242,7 +298,23 @@ function writeFixture(
   const graphWithoutHash: Omit<FixtureDeploymentGraph, "contentHash"> = {
     schemaVersion: "voyant.resolved-graph.v1",
     diagnostics: options.diagnostics ?? [],
-    deployment: { target: "node", mode: "self-hosted" },
+    deployment: options.deployment ?? {
+      target: "node",
+      mode: "self-hosted",
+      providers: {
+        database: "postgres",
+        storage: "memory",
+        cache: "memory",
+        sharedState: "memory",
+        rateLimit: "memory",
+        search: "none",
+        email: "none",
+        sms: "none",
+        auth: "better-auth",
+        scheduledJobs: "none",
+        workflows: "none",
+      },
+    },
     ...(!options.omitRequirements && options.requirements !== undefined
       ? { requirements: options.requirements }
       : !options.omitRequirements
@@ -323,7 +395,11 @@ interface FixtureDeploymentGraph {
   schemaVersion: string
   contentHash: string
   diagnostics: Array<{ code: string; message: string }>
-  deployment: { target: string; mode: string }
+  deployment: {
+    target: string
+    mode: string
+    providers?: Record<string, string>
+  }
   requirements?: {
     resources: Array<{
       resourceKey: string

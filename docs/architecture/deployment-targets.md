@@ -40,11 +40,13 @@ workload class well. On Node none of it is necessary.
   provisioned env/secrets; storefront/site artifacts remain separate apps that
   consume the managed API for the selected profile. Today that profile is the
   standard managed `operator` profile, but the entry is not named after it.
-- **Bindings are real Node providers, not Cloudflare emulation.** In-process KV
-  (`createMemoryKvNamespace`) backs `CACHE`/`RATE_LIMIT`; object storage is
-  S3-backed in prod (`createR2BucketShim`) or in-process in dev
-  (`createMemoryR2Bucket`); there is no `caches.default` shim (the public-cache
-  middleware reads `env.CACHE` directly).
+- **Bindings are real Node providers, not Cloudflare emulation.** The resolved
+  deployment graph's `deployment.providers` map selects the concrete Node
+  providers. `memory` uses in-process KV/object storage, `redis`/`postgres`
+  back selected KV and rate-limit stores, and `r2`/`s3` backs object storage via
+  `createR2BucketShim`. Env vars configure the graph-selected provider; their
+  mere presence must not change provider choice. There is no `caches.default`
+  shim (the public-cache middleware reads `env.CACHE` directly).
 - **Build:** `pnpm --filter operator build` (Vite, no `@cloudflare/vite-plugin`)
   emits `dist/client` + `dist/server/server.js`. **Run:** `pnpm --filter operator
   start` (`node dist/server/server.js`).
@@ -57,9 +59,9 @@ workload class well. On Node none of it is necessary.
 - **Graph contract:** `pnpm --filter operator dev`, `pnpm --filter operator
   db:migrate`, and standalone Node boot all load the generated deployment graph
   artifacts and fail before serving traffic or touching the database when
-  graph-declared required resource env is missing. Local `.env` loading is only
-  a source for satisfying the same graph contract; it is not a parallel
-  deployment shape.
+  graph-declared required resource env or graph-selected provider env is
+  missing. Local `.env` loading is only a source for satisfying the same graph
+  contract; it is not a parallel deployment shape.
 - **Database:** the pooled node-postgres lane (`DATABASE_URL_DIRECT`, `adapter:
   "node"`) is the production default — one resident pool per process. neon-http/WS
   remain the fallback adapters. See
@@ -115,7 +117,10 @@ The mechanical checks live in `scripts/check-node-entrypoint.mjs` and
 and graph artifact/resource validation, that `pnpm --filter operator dev` and
 `pnpm --filter operator db:migrate` preflight graph resource env, that the Docker
 target consumes the graph-checked build artifacts, and that the app entry keeps
-those graphs lazy.
+those graphs lazy. The Node entrypoint check also asserts provider bindings are
+selected from `deployment.providers`, so adding `REDIS_URL`, `DATABASE_URL`, or
+R2 env cannot silently alter runtime providers unless the graph selects those
+providers.
 
 ## Stop-the-bleed policy
 
