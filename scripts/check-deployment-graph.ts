@@ -230,6 +230,34 @@ async function main(): Promise<void> {
       "expected operator graph package records to include @voyant-travel/plugin-netopia",
     )
   }
+  const bookingsRecord = operatorPackageRecords.get("@voyant-travel/bookings")
+  if (bookingsRecord?.metadata?.manifest !== "./voyant") {
+    failures.push(
+      "expected @voyant-travel/bookings package metadata to advertise its ./voyant manifest",
+    )
+  }
+  const bookingsUnit = operatorGraph.modules.find((unit) => unit.id === "@voyant-travel/bookings")
+  for (const surface of ["admin", "public"] as const) {
+    const route = bookingsUnit?.api?.find((entry) => entry.surface === surface)
+    if (
+      route?.runtime?.entry !== "@voyant-travel/bookings" ||
+      route.runtime.export !== "bookingsHonoModule" ||
+      route.transactional !== true
+    ) {
+      failures.push(
+        `expected generated bookings ${surface} API to come from its package-owned runtime declaration`,
+      )
+    }
+  }
+  if (!bookingsUnit?.schema?.some((entry) => entry.source === "@voyant-travel/bookings/schema")) {
+    failures.push("expected generated bookings schema to come from its package-owned manifest")
+  }
+  if (!bookingsUnit?.migrations?.some((entry) => entry.source === "./migrations")) {
+    failures.push("expected generated bookings migrations to come from its package-owned manifest")
+  }
+  if (!bookingsUnit?.links?.some((entry) => entry.source === "@voyant-travel/bookings/linkables")) {
+    failures.push("expected generated bookings linkables to come from its package-owned manifest")
+  }
   for (const id of OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS) {
     if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
@@ -322,6 +350,14 @@ async function readOperatorGeneratedGraph(): Promise<{
   project?: { presetLineage?: string }
   modules: Array<{
     id: string
+    api?: Array<{
+      surface: string
+      transactional?: boolean
+      runtime?: { entry?: string; export?: string }
+    }>
+    schema?: Array<{ source?: string }>
+    migrations?: Array<{ source?: string }>
+    links?: Array<{ source?: string }>
     workflows?: Array<{ id: string }>
   }>
   plugins: Array<{ id: string }>
@@ -331,6 +367,7 @@ async function readOperatorGeneratedGraph(): Promise<{
     metadata?: {
       schemaVersion?: string
       kind?: string
+      manifest?: string
       compatibleWith?: {
         framework?: string
         targets?: string[]
@@ -350,6 +387,14 @@ async function readOperatorGeneratedGraph(): Promise<{
   ) as {
     modules: Array<{
       id: string
+      api?: Array<{
+        surface: string
+        transactional?: boolean
+        runtime?: { entry?: string; export?: string }
+      }>
+      schema?: Array<{ source?: string }>
+      migrations?: Array<{ source?: string }>
+      links?: Array<{ source?: string }>
       workflows?: Array<{ id: string }>
     }>
     plugins: Array<{ id: string }>
@@ -359,6 +404,7 @@ async function readOperatorGeneratedGraph(): Promise<{
       metadata?: {
         schemaVersion?: string
         kind?: string
+        manifest?: string
         compatibleWith?: {
           framework?: string
           targets?: string[]

@@ -1989,6 +1989,9 @@ importers:
       '@voyant-travel/connect-sdk':
         specifier: 0.9.1
         version: 0.9.1
+      '@voyant-travel/core':
+        specifier: workspace:*
+        version: link:../core
       '@voyant-travel/cruises':
         specifier: workspace:*
         version: link:../cruises

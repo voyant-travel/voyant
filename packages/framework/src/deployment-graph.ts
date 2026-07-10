@@ -1,5 +1,26 @@
 // agent-quality: file-size exception -- reason: first v1 deployment-graph cut keeps schema versions, diagnostics, resolver, managed-profile bridge, and author harness co-located until generated runtime lowering defines stable split points.
 import {
+  defineModule,
+  definePlugin,
+  defineProject,
+  VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
+  VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
+  type VoyantGraphCapabilityDeclaration,
+  type VoyantGraphEvent,
+  type VoyantGraphFacetEntity,
+  type VoyantGraphJsonObject,
+  type VoyantGraphJsonValue,
+  type VoyantGraphPortDeclaration,
+  type VoyantGraphProject,
+  type VoyantGraphRouteBundle,
+  type VoyantGraphRouteSurface,
+  type VoyantGraphSubscriber,
+  type VoyantGraphUnitKind,
+  type VoyantGraphUnitManifest,
+  type VoyantGraphWorkflow,
+  type VoyantGraphWorkflowSchedule,
+} from "@voyant-travel/core/project"
+import {
   getManagedProfileScheduledJobs,
   getStandardProfileEventFiltersForModule,
   getStandardProfileWorkflowManifestForModule,
@@ -26,18 +47,39 @@ import {
 import { resourceRequirementsForProvider } from "./profile-requirements.js"
 import { moduleIdFromSpecifier } from "./profile-types.js"
 
-export const VOYANT_GRAPH_PROJECT_SCHEMA_VERSION = "voyant.project.v1" as const
 export const VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION = "voyant.deployment.v1" as const
-export const VOYANT_GRAPH_MODULE_SCHEMA_VERSION = "voyant.module.v1" as const
-export const VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION = "voyant.plugin.v1" as const
 export const VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION = "voyant.package.v1" as const
 export const VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1" as const
 
-export type VoyantGraphUnitKind = "module" | "plugin"
 export type VoyantGraphPackageKind = VoyantGraphUnitKind | "framework" | "library"
 export type VoyantGraphDiagnosticSeverity = "info" | "warning" | "error"
-export type VoyantGraphRouteSurface = "admin" | "public" | "webhook" | "internal"
 export type VoyantGraphPackageSourceKind = "registry" | "workspace" | "file" | "git" | "unknown"
+
+export {
+  type DefineVoyantGraphProjectInput,
+  type DefineVoyantGraphUnitInput,
+  defineModule,
+  definePlugin,
+  defineProject,
+  VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
+  VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
+  VOYANT_GRAPH_PROJECT_SCHEMA_VERSION,
+  type VoyantGraphCapabilityDeclaration,
+  type VoyantGraphEvent,
+  type VoyantGraphFacetEntity,
+  type VoyantGraphJsonObject,
+  type VoyantGraphJsonValue,
+  type VoyantGraphPortDeclaration,
+  type VoyantGraphProject,
+  type VoyantGraphRouteBundle,
+  type VoyantGraphRouteSurface,
+  type VoyantGraphRuntimeReference,
+  type VoyantGraphSubscriber,
+  type VoyantGraphUnitKind,
+  type VoyantGraphUnitManifest,
+  type VoyantGraphWorkflow,
+  type VoyantGraphWorkflowSchedule,
+} from "@voyant-travel/core/project"
 
 export const VOYANT_GRAPH_RESERVED_FACETS = [
   "admin",
@@ -74,6 +116,10 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_INVALID_SCHEMA_VERSION: "A graph declaration uses an unsupported schema version.",
   VOYANT_GRAPH_INVALID_SCOPE:
     "An API route bundle required scope does not match v1 resource:action syntax.",
+  VOYANT_GRAPH_MANIFEST_LOAD_FAILED:
+    "An admitted package manifest could not be loaded or did not declare the selected graph unit.",
+  VOYANT_GRAPH_MANIFEST_OWNERSHIP_MISMATCH:
+    "A package manifest declared a graph unit owned by a different package.",
   VOYANT_GRAPH_MISSING_CAPABILITY:
     "A selected graph unit requires a capability that no selected graph unit provides.",
   VOYANT_GRAPH_MISSING_PORT:
@@ -82,6 +128,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
     "A package metadata record is incompatible with the selected target or deployment mode.",
   VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED:
     "A package source kind is not admitted by the configured graph admission policy.",
+  VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED:
+    "A graph runtime reference points to a package that did not pass admission.",
   VOYANT_GRAPH_UNKNOWN_FACET: "A module or plugin manifest contains an unknown top-level facet.",
   VOYANT_GRAPH_UNSUPPORTED_FACET:
     "A module or plugin manifest uses a reserved facet that this toolchain does not support yet.",
@@ -105,59 +153,6 @@ export interface VoyantGraphDiagnostic {
   hint?: string
 }
 
-export interface VoyantGraphCapabilityDeclaration {
-  capabilities?: readonly string[]
-  ports?: readonly VoyantGraphPortDeclaration[]
-}
-
-export interface VoyantGraphPortDeclaration {
-  id: string
-  optional?: boolean
-}
-
-export interface VoyantGraphRouteBundle {
-  id: string
-  surface: VoyantGraphRouteSurface
-  mount?: string
-  resource?: string
-  requiredScopes?: readonly string[]
-  anonymous?: boolean | readonly string[]
-}
-
-export interface VoyantGraphFacetEntity {
-  id: string
-  source?: string
-}
-
-export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
-  eventType?: string
-}
-
-export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
-  eventType?: string
-  eventFilterId?: string
-  workflowId?: string
-  filter?: VoyantGraphJsonObject
-}
-
-export interface VoyantGraphWorkflow extends VoyantGraphFacetEntity {
-  config?: VoyantGraphJsonObject
-  schedules?: readonly VoyantGraphWorkflowSchedule[]
-}
-
-export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {
-  workflowId?: string
-  cron?: string
-  every?: string | number
-  at?: string
-  timezone?: string
-  input?: VoyantGraphJsonValue
-  enabled?: boolean
-  overlap?: "skip" | "queue" | "allow"
-  environments?: readonly ("production" | "preview" | "development")[]
-  name?: string
-}
-
 export interface VoyantGraphScheduledJob {
   id: string
   cron: string
@@ -166,55 +161,6 @@ export interface VoyantGraphScheduledJob {
   module: string
   workflowId?: string
   input?: VoyantGraphJsonValue
-}
-
-export interface VoyantGraphUnitManifest {
-  schemaVersion:
-    | typeof VOYANT_GRAPH_MODULE_SCHEMA_VERSION
-    | typeof VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION
-  id: string
-  localId?: string
-  packageName?: string
-  provides?: VoyantGraphCapabilityDeclaration
-  requires?: VoyantGraphCapabilityDeclaration
-  api?: readonly VoyantGraphRouteBundle[]
-  schema?: readonly VoyantGraphFacetEntity[]
-  migrations?: readonly VoyantGraphFacetEntity[]
-  links?: readonly VoyantGraphFacetEntity[]
-  subscribers?: readonly VoyantGraphSubscriber[]
-  events?: readonly VoyantGraphEvent[]
-  workflows?: readonly VoyantGraphWorkflow[]
-  meta?: VoyantGraphJsonObject
-}
-
-export type VoyantGraphJsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | readonly VoyantGraphJsonValue[]
-  | { readonly [key: string]: VoyantGraphJsonValue }
-
-export type VoyantGraphJsonObject = { readonly [key: string]: VoyantGraphJsonValue }
-
-export interface DefineVoyantGraphUnitInput extends Omit<VoyantGraphUnitManifest, "schemaVersion"> {
-  schemaVersion?: VoyantGraphUnitManifest["schemaVersion"]
-}
-
-export interface DefineVoyantGraphProjectInput {
-  schemaVersion?: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
-  presetLineage?: string
-  modules: readonly VoyantGraphUnitManifest[]
-  plugins?: readonly VoyantGraphUnitManifest[]
-  meta?: VoyantGraphJsonObject
-}
-
-export interface VoyantGraphProject {
-  schemaVersion: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
-  presetLineage?: string
-  modules: readonly VoyantGraphUnitManifest[]
-  plugins: readonly VoyantGraphUnitManifest[]
-  meta?: VoyantGraphJsonObject
 }
 
 export interface DefineVoyantGraphDeploymentInput {
@@ -244,6 +190,8 @@ export interface VoyantGraphDeployment {
 export interface VoyantGraphPackageMetadata {
   schemaVersion: typeof VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION
   kind: VoyantGraphPackageKind
+  /** Import-cheap package export containing package-owned graph declarations. */
+  manifest?: string
   compatibleWith?: {
     framework?: string
     targets?: readonly string[]
@@ -278,6 +226,13 @@ export interface ResolveDeploymentGraphInput {
   target?: string
   mode?: VoyantProjectDeploymentMode
   admission?: VoyantGraphAdmissionPolicy
+}
+
+export interface ResolveDeploymentGraphWithPackageManifestsInput
+  extends ResolveDeploymentGraphInput {
+  loadPackageManifests: (
+    record: VoyantGraphPackageRecord,
+  ) => Promise<readonly VoyantGraphUnitManifest[]>
 }
 
 export interface CreateTestDeploymentInput {
@@ -400,31 +355,6 @@ const STANDARD_CAPABILITY_PREFIXES = new Set([
   "storefront",
   "trips",
 ])
-
-export function defineModule(input: DefineVoyantGraphUnitInput): VoyantGraphUnitManifest {
-  return defineGraphUnit(VOYANT_GRAPH_MODULE_SCHEMA_VERSION, input)
-}
-
-export function definePlugin(input: DefineVoyantGraphUnitInput): VoyantGraphUnitManifest {
-  return defineGraphUnit(VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION, input)
-}
-
-export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraphProject {
-  const project = {
-    schemaVersion: input.schemaVersion ?? VOYANT_GRAPH_PROJECT_SCHEMA_VERSION,
-    ...(input.presetLineage ? { presetLineage: input.presetLineage } : {}),
-    modules: [...input.modules],
-    plugins: [...(input.plugins ?? [])],
-    ...(input.meta ? { meta: input.meta } : {}),
-  } satisfies VoyantGraphProject
-
-  if (project.schemaVersion !== VOYANT_GRAPH_PROJECT_SCHEMA_VERSION) {
-    throw new Error(
-      `defineProject: schemaVersion must be "${VOYANT_GRAPH_PROJECT_SCHEMA_VERSION}".`,
-    )
-  }
-  return project
-}
 
 export function defineDeployment(input: DefineVoyantGraphDeploymentInput): VoyantGraphDeployment {
   const deployment = {
@@ -587,6 +517,7 @@ export async function resolveDeploymentGraph(
       mode,
       admission: input.admission,
     }),
+    ...validateRuntimeReferenceAdmission(selectedUnits, packageRecords),
   ])
 
   const modules = selectedModules.map(({ original: _original, ...unit }) => unit)
@@ -619,6 +550,86 @@ export async function resolveDeploymentGraph(
     ...graphWithoutHash,
     contentHash: `sha256:${await sha256(graphWithoutHash)}`,
   }
+}
+
+/**
+ * Resolve package selection and admission first, then import only manifests
+ * belonging to packages that passed admission and resolve the graph again.
+ */
+export async function resolveDeploymentGraphWithPackageManifests(
+  input: ResolveDeploymentGraphWithPackageManifestsInput,
+): Promise<ResolvedVoyantDeploymentGraph> {
+  const { loadPackageManifests, ...resolveInput } = input
+  const admitted = await resolveDeploymentGraph(resolveInput)
+  const admissionFailed = admitted.diagnostics.some(
+    (entry) =>
+      entry.severity === "error" &&
+      (entry.code === "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE" ||
+        entry.code === "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED"),
+  )
+  if (admissionFailed) return admitted
+
+  const selectedUnits = [...resolveInput.project.modules, ...(resolveInput.project.plugins ?? [])]
+  const selectedIds = new Set(selectedUnits.map((unit) => unit.id))
+  const replacements = new Map<string, VoyantGraphUnitManifest>()
+  const diagnostics: VoyantGraphDiagnostic[] = []
+
+  for (const record of admitted.packageRecords) {
+    if (!record.metadata?.manifest) continue
+    try {
+      const manifests = await loadPackageManifests(record)
+      let matched = false
+      for (const manifest of manifests) {
+        if (!selectedIds.has(manifest.id)) continue
+        matched = true
+        const idOwner = packageNameFromGraphId(manifest.id)
+        const declaredOwner = manifest.packageName
+        if (
+          idOwner !== record.packageName ||
+          (declaredOwner !== undefined && declaredOwner !== record.packageName)
+        ) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_MANIFEST_OWNERSHIP_MISMATCH",
+              source: manifest.id,
+              facet: "packageName",
+              message: `Manifest loaded from ${record.packageName} declares unit ${manifest.id} in the ${idOwner} namespace${declaredOwner ? ` with packageName ${declaredOwner}` : ""}.`,
+              hint: "A package may declare only its own package id or package-scoped fragments.",
+            }),
+          )
+          continue
+        }
+        replacements.set(manifest.id, manifest)
+      }
+      if (!matched) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_MANIFEST_LOAD_FAILED",
+            source: record.packageName,
+            facet: "package.manifest",
+            message: `Manifest ${record.metadata.manifest} does not declare any selected unit owned by ${record.packageName}.`,
+          }),
+        )
+      }
+    } catch (error) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_MANIFEST_LOAD_FAILED",
+          source: record.packageName,
+          facet: "package.manifest",
+          message: `Failed to load admitted manifest ${record.metadata.manifest}: ${errorMessage(error)}.`,
+        }),
+      )
+    }
+  }
+
+  const project = defineProject({
+    ...resolveInput.project,
+    modules: resolveInput.project.modules.map((unit) => replacements.get(unit.id) ?? unit),
+    plugins: resolveInput.project.plugins.map((unit) => replacements.get(unit.id) ?? unit),
+  })
+  const resolved = await resolveDeploymentGraph({ ...resolveInput, project })
+  return diagnostics.length > 0 ? graphWithDiagnostics(resolved, diagnostics) : resolved
 }
 
 export function defineProjectFromManagedProfile(
@@ -954,27 +965,6 @@ function compareResourceRequirements(
     Number(left.required) - Number(right.required) ||
     left.roles.join(",").localeCompare(right.roles.join(","))
   )
-}
-
-function defineGraphUnit(
-  schemaVersion: VoyantGraphUnitManifest["schemaVersion"],
-  input: DefineVoyantGraphUnitInput,
-): VoyantGraphUnitManifest {
-  const unit = {
-    ...input,
-    schemaVersion: input.schemaVersion ?? schemaVersion,
-  } satisfies VoyantGraphUnitManifest
-  const kind = schemaVersion === VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION ? "plugin" : "module"
-  const diagnostics = validateGraphUnitManifest(unit, kind)
-  const errors = diagnostics.filter((entry) => entry.severity === "error")
-  if (errors.length > 0) {
-    throw new Error(
-      `${kind === "plugin" ? "definePlugin" : "defineModule"}: ${errors
-        .map((entry) => `${entry.code}: ${entry.message}`)
-        .join("; ")}`,
-    )
-  }
-  return unit
 }
 
 function resolveUnit(
@@ -1329,6 +1319,36 @@ function validateRouteBundles(value: unknown, source: string | undefined): Voyan
         }),
       )
     }
+
+    if (route.transactional !== undefined && typeof route.transactional !== "boolean") {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          source,
+          facet: `${facet}.transactional`,
+          message: `Route bundle "${route.id ?? index}" transactional metadata must be a boolean.`,
+        }),
+      )
+    }
+
+    if (route.runtime !== undefined) {
+      if (
+        !isRecord(route.runtime) ||
+        typeof route.runtime.entry !== "string" ||
+        route.runtime.entry.length === 0 ||
+        (route.runtime.export !== undefined &&
+          (typeof route.runtime.export !== "string" || route.runtime.export.length === 0))
+      ) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+            source,
+            facet: `${facet}.runtime`,
+            message: `Route bundle "${route.id ?? index}" runtime must reference a non-empty package entry and optional export.`,
+          }),
+        )
+      }
+    }
   }
 
   return diagnostics
@@ -1536,6 +1556,34 @@ function validatePackageAdmission(
   return diagnostics
 }
 
+function validateRuntimeReferenceAdmission(
+  units: readonly ResolvedVoyantGraphUnit[],
+  packageRecords: readonly VoyantGraphPackageRecord[],
+): VoyantGraphDiagnostic[] {
+  const admittedPackages = new Set(packageRecords.map((record) => record.packageName))
+  const diagnostics: VoyantGraphDiagnostic[] = []
+
+  for (const unit of units) {
+    for (const route of unit.api) {
+      const entry = route.runtime?.entry
+      if (!entry) continue
+      const packageName = entry.startsWith(".") ? unit.packageName : packageNameFromSpecifier(entry)
+      if (admittedPackages.has(packageName)) continue
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
+          source: unit.id,
+          facet: `api.${route.id}.runtime.entry`,
+          message: `Runtime entry ${entry} resolves to ${packageName}, which is not present in admitted package records.`,
+          hint: "Declare runtime code from the owning package or add and admit the referenced package.",
+        }),
+      )
+    }
+  }
+
+  return diagnostics
+}
+
 function isFrameworkVersionCompatible(version: string, range: string): boolean {
   const parsedVersion = parseVersion(version)
   if (!parsedVersion) return version === range
@@ -1714,6 +1762,21 @@ function formatDiagnostics(diagnostics: readonly VoyantGraphDiagnostic[]): strin
     .join("\n")
 }
 
+async function graphWithDiagnostics(
+  graph: ResolvedVoyantDeploymentGraph,
+  additional: readonly VoyantGraphDiagnostic[],
+): Promise<ResolvedVoyantDeploymentGraph> {
+  const { contentHash: _contentHash, ...withoutHash } = graph
+  const next = {
+    ...withoutHash,
+    diagnostics: sortDiagnostics([...graph.diagnostics, ...additional]),
+  }
+  return {
+    ...next,
+    contentHash: `sha256:${await sha256(next)}`,
+  }
+}
+
 function sortWorkflows(workflows: readonly VoyantGraphWorkflow[]): VoyantGraphWorkflow[] {
   return [...workflows]
     .map((workflow) => ({
@@ -1850,6 +1913,10 @@ function bytesToHex(bytes: Uint8Array): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value)
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 function assert(condition: unknown, message: string): asserts condition {

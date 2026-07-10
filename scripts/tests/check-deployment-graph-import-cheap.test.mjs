@@ -25,6 +25,10 @@ async function runChecker(cwd, entry = "manifest:manifest.ts") {
   return execFileAsync(process.execPath, [checkerPath, "--entry", entry], { cwd })
 }
 
+async function runDefaultChecker(cwd) {
+  return execFileAsync(process.execPath, [checkerPath], { cwd })
+}
+
 describe("check-deployment-graph-import-cheap", () => {
   it("rejects static managed runtime imports from generated metadata entries", async () => {
     const root = await createFixture({
@@ -84,6 +88,59 @@ export const graph = { routes }
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /manifest\.ts imports \.\/routes/)
       assert.match(error.stderr, /route graph must stay behind a lazy runtime import/)
+      return true
+    })
+  })
+
+  it("rejects package-root imports from package-owned manifests", async () => {
+    const root = await createFixture({
+      "voyant.ts": `import { bookingsHonoModule } from "@voyant-travel/bookings"
+export const manifest = { id: "bookings", bookingsHonoModule }
+`,
+    })
+
+    await assert.rejects(runChecker(root, "package:voyant.ts"), (error) => {
+      assert.match(error.stderr, /package manifests may import only project authoring helpers/)
+      return true
+    })
+  })
+
+  it("enforces package manifest imports independently of the export target filename", async () => {
+    const root = await createFixture({
+      "graph-manifest.ts": `import { bookingsHonoModule } from "@voyant-travel/bookings"
+export const manifest = { id: "bookings", bookingsHonoModule }
+`,
+    })
+
+    await assert.rejects(runChecker(root, "package:graph-manifest.ts"), (error) => {
+      assert.match(error.stderr, /package manifests may import only project authoring helpers/)
+      return true
+    })
+  })
+
+  it("discovers package manifests through nested conditional export arrays", async () => {
+    const root = await createFixture({
+      "packages/framework/src/deployment-graph.ts": "export {}\n",
+      "packages/framework/src/deployment-artifacts.ts": "export {}\n",
+      "starters/operator/deployment-graph.local.ts": "export {}\n",
+      "starters/operator/src/runtime-entry.generated.ts": "export {}\n",
+      "packages/example/package.json": JSON.stringify({
+        name: "@acme/example",
+        voyant: { manifest: "./voyant" },
+        exports: {
+          "./voyant": {
+            node: { require: "./src/graph-manifest.cjs" },
+            import: ["../invalid.js", "./src/graph-manifest.ts"],
+          },
+        },
+      }),
+      "packages/example/src/graph-manifest.ts":
+        'import { runtime } from "@acme/example"\nexport const manifest = { runtime }\n',
+    })
+
+    await assert.rejects(runDefaultChecker(root), (error) => {
+      assert.match(error.stderr, /@acme\/example/)
+      assert.match(error.stderr, /package manifests may import only project authoring helpers/)
       return true
     })
   })

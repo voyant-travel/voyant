@@ -11,7 +11,9 @@ import {
 } from "../packages/framework/src/deployment-artifacts.ts"
 import {
   type ResolveDeploymentGraphInput,
+  type ResolvedVoyantDeploymentGraph,
   resolveDeploymentGraph,
+  resolveDeploymentGraphWithPackageManifests,
 } from "../packages/framework/src/deployment-graph.ts"
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
@@ -25,6 +27,7 @@ import {
   formatDeploymentGraphDoctorDiagnostics,
 } from "./lib/deployment-graph-doctor.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
+import { loadVoyantPackageManifests } from "./lib/load-voyant-package-manifests.ts"
 import {
   OPERATOR_GRAPH_ADMISSION_POLICY,
   OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
@@ -78,7 +81,7 @@ async function main(): Promise<void> {
         profileSnapshot: relativeToOperator(options.profilePath),
       }),
     ],
-    migrationSources: operatorMigrationSources(),
+    migrationSources: operatorMigrationSources(graph),
   })
   const manifestText = formatGeneratedText(
     options.manifestOutputPath,
@@ -166,6 +169,8 @@ async function resolveGraph(profilePath: string) {
   const packageRecords = withOperatorDeploymentLocalPackageRecords(
     readPnpmLockfilePackageRecords({
       repoRoot,
+      projectRoot: defaultOperatorRoot,
+      importerPaths: ["starters/operator"],
       packageNames: [
         "@voyant-travel/framework",
         "@voyant-travel/framework-migrations",
@@ -174,15 +179,29 @@ async function resolveGraph(profilePath: string) {
       packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
     }),
   )
-  return resolveOperatorDeploymentGraph(project, { packageRecords })
+  return resolveDeploymentGraphWithPackageManifests({
+    ...operatorDeploymentGraphInput(project, { packageRecords }),
+    loadPackageManifests: (record) =>
+      loadVoyantPackageManifests(record, {
+        projectRoot: defaultOperatorRoot,
+        repoRoot,
+      }),
+  })
 }
 
 function resolveOperatorDeploymentGraph(
   project: VoyantProjectManifest,
   options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
 ) {
+  return resolveDeploymentGraph(operatorDeploymentGraphInput(project, options))
+}
+
+function operatorDeploymentGraphInput(
+  project: VoyantProjectManifest,
+  options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
+): ResolveDeploymentGraphInput {
   const { project: graphProject, ...deployment } = OPERATOR_VOYANT_DEPLOYMENT
-  return resolveDeploymentGraph({
+  return {
     ...options,
     project: graphProject,
     deployment,
@@ -194,10 +213,22 @@ function resolveOperatorDeploymentGraph(
     target: options.target ?? deployment.target,
     mode: options.mode ?? deployment.mode,
     admission: options.admission ?? OPERATOR_GRAPH_ADMISSION_POLICY,
-  })
+  }
 }
 
-function operatorMigrationSources() {
+function operatorMigrationSources(graph: ResolvedVoyantDeploymentGraph) {
+  const units = [...graph.modules, ...graph.plugins]
+  const packageOwnedMigrationSources = new Set(
+    units
+      .filter((unit) => unit.schema.length > 0 && unit.migrations.length > 0)
+      .map((unit) => unit.packageName),
+  )
+  const manifestPackages = new Set(
+    graph.packageRecords
+      .filter((record) => record.metadata?.manifest)
+      .map((record) => record.packageName),
+  )
+
   return operatorSchemaPaths
     .map((schemaPath) => {
       const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
@@ -208,6 +239,11 @@ function operatorMigrationSources() {
       }
     })
     .filter((source): source is { packageName: string; schema: string } => Boolean(source))
+    .filter(
+      (source) =>
+        !manifestPackages.has(source.packageName) ||
+        packageOwnedMigrationSources.has(source.packageName),
+    )
 }
 
 async function writeGeneratedFile(filePath: string, text: string): Promise<void> {

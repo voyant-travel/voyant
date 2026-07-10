@@ -11,13 +11,17 @@ const voyantDeploymentModes = new Set(["managed-cloud", "self-hosted", "local"])
 
 export function readPnpmLockfilePackageRecords(options) {
   const repoRoot = options.repoRoot ?? process.cwd()
+  const projectRoot = options.projectRoot ?? repoRoot
   const lockfilePath = options.lockfilePath ?? path.join(repoRoot, "pnpm-lock.yaml")
   const workspacePackageInfo = readWorkspacePackageInfo(repoRoot)
+  const installedPackageInfo = readInstalledPackageInfo(projectRoot, repoRoot, options.packageNames)
   return packageRecordsFromPnpmLockfile(readFileSync(lockfilePath, "utf8"), {
     packageNames: options.packageNames,
     importerPaths: options.importerPaths,
     workspacePackageVersions: options.workspacePackageVersions ?? workspacePackageInfo.versions,
     workspacePackageMetadata: options.workspacePackageMetadata ?? workspacePackageInfo.metadata,
+    installedPackageMetadata: installedPackageInfo.metadata,
+    installedPackageVersions: installedPackageInfo.versions,
     packageMetadata: options.packageMetadata,
   })
 }
@@ -38,6 +42,16 @@ export function packageRecordsFromPnpmLockfile(lockfileText, options) {
       .map(([packageName, metadata]) => [packageName, normalizeVoyantPackageMetadata(metadata)])
       .filter(([, metadata]) => metadata),
   )
+  const installedPackageMetadata = new Map(
+    Object.entries(options.installedPackageMetadata ?? {})
+      .map(([packageName, metadata]) => [packageName, normalizeVoyantPackageMetadata(metadata)])
+      .filter(([, metadata]) => metadata),
+  )
+  const installedPackageVersions = new Map(
+    Object.entries(options.installedPackageVersions ?? {}).filter(
+      ([, version]) => typeof version === "string" && version.length > 0,
+    ),
+  )
 
   return [...new Set(options.packageNames)]
     .sort((left, right) => left.localeCompare(right))
@@ -47,6 +61,8 @@ export function packageRecordsFromPnpmLockfile(lockfileText, options) {
         dependencies: dependencies.get(packageName) ?? [],
         workspacePackageVersions,
         packageMetadata,
+        installedPackageMetadata,
+        installedPackageVersions,
       }),
     )
 }
@@ -57,6 +73,25 @@ export function readWorkspacePackageVersions(repoRoot) {
 
 export function readWorkspacePackageMetadata(repoRoot) {
   return readWorkspacePackageInfo(repoRoot).metadata
+}
+
+function readInstalledPackageInfo(projectRoot, repoRoot, packageNames) {
+  const metadata = {}
+  const versions = {}
+  for (const packageName of [...new Set(packageNames)].sort((left, right) =>
+    left.localeCompare(right),
+  )) {
+    for (const root of [...new Set([projectRoot, repoRoot])]) {
+      const packageJsonPath = path.join(root, "node_modules", packageName, "package.json")
+      if (!existsSync(packageJsonPath)) continue
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+      if (typeof packageJson.version === "string") versions[packageName] = packageJson.version
+      const normalized = normalizeVoyantPackageMetadata(packageJson.voyant)
+      if (normalized) metadata[packageName] = normalized
+      break
+    }
+  }
+  return { metadata, versions }
 }
 
 function readWorkspacePackageInfo(repoRoot) {
@@ -145,7 +180,13 @@ function packageRecordForPackage(packageName, context) {
 }
 
 function withPackageMetadata(record, packageName, context) {
-  const metadata = context.packageMetadata.get(packageName)
+  const declaredMetadata = context.packageMetadata.get(packageName)
+  const installedVersion = context.installedPackageVersions.get(packageName)
+  const installedMetadata =
+    record.source.kind !== "registry" || record.version === installedVersion
+      ? context.installedPackageMetadata.get(packageName)
+      : undefined
+  const metadata = declaredMetadata ?? installedMetadata
   if (!metadata) return record
   return {
     ...record,
@@ -232,9 +273,11 @@ function normalizeVoyantPackageMetadata(value) {
 
   const compatibleWith = normalizeCompatibleWith(value.compatibleWith)
   const requires = normalizeCapabilityDeclaration(value.requires)
+  const manifest = normalizeString(value.manifest)
   return {
     schemaVersion: voyantPackageMetadataSchemaVersion,
     kind: value.kind,
+    ...(manifest ? { manifest } : {}),
     ...(compatibleWith ? { compatibleWith } : {}),
     ...(requires ? { requires } : {}),
   }

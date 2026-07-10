@@ -313,6 +313,7 @@
       "@voyant-travel/bookings/tasks": ["../../packages/bookings/dist/tasks/index.d.ts"],
       "@voyant-travel/bookings/tools": ["../../packages/bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../../packages/bookings/dist/validation.d.ts"],
+      "@voyant-travel/bookings/voyant": ["../../packages/bookings/dist/voyant.d.ts"],
       "@voyant-travel/catalog": ["../../packages/catalog/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring": ["../../packages/catalog-authoring/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring/extension": [
@@ -643,6 +644,7 @@
       "@voyant-travel/core/module": ["../../packages/core/dist/module.d.ts"],
       "@voyant-travel/core/orchestration": ["../../packages/core/dist/orchestration.d.ts"],
       "@voyant-travel/core/plugin": ["../../packages/core/dist/plugin.d.ts"],
+      "@voyant-travel/core/project": ["../../packages/core/dist/project.d.ts"],
       "@voyant-travel/core/query": ["../../packages/core/dist/query.d.ts"],
       "@voyant-travel/core/registry": ["../../packages/core/dist/registry.d.ts"],
       "@voyant-travel/core/workflows": ["../../packages/core/dist/workflows.d.ts"],
@@ -1040,6 +1042,7 @@
         "../../packages/framework/dist/managed-runtime.d.ts"
       ],
       "@voyant-travel/framework/profile": ["../../packages/framework/dist/profile.d.ts"],
+      "@voyant-travel/framework/project": ["../../packages/framework/dist/project.d.ts"],
       "@voyant-travel/hono": ["../../packages/hono/dist/index.d.ts"],
       "@voyant-travel/hono/app": ["../../packages/hono/dist/app.d.ts"],
       "@voyant-travel/hono/auth": ["../../packages/hono/dist/auth/index.d.ts"],
