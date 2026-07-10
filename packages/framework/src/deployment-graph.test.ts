@@ -1,4 +1,6 @@
 // agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while the resolver, diagnostics, hashing, and managed-profile bridge share one contract harness.
+
+import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
 import {
   bulkReindexProductsWorkflowManifest,
   promotionAffectedAllFilter,
@@ -13,6 +15,7 @@ import {
   graphIdFromSpecifier,
   packageNameFromSpecifier,
   resolveDeploymentGraph,
+  resolveDeploymentGraphWithPackageManifests,
   resolveManagedProfileDeploymentGraph,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
   VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
@@ -55,6 +58,169 @@ describe("deployment graph v1", () => {
       ]),
     )
     expect(validateGraphUnitManifest(module)).toEqual([])
+  })
+
+  it("resolves a package-owned module manifest without starter synthesis", async () => {
+    expect(validateGraphUnitManifest(bookingsVoyantModule, "module")).toEqual([])
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [bookingsVoyantModule] }),
+      target: "node",
+      mode: "self-hosted",
+    })
+
+    expect(graph.modules[0]).toMatchObject({
+      id: "@voyant-travel/bookings",
+      api: [
+        {
+          id: "@voyant-travel/bookings#api.admin",
+          runtime: { entry: "@voyant-travel/bookings", export: "bookingsHonoModule" },
+        },
+        {
+          id: "@voyant-travel/bookings#api.public",
+          runtime: { entry: "@voyant-travel/bookings", export: "bookingsHonoModule" },
+        },
+      ],
+      schema: [{ id: "@voyant-travel/bookings#schema" }],
+      migrations: [{ id: "@voyant-travel/bookings#migrations" }],
+      links: [{ id: "@voyant-travel/bookings#linkable.booking" }],
+    })
+  })
+
+  it("loads package manifests only after package admission", async () => {
+    let loaded = false
+    const graph = await resolveDeploymentGraphWithPackageManifests({
+      project: defineProject({
+        modules: [defineModule({ id: "@acme/voyant-loyalty" })],
+      }),
+      target: "node",
+      mode: "self-hosted",
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "workspace" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            manifest: "./voyant",
+            compatibleWith: { targets: ["node"], modes: ["self-hosted"] },
+          },
+        },
+      ],
+      admission: { allowedSourceKinds: ["workspace"] },
+      loadPackageManifests: async () => {
+        loaded = true
+        return [
+          defineModule({
+            id: "@acme/voyant-loyalty",
+            schema: [{ id: "@acme/voyant-loyalty#schema", source: "./schema" }],
+          }),
+        ]
+      },
+    })
+
+    expect(loaded).toBe(true)
+    expect(graph.modules[0]?.schema).toEqual([
+      { id: "@acme/voyant-loyalty#schema", source: "./schema" },
+    ])
+    expect(graph.diagnostics).toEqual([])
+  })
+
+  it("does not execute package manifests when admission fails", async () => {
+    let loaded = false
+    const graph = await resolveDeploymentGraphWithPackageManifests({
+      project: defineProject({
+        modules: [defineModule({ id: "@acme/voyant-loyalty" })],
+      }),
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "registry" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            manifest: "./voyant",
+          },
+        },
+      ],
+      admission: { allowedSourceKinds: ["workspace"] },
+      loadPackageManifests: async () => {
+        loaded = true
+        return []
+      },
+    })
+
+    expect(loaded).toBe(false)
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED" }),
+      ]),
+    )
+  })
+
+  it("prevents an admitted package manifest from replacing another package's unit", async () => {
+    const graph = await resolveDeploymentGraphWithPackageManifests({
+      project: defineProject({
+        modules: [defineModule({ id: "@acme/victim" }), defineModule({ id: "@zzz/attacker" })],
+      }),
+      packageRecords: [
+        { packageName: "@acme/victim", source: { kind: "workspace" } },
+        {
+          packageName: "@zzz/attacker",
+          source: { kind: "workspace" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "module",
+            manifest: "./voyant",
+          },
+        },
+      ],
+      loadPackageManifests: async () => [
+        defineModule({
+          id: "@acme/victim",
+          packageName: "@zzz/attacker",
+          schema: [{ id: "@acme/victim#hostile-schema", source: "./hostile-schema" }],
+        }),
+      ],
+    })
+
+    expect(graph.modules.find((unit) => unit.id === "@acme/victim")?.schema).toEqual([])
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_MANIFEST_OWNERSHIP_MISMATCH" }),
+      ]),
+    )
+  })
+
+  it("rejects runtime references to packages that were not admitted", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/voyant-loyalty",
+            api: [
+              {
+                id: "@acme/voyant-loyalty#api.admin",
+                surface: "admin",
+                runtime: { entry: "@unknown/runtime", export: "routes" },
+              },
+            ],
+          }),
+        ],
+      }),
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-loyalty",
+          source: { kind: "workspace" },
+        },
+      ],
+    })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED" }),
+      ]),
+    )
   })
 
   it("rejects bare legacy aliases as canonical graph ids", () => {
@@ -771,10 +937,13 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
       "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
       "VOYANT_GRAPH_INVALID_SCOPE",
+      "VOYANT_GRAPH_MANIFEST_LOAD_FAILED",
+      "VOYANT_GRAPH_MANIFEST_OWNERSHIP_MISMATCH",
       "VOYANT_GRAPH_MISSING_CAPABILITY",
       "VOYANT_GRAPH_MISSING_PORT",
       "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE",
       "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
+      "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
       "VOYANT_GRAPH_UNKNOWN_FACET",
       "VOYANT_GRAPH_UNSUPPORTED_FACET",
     ])

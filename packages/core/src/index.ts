@@ -95,6 +95,25 @@ export type {
 } from "./plugin.js"
 export { definePlugin, registerPlugins } from "./plugin.js"
 export type {
+  DefineVoyantGraphProjectInput,
+  DefineVoyantGraphUnitInput,
+  VoyantGraphCapabilityDeclaration,
+  VoyantGraphEvent,
+  VoyantGraphFacetEntity,
+  VoyantGraphJsonObject,
+  VoyantGraphJsonValue,
+  VoyantGraphPortDeclaration,
+  VoyantGraphProject,
+  VoyantGraphRouteBundle,
+  VoyantGraphRouteSurface,
+  VoyantGraphRuntimeReference,
+  VoyantGraphSubscriber,
+  VoyantGraphUnitKind,
+  VoyantGraphUnitManifest,
+  VoyantGraphWorkflow,
+  VoyantGraphWorkflowSchedule,
+} from "./project.js"
+export type {
   EntityFetcher,
   EntityFetcherArgs,
   EntityRecord,

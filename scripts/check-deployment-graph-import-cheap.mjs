@@ -7,9 +7,10 @@
  * static imports may reach manifest math helpers, but must not pull route,
  * schema, UI, workflow, runtime, or provider graphs into discovery.
  */
-import { existsSync, readFileSync, statSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import path from "node:path"
 
+const repoRoot = process.cwd()
 const DEFAULT_ENTRY_SURFACES = [
   {
     id: "framework-deployment-graph",
@@ -27,14 +28,20 @@ const DEFAULT_ENTRY_SURFACES = [
     id: "operator-generated-runtime-entry",
     file: "starters/operator/src/runtime-entry.generated.ts",
   },
+  ...discoverPackageManifestEntries(repoRoot),
 ]
 
 const ALLOWED_EXTERNAL_IMPORTS = new Set(["@voyant-travel/hono/composition"])
+const ALLOWED_PACKAGE_MANIFEST_IMPORTS = new Set([
+  "@voyant-travel/core/project",
+  "@voyant-travel/framework/project",
+])
 
 const ALLOWED_EXTERNAL_IMPORT_PATTERNS = [
   /\/workflow-[^/]+-manifest$/,
   /\/[^/]+-workflow-manifest$/,
 ]
+const ALLOWED_PACKAGE_MANIFEST_IMPORT_PATTERNS = [/\/ports$/, /\/[^/]+-manifest$/]
 
 const FORBIDDEN_EXTERNAL_IMPORTS = new Map([
   [
@@ -46,7 +53,6 @@ const FORBIDDEN_EXTERNAL_IMPORTS = new Map([
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs"]
 const TEST_PATH_SEGMENTS = new Set(["__tests__", "tests"])
 
-const repoRoot = process.cwd()
 const entrySurfaces = parseArgs(process.argv.slice(2))
 const failures = []
 const checkedFiles = new Set()
@@ -84,7 +90,7 @@ function walkEntry(entry, filePath, activeStack) {
 
   const source = readFileSync(resolved, "utf8")
   for (const edge of staticRuntimeImports(source)) {
-    const violation = forbiddenImport(edge.specifier, resolved)
+    const violation = forbiddenImport(edge.specifier, resolved, entry)
     if (violation) {
       failures.push({
         code: violation.code,
@@ -150,8 +156,20 @@ function isTypeOnlyImport(kind, clause) {
   return entries.length > 0 && entries.every((entry) => entry.startsWith("type "))
 }
 
-function forbiddenImport(specifier, importer) {
+function forbiddenImport(specifier, importer, entry) {
   if (specifier.startsWith("node:")) return undefined
+  if (!isRelativeSpecifier(specifier) && isPackageManifestEntry(entry)) {
+    const allowed =
+      ALLOWED_PACKAGE_MANIFEST_IMPORTS.has(specifier) ||
+      ALLOWED_PACKAGE_MANIFEST_IMPORT_PATTERNS.some((pattern) => pattern.test(specifier))
+    if (!allowed) {
+      return {
+        code: "runtime-heavy-import",
+        reason:
+          "package manifests may import only project authoring helpers, port contracts, or dedicated manifest subpaths",
+      }
+    }
+  }
   if (ALLOWED_EXTERNAL_IMPORTS.has(specifier)) return undefined
   if (ALLOWED_EXTERNAL_IMPORT_PATTERNS.some((pattern) => pattern.test(specifier))) {
     return undefined
@@ -175,6 +193,10 @@ function forbiddenImport(specifier, importer) {
   }
 
   return undefined
+}
+
+function isPackageManifestEntry(entry) {
+  return entry.packageManifest === true || entry.id === "package"
 }
 
 function forbiddenPathReason(value) {
@@ -236,6 +258,77 @@ function resolveSourceImport(fromDir, specifier) {
 
 function isRelativeSpecifier(specifier) {
   return specifier.startsWith(".") || specifier.startsWith("/")
+}
+
+function discoverPackageManifestEntries(root) {
+  const packageRoot = path.join(root, "packages")
+  if (!existsSync(packageRoot)) return []
+
+  return findPackageJsonFiles(packageRoot).flatMap((packageJsonPath) => {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+    const manifest = packageJson.voyant?.manifest
+    if (typeof manifest !== "string" || manifest.length === 0) return []
+
+    const exportTarget = packageExportTarget(
+      packageJson.exports?.[manifest],
+      path.dirname(packageJsonPath),
+    )
+    if (!exportTarget) {
+      return [
+        {
+          id: packageJson.name ?? relativeToRepo(packageJsonPath),
+          file: path.join(path.dirname(relativeToRepo(packageJsonPath)), manifest),
+          packageManifest: true,
+        },
+      ]
+    }
+
+    return [
+      {
+        id: packageJson.name ?? relativeToRepo(packageJsonPath),
+        file: relativeToRepo(path.resolve(path.dirname(packageJsonPath), exportTarget)),
+        packageManifest: true,
+      },
+    ]
+  })
+}
+
+function findPackageJsonFiles(directory) {
+  const packageJsonPath = path.join(directory, "package.json")
+  if (existsSync(packageJsonPath)) return [packageJsonPath]
+
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (!entry.isDirectory() || entry.name === "node_modules" || entry.name === "dist") return []
+    return findPackageJsonFiles(path.join(directory, entry.name))
+  })
+}
+
+function packageExportTarget(value, packageDirectory) {
+  for (const target of packageExportTargets(value) ?? []) {
+    if (validPackageExportTarget(packageDirectory, target)) return target
+  }
+  return undefined
+}
+
+function packageExportTargets(value) {
+  if (typeof value === "string") return [value]
+  if (Array.isArray(value))
+    return value.flatMap((candidate) => packageExportTargets(candidate) ?? [])
+  if (value === null) return []
+  if (typeof value !== "object") return undefined
+  for (const [condition, candidate] of Object.entries(value)) {
+    if (condition !== "node" && condition !== "import" && condition !== "default") continue
+    const targets = packageExportTargets(candidate)
+    if (targets !== undefined) return targets
+  }
+  return undefined
+}
+
+function validPackageExportTarget(packageDirectory, target) {
+  if (!target.startsWith("./")) return false
+  const packageRoot = path.resolve(packageDirectory)
+  const relative = path.relative(packageRoot, path.resolve(packageRoot, target))
+  return !relative.startsWith("..") && !path.isAbsolute(relative)
 }
 
 function parseArgs(args) {

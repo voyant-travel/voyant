@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:7ee85f5ddd22aa65e9e5919be3ff0031204d5c550d071b1473af439d2e64adb6",
+  "contentHash": "sha256:acee3b0a6b3d4751d1621b5515739a13a79f03865596e073187051686cdbf780",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -112,17 +112,42 @@
     {
       "api": [
         {
-          "id": "@voyant-travel/bookings#api",
-          "mount": "@voyant-travel/bookings",
-          "surface": "admin"
+          "id": "@voyant-travel/bookings#api.admin",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/bookings",
+            "export": "bookingsHonoModule"
+          },
+          "surface": "admin",
+          "transactional": true
+        },
+        {
+          "id": "@voyant-travel/bookings#api.public",
+          "mount": "bookings",
+          "runtime": {
+            "entry": "@voyant-travel/bookings",
+            "export": "bookingsHonoModule"
+          },
+          "surface": "public",
+          "transactional": true
         }
       ],
       "events": [],
       "id": "@voyant-travel/bookings",
       "kind": "module",
-      "links": [],
+      "links": [
+        {
+          "id": "@voyant-travel/bookings#linkable.booking",
+          "source": "@voyant-travel/bookings/linkables"
+        }
+      ],
       "localId": "bookings",
-      "migrations": [],
+      "migrations": [
+        {
+          "id": "@voyant-travel/bookings#migrations",
+          "source": "./migrations"
+        }
+      ],
       "order": 3,
       "packageName": "@voyant-travel/bookings",
       "provides": {
@@ -133,7 +158,12 @@
         "capabilities": [],
         "ports": []
       },
-      "schema": [],
+      "schema": [
+        {
+          "id": "@voyant-travel/bookings#schema",
+          "source": "@voyant-travel/bookings/schema"
+        }
+      ],
       "subscribers": [],
       "workflows": []
     },
@@ -1288,7 +1318,7 @@
       "packageName": "@voyant-travel/accommodations",
       "source": {
         "kind": "workspace",
-        "reference": "link:../accommodations"
+        "reference": "link:../../packages/accommodations"
       },
       "version": "0.111.5"
     },
@@ -1305,7 +1335,7 @@
       "packageName": "@voyant-travel/action-ledger",
       "source": {
         "kind": "workspace",
-        "reference": "link:../action-ledger"
+        "reference": "link:../../packages/action-ledger"
       },
       "version": "0.105.14"
     },
@@ -1322,7 +1352,7 @@
       "packageName": "@voyant-travel/availability",
       "source": {
         "kind": "workspace",
-        "reference": "link:../availability"
+        "reference": "link:../../packages/availability"
       },
       "version": "0.1.3"
     },
@@ -1334,6 +1364,7 @@
           "targets": ["node", "voyant-cloud"]
         },
         "kind": "module",
+        "manifest": "./voyant",
         "schemaVersion": "voyant.package.v1"
       },
       "packageName": "@voyant-travel/bookings",
@@ -1390,7 +1421,7 @@
       "packageName": "@voyant-travel/charters",
       "source": {
         "kind": "workspace",
-        "reference": "link:../charters"
+        "reference": "link:../../packages/charters"
       },
       "version": "0.147.1"
     },
@@ -1407,7 +1438,7 @@
       "packageName": "@voyant-travel/commerce",
       "source": {
         "kind": "workspace",
-        "reference": "link:../commerce"
+        "reference": "link:../../packages/commerce"
       },
       "version": "0.31.1"
     },
@@ -1424,7 +1455,7 @@
       "packageName": "@voyant-travel/cruises",
       "source": {
         "kind": "workspace",
-        "reference": "link:../cruises"
+        "reference": "link:../../packages/cruises"
       },
       "version": "0.148.1"
     },
@@ -1509,9 +1540,9 @@
       "packageName": "@voyant-travel/framework",
       "source": {
         "kind": "workspace",
-        "reference": "link:../framework"
+        "reference": "link:../../packages/framework"
       },
-      "version": "0.32.0"
+      "version": "0.33.0"
     },
     {
       "metadata": {
@@ -1543,7 +1574,7 @@
       "packageName": "@voyant-travel/hono",
       "source": {
         "kind": "workspace",
-        "reference": "link:../hono"
+        "reference": "link:../../packages/hono"
       },
       "version": "0.122.2"
     },
@@ -1560,7 +1591,7 @@
       "packageName": "@voyant-travel/identity",
       "source": {
         "kind": "workspace",
-        "reference": "link:../identity"
+        "reference": "link:../../packages/identity"
       },
       "version": "0.149.1"
     },
@@ -1594,7 +1625,7 @@
       "packageName": "@voyant-travel/legal",
       "source": {
         "kind": "workspace",
-        "reference": "link:../legal"
+        "reference": "link:../../packages/legal"
       },
       "version": "0.149.1"
     },
@@ -1611,7 +1642,7 @@
       "packageName": "@voyant-travel/mice",
       "source": {
         "kind": "workspace",
-        "reference": "link:../mice"
+        "reference": "link:../../packages/mice"
       },
       "version": "0.6.9"
     },
@@ -1628,7 +1659,7 @@
       "packageName": "@voyant-travel/notifications",
       "source": {
         "kind": "workspace",
-        "reference": "link:../notifications"
+        "reference": "link:../../packages/notifications"
       },
       "version": "0.122.1"
     },
@@ -1678,7 +1709,7 @@
       "packageName": "@voyant-travel/operator-settings",
       "source": {
         "kind": "workspace",
-        "reference": "link:../operator-settings"
+        "reference": "link:../../packages/operator-settings"
       },
       "version": "0.2.34"
     },
@@ -1747,7 +1778,7 @@
       "packageName": "@voyant-travel/storefront",
       "source": {
         "kind": "workspace",
-        "reference": "link:../storefront"
+        "reference": "link:../../packages/storefront"
       },
       "version": "0.151.1"
     },
@@ -1764,7 +1795,7 @@
       "packageName": "@voyant-travel/trips",
       "source": {
         "kind": "workspace",
-        "reference": "link:../trips"
+        "reference": "link:../../packages/trips"
       },
       "version": "0.140.1"
     },
@@ -1781,7 +1812,7 @@
       "packageName": "@voyant-travel/workflow-runs",
       "source": {
         "kind": "workspace",
-        "reference": "link:../workflow-runs"
+        "reference": "link:../../packages/workflow-runs"
       },
       "version": "0.111.19"
     }

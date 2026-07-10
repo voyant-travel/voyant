@@ -13,6 +13,7 @@ Related:
 - [packaged-admin-rfc.md](./packaged-admin-rfc.md)
 - [ADR-0007 module subsetting](../adr/0007-module-subsetting-and-capability-ports.md)
 - [ADR-0008 convention-driven deployment surface](../adr/0008-convention-driven-deployment-surface.md)
+- [ADR-0011 agent tool library and MCP](../adr/0011-agent-tool-library-and-mcp.md)
 
 ## Purpose
 
@@ -24,7 +25,7 @@ more.
 Those notes are directionally coherent, but together they describe a framework
 rewrite if treated as one feature. This document is the controlling
 architecture plan. It preserves the core direction, normalizes vocabulary, and
-sets a v1 cut so the work can ship incrementally.
+orders the work so it can ship incrementally.
 
 The rule is:
 
@@ -32,12 +33,18 @@ The rule is:
 The graph is validated by doctor/build tooling, then lowered into target-specific
 runtime artifacts.**
 
+The current `voyant.resolved-graph.v1` implementation is the foundational
+substrate for this rule. It proves stable identity, deterministic artifacts,
+package admission, diagnostics, migration-source accounting, schedule lowering,
+and generated runtime entries. It does **not** by itself complete `voyant#3080`.
+The issue is complete only when selected packages own their manifests and all
+supported product surfaces are resolved from those package manifests without an
+operator-starter catalog or hand-maintained composition layer.
+
 ## Non-Goals
 
-This document does not require v1 to ship every facet discussed in the RFC
-comments.
-
-Out of v1:
+The foundational v1 graph does not need every facet discussed in the RFC
+comments. The following remain out of the foundational substrate:
 
 - a broad plugin lifecycle hook API
 - a full supply-chain security platform
@@ -48,8 +55,11 @@ Out of v1:
 - graph-derived tools and MCP manifests
 - a full replacement-port story for every required standard module
 
-Those may become follow-up work. They must not block the first explicit graph
-cut.
+These are not optional for the architecture indefinitely. The facet matrix below
+classifies which are required to complete `voyant#3080`, which are later
+hardening, and what each depends on. They must not block use of the foundational
+graph, but generated operator synthesis must not be declared the final state
+while package-owned facets remain absent.
 
 ## Core Decisions
 
@@ -154,6 +164,58 @@ export const smartbill = definePlugin({
 ```
 
 It may still be described as an adapter package in taxonomy and docs.
+
+### 6. Packages own manifests; starters only lower resolved graphs
+
+The end-state source of truth for a module or plugin is an import-cheap manifest
+exported by the package that owns the behavior. This rule applies equally to
+first-party, third-party, workspace, and deployment-local units.
+
+```json
+{
+  "exports": {
+    ".": "./dist/index.js",
+    "./voyant": "./dist/voyant.js",
+    "./admin": "./dist/admin/index.js",
+    "./tools": "./dist/tools.js"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "manifest": "./voyant"
+  }
+}
+```
+
+`./voyant` exports one or more `defineModule` / `definePlugin` declarations and
+static package metadata. It owns the package's capabilities, ports, schema and
+migrations, API bundles, admin contributions, workflows, schedules, events,
+subscribers, runtime contract, access resources, tools, and action metadata as
+those facets become supported. Executable bodies remain behind lazy imports.
+
+A plain package specifier selects the package's sole or explicitly declared
+default graph unit. Packages with multiple units require a package-scoped
+fragment such as `@acme/voyant-suite#loyalty`; resolution must never select
+multiple units by accident.
+
+The resolver may generate JSON artifacts and bundler entry modules from selected
+package manifests. Generation is an output of resolution, not a second catalog.
+`starters/operator` may temporarily adapt legacy declarations and may host target
+bootstrap code, but it must not remain the authoritative list of package routes,
+migrations, admin pages, workflows, subscribers, permissions, copy, tools, or
+providers.
+
+Specifically:
+
+- no new package facet may require adding a parallel entry to an operator
+  manifest or composition file
+- first-party packages use the same public manifest interface as external
+  packages; provenance may affect admission, never shape
+- a compatibility generator may derive missing package facets during migration,
+  but doctor must identify the owning package and the bridge used
+- the bridge is removable only when direct package resolution produces the same
+  graph; parity, not continued central generation, is its exit criterion
+- target bootstraps consume a resolved graph and target bindings; they do not
+  decide product composition
 
 ## Identity
 
@@ -296,18 +358,28 @@ Cloud fast paths such as "this graph hash matches the standard operator graph."
 
 ## Project And Deployment Declarations
 
-Use two declarations:
+Use one common project declaration and one optional deployment declaration:
 
-- `defineProject` describes the target-neutral desired graph.
+- `voyant.config.ts` / `defineProject` describes the target-neutral desired graph.
 - `defineDeployment` binds that graph to a runtime target and substrate.
 
 ```ts
-// voyant.project.ts
+// voyant.config.ts
+import { defineProject } from "@voyant-travel/framework/project"
+
 export default defineProject({
   schemaVersion: "voyant.project.v1",
   presetLineage: "operator-standard",
-  modules: [bookings(), inventory(), finance()],
-  plugins: [smartbill()],
+  modules: [
+    "@voyant-travel/bookings",
+    "@voyant-travel/inventory",
+    "@voyant-travel/finance",
+    {
+      resolve: "./src/modules/loyalty",
+      config: { tiers: ["silver", "gold", "platinum"] },
+    },
+  ],
+  plugins: ["@acme/voyant-smartbill"],
 })
 ```
 
@@ -315,25 +387,101 @@ export default defineProject({
 // voyant.deployment.ts
 export default defineDeployment({
   schemaVersion: "voyant.deployment.v1",
-  project,
-  target: "voyant-cloud",
-  providers: {
-    database: "postgres",
-    cache: "redis",
-    storage: "s3",
-    workflows: "voyant-cloud",
+  project: "./voyant.config.ts",
+  target: "self-hosted-node",
+  secrets: {
+    "smartbill.apiToken": secret.fromEnv("SMARTBILL_API_TOKEN"),
+  },
+  bindings: {
+    "app.db": resource.postgres.fromEnv("DATABASE_URL"),
+    "app.cache": resource.redis.fromEnv("REDIS_URL"),
   },
 })
 ```
 
-For v1, prefer factory imports over string-only declarations. A preset writes
-the imports, so the verbosity is paid by scaffolding, not by the user. String
-forms can be added later if there is real demand.
+Package specifiers and `{ resolve, config }` selections are the normal authoring
+forms. The resolver reads package metadata and performs admission before it
+imports `./voyant`. Trusted deployment-local declarations may be imported by an
+advanced project, but registry package imports must not become a path around
+pre-admission. A preset writes explicit selections and may record
+`presetLineage`, but the preset is never consulted after scaffolding.
 
-## V1 Facet Cut
+### Clean project ergonomics
 
-The first implementation should only include facets that already map to current
-runtime concepts.
+The project must feel like an application built on Voyant, not a fork of the
+operator starter. The useful lesson from conventional application frameworks is
+that common extension locations and one CLI remove assembly work from the app,
+while explicit activation keeps the deployment auditable.
+
+A normal source-backed project should need no framework-internal composition
+files:
+
+```txt
+acme-voyant/
+  package.json
+  voyant.config.ts
+  voyant.deployment.ts        # optional; absent for default Voyant Cloud deploy
+  src/
+    modules/loyalty/
+      index.ts                 # defineModule; explicit project selection
+      schema.ts
+      migrations/
+      api/
+      admin/
+      workflows/
+      subscribers/
+    plugins/
+    links/
+    scripts/
+  .voyant/                     # generated, disposable, gitignored
+```
+
+Conventions apply **inside an explicitly selected unit**. They may provide
+defaults for `schema.ts`, `migrations/`, `api/`, `admin/`, `workflows/`, and
+`subscribers/`, but dropping a file in `src/` must not silently change the graph.
+`index.ts` owns the manifest, and `voyant.config.ts` activates the unit. A
+project-level link or cross-module workflow remains explicit because no one
+package owns it; it should be declared in `links/` or in a small
+deployment-local module selected by the project.
+
+The ordinary workflow is:
+
+```sh
+voyant new --preset operator-standard
+voyant generate module loyalty --schema --admin --workflow
+voyant add ./src/modules/loyalty
+voyant add @acme/voyant-smartbill
+voyant dev
+voyant doctor
+voyant db generate loyalty
+voyant migrate
+voyant exec ./src/scripts/seed.ts
+voyant build
+voyant deploy
+```
+
+These commands all resolve the same project graph. `add` / `install`, `upgrade`,
+and `uninstall` edit dependencies and explicit selections, then report config,
+secret, migration, access, and resource consequences. They do not ask the user
+to edit `createVoyantApp`, route registries, admin registries, migration
+collectors, scheduler lists, or provider containers.
+
+`voyant deploy` needs no deployment file for the default Voyant Cloud path. A
+deployment file exists only when target bindings, resource sources, schedule
+overrides, copy overrides, webhook subscriptions, or other deployment policy is
+actually configured. It must not repeat product modules or package facets.
+
+Generated JSON, route entry modules, admin entry modules, migration plans, and
+target manifests live under `.voyant/` (or an equivalent build directory). They
+are reproducible outputs and are never application-authored source-of-truth
+files. A contributor adding a package-owned facet should be able to test it from
+the package and select it from a project without changing `starters/operator`.
+
+## Foundational V1 Substrate
+
+The first implementation intentionally includes only facets that map to current
+runtime concepts. This is the current foundational substrate, not the completion
+boundary for `voyant#3080`.
 
 Required for v1:
 
@@ -354,7 +502,7 @@ Required for v1:
 - closed manifest schemas with fail-closed unknown/unsupported facet handling
 - diagnostics with stable codes and source locations
 
-Explicitly defer:
+Not yet complete in the foundational substrate:
 
 - admin slots
 - graph-derived admin copy
@@ -367,8 +515,9 @@ Explicitly defer:
   deliverability
 - destructive uninstall/purge
 
-Some deferred items are high-value and independently shippable. They should be
-tracked as follow-up slices, not bundled into the first resolver.
+These items ship as dependency-ordered slices. The issue-level end state is not
+reached until every facet marked `#3080` in the matrix below is package-owned and
+starter-independent.
 
 ## Requires And Provides
 
@@ -429,9 +578,9 @@ would give false confidence.
 
 ## Static Metadata And Runtime Introspection
 
-Use a two-phase model.
+Use a two-pass introspection model.
 
-### Phase 1: pre-admission metadata
+### Pass 1: pre-admission metadata
 
 Before any package code is imported, tooling can inspect:
 
@@ -441,7 +590,7 @@ Before any package code is imported, tooling can inspect:
 - project/deployment declarations
 - configured package admission policy
 
-This phase can reject incompatible or unadmitted packages before arbitrary code
+This pass can reject incompatible or unadmitted packages before arbitrary code
 executes.
 
 Resolved package records must also capture provenance from the lockfile:
@@ -477,7 +626,7 @@ V1 package admission checks compatibility and source admission only. It does not
 require SBOMs, Sigstore, revocation feeds, advisory policy engines, or
 certificate-style admission receipts.
 
-### Phase 2: admitted build-time introspection
+### Pass 2: admitted build-time introspection
 
 After admission, build/doctor may import admitted package code to inspect route
 bundles, OpenAPI metadata, tools, admin entries, workflow descriptors, and
@@ -600,16 +749,23 @@ Rules:
 
 ## Admin Surface
 
-Admin composition is not v1 for the graph resolver, but the direction is:
+Admin composition is beyond the foundational v1 substrate but required for the
+package-owned end state:
 
 - packages contribute admin nav/routes/pages through package-owned admin facets
 - generated route files or equivalent generated entry modules bind lazy page
   imports into the host router
-- slots and copy are follow-up facets
-- custom admin pages remain possible through deployment-owned extensions
+- packages expose stable slots and contribute widgets to slots owned by other
+  selected packages
+- packages own namespaced copy; deployments may override known keys without
+  forking package code
+- custom admin pages use the same package/local-module contract, not a
+  deployment-only extension path
 
-The first admin slice should be nav/routes only. Slots and graph-derived copy
-should follow after the basic generated admin route assembly is stable.
+The first admin slice is nav/routes because slots and copy depend on stable page
+ids and package UI exports. Generated operator route modules are an acceptable
+bridge, but the generator must read selected package manifests and may not keep a
+separate first-party admin catalog.
 
 ## API, OpenAPI, Scopes, And RBAC
 
@@ -640,8 +796,8 @@ collect it after package admission, not require a separate OpenAPI facet first.
 
 API scopes, staff RBAC, user scopes, tool permissions, and action-ledger
 capabilities should converge toward one permission catalog, but that is a
-follow-up workstream. It is high leverage and should be designed once, not
-piecemeal per facet.
+later dependency-ordered phase. It is high leverage and should be designed once,
+not piecemeal per facet.
 
 ## Workflows And Schedules
 
@@ -684,7 +840,7 @@ bundle.
 V1 should include subscribers and workflow event filters that already map to
 existing descriptors.
 
-The broader event catalog is deferred:
+The broader event catalog is beyond the foundational substrate:
 
 - declared `events.emits` catalogs
 - payload schemas for every emitted event
@@ -693,11 +849,13 @@ The broader event catalog is deferred:
 - event-to-OpenAPI or event-to-SDK generation
 
 Inbound webhook routes remain API route declarations. Outbound webhook delivery
-should be designed with the event catalog follow-up, not squeezed into v1.
+ships after the package-owned event catalog, not inside the foundational slice.
 
 ## Testing Story
 
-Custom module/plugin authors need a first-class test harness in v1.
+Custom module/plugin authors need a first-class test harness. The foundational
+v1 graph establishes its diagnostics and skeleton; each later facet must add its
+own assertions before that facet is public.
 
 Target shape:
 
@@ -725,8 +883,9 @@ The harness should support:
 - port conformance kits
 - admin contribution tests when admin facets ship
 
-This is part of the v1 credibility story. A framework that sells extensibility
-must give authors a way to prove their extensions are valid.
+The complete harness is part of the `voyant#3080` credibility story. A framework
+that sells extensibility must give authors a way to prove their extensions are
+valid without booting the reference operator.
 
 ## Diagnostics
 
@@ -771,6 +930,22 @@ stable if the repository enforces that rule.
 
 First-party modules must use the same interface as external modules, but the
 first migration should be generated mechanically where possible.
+
+There are three distinct states; documentation and diagnostics must not blur
+them:
+
+1. **Derived bridge:** tooling infers a graph unit or facet from a central
+   first-party registry, starter list, generated schema bundle, or runtime
+   declaration. This is foundational migration substrate.
+2. **Package-owned manifest:** the owning package exports the facet through its
+   public `./voyant` manifest. Resolution no longer needs a package-specific
+   operator entry.
+3. **Bridge removed:** parity tests prove direct package resolution produces the
+   expected graph, and the central inference path is deleted.
+
+Moving central synthesis into a generator completes state 1, not state 2. A
+facet cannot be reported as migrated while the operator starter remains the only
+place that knows the package contributes it.
 
 Step zero should be a generator that derives v1 manifests from existing
 runtime shapes:
@@ -818,14 +993,15 @@ CLI follow-up; it should consume this report contract rather than inventing a
 separate diagnostic model.
 
 The reference operator now owns checked-in `voyant.project.ts` and
-`voyant.deployment.ts` declarations. The managed-profile snapshot remains a
+`voyant.deployment.ts` declarations. It is a reference consumer and compatibility
+host, not the canonical package catalog. The managed-profile snapshot remains a
 runtime compatibility input for the generated managed Node entry and legacy
 scheduled-job derivation, but it does not select graph units, providers, or the
 deployment target. Deployment requirements derive from the graph's declared
 provider bindings using the existing v1 provider contract, and generated Node
 runtime entries pass both the resolved requirements and deployment mode/provider
-bindings into boot validation. Phase 2 also models compatible environment aliases
-and value formats on canonical resource requirements:
+bindings into boot validation. The foundational substrate also models compatible
+environment aliases and value formats on canonical resource requirements:
 for example, either `DATABASE_URL` or the Node-pool `DATABASE_URL_DIRECT`
 satisfies the graph's Postgres requirement, and the resolved value must be a
 valid Postgres URL. Phase 2 continues the remaining runtime compatibility and
@@ -853,116 +1029,206 @@ explicit operator metadata bridge, but generated operator graph checks still
 require the final package record to carry normalized `voyant.package.v1`
 compatibility metadata before runtime imports are emitted.
 
-## Implementation Phases
+## Relationship To Existing ADRs
 
-Phases 0-2 are the complete v1 deployment-graph program. Phase 1 is the first
-deployable vertical slice, not the whole v1. Phases 3-5 are follow-up facets
-that build on the same graph contract.
+This plan extends existing decisions; it does not silently rewrite them.
 
-### Phase 0: vocabulary, schema, and generated first-party manifests
+- ADR-0007 remains the compatibility rule for the current standard graph:
+  default-on subsetting, required foundational modules including
+  `relationships`, extension-ownership cascade, and the monolithic inert schema
+  bundle remain valid until a separately reviewed package-owned migration
+  replaces them. The unified graph normalizes that result today. It does not
+  claim an alternate CRM is valid until consumers use a typed port, the provider
+  passes its conformance kit, and the replacement decision is explicitly made.
+- ADR-0008 remains the route-authoring direction: anonymous and transactional
+  intent is package-owned metadata, standard lists trend to empty, and discovery
+  happens at build time. Convention discovery may locate package exports, but
+  the project still explicitly selects graph units. Explicit provider injection
+  remains; the resolver lowers package-owned factories into it rather than
+  introducing opaque named-DI auto-wiring.
+- ADR-0011 remains the tool/MCP runtime: packages author transport-neutral tools,
+  the selected graph aggregates one registry, scopes are enforced at the tool
+  layer, and the stateless MCP route remains in the operator deployment. The
+  graph does not introduce a separate MCP worker or agent runtime.
 
-- land this document
-- define `voyant.project.v1`, `voyant.deployment.v1`, `voyant.module.v1`,
-  `voyant.plugin.v1`, and `voyant.package.v1`
-- normalize `requires` / `provides` to capabilities plus typed ports
-- define stable id rules for every v1 graph entity
-- define capability token namespace rules
-- define closed manifest schemas and reserved deferred facet names
-- generate first-party manifests from existing runtime declarations
-- add unified diagnostics types
-- add a checked-in diagnostic-code registry
-- add import-cheap manifest checker
-- add module/plugin test harness skeleton
+Any phase that changes one of those decisions must update or supersede the ADR
+in the same change.
 
-### Phase 1: resolver, doctor, and one deployable Node target
+## Facet And Migration Matrix
 
-- resolve explicit project graph
-- validate selected graph closure
-- validate duplicate graph ids fail under the v1 single-instance rule
-- validate package compatibility/admission
-- emit deterministic JSON graph manifest with content hash and package
-  provenance
-- emit generated runtime entry modules
-- keep the reference Node target in `starters/operator`; graph artifacts for the
-  managed-profile bridge live there, not in a separate managed-operator starter
-- make `voyant dev` consume the same resolved graph as doctor/build/deploy
-- wire `voyant doctor`
-- wire `voyant doctor --json`
-- wire one Docker/Node deploy target
-- preserve current managed Cloud/default target behavior
+`Package` below includes a deployment-local module/plugin, which follows the
+same manifest interface. `Project/deployment` means policy that legitimately
+spans packages; it does not authorize starter-owned catalogs. `#3080` rows are
+part of the issue's package-owned end state. `Hardening` rows may remain later.
 
-### Phase 2: runtime contracts and substrate requirements
+| Facet | Current substrate or bridge | End-state owner and declaration | Depends on | Migration exit test | Scope |
+| --- | --- | --- | --- | --- | --- |
+| Identity, selection, package metadata, admission | Deterministic v1 graph, package records, generated operator units, managed-profile compatibility | Package exports `voyant.package.v1` plus import-cheap `./voyant`; project explicitly selects normalized module/plugin package or path references | Phase 0 | Direct package resolution matches the bridge graph; no operator package catalog is consulted | #3080 |
+| Capabilities | `FRAMEWORK_CAPABILITY_GRAPH` and generated `provides`/`requires` | Package manifest owns coarse capability tokens; project graph closes them | Identity | Removing the central capability entry does not change resolution or diagnostics | #3080 |
+| Typed ports, providers, adapters | First public-port slice plus broad `FrameworkProviders` container and starter factories | Port-owning package exports contract and conformance kit; module declares requirements; plugin-distributed providers declare provisions; deployment selects routing/defaults only where needed | Capabilities, runtime contract, test harness | Selected providers satisfy facets and kits; no package-specific starter provider entry is required | #3080, demand-driven replacement |
+| Schema and migrations | D.2 collector, generated schema manifest, operator migration-source artifact, ADR-0007 monolithic bundle | Schema-owning package declares schema and ships namespaced migrations; project owns only cross-package link/deployment-local migrations | Identity, admission | `dev`, `doctor`, `migrate`, Cloud, and Docker derive the same dependency-ordered plan directly from selected packages | #3080 |
+| Setup/data migrations | Ad hoc seed/setup behavior and ordinary migrations | Package owns versioned, idempotent setup/data migrations with applied-work ids; project owns optional explicit seed scripts | Schema/migrations, lifecycle ledger | Install/upgrade replay is idempotent and no lifecycle hook is needed | #3080 |
+| Linkables and links | Existing `defineLink`, generated schema inputs, deployment-local link migrations | Package exposes linkables; package/project explicitly declares neutral pair links; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and generated DDL resolve without starter link lists | #3080 |
+| Runtime config | Managed profile settings and deployment config bridges | Package declares typed config contract; project supplies portable non-secret values | Package manifests | Defaults/values validate before build and package code no longer reads profile settings directly | #3080 |
+| Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds target-specific sources; runtime receives typed redacted handles | Runtime config, target adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no target env names | #3080 |
+| API routes and route posture | Existing Hono modules/extensions, generated entries, starter `publicPaths` and transactional fallbacks | Package `api.admin`, `api.public`, `api.webhooks`, and `api.internal` own lazy factories, stable ids, anonymous posture, transaction need, mounts, and operation metadata | Package manifests, runtime bindings | Standard `publicPaths`, transactional paths, and route-family lists are derived and starter fallbacks are empty | #3080 |
+| OpenAPI | Route-owned schemas plus shipped graph coverage report and allowlists | Package API bundle opts into documents and owns operation metadata; selected graph emits deployment-specific documents | API routes | Coverage has no unexplained allowlist and no operator OpenAPI catalog | #3080 |
+| Access resources and grants | Pass-through route scopes and existing Better Auth `Record<string, string[]>` permissions | Package owns `access.resources`; routes, tools, admin, workflows, and actions reference one `resource:action` catalog; project owns role presets | Identity, API operation ids | All references validate against one selected catalog; no central first-party permission catalog remains | #3080 |
+| Admin nav, routes, and pages | Shipped generated operator extension factories and code-assembled route module | Package `admin.nav` / `admin.routes` plus exported lazy UI; selected graph generates one admin bundle | Package UI exports, identity, access | Adding/removing a package changes admin output without editing operator admin registries | #3080 |
+| Admin slots and contributions | Deployment-owned extensions and package-specific host knowledge | Page-owning package declares stable slots and prop contracts; selected packages declare ordered contributions | Admin routes, access | Doctor resolves every required slot/prop contract and no operator widget registry remains | #3080 |
+| Admin copy/i18n | Package message providers plus manual operator route-message composition | Package owns namespaced `admin.copy`; admin references message keys; deployment may override known keys | Admin routes/slots | Selected namespaces compose lazily without operator copy lists; locale/key parity passes | #3080 |
+| Workflows and schedules | Existing descriptors, graph workflow/event-filter slice, stable schedule lowering, operator local workflow bridge | Package owns workflow descriptors and schedules; project owns cross-package workflows/overrides; target provisions stable schedule ids | Identity, runtime bindings | No product schedule or workflow bundle requires operator registration; cron-string dispatch is compatibility-only | #3080 |
+| Emitted events, subscribers, event filters | Existing subscribers, event descriptors, outbox, and first graph event-filter slice | Package owns emitted-event catalog, payload/visibility metadata, subscribers, workflows, and event filters | Identity, workflows, runtime bindings | Unknown event/target checks pass and subscriber/event lists are absent from starter composition | #3080 |
+| Inbound and outbound webhooks | Inbound Hono routes; outbound behavior configured outside a complete event catalog | Package owns inbound route verification metadata and declares externally deliverable events; deployment owns endpoint subscriptions and secrets | API routes, event catalog, access/visibility | Target plans validate delivery eligibility and no webhook is hidden in starter route/scheduler lists | #3080 |
+| Tools and MCP | `@voyant-travel/tools`, package `./tools` exports aggregated manually, in-deployment MCP from ADR-0011 | Package manifest references transport-neutral tool definitions/context; selected graph builds one registry and manifest; MCP remains a transport adapter | Access catalog, runtime bindings, stable ids | Tool registry follows package selection with no operator tool list; scopes/risk/context validate | #3080 |
+| Action-ledger metadata | Existing ledger capabilities and explicit write helpers outside the deployment graph | Package owns action definitions bound by stable route/tool/workflow/event ids and admin copy; runtime writes remain explicit | Access, API, tools, workflows, events, admin copy | Every declared binding resolves and package actions appear without central capability registration | #3080 |
+| Install, upgrade, uninstall | Manual dependency/project edits; migrations and admission exist independently | CLI edits dependency plus selected graph; facets drive plan; uninstall detaches all surfaces and retains durable data/history by default | All detachable facets, setup ledger, diagnostics | Lifecycle diff names every affected facet and leaves no active references to removed units | #3080 |
+| Destructive purge and broad lifecycle hooks | Not supported | No broad hooks; any future purge is separately declared, backup/approval gated, and package-specific | Complete lifecycle | Explicit future ADR and end-to-end safety proof | Hardening |
+| Target lowering and CLI | Generated Node entries, managed Cloud bridge, partial requirements lowering | `dev`, `doctor`, `build`, `migrate`, `deploy`, logs, smoke tests, and emitted manifests consume one graph; adapters vary substrate only | Runtime bindings, API/workflow manifests, migration plan | Voyant Cloud and at least Docker/custom manifest deploy identical product graphs; starter bootstrap has no product decisions | #3080 |
+| Diagnostics and author test harness | Stable diagnostics/code registry, graph scripts, architecture checks, partial conformance kits | Public `voyant doctor[ --json]` plus package test deployment harness cover every supported facet | Each facet as introduced | Human/JSON reports agree and package authors can validate without running the operator starter | #3080 |
+| Supply-chain security beyond admission | Lockfile provenance and source admission | Optional SBOM/signature/revocation/policy layers without changing package manifest ownership | Stable package records | Separate threat model and ADR | Hardening |
 
-- make provider requirements graph-derived
-- keep env alias compatibility for existing deployments
-- validate resource config, secrets, and provider requirements before boot
-- make self-hosted and Voyant Cloud use the same requirements contract
+## Dependency-Ordered Implementation Phases
 
-### Phase 3: packaged admin routes
+Each phase is independently useful, but a later phase may not move ownership
+back into `starters/operator`. Within a phase, land package contract, resolver,
+diagnostics, lowering, author test support, and first-party migration together.
 
-- **Shipped:** graph-selected module/plugin packages now drive the generated
-  admin extension factories, code-assembled route module, and destination
-  resolvers. The generator reads `deployment-graph.generated.json`; its checks
-  run before the operator dev/build entrypoints and in the repository
-  architecture gate.
-- generated route/page imports remain lazy through the existing code-assembled
-  route module contract
-- graph-input coverage verifies extension factories, routes, and destinations
-- defer slots and copy until route assembly is proven
+### Phase 0: foundational graph substrate
 
-### Phase 4: typed ports and adapter conformance
+This is the current v1 foundation:
 
-- **Shipped first slice:** public ports now carry mandatory conformance kits,
-  lower to serializable graph declarations, and participate in required-port
-  closure diagnostics. The first-party provider container remains unchanged.
-- migrate `FrameworkProviders` toward typed ports where there are real
-  replacements
-- provide conformance test kits for public ports
-- keep adapters as plugin-distributed provider/extension packages
+- versioned project/deployment/unit/package schemas, stable ids, closed facets,
+  deterministic graph hashing, package provenance/admission, and stable
+  diagnostics
+- generated first-party/operator bridges for routes, migrations, workflows,
+  schedules, events, requirements, admin routes, and runtime entries
+- one Node runtime path, managed-profile compatibility, stable schedule-id
+  dispatch, OpenAPI coverage reporting, and the first typed-port/conformance
+  slice
 
-### Phase 5: higher-level graph facets
+Exit: the foundation is usable and every bridged entity identifies its intended
+owning package. Reaching this exit does not close `voyant#3080`.
 
-Candidate follow-ups:
+### Phase 1: package authority and project ergonomics
 
-- unified permission catalog for API keys, staff RBAC, tools, and action-ledger
-  capabilities
-- graph-derived tools/MCP/agent manifests
-- action-ledger action metadata
-- **Shipped:** graph-derived OpenAPI coverage reports are available through
-  `scripts/check-deployment-graph-openapi-coverage.mjs --json`, including
-  covered bundles, allowlisted gaps, missing documentation, and stable errors
-- graph-derived admin copy
-- graph-derived admin copy
-- admin slots and UI extension points
-- package admission policy hardening for managed Cloud
+- finalize `./voyant` package export and the optional-facet
+  `defineModule` / `definePlugin` contract
+- normalize string/path specifiers and configured selections to the same unit records
+- make presets write explicit selections and make `.voyant/` the only generated
+  project output
+- implement the clean `new`, `generate`, `add/install`, `dev`, `doctor`, and
+  `exec` application workflow
+- add bridge-origin diagnostics and direct-vs-derived parity tests
+- migrate identity, package metadata, and coarse capabilities into first-party
+  package manifests
 
-Each should ship as an independently useful slice, not as part of the first
-explicit graph cut.
+Exit: a new local or packaged module can be selected, inspected, and diagnosed
+without editing the operator starter; central synthesis remains only for facets
+not yet migrated in the matrix.
 
-## Acceptance Criteria For V1
+### Phase 2: data ownership and runtime contracts
 
-V1 is complete when:
+- migrate package-owned schema, migrations, setup/data migrations, linkables,
+  and links into direct resolution
+- add package config, secret, and resource/service binding contracts; keep env
+  aliases only in target adapters and compatibility shims
+- migrate real replacement seams from `FrameworkProviders` to typed ports only
+  with conformance kits; keep explicit injection and ADR-0007's current required
+  module behavior until each replacement is separately justified
+- make migration and binding plans identical for local, Docker, and Cloud
 
-- a preset can scaffold an explicit project graph
-- first-party manifests are generated or declared for the standard operator
-  graph
-- every resolved graph entity has a stable id
-- duplicate graph ids fail under the v1 single-instance rule
-- `voyant doctor` validates the graph with stable diagnostic codes
-- `voyant doctor --json` emits the same diagnostics as the human-readable
-  output
-- `voyant dev`, `voyant doctor`, build, migrate, and deploy consume the same
-  resolved graph contract
-- unknown manifest facets fail closed, and reserved deferred facets are not
-  silently ignored
-- the resolved graph artifact is deterministic and content-hashed
-- resolved package records include lockfile-derived provenance
-- package compatibility/admission runs before managed plugin import
-- package-owned migrations are collected from the selected graph
-- API route bundles, subscribers, and workflows are resolved from declarations
-- a Node/Docker target can deploy the graph
-- self-hosted and Voyant Cloud use the same requirements contract, even if Cloud
-  provisions more automatically
-- custom module/plugin authors can run the test harness locally
+Exit: selected package manifests are sufficient to plan data changes and runtime
+requirements before importing runtime bodies. The operator schema/provider lists
+are no longer authoritative.
 
-Anything beyond that is a follow-up facet.
+### Phase 3: package-owned runtime composition and first non-Cloud target
+
+- migrate API bundles, anonymous/transactional posture, subscribers, workflow
+  descriptors, schedules, and event filters to package manifests
+- lower package factories into the existing Hono composition and explicit
+  provider container; do not add named-DI auto-wiring
+- make `dev`, `doctor`, `build`, `migrate`, and `deploy` consume one resolver and
+  graph hash
+- complete Docker or `custom --emit-manifest`, including migrate, smoke-test,
+  logs, and scheduler plans; preserve Voyant Cloud as the default adapter
+- empty standard operator route, plugin, subscriber, public-path,
+  transactional-path, workflow, schedule, and migration-source hand-lists as
+  their package facets migrate
+
+Exit: two targets lower the same product graph, and the starter contains target
+bootstrap only. This completes the core deployment loop, but not the remaining
+package surfaces in `voyant#3080`.
+
+### Phase 4: access, API description, and admin composition
+
+- land one package-owned access-resource catalog and migrate route scopes, API
+  token grants, staff RBAC, UI visibility, workflow triggers, and role presets
+- finish selected-graph OpenAPI emission from route-owned schemas and operation
+  metadata
+- migrate admin nav/routes/pages, then stable slots/contributions, then
+  namespaced copy and deployment overrides
+- generate the admin bundle only from selected package exports and graph data
+
+Exit: a custom package contributes a secured, documented API and complete admin
+surface without operator edits; all grants and message references validate.
+
+### Phase 5: event delivery, tools, and audit metadata
+
+- complete emitted-event catalogs, payload visibility, subscriber ownership,
+  and outbound webhook subscription validation
+- aggregate package-owned tools and contexts into the ADR-0011 registry and
+  in-deployment MCP surface
+- migrate action-ledger declarations after route, tool, workflow, event, access,
+  and copy ids are stable; keep ledger writes explicit
+
+Exit: package selection controls events, external delivery eligibility, agent
+tools, and audited action metadata without parallel operator catalogs.
+
+### Phase 6: lifecycle completion and bridge removal
+
+- make install/upgrade/uninstall graph edits produce full facet, migration,
+  config, secret, grant, admin, schedule, tool, webhook, and retained-data plans
+- complete the public author test harness and stable `voyant doctor --json`
+  coverage for every matrix row
+- harden managed admission as needed without requiring the broader supply-chain
+  platform
+- delete each central generator input after direct package parity passes; keep
+  only target-neutral generated outputs and target bootstraps
+- run an issue-completion audit against every `#3080` matrix exit test
+
+Exit: `starters/operator` can be replaced by another target bootstrap without
+reconstructing product composition. No selected package surface is known only to
+the starter, and every `#3080` matrix row is package/project-owned.
+
+## Completion Criteria
+
+### Foundational v1 readiness
+
+The current substrate is ready when stable ids, fail-closed schemas,
+deterministic artifacts, package provenance/admission, migration-source
+accounting, graph closure, unified diagnostics, generated runtime entries, and
+one deployable Node path work together. Generated first-party manifests are
+valid evidence for this milestone.
+
+### `voyant#3080` completion
+
+The issue is complete only when:
+
+- presets scaffold an explicit graph and named profiles have no runtime meaning
+- first-party, external, and local units use the same package-owned manifest
+  interface
+- every `#3080` matrix row passes its migration exit test
+- `dev`, `doctor`, `build`, `migrate`, and `deploy` consume the same graph and
+  content hash
+- Voyant Cloud and at least one self-host target lower the same selected product
+  graph and differ only in substrate binding/provisioning
+- install/upgrade/uninstall operate on the graph without opaque lifecycle hooks
+- package authors can validate all supported facets with public diagnostics and
+  test harnesses
+- no operator-starter registry, generated input catalog, managed profile, or
+  hand-maintained list is required to discover a package-owned product surface
+
+Generated runtime/admin entry modules, migration plans, and target manifests are
+expected end-state build artifacts. Generated first-party **source catalogs** and
+operator-owned synthesis are not.

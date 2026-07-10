@@ -14,9 +14,10 @@ pnpm add @voyant-travel/core
 ## Usage
 
 ```typescript
-import { defineModule } from "@voyant-travel/core/module"
+import type { Module } from "@voyant-travel/core/module"
 import { defineLink } from "@voyant-travel/core/links"
 import { definePlugin } from "@voyant-travel/core/plugin"
+import { defineModule } from "@voyant-travel/core/project"
 import { defineVoyantConfig } from "@voyant-travel/core/config"
 import { createWorkflow, step } from "@voyant-travel/core/workflows"
 ```
@@ -30,7 +31,7 @@ together for reuse across projects when a broader bundle is helpful.
 | Entry | Description |
 | --- | --- |
 | `.` | Barrel re-exports |
-| `./module` | `Module`, `defineModule` |
+| `./module` | Runtime `Module` and `Extension` contracts |
 | `./registry` | Module registry |
 | `./container` | `createContainer` dependency container |
 | `./events` | `createEventBus` in-process event bus |
@@ -40,6 +41,7 @@ together for reuse across projects when a broader bundle is helpful.
 | `./query` | Cross-module reads — `queryGraph`, `createQueryContext` |
 | `./workflows` | In-process saga primitive with compensation |
 | `./plugin` | Plugin bundles — `definePlugin`, `registerPlugins` |
+| `./project` | Import-cheap package-owned deployment manifests |
 | `./config` | `VoyantConfig` manifest shape + `defineVoyantConfig` |
 | `./env` | Environment helpers |
 

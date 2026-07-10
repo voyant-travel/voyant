@@ -99,6 +99,7 @@ describe("deployment graph package provenance", () => {
         "@voyant-travel/bookings": {
           schemaVersion: "voyant.package.v1",
           kind: "module",
+          manifest: " ./voyant ",
           compatibleWith: {
             framework: " ^0.24.0 ",
             targets: " node ",
@@ -134,6 +135,7 @@ describe("deployment graph package provenance", () => {
         metadata: {
           schemaVersion: "voyant.package.v1",
           kind: "module",
+          manifest: "./voyant",
           compatibleWith: {
             framework: "^0.24.0",
             targets: ["node"],
@@ -204,6 +206,58 @@ describe("deployment graph package provenance", () => {
         },
       },
     ])
+  })
+
+  it("reads manifest metadata from an installed registry package", () => {
+    const repoRoot = mkdtempSync(path.join(tmpdir(), "voyant-provenance-"))
+    const projectRoot = path.join(repoRoot, "starters", "operator")
+    const packageRoot = path.join(projectRoot, "node_modules", "@acme", "registry-module")
+    mkdirSync(packageRoot, { recursive: true })
+    writeFileSync(
+      path.join(repoRoot, "pnpm-lock.yaml"),
+      lockfile.replaceAll("@voyant-travel/plugin-netopia", "@acme/registry-module"),
+    )
+    writeFileSync(
+      path.join(packageRoot, "package.json"),
+      JSON.stringify({
+        name: "@acme/registry-module",
+        version: "0.105.18",
+        voyant: {
+          schemaVersion: "voyant.package.v1",
+          kind: "module",
+          manifest: "./voyant",
+        },
+      }),
+    )
+
+    const records = readPnpmLockfilePackageRecords({
+      repoRoot,
+      projectRoot,
+      packageNames: ["@acme/registry-module"],
+    })
+
+    assert.equal(records[0]?.metadata?.manifest, "./voyant")
+    assert.equal(records[0]?.metadata?.kind, "module")
+    assert.equal(records[0]?.source.kind, "registry")
+  })
+
+  it("does not attach installed metadata to a different locked registry version", () => {
+    const records = packageRecordsFromPnpmLockfile(lockfile, {
+      packageNames: ["@voyant-travel/plugin-netopia"],
+      installedPackageVersions: {
+        "@voyant-travel/plugin-netopia": "9.9.9",
+      },
+      installedPackageMetadata: {
+        "@voyant-travel/plugin-netopia": {
+          schemaVersion: "voyant.package.v1",
+          kind: "plugin",
+          manifest: "./voyant",
+        },
+      },
+    })
+
+    assert.equal(records[0]?.version, "0.105.18")
+    assert.equal(records[0]?.metadata, undefined)
   })
 
   it("reads v1 voyant package metadata from package.json files", () => {

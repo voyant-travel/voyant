@@ -30,6 +30,7 @@ const frameworkRuntimeEntryDeps = {
   "@voyant-travel/auth": "workspace:*",
   "@voyant-travel/cloud-sdk": "^0.11.0",
   "@voyant-travel/connect-sdk": "0.9.1",
+  "@voyant-travel/core": "workspace:*",
   "@voyant-travel/cruises": "workspace:*",
   "@voyant-travel/db": "workspace:*",
   "@voyant-travel/mcp": "workspace:*",
