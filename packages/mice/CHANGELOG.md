@@ -1,5 +1,41 @@
 # @voyant-travel/mice
 
+## 0.7.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for booking requirements and the
+  bookings, distribution, MICE, and quotes extension surfaces.
+- e3dc5a9: Declare package-owned admin route and copy facets for vertical modules with existing public admin extensions.
+- e3dc5a9: Declare package-owned Node deployment facets for product events, subscribers, workflows, access resources, tools, actions, and retain-data lifecycle behavior.
+
+### Patch Changes
+
+- a370024: Correct package-owned API mounts and runtime references for distribution, MICE,
+  workflow runs, and flights deployment manifests.
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/accommodations@0.112.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/operations@0.6.0
+  - @voyant-travel/hono@0.122.4
+
 ## 0.6.10
 
 ### Patch Changes

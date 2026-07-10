@@ -1,5 +1,32 @@
 # @voyant-travel/hono
 
+## 0.122.4
+
+### Patch Changes
+
+- a370024: Publish package-owned deployment manifests for storage media routes and public document delivery.
+
+  Move public document delivery into its own package while retaining the Hono compatibility export,
+  and expose storage upload, serve, and video-ticket routes independently from inventory brochures.
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/public-document-delivery@0.2.0
+  - @voyant-travel/types@0.107.2
+  - @voyant-travel/workflows@0.112.0
+
 ## 0.122.3
 
 ### Patch Changes

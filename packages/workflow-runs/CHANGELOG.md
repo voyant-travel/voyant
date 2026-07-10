@@ -1,5 +1,34 @@
 # @voyant-travel/workflow-runs
 
+## 0.112.0
+
+### Minor Changes
+
+- e3dc5a9: Declare package-owned Node application resources, providers, configuration, secrets, events, subscribers, access, and retain-data lifecycle metadata in deployment manifests.
+
+### Patch Changes
+
+- a370024: Correct package-owned API mounts and runtime references for distribution, MICE,
+  workflow runs, and flights deployment manifests.
+- a370024: Publish import-cheap package-owned Voyant deployment manifests for infrastructure and trips graph units.
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+  - @voyant-travel/workflows@0.112.0
+
 ## 0.111.19
 
 ### Patch Changes

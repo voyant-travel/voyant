@@ -1,5 +1,52 @@
 # @voyant-travel/legal
 
+## 0.151.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for legal, storefront, and first-party edge plugins.
+- e3dc5a9: Declare the existing customer and commerce admin routes, navigation, slots, copy, and widget contributions in their package-owned Voyant manifests.
+- e3dc5a9: Move existing customer and commerce package surfaces into package-owned Voyant manifests, including Node application events, tools, access resources, action metadata, setup migrations, outbound webhooks, and retain-data lifecycle declarations.
+
+### Patch Changes
+
+- a370024: Rehome finance, quote, legal, and storefront bridge graph declarations into their owning packages with executable runtime descriptors.
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/finance@0.151.0
+  - @voyant-travel/bookings@0.151.0
+  - @voyant-travel/distribution@0.141.0
+  - @voyant-travel/action-ledger@0.106.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/relationships@0.123.0
+  - @voyant-travel/storage@0.107.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+
 ## 0.150.0
 
 ### Patch Changes

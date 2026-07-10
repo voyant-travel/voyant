@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/workflows-react",
-  "version": "0.111.19",
+  "version": "0.112.0",
   "description": "React hooks for Voyant Workflows — trigger, subscribe, and stream runs — plus the styled workflow-run admin UI (formerly @voyant-travel/workflows-ui).",
   "license": "Apache-2.0",
   "repository": {

@@ -1,5 +1,7 @@
 # @voyant-travel/workflows
 
+## 0.112.0
+
 ## 0.111.19
 
 ## 0.111.18

@@ -1,5 +1,58 @@
 # @voyant-travel/commerce
 
+## 0.33.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for catalog, commerce, and inventory
+  runtime, persistence, orchestration, and extension surfaces.
+- e3dc5a9: Load package-owned workflow and subscriber runtime references from the selected Node deployment graph, and move the commerce promotion reindex workflow and event filter out of framework-owned catalogs.
+- e3dc5a9: Declare the existing customer and commerce admin routes, navigation, slots, copy, and widget contributions in their package-owned Voyant manifests.
+- a370024: Publish package-owned deployment declarations and runtime descriptors for the
+  catalog booking engine, catalog offers, catalog checkout, booking maintenance,
+  and action-ledger health surfaces.
+- e3dc5a9: Move existing customer and commerce package surfaces into package-owned Voyant manifests, including Node application events, tools, access resources, action metadata, setup migrations, outbound webhooks, and retain-data lifecycle declarations.
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/catalog@0.149.0
+  - @voyant-travel/legal@0.151.0
+  - @voyant-travel/finance@0.151.0
+  - @voyant-travel/bookings@0.151.0
+  - @voyant-travel/distribution@0.141.0
+  - @voyant-travel/quotes@0.126.0
+  - @voyant-travel/workflow-runs@0.112.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+  - @voyant-travel/workflows@0.112.0
+
 ## 0.32.0
 
 ### Patch Changes

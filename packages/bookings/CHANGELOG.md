@@ -1,5 +1,49 @@
 # @voyant-travel/bookings
 
+## 0.151.0
+
+### Minor Changes
+
+- a370024: Publish package-owned deployment manifests for booking requirements and the
+  bookings, distribution, MICE, and quotes extension surfaces.
+- a370024: Publish package-owned deployment declarations and configurable runtime factories for vertical
+  content, brochure, booking-extension, base API, and scheduled workflow surfaces.
+- e3dc5a9: Declare the existing customer and commerce admin routes, navigation, slots, copy, and widget contributions in their package-owned Voyant manifests.
+- a370024: Add the dependency-light package-owned deployment manifest authoring interface,
+  publish the bookings manifest through `./voyant`, and let framework graph
+  resolution consume the same contract.
+- e3dc5a9: Derive the bookings graph action manifest and canonical action-ledger registry
+  from one package-owned declaration source, preserving persisted capability
+  identity, established graph action names, and policy metadata with an end-to-end
+  parity test.
+- e3dc5a9: Move existing customer and commerce package surfaces into package-owned Voyant manifests, including Node application events, tools, access resources, action metadata, setup migrations, outbound webhooks, and retain-data lifecycle declarations.
+
+### Patch Changes
+
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [a370024]
+- Updated dependencies [a370024]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+- Updated dependencies [e3dc5a9]
+  - @voyant-travel/core@0.114.0
+  - @voyant-travel/action-ledger@0.106.0
+  - @voyant-travel/db@0.111.0
+  - @voyant-travel/hono@0.122.4
+  - @voyant-travel/types@0.107.2
+  - @voyant-travel/workflows@0.112.0
+
 ## 0.150.0
 
 ### Minor Changes

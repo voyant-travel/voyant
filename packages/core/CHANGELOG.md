@@ -1,5 +1,28 @@
 # @voyant-travel/core
 
+## 0.114.0
+
+### Minor Changes
+
+- a370024: Accept package, package-subpath, and local-path project selections, retain
+  serializable selection config and provenance, and replace admitted selections
+  with package-owned `./voyant` manifests.
+- e3dc5a9: Generate executable Node schema and setup migration plans with idempotency ledgers, and run the finance voucher backfill through its package-owned setup migration reference.
+- e3dc5a9: Add the import-cheap project deployment authoring contract and framework-owned
+  project resolver with deterministic target-neutral graph, runtime, and migration
+  artifacts for CLI lifecycle commands.
+- e3dc5a9: Load package-owned workflow and subscriber runtime references from the selected Node deployment graph, and move the commerce promotion reindex workflow and event filter out of framework-owned catalogs.
+- e3dc5a9: Restrict the legacy deployment target hint to the unified Node runtime. Separate edge applications no longer identify Cloudflare Workers as a Voyant deployment target.
+- a370024: Add the dependency-light package-owned deployment manifest authoring interface,
+  publish the bookings manifest through `./voyant`, and let framework graph
+  resolution consume the same contract.
+- e3dc5a9: Promote package-owned config, secrets, resources, providers, access, admin, tools, webhooks, actions, setup migrations, and lifecycle metadata into the deployment graph contract.
+- e3dc5a9: Add explicit deployment provider selection and lazy, redacted graph provider resolution, with the Node Postgres database provider as the first end-to-end declaration and factory.
+- e3dc5a9: Derive the bookings graph action manifest and canonical action-ledger registry
+  from one package-owned declaration source, preserving persisted capability
+  identity, established graph action names, and policy metadata with an end-to-end
+  parity test.
+
 ## 0.113.0
 
 ### Minor Changes
