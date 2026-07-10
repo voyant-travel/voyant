@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  financeBookingScheduleVoyantPlugin,
   financeBookingsCreateVoyantPlugin,
   financeBookingTaxVoyantPlugin,
   financeVoyantModule,
@@ -20,6 +21,7 @@ describe("finance deployment manifest", () => {
         {
           id: "@voyant-travel/finance#api.public",
           surface: "public",
+          anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
           runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
         },
       ],
@@ -58,5 +60,34 @@ describe("finance deployment manifest", () => {
         ],
       },
     ])
+  })
+
+  it("owns the booking schedule bridge with package runtime references", () => {
+    expect(financeBookingScheduleVoyantPlugin).toMatchObject({
+      schemaVersion: "voyant.plugin.v1",
+      id: "@voyant-travel/finance#booking-schedule-extension",
+      packageName: "@voyant-travel/finance",
+      api: [
+        {
+          id: "@voyant-travel/finance#booking-schedule-extension.api.admin",
+          surface: "admin",
+          mount: "bookings",
+          runtime: {
+            entry: "@voyant-travel/finance",
+            export: "createBookingScheduleHonoExtension",
+          },
+        },
+        {
+          id: "@voyant-travel/finance#booking-schedule-extension.api.public",
+          surface: "public",
+          mount: "payment-policy",
+          anonymous: true,
+          runtime: {
+            entry: "@voyant-travel/finance",
+            export: "createBookingScheduleHonoExtension",
+          },
+        },
+      ],
+    })
   })
 })

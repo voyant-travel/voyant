@@ -147,6 +147,7 @@ export {
   CONTRACT_DOCUMENT_ROUTE_PATHS,
   type ContractDocumentRoutesOptions,
   type ContractDocumentStorageLike,
+  createContractDocumentHonoModule,
   createContractDocumentRoutes,
 } from "./contract-document-routes.js"
 export {

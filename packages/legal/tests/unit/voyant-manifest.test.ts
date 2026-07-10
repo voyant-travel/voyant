@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { legalVoyantModule } from "../../src/voyant.js"
+import { legalContractDocumentVoyantModule, legalVoyantModule } from "../../src/voyant.js"
 
 describe("legal deployment manifest", () => {
   it("owns the selected legal package surfaces", () => {
@@ -9,8 +9,20 @@ describe("legal deployment manifest", () => {
       packageName: "@voyant-travel/legal",
       api: [
         {
-          id: "@voyant-travel/legal#api",
+          id: "@voyant-travel/legal#api.admin",
           surface: "admin",
+          mount: "legal",
+          transactional: true,
+          runtime: {
+            entry: "@voyant-travel/legal",
+            export: "createLegalHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/legal#api.public",
+          surface: "public",
+          mount: "legal",
+          anonymous: true,
           transactional: true,
           runtime: {
             entry: "@voyant-travel/legal",
@@ -29,5 +41,23 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#linkable.policyAcceptance",
       "@voyant-travel/legal#linkable.term",
     ])
+  })
+
+  it("owns the contract-document bridge", () => {
+    expect(legalContractDocumentVoyantModule).toMatchObject({
+      schemaVersion: "voyant.module.v1",
+      id: "@voyant-travel/legal#contract-document",
+      packageName: "@voyant-travel/legal",
+      api: [
+        {
+          id: "@voyant-travel/legal#contract-document.api",
+          surface: "admin",
+          runtime: {
+            entry: "@voyant-travel/legal/contract-document-routes",
+            export: "createContractDocumentHonoModule",
+          },
+        },
+      ],
+    })
   })
 })

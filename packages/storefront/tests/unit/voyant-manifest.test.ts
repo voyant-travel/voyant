@@ -1,16 +1,38 @@
 import { describe, expect, it } from "vitest"
 import {
   storefrontCustomerPortalVoyantModule,
+  storefrontPaymentLinkVoyantModule,
   storefrontVerificationVoyantModule,
   storefrontVoyantModule,
 } from "../../src/voyant.js"
 
 describe("storefront deployment manifest", () => {
-  it("keeps the selected base unit schema-only", () => {
+  it("owns the base runtime, persistence, and verification link facets", () => {
     expect(storefrontVoyantModule).toMatchObject({
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront",
       packageName: "@voyant-travel/storefront",
+      api: [
+        {
+          id: "@voyant-travel/storefront#api.admin",
+          surface: "admin",
+          mount: "storefront",
+          runtime: {
+            entry: "@voyant-travel/storefront",
+            export: "createStorefrontHonoModule",
+          },
+        },
+        {
+          id: "@voyant-travel/storefront#api.public",
+          surface: "public",
+          mount: "/",
+          anonymous: ["/leads", "/newsletter", "/offers"],
+          runtime: {
+            entry: "@voyant-travel/storefront",
+            export: "createStorefrontHonoModule",
+          },
+        },
+      ],
       schema: [
         {
           id: "@voyant-travel/storefront#schema",
@@ -23,8 +45,13 @@ describe("storefront deployment manifest", () => {
           source: "./migrations",
         },
       ],
+      links: [
+        {
+          id: "@voyant-travel/storefront#linkable.storefrontVerificationChallenge",
+          source: "@voyant-travel/storefront/verification",
+        },
+      ],
     })
-    expect(storefrontVoyantModule.api).toBeUndefined()
   })
 
   it("owns package-namespaced storefront fragments", () => {
@@ -39,6 +66,9 @@ describe("storefront deployment manifest", () => {
         api: [
           {
             id: "@voyant-travel/storefront#customer-portal.api",
+            surface: "public",
+            mount: "customer-portal",
+            anonymous: ["/contact-exists"],
             runtime: {
               entry: "@voyant-travel/storefront/customer-portal",
               export: "createCustomerPortalHonoModule",
@@ -53,6 +83,9 @@ describe("storefront deployment manifest", () => {
         api: [
           {
             id: "@voyant-travel/storefront#verification.api",
+            surface: "public",
+            mount: "storefront-verification",
+            anonymous: true,
             runtime: {
               entry: "@voyant-travel/storefront/verification",
               export: "createStorefrontVerificationHonoModule",
@@ -61,5 +94,24 @@ describe("storefront deployment manifest", () => {
         ],
       },
     ])
+  })
+
+  it("owns the payment-link bridge", () => {
+    expect(storefrontPaymentLinkVoyantModule).toMatchObject({
+      schemaVersion: "voyant.module.v1",
+      id: "@voyant-travel/storefront#payment-link",
+      packageName: "@voyant-travel/storefront",
+      api: [
+        {
+          id: "@voyant-travel/storefront#payment-link.api",
+          surface: "public",
+          anonymous: ["payment-link-config", "payment-link"],
+          runtime: {
+            entry: "@voyant-travel/storefront/payment-link",
+            export: "createPaymentLinkHonoModule",
+          },
+        },
+      ],
+    })
   })
 })

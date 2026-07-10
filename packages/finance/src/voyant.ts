@@ -20,6 +20,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#api.public",
       surface: "public",
       mount: "finance",
+      anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
@@ -96,6 +97,37 @@ export const financeBookingsCreateVoyantPlugin = definePlugin({
       runtime: {
         entry: "@voyant-travel/finance",
         export: "bookingsCreateExtension",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const financeBookingScheduleVoyantPlugin = definePlugin({
+  id: "@voyant-travel/finance#booking-schedule-extension",
+  packageName: "@voyant-travel/finance",
+  localId: "finance.booking-schedule-extension",
+  api: [
+    {
+      id: "@voyant-travel/finance#booking-schedule-extension.api.admin",
+      surface: "admin",
+      mount: "bookings",
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/finance",
+        export: "createBookingScheduleHonoExtension",
+      },
+    },
+    {
+      id: "@voyant-travel/finance#booking-schedule-extension.api.public",
+      surface: "public",
+      mount: "payment-policy",
+      anonymous: true,
+      runtime: {
+        entry: "@voyant-travel/finance",
+        export: "createBookingScheduleHonoExtension",
       },
     },
   ],

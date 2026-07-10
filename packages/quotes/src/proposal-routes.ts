@@ -27,6 +27,7 @@
  * package stays free of operator types and CloudflareBindings.
  */
 import { parseJsonBody, parseOptionalJsonBody } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import {
   type CancelTripComponentsDeps,
   type ReserveTripDeps,
@@ -314,6 +315,29 @@ export function createQuoteVersionSnapshotRoutes(
     handleFreezeQuoteVersionSnapshot(c, options),
   )
   return app
+}
+
+/** Package-owned proposal extension descriptor; deployments inject cross-module readers. */
+export function createQuoteProposalHonoExtension(
+  options: QuoteProposalRoutesOptions,
+): HonoExtension {
+  return {
+    extension: { name: "proposal", module: "quote-versions" },
+    lazyAdminRoutes: async () => createQuoteProposalAdminRoutes(options),
+    lazyPublicRoutes: async () => createQuoteProposalPublicRoutes(options),
+    publicPath: "proposals",
+    anonymous: true,
+  }
+}
+
+/** Package-owned Trip snapshot extension descriptor; deployments inject the db resolver. */
+export function createQuoteVersionSnapshotHonoExtension(
+  options: QuoteVersionSnapshotRoutesOptions,
+): HonoExtension {
+  return {
+    extension: { name: "quote-version-snapshot", module: "trips" },
+    lazyAdminRoutes: async () => createQuoteVersionSnapshotRoutes(options),
+  }
 }
 
 async function handleSendQuoteVersion(

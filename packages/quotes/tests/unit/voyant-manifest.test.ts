@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { quotesBookingVoyantPlugin, quotesVoyantModule } from "../../src/voyant.js"
+import {
+  quotesBookingVoyantPlugin,
+  quotesProposalVoyantPlugin,
+  quotesVersionSnapshotVoyantPlugin,
+  quotesVoyantModule,
+} from "../../src/voyant.js"
 
 describe("quotes deployment manifests", () => {
   it("owns the module runtime, persistence, and link facets", () => {
@@ -11,7 +16,7 @@ describe("quotes deployment manifests", () => {
         {
           id: "@voyant-travel/quotes#api",
           surface: "admin",
-          mount: "@voyant-travel/quotes",
+          mount: "quotes",
           transactional: true,
           runtime: { entry: "@voyant-travel/quotes", export: "createQuotesHonoModule" },
         },
@@ -33,7 +38,7 @@ describe("quotes deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/quotes#booking-extension.api",
-          mount: "@voyant-travel/quotes/booking-extension",
+          mount: "bookings",
           runtime: {
             entry: "@voyant-travel/quotes/booking-extension",
             export: "quotesBookingExtension",
@@ -41,5 +46,47 @@ describe("quotes deployment manifests", () => {
         },
       ],
     })
+  })
+
+  it("owns the proposal and quote-version snapshot bridges", () => {
+    expect([quotesProposalVoyantPlugin, quotesVersionSnapshotVoyantPlugin]).toMatchObject([
+      {
+        schemaVersion: "voyant.plugin.v1",
+        id: "@voyant-travel/quotes#proposal-extension",
+        api: [
+          {
+            surface: "admin",
+            mount: "quote-versions",
+            runtime: {
+              entry: "@voyant-travel/quotes",
+              export: "createQuoteProposalHonoExtension",
+            },
+          },
+          {
+            surface: "public",
+            mount: "proposals",
+            anonymous: true,
+            runtime: {
+              entry: "@voyant-travel/quotes",
+              export: "createQuoteProposalHonoExtension",
+            },
+          },
+        ],
+      },
+      {
+        schemaVersion: "voyant.plugin.v1",
+        id: "@voyant-travel/quotes#quote-version-snapshot-extension",
+        api: [
+          {
+            surface: "admin",
+            mount: "trips",
+            runtime: {
+              entry: "@voyant-travel/quotes",
+              export: "createQuoteVersionSnapshotHonoExtension",
+            },
+          },
+        ],
+      },
+    ])
   })
 })

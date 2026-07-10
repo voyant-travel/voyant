@@ -47,7 +47,9 @@ export type {
 export {
   buildQuoteVersionProposalUrl,
   createQuoteProposalAdminRoutes,
+  createQuoteProposalHonoExtension,
   createQuoteProposalPublicRoutes,
+  createQuoteVersionSnapshotHonoExtension,
   createQuoteVersionSnapshotRoutes,
   tripSnapshotToQuoteVersionApply,
 } from "./proposal-routes.js"

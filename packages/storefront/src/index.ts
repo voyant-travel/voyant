@@ -23,7 +23,11 @@ export type {
   PaymentLinkTripComponent,
   PaymentLinkTripData,
 } from "./payment-link/routes.js"
-export { createPaymentLinkRoutes } from "./payment-link/routes.js"
+export {
+  createPaymentLinkHonoModule,
+  createPaymentLinkRoutes,
+  PAYMENT_LINK_ROUTE_PATHS,
+} from "./payment-link/routes.js"
 export type { StorefrontAdminRoutes } from "./routes-admin.js"
 export { createStorefrontAdminRoutes } from "./routes-admin.js"
 export type { StorefrontPublicRoutes } from "./routes-public.js"

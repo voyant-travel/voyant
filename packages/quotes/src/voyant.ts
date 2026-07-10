@@ -9,7 +9,7 @@ export const quotesVoyantModule = defineModule({
     {
       id: "@voyant-travel/quotes#api",
       surface: "admin",
-      mount: "@voyant-travel/quotes",
+      mount: "quotes",
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
@@ -49,10 +49,63 @@ export const quotesBookingVoyantPlugin = definePlugin({
     {
       id: "@voyant-travel/quotes#booking-extension.api",
       surface: "admin",
-      mount: "@voyant-travel/quotes/booking-extension",
+      mount: "bookings",
       runtime: {
         entry: "@voyant-travel/quotes/booking-extension",
         export: "quotesBookingExtension",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const quotesProposalVoyantPlugin = definePlugin({
+  id: "@voyant-travel/quotes#proposal-extension",
+  packageName: "@voyant-travel/quotes",
+  localId: "quotes.proposal-extension",
+  api: [
+    {
+      id: "@voyant-travel/quotes#proposal-extension.api.admin",
+      surface: "admin",
+      mount: "quote-versions",
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/quotes",
+        export: "createQuoteProposalHonoExtension",
+      },
+    },
+    {
+      id: "@voyant-travel/quotes#proposal-extension.api.public",
+      surface: "public",
+      mount: "proposals",
+      anonymous: true,
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/quotes",
+        export: "createQuoteProposalHonoExtension",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const quotesVersionSnapshotVoyantPlugin = definePlugin({
+  id: "@voyant-travel/quotes#quote-version-snapshot-extension",
+  packageName: "@voyant-travel/quotes",
+  localId: "quotes.quote-version-snapshot-extension",
+  api: [
+    {
+      id: "@voyant-travel/quotes#quote-version-snapshot-extension.api",
+      surface: "admin",
+      mount: "trips",
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/quotes",
+        export: "createQuoteVersionSnapshotHonoExtension",
       },
     },
   ],

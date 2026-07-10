@@ -9,9 +9,20 @@ export const legalVoyantModule = defineModule({
   localId: "legal",
   api: [
     {
-      id: "@voyant-travel/legal#api",
+      id: "@voyant-travel/legal#api.admin",
       surface: "admin",
-      mount: "@voyant-travel/legal",
+      mount: "legal",
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/legal",
+        export: "createLegalHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/legal#api.public",
+      surface: "public",
+      mount: "legal",
+      anonymous: true,
       transactional: true,
       runtime: {
         entry: "@voyant-travel/legal",
@@ -38,6 +49,25 @@ export const legalVoyantModule = defineModule({
     { id: "@voyant-travel/legal#linkable.policyVersion", source: linkableSource },
     { id: "@voyant-travel/legal#linkable.policyAcceptance", source: linkableSource },
     { id: "@voyant-travel/legal#linkable.term", source: linkableSource },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const legalContractDocumentVoyantModule = defineModule({
+  id: "@voyant-travel/legal#contract-document",
+  packageName: "@voyant-travel/legal",
+  localId: "legal.contract-document",
+  api: [
+    {
+      id: "@voyant-travel/legal#contract-document.api",
+      surface: "admin",
+      runtime: {
+        entry: "@voyant-travel/legal/contract-document-routes",
+        export: "createContractDocumentHonoModule",
+      },
+    },
   ],
   meta: {
     ownership: "package",
