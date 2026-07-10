@@ -52,6 +52,23 @@ export const cruisesVoyantModule = defineModule({
     },
     { id: "@voyant-travel/cruises#linkable.cruise_ship", source: "@voyant-travel/cruises" },
   ],
+  events: [
+    {
+      id: "@voyant-travel/cruises#event.cruise-created",
+      eventType: "cruise.created",
+    },
+    {
+      id: "@voyant-travel/cruises#event.cruise-updated",
+      eventType: "cruise.updated",
+    },
+    {
+      id: "@voyant-travel/cruises#event.cruise-deleted",
+      eventType: "cruise.deleted",
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

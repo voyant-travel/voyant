@@ -51,6 +51,15 @@ export const operationsVoyantModule = defineModule({
       source: "@voyant-travel/operations/places/linkables",
     },
   ],
+  events: [
+    {
+      id: "@voyant-travel/operations#event.availability-slot-changed",
+      eventType: "availability.slot.changed",
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

@@ -40,6 +40,15 @@ export const miceVoyantModule = defineModule({
     { id: "@voyant-travel/mice#linkable.rfp", source: "@voyant-travel/mice/linkables" },
     { id: "@voyant-travel/mice#linkable.bid", source: "@voyant-travel/mice/linkables" },
   ],
+  events: [
+    {
+      id: "@voyant-travel/mice#event.rfp-awarded",
+      eventType: "mice.rfp.awarded",
+    },
+  ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

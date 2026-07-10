@@ -17,6 +17,9 @@ export const availabilityVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },
