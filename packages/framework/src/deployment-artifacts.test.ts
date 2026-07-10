@@ -10,6 +10,7 @@ import {
   VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
 import {
+  defineExtension,
   defineModule,
   definePlugin,
   defineProject,
@@ -56,10 +57,11 @@ async function sampleGraph() {
 async function graphWithSelectedUnits(
   modules: readonly VoyantGraphUnitManifest[],
   plugins: readonly VoyantGraphUnitManifest[] = [],
+  extensions: readonly VoyantGraphUnitManifest[] = [],
 ) {
-  const units = [...modules, ...plugins]
+  const units = [...modules, ...extensions, ...plugins]
   return resolveDeploymentGraph({
-    project: defineProject({ modules, plugins }),
+    project: defineProject({ modules, extensions, plugins }),
     target: "node",
     mode: "self-hosted",
     packageRecords: [
@@ -193,6 +195,42 @@ describe("deployment graph artifacts", () => {
     expect(first).toContain('"createLoyaltyModule"')
     expect(first).toContain("createGeneratedGraphRuntime")
     expect(first).not.toContain("FRAMEWORK_RUNTIME_MANIFEST")
+  })
+
+  it("preserves and lowers unit runtimes for modules, extensions, and plugins", async () => {
+    const module = defineModule({
+      id: "@acme/catalog",
+      runtime: { entry: "./runtime", export: "createCatalogModule" },
+    })
+    const extension = defineExtension({
+      id: "@acme/catalog#admin",
+      runtime: { entry: "./admin-runtime", export: "createCatalogAdmin" },
+    })
+    const plugin = definePlugin({
+      id: "@acme/catalog#audit",
+      runtime: { entry: "./audit-runtime", export: "createCatalogAudit" },
+    })
+    const graph = await graphWithSelectedUnits([module], [plugin], [extension])
+    const withoutRuntime = await graphWithSelectedUnits([defineModule({ id: "@acme/catalog" })])
+
+    expect(graph.contentHash).not.toBe(withoutRuntime.contentHash)
+    expect(graph.modules[0]?.runtime).toEqual(module.runtime)
+    expect(graph.extensions[0]?.runtime).toEqual(extension.runtime)
+    expect(graph.plugins[0]?.runtime).toEqual(plugin.runtime)
+    expect(JSON.parse(buildDeploymentGraphJson(graph))).toMatchObject({
+      modules: [{ runtime: module.runtime }],
+      extensions: [{ runtime: extension.runtime }],
+      plugins: [{ runtime: plugin.runtime }],
+    })
+
+    const source = buildGraphRuntimeModule({ graph })
+    expect(source.match(/"facet": "runtime"/g)).toHaveLength(3)
+    expect(source).toContain('import("@acme/catalog/runtime")')
+    expect(source).toContain('import("@acme/catalog/admin-runtime")')
+    expect(source).toContain('import("@acme/catalog/audit-runtime")')
+    expect(source).toContain('"runtimeReferenceId": "%40acme%2Fcatalog/runtime/%40acme%2Fcatalog"')
+    expect(source).toContain('"kind": "extension"')
+    expect(source).toContain('"kind": "plugin"')
   })
 
   it("lowers every package-owned executable facet through deduplicated lazy imports", async () => {

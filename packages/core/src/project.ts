@@ -110,6 +110,8 @@ export interface VoyantGraphUnitManifest {
   id: string
   localId?: string
   packageName?: string
+  /** The package export that creates this unit's runtime module or extension. */
+  runtime?: VoyantGraphRuntimeReference
   provides?: VoyantGraphCapabilityDeclaration
   requires?: VoyantGraphCapabilityDeclaration
   api?: readonly VoyantGraphRouteBundle[]

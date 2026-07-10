@@ -117,11 +117,16 @@ describe("defineProject", () => {
   it("preserves direct manifests for advanced authoring", () => {
     const manifest = defineModule({
       id: "@acme/voyant-loyalty",
+      runtime: { entry: "./runtime", export: "createLoyaltyModule" },
       schema: [{ id: "@acme/voyant-loyalty#schema" }],
     })
     const project = defineProject({ modules: [manifest] })
 
     expect(project.modules[0]).toBe(manifest)
+    expect(project.modules[0]?.runtime).toEqual({
+      entry: "./runtime",
+      export: "createLoyaltyModule",
+    })
     expect(project.selections).toBeUndefined()
   })
 

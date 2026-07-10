@@ -117,6 +117,51 @@ describe("graph runtime lowering", () => {
     expect(importRuntime).toHaveBeenCalledTimes(1)
   })
 
+  it("prefers a unit runtime over route runtime factories", async () => {
+    const unitFactory = () => ({ module: { name: "loyalty" } })
+    const routeFactory = () => ({ module: { name: "legacy-loyalty" } })
+    const importRuntime = vi.fn(async () => ({ unitFactory, routeFactory }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: { "@acme/loyalty/runtime": importRuntime },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          runtimeReferenceId: "loyalty-runtime",
+          references: [
+            {
+              id: "loyalty-runtime",
+              unitId: "@acme/loyalty",
+              facet: "runtime",
+              entityId: "@acme/loyalty",
+              runtime: { entry: "./runtime", export: "unitFactory" },
+              importEntry: "@acme/loyalty/runtime",
+            },
+          ],
+          routes: [
+            {
+              route: {
+                id: "@acme/loyalty#api.admin",
+                surface: "admin",
+                runtime: { entry: "./runtime", export: "routeFactory" },
+              },
+              importEntry: "@acme/loyalty/runtime",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importRuntime).not.toHaveBeenCalled()
+    await expect(runtime.modules[0]?.load()).resolves.toEqual([unitFactory])
+    await expect(runtime.modules[0]?.routes[0]?.load()).resolves.toBe(routeFactory)
+    expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
   it("loads typed package exports for non-route facets by stable reference id", async () => {
     const provider = { kind: "ledger-provider" }
     const tool = () => "adjusted"
