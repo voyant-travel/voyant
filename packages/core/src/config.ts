@@ -103,28 +103,8 @@ export type PluginEntry =
       options?: Record<string, unknown>
     }
 
-/**
- * Supported deployment targets (informational — used by CLI/tooling).
- *
- * `"node"` / `"dedicated"` (a resident Node process, e.g. Cloud Run) is the
- * recommended and default target for composed operator/admin deployments: the
- * composition graph is built once and reused for the process lifetime, avoiding
- * the per-request graph evaluation that makes Cloudflare Workers unsuitable for
- * this workload class (voyant#2966).
- *
- * `"cloudflare-worker"` remains valid — and the right target — for the surfaces
- * that stay edge-native: storefronts, small cacheable public surfaces, and
- * federated per-domain apps (whose per-domain graphs are small enough to stay
- * resident). This is the shared config type across all deployment kinds, not the
- * operator's single choice.
- */
-export type DeploymentTarget =
-  | "node"
-  | "dedicated"
-  | "cloudflare-worker"
-  | "vercel"
-  | "bun"
-  | (string & {})
+/** Unified Voyant applications execute as resident Node processes. */
+export type DeploymentTarget = "node"
 
 /**
  * The top-level voyant.config.ts manifest.
@@ -186,7 +166,7 @@ export interface VoyantConfig {
  * export default defineVoyantConfig({
  *   modules: ["crm", "bookings", "products", "finance", "suppliers"],
  *   plugins: ["payload-cms", "bokun"],
- *   deployment: "cloudflare-worker",
+ *   deployment: "node",
  *   admin: { enabled: true, path: "/app" },
  * })
  * ```
@@ -412,8 +392,8 @@ export function validateVoyantConfig(config: unknown): ConfigValidationResult {
     }
   }
 
-  if (cfg.deployment !== undefined && typeof cfg.deployment !== "string") {
-    issues.push({ path: "deployment", message: "Expected a string." })
+  if (cfg.deployment !== undefined && cfg.deployment !== "node") {
+    issues.push({ path: "deployment", message: 'Expected "node".' })
   }
 
   return { ok: issues.length === 0, issues }

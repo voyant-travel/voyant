@@ -60,4 +60,24 @@ describe("legal deployment manifest", () => {
       ],
     })
   })
+
+  it("declares every route in the packaged legal admin extension", () => {
+    expect(legalVoyantModule.admin?.routes?.map(({ id, path }) => [id, path])).toEqual([
+      ["@voyant-travel/legal#admin.route.index", "/legal"],
+      ["@voyant-travel/legal#admin.route.contracts-index", "/legal/contracts"],
+      ["@voyant-travel/legal#admin.route.contracts-detail", "/legal/contracts/$id"],
+      ["@voyant-travel/legal#admin.route.templates-index", "/legal/templates"],
+      ["@voyant-travel/legal#admin.route.templates-detail", "/legal/templates/$id"],
+      ["@voyant-travel/legal#admin.route.policies-index", "/legal/policies"],
+      ["@voyant-travel/legal#admin.route.policies-detail", "/legal/policies/$id"],
+      ["@voyant-travel/legal#admin.route.number-series", "/legal/number-series"],
+    ])
+    expect(
+      legalVoyantModule.admin?.routes?.every(
+        ({ runtime }) =>
+          runtime.entry === "@voyant-travel/legal-react/admin" &&
+          runtime.export === "createLegalAdminExtension",
+      ),
+    ).toBe(true)
+  })
 })

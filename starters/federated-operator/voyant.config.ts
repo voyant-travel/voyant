@@ -1,14 +1,13 @@
 import { defineVoyantConfig } from "@voyant-travel/core/config"
 
 /**
- * Federated operator manifest.
+ * Federated edge-application manifest.
  *
- * This is a reduced operating-layer posture, not the all-in-one operator
- * profile. Runtime composition is explicit in `src/api/app.ts`; this manifest
- * powers tooling such as schema discovery and future admin generators.
+ * This app is outside the unified Voyant deployment graph. Runtime composition
+ * is explicit in `src/api/app.ts`; this manifest only powers legacy schema and
+ * admin tooling.
  */
 export default defineVoyantConfig({
-  deployment: "cloudflare-worker",
   projectConfig: {
     database: { urlEnv: "DATABASE_URL", adapter: "serverless" },
     cache: { provider: "platform" },

@@ -30,6 +30,11 @@ export {
   modulesFromGlob,
 } from "./discover-modules.js"
 export {
+  type LowerVoyantGraphActionsOptions,
+  lowerVoyantGraphActionsToActionLedgerRegistry,
+  type VoyantGraphActionRiskEvaluator,
+} from "./graph-action-ledger.js"
+export {
   FRAMEWORK_CAPABILITY_GRAPH,
   FRAMEWORK_EXTENSION_OWNERSHIP,
   FRAMEWORK_RUNTIME_MANIFEST,
@@ -84,6 +89,7 @@ export {
 export {
   type ComposeVoyantGraphRuntimeInput,
   composeVoyantGraphRuntime,
+  composeVoyantGraphRuntimeFacetModules,
   type VoyantGraphRuntimeBinding,
   type VoyantGraphRuntimeBindingContext,
   type VoyantGraphRuntimeBindings,
@@ -92,16 +98,52 @@ export {
 export {
   type CreateVoyantGraphRuntimeInput,
   createVoyantGraphRuntime,
+  registerVoyantGraphTools,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,
   type VoyantGraphRuntime,
+  type VoyantGraphRuntimeActionDefinition,
+  type VoyantGraphRuntimeConfigDefinition,
+  type VoyantGraphRuntimeConfigLoader,
   VoyantGraphRuntimeLoadError,
   type VoyantGraphRuntimeLoadErrorCode,
+  type VoyantGraphRuntimeProviderDefinition,
+  type VoyantGraphRuntimeProviderLoader,
+  type VoyantGraphRuntimeResourceDefinition,
   type VoyantGraphRuntimeRouteDefinition,
   type VoyantGraphRuntimeRouteLoader,
+  type VoyantGraphRuntimeSecretDefinition,
+  type VoyantGraphRuntimeSecretLoader,
+  type VoyantGraphRuntimeSelectedIds,
+  type VoyantGraphRuntimeToolDefinition,
+  type VoyantGraphRuntimeToolLoader,
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
+  type VoyantGraphRuntimeWebhookPlan,
 } from "./runtime-lowering.js"
 export {
   FRAMEWORK_RUNTIME_PACKAGES,
   type FrameworkRuntimePackage,
 } from "./runtime-packages.generated.js"
+export {
+  type ResolvedVoyantGraphRuntimeProviders,
+  type ResolveVoyantGraphRuntimeProvidersInput,
+  resolveVoyantGraphRuntimeProviders,
+  type SelectedVoyantGraphRuntimeProvider,
+  VOYANT_GRAPH_RUNTIME_PROVIDER_ERROR_CODES,
+  type VoyantGraphProviderFactory,
+  type VoyantGraphProviderFactoryContext,
+  VoyantGraphRuntimeProviderError,
+  type VoyantGraphRuntimeProviderErrorCode,
+  type VoyantGraphRuntimeProviderIssue,
+} from "./runtime-providers.js"
+export {
+  type ResolvedVoyantGraphRuntimeConfig,
+  type ResolvedVoyantGraphRuntimeSecret,
+  type ResolvedVoyantGraphRuntimeValues,
+  type ResolveVoyantGraphRuntimeValuesInput,
+  resolveVoyantGraphRuntimeValues,
+  VOYANT_GRAPH_RUNTIME_VALUE_ERROR_CODES,
+  VoyantGraphRuntimeValueError,
+  type VoyantGraphRuntimeValueErrorCode,
+  type VoyantGraphRuntimeValueIssue,
+} from "./runtime-values.js"

@@ -114,6 +114,8 @@ describe("deployment graph package provenance", () => {
               { id: "" },
             ],
           },
+          schema: " ./schema ",
+          requiresSchemas: ["@voyant-travel/db", "", "@voyant-travel/db"],
         },
         "@voyant-travel/legacy": {
           schema: "./schema",
@@ -149,6 +151,8 @@ describe("deployment graph package provenance", () => {
               { id: "ignored.optional" },
             ],
           },
+          schema: "./schema",
+          requiresSchemas: ["@voyant-travel/db"],
         },
       },
       {

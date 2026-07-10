@@ -1,134 +1,93 @@
-/**
- * Deployment migration runner — D.2 package-owned migrations + topological
- * collector (`@voyant-travel/framework-migrations`). Each schema-owning package
- * SHIPS its own drizzle `migrations/` folder; this runner discovers them from
- * the validated deployment graph artifact's migration source list, orders them
- * deps-first by `voyant.requiresSchemas`, and applies:
- *
- *   1. each package source (topological order — a package's deps migrate first)
- *   2. this deployment's own `./migrations` (cross-module link tables + any
- *      custom `src/{modules,extensions}` schema) LAST — they FK into package tables
- *
- * recording each in the `drizzle._voyant_migrations` ledger keyed by
- * `(source, tag, content_hash)`. The retired framework bundle is NO LONGER a
- * source; any `framework/*` ledger rows are left untouched as inert history.
- *
- * Two paths, auto-detected (see {@link runDeploymentMigrations}):
- *   • FRESH    — execute every source.
- *   • EXISTING — a pre-D.2 DB whose schema D.1's bundle or the legacy runner
- *                already materialised: import-baseline the cutline (record
- *                without executing, gated by a parity check), execute increments.
- *
- * See docs/architecture/migration-collector-d2.md.
- */
+import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+
 import {
-  discoverMigrationSources,
-  loadCutline,
-  loadMigrationFolder,
-  type MigrationSource,
-  runDeploymentMigrations,
-} from "@voyant-travel/framework-migrations"
+  createProjectMigrationPlan,
+  executeNodeMigrationPlan,
+  type SetupMigrationHandler,
+  type VoyantProjectMigrationPlan,
+  type VoyantProjectSetupMigration,
+} from "@voyant-travel/framework/project"
 import { config } from "dotenv"
-import { Client } from "pg"
+import type { ResolvedVoyantDeploymentGraph } from "../../../packages/framework/src/deployment-graph"
 import {
   assertOperatorDeploymentGraphResourceEnv,
   loadOperatorDeploymentGraphArtifacts,
 } from "../src/deployment-graph-artifacts"
 
-const explicitDatabaseUrl = process.env.DATABASE_URL
-config({ path: ".env" })
-config({ path: "../../.env" })
-config({ path: "../../.env.local" })
-config({ path: ".env", override: true })
-// An explicitly-provided DATABASE_URL (CI, the migration-replay oracle, ad-hoc
-// runs) must WIN over `.env` (loaded with `override: true` for local-dev
-// ergonomics), which would otherwise redirect every run at the local dev DB.
-if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
-
-const deploymentGraphArtifacts = loadOperatorDeploymentGraphArtifacts()
-try {
-  assertOperatorDeploymentGraphResourceEnv(deploymentGraphArtifacts, process.env)
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exit(1)
-}
-
-const databaseUrl = process.env.DATABASE_URL
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is not set")
-}
-
-const scriptsDir = path.dirname(fileURLToPath(import.meta.url))
-// The graph artifact's schema paths (`../../packages/…`) resolve from the
-// deployment root, where `drizzle.config` lives; the deployment's own migrations
-// are `./migrations`.
-const baseDir = path.resolve(scriptsDir, "..")
-const client = new Client({ connectionString: databaseUrl })
-
-try {
-  await client.connect()
-
-  // Discover package sources (deps-first) + the deployment's ./migrations (last).
-  const discovered = discoverMigrationSources(
-    deploymentGraphArtifacts.migrationSources.map((source) => source.schema),
+export async function runOperatorMigrations(options: {
+  databaseUrl: string
+  graph: ResolvedVoyantDeploymentGraph
+}) {
+  const plan = await createProjectMigrationPlan(options.graph)
+  return executeNodeMigrationPlan(
+    plan,
     {
-      baseDir,
-      deploymentMigrationsDir: path.join(baseDir, "migrations"),
+      resolveFrom: import.meta.url,
+      setupLoaders: createSetupLoaders(plan),
     },
+    { databaseUrl: options.databaseUrl },
   )
-  const sources: MigrationSource[] = []
-  for (let i = 0; i < discovered.length; i++) {
-    const d = discovered[i] as (typeof discovered)[number]
-    if (!d.hasMigrations) {
-      throw new Error(
-        `migration source '${d.name}' has no migrations folder at ${d.migrationsDir}. ` +
-          "Regenerate deployment graph artifacts and verify the owning package publishes " +
-          "migrations/*.sql and migrations/meta/_journal.json.",
+}
+
+export function createSetupLoaders(
+  plan: VoyantProjectMigrationPlan,
+): Readonly<Record<string, () => Promise<SetupMigrationHandler>>> {
+  return Object.fromEntries(
+    plan.migrations
+      .filter(
+        (migration): migration is VoyantProjectSetupMigration =>
+          migration.migrationKind === "setup",
       )
-    }
-    sources.push({
-      name: d.name,
-      priority: i, // discovery order: deps-first, deployment last
-      migrations: await loadMigrationFolder(d.migrationsDir),
-    })
-  }
-
-  const cutline = await loadCutline()
-  const { existing, executed, baselined } = await runDeploymentMigrations(
-    client,
-    sources,
-    cutline,
-    {
-      onApplied: (id) => console.log(`✓ applied ${id}`),
-      onBaselined: (id) => console.log(`▷ baselined ${id}`),
-    },
+      .map((migration) => [
+        migration.id,
+        async () => {
+          const module = (await import(migration.runtime.entry)) as Record<string, unknown>
+          const handler = module[migration.runtime.export]
+          if (typeof handler !== "function") {
+            throw new Error(
+              `Setup migration ${migration.id} must export ${migration.runtime.export} as a function.`,
+            )
+          }
+          return handler as SetupMigrationHandler
+        },
+      ]),
   )
+}
 
-  if (existing && baselined.length > 0) {
-    console.log(
-      "(existing pre-D.2 deployment — cutline import-baselined onto the collector ledger.)",
+async function main(): Promise<void> {
+  const explicitDatabaseUrl = process.env.DATABASE_URL
+  config({ path: ".env" })
+  config({ path: "../../.env" })
+  config({ path: "../../.env.local" })
+  config({ path: ".env", override: true })
+  if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
+
+  const artifacts = loadOperatorDeploymentGraphArtifacts()
+  assertOperatorDeploymentGraphResourceEnv(artifacts, process.env)
+  const databaseUrl = process.env.DATABASE_URL_DIRECT?.trim() || process.env.DATABASE_URL?.trim()
+  if (!databaseUrl) throw new Error("DATABASE_URL or DATABASE_URL_DIRECT is not set")
+
+  const graphPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../.voyant/deployment-graph.generated.json",
+  )
+  const graph = JSON.parse(await readFile(graphPath, "utf8")) as ResolvedVoyantDeploymentGraph
+  if (graph.contentHash !== artifacts.graphHash) {
+    throw new Error(
+      `Migration graph hash ${graph.contentHash} does not match admitted artifact ${artifacts.graphHash}`,
     )
   }
 
-  const total = executed.length + baselined.length
-  if (total === 0) {
-    console.log("No pending migrations.")
-  } else {
-    console.log("")
-    console.log(
-      `Recorded ${total} migration(s) — ${executed.length} executed, ${baselined.length} baselined.`,
-    )
-    if (executed.length > 0) {
-      // Postgres drivers cache prepared-statement plans per connection. Long-lived
-      // workers / dev servers started before this run hold stale plans referencing
-      // the old schema and will fail on the first query that touches a changed
-      // column. Tell the caller to restart them.
-      console.log("⚠️  Restart any long-lived workers / dev servers now —")
-      console.log("    drizzle's prepared-statement cache is keyed to the old schema.")
-    }
-  }
-} finally {
-  await client.end()
+  const report = await runOperatorMigrations({ databaseUrl, graph })
+  for (const migration of report.applied) console.log(`applied ${migration.id}`)
+  for (const migration of report.skipped) console.log(`skipped ${migration.id}`)
+  for (const migration of report.failed)
+    console.error(`failed ${migration.id}: ${migration.detail}`)
+  if (report.failed.length > 0) process.exitCode = 1
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main()
 }

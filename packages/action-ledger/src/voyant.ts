@@ -28,6 +28,21 @@ export const actionLedgerVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/action-ledger#admin.route.index",
+        path: "/action-ledger",
+        runtime: {
+          entry: "@voyant-travel/action-ledger-react/admin",
+          export: "createActionLedgerAdminExtension",
+        },
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

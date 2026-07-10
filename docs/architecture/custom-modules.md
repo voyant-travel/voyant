@@ -3,36 +3,42 @@
 A deployment can add its own domain modules **on top of** the standard framework
 set without editing a single framework-owned file, and the module survives
 `voyant upgrade`. This is the "custom module" seam from the consolidated-deployments
-RFC (the "20%"). Two mechanisms cooperate, both **build-time** (Cloudflare Workers
-compose statically — no runtime `require`):
+RFC (the "20%"). Three mechanisms cooperate, all **build-time**, so the resolved
+graph lowers to one deterministic Node application artifact with no runtime
+package discovery:
 
-1. **Runtime mounting** — `src/modules/<name>/index.ts` is auto-discovered and mounted.
-2. **Migrations** — `src/modules/<name>/schema.ts` is migrated as a *deployment*
+1. **Graph activation** — `voyant.config.ts` selects `./src/modules/<name>`.
+2. **Declaration and runtime** — `voyant.ts` owns graph facets and `index.ts`
+   exports the runtime factory.
+3. **Migrations** — `src/modules/<name>/schema.ts` is migrated as a *deployment*
    source, applied by the D.1 collector after the framework bundle.
 
 ## TL;DR
 
 ```sh
 voyant generate module loyalty --dir src/modules   # scaffold
-# edit src/modules/loyalty/{schema,routes,service}.ts, add `export default` to index.ts
+# edit src/modules/loyalty/{voyant,index,schema,routes,service}.ts
+# add "./src/modules/loyalty" to voyant.config.ts
 pnpm db:generate:deployment                         # emit the migration → migrations/
 pnpm db:migrate                                     # collector applies it
 ```
 
-No edits to `composition.ts`, `app.ts`, the framework, or any `*.generated.*` file.
+No edits to `app.ts`, the framework, or any generated file.
 
 ## Folder shape
 
 ```
 src/modules/loyalty/
-  index.ts     # default-exports the module  → auto-mounted
+  voyant.ts    # import-cheap graph manifest → selected by voyant.config.ts
+  index.ts     # default-exports the runtime module
   schema.ts    # Drizzle tables (optional)    → auto-migrated
   routes.ts    # Hono routes
   service.ts   # business logic
   validation.ts
 ```
 
-The directory name (`loyalty`) is the module's composition key.
+The manifest id is the composition key; the directory name is only the stable
+project-relative selection path.
 
 ## Mounting (`index.ts`)
 
@@ -61,21 +67,21 @@ export default defineDeploymentModule((ctx) => ({
 }))
 ```
 
-### How discovery works
+### How activation works
 
-`src/api/composition.ts` (deployment-owned) discovers modules with a Vite glob:
+`voyant.config.ts` activates local modules by project-relative path. Until the
+framework-generated local runtime binder replaces the compatibility map,
+`src/api/composition.ts` binds the selected manifest id to its `index.ts`
+factory:
 
 ```ts
-const discoveredModules = modulesFromGlob<OperatorCapabilities>(
-  import.meta.glob("../modules/*/index.ts", { eager: true }),
-)
-export const deploymentLocalModules = { ...discoveredModules, /* hand-wired */ }
+export const deploymentLocalModules = {
+  "@voyant-travel/operator#loyalty": loyaltyModule,
+}
 ```
 
-Vite compiles `import.meta.glob` to **static imports at build time**, so it
-satisfies the Workers build-time-composition constraint — there is no dynamic
-module resolution at runtime. The glob is empty until you add a module, so the
-seam costs nothing when unused.
+The generated graph decides whether the binding is mounted. Merely adding a
+directory does not alter the graph; explicit config selection is required.
 
 ## Migrations (`schema.ts`)
 
@@ -183,8 +189,9 @@ never re-runs or collides with your deployment migrations.
 - **Standard profile.** A custom module *adds* tables; it doesn't remove or
   re-shape framework tables. Arbitrary add/remove of *framework* modules is the
   D.2 (package-owned migrations) story — out of scope here.
-- **Discovery is build-time.** A new module requires a rebuild/redeploy (it's
-  compiled in), which is exactly what you want on Workers.
+- **Discovery is build-time.** A new module requires rebuilding and redeploying
+  the Node application artifact. Unified Voyant deployments do not target
+  Cloudflare Workers.
 - **Table names are global.** A custom table can't reuse a framework table name
   (e.g. `booking_notes` already exists) — `pnpm db:migrate` fails fast with
   `relation "…" already exists`. Prefix deployment-owned tables (`acme_*`) to stay

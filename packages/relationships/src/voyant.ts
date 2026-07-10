@@ -1,5 +1,10 @@
 import { defineModule } from "@voyant-travel/core/project"
 
+const relationshipsAdminRuntime = {
+  entry: "@voyant-travel/relationships-react/admin",
+  export: "createRelationshipsAdminExtension",
+} as const
+
 /** Import-cheap deployment declaration owned by the relationships package. */
 export const relationshipsVoyantModule = defineModule({
   id: "@voyant-travel/relationships",
@@ -39,6 +44,112 @@ export const relationshipsVoyantModule = defineModule({
       source: "@voyant-travel/relationships/linkables",
     },
   ],
+  events: [
+    {
+      id: "@voyant-travel/relationships#event.customer.signal.created",
+      eventType: "customer.signal.created",
+    },
+    {
+      id: "@voyant-travel/relationships#event.person.changed",
+      eventType: "person.changed",
+    },
+    {
+      id: "@voyant-travel/relationships#event.organization.changed",
+      eventType: "organization.changed",
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/relationships#access.crm",
+        resource: "crm",
+        actions: ["read", "write", "delete"],
+      },
+      {
+        id: "@voyant-travel/relationships#access.relationships-pii",
+        resource: "relationships-pii",
+        actions: ["read"],
+      },
+    ],
+  },
+  tools: [
+    {
+      id: "@voyant-travel/relationships#tool.list-people",
+      name: "list_people",
+      runtime: { entry: "@voyant-travel/relationships/tools", export: "listPeopleTool" },
+      requiredScopes: ["crm:read"],
+    },
+    {
+      id: "@voyant-travel/relationships#tool.get-person",
+      name: "get_person",
+      runtime: { entry: "@voyant-travel/relationships/tools", export: "getPersonTool" },
+      requiredScopes: ["crm:read"],
+    },
+    {
+      id: "@voyant-travel/relationships#tool.list-organizations",
+      name: "list_organizations",
+      runtime: {
+        entry: "@voyant-travel/relationships/tools",
+        export: "listOrganizationsTool",
+      },
+      requiredScopes: ["crm:read"],
+    },
+    {
+      id: "@voyant-travel/relationships#tool.get-organization",
+      name: "get_organization",
+      runtime: { entry: "@voyant-travel/relationships/tools", export: "getOrganizationTool" },
+      requiredScopes: ["crm:read"],
+    },
+  ],
+  actions: [
+    {
+      id: "relationships.person_document.reveal",
+      version: "v1",
+      kind: "sensitive-read",
+      targetType: "person_document",
+      requiredScopes: ["relationships-pii:read"],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      policy: "scope_grant",
+      reversible: false,
+      from: { routes: ["@voyant-travel/relationships#api.admin"] },
+    },
+  ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/relationships#admin.route.people-index",
+        path: "/people",
+        runtime: relationshipsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/relationships#admin.route.people-detail",
+        path: "/people/$id",
+        runtime: relationshipsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/relationships#admin.route.organizations-index",
+        path: "/organizations",
+        runtime: relationshipsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/relationships#admin.route.organizations-detail",
+        path: "/organizations/$id",
+        runtime: relationshipsAdminRuntime,
+      },
+    ],
+    slots: [
+      {
+        id: "person.details.bookings-tab",
+        routeId: "@voyant-travel/relationships#admin.route.people-detail",
+        contract: { personId: "string" },
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

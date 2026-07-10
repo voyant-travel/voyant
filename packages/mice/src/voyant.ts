@@ -40,6 +40,35 @@ export const miceVoyantModule = defineModule({
     { id: "@voyant-travel/mice#linkable.rfp", source: "@voyant-travel/mice/linkables" },
     { id: "@voyant-travel/mice#linkable.bid", source: "@voyant-travel/mice/linkables" },
   ],
+  events: [
+    {
+      id: "@voyant-travel/mice#event.rfp-awarded",
+      eventType: "mice.rfp.awarded",
+    },
+  ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/mice#admin.route.programs-index",
+        path: "/mice",
+        runtime: {
+          entry: "@voyant-travel/mice-react/admin",
+          export: "createMiceAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/mice#admin.route.programs-detail",
+        path: "/mice/$id",
+        runtime: {
+          entry: "@voyant-travel/mice-react/admin",
+          export: "createMiceAdminExtension",
+        },
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

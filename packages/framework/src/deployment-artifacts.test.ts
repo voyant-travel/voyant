@@ -5,6 +5,7 @@ import {
   buildGraphRuntimeModule,
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
+  buildProjectRuntimeModule,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
   VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
@@ -81,7 +82,30 @@ describe("deployment graph artifacts", () => {
     expect(JSON.parse(first)).toMatchObject({
       schemaVersion: "voyant.resolved-graph.v1",
       contentHash: graph.contentHash,
+      webhookPlan: { inbound: [], outbound: [] },
     })
+  })
+
+  it("lowers the selected webhook plan into generated runtime source", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/hooks",
+        events: [{ id: "@acme/hooks#event.changed", eventType: "hooks.changed" }],
+        webhooks: [
+          {
+            id: "@acme/hooks#webhook.changed",
+            direction: "outbound",
+            eventId: "@acme/hooks#event.changed",
+          },
+        ],
+      }),
+    ])
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain("GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
+    expect(source).toContain('"eventType": "hooks.changed"')
+    expect(source).toContain("webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
   })
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {
@@ -108,6 +132,7 @@ describe("deployment graph artifacts", () => {
       schemaVersion: VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
       graphHash: graph.contentHash,
       graph: "deployment-graph.generated.json",
+      webhookPlan: { inbound: [], outbound: [] },
       runtimeEntries: [
         {
           id: VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
@@ -149,8 +174,8 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("startManagedProfileRuntime")
     expect(source).toContain("deployment: resolveGeneratedRuntimeDeployment()")
     expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
-    expect(source).toContain("managed profile boot remains snapshot-manifest based")
-    expect(source).not.toContain("createGeneratedGraphRuntime")
+    expect(source).toContain('from "./graph-runtime.generated.js"')
+    expect(source).toContain("graphRuntime: createGeneratedGraphRuntime()")
     expect(source).not.toContain("starters/")
   })
 
@@ -168,6 +193,180 @@ describe("deployment graph artifacts", () => {
     expect(first).toContain('"createLoyaltyModule"')
     expect(first).toContain("createGeneratedGraphRuntime")
     expect(first).not.toContain("FRAMEWORK_RUNTIME_MANIFEST")
+  })
+
+  it("lowers every package-owned executable facet through deduplicated lazy imports", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        api: [
+          {
+            id: "loyalty.api",
+            surface: "webhook",
+            runtime: { entry: "./runtime", export: "createRoutes" },
+          },
+        ],
+        config: [
+          {
+            id: "loyalty.config",
+            key: "loyalty",
+            validator: { entry: "./runtime", export: "configSchema" },
+          },
+        ],
+        secrets: [
+          {
+            id: "loyalty.secret",
+            key: "LOYALTY_TOKEN",
+            validator: { entry: "./runtime", export: "secretSchema" },
+          },
+        ],
+        resources: [
+          {
+            id: "loyalty.resource",
+            kind: "http-service",
+            required: true,
+            config: { service: "loyalty" },
+          },
+        ],
+        providers: [
+          {
+            id: "loyalty.provider",
+            port: "loyalty.ledger",
+            runtime: { entry: "./runtime", export: "createLedgerProvider" },
+          },
+        ],
+        access: {
+          resources: [
+            {
+              id: "loyalty.access",
+              resource: "loyalty",
+              actions: ["read", "write"],
+            },
+          ],
+        },
+        admin: {
+          copy: [
+            {
+              id: "loyalty.copy",
+              namespace: "loyalty",
+              fallbackLocale: "en",
+              runtime: { entry: "./admin", export: "copy" },
+            },
+          ],
+          routes: [
+            {
+              id: "loyalty.admin.route",
+              path: "/loyalty",
+              runtime: { entry: "./admin", export: "LoyaltyPage" },
+            },
+          ],
+          slots: [{ id: "loyalty.slot", routeId: "loyalty.admin.route" }],
+          contributions: [
+            {
+              id: "loyalty.balance",
+              slotId: "loyalty.slot",
+              runtime: { entry: "./admin", export: "BalanceWidget" },
+            },
+          ],
+        },
+        tools: [
+          {
+            id: "loyalty.adjust",
+            name: "adjust_loyalty",
+            runtime: { entry: "./runtime", export: "adjustLoyalty" },
+            requiredScopes: ["loyalty:write"],
+          },
+        ],
+        workflows: [
+          {
+            id: "loyalty.reconcile",
+            runtime: { entry: "./runtime", export: "reconcileWorkflow" },
+          },
+        ],
+        events: [{ id: "loyalty.event", eventType: "loyalty.changed" }],
+        webhooks: [
+          {
+            id: "loyalty.webhook",
+            direction: "inbound",
+            apiId: "loyalty.api",
+          },
+        ],
+        actions: [
+          {
+            id: "loyalty.points.adjust",
+            version: "v1",
+            kind: "execute",
+            targetType: "loyalty_account",
+            requiredScopes: ["loyalty:write"],
+            risk: "medium",
+            ledger: "required",
+            from: {
+              routes: ["loyalty.api"],
+              tools: ["loyalty.adjust"],
+              workflows: ["loyalty.reconcile"],
+              events: ["loyalty.event"],
+              webhooks: ["loyalty.webhook"],
+            },
+          },
+        ],
+        subscribers: [
+          {
+            id: "loyalty.changed",
+            eventType: "loyalty.changed",
+            runtime: { entry: "./runtime", export: "loyaltyChangedFilter" },
+          },
+        ],
+      }),
+    ])
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    for (const facet of [
+      "api",
+      "config.validator",
+      "secrets.validator",
+      "providers.runtime",
+      "admin.copy.runtime",
+      "admin.routes.runtime",
+      "admin.contributions.runtime",
+      "tools.runtime",
+      "workflows.runtime",
+      "subscribers.runtime",
+    ]) {
+      expect(source).toContain(`"facet": "${facet}"`)
+    }
+    expect(source.match(/import\("@acme\/voyant-loyalty\/runtime"\)/g)).toHaveLength(1)
+    expect(source.match(/import\("@acme\/voyant-loyalty\/admin"\)/g)).toHaveLength(1)
+    expect(source).toContain('"accessScopes": [')
+    expect(source).toContain('"loyalty:write"')
+    expect(source).toContain('"tools": [')
+    expect(source).toContain('"name": "adjust_loyalty"')
+    expect(source).toContain('"config": [')
+    expect(source).toContain('"declaration": {')
+    expect(source).toContain('"key": "loyalty"')
+    expect(source).toContain('"resources": [')
+    expect(source).toContain('"kind": "http-service"')
+    expect(source).toContain('"providers": [')
+    expect(source).toContain('"actions": [')
+    expect(source).toContain('"id": "loyalty.points.adjust"')
+    expect(source).toContain('"selectedIds": {')
+    expect(source).toContain('"loyalty.event"')
+    expect(source).toContain('"loyalty.webhook"')
+  })
+
+  it("builds one target-neutral whole-application runtime", async () => {
+    const graph = await sampleGraph()
+    const targetNeutralGraph = {
+      ...graph,
+      deployment: { mode: graph.deployment.mode, providers: graph.deployment.providers },
+    }
+    const source = buildProjectRuntimeModule({ graph: targetNeutralGraph })
+
+    expect(source).toContain('GENERATED_PROJECT_RUNTIME_KIND = "application"')
+    expect(source).toContain(`graphHash: GENERATED_GRAPH_RUNTIME_HASH`)
+    expect(source).toContain(`GENERATED_GRAPH_RUNTIME_HASH = "${graph.contentHash}"`)
+    expect(source).not.toContain("starters/")
+    expect(() => buildProjectRuntimeModule({ graph })).toThrow(/must be target-neutral/)
   })
 
   it("removes package importers and loaders when the package is not selected", async () => {
@@ -257,6 +456,25 @@ describe("deployment graph artifacts", () => {
 
     expect(() => buildGraphRuntimeModule({ graph })).toThrow(
       /VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED/,
+    )
+  })
+
+  it("refuses unadmitted package references from non-route facets", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        providers: [
+          {
+            id: "loyalty.provider",
+            port: "loyalty.ledger",
+            runtime: { entry: "@unknown/ledger", export: "provider" },
+          },
+        ],
+      }),
+    ])
+
+    expect(() => buildGraphRuntimeModule({ graph })).toThrow(
+      /VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED.*providers\.runtime/,
     )
   })
 

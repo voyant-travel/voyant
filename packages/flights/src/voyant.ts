@@ -28,6 +28,56 @@ export const flightsVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  admin: {
+    copy: [
+      {
+        id: "@voyant-travel/flights#admin.copy",
+        namespace: "flights.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/flights-react/i18n",
+          export: "flightsUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/flights#admin.route.flights-index",
+        path: "/flights",
+        runtime: {
+          entry: "@voyant-travel/flights-react/admin",
+          export: "createFlightsAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/flights#admin.route.flights-book",
+        path: "/flights/book/$offerId",
+        runtime: {
+          entry: "@voyant-travel/flights-react/admin",
+          export: "createFlightsAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/flights#admin.route.flights-orders",
+        path: "/flights/orders",
+        runtime: {
+          entry: "@voyant-travel/flights-react/admin",
+          export: "createFlightsAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/flights#admin.route.flights-order-detail",
+        path: "/flights/orders/$orderId",
+        runtime: {
+          entry: "@voyant-travel/flights-react/admin",
+          export: "createFlightsAdminExtension",
+        },
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

@@ -81,7 +81,7 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
     expect(packageJson.voyant.schemaVersion).toBe("voyant.package.v1")
     expect(packageJson.voyant.kind).toBe("module")
     expect(packageJson.voyant.compatibleWith.framework).toBe(">=0.26.0")
-    expect(packageJson.voyant.compatibleWith.targets).toEqual(["node", "voyant-cloud"])
+    expect(packageJson.voyant.compatibleWith.targets).toEqual(["node"])
     expect(packageJson.voyant.compatibleWith.modes).toEqual([
       "local",
       "managed-cloud",

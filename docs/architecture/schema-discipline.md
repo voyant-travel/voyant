@@ -102,16 +102,17 @@ clauses).
 
 ## Migration generation & ordering
 
-A template's Drizzle schema set is **derived from `voyant.config.ts`**, not
-hand-listed. The manifest's `modules` + `extensions` + `additionalSchemas`
-(package closures) plus `schemas` (starter-local files) are resolved into a
-committed `drizzle.schemas.generated.ts` that `drizzle.config.ts` imports. See
+A template's Drizzle schema set is **derived from package/local manifests
+selected by `voyant.config.ts`**, not hand-listed in config. Package schema and
+migration facets plus transitive schema requirements are resolved into a
+committed `drizzle.schemas.generated.ts`; generated project links are appended.
+See
 [`migration-resilience-rfc.md`](./migration-resilience-rfc.md) (voyant#1608).
 
 Rules:
 
-- **Never hand-edit the schema list** in `drizzle.config.ts`. Add the
-  module/extension/package to `voyant.config.ts` and run `voyant db generate`
+- **Never hand-edit the schema list** in `drizzle.config.ts`. Select the owning
+  module/plugin in `voyant.config.ts` and run `voyant db generate`
   (or `voyant db schemas --emit`) to refresh the generated manifest.
 - **New migrations use timestamp prefixes.** `voyant db generate` defaults to
   `--prefix timestamp`, so concurrently-authored migrations never collide on a

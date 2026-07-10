@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import path, { dirname, join, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 
 import {
   buildDeploymentArtifactManifest,
@@ -10,35 +10,27 @@ import {
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
 } from "../packages/framework/src/deployment-artifacts.ts"
-import {
-  type ResolveDeploymentGraphInput,
-  type ResolvedVoyantDeploymentGraph,
-  resolveDeploymentGraph,
-  resolveDeploymentGraphWithPackageManifests,
-} from "../packages/framework/src/deployment-graph.ts"
+import type { ResolvedVoyantDeploymentGraph } from "../packages/framework/src/deployment-graph.ts"
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
-import { OPERATOR_VOYANT_DEPLOYMENT } from "../starters/operator/voyant.deployment.ts"
 import {
   buildDeploymentGraphDoctorJson,
   buildDeploymentGraphDoctorReport,
   checkDeploymentGraphGeneratedArtifacts,
   formatDeploymentGraphDoctorDiagnostics,
 } from "./lib/deployment-graph-doctor.ts"
-import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
-import { loadVoyantPackageManifests } from "./lib/load-voyant-package-manifests.ts"
 import {
-  OPERATOR_GRAPH_ADMISSION_POLICY,
-  OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
-  withOperatorDeploymentLocalPackageRecords,
+  type OperatorAuthoredProject,
+  resolveOperatorDeploymentGraph,
 } from "./lib/operator-deployment-graph-package-records.ts"
 
 interface CliOptions {
   emit: boolean
   json: boolean
-  profilePath: string
+  configPath: string
+  profileOutputPath: string
   manifestOutputPath: string
   graphOutputPath: string
   entryOutputPath: string
@@ -52,17 +44,15 @@ const command = "pnpm --filter operator graph:emit"
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
-  const graph = await resolveGraph(options.profilePath)
+  const { graph, profile } = await resolveGraph(options.configPath)
   const graphText = formatGeneratedText(options.graphOutputPath, buildDeploymentGraphJson(graph))
   const graphArtifactPath = toPosixRelativePath(
     dirname(options.entryOutputPath),
     options.graphOutputPath,
-    path,
   )
   const profileSnapshotPath = toPosixRelativePath(
     dirname(options.entryOutputPath),
-    options.profilePath,
-    path,
+    options.profileOutputPath,
   )
   const entryText = formatGeneratedText(
     options.entryOutputPath,
@@ -77,28 +67,42 @@ async function main(): Promise<void> {
     options.runtimeOutputPath,
     buildGraphRuntimeModule({ graph, command }),
   )
+  const manifestDirectory = dirname(options.manifestOutputPath)
   const manifest = buildDeploymentArtifactManifest({
     graph,
-    graphArtifactPath: relativeToOperator(options.graphOutputPath),
+    graphArtifactPath: toPosixRelativePath(manifestDirectory, options.graphOutputPath),
     runtimeEntries: [
       buildManagedNodeRuntimeEntryArtifact({
         graph,
-        file: relativeToOperator(options.entryOutputPath),
-        profileSnapshot: relativeToOperator(options.profilePath),
+        file: toPosixRelativePath(manifestDirectory, options.entryOutputPath),
+        profileSnapshot: toPosixRelativePath(manifestDirectory, options.profileOutputPath),
       }),
     ],
     migrationSources: operatorMigrationSources(graph),
   })
+  const profileText = formatGeneratedText(
+    options.profileOutputPath,
+    `${JSON.stringify(profile, null, 2)}\n`,
+  )
   const manifestText = formatGeneratedText(
     options.manifestOutputPath,
     `${JSON.stringify(manifest, null, 2)}\n`,
   )
 
+  const artifacts = [
+    { path: options.profileOutputPath, expected: profileText, facet: "managed-profile" },
+    {
+      path: options.manifestOutputPath,
+      expected: manifestText,
+      facet: "deployment-artifacts",
+    },
+    { path: options.graphOutputPath, expected: graphText, facet: "deployment-graph" },
+    { path: options.entryOutputPath, expected: entryText, facet: "runtime-entry" },
+    { path: options.runtimeOutputPath, expected: runtimeText, facet: "graph-runtime" },
+  ]
+
   if (options.emit) {
-    await writeGeneratedFile(options.manifestOutputPath, manifestText)
-    await writeGeneratedFile(options.graphOutputPath, graphText)
-    await writeGeneratedFile(options.entryOutputPath, entryText)
-    await writeGeneratedFile(options.runtimeOutputPath, runtimeText)
+    for (const artifact of artifacts) await writeGeneratedFile(artifact.path, artifact.expected)
     const report = buildDeploymentGraphDoctorReport({ graph })
     if (options.json) {
       process.stdout.write(buildDeploymentGraphDoctorJson(report))
@@ -113,45 +117,18 @@ async function main(): Promise<void> {
       process.exit(1)
     }
     console.log(
-      `emit-deployment-graph: wrote ${[
-        options.manifestOutputPath,
-        options.graphOutputPath,
-        options.entryOutputPath,
-        options.runtimeOutputPath,
-      ]
-        .map(relativeToRepo)
+      `emit-deployment-graph: wrote ${artifacts
+        .map((artifact) => relativeToRepo(artifact.path))
         .join(", ")} (${graph.contentHash})`,
     )
     return
   }
 
   const artifactDiagnostics = await checkDeploymentGraphGeneratedArtifacts(
-    [
-      {
-        path: options.manifestOutputPath,
-        expected: manifestText,
-        facet: "deployment-artifacts",
-        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
-      },
-      {
-        path: options.graphOutputPath,
-        expected: graphText,
-        facet: "deployment-graph",
-        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
-      },
-      {
-        path: options.entryOutputPath,
-        expected: entryText,
-        facet: "runtime-entry",
-        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
-      },
-      {
-        path: options.runtimeOutputPath,
-        expected: runtimeText,
-        facet: "graph-runtime",
-        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
-      },
-    ],
+    artifacts.map((artifact) => ({
+      ...artifact,
+      hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
+    })),
     { repoRoot },
   )
   const report = buildDeploymentGraphDoctorReport({ graph, diagnostics: artifactDiagnostics })
@@ -161,16 +138,13 @@ async function main(): Promise<void> {
     if (!report.ok) process.exit(1)
     return
   }
-
   if (!report.ok) {
     console.error("Deployment graph doctor failed.")
     if (artifactDiagnostics.length > 0) {
       console.error("Generated deployment graph artifacts are stale or missing.")
     }
     console.error(formatDeploymentGraphDoctorDiagnostics(report.diagnostics))
-    if (artifactDiagnostics.length > 0) {
-      console.error(`Run \`${command}\` to refresh them.`)
-    }
+    if (artifactDiagnostics.length > 0) console.error(`Run \`${command}\` to refresh them.`)
     process.exit(1)
   }
 
@@ -179,56 +153,52 @@ async function main(): Promise<void> {
   )
 }
 
-async function resolveGraph(profilePath: string) {
-  const project = JSON.parse(await readFile(profilePath, "utf8")) as VoyantProjectManifest
-  const discoveredGraph = await resolveOperatorDeploymentGraph(project)
-  const packageRecords = withOperatorDeploymentLocalPackageRecords(
-    readPnpmLockfilePackageRecords({
-      repoRoot,
-      projectRoot: defaultOperatorRoot,
-      importerPaths: ["starters/operator"],
-      packageNames: [
-        "@voyant-travel/framework",
-        "@voyant-travel/framework-migrations",
-        ...discoveredGraph.packageRecords.map((record) => record.packageName),
-      ],
-      packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
-    }),
-  )
-  return resolveDeploymentGraphWithPackageManifests({
-    ...operatorDeploymentGraphInput(project, { packageRecords }),
-    loadPackageManifests: (record) =>
-      loadVoyantPackageManifests(record, {
-        projectRoot: defaultOperatorRoot,
-        repoRoot,
-      }),
+async function resolveGraph(configPath: string) {
+  const project = await loadOperatorConfig(configPath)
+  const frameworkVersion = await readFrameworkVersion()
+  const profile = compatibilityManagedProfile(project, frameworkVersion)
+  const resolved = await resolveOperatorDeploymentGraph({
+    project,
+    projectRoot: defaultOperatorRoot,
+    repoRoot,
+    frameworkVersion,
+    scheduledJobs: [...getManagedProfileScheduledJobs(profile), ...OPERATOR_LOCAL_SCHEDULED_JOBS],
   })
+  return { graph: resolved.graph, profile }
 }
 
-function resolveOperatorDeploymentGraph(
-  project: VoyantProjectManifest,
-  options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
-) {
-  return resolveDeploymentGraph(operatorDeploymentGraphInput(project, options))
+async function loadOperatorConfig(configPath: string): Promise<OperatorAuthoredProject> {
+  const namespace = (await import(`${pathToFileURL(configPath).href}?t=${Date.now()}`)) as {
+    default?: unknown
+  }
+  if (!namespace.default || typeof namespace.default !== "object") {
+    throw new Error(`${relativeToRepo(configPath)} must default-export defineProject(...)`)
+  }
+  return namespace.default as OperatorAuthoredProject
 }
 
-function operatorDeploymentGraphInput(
-  project: VoyantProjectManifest,
-  options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
-): ResolveDeploymentGraphInput {
-  const { project: graphProject, ...deployment } = OPERATOR_VOYANT_DEPLOYMENT
+async function readFrameworkVersion(): Promise<string> {
+  const packageJson = JSON.parse(
+    await readFile(join(repoRoot, "packages", "framework", "package.json"), "utf8"),
+  ) as { version?: string }
+  if (!packageJson.version) throw new Error("packages/framework/package.json has no version")
+  return packageJson.version
+}
+
+function compatibilityManagedProfile(
+  project: OperatorAuthoredProject,
+  frameworkVersion: string,
+): VoyantProjectManifest {
   return {
-    ...options,
-    project: graphProject,
-    deployment,
-    scheduledJobs: [
-      ...(options.scheduledJobs ?? getManagedProfileScheduledJobs(project)),
-      ...OPERATOR_LOCAL_SCHEDULED_JOBS,
-    ],
-    frameworkVersion: options.frameworkVersion ?? project.frameworkVersion,
-    target: options.target ?? deployment.target,
-    mode: options.mode ?? deployment.mode,
-    admission: options.admission ?? OPERATOR_GRAPH_ADMISSION_POLICY,
+    schemaVersion: "voyant.managed-profile.v1",
+    profile: "operator",
+    frameworkVersion,
+    mode: project.deployment.mode,
+    modules: [],
+    plugins: [],
+    settings: {},
+    providers: project.deployment.providers,
+    admin: { enabled: true, path: "/app" },
   }
 }
 
@@ -245,21 +215,17 @@ function operatorMigrationSources(graph: ResolvedVoyantDeploymentGraph) {
       .map((record) => record.packageName),
   )
 
-  return operatorSchemaPaths
-    .map((schemaPath) => {
-      const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
-      if (!match?.[1]) return undefined
-      return {
-        packageName: `@voyant-travel/${match[1]}`,
-        schema: schemaPath,
-      }
-    })
-    .filter((source): source is { packageName: string; schema: string } => Boolean(source))
-    .filter(
-      (source) =>
-        !manifestPackages.has(source.packageName) ||
-        packageOwnedMigrationSources.has(source.packageName),
-    )
+  const sources: Array<{ packageName: string; schema: string }> = []
+  for (const schemaPath of operatorSchemaPaths) {
+    const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
+    if (!match?.[1]) continue
+    sources.push({ packageName: `@voyant-travel/${match[1]}`, schema: schemaPath })
+  }
+  return sources.filter(
+    (source) =>
+      !manifestPackages.has(source.packageName) ||
+      packageOwnedMigrationSources.has(source.packageName),
+  )
 }
 
 async function writeGeneratedFile(filePath: string, text: string): Promise<void> {
@@ -277,14 +243,16 @@ function formatGeneratedText(filePath: string, text: string): string {
 }
 
 function parseArgs(args: readonly string[]): CliOptions {
+  const generatedRoot = join(defaultOperatorRoot, ".voyant")
   const options: CliOptions = {
     emit: false,
     json: false,
-    profilePath: join(defaultOperatorRoot, "managed-profile.json"),
-    manifestOutputPath: join(defaultOperatorRoot, "deployment-artifacts.generated.json"),
-    graphOutputPath: join(defaultOperatorRoot, "deployment-graph.generated.json"),
-    entryOutputPath: join(defaultOperatorRoot, "src", "runtime-entry.generated.ts"),
-    runtimeOutputPath: join(defaultOperatorRoot, "src", "graph-runtime.generated.ts"),
+    configPath: join(defaultOperatorRoot, "voyant.config.ts"),
+    profileOutputPath: join(generatedRoot, "managed-profile.json"),
+    manifestOutputPath: join(generatedRoot, "deployment-artifacts.generated.json"),
+    graphOutputPath: join(generatedRoot, "deployment-graph.generated.json"),
+    entryOutputPath: join(generatedRoot, "runtime-entry.generated.ts"),
+    runtimeOutputPath: join(generatedRoot, "graph-runtime.generated.ts"),
   }
 
   for (let index = 0; index < args.length; index += 1) {
@@ -297,28 +265,9 @@ function parseArgs(args: readonly string[]): CliOptions {
       options.json = true
       continue
     }
-    if (arg === "--profile") {
-      options.profilePath = resolvePath(readValue(args, index, arg))
-      index += 1
-      continue
-    }
-    if (arg === "--graph-output") {
-      options.graphOutputPath = resolvePath(readValue(args, index, arg))
-      index += 1
-      continue
-    }
-    if (arg === "--manifest-output") {
-      options.manifestOutputPath = resolvePath(readValue(args, index, arg))
-      index += 1
-      continue
-    }
-    if (arg === "--entry-output") {
-      options.entryOutputPath = resolvePath(readValue(args, index, arg))
-      index += 1
-      continue
-    }
-    if (arg === "--runtime-output") {
-      options.runtimeOutputPath = resolvePath(readValue(args, index, arg))
+    const outputOption = outputOptionFor(arg)
+    if (outputOption) {
+      options[outputOption] = resolvePath(readValue(args, index, arg))
       index += 1
       continue
     }
@@ -328,8 +277,29 @@ function parseArgs(args: readonly string[]): CliOptions {
     }
     throw new Error(`Unknown argument: ${arg}`)
   }
-
   return options
+}
+
+function outputOptionFor(
+  arg: string,
+):
+  | keyof Pick<
+      CliOptions,
+      | "configPath"
+      | "profileOutputPath"
+      | "manifestOutputPath"
+      | "graphOutputPath"
+      | "entryOutputPath"
+      | "runtimeOutputPath"
+    >
+  | null {
+  if (arg === "--config") return "configPath"
+  if (arg === "--profile-output") return "profileOutputPath"
+  if (arg === "--manifest-output") return "manifestOutputPath"
+  if (arg === "--graph-output") return "graphOutputPath"
+  if (arg === "--entry-output") return "entryOutputPath"
+  if (arg === "--runtime-output") return "runtimeOutputPath"
+  return null
 }
 
 function readValue(args: readonly string[], index: number, arg: string): string {
@@ -346,12 +316,8 @@ function relativeToRepo(filePath: string): string {
   return path.relative(repoRoot, filePath).replaceAll(path.sep, "/")
 }
 
-function relativeToOperator(filePath: string): string {
-  return path.relative(defaultOperatorRoot, filePath).replaceAll(path.sep, "/")
-}
-
-function toPosixRelativePath(fromDir: string, toPath: string, pathModule: typeof path): string {
-  let relative = pathModule.relative(fromDir, toPath).replaceAll(pathModule.sep, "/")
+function toPosixRelativePath(fromDir: string, toPath: string): string {
+  let relative = path.relative(fromDir, toPath).replaceAll(path.sep, "/")
   if (!relative.startsWith(".")) relative = `./${relative}`
   return relative
 }
@@ -359,16 +325,17 @@ function toPosixRelativePath(fromDir: string, toPath: string, pathModule: typeof
 function printHelp(): void {
   console.log(`Usage: tsx scripts/emit-deployment-graph.ts [--emit]
 
-Resolves the operator graph declarations into committed generated graph artifacts.
+Resolves starters/operator/voyant.config.ts into disposable .voyant artifacts.
 
 Options:
-  --emit                 write generated artifacts instead of checking staleness
-  --json                 print the graph doctor report JSON contract
-  --profile <path>       managed-profile compatibility snapshot path
-  --manifest-output <path> deployment artifact manifest output path
-  --graph-output <path>  resolved graph JSON output path
-  --entry-output <path>  runtime entry metadata module output path
-  --runtime-output <path> selected graph runtime loader module output path
+  --emit                    write generated artifacts instead of checking staleness
+  --json                    print the graph doctor report JSON contract
+  --config <path>           authored project config input
+  --profile-output <path>   compatibility profile output path
+  --manifest-output <path>  deployment artifact manifest output path
+  --graph-output <path>     resolved graph JSON output path
+  --entry-output <path>     runtime entry metadata module output path
+  --runtime-output <path>   selected graph runtime loader module output path
 `)
 }
 

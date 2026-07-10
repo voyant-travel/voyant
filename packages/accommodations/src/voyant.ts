@@ -35,6 +35,9 @@ export const accommodationsVoyantModule = defineModule({
       source: "@voyant-travel/accommodations/linkables",
     },
   ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

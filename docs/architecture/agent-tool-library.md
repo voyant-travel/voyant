@@ -95,9 +95,9 @@ return createMcpHonoApp({ registry, buildContext })
 
 `@modelcontextprotocol/sdk` `McpServer` over `@hono/mcp` `StreamableHTTPTransport`,
 **stateless** (fresh server + transport per request, `sessionIdGenerator: undefined`,
-`enableJsonResponse: true`). No Durable Object; fits the operator's single-worker
-`nodejs_compat` runtime. `GET /v1/admin/mcp/manifest` serves a contract-versioned
-discovery manifest for remote agents.
+`enableJsonResponse: true`). It runs inside the tenant's Node application; no
+separate MCP service or Durable Object is required. `GET /v1/admin/mcp/manifest`
+serves a contract-versioned discovery manifest for remote agents.
 
 ## Migration status
 

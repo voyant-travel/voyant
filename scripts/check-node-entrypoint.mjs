@@ -221,13 +221,13 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
       text: devScript,
     })
   }
-  if (!migrateScript.includes("pnpm run graph:check")) {
+  if (!migrateScript.includes("pnpm run graph:emit")) {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
       line: 0,
       check: {
         id: "operator-migrate-graph-check-missing",
-        message: "The operator db:migrate script must run graph:check before migration.",
+        message: "The operator db:migrate script must generate .voyant artifacts before migration.",
       },
       text: migrateScript,
     })

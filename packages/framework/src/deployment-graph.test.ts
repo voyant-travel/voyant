@@ -1,10 +1,6 @@
 // agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while the resolver, diagnostics, hashing, and managed-profile bridge share one contract harness.
 
 import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
-import {
-  bulkReindexProductsWorkflowManifest,
-  promotionAffectedAllFilter,
-} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
@@ -42,14 +38,14 @@ describe("deployment graph v1", () => {
     expect(
       validateGraphUnitManifest({
         ...module,
-        admin: { nav: [] },
+        audit: { actions: [] },
         unsupportedThing: true,
       }),
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           code: "VOYANT_GRAPH_UNSUPPORTED_FACET",
-          facet: "admin",
+          facet: "audit",
         }),
         expect.objectContaining({
           code: "VOYANT_GRAPH_UNKNOWN_FACET",
@@ -58,6 +54,306 @@ describe("deployment graph v1", () => {
       ]),
     )
     expect(validateGraphUnitManifest(module)).toEqual([])
+  })
+
+  it("resolves the full package-owned facet contract without starter catalogs", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-loyalty",
+      api: [
+        {
+          id: "@acme/voyant-loyalty#api.admin",
+          surface: "admin",
+          requiredScopes: ["loyalty:read"],
+          runtime: { entry: "@acme/voyant-loyalty/routes", export: "adminRoutes" },
+        },
+      ],
+      migrations: [{ id: "@acme/voyant-loyalty#migration.001", source: "./migrations" }],
+      setupMigrations: [
+        {
+          id: "@acme/voyant-loyalty#setup.default-tiers",
+          source: "./setup/default-tiers",
+          runtime: { entry: "@acme/voyant-loyalty/setup", export: "runSetup" },
+          dependsOn: ["@acme/voyant-loyalty#migration.001"],
+        },
+      ],
+      config: [
+        {
+          id: "@acme/voyant-loyalty#config.tiers",
+          key: "tiers",
+          validator: { entry: "@acme/voyant-loyalty/config", export: "tiersSchema" },
+        },
+      ],
+      secrets: [
+        {
+          id: "@acme/voyant-loyalty#secret.webhook",
+          key: "webhookSecret",
+          required: true,
+        },
+      ],
+      resources: [{ id: "@acme/voyant-loyalty#resource.store", kind: "database", required: true }],
+      providers: [
+        {
+          id: "@acme/voyant-loyalty#provider.ledger",
+          port: "acme.loyalty.ledger",
+          runtime: { entry: "@acme/voyant-loyalty/provider", export: "ledgerProvider" },
+        },
+      ],
+      access: {
+        resources: [
+          {
+            id: "@acme/voyant-loyalty#access.loyalty",
+            resource: "loyalty",
+            actions: ["read", "write"],
+          },
+        ],
+        roles: [
+          {
+            id: "@acme/voyant-loyalty#role.agent",
+            grants: ["loyalty:read"],
+          },
+        ],
+      },
+      admin: {
+        copy: [
+          {
+            id: "@acme/voyant-loyalty#copy.admin",
+            namespace: "loyalty.admin",
+            fallbackLocale: "en",
+            runtime: { entry: "@acme/voyant-loyalty/admin/copy" },
+          },
+        ],
+        routes: [
+          {
+            id: "@acme/voyant-loyalty#admin.route.index",
+            path: "/loyalty",
+            runtime: { entry: "@acme/voyant-loyalty/admin", export: "LoyaltyPage" },
+            requiredScopes: ["loyalty:read"],
+            copy: [{ namespace: "loyalty.admin", key: "routes.index.title" }],
+          },
+        ],
+        nav: [
+          {
+            id: "@acme/voyant-loyalty#admin.nav",
+            routeId: "@acme/voyant-loyalty#admin.route.index",
+            label: { namespace: "loyalty.admin", key: "nav.loyalty" },
+          },
+        ],
+        slots: [
+          {
+            id: "@acme/voyant-loyalty#admin.slot.summary",
+            routeId: "@acme/voyant-loyalty#admin.route.index",
+          },
+        ],
+        contributions: [
+          {
+            id: "@acme/voyant-loyalty#admin.contribution.balance",
+            slotId: "@acme/voyant-loyalty#admin.slot.summary",
+            runtime: { entry: "@acme/voyant-loyalty/admin", export: "BalanceWidget" },
+          },
+        ],
+      },
+      tools: [
+        {
+          id: "@acme/voyant-loyalty#tool.adjust-points",
+          name: "adjust_loyalty_points",
+          runtime: { entry: "@acme/voyant-loyalty/tools", export: "adjustPoints" },
+          requiredScopes: ["loyalty:write"],
+          risk: "high",
+        },
+      ],
+      events: [{ id: "@acme/voyant-loyalty#event.points-adjusted", eventType: "points.adjusted" }],
+      webhooks: [
+        {
+          id: "@acme/voyant-loyalty#webhook.points-adjusted",
+          direction: "outbound",
+          eventId: "@acme/voyant-loyalty#event.points-adjusted",
+          secretIds: ["@acme/voyant-loyalty#secret.webhook"],
+        },
+      ],
+      actions: [
+        {
+          id: "@acme/voyant-loyalty#action.adjust-points",
+          version: "v1",
+          kind: "execute",
+          targetType: "loyalty-account",
+          requiredScopes: ["loyalty:write"],
+          risk: "high",
+          ledger: "required",
+          from: {
+            routes: ["@acme/voyant-loyalty#api.admin"],
+            tools: ["@acme/voyant-loyalty#tool.adjust-points"],
+            events: ["@acme/voyant-loyalty#event.points-adjusted"],
+            webhooks: ["@acme/voyant-loyalty#webhook.points-adjusted"],
+          },
+          copy: [{ namespace: "loyalty.admin", key: "actions.adjust" }],
+        },
+      ],
+      lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
+    })
+
+    expect(validateGraphUnitManifest(module)).toEqual([])
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [module] }),
+      target: "node",
+      mode: "self-hosted",
+    })
+    expect(graph.diagnostics).toEqual([])
+    expect(graph.modules[0]).toMatchObject({
+      id: "@acme/voyant-loyalty",
+      tools: [{ id: "@acme/voyant-loyalty#tool.adjust-points" }],
+      admin: { routes: [{ id: "@acme/voyant-loyalty#admin.route.index" }] },
+      lifecycle: { uninstall: { default: "retain-data" } },
+    })
+    expect(graph.webhookPlan.outbound).toEqual([
+      {
+        id: "@acme/voyant-loyalty#webhook.points-adjusted",
+        unitId: "@acme/voyant-loyalty",
+        packageName: "@acme/voyant-loyalty",
+        eventId: "@acme/voyant-loyalty#event.points-adjusted",
+        eventUnitId: "@acme/voyant-loyalty",
+        eventType: "points.adjusted",
+        secretIds: ["@acme/voyant-loyalty#secret.webhook"],
+      },
+    ])
+  })
+
+  it("compiles cross-unit inbound routes and outbound events into a deterministic plan", async () => {
+    const routes = defineModule({
+      id: "@acme/voyant-hooks",
+      localId: "hooks",
+      api: [
+        {
+          id: "@acme/voyant-hooks#api.inbound",
+          surface: "webhook",
+          mount: "partner-hooks",
+          runtime: { entry: "@acme/voyant-hooks", export: "createHooksModule" },
+        },
+      ],
+      events: [{ id: "@acme/voyant-hooks#event.changed", eventType: "partner.changed" }],
+    })
+    const delivery = definePlugin({
+      id: "@acme/voyant-delivery",
+      webhooks: [
+        {
+          id: "@acme/voyant-delivery#webhook.outbound",
+          direction: "outbound",
+          eventId: "@acme/voyant-hooks#event.changed",
+        },
+        {
+          id: "@acme/voyant-delivery#webhook.inbound",
+          direction: "inbound",
+          apiId: "@acme/voyant-hooks#api.inbound",
+        },
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [routes], plugins: [delivery] }),
+    })
+
+    expect(graph.diagnostics).toEqual([])
+    expect(graph.webhookPlan).toEqual({
+      inbound: [
+        expect.objectContaining({
+          id: "@acme/voyant-delivery#webhook.inbound",
+          apiId: "@acme/voyant-hooks#api.inbound",
+          apiUnitId: "@acme/voyant-hooks",
+          mountPath: "/v1/partner-hooks",
+        }),
+      ],
+      outbound: [
+        expect.objectContaining({
+          id: "@acme/voyant-delivery#webhook.outbound",
+          eventId: "@acme/voyant-hooks#event.changed",
+          eventUnitId: "@acme/voyant-hooks",
+          eventType: "partner.changed",
+        }),
+      ],
+    })
+  })
+
+  it("rejects webhook references to the wrong selected graph entity kinds", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-hooks",
+      api: [{ id: "@acme/voyant-hooks#api.admin", surface: "admin" }],
+      events: [{ id: "@acme/voyant-hooks#event.untyped" }],
+      webhooks: [
+        {
+          id: "@acme/voyant-hooks#webhook.inbound",
+          direction: "inbound",
+          apiId: "@acme/voyant-hooks#api.admin",
+        },
+        {
+          id: "@acme/voyant-hooks#webhook.outbound",
+          direction: "outbound",
+          eventId: "@acme/voyant-hooks#event.untyped",
+        },
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+          facet: "@acme/voyant-hooks#webhook.inbound.apiId",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "@acme/voyant-hooks#webhook.outbound.eventId",
+        }),
+      ]),
+    )
+    expect(graph.webhookPlan).toEqual({ inbound: [], outbound: [] })
+  })
+
+  it("fails closed for invalid promoted facets and unresolved references", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-loyalty",
+      access: {
+        resources: [
+          {
+            id: "@acme/voyant-loyalty#access.loyalty",
+            resource: "loyalty",
+            actions: ["read"],
+          },
+        ],
+      },
+      tools: [
+        {
+          id: "@acme/voyant-loyalty#tool.adjust-points",
+          name: "adjust_loyalty_points",
+          runtime: { entry: "" },
+          requiredScopes: ["loyalty:write"],
+        },
+      ],
+      actions: [
+        {
+          id: "@acme/voyant-loyalty#action.adjust-points",
+          version: "v1",
+          kind: "execute",
+          targetType: "loyalty-account",
+          risk: "critical",
+          ledger: "optional",
+          from: { routes: ["@acme/voyant-loyalty#api.missing"] },
+        },
+      ],
+    })
+
+    expect(validateGraphUnitManifest(module)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_FACET", facet: "tools[0].runtime" }),
+        expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_FACET", facet: "actions[0].ledger" }),
+      ]),
+    )
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_UNKNOWN_REFERENCE" }),
+        expect.objectContaining({ message: expect.stringContaining("loyalty:write") }),
+      ]),
+    )
   })
 
   it("resolves a package-owned module manifest without starter synthesis", async () => {
@@ -185,6 +481,7 @@ describe("deployment graph v1", () => {
     })
 
     expect(project.selections?.modules[0]?.config).toEqual({ tiers: ["silver", "gold"] })
+    expect(graph.modules[0]?.projectConfig).toEqual({ tiers: ["silver", "gold"] })
     expect(graph.modules[0]?.schema).toEqual([
       { id: "@acme/voyant-suite#loyalty.schema", source: "./schema" },
     ])
@@ -284,6 +581,38 @@ describe("deployment graph v1", () => {
     expect(graph.diagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED" }),
+      ]),
+    )
+  })
+
+  it("rejects unadmitted runtime packages from non-API facets during resolution", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/voyant-loyalty",
+            admin: {
+              routes: [
+                {
+                  id: "@acme/voyant-loyalty#admin.members",
+                  path: "/members",
+                  runtime: { entry: "@unknown/loyalty-react/admin", export: "membersRoute" },
+                },
+              ],
+            },
+          }),
+        ],
+      }),
+      packageRecords: [{ packageName: "@acme/voyant-loyalty", source: { kind: "workspace" } }],
+    })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
+          facet: "admin.routes.runtime.@acme/voyant-loyalty#admin.members.entry",
+          source: "@acme/voyant-loyalty",
+        }),
       ]),
     )
   })
@@ -701,6 +1030,25 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("rejects non-node authored deployment targets", () => {
+    expect(() =>
+      defineDeployment({
+        project: defineProject({ modules: [] }),
+        target: "voyant-cloud" as never,
+        mode: "managed-cloud",
+      }),
+    ).toThrow('defineDeployment: target must be "node".')
+  })
+
+  it("rejects non-node direct resolver targets", async () => {
+    await expect(
+      resolveDeploymentGraph({
+        project: defineProject({ modules: [] }),
+        target: "workers" as never,
+      }),
+    ).rejects.toThrow('resolveDeploymentGraph: target must be "node".')
+  })
+
   it("detects package framework incompatibility from metadata", async () => {
     const project = defineProject({
       modules: [
@@ -787,7 +1135,7 @@ describe("deployment graph v1", () => {
 
     expect(graph.schemaVersion).toBe("voyant.resolved-graph.v1")
     expect(graph.project.presetLineage).toBe("operator-standard")
-    expect(graph.deployment.target).toBe("voyant-cloud")
+    expect(graph.deployment.target).toBe("node")
     expect(graph.deployment.providers).toEqual(
       expect.objectContaining({
         database: "postgres",
@@ -820,22 +1168,9 @@ describe("deployment graph v1", () => {
     )
     expect(graph.modules.map((unit) => unit.id)).not.toContain("@voyant-travel/flights")
     const commerce = graph.modules.find((unit) => unit.id === "@voyant-travel/commerce")
-    expect(commerce?.workflows).toEqual([bulkReindexProductsWorkflowManifest])
-    expect(commerce?.events).toEqual([
-      {
-        id: "@voyant-travel/commerce#event.promotion.changed",
-        eventType: "promotion.changed",
-      },
-    ])
-    expect(commerce?.subscribers).toEqual([
-      {
-        id: `@voyant-travel/commerce#subscriber.${promotionAffectedAllFilter.id}`,
-        eventType: "promotion.changed",
-        eventFilterId: promotionAffectedAllFilter.id,
-        workflowId: bulkReindexProductsWorkflowManifest.id,
-        filter: promotionAffectedAllFilter.manifest,
-      },
-    ])
+    expect(commerce?.workflows).toEqual([])
+    expect(commerce?.events).toEqual([])
+    expect(commerce?.subscribers).toEqual([])
     expect(graph.plugins.map((unit) => unit.id)).toEqual(
       expect.arrayContaining(["@voyant-travel/plugin-netopia", "@acme/voyant-loyalty-admin"]),
     )
@@ -996,6 +1331,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_DUPLICATE_ID",
       "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
       "VOYANT_GRAPH_INVALID_ENTITY_ID",
+      "VOYANT_GRAPH_INVALID_FACET",
       "VOYANT_GRAPH_INVALID_ID",
       "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
       "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
@@ -1008,6 +1344,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
       "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
       "VOYANT_GRAPH_UNKNOWN_FACET",
+      "VOYANT_GRAPH_UNKNOWN_REFERENCE",
       "VOYANT_GRAPH_UNSUPPORTED_FACET",
     ])
   })

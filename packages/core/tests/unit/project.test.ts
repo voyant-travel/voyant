@@ -107,6 +107,29 @@ describe("defineProject", () => {
     expect(project.selections).toBeUndefined()
   })
 
+  it("normalizes import-cheap deployment authoring data", () => {
+    const project = defineProject({
+      modules: [],
+      deployment: {
+        target: " node ",
+        mode: "self-hosted",
+        providers: {
+          workflows: "trigger",
+          database: "postgres",
+        },
+      },
+    })
+
+    expect(project.deployment).toEqual({
+      target: "node",
+      mode: "self-hosted",
+      providers: {
+        database: "postgres",
+        workflows: "trigger",
+      },
+    })
+  })
+
   it("rejects paths and config that cannot produce deterministic project metadata", () => {
     expect(() => defineProject({ modules: ["/tmp/voyant-loyalty"] })).toThrow(
       /absolute local paths are not deterministic/,
@@ -134,5 +157,17 @@ describe("defineProject", () => {
         ],
       }),
     ).toThrow(/unsupported key "secrets"/)
+    expect(() =>
+      defineProject({
+        modules: [],
+        deployment: { providers: { database: "" } },
+      }),
+    ).toThrow(/deployment\.providers\.database must be a non-empty string/)
+    expect(() =>
+      defineProject({
+        modules: [],
+        deployment: { target: "cloudflare-worker" },
+      } as never),
+    ).toThrow(/deployment\.target must be "node"/)
   })
 })

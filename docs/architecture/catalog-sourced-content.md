@@ -434,14 +434,18 @@ Two refresh paths, both invisible to operators:
 
 #### Cross-worker singleflight
 
-In-process `Map`-based singleflight only dedupes within one worker. Voyant deployments routinely run N workers concurrently (CF Workers, Node fleet, multi-pod), so a hot stale row would otherwise trigger N concurrent `getContent` calls — once per worker. We need DB-level dedup.
+In-process `Map`-based singleflight only dedupes within one Node process. Voyant
+deployments may run multiple processes or pods, so a hot stale row would
+otherwise trigger concurrent `getContent` calls from every replica. We need
+DB-level dedup.
 
 Two equivalent options; pick one per vertical:
 
 - **Postgres advisory lock** — `pg_try_advisory_lock(hashtext('content:' || entity_module || ':' || entity_id || ':' || locale || ':' || market))` before refresh; release after write. Concurrent stale-readers across workers either get the lock (refresh) or skip (return stale, let the lock-holder do the work). Zero schema cost.
 - **`content_refresh_inflight` table** keyed on `(entity_module, entity_id, locale, market)` with `started_at` and `worker_id`. Caller `INSERT ON CONFLICT DO NOTHING`; row-presence acts as the lock. Slightly heavier (a row write) but visible in queries — useful for "what's currently refreshing" diagnostics.
 
-In-process Map *also* runs as a fast-path inside each worker so two requests on the same worker still collapse before they hit the DB.
+In-process Map *also* runs as a fast-path inside each process so two requests on
+the same replica still collapse before they hit the DB.
 
 #### Cache miss is the one blocking case
 

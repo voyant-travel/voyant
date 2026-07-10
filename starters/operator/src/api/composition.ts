@@ -24,7 +24,6 @@ import {
   extensionsFromGlob,
   type FrameworkProviders,
   frameworkComposition,
-  modulesFromGlob,
   type VoyantGraphRuntimeBindingContext,
   type VoyantGraphRuntimeBindings,
 } from "@voyant-travel/framework"
@@ -35,6 +34,9 @@ import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
+import { invitationsModule } from "../modules/invitations"
+import { mcpModule } from "../modules/mcp"
+import { teamModule } from "../modules/team"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
@@ -341,44 +343,10 @@ function createLazyCatalogIndexer(
   }
 }
 
-/**
- * Custom modules dropped into `src/modules/<name>/index.ts` are auto-discovered
- * and mounted — the "build your own module without forking" seam. Vite compiles
- * this `import.meta.glob` to static imports at build time (Workers-safe); each
- * module's default export is a `HonoModule`/`ModuleFactory` (see
- * `defineDeploymentModule`), keyed by its `<name>` directory. Empty until a
- * deployment adds one. Schema for a custom module (`src/modules/<name>/schema.ts`)
- * is picked up by the deployment drizzle configs and migrated as a deployment
- * source after the framework bundle. See docs/architecture/custom-modules.md.
- */
-const discoveredModules = modulesFromGlob<OperatorCapabilities>(
-  import.meta.glob("../modules/*/index.ts", { eager: true }),
-)
-
 export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabilities>> = {
-  ...discoveredModules,
-  "@voyant-travel/operator#mcp": () => ({
-    module: { name: "mcp" },
-    lazyAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
-  }),
-  "@voyant-travel/operator#invitations": () => ({
-    module: { name: "invitations" },
-    lazyAdminRoutes: () =>
-      import("./routes/invitations").then((m) => m.createInvitationsAdminRoutes()),
-    lazyPublicRoutes: () =>
-      import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
-    // Invitation redemption is reached from an emailed link without a session
-    // (ADR-0008); the public surface is anonymous.
-    anonymous: true,
-  }),
-  // Cloud-mode team management mounted at /v1/admin/team — proxies member
-  // management to the Voyant Cloud platform when VOYANT_ADMIN_AUTH_MODE is
-  // "voyant-cloud". The local invitations surface above stays the local-mode
-  // path; these routes 404 in local mode.
-  "@voyant-travel/operator#team": () => ({
-    module: { name: "team" },
-    lazyAdminRoutes: () => import("./routes/team").then((m) => m.createTeamAdminRoutes()),
-  }),
+  "@voyant-travel/operator#mcp": mcpModule,
+  "@voyant-travel/operator#invitations": invitationsModule,
+  "@voyant-travel/operator#team": teamModule,
 }
 
 /**
@@ -507,50 +475,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       anonymous: true,
     }
   },
-  "@voyant-travel/storefront": async ({ capabilities, runtimeExports, unit }) => {
-    const createStorefront = singleRuntimeFactory<
-      typeof import("@voyant-travel/storefront").createStorefrontHonoModule
-    >(unit.id, runtimeExports)
-    const { createCommerceStorefrontOfferResolvers } = await import("@voyant-travel/commerce")
-    return createStorefront({
-      offers: createCommerceStorefrontOfferResolvers(),
-      bookingIntents: { resolveDb: capabilities.resolveDb },
-      intake: { persistence: capabilities.storefrontIntakePersistence },
-    })
-  },
-  "@voyant-travel/public-document-delivery": ({ capabilities, runtimeExports, unit }) => ({
-    ...singleRuntimeFactory<
-      typeof import("@voyant-travel/public-document-delivery").createPublicDocumentDeliveryHonoModule
-    >(
-      unit.id,
-      runtimeExports,
-    )({
-      resolveStorage: capabilities.createOperatorDocumentStorage,
-    }),
-    anonymous: true,
-  }),
-  "@voyant-travel/cruises": ({ runtimeExports, unit }) =>
-    singleRuntimeFactory<typeof import("@voyant-travel/cruises").createCruisesHonoModule>(
-      unit.id,
-      runtimeExports,
-    )({
-      lazyAdminRoutes: () =>
-        import("./routes/cruises").then((routes) => routes.createCruiseAdminRoutes()),
-      lazyPublicRoutes: () =>
-        import("./routes/cruises").then((routes) => routes.createCruisePublicRoutes()),
-      anonymous: true,
-    }),
-  "@voyant-travel/charters": ({ runtimeExports, unit }) =>
-    singleRuntimeFactory<typeof import("@voyant-travel/charters").createChartersHonoModule>(
-      unit.id,
-      runtimeExports,
-    )({
-      lazyAdminRoutes: () =>
-        import("./routes/charters").then((routes) => routes.createCharterAdminRoutes()),
-      lazyPublicRoutes: () =>
-        import("./routes/charters").then((routes) => routes.createCharterPublicRoutes()),
-      anonymous: true,
-    }),
   "@voyant-travel/bookings": async ({ capabilities, runtimeExports, unit }) => {
     const createBookings = singleRuntimeFactory<
       typeof import("@voyant-travel/bookings").createBookingsHonoModule

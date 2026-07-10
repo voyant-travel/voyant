@@ -23,7 +23,10 @@ import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, "..")
-const GRAPH = optionPath("--graph", join(ROOT, "starters/operator/deployment-graph.generated.json"))
+const GRAPH = optionPath(
+  "--graph",
+  join(ROOT, "starters/operator/.voyant/deployment-graph.generated.json"),
+)
 const EXTENSIONS = optionPath(
   "--extensions",
   join(ROOT, "starters/operator/src/admin.extensions.generated.ts"),
@@ -42,7 +45,7 @@ function optionPath(name, fallback) {
 function readGraphSelectedAdminPackages() {
   if (!existsSync(GRAPH)) {
     throw new Error(
-      "starters/operator/deployment-graph.generated.json is missing — run `pnpm --filter operator graph:emit`",
+      "starters/operator/.voyant/deployment-graph.generated.json is missing — run `pnpm --filter operator graph:emit`",
     )
   }
 

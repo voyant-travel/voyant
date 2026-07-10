@@ -54,6 +54,9 @@ export const chartersVoyantModule = defineModule({
       source: "@voyant-travel/charters",
     },
   ],
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

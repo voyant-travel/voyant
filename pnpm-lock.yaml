@@ -2016,6 +2016,9 @@ importers:
       '@voyant-travel/flights':
         specifier: workspace:*
         version: link:../flights
+      '@voyant-travel/framework-migrations':
+        specifier: workspace:*
+        version: link:../framework-migrations
       '@voyant-travel/identity':
         specifier: workspace:*
         version: link:../identity
@@ -2079,10 +2082,19 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
     devDependencies:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.5.2
+      '@types/pg':
+        specifier: ^8.15.6
+        version: 8.20.0
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono

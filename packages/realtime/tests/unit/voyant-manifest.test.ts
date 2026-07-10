@@ -9,6 +9,7 @@ describe("realtime deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/realtime",
       packageName: "@voyant-travel/realtime",
+      provides: { ports: [{ id: "realtime.transport" }] },
       api: [
         {
           id: "@voyant-travel/realtime#api.admin",
@@ -24,6 +25,22 @@ describe("realtime deployment manifest", () => {
           runtime: {
             entry: "@voyant-travel/realtime",
             export: "createRealtimeHonoModule",
+          },
+        },
+      ],
+      providers: [
+        {
+          id: "@voyant-travel/realtime#provider.local",
+          runtime: {
+            entry: "@voyant-travel/realtime/providers/local",
+            export: "createLocalRealtimeProvider",
+          },
+        },
+        {
+          id: "@voyant-travel/realtime#provider.voyant-cloud",
+          runtime: {
+            entry: "@voyant-travel/realtime/providers/voyant-cloud",
+            export: "createVoyantCloudRealtimeProvider",
           },
         },
       ],

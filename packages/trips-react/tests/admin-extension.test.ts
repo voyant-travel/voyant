@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest"
 
+import { tripsVoyantModule } from "../../trips/src/voyant.js"
 import { createTripsAdminExtension } from "../src/admin/index.js"
 
 describe("createTripsAdminExtension", () => {
+  it("keeps the package-owned route facets aligned with the admin extension", () => {
+    const extension = createTripsAdminExtension()
+    expect(tripsVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
+      extension.routes?.map((route) => route.path),
+    )
+    expect(tripsVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual(
+      extension.routes?.map(() => ({
+        entry: "@voyant-travel/trips-react/admin",
+        export: "createTripsAdminExtension",
+      })),
+    )
+  })
+
   it("contributes the Trips nav group spliced after Bookings", () => {
     const extension = createTripsAdminExtension()
     expect(extension.id).toBe("trips")

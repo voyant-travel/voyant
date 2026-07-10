@@ -47,13 +47,13 @@ receiver *knows* it's anonymous; a reserve handler *knows* it needs a transactio
 a route bundle *knows* its mount surface. Today that knowledge is re-stated in
 `app.ts`/`composition.ts` and can drift from the code it describes.
 
-This is not Workers-inevitable. The runtime constraints (per-request isolates, no
-persistent pool, build-time bundling rather than runtime filesystem discovery) are
-real and shape *how* discovery works (`import.meta.glob` at build time, lazy
-loaders for cold-start) — but they do not require the *intent* to live in
-hand-lists. Provider injection (the ~39 closures in `buildOperatorProviders`) is a
-deliberate, sound decision (no-assembly-kit) and is explicitly **out of scope**
-here — that complexity is essential.
+The Node deployment still uses build-time bundling rather than production
+filesystem discovery. That constraint shapes *how* discovery works
+(`import.meta.glob` at build time and lazy loaders for boot weight), but it does
+not require the *intent* to live in hand-maintained lists. Provider injection
+(the ~39 closures in `buildOperatorProviders`) is a deliberate, sound decision
+(no-assembly-kit) and is explicitly **out of scope** here; that complexity is
+essential.
 
 ## Decision
 

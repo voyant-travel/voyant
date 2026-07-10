@@ -1,5 +1,12 @@
 import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
+import { BOOKING_VOYANT_ACTIONS } from "./action-declarations.js"
+
+const bookingsAdminRuntime = {
+  entry: "@voyant-travel/bookings-react/admin",
+  export: "createBookingsAdminExtension",
+} as const
+
 /**
  * Import-cheap deployment declaration owned by the bookings package.
  * Executable package surfaces stay behind symbolic package export references.
@@ -62,6 +69,104 @@ export const bookingsVoyantModule = defineModule({
       source: "@voyant-travel/bookings/workflows",
     },
   ],
+  events: [
+    {
+      id: "@voyant-travel/bookings#event.availability.slot.changed",
+      eventType: "availability.slot.changed",
+    },
+    { id: "@voyant-travel/bookings#event.booking.confirmed", eventType: "booking.confirmed" },
+    { id: "@voyant-travel/bookings#event.booking.expired", eventType: "booking.expired" },
+    { id: "@voyant-travel/bookings#event.booking.cancelled", eventType: "booking.cancelled" },
+    { id: "@voyant-travel/bookings#event.booking.started", eventType: "booking.started" },
+    { id: "@voyant-travel/bookings#event.booking.completed", eventType: "booking.completed" },
+    {
+      id: "@voyant-travel/bookings#event.booking.status-overridden",
+      eventType: "booking.status_overridden",
+    },
+    { id: "@voyant-travel/bookings#event.booking.refunded", eventType: "booking.refunded" },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/bookings#access.bookings",
+        resource: "bookings",
+        actions: ["read", "write", "delete", "cancel"],
+      },
+      {
+        id: "@voyant-travel/bookings#access.bookings-pii",
+        resource: "bookings-pii",
+        actions: ["read"],
+      },
+    ],
+  },
+  tools: [
+    {
+      id: "@voyant-travel/bookings#tool.list-bookings",
+      name: "list_bookings",
+      runtime: { entry: "@voyant-travel/bookings/tools", export: "listBookingsTool" },
+      requiredScopes: ["bookings:read"],
+    },
+    {
+      id: "@voyant-travel/bookings#tool.get-booking",
+      name: "get_booking",
+      runtime: { entry: "@voyant-travel/bookings/tools", export: "getBookingTool" },
+      requiredScopes: ["bookings:read"],
+    },
+  ],
+  actions: BOOKING_VOYANT_ACTIONS,
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/bookings#admin.route.index",
+        path: "/bookings",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.detail",
+        path: "/bookings/$id",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.new",
+        path: "/bookings/new",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.compose",
+        path: "/bookings/compose",
+        runtime: bookingsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/bookings#admin.route.journey",
+        path: "/catalog/journey/$entityModule/$entityId",
+        runtime: bookingsAdminRuntime,
+      },
+    ],
+    slots: [
+      {
+        id: "booking.details.invoices-tab",
+        routeId: "@voyant-travel/bookings#admin.route.detail",
+      },
+      {
+        id: "booking.details.finance-start",
+        routeId: "@voyant-travel/bookings#admin.route.detail",
+      },
+      {
+        id: "booking.details.finance-end",
+        routeId: "@voyant-travel/bookings#admin.route.detail",
+      },
+    ],
+    contributions: [
+      {
+        id: "@voyant-travel/bookings#admin.contribution.person-bookings",
+        slotId: "person.details.bookings-tab",
+        runtime: bookingsAdminRuntime,
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

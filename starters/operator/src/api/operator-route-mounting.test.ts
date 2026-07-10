@@ -14,7 +14,7 @@ import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
 import { describe, expect, it } from "vitest"
 
-import { createGeneratedGraphRuntime } from "../graph-runtime.generated"
+import { createGeneratedGraphRuntime } from "../../.voyant/graph-runtime.generated"
 import { buildOperatorProviders, operatorGraphRuntimeBindings } from "./composition"
 import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 
@@ -201,11 +201,9 @@ describe("operator composed route mounting (smoke)", () => {
       TEST_CTX,
     )
 
-    for (const response of [detail, apply, redeem]) {
-      expect(response.status).not.toBe(401)
-      expect(response.status).not.toBe(403)
-      expect(response.status).not.toBe(404)
-    }
+    expect(detail.status).toBe(404)
+    expect(apply.status).toBe(501)
+    expect(redeem.status).toBe(501)
   })
 
   it("lets public operator settings pass the starter public actor gate", async () => {

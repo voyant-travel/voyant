@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { inventoryVoyantModule } from "../../../inventory/src/voyant.js"
 import {
   createInventoryAdminExtension,
   ProductDetailSkeleton,
@@ -9,6 +10,23 @@ import { ProductCategoriesHost } from "./product-categories-host.js"
 import { ProductsHost } from "./products-host.js"
 
 describe("createInventoryAdminExtension", () => {
+  it("keeps the package-owned deployment facets aligned with the admin extension", () => {
+    const extension = createInventoryAdminExtension()
+    expect(inventoryVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
+      extension.routes?.map((route) => route.path),
+    )
+    expect(inventoryVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual(
+      extension.routes?.map(() => ({
+        entry: "@voyant-travel/inventory-react/admin",
+        export: "createInventoryAdminExtension",
+      })),
+    )
+    expect(inventoryVoyantModule.admin?.copy?.[0]?.runtime).toEqual({
+      entry: "@voyant-travel/inventory-react/i18n",
+      export: "productsUiMessageDefinitions",
+    })
+  })
+
   it("contributes no navigation (products nav is base-nav-owned)", () => {
     const extension = createInventoryAdminExtension()
     expect(extension.id).toBe("inventory")

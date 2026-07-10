@@ -79,4 +79,28 @@ describe("catalog deployment manifest", () => {
       ],
     })
   })
+
+  it("declares every route in the packaged catalog admin extension", () => {
+    expect(catalogVoyantModule.admin?.routes?.map(({ id, path }) => [id, path])).toEqual([
+      ["@voyant-travel/catalog#admin.route.index", "/catalog"],
+      ["@voyant-travel/catalog#admin.route.products-index", "/catalog/products"],
+      ["@voyant-travel/catalog#admin.route.products-detail", "/catalog/products/$productId"],
+      ["@voyant-travel/catalog#admin.route.excursions-index", "/catalog/excursions"],
+      ["@voyant-travel/catalog#admin.route.excursions-detail", "/catalog/excursions/$id"],
+      ["@voyant-travel/catalog#admin.route.tours-index", "/catalog/tours"],
+      ["@voyant-travel/catalog#admin.route.tours-detail", "/catalog/tours/$id"],
+      ["@voyant-travel/catalog#admin.route.cruises-index", "/catalog/cruises"],
+      ["@voyant-travel/catalog#admin.route.cruises-detail", "/catalog/cruises/$id"],
+      ["@voyant-travel/catalog#admin.route.accommodations-index", "/catalog/accommodations"],
+      ["@voyant-travel/catalog#admin.route.accommodations-detail", "/catalog/accommodations/$id"],
+    ])
+    expect(new Set(catalogVoyantModule.admin?.routes?.map(({ runtime }) => runtime))).toEqual(
+      new Set([
+        {
+          entry: "@voyant-travel/catalog-react/admin",
+          export: "createCatalogAdminExtension",
+        },
+      ]),
+    )
+  })
 })

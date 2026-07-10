@@ -1,11 +1,15 @@
 import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
-import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
+import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
+import {
+  composeVoyantGraphRuntime,
+  lowerVoyantGraphActionsToActionLedgerRegistry,
+} from "@voyant-travel/framework"
 import { defineLazyHonoBundle, mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import {
   createGeneratedGraphRuntime,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
-} from "../graph-runtime.generated"
+} from "../../.voyant/graph-runtime.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
   hasAuthPermission,
@@ -20,6 +24,7 @@ import { channelPushBundle } from "./routes/channel-push"
 import {
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
+  resolveOperatorDb,
 } from "./runtime/operator-runtime-adapter"
 import { tripsPaymentBundle } from "./runtime/trips-runtime"
 import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
@@ -39,10 +44,16 @@ import { smartbillOperatorBundle } from "./subscribers/smartbill-bundle"
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
 const operatorProviders = buildOperatorProviders()
+const graphRuntime = createGeneratedGraphRuntime()
+export const operatorActionLedgerCapabilityRegistry =
+  lowerVoyantGraphActionsToActionLedgerRegistry(graphRuntime)
 const graphComposition = await composeVoyantGraphRuntime({
-  runtime: createGeneratedGraphRuntime(),
+  runtime: graphRuntime,
   capabilities: operatorProviders,
   bindings: operatorGraphRuntimeBindings,
+  outboundWebhooks: {
+    enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
+  },
 })
 
 export const app = mountApp<AppBindings>({

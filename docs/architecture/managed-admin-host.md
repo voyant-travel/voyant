@@ -8,11 +8,10 @@
 ## Implementation status
 
 The source-free managed-profile work is now represented by graph artifacts under
-`starters/operator/`, not by a second starter. The operator starter is the single
-reference deployment surface; its `managed-profile.json`,
-`deployment-graph.generated.json`, `deployment-artifacts.generated.json`, and
-`src/runtime-entry.generated.ts` are the checked graph artifacts for the managed
-Node runtime path.
+`starters/operator/.voyant/`, not by a second starter. The operator starter is
+the single reference deployment surface; its compatibility profile, resolved
+graph, artifact manifest, and runtime modules are disposable generated outputs
+for the managed Node runtime path.
 
 Shipped:
 

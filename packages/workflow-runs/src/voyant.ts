@@ -28,6 +28,33 @@ export const workflowRunsVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  config: [
+    {
+      id: "@voyant-travel/workflow-runs#config.admin-surface",
+      key: "VOYANT_WORKFLOW_ADMIN_SURFACE",
+      default: "tenant",
+    },
+  ],
+  resources: [
+    {
+      id: "@voyant-travel/workflow-runs#resource.database",
+      kind: "database",
+      required: true,
+      config: { engine: "postgres" },
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/workflow-runs#access.workflows",
+        resource: "workflows",
+        actions: ["trigger"],
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

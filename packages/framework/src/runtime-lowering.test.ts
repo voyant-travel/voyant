@@ -1,5 +1,10 @@
+import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
-import { createVoyantGraphRuntime, VoyantGraphRuntimeLoadError } from "./runtime-lowering.js"
+import {
+  createVoyantGraphRuntime,
+  registerVoyantGraphTools,
+  VoyantGraphRuntimeLoadError,
+} from "./runtime-lowering.js"
 
 function runtimeInput(load: () => Promise<unknown>) {
   return {
@@ -44,6 +49,62 @@ function runtimeInput(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime lowering", () => {
+  it("exposes only selected outbound webhook event types as delivery-eligible", () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:webhooks",
+      entries: { "@acme/hooks": async () => ({ createHooksModule: () => ({}) }) },
+      modules: [
+        {
+          id: "@acme/hooks",
+          kind: "module",
+          packageName: "@acme/hooks",
+          order: 0,
+          routes: [
+            {
+              route: {
+                id: "@acme/hooks#api.inbound",
+                surface: "webhook",
+                runtime: { entry: "@acme/hooks", export: "createHooksModule" },
+              },
+              importEntry: "@acme/hooks",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+      webhookPlan: {
+        inbound: [
+          {
+            id: "@acme/hooks#webhook.inbound",
+            unitId: "@acme/hooks",
+            packageName: "@acme/hooks",
+            apiId: "@acme/hooks#api.inbound",
+            apiUnitId: "@acme/hooks",
+            mountPath: "/v1/hooks",
+            secretIds: [],
+          },
+        ],
+        outbound: [
+          {
+            id: "@acme/hooks#webhook.changed",
+            unitId: "@acme/hooks",
+            packageName: "@acme/hooks",
+            eventId: "@acme/hooks#event.changed",
+            eventUnitId: "@acme/hooks",
+            eventType: "hooks.changed",
+            secretIds: [],
+          },
+        ],
+      },
+    })
+
+    expect(runtime.webhooks.inboundApiIds).toEqual(["@acme/hooks#api.inbound"])
+    expect(runtime.webhooks.isInboundApi("@acme/hooks#api.inbound")).toBe(true)
+    expect(runtime.webhooks.outboundEventTypes).toEqual(["hooks.changed"])
+    expect(runtime.webhooks.isOutboundEventEligible("hooks.changed")).toBe(true)
+    expect(runtime.webhooks.isOutboundEventEligible("hooks.deleted")).toBe(false)
+  })
+
   it("keeps package imports lazy and memoized across route and unit loaders", async () => {
     const factory = () => ({ module: { name: "loyalty" } })
     const importRuntime = vi.fn(async () => ({ createLoyaltyModule: factory }))
@@ -54,6 +115,179 @@ describe("graph runtime lowering", () => {
     await expect(runtime.modules[0]?.load()).resolves.toEqual([factory])
     await expect(runtime.modules[0]?.routes[1]?.load()).resolves.toBe(factory)
     expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("loads typed package exports for non-route facets by stable reference id", async () => {
+    const provider = { kind: "ledger-provider" }
+    const tool = () => "adjusted"
+    const importRuntime = vi.fn(async () => ({ provider, tool }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: { "@acme/loyalty/runtime": importRuntime },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          references: [
+            {
+              id: "loyalty-provider",
+              unitId: "@acme/loyalty",
+              facet: "providers.runtime",
+              entityId: "provider",
+              runtime: { entry: "./runtime", export: "provider" },
+              importEntry: "@acme/loyalty/runtime",
+            },
+            {
+              id: "loyalty-tool",
+              unitId: "@acme/loyalty",
+              facet: "tools.runtime",
+              entityId: "tool",
+              runtime: { entry: "./runtime", export: "tool" },
+              importEntry: "@acme/loyalty/runtime",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importRuntime).not.toHaveBeenCalled()
+    await expect(runtime.loadReference<typeof provider>("loyalty-provider")).resolves.toBe(provider)
+    await expect(runtime.loadReference<typeof tool>("loyalty-tool")).resolves.toBe(tool)
+    expect(runtime.references.map((reference) => reference.facet)).toEqual([
+      "providers.runtime",
+      "tools.runtime",
+    ])
+    expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("exposes selected access scopes and lazily registers selected graph tools", async () => {
+    const tool = {
+      name: "adjust_loyalty",
+      description: "Adjust loyalty points",
+      inputSchema: {},
+      outputSchema: {},
+      requiredScopes: ["loyalty:write"],
+      tier: "medium",
+      riskPolicy: {
+        destructive: false,
+        reversible: true,
+        dryRun: false,
+        sideEffects: ["database_write"],
+      },
+      handler: async () => ({ ok: true }),
+    }
+    const importRuntime = vi.fn(async () => ({ adjustLoyalty: tool }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: { "@acme/loyalty/tools": importRuntime },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          accessScopes: ["loyalty:read", "loyalty:write"],
+          references: [
+            {
+              id: "loyalty-tool-runtime",
+              unitId: "@acme/loyalty",
+              facet: "tools.runtime",
+              entityId: "loyalty-tool",
+              runtime: { entry: "./tools", export: "adjustLoyalty" },
+              importEntry: "@acme/loyalty/tools",
+            },
+          ],
+          tools: [
+            {
+              id: "loyalty-tool",
+              unitId: "@acme/loyalty",
+              name: "adjust_loyalty",
+              referenceId: "loyalty-tool-runtime",
+              requiredScopes: ["loyalty:write"],
+              context: ["loyalty"],
+              risk: "medium",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(runtime.accessScopes).toEqual(["loyalty:read", "loyalty:write"])
+    expect(runtime.tools.map(({ id }) => id)).toEqual(["loyalty-tool"])
+    expect(importRuntime).not.toHaveBeenCalled()
+
+    const registry = createToolRegistry()
+    await registerVoyantGraphTools(runtime, registry)
+
+    expect(registry.names()).toEqual(["adjust_loyalty"])
+    expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("rejects undeclared tool scopes before evaluating package imports", () => {
+    const importRuntime = vi.fn(async () => ({}))
+
+    expect(() =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:test",
+        entries: { "@acme/loyalty/tools": importRuntime },
+        modules: [
+          {
+            id: "@acme/loyalty",
+            kind: "module",
+            packageName: "@acme/loyalty",
+            order: 0,
+            accessScopes: ["loyalty:read"],
+            references: [
+              {
+                id: "loyalty-tool-runtime",
+                unitId: "@acme/loyalty",
+                facet: "tools.runtime",
+                entityId: "loyalty-tool",
+                runtime: { entry: "./tools", export: "adjustLoyalty" },
+                importEntry: "@acme/loyalty/tools",
+              },
+            ],
+            tools: [
+              {
+                id: "loyalty-tool",
+                unitId: "@acme/loyalty",
+                name: "adjust_loyalty",
+                referenceId: "loyalty-tool-runtime",
+                requiredScopes: ["loyalty:write"],
+              },
+            ],
+            routes: [],
+          },
+        ],
+        plugins: [],
+      }),
+    ).toThrow(/tool "loyalty-tool" requires undeclared access scope "loyalty:write"/)
+    expect(importRuntime).not.toHaveBeenCalled()
+  })
+
+  it("rejects unknown reference ids before evaluating package imports", async () => {
+    const importRuntime = vi.fn(async () => ({ createLoyaltyModule: {} }))
+    const runtime = createVoyantGraphRuntime(runtimeInput(importRuntime))
+
+    await expect(runtime.loadReference("not-admitted")).rejects.toMatchObject({
+      code: "VOYANT_GRAPH_RUNTIME_REFERENCE_UNKNOWN",
+      context: { referenceId: "not-admitted" },
+    })
+    expect(importRuntime).not.toHaveBeenCalled()
+  })
+
+  it("does not mutate reusable generated runtime definitions", () => {
+    const input = runtimeInput(async () => ({ createLoyaltyModule: {} }))
+
+    expect(() => createVoyantGraphRuntime(input)).not.toThrow()
+    expect(() => createVoyantGraphRuntime(input)).not.toThrow()
+    expect(input.modules[0]?.routes[0]).not.toHaveProperty("referenceId")
   })
 
   it("reports a missing package export with graph unit and route context", async () => {

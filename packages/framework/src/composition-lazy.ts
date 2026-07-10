@@ -8,10 +8,6 @@ import type {
   BookingsHonoModuleOptions,
 } from "@voyant-travel/bookings"
 import type { CatalogSearchRoutesOptions } from "@voyant-travel/catalog"
-import {
-  bulkReindexProductsWorkflowManifest,
-  promotionAffectedAllFilter,
-} from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
 import type { BootstrapHandler } from "@voyant-travel/core"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
@@ -405,11 +401,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         pricing: { name: "pricing" },
         markets: { name: "markets" },
         sellability: { name: "sellability" },
-        promotions: {
-          name: "promotions",
-          workflows: [bulkReindexProductsWorkflowManifest],
-          eventFilters: [promotionAffectedAllFilter],
-        },
+        promotions: { name: "promotions" },
       } satisfies Record<string, HonoModule["module"]>
 
       return (Object.keys(moduleMetadata) as Array<keyof typeof moduleMetadata>).map((name) => {

@@ -1,3 +1,4 @@
+import { createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
@@ -34,6 +35,206 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime composition", () => {
+  it("registers outbound subscribers from graph selections without a deployment event catalog", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:webhook-runtime",
+      entries: {},
+      modules: [
+        {
+          id: "@acme/catalog",
+          kind: "module",
+          packageName: "@acme/catalog",
+          order: 0,
+          routes: [],
+        },
+      ],
+      plugins: [],
+      webhookPlan: {
+        inbound: [],
+        outbound: [
+          {
+            id: "@acme/catalog#webhook.updated",
+            unitId: "@acme/catalog",
+            packageName: "@acme/catalog",
+            eventId: "@acme/catalog#event.updated",
+            eventUnitId: "@acme/catalog",
+            eventType: "catalog.entity.updated",
+            secretIds: [],
+          },
+        ],
+      },
+    })
+    const enqueue = vi.fn(async () => {})
+    const composition = await composeVoyantGraphRuntime({
+      runtime,
+      capabilities: {},
+      outboundWebhooks: { enqueue },
+    })
+    const module = composition.modules.find(
+      (candidate) => candidate.module.name === "graph-outbound-webhooks",
+    )
+    const eventBus = createEventBus()
+    await module?.module.bootstrap?.({ bindings: { deployment: "node" }, eventBus } as never)
+
+    await eventBus.emit("catalog.entity.updated", { entity_id: "prod_1" })
+    await eventBus.emit("catalog.entity.deleted", { entity_id: "prod_1" })
+
+    expect(enqueue).toHaveBeenCalledOnce()
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "catalog.entity.updated",
+        metadata: expect.objectContaining({ eventId: expect.stringMatching(/^evt_/) }),
+      }),
+      { deployment: "node" },
+    )
+  })
+  it("requires selected inbound webhook APIs to execute through webhookRoutes", async () => {
+    const createRuntime = (webhookRoutes: unknown) =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:webhook-posture",
+        entries: {
+          "@acme/hooks": async () => ({
+            createHooksModule: () => ({ module: { name: "hooks" }, webhookRoutes }),
+          }),
+        },
+        modules: [
+          {
+            id: "@acme/hooks",
+            kind: "module",
+            packageName: "@acme/hooks",
+            order: 0,
+            routes: [
+              {
+                route: {
+                  id: "@acme/hooks#api.inbound",
+                  surface: "webhook",
+                  runtime: { entry: "@acme/hooks", export: "createHooksModule" },
+                },
+                importEntry: "@acme/hooks",
+              },
+            ],
+          },
+        ],
+        plugins: [],
+        webhookPlan: {
+          inbound: [
+            {
+              id: "@acme/hooks#webhook.inbound",
+              unitId: "@acme/hooks",
+              packageName: "@acme/hooks",
+              apiId: "@acme/hooks#api.inbound",
+              apiUnitId: "@acme/hooks",
+              mountPath: "/v1/hooks",
+              secretIds: [],
+            },
+          ],
+          outbound: [],
+        },
+      })
+
+    await expect(
+      composeVoyantGraphRuntime({ runtime: createRuntime({}), capabilities: {} }),
+    ).resolves.toMatchObject({ modules: [{ module: { name: "hooks" } }] })
+    await expect(
+      composeVoyantGraphRuntime({ runtime: createRuntime(undefined), capabilities: {} }),
+    ).rejects.toThrow(/inbound webhook plan.*no webhookRoutes/)
+  })
+
+  it("registers graph-selected workflow and subscriber runtime exports", async () => {
+    const workflow = {
+      id: "promotions.reindex-all-products",
+      config: { id: "promotions.reindex-all-products", run: vi.fn() },
+    }
+    const eventFilter = {
+      id: "ef_6f8e4b4ce409d04c",
+      eventType: "promotion.changed",
+      manifest: {
+        id: "ef_6f8e4b4ce409d04c",
+        eventType: "promotion.changed",
+        payloadHash: "6f8e4b4ce409d04c",
+        targetWorkflowId: workflow.id,
+      },
+    }
+    const importWorkflow = vi.fn(async () => ({ workflow }))
+    const importSubscriber = vi.fn(async () => ({ eventFilter }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:commerce",
+      entries: {
+        "@voyant-travel/commerce/promotions/workflow": importWorkflow,
+        "@voyant-travel/commerce/promotions/subscriber": importSubscriber,
+      },
+      modules: [
+        {
+          id: "@voyant-travel/commerce",
+          localId: "commerce",
+          kind: "module",
+          packageName: "@voyant-travel/commerce",
+          order: 0,
+          references: [
+            {
+              id: "commerce-workflow",
+              unitId: "@voyant-travel/commerce",
+              facet: "workflows.runtime",
+              entityId: workflow.id,
+              runtime: {
+                entry: "./promotions/workflow",
+                export: "workflow",
+              },
+              importEntry: "@voyant-travel/commerce/promotions/workflow",
+            },
+            {
+              id: "commerce-subscriber",
+              unitId: "@voyant-travel/commerce",
+              facet: "subscribers.runtime",
+              entityId: eventFilter.id,
+              runtime: {
+                entry: "./promotions/subscriber",
+                export: "eventFilter",
+              },
+              importEntry: "@voyant-travel/commerce/promotions/subscriber",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importWorkflow).not.toHaveBeenCalled()
+    expect(importSubscriber).not.toHaveBeenCalled()
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.modules).toContainEqual({
+      module: {
+        name: "commerce.graph-runtime",
+        workflows: [workflow],
+        eventFilters: [eventFilter],
+      },
+    })
+    expect(importWorkflow).toHaveBeenCalledTimes(1)
+    expect(importSubscriber).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not import or register workflow facets for an unselected package", async () => {
+    const importCommerce = vi.fn(async () => ({
+      bulkReindexProductsWorkflow: { id: "promotions.reindex-all-products" },
+    }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:without-commerce",
+      entries: {
+        "@voyant-travel/commerce/promotions/workflow-bulk-reindex": importCommerce,
+      },
+      modules: [],
+      plugins: [],
+    })
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.modules).toEqual([])
+    expect(importCommerce).not.toHaveBeenCalled()
+  })
+
   it("mounts a package runtime export once when multiple API facets reference it", async () => {
     const factory = vi.fn(() => ({ module: { name: "loyalty" } }))
     const importRuntime = vi.fn(async () => ({ createLoyaltyModule: factory }))

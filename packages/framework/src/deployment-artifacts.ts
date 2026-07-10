@@ -1,23 +1,62 @@
 import {
   canonicalJson,
-  packageNameFromSpecifier,
   type ResolvedVoyantDeploymentGraph,
-  type ResolvedVoyantGraphUnit,
+  type VoyantGraphRuntimeTarget,
 } from "./deployment-graph.js"
+import { lowerGraphRuntimeUnits } from "./graph-runtime-generation.js"
 import { PROVIDER_ROLES, type VoyantProjectDeploymentMode } from "./profile.js"
 
 export {
   type CreateVoyantGraphRuntimeInput,
   createVoyantGraphRuntime,
+  registerVoyantGraphTools,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,
   type VoyantGraphRuntime,
+  type VoyantGraphRuntimeActionDefinition,
+  type VoyantGraphRuntimeConfigDefinition,
+  type VoyantGraphRuntimeConfigLoader,
   VoyantGraphRuntimeLoadError,
   type VoyantGraphRuntimeLoadErrorCode,
+  type VoyantGraphRuntimeProviderDefinition,
+  type VoyantGraphRuntimeProviderLoader,
+  type VoyantGraphRuntimeReferenceDefinition,
+  type VoyantGraphRuntimeReferenceFacet,
+  type VoyantGraphRuntimeReferenceLoader,
+  type VoyantGraphRuntimeResourceDefinition,
   type VoyantGraphRuntimeRouteDefinition,
   type VoyantGraphRuntimeRouteLoader,
+  type VoyantGraphRuntimeSecretDefinition,
+  type VoyantGraphRuntimeSecretLoader,
+  type VoyantGraphRuntimeSelectedIds,
+  type VoyantGraphRuntimeToolDefinition,
+  type VoyantGraphRuntimeToolLoader,
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
+  type VoyantGraphRuntimeWebhookPlan,
 } from "./runtime-lowering.js"
+export {
+  type ResolvedVoyantGraphRuntimeProviders,
+  type ResolveVoyantGraphRuntimeProvidersInput,
+  resolveVoyantGraphRuntimeProviders,
+  type SelectedVoyantGraphRuntimeProvider,
+  VOYANT_GRAPH_RUNTIME_PROVIDER_ERROR_CODES,
+  type VoyantGraphProviderFactory,
+  type VoyantGraphProviderFactoryContext,
+  VoyantGraphRuntimeProviderError,
+  type VoyantGraphRuntimeProviderErrorCode,
+  type VoyantGraphRuntimeProviderIssue,
+} from "./runtime-providers.js"
+export {
+  type ResolvedVoyantGraphRuntimeConfig,
+  type ResolvedVoyantGraphRuntimeSecret,
+  type ResolvedVoyantGraphRuntimeValues,
+  type ResolveVoyantGraphRuntimeValuesInput,
+  resolveVoyantGraphRuntimeValues,
+  VOYANT_GRAPH_RUNTIME_VALUE_ERROR_CODES,
+  VoyantGraphRuntimeValueError,
+  type VoyantGraphRuntimeValueErrorCode,
+  type VoyantGraphRuntimeValueIssue,
+} from "./runtime-values.js"
 
 export const VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION = "voyant.deployment-artifacts.v1" as const
 export const VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node" as const
@@ -26,7 +65,7 @@ export type VoyantDeploymentRuntimeEntryKind = "managed-profile-node"
 
 export interface VoyantDeploymentRuntimeEntryArtifact {
   id: string
-  target: string
+  target: VoyantGraphRuntimeTarget
   file: string
   graphHash: string
   kind: VoyantDeploymentRuntimeEntryKind
@@ -42,6 +81,7 @@ export interface VoyantDeploymentArtifactManifest {
   schemaVersion: typeof VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION
   graphHash: string
   graph: string
+  webhookPlan: ResolvedVoyantDeploymentGraph["webhookPlan"]
   runtimeEntries: readonly VoyantDeploymentRuntimeEntryArtifact[]
   migrationSources: readonly VoyantDeploymentMigrationSourceArtifact[]
 }
@@ -64,45 +104,41 @@ export interface BuildManagedNodeRuntimeEntryInput {
   graph: ResolvedVoyantDeploymentGraph
   graphArtifactPath: string
   profileSnapshotPath: string
+  graphRuntimePath?: string
   command?: string
 }
 
 export interface BuildGraphRuntimeModuleInput {
   graph: ResolvedVoyantDeploymentGraph
   command?: string
+  /** Build-time import lowering for admitted project-relative packages. */
+  runtimeEntryOverrides?: Readonly<Record<string, string>>
 }
 
-interface GeneratedRuntimeRouteDefinition {
-  route: ResolvedVoyantGraphUnit["api"][number]
-  importEntry: string
-}
-
-interface GeneratedRuntimeUnitDefinition {
-  id: string
-  kind: ResolvedVoyantGraphUnit["kind"]
-  packageName: string
-  order: number
-  routes: GeneratedRuntimeRouteDefinition[]
-}
+export interface BuildProjectRuntimeModuleInput extends BuildGraphRuntimeModuleInput {}
 
 export function buildDeploymentGraphJson(graph: ResolvedVoyantDeploymentGraph): string {
   return `${JSON.stringify(JSON.parse(canonicalJson(graph)), null, 2)}\n`
 }
 
-/**
- * Emit target-neutral lazy package loaders from the selected graph. Import
- * expressions stay in generated source and are never evaluated by resolution
- * or artifact generation.
- */
+/** Emit target-neutral lazy package loaders without evaluating imports. */
 export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): string {
   assertGraphRuntimeLowerable(input.graph)
 
-  const modules = lowerRuntimeUnits(input.graph.modules, input.graph)
-  const plugins = lowerRuntimeUnits(input.graph.plugins, input.graph)
+  const modules = lowerGraphRuntimeUnits(
+    input.graph.modules,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
+  const plugins = lowerGraphRuntimeUnits(
+    input.graph.plugins,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
   const entries = [
     ...new Set(
       [...modules, ...plugins].flatMap((unit) =>
-        unit.routes.map((definition) => definition.importEntry),
+        unit.references.map((definition) => definition.importEntry),
       ),
     ),
   ].sort((left, right) => left.localeCompare(right))
@@ -124,17 +160,54 @@ export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = ${formatConstArray(
 export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${formatConstArray(
     plugins.map((unit) => unit.id),
   )}
+export const GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN = ${formatGeneratedValue(
+    input.graph.webhookPlan,
+    0,
+  )} as const
 
 const GENERATED_GRAPH_RUNTIME_IMPORTERS = ${formatRuntimeImporters(entries)}
 
 export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
   return createVoyantGraphRuntime({
     graphHash: GENERATED_GRAPH_RUNTIME_HASH,
+    providerSelections: ${formatGeneratedValue(input.graph.deployment.providers, 4)},
     entries: GENERATED_GRAPH_RUNTIME_IMPORTERS,
     modules: ${formatGeneratedValue(modules, 4)},
     plugins: ${formatGeneratedValue(plugins, 4)},
+    webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN,
   })
 }
+`
+}
+
+/** Emit the target-neutral application runtime used by lifecycle commands. */
+export function buildProjectRuntimeModule(input: BuildProjectRuntimeModuleInput): string {
+  if (input.graph.deployment.target !== undefined) {
+    throw new Error(
+      `buildProjectRuntimeModule: resolved graph must be target-neutral, got ${input.graph.deployment.target}.`,
+    )
+  }
+
+  const graphRuntime = buildGraphRuntimeModule(input)
+  const deployment = {
+    ...(input.graph.deployment.mode ? { mode: input.graph.deployment.mode } : {}),
+    providers: input.graph.deployment.providers,
+  }
+
+  return `${graphRuntime}
+export const GENERATED_PROJECT_RUNTIME_KIND = "application" as const
+export const GENERATED_PROJECT_RUNTIME_DEPLOYMENT = ${formatGeneratedValue(deployment, 0)} as const
+
+export function createGeneratedProjectRuntime() {
+  return {
+    kind: GENERATED_PROJECT_RUNTIME_KIND,
+    graphHash: GENERATED_GRAPH_RUNTIME_HASH,
+    deployment: GENERATED_PROJECT_RUNTIME_DEPLOYMENT,
+    graphRuntime: createGeneratedGraphRuntime(),
+  }
+}
+
+export default createGeneratedProjectRuntime
 `
 }
 
@@ -156,6 +229,7 @@ export function buildDeploymentArtifactManifest(
     schemaVersion: VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
     graphHash: input.graph.contentHash,
     graph: input.graphArtifactPath,
+    webhookPlan: input.graph.webhookPlan,
     runtimeEntries: [...input.runtimeEntries].sort((left, right) =>
       left.id.localeCompare(right.id),
     ),
@@ -181,18 +255,20 @@ export function buildManagedNodeRuntimeEntryArtifact(
 export function buildManagedNodeRuntimeEntry(input: BuildManagedNodeRuntimeEntryInput): string {
   assertRelativeArtifactPath(input.graphArtifactPath, "graphArtifactPath")
   assertRelativeArtifactPath(input.profileSnapshotPath, "profileSnapshotPath")
+  const graphRuntimePath = input.graphRuntimePath ?? "./graph-runtime.generated.js"
+  assertRelativeArtifactPath(graphRuntimePath, "graphRuntimePath")
 
   const command = input.command ?? "voyant deployment graph emit"
   return `// GENERATED by ${command} - do not edit.
 // Recreate after changing the managed profile, package lockfile, or graph resolver.
-// Compatibility boundary: managed profile boot remains snapshot-manifest based;
-// self-host operator composition consumes the separate generated graph runtime module.
+// The managed Node runtime consumes the same admitted graph runtime as self-hosted composition.
 
 import { readFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import type { ManagedProfileRuntimeDeployment } from "@voyant-travel/framework/managed-runtime"
+import { createGeneratedGraphRuntime } from ${quote(graphRuntimePath)}
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = ${quote(input.graph.schemaVersion)} as const
 export const GENERATED_DEPLOYMENT_GRAPH_HASH = ${quote(input.graph.contentHash)} as const
@@ -342,6 +418,7 @@ if (isMainModule) {
     profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
     deployment: resolveGeneratedRuntimeDeployment(),
     deploymentRequirements: resolveGeneratedDeploymentRequirements(),
+    graphRuntime: createGeneratedGraphRuntime(),
   })
   console.info(
     \`[managed-runtime] Node runtime listening on :\${handle.port} (\${GENERATED_DEPLOYMENT_GRAPH_HASH})\`,
@@ -383,69 +460,6 @@ function assertGraphRuntimeLowerable(graph: ResolvedVoyantDeploymentGraph): void
       )
       .join("\n")}`,
   )
-}
-
-function lowerRuntimeUnits(
-  units: readonly ResolvedVoyantGraphUnit[],
-  graph: ResolvedVoyantDeploymentGraph,
-): GeneratedRuntimeUnitDefinition[] {
-  const admittedPackages = new Set(graph.packageRecords.map((record) => record.packageName))
-
-  return units
-    .flatMap((unit) => {
-      const routes = unit.api
-        .filter((route) => route.runtime !== undefined)
-        .map((route) => {
-          const runtime = route.runtime
-          if (!runtime) {
-            throw new Error(
-              `buildGraphRuntimeModule: route "${route.id}" was selected for lowering without a runtime reference.`,
-            )
-          }
-          const referencedPackage = runtime.entry.startsWith(".")
-            ? unit.packageName
-            : packageNameFromSpecifier(runtime.entry)
-          if (!admittedPackages.has(referencedPackage)) {
-            throw new Error(
-              `buildGraphRuntimeModule: runtime entry "${runtime.entry}" for ${unit.id} route ${route.id} resolves to package "${referencedPackage}", which is not admitted by the graph.`,
-            )
-          }
-          return {
-            route,
-            importEntry: lowerRuntimeImportEntry(unit, runtime.entry),
-          }
-        })
-        .sort((left, right) => left.route.id.localeCompare(right.route.id))
-
-      return [
-        {
-          id: unit.id,
-          kind: unit.kind,
-          packageName: unit.packageName,
-          order: unit.order,
-          routes,
-        },
-      ]
-    })
-    .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id))
-}
-
-function lowerRuntimeImportEntry(unit: ResolvedVoyantGraphUnit, entry: string): string {
-  if (!entry.startsWith(".")) return entry
-  if (entry === "." || entry === "./") return unit.packageName
-  if (!entry.startsWith("./") || entry.includes("\\")) {
-    throw new Error(
-      `buildGraphRuntimeModule: runtime entry "${entry}" for ${unit.id} must be an owner-relative "./" package export.`,
-    )
-  }
-
-  const parts = entry.slice(2).split("/")
-  if (parts.some((part) => part.length === 0 || part === "." || part === "..")) {
-    throw new Error(
-      `buildGraphRuntimeModule: runtime entry "${entry}" for ${unit.id} contains an invalid package export path.`,
-    )
-  }
-  return `${unit.packageName}/${parts.join("/")}`
 }
 
 function formatRuntimeImporters(entries: readonly string[]): string {

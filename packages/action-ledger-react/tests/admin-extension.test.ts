@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest"
 
+import { actionLedgerVoyantModule } from "../../action-ledger/src/voyant.js"
 import { createActionLedgerAdminExtension } from "../src/admin/index.js"
 
 describe("createActionLedgerAdminExtension", () => {
+  it("keeps the package-owned route facet aligned with the admin extension", () => {
+    const extension = createActionLedgerAdminExtension()
+    expect(actionLedgerVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
+      extension.routes?.map((route) => route.path),
+    )
+    expect(actionLedgerVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual([
+      {
+        entry: "@voyant-travel/action-ledger-react/admin",
+        export: "createActionLedgerAdminExtension",
+      },
+    ])
+  })
+
   it("contributes the Logs nav item with the default order", () => {
     const extension = createActionLedgerAdminExtension()
     expect(extension.id).toBe("action-ledger")

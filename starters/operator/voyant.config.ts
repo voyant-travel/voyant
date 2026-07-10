@@ -1,79 +1,102 @@
-import { defineVoyantConfig } from "@voyant-travel/core/config"
+import type {
+  VoyantProjectDeploymentMode,
+  VoyantProjectProviders,
+} from "@voyant-travel/framework/profile"
+import { defineProject } from "@voyant-travel/framework/project"
 
-/**
- * voyant.config.ts — manifest powering CLI tooling (link-table sync and schema
- * resolution). Standard runtime composition is
- * owned by `@voyant-travel/framework`; deployment-local additions are appended
- * through `createVoyantApp` in `src/api/app.ts`.
- */
-export default defineVoyantConfig({
-  // Node (a resident process — Cloud Run) is the first-class production target
-  // for the operator: the composed graph is built once and reused, avoiding the
-  // per-request graph evaluation that makes Cloudflare Workers unsuitable for a
-  // composed operator API (voyant#2966). The Node entry is `src/server.ts`.
-  deployment: "node",
-  projectConfig: {
-    // On Node the pooled node-postgres lane (`DATABASE_URL_DIRECT`) is the
-    // production default; neon-http/WS remain the fallback adapters.
-    database: { urlEnv: "DATABASE_URL", adapter: "node" },
-    cache: { provider: "postgres" },
-    auth: { provider: "better-auth" },
+const deployment = {
+  target: "node",
+  mode: "self-hosted",
+  providers: {
+    database: "postgres",
+    storage: "memory",
+    cache: "postgres",
+    sharedState: "memory",
+    rateLimit: "memory",
+    search: "none",
+    email: "none",
+    sms: "none",
+    auth: "better-auth",
+    scheduledJobs: "none",
+    workflows: "none",
   },
-  admin: { enabled: true, path: "/app" },
-  // Mounted Hono modules that own migrated schema. Route-only modules that own
-  // no tables are mounted by runtime composition rather than schema discovery.
+  migrations: [{ id: "deployment", source: "./migrations" }],
+} as const satisfies {
+  target: "node"
+  mode: VoyantProjectDeploymentMode
+  providers: VoyantProjectProviders
+  migrations: readonly [{ id: "deployment"; source: "./migrations" }]
+}
+
+const definition = {
+  presetLineage: "operator-standard",
   modules: [
     "@voyant-travel/action-ledger",
     "@voyant-travel/relationships",
     "@voyant-travel/quotes",
+    "@voyant-travel/operations",
     "@voyant-travel/identity",
     "@voyant-travel/distribution",
-    "@voyant-travel/inventory",
+    "@voyant-travel/inventory/extras",
+    "@voyant-travel/bookings/requirements",
     "@voyant-travel/commerce",
+    "@voyant-travel/inventory",
     "@voyant-travel/catalog",
+    "@voyant-travel/catalog/booking-engine",
+    "@voyant-travel/accommodations",
     "@voyant-travel/bookings",
     "@voyant-travel/finance",
-    "@voyant-travel/operations",
-    "@voyant-travel/notifications",
-    // Flights: schema is migrated and the admin surface is package-delivered
-    // (@voyant-travel/flights-react/admin); the API routes are still mounted
-    // app-locally in src/api/flights.ts rather than as the package's Hono
-    // module.
-    "@voyant-travel/flights",
     "@voyant-travel/legal",
+    "@voyant-travel/legal/contract-document",
+    "@voyant-travel/public-document-delivery",
+    "@voyant-travel/notifications",
+    "@voyant-travel/storage",
     "@voyant-travel/storefront",
+    "@voyant-travel/storefront/customer-portal",
+    "@voyant-travel/storefront/verification",
+    "@voyant-travel/storefront/payment-link",
     "@voyant-travel/trips",
-    // Operator-tenant settings (profile + payment + booking-tax) — a standard
-    // module: schema-owning + routes mounted via the framework composition.
+    "@voyant-travel/flights",
     "@voyant-travel/operator-settings",
-    // Accommodations — now a standard runtime module (voyant#1489): room blocks
-    // are mounted via the framework composition (accommodationsHonoModule), and
-    // its schema (incl. room_blocks) is migrated.
-    "@voyant-travel/accommodations",
-    // MICE group-program spine (voyant#1489) — deployment-local (niche),
-    // mounted via createVoyantApp's deploymentLocalModules. Listed here so its
-    // schema (mice_programs) is discovered for migration generation.
-    "@voyant-travel/mice",
-  ],
-  plugins: ["@voyant-travel/plugin-smartbill"],
-  // Mounted Hono extensions that own migrated schema.
-  extensions: ["@voyant-travel/catalog-authoring"],
-  // Schema this template migrates but does not mount as a module or extension:
-  //  - workflow-runs: only its admin routes are mounted, not a module
-  //  - charters / cruises: schema migrated ahead of route mounting
-  additionalSchemas: [
-    "@voyant-travel/availability",
-    "@voyant-travel/workflow-runs",
     "@voyant-travel/charters",
     "@voyant-travel/cruises",
+    "@voyant-travel/realtime",
+    "@voyant-travel/mice",
+    "@voyant-travel/db",
+    "@voyant-travel/availability",
+    "@voyant-travel/catalog-authoring",
+    "@voyant-travel/workflow-runs",
+    { resolve: "./src/modules/mcp" },
+    { resolve: "./src/modules/invitations" },
+    { resolve: "./src/modules/team" },
   ],
-  // Template-local Drizzle schema(s) owned by no package: the generated
-  // cross-module link tables (folded into the migration history instead of
-  // applied out-of-band via sync-links — regenerate with
-  // `voyant db sync-links --emit-drizzle`).
-  schemas: ["./drizzle.links.generated.ts"],
-  featureFlags: {
-    links_enabled: true,
-    query_graph: true,
-  },
-})
+  plugins: [
+    "@voyant-travel/bookings/booking-supplier-extension",
+    "@voyant-travel/finance/bookings-create-extension",
+    "@voyant-travel/inventory/booking-extension",
+    "@voyant-travel/inventory/authoring/extension",
+    "@voyant-travel/quotes/booking-extension",
+    "@voyant-travel/distribution/extension",
+    "@voyant-travel/distribution/channel-push-extension",
+    "@voyant-travel/finance/booking-tax-extension",
+    "@voyant-travel/inventory/content-extension",
+    "@voyant-travel/cruises/content-extension",
+    "@voyant-travel/accommodations/content-extension",
+    "@voyant-travel/inventory/brochure-extension",
+    "@voyant-travel/finance/booking-schedule-extension",
+    "@voyant-travel/quotes/quote-version-snapshot-extension",
+    "@voyant-travel/commerce/booking-maintenance-extension",
+    "@voyant-travel/action-ledger/health-extension",
+    "@voyant-travel/quotes/proposal-extension",
+    "@voyant-travel/catalog/offers-extension",
+    "@voyant-travel/commerce/catalog-checkout-extension",
+    "@voyant-travel/mice/booking-extension",
+    { resolve: "@voyant-travel/plugin-netopia" },
+  ],
+  deployment,
+} as const
+
+// The deployment member is part of the framework project contract supplied by
+// the project-resolver slice. Object.assign preserves it when this branch is
+// tested alone against the pre-resolver defineProject implementation.
+export default Object.assign(defineProject(definition), { deployment })

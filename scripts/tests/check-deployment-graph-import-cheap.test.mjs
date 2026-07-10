@@ -122,8 +122,10 @@ export const manifest = { id: "bookings", bookingsHonoModule }
     const root = await createFixture({
       "packages/framework/src/deployment-graph.ts": "export {}\n",
       "packages/framework/src/deployment-artifacts.ts": "export {}\n",
-      "starters/operator/deployment-graph.local.ts": "export {}\n",
-      "starters/operator/src/runtime-entry.generated.ts": "export {}\n",
+      "starters/operator/voyant.config.ts": "export default {}\n",
+      "starters/operator/src/modules/invitations/voyant.ts": "export {}\n",
+      "starters/operator/src/modules/mcp/voyant.ts": "export {}\n",
+      "starters/operator/src/modules/team/voyant.ts": "export {}\n",
       "packages/example/package.json": JSON.stringify({
         name: "@acme/example",
         voyant: { manifest: "./voyant" },

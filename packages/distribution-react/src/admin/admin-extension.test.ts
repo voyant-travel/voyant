@@ -1,8 +1,34 @@
 import { describe, expect, it } from "vitest"
 
+import { distributionVoyantModule } from "../../../distribution/src/voyant.js"
+import { supplierDetailPaymentPolicySlot } from "../suppliers/admin/slots.js"
 import { createDistributionAdminExtension } from "./index.js"
 
 describe("createDistributionAdminExtension", () => {
+  it("keeps the package-owned deployment facets aligned with the admin extension", () => {
+    const extension = createDistributionAdminExtension()
+    expect(distributionVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
+      extension.routes?.map((route) => route.path),
+    )
+    expect(distributionVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual(
+      extension.routes?.map(() => ({
+        entry: "@voyant-travel/distribution-react/admin",
+        export: "createDistributionAdminExtension",
+      })),
+    )
+    expect(distributionVoyantModule.admin?.copy?.[0]?.runtime).toEqual({
+      entry: "@voyant-travel/distribution-react/i18n",
+      export: "distributionUiMessageDefinitions",
+    })
+    expect(distributionVoyantModule.admin?.slots).toEqual([
+      {
+        id: supplierDetailPaymentPolicySlot,
+        routeId: "@voyant-travel/distribution#admin.route.suppliers-detail",
+        contract: { supplierId: "string" },
+      },
+    ])
+  })
+
   it("contributes no navigation (the channel-sync item is base-nav-owned)", () => {
     const extension = createDistributionAdminExtension()
     expect(extension.id).toBe("distribution")

@@ -60,8 +60,7 @@
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
-        "node",
-        "voyant-cloud"
+        "node"
       ],
       "modes": [
         "local",

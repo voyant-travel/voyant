@@ -141,57 +141,6 @@ export const STANDARD_PROFILE_SCHEDULED_JOBS: readonly StandardScheduledJobDefin
   },
 ]
 
-/**
- * The standard workflow definitions each module contributes, keyed by module
- * specifier. Mirrors the `module.workflows` metadata the framework composition
- * declares (`composition-lazy.ts`), so the derived manifest never drifts from
- * what the runtime actually registers. Kept in sync by a unit test.
- */
-const STANDARD_PROFILE_WORKFLOWS: Readonly<
-  Record<string, readonly ManagedWorkflowManifestEntry[]>
-> = {
-  "@voyant-travel/commerce": [
-    {
-      id: "promotions.reindex-all-products",
-      config: {
-        defaultRuntime: "node",
-      },
-    },
-  ],
-}
-
-/**
- * The standard event-filter bindings each module contributes, keyed by module
- * specifier. Mirrors the `module.eventFilters` metadata the framework
- * composition declares (`composition-lazy.ts`) alongside `workflows`, so a
- * managed deployment routes the same events into the same workflows the composed
- * runtime does. Kept in sync by a unit test.
- */
-const STANDARD_PROFILE_EVENT_FILTERS: Readonly<Record<string, readonly ManagedEventFilterEntry[]>> =
-  {
-    "@voyant-travel/commerce": [
-      {
-        id: "ef_6f8e4b4ce409d04c",
-        eventType: "promotion.changed",
-        manifest: {
-          eventType: "promotion.changed",
-          id: "ef_6f8e4b4ce409d04c",
-          input: {
-            object: {
-              offerId: { path: "data.offerId" },
-              source: { path: "data.source" },
-            },
-          },
-          payloadHash: "6f8e4b4ce409d04c",
-          targetWorkflowId: "promotions.reindex-all-products",
-          where: {
-            eq: [{ path: "data.affected.kind" }, { lit: "all" }],
-          },
-        },
-      },
-    ],
-  }
-
 function toManagedScheduledJob(job: StandardScheduledJobDefinition): ManagedScheduledJob {
   return {
     id: job.id,
@@ -235,51 +184,28 @@ export function getManagedProfileScheduledJobs(
   ).map(toManagedScheduledJob)
 }
 
-/**
- * The workflow definitions manifest for a managed profile snapshot
- * (voyant#3032), at the `{ id, config }` grain the Cloud driver registers at
- * deploy. Only workflows owned by active modules are included, so the
- * registered set matches what the composed runtime actually runs.
- */
+/** Package workflows are now loaded from selected graph runtime references. */
 export function getManagedProfileWorkflowManifest(
-  project: VoyantProjectManifest,
+  _project: VoyantProjectManifest,
 ): ManagedWorkflowManifestEntry[] {
-  return collectActiveModuleEntries(project, STANDARD_PROFILE_WORKFLOWS)
+  return []
 }
 
-/**
- * The event-filter bindings for a managed profile snapshot (voyant#3032). These
- * register the `event → workflow` routes alongside
- * {@link getManagedProfileWorkflowManifest} — without them a registered workflow
- * never fires on the events meant to trigger it. Only filters owned by active
- * modules are included.
- */
+/** Package event filters are now loaded from selected graph runtime references. */
 export function getManagedProfileEventFilters(
-  project: VoyantProjectManifest,
+  _project: VoyantProjectManifest,
 ): ManagedEventFilterEntry[] {
-  return collectActiveModuleEntries(project, STANDARD_PROFILE_EVENT_FILTERS)
+  return []
 }
 
 export function getStandardProfileWorkflowManifestForModule(
-  moduleSpecifier: string,
+  _moduleSpecifier: string,
 ): ManagedWorkflowManifestEntry[] {
-  return [...(STANDARD_PROFILE_WORKFLOWS[moduleSpecifier] ?? [])]
+  return []
 }
 
 export function getStandardProfileEventFiltersForModule(
-  moduleSpecifier: string,
+  _moduleSpecifier: string,
 ): ManagedEventFilterEntry[] {
-  return [...(STANDARD_PROFILE_EVENT_FILTERS[moduleSpecifier] ?? [])]
-}
-
-function collectActiveModuleEntries<T>(
-  project: VoyantProjectManifest,
-  byModuleSpecifier: Readonly<Record<string, readonly T[]>>,
-): T[] {
-  const active = resolveActiveModuleSpecifiers(project)
-  const entries: T[] = []
-  for (const [specifier, moduleEntries] of Object.entries(byModuleSpecifier)) {
-    if (active.has(specifier)) entries.push(...moduleEntries)
-  }
-  return entries
+  return []
 }

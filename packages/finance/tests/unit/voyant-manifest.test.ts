@@ -27,6 +27,16 @@ describe("finance deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/finance#schema" }],
       migrations: [{ id: "@voyant-travel/finance#migrations" }],
+      setupMigrations: [
+        {
+          id: "@voyant-travel/finance#setup.vouchers-from-payment-instruments.v1",
+          runtime: {
+            entry: "@voyant-travel/finance/setup/vouchers",
+            export: "runVoucherSetupMigration",
+          },
+          dependsOn: ["@voyant-travel/finance#migrations"],
+        },
+      ],
       links: [
         { id: "@voyant-travel/finance#linkable.creditNote" },
         { id: "@voyant-travel/finance#linkable.invoice" },
@@ -89,5 +99,45 @@ describe("finance deployment manifest", () => {
         },
       ],
     })
+  })
+
+  it("declares finance routes and existing cross-package widgets", () => {
+    expect(financeVoyantModule.admin?.routes?.map(({ id, path }) => [id, path])).toEqual([
+      ["@voyant-travel/finance#admin.route.index", "/finance"],
+      ["@voyant-travel/finance#admin.route.invoices-index", "/finance/invoices"],
+      ["@voyant-travel/finance#admin.route.invoices-detail", "/finance/invoices/$id"],
+      [
+        "@voyant-travel/finance#admin.route.invoice-number-series",
+        "/finance/invoice-number-series",
+      ],
+      ["@voyant-travel/finance#admin.route.payments-index", "/finance/payments"],
+      ["@voyant-travel/finance#admin.route.payments-detail", "/finance/payments/$id"],
+      ["@voyant-travel/finance#admin.route.supplier-invoices-index", "/finance/supplier-invoices"],
+      [
+        "@voyant-travel/finance#admin.route.supplier-invoices-detail",
+        "/finance/supplier-invoices/$id",
+      ],
+      ["@voyant-travel/finance#admin.route.profitability", "/finance/profitability"],
+    ])
+    expect(financeVoyantModule.admin?.contributions?.map(({ id, slotId }) => [id, slotId])).toEqual(
+      [
+        [
+          "@voyant-travel/finance#admin.contribution.booking-invoices",
+          "booking.details.invoices-tab",
+        ],
+        [
+          "@voyant-travel/finance#admin.contribution.booking-pending-payment-sessions",
+          "booking.details.finance-start",
+        ],
+        [
+          "@voyant-travel/finance#admin.contribution.booking-payment-policy",
+          "booking.details.finance-end",
+        ],
+        [
+          "@voyant-travel/finance#admin.contribution.supplier-payment-policy",
+          "supplier.details.payment-policy",
+        ],
+      ],
+    )
   })
 })

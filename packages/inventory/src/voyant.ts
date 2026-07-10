@@ -43,6 +43,24 @@ export const inventoryVoyantModule = defineModule({
       source: "@voyant-travel/inventory/linkables",
     },
   ],
+  events: [
+    {
+      id: "@voyant-travel/inventory#event.product-created",
+      eventType: "product.created",
+    },
+    {
+      id: "@voyant-travel/inventory#event.product-updated",
+      eventType: "product.updated",
+    },
+    {
+      id: "@voyant-travel/inventory#event.product-deleted",
+      eventType: "product.deleted",
+    },
+    {
+      id: "@voyant-travel/inventory#event.product-content-changed",
+      eventType: "product.content.changed",
+    },
+  ],
   workflows: [
     {
       id: "products.generate-pdf",
@@ -52,6 +70,103 @@ export const inventoryVoyantModule = defineModule({
       source: "@voyant-travel/inventory/workflows",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/inventory#access.products",
+        resource: "products",
+        actions: ["read"],
+      },
+    ],
+  },
+  tools: [
+    {
+      id: "@voyant-travel/inventory#tool.list-products",
+      name: "list_products",
+      runtime: {
+        entry: "@voyant-travel/inventory/tools",
+        export: "listProductsTool",
+      },
+      requiredScopes: ["products:read"],
+      context: ["inventory"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/inventory#tool.get-product",
+      name: "get_product",
+      runtime: {
+        entry: "@voyant-travel/inventory/tools",
+        export: "getProductTool",
+      },
+      requiredScopes: ["products:read"],
+      context: ["inventory"],
+      risk: "low",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/inventory#action.list-products",
+      version: "v1",
+      kind: "read",
+      targetType: "product",
+      requiredScopes: ["products:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/inventory#tool.list-products"] },
+    },
+    {
+      id: "@voyant-travel/inventory#action.get-product",
+      version: "v1",
+      kind: "read",
+      targetType: "product",
+      requiredScopes: ["products:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/inventory#tool.get-product"] },
+    },
+  ],
+  admin: {
+    copy: [
+      {
+        id: "@voyant-travel/inventory#admin.copy",
+        namespace: "inventory.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/i18n",
+          export: "productsUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/inventory#admin.route.products-index",
+        path: "/products",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/admin",
+          export: "createInventoryAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/inventory#admin.route.products-categories",
+        path: "/products/categories",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/admin",
+          export: "createInventoryAdminExtension",
+        },
+      },
+      {
+        id: "@voyant-travel/inventory#admin.route.products-detail",
+        path: "/products/$id",
+        runtime: {
+          entry: "@voyant-travel/inventory-react/admin",
+          export: "createInventoryAdminExtension",
+        },
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
   meta: {
     ownership: "package",
   },

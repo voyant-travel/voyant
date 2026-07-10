@@ -5,11 +5,11 @@ This policy classifies public API routes by cache behavior. It complements
 contract explains what cache can safely do, while this document says which
 public route groups should opt in.
 
-The Worker public response cache only stores `GET /v1/public/*` responses when
-the route explicitly emits `Cache-Control: public, s-maxage=...` and the
-response has no `Set-Cookie`. It uses the Cache API when available and falls
-back to the `env.CACHE` KV binding in Cloudflare runtimes where `caches.default`
-is unavailable.
+The Node deployment marks `GET /v1/public/*` responses cacheable only when the
+route explicitly emits `Cache-Control: public, s-maxage=...` and the response
+has no `Set-Cookie`. Shared response caching is performed by an external CDN or
+the graph-selected `env.CACHE` provider; the runtime does not depend on the
+Cloudflare Cache API.
 
 ## Policy Classes
 

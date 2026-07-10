@@ -30,8 +30,16 @@ orders the work so it can ship incrementally.
 The rule is:
 
 **Voyant deployments are built from an explicit, versioned, declarative graph.
-The graph is validated by doctor/build tooling, then lowered into target-specific
-runtime artifacts.**
+The graph is validated by doctor/build tooling, then lowered into
+hosting-specific Node artifacts.**
+
+For this document, the application runtime is **Node only**. "Target-neutral"
+means neutral across Node hosting substrates, not neutral across JavaScript
+runtimes. Voyant Cloud, Docker, Fly.io, Railway, Cloud Run, and custom adapters
+all lower the same graph to a Node application artifact. Cloudflare Workers do
+not host this composed application graph and must not add static-composition or
+runtime-loading constraints to its module/plugin model. Separate edge-native
+storefront or federated applications are outside this deployment graph.
 
 The current `voyant.resolved-graph.v1` implementation is the foundational
 substrate for this rule. It proves stable identity, deterministic artifacts,
@@ -87,15 +95,16 @@ If a project records a scaffold source, that field is diagnostic only:
 presetLineage: "operator-standard" // optional; never used for graph closure
 ```
 
-Package compatibility should target framework version, runtime target,
-deployment mode, and required capabilities/surfaces. It should not target
-`profiles: ["operator"]`.
+Package compatibility should target framework version, the Node runtime
+contract, deployment mode, and required capabilities/surfaces. It should not
+target `profiles: ["operator"]` or treat a hosting provider as a runtime.
 
-### 2. Default to Voyant Cloud, but keep target lowering separate
+### 2. Default to Voyant Cloud, but keep Node substrate lowering separate
 
-The authoring model should be target-neutral. `voyant deploy` can default to
-Voyant Cloud when no target is specified, but the same graph should lower to
-self-hosted Node, Fly.io, Railway, GCP, AWS, or another Node target.
+The authoring model should be Node-substrate-neutral. `voyant deploy` can
+default to Voyant Cloud when no target is specified, but the same Node graph
+should lower to self-hosted Docker, Fly.io, Railway, GCP, AWS, or another Node
+host. Target adapters never select a different application runtime.
 
 Voyant Cloud may provision database, Redis, auth, secrets, and platform API keys
 automatically. Self-hosted targets must provide equivalent config and secrets.
@@ -214,8 +223,8 @@ Specifically:
   but doctor must identify the owning package and the bridge used
 - the bridge is removable only when direct package resolution produces the same
   graph; parity, not continued central generation, is its exit criterion
-- target bootstraps consume a resolved graph and target bindings; they do not
-  decide product composition
+- Node host bootstraps consume a resolved graph and provider bindings; they do
+  not decide product composition
 
 ## Identity
 
@@ -356,12 +365,12 @@ Rules:
 This buys reproducible deploys, graph diff reviews, doctor drift detection, and
 Cloud fast paths such as "this graph hash matches the standard operator graph."
 
-## Project And Deployment Declarations
+## Project And Deployment Declaration
 
-Use one common project declaration and one optional deployment declaration:
-
-- `voyant.config.ts` / `defineProject` describes the target-neutral desired graph.
-- `defineDeployment` binds that graph to a runtime target and substrate.
+The source-backed operator has one authored declaration: `voyant.config.ts`.
+`defineProject` owns package/local selections and the deployment's mode,
+provider, and target bindings. Target adapters may override substrate policy at
+deploy time, but no second checked-in file may repeat the product graph.
 
 ```ts
 // voyant.config.ts
@@ -380,21 +389,13 @@ export default defineProject({
     },
   ],
   plugins: ["@acme/voyant-smartbill"],
-})
-```
-
-```ts
-// voyant.deployment.ts
-export default defineDeployment({
-  schemaVersion: "voyant.deployment.v1",
-  project: "./voyant.config.ts",
-  target: "self-hosted-node",
-  secrets: {
-    "smartbill.apiToken": secret.fromEnv("SMARTBILL_API_TOKEN"),
-  },
-  bindings: {
-    "app.db": resource.postgres.fromEnv("DATABASE_URL"),
-    "app.cache": resource.redis.fromEnv("REDIS_URL"),
+  deployment: {
+    target: "node",
+    mode: "self-hosted",
+    providers: {
+      database: "postgres",
+      cache: "redis",
+    },
   },
 })
 ```
@@ -420,10 +421,10 @@ files:
 acme-voyant/
   package.json
   voyant.config.ts
-  voyant.deployment.ts        # optional; absent for default Voyant Cloud deploy
   src/
     modules/loyalty/
-      index.ts                 # defineModule; explicit project selection
+      voyant.ts                # import-cheap graph manifest
+      index.ts                 # runtime factory
       schema.ts
       migrations/
       api/
@@ -671,31 +672,24 @@ Separate two concerns:
 
 - resource requirements and environment validation, which v1 inherits from the
   current managed requirements contract
-- module/plugin-owned `config` and `secrets` manifest facets, which are reserved
-  until the toolchain explicitly promotes them
+- module/plugin-owned `config` and `secrets` declarations, which identify
+  logical keys and lazily reference admitted validator exports
 
-When module/plugin-owned config and secret facets are introduced after the first
-resolver slice, the current preferred direction is constrained Zod plus metadata
-wrappers:
+The manifest stores serializable metadata and symbolic validator references;
+the admitted build/doctor pass may load constrained Zod validators:
 
 ```ts
-config: defineConfigSchema({
-  schema: z.object({
-    companyVatId: z.string().min(1),
-  }),
-  visibility: {
-    companyVatId: "operator-visible",
-  },
-})
-
-secrets: defineSecretSchema({
-  schema: z.object({
-    apiToken: z.string().min(1),
-  }),
-  rotation: {
-    apiToken: "supported",
-  },
-})
+config: [{
+  id: "@acme/voyant-fiscal#config.company-vat-id",
+  key: "companyVatId",
+  validator: { entry: "@acme/voyant-fiscal/config", export: "companyVatIdSchema" },
+}],
+secrets: [{
+  id: "@acme/voyant-fiscal#secret.api-token",
+  key: "apiToken",
+  validator: { entry: "@acme/voyant-fiscal/config", export: "apiTokenSchema" },
+  rotation: "supported",
+}],
 ```
 
 If a custom DSL is introduced later, it must remain tiny and frozen. It should
@@ -704,9 +698,33 @@ not become a second general validation language.
 Secret values must not cross workflow boundaries as captured handles. Workflow
 steps should rehydrate secrets by logical binding name inside each step context.
 
-Phase 2 may promote `config` and `secrets` from reserved names into supported
-facets, but only through the constrained Zod-plus-metadata contract above. A
-detailed custom DSL remains explicitly deferred.
+The v1 graph contract now supports these logical declarations, resources,
+providers, access, admin, tools, webhooks, actions, setup migrations, and
+retain-data lifecycle metadata. Package migration and target lowering remain
+separate work; a detailed custom schema DSL remains explicitly deferred.
+
+Generated Node runtime artifacts retain each selected unit's deterministic
+project config and its config, secret, resource, and provider declarations.
+`resolveVoyantGraphRuntimeValues(...)` resolves config in this order:
+
+1. the selected unit's project config
+2. Node deployment values (including aliases declared by deployment resource
+   requirements)
+3. the declaration default
+
+Secrets resolve only from Node deployment values. Required values and admitted
+validator exports are checked before managed Node composition starts. Errors
+identify the unit, declaration, logical key, and failure code, but do not retain
+or format secret values or validator exceptions. Resolved secrets are available
+through `getSecret(declarationId)` and are not included in enumerable runtime
+metadata.
+
+Provider declarations expose admitted, memoized lazy loaders alongside their
+port and static config metadata. The generic framework does not invoke provider
+factories or choose among multiple declarations for the same port: that requires
+a separate provider-selection and port-binding contract. Resource declarations
+remain available as package metadata; existing deployment resource environment
+validation remains the authority for provider infrastructure requirements.
 
 ## Links And Linkable Entities
 
@@ -835,6 +853,36 @@ generation. Their schedules are provisioned from the owning package ids while
 the generated runtime imports the owning package exports. The operator keeps
 only graph-id-keyed bindings for deployment capabilities and local units.
 
+## Action-Ledger Runtime Lowering
+
+Generated `VoyantGraphRuntime` units carry deterministic action declarations and
+the selected route, tool, workflow, event, and webhook ids those actions may
+bind. `lowerVoyantGraphActionsToActionLedgerRegistry(...)` revalidates every
+required scope and binding against that selected runtime before producing the
+shared action-ledger capability registry. Required scopes lower to required
+grants; action risk, ledger, approval, and reversibility policy remain
+package-owned metadata.
+
+Risk evaluation may depend on request or package runtime state and therefore
+cannot be serialized in the graph. The lowering API exposes only a keyed
+`riskEvaluators` override (`<capability-id>@<version>`); it does not allow a
+runtime to replace graph-owned identity, grants, policy, or bindings.
+
+The managed and operator runtimes instantiate this generic selected-graph
+registry. Bookings now owns one import-cheap action declaration source from
+which both its graph manifest and canonical request-path capability registry are
+derived. Its parity test preserves persisted capability ids, explicit
+resource/action metadata, grants, actor restrictions, risk, approval, ledger,
+and reversibility behavior. Graph action ids remain the established action
+names; the explicit `capabilityId` carries the separately persisted
+action-ledger identity. The route/request path continues to use the package's
+canonical registry.
+
+The relationships person-document capability remains a parallel catalog and a
+compatibility authority until the same package-owned declaration and parity
+test exist. Equivalent-looking graph metadata alone is not sufficient reason to
+remove it.
+
 ## Events And Webhooks
 
 V1 should include subscribers and workflow event filters that already map to
@@ -909,7 +957,7 @@ Example:
   "severity": "error",
   "source": "@acme/voyant-plugin-loyalty",
   "facet": "requires.capabilities",
-  "location": "voyant.project.ts:12",
+  "location": "voyant.config.ts:12",
   "message": "Required capability identity.people is not provided by the selected graph.",
   "hint": "Select the relationships module or another module that provides identity.people."
 }
@@ -992,20 +1040,35 @@ diagnostic-code registry. The public `voyant doctor --json` command remains the
 CLI follow-up; it should consume this report contract rather than inventing a
 separate diagnostic model.
 
-The reference operator now owns checked-in `voyant.project.ts` and
-`voyant.deployment.ts` declarations. It is a reference consumer and compatibility
-host, not the canonical package catalog. The managed-profile snapshot remains a
-runtime compatibility input for the generated managed Node entry and legacy
-scheduled-job derivation, but it does not select graph units, providers, or the
-deployment target. Deployment requirements derive from the graph's declared
-provider bindings using the existing v1 provider contract, and generated Node
-runtime entries pass both the resolved requirements and deployment mode/provider
-bindings into boot validation. The foundational substrate also models compatible
+The reference operator owns one checked-in `voyant.config.ts`. It is a reference
+consumer and compatibility host, not the canonical package catalog. Its
+managed-profile compatibility snapshot and all deployment graph/runtime
+artifacts are regenerated beneath the gitignored `.voyant/` directory. They do
+not select graph units, providers, or the deployment target. The architecture
+checker forbids `voyant.project.ts`, `voyant.deployment.ts`,
+`deployment-graph.local.ts`, and root/`src` graph artifacts from returning.
+Deployment requirements derive from the graph's declared provider bindings
+using the existing v1 provider contract, and generated Node runtime entries pass
+both the resolved requirements and deployment mode/provider bindings into boot
+validation. The foundational substrate also models compatible
 environment aliases and value formats on canonical resource requirements:
 for example, either `DATABASE_URL` or the Node-pool `DATABASE_URL_DIRECT`
 satisfies the graph's Postgres requirement, and the resolved value must be a
 valid Postgres URL. Phase 2 continues the remaining runtime compatibility and
 provisioning migration.
+
+Provider runtime selection is an explicit equality match between a provider
+declaration's `selection: { role, value }` and
+`deployment.providers[role]`. Runtime code must not derive that match from
+environment presence or provider ids. Before importing a provider body, the
+Node resolver proves that every non-optional required port has exactly one
+selected declaration. It then memoizes factory invocation and supplies only
+the owning unit's resolved config, secrets, resources, and static provider
+config. Composition receives typed provider values through `getProvider<T>()`
+and enumerable selection metadata contains no config, secret, resource, or
+provider instance values. The first migrated family is
+`database.client`/`database: postgres`; replacing the operator's remaining
+legacy database composition with this resolved value is a follow-up.
 
 The operator graph also runs an explicit source-admission policy for generated
 artifacts: selected packages must resolve to admitted lockfile/workspace
@@ -1013,6 +1076,15 @@ provenance, deployment-local operator units get an explicit local workspace
 record, and virtual graph units point package provenance at the real package
 that ships them. Generated managed runtime entries validate graph artifacts and
 graph diagnostics before importing the managed runtime package.
+
+The coordinated framework resolver integration must accept app-local selections
+whose import-cheap manifest is `src/modules/<name>/voyant.ts` without requiring
+each module directory to impersonate a standalone npm package. It must preserve
+the manifest's `@voyant-travel/operator#<name>` id and expose enough resolved
+project data for the operator to add target admission, lockfile provenance, and
+runtime-maintenance schedules. The operator resolver adapter uses the framework
+`resolveProject({ project, projectRoot, configPath })` entry point when present
+and retains a narrow local-manifest fallback for the pre-integration base.
 
 Schema-owning first-party package manifests publish `voyant.package.v1`
 compatibility metadata alongside the existing migration-facing `schema` and
@@ -1070,7 +1142,7 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | Setup/data migrations | Ad hoc seed/setup behavior and ordinary migrations | Package owns versioned, idempotent setup/data migrations with applied-work ids; project owns optional explicit seed scripts | Schema/migrations, lifecycle ledger | Install/upgrade replay is idempotent and no lifecycle hook is needed | #3080 |
 | Linkables and links | Existing `defineLink`, generated schema inputs, deployment-local link migrations | Package exposes linkables; package/project explicitly declares neutral pair links; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and generated DDL resolve without starter link lists | #3080 |
 | Runtime config | Managed profile settings and deployment config bridges | Package declares typed config contract; project supplies portable non-secret values | Package manifests | Defaults/values validate before build and package code no longer reads profile settings directly | #3080 |
-| Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds target-specific sources; runtime receives typed redacted handles | Runtime config, target adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no target env names | #3080 |
+| Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds provider-specific sources; runtime receives typed redacted handles | Runtime config, Node host adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no provider env names | #3080 |
 | API routes and route posture | Existing Hono modules/extensions, generated entries, starter `publicPaths` and transactional fallbacks | Package `api.admin`, `api.public`, `api.webhooks`, and `api.internal` own lazy factories, stable ids, anonymous posture, transaction need, mounts, and operation metadata | Package manifests, runtime bindings | Standard `publicPaths`, transactional paths, and route-family lists are derived and starter fallbacks are empty | #3080 |
 | OpenAPI | Route-owned schemas plus shipped graph coverage report and allowlists | Package API bundle opts into documents and owns operation metadata; selected graph emits deployment-specific documents | API routes | Coverage has no unexplained allowlist and no operator OpenAPI catalog | #3080 |
 | Access resources and grants | Pass-through route scopes and existing Better Auth `Record<string, string[]>` permissions | Package owns `access.resources`; routes, tools, admin, workflows, and actions reference one `resource:action` catalog; project owns role presets | Identity, API operation ids | All references validate against one selected catalog; no central first-party permission catalog remains | #3080 |
@@ -1194,12 +1266,12 @@ tools, and audited action metadata without parallel operator catalogs.
 - harden managed admission as needed without requiring the broader supply-chain
   platform
 - delete each central generator input after direct package parity passes; keep
-  only target-neutral generated outputs and target bootstraps
+  only hosting-neutral generated outputs and Node host bootstraps
 - run an issue-completion audit against every `#3080` matrix exit test
 
-Exit: `starters/operator` can be replaced by another target bootstrap without
-reconstructing product composition. No selected package surface is known only to
-the starter, and every `#3080` matrix row is package/project-owned.
+Exit: `starters/operator` can be replaced by another Node host bootstrap without
+reconstructing product composition. No selected package surface is known only
+to the starter, and every `#3080` matrix row is package/project-owned.
 
 ## Completion Criteria
 

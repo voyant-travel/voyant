@@ -1,9 +1,9 @@
 # Deployment Targets
 
-Which runtime each Voyant deployment class runs on, and why. The short version:
-**Node is the first-class production target for composed operator/admin
-deployments; Cloudflare Workers stays the right answer for storefronts, small
-cacheable surfaces, and federated per-domain apps.**
+Which runtime each Voyant application class runs on, and why. The short version:
+**the unified composed application deployment graph is Node-only.** Cloudflare
+Workers may still host separate edge-native storefront or federated
+applications, but Workers are not a target adapter for that unified graph.
 
 ## Node is the first-class target for the operator
 
@@ -80,14 +80,18 @@ workload class well. On Node none of it is necessary.
 - **CI:** the `node-smoke` job builds the operator, boots it under Node, and
   asserts `/healthz` + API dispatch — so the first-class target is gated.
 
-## Workers is partially supported
+## Workers host separate edge applications
 
-Still supported and still excellent on Workers:
+These surfaces can still be deployed as independent Worker applications:
 
 - storefronts, small/public cacheable surfaces, demo deployments, UI shells;
 - **federated (per-domain) apps** under the residency cliff — per-domain graphs
   are small enough to stay resident, which is the edge-native long-term
   alternative (see [federated-operating-mode.md](./federated-operating-mode.md)).
+
+They do not consume or statically compose the unified application deployment
+graph. A `cloudflare-worker` target must not be offered by its CLI target
+adapters.
 
 **Known limitation for composed operator APIs on Workers:** no isolate residency
 → a per-request composition toll (multi-second graph evaluation). This is a

@@ -1,0 +1,167 @@
+import { evaluateActionLedgerCapabilityRisk } from "@voyant-travel/action-ledger/capability"
+import { bookingActionLedgerCapabilityRegistry } from "@voyant-travel/bookings/action-ledger-capabilities"
+import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
+import { describe, expect, it } from "vitest"
+
+import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
+import { createVoyantGraphRuntime, type VoyantGraphRuntimeSelectedIds } from "./runtime-lowering.js"
+
+const selectedIds: VoyantGraphRuntimeSelectedIds = {
+  routes: ["loyalty.api"],
+  tools: ["loyalty.tool"],
+  workflows: ["loyalty.workflow"],
+  events: ["loyalty.event"],
+  webhooks: ["loyalty.webhook"],
+}
+
+function actionRuntime(
+  overrides: { accessScopes?: readonly string[]; selectedIds?: VoyantGraphRuntimeSelectedIds } = {},
+) {
+  return createVoyantGraphRuntime({
+    graphHash: "sha256:actions",
+    entries: {},
+    modules: [
+      {
+        id: "@acme/loyalty",
+        kind: "module",
+        packageName: "@acme/loyalty",
+        order: 0,
+        accessScopes: overrides.accessScopes ?? ["loyalty:write"],
+        actions: [
+          {
+            id: "loyalty.points.adjust",
+            capabilityId: "loyalty:points:adjust",
+            unitId: "@acme/loyalty",
+            version: "v1",
+            kind: "execute",
+            targetType: "loyalty_account",
+            resource: "loyalty_balance",
+            action: "adjust_points",
+            requiredScopes: ["loyalty:write"],
+            risk: "medium",
+            ledger: "required",
+            approval: "conditional",
+            reversible: true,
+            allowedActorTypes: ["staff", "system"],
+            from: {
+              routes: ["loyalty.api"],
+              tools: ["loyalty.tool"],
+              workflows: ["loyalty.workflow"],
+              events: ["loyalty.event"],
+              webhooks: ["loyalty.webhook"],
+            },
+          },
+        ],
+        selectedIds: overrides.selectedIds ?? selectedIds,
+        routes: [],
+      },
+    ],
+    plugins: [],
+  })
+}
+
+describe("graph action-ledger lowering", () => {
+  it("lowers selected actions into deterministic capability definitions", () => {
+    const evaluateRisk = ({ amount }: { amount: number }) =>
+      amount > 1_000 ? ("high" as const) : ("medium" as const)
+    const registry = lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime(), {
+      riskEvaluators: { "loyalty:points:adjust@v1": evaluateRisk },
+    })
+
+    expect(registry.definitions).toEqual([
+      {
+        id: "loyalty:points:adjust",
+        version: "v1",
+        resource: "loyalty_balance",
+        action: "adjust_points",
+        risk: "medium",
+        ledgerPolicy: "required",
+        approvalPolicy: "conditional",
+        reversible: true,
+        allowedActorTypes: ["staff", "system"],
+        requiredGrants: [{ resource: "loyalty", action: "write" }],
+        evaluateRisk,
+      },
+    ])
+    expect(evaluateActionLedgerCapabilityRisk(registry.definitions[0]!, { amount: 2_000 })).toBe(
+      "high",
+    )
+  })
+
+  it("rejects action scopes outside the selected graph", () => {
+    expect(() =>
+      lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime({ accessScopes: [] })),
+    ).toThrow(/requires undeclared selected-graph scope "loyalty:write"/)
+  })
+
+  it.each([
+    "routes",
+    "tools",
+    "workflows",
+    "events",
+    "webhooks",
+  ] as const)("rejects unknown selected-graph %s bindings", (binding) => {
+    const withoutBinding = { ...selectedIds, [binding]: [] }
+
+    expect(() =>
+      lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime({ selectedIds: withoutBinding })),
+    ).toThrow(new RegExp(`binds unknown selected-graph ${binding} id`))
+  })
+
+  it("keeps the bookings manifest in parity with its canonical request registry", () => {
+    const actions = bookingsVoyantModule.actions ?? []
+    expect(actions.map(({ id, capabilityId }) => ({ id, capabilityId }))).toEqual([
+      { id: "booking.pii.read", capabilityId: "bookings-pii:read" },
+      { id: "booking.status.confirm", capabilityId: "bookings:status:confirm" },
+      { id: "booking.status.expire", capabilityId: "bookings:status:expire" },
+      { id: "booking.status.cancel", capabilityId: "bookings:status:cancel" },
+      { id: "booking.status.start", capabilityId: "bookings:status:start" },
+      { id: "booking.status.complete", capabilityId: "bookings:status:complete" },
+      { id: "booking.status.override", capabilityId: "bookings:status:override" },
+    ])
+    const accessScopes = (bookingsVoyantModule.access?.resources ?? []).flatMap((resource) =>
+      resource.actions.map((action) => `${resource.resource}:${action}`),
+    )
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:bookings-action-parity",
+      entries: {},
+      modules: [
+        {
+          id: bookingsVoyantModule.id,
+          kind: "module",
+          packageName: bookingsVoyantModule.packageName!,
+          order: 0,
+          accessScopes,
+          actions: actions.map((action) => ({
+            ...action,
+            unitId: bookingsVoyantModule.id,
+            requiredScopes: [...(action.requiredScopes ?? [])],
+            from: {
+              routes: [...(action.from?.routes ?? [])],
+              tools: [...(action.from?.tools ?? [])],
+              workflows: [...(action.from?.workflows ?? [])],
+              events: [...(action.from?.events ?? [])],
+              webhooks: [...(action.from?.webhooks ?? [])],
+            },
+          })),
+          selectedIds: {
+            routes: (bookingsVoyantModule.api ?? []).map(({ id }) => id),
+            tools: (bookingsVoyantModule.tools ?? []).map(({ id }) => id),
+            workflows: (bookingsVoyantModule.workflows ?? []).map(({ id }) => id),
+            events: (bookingsVoyantModule.events ?? []).map(({ id }) => id),
+            webhooks: (bookingsVoyantModule.webhooks ?? []).map(({ id }) => id),
+          },
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    const lowered = lowerVoyantGraphActionsToActionLedgerRegistry(runtime).definitions
+    const canonical = [...bookingActionLedgerCapabilityRegistry.definitions].sort(
+      (left, right) => left.id.localeCompare(right.id) || left.version.localeCompare(right.version),
+    )
+
+    expect(lowered).toEqual(canonical)
+  })
+})

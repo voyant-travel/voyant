@@ -1,8 +1,8 @@
 import { config } from "dotenv"
 import { defineConfig } from "drizzle-kit"
 
-// Schema list is DERIVED from voyant.config.ts (modules + additionalSchemas +
-// starter-local schemas) and emitted to this committed file. Do not hand-edit
+// Schema is derived from package/local manifests selected by voyant.config.ts
+// plus generated project links, then emitted here. Do not hand-edit
 // the list — run `voyant db schemas --emit` (or `voyant db generate`) to
 // refresh it; `voyant db doctor` fails if it drifts.
 import { schema } from "./drizzle.schemas.generated.ts"

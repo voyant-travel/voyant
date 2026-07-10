@@ -26,7 +26,7 @@ import {
   infraWebhookDeliverySelectSchema,
   type SelectInfraWebhookDelivery,
 } from "@voyant-travel/db/schema/infra"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 
 const DEFAULT_EXCERPT_BYTES = 4 * 1024
 
@@ -133,6 +133,58 @@ export interface PreparedEnvelope {
   delivery: InfraWebhookDelivery
   /** Finalize the envelope after the upstream call returns or throws. */
   complete: (result: OutboundEnvelopeResultInput) => Promise<InfraWebhookDelivery>
+}
+
+/**
+ * Persist an outbound request for a future delivery worker without claiming
+ * that an HTTP attempt has started. Replays with the same idempotency key and
+ * attempt number return the existing row.
+ */
+export async function enqueueOutboundEnvelope(
+  db: AnyDrizzleDb,
+  input: OutboundEnvelopeInput & { idempotencyKey: string },
+): Promise<InfraWebhookDelivery> {
+  const attemptNumber = input.attemptNumber ?? 1
+  const existing = (await db
+    .select()
+    .from(infraWebhookDeliveriesTable)
+    .where(
+      and(
+        eq(infraWebhookDeliveriesTable.idempotencyKey, input.idempotencyKey),
+        eq(infraWebhookDeliveriesTable.attemptNumber, attemptNumber),
+      ),
+    )
+    .limit(1)) as SelectInfraWebhookDelivery[]
+  if (existing[0]) return toInfraWebhookDelivery(existing[0])
+
+  const now = new Date()
+  const inserted = (await db
+    .insert(infraWebhookDeliveriesTable)
+    .values({
+      id: newId("webhook_deliveries"),
+      sourceModule: input.sourceModule,
+      sourceEvent: input.sourceEvent,
+      sourceEntityModule: input.sourceEntityModule ?? null,
+      sourceEntityId: input.sourceEntityId ?? null,
+      subscriptionId: input.subscriptionId ?? null,
+      targetUrl: input.targetUrl,
+      targetKind: input.targetKind ?? null,
+      targetRef: input.targetRef ?? null,
+      requestMethod: input.requestMethod,
+      requestHeaders: redactHeaders(input.requestHeaders),
+      requestBodyHash: hashBodySync(input.requestBody),
+      requestBodyExcerpt: excerptBody(input.requestBody),
+      attemptNumber,
+      parentDeliveryId: input.parentDeliveryId ?? null,
+      idempotencyKey: input.idempotencyKey,
+      status: "pending",
+      scheduledFor: input.scheduledFor ?? now,
+      startedAt: null,
+    })
+    .returning()) as SelectInfraWebhookDelivery[]
+  const row = inserted[0]
+  if (!row) throw new Error("enqueueOutboundEnvelope: insert returned no rows")
+  return toInfraWebhookDelivery(row)
 }
 
 function toInfraWebhookDelivery(row: SelectInfraWebhookDelivery): InfraWebhookDelivery {

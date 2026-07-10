@@ -5,15 +5,15 @@ import { fileURLToPath } from "node:url"
 
 const ARTIFACT_MANIFEST_SCHEMA_VERSION = "voyant.deployment-artifacts.v1"
 const RESOLVED_GRAPH_SCHEMA_VERSION = "voyant.resolved-graph.v1"
-const ARTIFACT_MANIFEST_FILENAME = "../deployment-artifacts.generated.json"
-const EXPECTED_GRAPH_ARTIFACT = "deployment-graph.generated.json"
+const ARTIFACT_MANIFEST_FILENAME = "../.voyant/deployment-artifacts.generated.json"
+const EXPECTED_GRAPH_ARTIFACT = "./deployment-graph.generated.json"
 const EXPECTED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node"
-const EXPECTED_NODE_RUNTIME_ENTRY_FILE = "src/runtime-entry.generated.ts"
-const EXPECTED_GRAPH_RUNTIME_FILE = "src/graph-runtime.generated.ts"
+const EXPECTED_NODE_RUNTIME_ENTRY_FILE = "./runtime-entry.generated.ts"
+const EXPECTED_GRAPH_RUNTIME_FILE = "graph-runtime.generated.ts"
 const EXPECTED_NODE_RUNTIME_ENTRY_KIND = "managed-profile-node"
-const EXPECTED_PROFILE_SNAPSHOT = "managed-profile.json"
-const EXPECTED_RUNTIME_ENTRY_GRAPH_ARTIFACT_PATH = "../deployment-graph.generated.json"
-const EXPECTED_RUNTIME_ENTRY_PROFILE_SNAPSHOT_PATH = "../managed-profile.json"
+const EXPECTED_PROFILE_SNAPSHOT = "./managed-profile.json"
+const EXPECTED_RUNTIME_ENTRY_GRAPH_ARTIFACT_PATH = "./deployment-graph.generated.json"
+const EXPECTED_RUNTIME_ENTRY_PROFILE_SNAPSHOT_PATH = "./managed-profile.json"
 const SHA256_CONTENT_HASH_PATTERN = /^sha256:[a-f0-9]{64}$/
 
 export interface OperatorDeploymentGraphArtifactSummary {

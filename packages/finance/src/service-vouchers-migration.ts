@@ -1,4 +1,5 @@
 import { eq, sql } from "drizzle-orm"
+import { drizzle, type NodePgClient, type NodePgDatabase } from "drizzle-orm/node-postgres"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { paymentInstruments, vouchers } from "./schema.js"
@@ -65,6 +66,19 @@ export interface VoucherMigrationResult {
   dryRun: boolean
 }
 
+export interface VoucherSetupMigrationContext {
+  client: NodePgClient
+  dryRun: boolean
+}
+
+/** Node migration-runner adapter exported by the package-owned setup facet. */
+export async function runVoucherSetupMigration(
+  context: VoucherSetupMigrationContext,
+): Promise<VoucherMigrationResult> {
+  const db = drizzle(context.client)
+  return migrateVouchersFromPaymentInstruments(db, { dryRun: context.dryRun })
+}
+
 /**
  * Backfill the `vouchers` table from legacy voucher rows in
  * `payment_instruments`. A legacy voucher is a row with `instrumentType =
@@ -84,7 +98,7 @@ export interface VoucherMigrationResult {
  * operator may have adjusted through the new redemption flow.
  */
 export async function migrateVouchersFromPaymentInstruments(
-  db: PostgresJsDatabase,
+  db: PostgresJsDatabase | NodePgDatabase,
   options: VoucherMigrationOptions = {},
 ): Promise<VoucherMigrationResult> {
   const dryRun = options.dryRun ?? false

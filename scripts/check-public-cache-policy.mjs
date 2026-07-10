@@ -97,7 +97,7 @@ function checkKvCacheBindings() {
   // against the KVStore-compatible CACHE/RATE_LIMIT env members.
   requireContains(
     "starters/operator/voyant.config.ts",
-    'cache: { provider: "postgres" }',
+    'cache: "postgres"',
     "operator cache backend declaration",
   )
   requireContains("starters/operator/env.d.ts", "CACHE: KVNamespace", "operator CACHE binding type")

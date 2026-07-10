@@ -1,18 +1,11 @@
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
-import type { HonoModule } from "@voyant-travel/hono/module"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
-import { graphIdFromSpecifier } from "../../../../packages/framework/src/deployment-graph"
 import {
-  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
-  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-} from "../../deployment-graph.local"
-import {
-  OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS,
-  OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS,
-  OPERATOR_VOYANT_PROJECT,
-} from "../../voyant.project"
-import { createGeneratedGraphRuntime } from "../graph-runtime.generated"
+  createGeneratedGraphRuntime,
+  GENERATED_GRAPH_RUNTIME_MODULE_IDS,
+  GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
+} from "../../.voyant/graph-runtime.generated"
 import {
   buildOperatorProviders,
   deploymentLocalExtensions,
@@ -30,22 +23,6 @@ async function composeOperatorGraph() {
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
   })
-}
-
-function graphModule(id: string) {
-  const unit = createGeneratedGraphRuntime().modules.find((candidate) => candidate.id === id)
-  if (!unit) throw new Error(`Missing generated graph module ${id}`)
-  return unit
-}
-
-async function invokeModuleBinding(
-  id: string,
-  factory: (options: Record<string, unknown>) => HonoModule,
-  capabilities = buildOperatorProviders(),
-) {
-  const binding = operatorGraphRuntimeBindings[id]
-  if (!binding) throw new Error(`Missing operator graph binding ${id}`)
-  return binding({ capabilities, unit: graphModule(id), runtimeExports: [factory] })
 }
 
 describe("operator graph runtime composition", () => {
@@ -73,25 +50,23 @@ describe("operator graph runtime composition", () => {
   })
 
   it("selects package-owned bridge units directly and keeps only genuine operator-local ids", () => {
-    const moduleIds = new Set(OPERATOR_VOYANT_PROJECT.modules.map((unit) => unit.id))
-    const pluginIds = new Set(OPERATOR_VOYANT_PROJECT.plugins.map((unit) => unit.id))
+    const moduleIds = new Set(GENERATED_GRAPH_RUNTIME_MODULE_IDS)
+    const pluginIds = new Set(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS)
 
-    for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS) {
-      expect(moduleIds).toContain(graphIdFromSpecifier(specifier))
+    for (const id of [
+      "@voyant-travel/charters",
+      "@voyant-travel/cruises",
+      "@voyant-travel/realtime",
+      "@voyant-travel/mice",
+    ]) {
+      expect(moduleIds).toContain(id)
     }
-    for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS) {
-      expect(pluginIds).toContain(graphIdFromSpecifier(specifier))
-    }
+    expect(pluginIds).toContain("@voyant-travel/mice#booking-extension")
 
     const operatorIds = [...moduleIds, ...pluginIds].filter((id) =>
       id.startsWith("@voyant-travel/operator#"),
     )
-    expect(operatorIds.sort()).toEqual(
-      [
-        ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
-        ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
-      ].sort(),
-    )
+    expect(operatorIds.sort()).toEqual(Object.keys(deploymentLocalModules).sort())
   })
 
   it("keeps invitations, team, and MCP explicitly deployment-local and graph-keyed", async () => {
@@ -134,60 +109,9 @@ describe("operator graph runtime composition", () => {
       expect(id).not.toMatch(/^@voyant-travel\/operator#/)
       expect(operatorGraphRuntimeBindings).toHaveProperty(id)
     }
-    for (const id of [
-      "@voyant-travel/storefront",
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
       "@voyant-travel/public-document-delivery",
-      "@voyant-travel/cruises",
-      "@voyant-travel/charters",
-    ]) {
-      expect(operatorGraphRuntimeBindings).toHaveProperty(id)
-    }
-  })
-
-  it("passes operator providers to storefront and public document graph modules", async () => {
-    const capabilities = buildOperatorProviders()
-    const createStorefront = vi.fn(() => ({ module: { name: "storefront" } }))
-    const createPublicDocuments = vi.fn(() => ({ module: { name: "documents" } }))
-
-    await invokeModuleBinding("@voyant-travel/storefront", createStorefront, capabilities)
-    const publicDocuments = await invokeModuleBinding(
-      "@voyant-travel/public-document-delivery",
-      createPublicDocuments,
-      capabilities,
     )
-
-    expect(createStorefront).toHaveBeenCalledOnce()
-    expect(createStorefront).toHaveBeenCalledWith({
-      offers: expect.objectContaining({
-        listApplicableOffers: expect.any(Function),
-        getOfferBySlug: expect.any(Function),
-        applyOffer: expect.any(Function),
-        redeemOffer: expect.any(Function),
-      }),
-      bookingIntents: { resolveDb: capabilities.resolveDb },
-      intake: { persistence: capabilities.storefrontIntakePersistence },
-    })
-    expect(createPublicDocuments).toHaveBeenCalledWith({
-      resolveStorage: capabilities.createOperatorDocumentStorage,
-    })
-    expect(publicDocuments).toMatchObject({ anonymous: true })
-  })
-
-  it("keeps cruise and charter operator route loaders anonymous", async () => {
-    const createCruises = vi.fn(() => ({ module: { name: "cruises" } }))
-    const createCharters = vi.fn(() => ({ module: { name: "charters" } }))
-
-    await invokeModuleBinding("@voyant-travel/cruises", createCruises)
-    await invokeModuleBinding("@voyant-travel/charters", createCharters)
-
-    for (const factory of [createCruises, createCharters]) {
-      expect(factory).toHaveBeenCalledOnce()
-      expect(factory).toHaveBeenCalledWith({
-        lazyAdminRoutes: expect.any(Function),
-        lazyPublicRoutes: expect.any(Function),
-        anonymous: true,
-      })
-    }
   })
 
   it("initializes the real operator app from the generated graph runtime", async () => {

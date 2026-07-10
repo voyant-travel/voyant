@@ -1,8 +1,25 @@
+// agent-quality: file-size exception -- reason: project authoring validation stays import-cheap and centralized with its public serializable contracts.
 /**
  * Import-cheap authoring contracts for package-owned deployment manifests.
  * Executable route, schema, UI, workflow, and provider code is referenced by
  * package export, never imported from this module.
  */
+
+import type {
+  VoyantGraphAccessDeclaration,
+  VoyantGraphActionDeclaration,
+  VoyantGraphAdminDeclaration,
+  VoyantGraphConfigDeclaration,
+  VoyantGraphLifecycleDeclaration,
+  VoyantGraphProviderDeclaration,
+  VoyantGraphResourceDeclaration,
+  VoyantGraphSecretDeclaration,
+  VoyantGraphSetupMigration,
+  VoyantGraphToolDeclaration,
+  VoyantGraphWebhookDeclaration,
+} from "./project-facets.js"
+
+export type * from "./project-facets.js"
 
 export const VOYANT_GRAPH_PROJECT_SCHEMA_VERSION = "voyant.project.v1" as const
 export const VOYANT_GRAPH_MODULE_SCHEMA_VERSION = "voyant.module.v1" as const
@@ -62,11 +79,13 @@ export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
   eventFilterId?: string
   workflowId?: string
   filter?: VoyantGraphJsonObject
+  runtime?: VoyantGraphRuntimeReference
 }
 
 export interface VoyantGraphWorkflow extends VoyantGraphFacetEntity {
   config?: VoyantGraphJsonObject
   schedules?: readonly VoyantGraphWorkflowSchedule[]
+  runtime?: VoyantGraphRuntimeReference
 }
 
 export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {
@@ -98,6 +117,17 @@ export interface VoyantGraphUnitManifest {
   subscribers?: readonly VoyantGraphSubscriber[]
   events?: readonly VoyantGraphEvent[]
   workflows?: readonly VoyantGraphWorkflow[]
+  setupMigrations?: readonly VoyantGraphSetupMigration[]
+  config?: readonly VoyantGraphConfigDeclaration[]
+  secrets?: readonly VoyantGraphSecretDeclaration[]
+  resources?: readonly VoyantGraphResourceDeclaration[]
+  providers?: readonly VoyantGraphProviderDeclaration[]
+  access?: VoyantGraphAccessDeclaration
+  admin?: VoyantGraphAdminDeclaration
+  tools?: readonly VoyantGraphToolDeclaration[]
+  webhooks?: readonly VoyantGraphWebhookDeclaration[]
+  actions?: readonly VoyantGraphActionDeclaration[]
+  lifecycle?: VoyantGraphLifecycleDeclaration
   meta?: VoyantGraphJsonObject
 }
 
@@ -140,11 +170,33 @@ export interface VoyantGraphProjectSelections {
   plugins: readonly VoyantGraphProjectSelection[]
 }
 
+export type VoyantGraphProjectDeploymentMode = "local" | "managed-cloud" | "self-hosted"
+
+/** A migration folder owned by the deployment rather than an installed package. */
+export interface VoyantGraphProjectDeploymentMigration {
+  id: string
+  /** Project-relative path to a committed Drizzle migration folder. */
+  source: string
+}
+
+/**
+ * Unified application graphs always compile to the Node runtime. Hosting
+ * choices such as Voyant Cloud, Docker, Fly, or Railway are CLI target adapters
+ * for that Node artifact, not alternate application runtimes.
+ */
+export interface VoyantGraphProjectDeployment {
+  target?: "node"
+  mode?: VoyantGraphProjectDeploymentMode
+  providers?: Readonly<Record<string, string>>
+  migrations?: readonly VoyantGraphProjectDeploymentMigration[]
+}
+
 export interface DefineVoyantGraphProjectInput {
   schemaVersion?: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
   presetLineage?: string
   modules: readonly DefineVoyantGraphProjectUnitInput[]
   plugins?: readonly DefineVoyantGraphProjectUnitInput[]
+  deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
 
@@ -154,6 +206,7 @@ export interface VoyantGraphProject {
   modules: readonly VoyantGraphUnitManifest[]
   plugins: readonly VoyantGraphUnitManifest[]
   selections?: VoyantGraphProjectSelections
+  deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
 
@@ -176,6 +229,7 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
   const modules = normalizeProjectUnits(input.modules, "module")
   const plugins = normalizeProjectUnits(input.plugins ?? [], "plugin")
   const hasSelections = modules.selections.length > 0 || plugins.selections.length > 0
+  const deployment = normalizeProjectDeployment(input.deployment)
 
   return {
     schemaVersion,
@@ -190,8 +244,114 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
           },
         }
       : {}),
+    ...(deployment ? { deployment } : {}),
     ...(input.meta ? { meta: input.meta } : {}),
   }
+}
+
+function normalizeProjectDeployment(
+  input: VoyantGraphProjectDeployment | undefined,
+): VoyantGraphProjectDeployment | undefined {
+  if (!input) return undefined
+
+  const target = normalizeOptionalString(input.target, "deployment.target")
+  if (target !== undefined && target !== "node") {
+    throw new Error('defineProject: deployment.target must be "node".')
+  }
+  if (
+    input.mode !== undefined &&
+    input.mode !== "local" &&
+    input.mode !== "managed-cloud" &&
+    input.mode !== "self-hosted"
+  ) {
+    throw new Error(
+      'defineProject: deployment.mode must be "local", "managed-cloud", or "self-hosted".',
+    )
+  }
+
+  const providers: Record<string, string> = {}
+  if (input.providers !== undefined) {
+    if (!isPlainObject(input.providers)) {
+      throw new Error("defineProject: deployment.providers must be a plain string record.")
+    }
+    for (const role of Object.keys(input.providers).sort((left, right) =>
+      left.localeCompare(right),
+    )) {
+      if (role.trim().length === 0) {
+        throw new Error("defineProject: deployment.providers keys must be non-empty strings.")
+      }
+      const provider = normalizeOptionalString(
+        input.providers[role],
+        `deployment.providers.${role}`,
+      )
+      if (!provider) {
+        throw new Error(`defineProject: deployment.providers.${role} must be a non-empty string.`)
+      }
+      providers[role] = provider
+    }
+  }
+
+  const migrations = (input.migrations ?? [])
+    .map((migration, index) => ({
+      id: normalizeOptionalString(migration.id, `deployment.migrations[${index}].id`)!,
+      source: normalizeProjectRelativePath(
+        migration.source,
+        `deployment.migrations[${index}].source`,
+      ),
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id))
+  const duplicateMigration = migrations.find(
+    (migration, index) => index > 0 && migrations[index - 1]?.id === migration.id,
+  )
+  if (duplicateMigration) {
+    throw new Error(
+      `defineProject: deployment.migrations contains duplicate id "${duplicateMigration.id}".`,
+    )
+  }
+
+  if (
+    !target &&
+    input.mode === undefined &&
+    Object.keys(providers).length === 0 &&
+    migrations.length === 0
+  ) {
+    return undefined
+  }
+  return {
+    ...(target ? { target } : {}),
+    ...(input.mode ? { mode: input.mode } : {}),
+    ...(Object.keys(providers).length > 0 ? { providers } : {}),
+    ...(migrations.length > 0 ? { migrations } : {}),
+  }
+}
+
+function normalizeProjectRelativePath(value: unknown, label: string): string {
+  const normalized = normalizeOptionalString(value, label)?.replaceAll("\\", "/")
+  if (!normalized?.startsWith("./") || normalized.includes("#")) {
+    throw new Error(`defineProject: ${label} must be a project-relative path starting with "./".`)
+  }
+  const segments: string[] = []
+  for (const segment of normalized.slice(2).split("/")) {
+    if (segment === "" || segment === ".") continue
+    if (segment === "..") {
+      if (segments.length === 0) {
+        throw new Error(`defineProject: ${label} must not escape the project.`)
+      }
+      segments.pop()
+      continue
+    }
+    segments.push(segment)
+  }
+  if (segments.length === 0) throw new Error(`defineProject: ${label} must identify a directory.`)
+  return `./${segments.join("/")}`
+}
+
+function normalizeOptionalString(value: unknown, label: string): string | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`defineProject: ${label} must be a non-empty string.`)
+  }
+  return value.trim()
 }
 
 function normalizeProjectUnits(

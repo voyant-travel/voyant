@@ -22,8 +22,7 @@
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
-        "node",
-        "voyant-cloud"
+        "node"
       ],
       "modes": [
         "local",
@@ -65,6 +64,7 @@
     "@voyant-travel/core": "workspace:*",
     "@voyant-travel/cruises": "workspace:*",
     "@voyant-travel/db": "workspace:*",
+    "@voyant-travel/framework-migrations": "workspace:*",
     "@voyant-travel/mcp": "workspace:*",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/runtime": "workspace:*",
@@ -74,7 +74,8 @@
     "@voyant-travel/utils": "workspace:*",
     "@voyant-travel/workflows": "workspace:*",
     "@voyant-travel/workflows-orchestrator": "workspace:*",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "pg": "^8.22.0"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",
@@ -85,6 +86,8 @@
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "@types/node": "catalog:",
+    "@types/pg": "^8.15.6",
     "hono": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -110,7 +113,8 @@
       },
       "./project": {
         "types": "./dist/project.d.ts",
-        "import": "./dist/project.js"
+        "import": "./dist/project.js",
+        "default": "./dist/project.js"
       },
       "./managed-jobs": {
         "types": "./dist/managed-jobs.d.ts",

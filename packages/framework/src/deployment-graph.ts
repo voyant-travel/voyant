@@ -5,19 +5,32 @@ import {
   defineProject,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
+  type VoyantGraphAccessDeclaration,
+  type VoyantGraphActionDeclaration,
+  type VoyantGraphAdminDeclaration,
   type VoyantGraphCapabilityDeclaration,
+  type VoyantGraphConfigDeclaration,
   type VoyantGraphEvent,
   type VoyantGraphFacetEntity,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
+  type VoyantGraphLifecycleDeclaration,
+  type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
+  type VoyantGraphProjectDeploymentMigration,
   type VoyantGraphProjectSelections,
+  type VoyantGraphProviderDeclaration,
+  type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
   type VoyantGraphRouteSurface,
+  type VoyantGraphSecretDeclaration,
+  type VoyantGraphSetupMigration,
   type VoyantGraphSubscriber,
+  type VoyantGraphToolDeclaration,
   type VoyantGraphUnitKind,
   type VoyantGraphUnitManifest,
+  type VoyantGraphWebhookDeclaration,
   type VoyantGraphWorkflow,
   type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
@@ -67,22 +80,34 @@ export {
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
   VOYANT_GRAPH_PROJECT_SCHEMA_VERSION,
+  type VoyantGraphAccessDeclaration,
+  type VoyantGraphActionDeclaration,
+  type VoyantGraphAdminDeclaration,
   type VoyantGraphCapabilityDeclaration,
+  type VoyantGraphConfigDeclaration,
   type VoyantGraphEvent,
   type VoyantGraphFacetEntity,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
+  type VoyantGraphLifecycleDeclaration,
+  type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
   type VoyantGraphProjectSelection,
   type VoyantGraphProjectSelectionProvenance,
   type VoyantGraphProjectSelections,
+  type VoyantGraphProviderDeclaration,
+  type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
   type VoyantGraphRouteSurface,
   type VoyantGraphRuntimeReference,
+  type VoyantGraphSecretDeclaration,
+  type VoyantGraphSetupMigration,
   type VoyantGraphSubscriber,
+  type VoyantGraphToolDeclaration,
   type VoyantGraphUnitKind,
   type VoyantGraphUnitManifest,
+  type VoyantGraphWebhookDeclaration,
   type VoyantGraphWorkflow,
   type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
@@ -116,6 +141,7 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN:
     "A provides/requires capability token does not match v1 namespace rules.",
   VOYANT_GRAPH_INVALID_ENTITY_ID: "A v1 facet entity is missing a stable id or uses an invalid id.",
+  VOYANT_GRAPH_INVALID_FACET: "A supported v1 facet does not match its closed metadata contract.",
   VOYANT_GRAPH_INVALID_ID: "A graph unit id is missing or is not a canonical package graph id.",
   VOYANT_GRAPH_INVALID_ROUTE_BUNDLE:
     "An API route bundle declaration does not match the v1 route metadata contract.",
@@ -137,6 +163,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED:
     "A graph runtime reference points to a package that did not pass admission.",
   VOYANT_GRAPH_UNKNOWN_FACET: "A module or plugin manifest contains an unknown top-level facet.",
+  VOYANT_GRAPH_UNKNOWN_REFERENCE:
+    "A package facet references an entity that is not present in the selected graph.",
   VOYANT_GRAPH_UNSUPPORTED_FACET:
     "A module or plugin manifest uses a reserved facet that this toolchain does not support yet.",
 } as const
@@ -169,15 +197,45 @@ export interface VoyantGraphScheduledJob {
   input?: VoyantGraphJsonValue
 }
 
+export interface VoyantGraphInboundWebhookPlanEntry {
+  id: string
+  unitId: string
+  packageName: string
+  apiId: string
+  apiUnitId: string
+  mountPath: string
+  secretIds: readonly string[]
+}
+
+export interface VoyantGraphOutboundWebhookPlanEntry {
+  id: string
+  unitId: string
+  packageName: string
+  eventId: string
+  eventUnitId: string
+  eventType: string
+  secretIds: readonly string[]
+}
+
+/** Executable webhook posture compiled from only the selected graph units. */
+export interface VoyantGraphWebhookPlan {
+  inbound: readonly VoyantGraphInboundWebhookPlanEntry[]
+  outbound: readonly VoyantGraphOutboundWebhookPlanEntry[]
+}
+
 export interface DefineVoyantGraphDeploymentInput {
   schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
-  target: string
+  target: VoyantGraphRuntimeTarget
   providers?: Partial<Record<VoyantProjectProviderRole | string, string>>
+  migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   mode?: VoyantProjectDeploymentMode
   requirements?: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
 }
+
+/** Unified Voyant applications always execute as resident Node processes. */
+export type VoyantGraphRuntimeTarget = "node"
 
 export interface VoyantGraphDeploymentRequirements {
   resources: readonly VoyantProfileResourceRequirement[]
@@ -186,8 +244,9 @@ export interface VoyantGraphDeploymentRequirements {
 export interface VoyantGraphDeployment {
   schemaVersion: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
-  target: string
+  target: VoyantGraphRuntimeTarget
   providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+  migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   mode?: VoyantProjectDeploymentMode
   requirements: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
@@ -204,6 +263,9 @@ export interface VoyantGraphPackageMetadata {
     modes?: readonly VoyantProjectDeploymentMode[]
   }
   requires?: VoyantGraphCapabilityDeclaration
+  /** Package schema export and its package-level migration dependencies. */
+  schema?: string
+  requiresSchemas?: readonly string[]
 }
 
 export interface VoyantGraphPackageRecord {
@@ -225,11 +287,14 @@ export interface VoyantGraphAdmissionPolicy {
 
 export interface ResolveDeploymentGraphInput {
   project: VoyantGraphProject
-  deployment?: Omit<VoyantGraphDeployment, "project">
+  deployment?: Omit<VoyantGraphDeployment, "project" | "schemaVersion" | "target"> & {
+    schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
+    target?: VoyantGraphRuntimeTarget
+  }
   packageRecords?: readonly VoyantGraphPackageRecord[]
   scheduledJobs?: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[]
   frameworkVersion?: string
-  target?: string
+  target?: VoyantGraphRuntimeTarget
   mode?: VoyantProjectDeploymentMode
   admission?: VoyantGraphAdmissionPolicy
 }
@@ -244,7 +309,7 @@ export interface ResolveDeploymentGraphWithPackageManifestsInput
 export interface CreateTestDeploymentInput {
   modules: readonly VoyantGraphUnitManifest[]
   plugins?: readonly VoyantGraphUnitManifest[]
-  target?: string
+  target?: VoyantGraphRuntimeTarget
   mode?: VoyantProjectDeploymentMode
   packageRecords?: readonly VoyantGraphPackageRecord[]
 }
@@ -255,6 +320,8 @@ export interface ResolvedVoyantGraphUnit {
   packageName: string
   localId?: string
   order: number
+  /** JSON-safe values authored on this unit's project selection. */
+  projectConfig?: VoyantGraphJsonObject
   provides: {
     capabilities: readonly string[]
     ports: readonly VoyantGraphPortDeclaration[]
@@ -270,6 +337,17 @@ export interface ResolvedVoyantGraphUnit {
   subscribers: readonly VoyantGraphSubscriber[]
   events: readonly VoyantGraphEvent[]
   workflows: readonly VoyantGraphWorkflow[]
+  setupMigrations?: readonly VoyantGraphSetupMigration[]
+  config?: readonly VoyantGraphConfigDeclaration[]
+  secrets?: readonly VoyantGraphSecretDeclaration[]
+  resources?: readonly VoyantGraphResourceDeclaration[]
+  providers?: readonly VoyantGraphProviderDeclaration[]
+  access?: VoyantGraphAccessDeclaration
+  admin?: VoyantGraphAdminDeclaration
+  tools?: readonly VoyantGraphToolDeclaration[]
+  webhooks?: readonly VoyantGraphWebhookDeclaration[]
+  actions?: readonly VoyantGraphActionDeclaration[]
+  lifecycle?: VoyantGraphLifecycleDeclaration
 }
 
 export interface ResolvedVoyantDeploymentGraph {
@@ -279,9 +357,10 @@ export interface ResolvedVoyantDeploymentGraph {
     presetLineage?: string
   }
   deployment: {
-    target?: string
+    target?: VoyantGraphRuntimeTarget
     mode?: VoyantProjectDeploymentMode
     providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+    migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   }
   requirements: VoyantGraphDeploymentRequirements
   modules: readonly ResolvedVoyantGraphUnit[]
@@ -291,6 +370,7 @@ export interface ResolvedVoyantDeploymentGraph {
     required: readonly string[]
   }
   packageRecords: readonly VoyantGraphPackageRecord[]
+  webhookPlan: VoyantGraphWebhookPlan
   provisioning: {
     scheduledJobs: readonly VoyantGraphScheduledJob[]
   }
@@ -333,6 +413,17 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "subscribers",
   "events",
   "workflows",
+  "setupMigrations",
+  "config",
+  "secrets",
+  "resources",
+  "providers",
+  "access",
+  "admin",
+  "tools",
+  "webhooks",
+  "actions",
+  "lifecycle",
   "meta",
 ])
 
@@ -363,11 +454,16 @@ const STANDARD_CAPABILITY_PREFIXES = new Set([
 ])
 
 export function defineDeployment(input: DefineVoyantGraphDeploymentInput): VoyantGraphDeployment {
+  if (input.target !== "node") {
+    throw new Error('defineDeployment: target must be "node".')
+  }
+
   const deployment = {
     schemaVersion: input.schemaVersion ?? VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION,
     project: input.project,
     target: input.target,
     providers: { ...(input.providers ?? {}) },
+    ...(input.migrations?.length ? { migrations: [...input.migrations] } : {}),
     ...(input.mode ? { mode: input.mode } : {}),
     requirements: normalizeDeploymentRequirements(
       input.requirements ?? deriveDeploymentRequirements(input.providers),
@@ -484,9 +580,10 @@ export function validateGraphUnitManifest(
   diagnostics.push(...validateFacetEntities(input.schema, "schema", source))
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
   diagnostics.push(...validateFacetEntities(input.links, "links", source))
-  diagnostics.push(...validateFacetEntities(input.subscribers, "subscribers", source))
+  diagnostics.push(...validateSubscribers(input.subscribers, source))
   diagnostics.push(...validateFacetEntities(input.events, "events", source))
   diagnostics.push(...validateWorkflows(input.workflows, source))
+  diagnostics.push(...validatePromotedFacets(input, source))
 
   return sortDiagnostics(diagnostics)
 }
@@ -495,14 +592,27 @@ export async function resolveDeploymentGraph(
   input: ResolveDeploymentGraphInput,
 ): Promise<ResolvedVoyantDeploymentGraph> {
   const target = input.target ?? input.deployment?.target
+  if (target !== undefined && target !== "node") {
+    throw new Error('resolveDeploymentGraph: target must be "node".')
+  }
   const mode = input.mode ?? input.deployment?.mode
   const providers = { ...(input.deployment?.providers ?? {}) }
   const requirements = normalizeDeploymentRequirements(input.deployment?.requirements)
+  const migrations = input.deployment?.migrations ?? input.project.deployment?.migrations
+  const selectionConfigById = new Map(
+    [...(input.project.selections?.modules ?? []), ...(input.project.selections?.plugins ?? [])]
+      .filter((selection) => selection.config !== undefined)
+      .map((selection) => [selection.id, selection.config!]),
+  )
   const selectedModules = sortResolvedUnits(
-    input.project.modules.map((unit) => resolveUnit(unit, "module")),
+    input.project.modules.map((unit) =>
+      resolveUnit(unit, "module", selectionConfigById.get(unit.id)),
+    ),
   )
   const selectedPlugins = sortResolvedUnits(
-    input.project.plugins.map((unit) => resolveUnit(unit, "plugin")),
+    input.project.plugins.map((unit) =>
+      resolveUnit(unit, "plugin", selectionConfigById.get(unit.id)),
+    ),
   )
   const selectedUnits = [...selectedModules, ...selectedPlugins]
 
@@ -515,9 +625,11 @@ export async function resolveDeploymentGraph(
     ...deriveWorkflowScheduledJobs(selectedUnits),
     ...(input.scheduledJobs ?? []),
   ])
+  const webhookPlan = compileWebhookPlan(selectedUnits)
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
+    ...validateFacetReferences(selectedUnits),
     ...validateCapabilityClosure(selectedUnits),
     ...validatePortClosure(selectedUnits),
     ...validateDuplicateEntityIds(selectedUnits),
@@ -541,6 +653,7 @@ export async function resolveDeploymentGraph(
       ...(target ? { target } : {}),
       ...(mode ? { mode } : {}),
       providers,
+      ...(migrations?.length ? { migrations: [...migrations] } : {}),
     },
     requirements,
     modules,
@@ -550,6 +663,7 @@ export async function resolveDeploymentGraph(
       required: sortedUnique(selectedUnits.flatMap((unit) => unit.requires.capabilities)),
     },
     packageRecords,
+    webhookPlan,
     provisioning: {
       scheduledJobs,
     },
@@ -677,7 +791,7 @@ export function defineDeploymentFromManagedProfile(
   const providers = getVoyantProjectProviders(project)
   return defineDeployment({
     project: defineProjectFromManagedProfile(project),
-    target: project.mode === "managed-cloud" ? "voyant-cloud" : "node",
+    target: "node",
     mode: project.mode,
     providers: { ...providers },
     meta: {
@@ -980,6 +1094,7 @@ function compareResourceRequirements(
 function resolveUnit(
   unit: VoyantGraphUnitManifest,
   kind: VoyantGraphUnitKind,
+  projectConfig?: VoyantGraphJsonObject,
 ): ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest } {
   const packageName = unit.packageName ?? packageNameFromGraphId(unit.id)
   return {
@@ -989,6 +1104,7 @@ function resolveUnit(
     packageName,
     ...(unit.localId ? { localId: unit.localId } : {}),
     order: 0,
+    ...(projectConfig ? { projectConfig } : {}),
     provides: {
       capabilities: sortedUnique(unit.provides?.capabilities ?? []),
       ports: sortPorts(unit.provides?.ports ?? []),
@@ -1004,6 +1120,40 @@ function resolveUnit(
     subscribers: sortFacetEntities(unit.subscribers ?? []) as VoyantGraphSubscriber[],
     events: sortFacetEntities(unit.events ?? []) as VoyantGraphEvent[],
     workflows: sortWorkflows(normalizeWorkflowScheduleFacets(unit.id, unit.workflows ?? [])),
+    ...(unit.setupMigrations?.length
+      ? { setupMigrations: sortFacetEntities(unit.setupMigrations) }
+      : {}),
+    ...(unit.config?.length ? { config: sortFacetEntities(unit.config) } : {}),
+    ...(unit.secrets?.length ? { secrets: sortFacetEntities(unit.secrets) } : {}),
+    ...(unit.resources?.length ? { resources: sortFacetEntities(unit.resources) } : {}),
+    ...(unit.providers?.length ? { providers: sortFacetEntities(unit.providers) } : {}),
+    ...(unit.access
+      ? {
+          access: {
+            ...(unit.access.resources?.length
+              ? { resources: sortFacetEntities(unit.access.resources) }
+              : {}),
+            ...(unit.access.roles?.length ? { roles: sortFacetEntities(unit.access.roles) } : {}),
+          },
+        }
+      : {}),
+    ...(unit.admin
+      ? {
+          admin: {
+            ...(unit.admin.copy?.length ? { copy: sortFacetEntities(unit.admin.copy) } : {}),
+            ...(unit.admin.routes?.length ? { routes: sortFacetEntities(unit.admin.routes) } : {}),
+            ...(unit.admin.nav?.length ? { nav: sortFacetEntities(unit.admin.nav) } : {}),
+            ...(unit.admin.slots?.length ? { slots: sortFacetEntities(unit.admin.slots) } : {}),
+            ...(unit.admin.contributions?.length
+              ? { contributions: sortFacetEntities(unit.admin.contributions) }
+              : {}),
+          },
+        }
+      : {}),
+    ...(unit.tools?.length ? { tools: sortFacetEntities(unit.tools) } : {}),
+    ...(unit.webhooks?.length ? { webhooks: sortFacetEntities(unit.webhooks) } : {}),
+    ...(unit.actions?.length ? { actions: sortFacetEntities(unit.actions) } : {}),
+    ...(unit.lifecycle ? { lifecycle: unit.lifecycle } : {}),
   }
 }
 
@@ -1239,6 +1389,305 @@ function validateFacetEntities(
   return value.flatMap((entry, index) => validateEntityId(entry, `${facet}[${index}]`, source))
 }
 
+function validatePromotedFacets(
+  input: Record<string, unknown>,
+  source: string | undefined,
+): VoyantGraphDiagnostic[] {
+  const diagnostics: VoyantGraphDiagnostic[] = []
+  for (const facet of [
+    "setupMigrations",
+    "config",
+    "secrets",
+    "resources",
+    "providers",
+    "tools",
+    "webhooks",
+    "actions",
+  ]) {
+    diagnostics.push(...validateFacetEntities(input[facet], facet, source))
+  }
+
+  validateEntityArray(input.config, "config", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.key, `${facet}.key`, source, diagnostics)
+    if (entry.validator !== undefined) {
+      validateRuntimeReference(entry.validator, `${facet}.validator`, source, diagnostics)
+    }
+  })
+  validateEntityArray(input.secrets, "secrets", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.key, `${facet}.key`, source, diagnostics)
+    if (entry.validator !== undefined) {
+      validateRuntimeReference(entry.validator, `${facet}.validator`, source, diagnostics)
+    }
+  })
+  validateEntityArray(input.resources, "resources", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.kind, `${facet}.kind`, source, diagnostics)
+  })
+  validateEntityArray(input.providers, "providers", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.port, `${facet}.port`, source, diagnostics)
+    if (entry.selection !== undefined) {
+      if (!isRecord(entry.selection)) {
+        invalidFacet(
+          `${facet}.selection`,
+          source,
+          diagnostics,
+          "Provider selection must declare a role/value object.",
+        )
+      } else {
+        requireNonEmptyString(entry.selection.role, `${facet}.selection.role`, source, diagnostics)
+        requireNonEmptyString(
+          entry.selection.value,
+          `${facet}.selection.value`,
+          source,
+          diagnostics,
+        )
+      }
+    }
+    validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+  })
+  validateEntityArray(
+    input.setupMigrations,
+    "setupMigrations",
+    source,
+    diagnostics,
+    (entry, facet) => {
+      requireNonEmptyString(entry.source, `${facet}.source`, source, diagnostics)
+      validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+    },
+  )
+  validateEntityArray(input.tools, "tools", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.name, `${facet}.name`, source, diagnostics)
+    validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+    validateScopeArray(entry.requiredScopes, `${facet}.requiredScopes`, source, diagnostics)
+  })
+  validateEntityArray(input.webhooks, "webhooks", source, diagnostics, (entry, facet) => {
+    if (entry.direction !== "inbound" && entry.direction !== "outbound") {
+      invalidFacet(
+        `${facet}.direction`,
+        source,
+        diagnostics,
+        "Webhook direction must be inbound or outbound.",
+      )
+    } else if (entry.direction === "inbound") {
+      requireNonEmptyString(entry.apiId, `${facet}.apiId`, source, diagnostics)
+      if (entry.eventId !== undefined) {
+        invalidFacet(
+          `${facet}.eventId`,
+          source,
+          diagnostics,
+          "Inbound webhooks cannot reference outbound events.",
+        )
+      }
+    } else {
+      requireNonEmptyString(entry.eventId, `${facet}.eventId`, source, diagnostics)
+      if (entry.apiId !== undefined) {
+        invalidFacet(
+          `${facet}.apiId`,
+          source,
+          diagnostics,
+          "Outbound webhooks cannot reference inbound APIs.",
+        )
+      }
+    }
+    if (entry.secretIds !== undefined && !isStringArray(entry.secretIds)) {
+      invalidFacet(
+        `${facet}.secretIds`,
+        source,
+        diagnostics,
+        "Webhook secretIds must be an array of graph entity ids.",
+      )
+    }
+  })
+  validateEntityArray(input.actions, "actions", source, diagnostics, (entry, facet) => {
+    if (entry.capabilityId !== undefined) {
+      requireNonEmptyString(entry.capabilityId, `${facet}.capabilityId`, source, diagnostics)
+    }
+    requireNonEmptyString(entry.version, `${facet}.version`, source, diagnostics)
+    requireNonEmptyString(entry.targetType, `${facet}.targetType`, source, diagnostics)
+    if (entry.resource !== undefined) {
+      requireNonEmptyString(entry.resource, `${facet}.resource`, source, diagnostics)
+    }
+    if (entry.action !== undefined) {
+      requireNonEmptyString(entry.action, `${facet}.action`, source, diagnostics)
+    }
+    if (entry.allowedActorTypes !== undefined && !isStringArray(entry.allowedActorTypes)) {
+      invalidFacet(
+        `${facet}.allowedActorTypes`,
+        source,
+        diagnostics,
+        "Action allowedActorTypes must be an array of strings.",
+      )
+    }
+    validateScopeArray(entry.requiredScopes, `${facet}.requiredScopes`, source, diagnostics)
+    if ((entry.risk === "high" || entry.risk === "critical") && entry.ledger !== "required") {
+      invalidFacet(
+        `${facet}.ledger`,
+        source,
+        diagnostics,
+        "High and critical actions must require action-ledger writes.",
+      )
+    }
+  })
+
+  validateAccessFacet(input.access, source, diagnostics)
+  validateAdminFacet(input.admin, source, diagnostics)
+  if (input.lifecycle !== undefined) {
+    if (!isRecord(input.lifecycle)) {
+      invalidFacet("lifecycle", source, diagnostics, "Lifecycle metadata must be an object.")
+    } else if (input.lifecycle.uninstall !== undefined) {
+      const uninstall = input.lifecycle.uninstall
+      if (!isRecord(uninstall) || uninstall.default !== "retain-data") {
+        invalidFacet(
+          "lifecycle.uninstall.default",
+          source,
+          diagnostics,
+          'Uninstall metadata must default to "retain-data".',
+        )
+      }
+    }
+  }
+  return diagnostics
+}
+
+function validateAccessFacet(
+  value: unknown,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    invalidFacet("access", source, diagnostics, "Access metadata must be an object.")
+    return
+  }
+  diagnostics.push(...validateFacetEntities(value.resources, "access.resources", source))
+  diagnostics.push(...validateFacetEntities(value.roles, "access.roles", source))
+  validateEntityArray(value.resources, "access.resources", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.resource, `${facet}.resource`, source, diagnostics)
+    if (!isStringArray(entry.actions) || entry.actions.length === 0) {
+      invalidFacet(
+        `${facet}.actions`,
+        source,
+        diagnostics,
+        "Access actions must be a non-empty string array.",
+      )
+    }
+  })
+  validateEntityArray(value.roles, "access.roles", source, diagnostics, (entry, facet) => {
+    validateScopeArray(entry.grants, `${facet}.grants`, source, diagnostics, true)
+  })
+}
+
+function validateAdminFacet(
+  value: unknown,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    invalidFacet("admin", source, diagnostics, "Admin metadata must be an object.")
+    return
+  }
+  for (const facet of ["copy", "routes", "nav", "slots", "contributions"] as const) {
+    diagnostics.push(...validateFacetEntities(value[facet], `admin.${facet}`, source))
+  }
+  validateEntityArray(value.copy, "admin.copy", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.namespace, `${facet}.namespace`, source, diagnostics)
+    requireNonEmptyString(entry.fallbackLocale, `${facet}.fallbackLocale`, source, diagnostics)
+    validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+  })
+  validateEntityArray(value.routes, "admin.routes", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.path, `${facet}.path`, source, diagnostics)
+    validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+    validateScopeArray(entry.requiredScopes, `${facet}.requiredScopes`, source, diagnostics)
+  })
+  validateEntityArray(value.nav, "admin.nav", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.routeId, `${facet}.routeId`, source, diagnostics)
+  })
+  validateEntityArray(value.slots, "admin.slots", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.routeId, `${facet}.routeId`, source, diagnostics)
+  })
+  validateEntityArray(
+    value.contributions,
+    "admin.contributions",
+    source,
+    diagnostics,
+    (entry, facet) => {
+      requireNonEmptyString(entry.slotId, `${facet}.slotId`, source, diagnostics)
+      validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+      validateScopeArray(entry.requiredScopes, `${facet}.requiredScopes`, source, diagnostics)
+    },
+  )
+}
+
+function validateEntityArray(
+  value: unknown,
+  facet: string,
+  _source: string | undefined,
+  _diagnostics: VoyantGraphDiagnostic[],
+  validate: (entry: Record<string, unknown>, facet: string) => void,
+): void {
+  if (!Array.isArray(value)) return
+  value.forEach((entry, index) => {
+    if (isRecord(entry)) validate(entry, `${facet}[${index}]`)
+  })
+}
+
+function requireNonEmptyString(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (typeof value === "string" && value.length > 0) return
+  invalidFacet(facet, source, diagnostics, "Expected a non-empty string.")
+}
+
+function validateRuntimeReference(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (
+    isRecord(value) &&
+    typeof value.entry === "string" &&
+    value.entry.length > 0 &&
+    (value.export === undefined || (typeof value.export === "string" && value.export.length > 0))
+  ) {
+    return
+  }
+  invalidFacet(
+    facet,
+    source,
+    diagnostics,
+    "Runtime references require entry and optional export strings.",
+  )
+}
+
+function validateScopeArray(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+  required = false,
+): void {
+  if (value === undefined && !required) return
+  if (
+    !Array.isArray(value) ||
+    value.some((scope) => typeof scope !== "string" || !ROUTE_SCOPE_PATTERN.test(scope))
+  ) {
+    invalidFacet(facet, source, diagnostics, "Scopes must be an array of resource:action strings.")
+  }
+}
+
+function invalidFacet(
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+  message: string,
+): void {
+  diagnostics.push(diagnostic({ code: "VOYANT_GRAPH_INVALID_FACET", source, facet, message }))
+}
+
 function validateRouteBundles(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
   const diagnostics = validateFacetEntities(value, "api", source)
   if (value == null || !Array.isArray(value)) return diagnostics
@@ -1377,7 +1826,16 @@ function validateWorkflows(value: unknown, source: string | undefined): VoyantGr
   if (!Array.isArray(value)) return diagnostics
   for (let workflowIndex = 0; workflowIndex < value.length; workflowIndex++) {
     const workflow = value[workflowIndex]
-    if (!isRecord(workflow) || !Array.isArray(workflow.schedules)) continue
+    if (!isRecord(workflow)) continue
+    if (workflow.runtime !== undefined) {
+      validateRuntimeReference(
+        workflow.runtime,
+        `workflows[${workflowIndex}].runtime`,
+        source,
+        diagnostics,
+      )
+    }
+    if (!Array.isArray(workflow.schedules)) continue
     for (let scheduleIndex = 0; scheduleIndex < workflow.schedules.length; scheduleIndex++) {
       diagnostics.push(
         ...validateEntityId(
@@ -1387,6 +1845,22 @@ function validateWorkflows(value: unknown, source: string | undefined): VoyantGr
         ),
       )
     }
+  }
+  return diagnostics
+}
+
+function validateSubscribers(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
+  const diagnostics = validateFacetEntities(value, "subscribers", source)
+  if (!Array.isArray(value)) return diagnostics
+  for (let index = 0; index < value.length; index++) {
+    const subscriber = value[index]
+    if (!isRecord(subscriber) || subscriber.runtime === undefined) continue
+    validateRuntimeReference(
+      subscriber.runtime,
+      `subscribers[${index}].runtime`,
+      source,
+      diagnostics,
+    )
   }
   return diagnostics
 }
@@ -1428,6 +1902,234 @@ function validateDuplicateGraphIds(
         message: `Graph id "${id}" is selected more than once. V1 allows one instance per graph id.`,
       }),
     )
+}
+
+function validateFacetReferences(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphDiagnostic[] {
+  const entityIds = new Set(units.flatMap(unitEntityIds))
+  const apiById = new Map(units.flatMap((unit) => unit.api.map((api) => [api.id, api] as const)))
+  const eventById = new Map(
+    units.flatMap((unit) => unit.events.map((event) => [event.id, event] as const)),
+  )
+  const scopes = new Set(
+    units.flatMap((unit) =>
+      (unit.access?.resources ?? []).flatMap((resource) =>
+        resource.actions.map((action) => `${resource.resource}:${action}`),
+      ),
+    ),
+  )
+  const copyNamespaces = new Set(
+    units.flatMap((unit) => (unit.admin?.copy ?? []).map((copy) => copy.namespace)),
+  )
+  const diagnostics: VoyantGraphDiagnostic[] = []
+
+  const reference = (unitId: string, facet: string, id: string) => {
+    if (entityIds.has(id)) return
+    diagnostics.push(
+      diagnostic({
+        code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+        source: unitId,
+        facet,
+        message: `Facet reference "${id}" does not exist in the selected graph.`,
+      }),
+    )
+  }
+  const requireScope = (unitId: string, facet: string, scope: string) => {
+    if (scopes.size === 0) return
+    if (scopes.has(scope)) return
+    diagnostics.push(
+      diagnostic({
+        code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+        source: unitId,
+        facet,
+        message: `Scope "${scope}" is not declared by a selected access resource.`,
+      }),
+    )
+  }
+  const requireCopy = (unitId: string, facet: string, copy: VoyantGraphMessageReference) => {
+    if (copyNamespaces.size === 0) return
+    if (copyNamespaces.has(copy.namespace)) return
+    diagnostics.push(
+      diagnostic({
+        code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+        source: unitId,
+        facet,
+        message: `Copy namespace "${copy.namespace}" is not declared by the selected graph.`,
+      }),
+    )
+  }
+
+  for (const unit of units) {
+    for (const route of unit.api) {
+      for (const scope of route.requiredScopes ?? []) {
+        requireScope(unit.id, `${route.id}.requiredScopes`, scope)
+      }
+    }
+    for (const role of unit.access?.roles ?? []) {
+      for (const scope of role.grants) requireScope(unit.id, `${role.id}.grants`, scope)
+    }
+    for (const route of unit.admin?.routes ?? []) {
+      for (const scope of route.requiredScopes ?? []) {
+        requireScope(unit.id, `${route.id}.requiredScopes`, scope)
+      }
+      for (const copy of route.copy ?? []) requireCopy(unit.id, `${route.id}.copy`, copy)
+    }
+    for (const nav of unit.admin?.nav ?? []) {
+      reference(unit.id, `${nav.id}.routeId`, nav.routeId)
+      requireCopy(unit.id, `${nav.id}.label`, nav.label)
+    }
+    for (const slot of unit.admin?.slots ?? []) {
+      reference(unit.id, `${slot.id}.routeId`, slot.routeId)
+    }
+    for (const contribution of unit.admin?.contributions ?? []) {
+      reference(unit.id, `${contribution.id}.slotId`, contribution.slotId)
+      for (const scope of contribution.requiredScopes ?? []) {
+        requireScope(unit.id, `${contribution.id}.requiredScopes`, scope)
+      }
+      for (const copy of contribution.copy ?? []) {
+        requireCopy(unit.id, `${contribution.id}.copy`, copy)
+      }
+    }
+    for (const tool of unit.tools ?? []) {
+      for (const scope of tool.requiredScopes ?? []) {
+        requireScope(unit.id, `${tool.id}.requiredScopes`, scope)
+      }
+    }
+    for (const webhook of unit.webhooks ?? []) {
+      if (webhook.direction === "inbound" && webhook.apiId) {
+        const api = apiById.get(webhook.apiId)
+        if (!api) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${webhook.id}.apiId`,
+              message: `Inbound webhook API reference "${webhook.apiId}" is not an API bundle in the selected graph.`,
+            }),
+          )
+        } else if (api.surface !== "webhook") {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${webhook.id}.apiId`,
+              message: `Inbound webhook API reference "${webhook.apiId}" must select an API bundle with surface "webhook".`,
+            }),
+          )
+        } else if (!api.runtime) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_FACET",
+              source: unit.id,
+              facet: `${webhook.id}.apiId`,
+              message: `Inbound webhook API reference "${webhook.apiId}" must select an executable API bundle with a runtime reference.`,
+            }),
+          )
+        }
+      }
+      if (webhook.direction === "outbound" && webhook.eventId) {
+        const event = eventById.get(webhook.eventId)
+        if (!event) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${webhook.id}.eventId`,
+              message: `Outbound webhook event reference "${webhook.eventId}" is not an event in the selected graph.`,
+            }),
+          )
+        } else if (!event.eventType?.trim()) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_FACET",
+              source: unit.id,
+              facet: `${webhook.id}.eventId`,
+              message: `Outbound webhook event reference "${webhook.eventId}" must select an event with a concrete eventType.`,
+            }),
+          )
+        }
+      }
+      for (const id of webhook.secretIds ?? []) {
+        reference(unit.id, `${webhook.id}.secretIds`, id)
+      }
+    }
+    for (const migration of unit.setupMigrations ?? []) {
+      for (const id of migration.dependsOn ?? []) {
+        reference(unit.id, `${migration.id}.dependsOn`, id)
+      }
+    }
+    for (const action of unit.actions ?? []) {
+      for (const scope of action.requiredScopes ?? []) {
+        requireScope(unit.id, `${action.id}.requiredScopes`, scope)
+      }
+      for (const copy of action.copy ?? []) requireCopy(unit.id, `${action.id}.copy`, copy)
+      for (const [kind, ids] of Object.entries(action.from ?? {})) {
+        for (const id of ids ?? []) reference(unit.id, `${action.id}.from.${kind}`, id)
+      }
+    }
+  }
+  return diagnostics
+}
+
+function compileWebhookPlan(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphWebhookPlan {
+  const apiById = new Map(
+    units.flatMap((unit) => unit.api.map((api) => [api.id, { api, unit }] as const)),
+  )
+  const eventById = new Map(
+    units.flatMap((unit) => unit.events.map((event) => [event.id, { event, unit }] as const)),
+  )
+  const inbound: VoyantGraphInboundWebhookPlanEntry[] = []
+  const outbound: VoyantGraphOutboundWebhookPlanEntry[] = []
+
+  for (const unit of units) {
+    for (const webhook of unit.webhooks ?? []) {
+      const secretIds = sortedUnique(webhook.secretIds ?? [])
+      if (webhook.direction === "inbound" && webhook.apiId) {
+        const target = apiById.get(webhook.apiId)
+        if (target?.api.surface === "webhook" && target.api.runtime) {
+          inbound.push({
+            id: webhook.id,
+            unitId: unit.id,
+            packageName: unit.packageName,
+            apiId: webhook.apiId,
+            apiUnitId: target.unit.id,
+            mountPath: webhookRouteMountPath(target.unit, target.api),
+            secretIds,
+          })
+        }
+      }
+      if (webhook.direction === "outbound" && webhook.eventId) {
+        const target = eventById.get(webhook.eventId)
+        if (target?.event.eventType?.trim()) {
+          outbound.push({
+            id: webhook.id,
+            unitId: unit.id,
+            packageName: unit.packageName,
+            eventId: webhook.eventId,
+            eventUnitId: target.unit.id,
+            eventType: target.event.eventType,
+            secretIds,
+          })
+        }
+      }
+    }
+  }
+
+  const byIdentity = <T extends { id: string; unitId: string }>(left: T, right: T) =>
+    left.id.localeCompare(right.id) || left.unitId.localeCompare(right.unitId)
+  return { inbound: inbound.sort(byIdentity), outbound: outbound.sort(byIdentity) }
+}
+
+function webhookRouteMountPath(
+  unit: ResolvedVoyantGraphUnit,
+  route: VoyantGraphRouteBundle,
+): string {
+  if (route.mount?.startsWith("/")) return route.mount
+  const segment = route.mount ?? unit.localId ?? unit.id.split("#").at(-1) ?? unit.id
+  return `/v1/${segment.replace(/^\/+|\/+$/g, "")}`
 }
 
 function validateCapabilityClosure(
@@ -1501,7 +2203,7 @@ function validatePackageAdmission(
   packageRecords: readonly VoyantGraphPackageRecord[],
   context: {
     frameworkVersion?: string
-    target?: string
+    target?: VoyantGraphRuntimeTarget
     mode?: VoyantProjectDeploymentMode
     admission?: VoyantGraphAdmissionPolicy
   },
@@ -1574,17 +2276,46 @@ function validateRuntimeReferenceAdmission(
   const diagnostics: VoyantGraphDiagnostic[] = []
 
   for (const unit of units) {
-    for (const route of unit.api) {
-      const entry = route.runtime?.entry
-      if (!entry) continue
+    const references: Array<{ entry: string; facet: string }> = []
+    const add = (facet: string, runtime?: { entry: string }) => {
+      if (runtime) references.push({ entry: runtime.entry, facet })
+    }
+    for (const route of unit.api) add(`api.${route.id}.runtime.entry`, route.runtime)
+    for (const config of unit.config ?? []) {
+      add(`config.validator.${config.id}.entry`, config.validator)
+    }
+    for (const secret of unit.secrets ?? []) {
+      add(`secrets.validator.${secret.id}.entry`, secret.validator)
+    }
+    for (const provider of unit.providers ?? []) {
+      add(`providers.runtime.${provider.id}.entry`, provider.runtime)
+    }
+    for (const copy of unit.admin?.copy ?? []) {
+      add(`admin.copy.runtime.${copy.id}.entry`, copy.runtime)
+    }
+    for (const route of unit.admin?.routes ?? []) {
+      add(`admin.routes.runtime.${route.id}.entry`, route.runtime)
+    }
+    for (const contribution of unit.admin?.contributions ?? []) {
+      add(`admin.contributions.runtime.${contribution.id}.entry`, contribution.runtime)
+    }
+    for (const tool of unit.tools ?? []) add(`tools.runtime.${tool.id}.entry`, tool.runtime)
+    for (const workflow of unit.workflows) {
+      add(`workflows.runtime.${workflow.id}.entry`, workflow.runtime)
+    }
+    for (const subscriber of unit.subscribers) {
+      add(`subscribers.runtime.${subscriber.id}.entry`, subscriber.runtime)
+    }
+
+    for (const { entry, facet } of references) {
       const packageName = entry.startsWith(".") ? unit.packageName : packageNameFromSpecifier(entry)
       if (admittedPackages.has(packageName)) continue
       diagnostics.push(
         diagnostic({
           code: "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
           source: unit.id,
-          facet: `api.${route.id}.runtime.entry`,
-          message: `Runtime entry ${entry} resolves to ${packageName}, which is not present in admitted package records.`,
+          facet,
+          message: `Runtime ${facet} entry ${entry} resolves to ${packageName}, which is not present in admitted package records.`,
           hint: "Declare runtime code from the owning package or add and admit the referenced package.",
         }),
       )
@@ -1697,6 +2428,21 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
     ...unit.links.map((entry) => entry.id),
     ...unit.subscribers.map((entry) => entry.id),
     ...unit.events.map((entry) => entry.id),
+    ...(unit.setupMigrations ?? []).map((entry) => entry.id),
+    ...(unit.config ?? []).map((entry) => entry.id),
+    ...(unit.secrets ?? []).map((entry) => entry.id),
+    ...(unit.resources ?? []).map((entry) => entry.id),
+    ...(unit.providers ?? []).map((entry) => entry.id),
+    ...(unit.access?.resources ?? []).map((entry) => entry.id),
+    ...(unit.access?.roles ?? []).map((entry) => entry.id),
+    ...(unit.admin?.copy ?? []).map((entry) => entry.id),
+    ...(unit.admin?.routes ?? []).map((entry) => entry.id),
+    ...(unit.admin?.nav ?? []).map((entry) => entry.id),
+    ...(unit.admin?.slots ?? []).map((entry) => entry.id),
+    ...(unit.admin?.contributions ?? []).map((entry) => entry.id),
+    ...(unit.tools ?? []).map((entry) => entry.id),
+    ...(unit.webhooks ?? []).map((entry) => entry.id),
+    ...(unit.actions ?? []).map((entry) => entry.id),
     ...unit.workflows.flatMap((entry) => [
       entry.id,
       ...(entry.schedules ?? []).map((schedule) => schedule.id),

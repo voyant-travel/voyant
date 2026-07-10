@@ -1,3 +1,4 @@
+import type { EventEnvelope, EventFilterDescriptor, WorkflowDescriptor } from "@voyant-travel/core"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
@@ -32,11 +33,27 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
    * id. A binding only runs when its unit is selected by the generated graph.
    */
   bindings?: VoyantGraphRuntimeBindings<TCapabilities>
+  /** Node-owned durable boundary for graph-selected outbound webhook events. */
+  outboundWebhooks?: {
+    enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
+  }
 }
 
 export interface VoyantGraphRuntimeComposition {
   modules: HonoModule[]
   extensions: HonoExtension[]
+}
+
+/** Load graph-owned workflow/subscriber metadata without composing API routes. */
+export async function composeVoyantGraphRuntimeFacetModules(
+  runtime: VoyantGraphRuntime,
+): Promise<HonoModule[]> {
+  const modules: HonoModule[] = []
+  for (const unit of [...runtime.modules, ...runtime.plugins]) {
+    const module = await resolveRuntimeFacetModule(unit)
+    if (module) modules.push(module)
+  }
+  return modules
 }
 
 /**
@@ -52,6 +69,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
 
   for (const unit of input.runtime.modules) {
     const outputs = await resolveRuntimeUnit(input, unit)
+    assertWebhookRoutePosture(input.runtime, unit, outputs)
     for (const output of outputs) {
       if (!isHonoModule(output)) {
         throw invalidRuntimeOutput(unit, "HonoModule", output)
@@ -62,6 +80,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
 
   for (const unit of input.runtime.plugins) {
     const outputs = await resolveRuntimeUnit(input, unit)
+    assertWebhookRoutePosture(input.runtime, unit, outputs)
     for (const output of outputs) {
       if (!isHonoExtension(output)) {
         throw invalidRuntimeOutput(unit, "HonoExtension", output)
@@ -70,7 +89,77 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
+  modules.push(...(await composeVoyantGraphRuntimeFacetModules(input.runtime)))
+  const outboundWebhookModule = createGraphOutboundWebhookModule(input)
+  if (outboundWebhookModule) modules.push(outboundWebhookModule)
+
   return { modules, extensions }
+}
+
+function createGraphOutboundWebhookModule<TCapabilities>(
+  input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
+): HonoModule | undefined {
+  const enqueue = input.outboundWebhooks?.enqueue
+  const eventTypes = input.runtime.webhooks.outboundEventTypes
+  if (!enqueue || eventTypes.length === 0) return undefined
+
+  return {
+    module: {
+      name: "graph-outbound-webhooks",
+      bootstrap: ({ bindings, eventBus }) => {
+        for (const eventType of eventTypes) {
+          eventBus.subscribe(eventType, async (event) => {
+            await enqueue(event, bindings)
+          })
+        }
+      },
+    },
+  }
+}
+
+function assertWebhookRoutePosture(
+  runtime: VoyantGraphRuntime,
+  unit: VoyantGraphRuntimeUnitLoader,
+  outputs: readonly unknown[],
+): void {
+  const declared = runtime.webhooks.inbound.some((entry) => entry.apiUnitId === unit.id)
+  const executable = outputs.some(
+    (output) => isRecord(output) && output.webhookRoutes !== undefined,
+  )
+  if (declared === executable) return
+
+  throw new Error(
+    declared
+      ? `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" declares an inbound webhook plan but its runtime output has no webhookRoutes.`
+      : `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" returned webhookRoutes without an inbound webhook declaration in the selected graph.`,
+  )
+}
+
+async function resolveRuntimeFacetModule(
+  unit: VoyantGraphRuntimeUnitLoader,
+): Promise<HonoModule | undefined> {
+  const workflows = await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
+  const eventFilters = await loadFacetReferences<EventFilterDescriptor>(unit, "subscribers.runtime")
+  if (workflows.length === 0 && eventFilters.length === 0) return undefined
+
+  return {
+    module: {
+      name: `${unit.localId ?? unit.id}.graph-runtime`,
+      ...(workflows.length > 0 ? { workflows } : {}),
+      ...(eventFilters.length > 0 ? { eventFilters } : {}),
+    },
+  }
+}
+
+async function loadFacetReferences<T>(
+  unit: VoyantGraphRuntimeUnitLoader,
+  facet: "workflows.runtime" | "subscribers.runtime",
+): Promise<T[]> {
+  return Promise.all(
+    unit.references
+      .filter((reference) => reference.facet === facet)
+      .map((reference) => reference.load<T>()),
+  )
 }
 
 async function resolveRuntimeUnit<TCapabilities>(

@@ -274,12 +274,16 @@ function normalizeVoyantPackageMetadata(value) {
   const compatibleWith = normalizeCompatibleWith(value.compatibleWith)
   const requires = normalizeCapabilityDeclaration(value.requires)
   const manifest = normalizeString(value.manifest)
+  const schema = normalizeString(value.schema)
+  const requiresSchemas = normalizeStringList(value.requiresSchemas)
   return {
     schemaVersion: voyantPackageMetadataSchemaVersion,
     kind: value.kind,
     ...(manifest ? { manifest } : {}),
     ...(compatibleWith ? { compatibleWith } : {}),
     ...(requires ? { requires } : {}),
+    ...(schema ? { schema } : {}),
+    ...(requiresSchemas ? { requiresSchemas } : {}),
   }
 }
 

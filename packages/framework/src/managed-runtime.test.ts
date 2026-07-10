@@ -2,7 +2,7 @@
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-
+import { listInvoicesTool } from "@voyant-travel/finance/tools"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -15,6 +15,7 @@ import {
   type ManagedProfileRuntimeEnv,
 } from "./managed-runtime.js"
 import { defineVoyantProject, type VoyantProjectProviders } from "./profile.js"
+import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 const localProviders = {
   database: "postgres",
@@ -128,8 +129,37 @@ describe("managed profile runtime entry", () => {
       ),
     )
 
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:managed-actions",
+      entries: {},
+      modules: [
+        {
+          id: "@voyant-travel/bookings",
+          kind: "module",
+          packageName: "@voyant-travel/bookings",
+          order: 0,
+          accessScopes: ["bookings:write"],
+          actions: [
+            {
+              id: "booking.status.confirm",
+              unitId: "@voyant-travel/bookings",
+              version: "v1",
+              kind: "execute",
+              targetType: "booking",
+              requiredScopes: ["bookings:write"],
+              risk: "medium",
+              ledger: "required",
+              from: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
+      graphRuntime,
       env: {
         DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL,
       },
@@ -137,6 +167,9 @@ describe("managed profile runtime entry", () => {
 
     expect(runtime.project.profile).toBe("operator")
     expect(runtime.requirements.modules.createVoyantAppExclude).toContain("@voyant-travel/flights")
+    expect(runtime.actionLedgerCapabilities.definitions.map(({ id }) => id)).toEqual([
+      "booking.status.confirm",
+    ])
     expect(runtime.app.fetch).toEqual(expect.any(Function))
   })
 
@@ -156,12 +189,92 @@ describe("managed profile runtime entry", () => {
       ),
     )
 
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: {},
+      modules: [
+        {
+          id: "@voyant-travel/db",
+          kind: "module",
+          packageName: "@voyant-travel/db",
+          order: 0,
+          secrets: [
+            {
+              unitId: "@voyant-travel/db",
+              declaration: {
+                id: "@voyant-travel/db#secret.database-url",
+                key: "DATABASE_URL",
+                required: true,
+              },
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
     const runtime = await loadManagedProfileRuntime({
       profileSnapshotPath: snapshotPath,
       env: { DATABASE_URL_DIRECT: MANAGED_PROFILE_TEST_DATABASE_URL },
+      graphRuntime,
     })
 
     expect(runtime.app.fetch).toEqual(expect.any(Function))
+    expect(runtime.graphValues?.getSecret("@voyant-travel/db#secret.database-url")).toBe(
+      MANAGED_PROFILE_TEST_DATABASE_URL,
+    )
+  })
+
+  it("rejects missing required graph values before loading managed plugins", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          providers: localProviders,
+        }),
+      ),
+    )
+    const importPluginModule = vi.fn(async () => ({}))
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: {},
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          config: [
+            {
+              unitId: "@acme/loyalty",
+              declaration: {
+                id: "@acme/loyalty#config.endpoint",
+                key: "LOYALTY_ENDPOINT",
+                required: true,
+              },
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(
+      loadManagedProfileRuntime({
+        profileSnapshotPath: snapshotPath,
+        env: { DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL },
+        graphRuntime,
+        importPluginModule,
+      }),
+    ).rejects.toThrow(/VOYANT_GRAPH_RUNTIME_VALUE_REQUIRED.*LOYALTY_ENDPOINT/)
+    expect(importPluginModule).not.toHaveBeenCalled()
   })
 
   it("rejects malformed graph-derived Postgres configuration before startup", async () => {
@@ -807,6 +920,68 @@ describe("managed profile runtime entry", () => {
         version: expect.any(String),
         serverInfo: expect.objectContaining({ name: "voyant-mcp" }),
         tools: [],
+      }),
+    )
+  }, 10000)
+
+  it("registers managed MCP tools from the admitted graph runtime", async () => {
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:managed-tools",
+      entries: {
+        "@voyant-travel/finance/tools": async () => ({ listInvoicesTool }),
+      },
+      modules: [
+        {
+          id: "@voyant-travel/finance",
+          kind: "module",
+          packageName: "@voyant-travel/finance",
+          order: 0,
+          accessScopes: ["finance:read"],
+          references: [
+            {
+              id: "finance-list-invoices-runtime",
+              unitId: "@voyant-travel/finance",
+              facet: "tools.runtime",
+              entityId: "@voyant-travel/finance#tool.list-invoices",
+              runtime: {
+                entry: "@voyant-travel/finance/tools",
+                export: "listInvoicesTool",
+              },
+              importEntry: "@voyant-travel/finance/tools",
+            },
+          ],
+          tools: [
+            {
+              id: "@voyant-travel/finance#tool.list-invoices",
+              unitId: "@voyant-travel/finance",
+              name: "list_invoices",
+              referenceId: "finance-list-invoices-runtime",
+              requiredScopes: ["finance:read"],
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+    const app = await createManagedProfileProviders({}, graphRuntime).loadMcpAdminRoutes()
+    const authorized = new Hono<{ Variables: { scopes: string[] } }>()
+    authorized.use("*", async (c, next) => {
+      c.set("scopes", ["finance:read"])
+      await next()
+    })
+    authorized.route("/", app)
+    const response = await authorized.request("/manifest")
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        tools: [
+          expect.objectContaining({
+            name: "list_invoices",
+            requiredScopes: ["finance:read"],
+          }),
+        ],
       }),
     )
   }, 10000)
