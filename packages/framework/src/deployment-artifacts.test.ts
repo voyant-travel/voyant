@@ -171,6 +171,91 @@ describe("deployment graph artifacts", () => {
     expect(first).not.toContain("FRAMEWORK_RUNTIME_MANIFEST")
   })
 
+  it("lowers every package-owned executable facet through deduplicated lazy imports", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        api: [
+          {
+            id: "loyalty.api",
+            surface: "public",
+            runtime: { entry: "./runtime", export: "createRoutes" },
+          },
+        ],
+        config: [
+          {
+            id: "loyalty.config",
+            key: "loyalty",
+            validator: { entry: "./runtime", export: "configSchema" },
+          },
+        ],
+        secrets: [
+          {
+            id: "loyalty.secret",
+            key: "LOYALTY_TOKEN",
+            validator: { entry: "./runtime", export: "secretSchema" },
+          },
+        ],
+        providers: [
+          {
+            id: "loyalty.provider",
+            port: "loyalty.ledger",
+            runtime: { entry: "./runtime", export: "createLedgerProvider" },
+          },
+        ],
+        admin: {
+          copy: [
+            {
+              id: "loyalty.copy",
+              namespace: "loyalty",
+              fallbackLocale: "en",
+              runtime: { entry: "./admin", export: "copy" },
+            },
+          ],
+          routes: [
+            {
+              id: "loyalty.admin.route",
+              path: "/loyalty",
+              runtime: { entry: "./admin", export: "LoyaltyPage" },
+            },
+          ],
+          slots: [{ id: "loyalty.slot", routeId: "loyalty.admin.route" }],
+          contributions: [
+            {
+              id: "loyalty.balance",
+              slotId: "loyalty.slot",
+              runtime: { entry: "./admin", export: "BalanceWidget" },
+            },
+          ],
+        },
+        tools: [
+          {
+            id: "loyalty.adjust",
+            name: "adjust_loyalty",
+            runtime: { entry: "./runtime", export: "adjustLoyalty" },
+          },
+        ],
+      }),
+    ])
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    for (const facet of [
+      "api",
+      "config.validator",
+      "secrets.validator",
+      "providers.runtime",
+      "admin.copy.runtime",
+      "admin.routes.runtime",
+      "admin.contributions.runtime",
+      "tools.runtime",
+    ]) {
+      expect(source).toContain(`"facet": "${facet}"`)
+    }
+    expect(source.match(/import\("@acme\/voyant-loyalty\/runtime"\)/g)).toHaveLength(1)
+    expect(source.match(/import\("@acme\/voyant-loyalty\/admin"\)/g)).toHaveLength(1)
+  })
+
   it("builds one target-neutral whole-application runtime", async () => {
     const graph = await sampleGraph()
     const targetNeutralGraph = {
@@ -273,6 +358,25 @@ describe("deployment graph artifacts", () => {
 
     expect(() => buildGraphRuntimeModule({ graph })).toThrow(
       /VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED/,
+    )
+  })
+
+  it("refuses unadmitted package references from non-route facets", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        providers: [
+          {
+            id: "loyalty.provider",
+            port: "loyalty.ledger",
+            runtime: { entry: "@unknown/ledger", export: "provider" },
+          },
+        ],
+      }),
+    ])
+
+    expect(() => buildGraphRuntimeModule({ graph })).toThrow(
+      /VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED.*providers\.runtime/,
     )
   })
 

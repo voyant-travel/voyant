@@ -56,6 +56,72 @@ describe("graph runtime lowering", () => {
     expect(importRuntime).toHaveBeenCalledTimes(1)
   })
 
+  it("loads typed package exports for non-route facets by stable reference id", async () => {
+    const provider = { kind: "ledger-provider" }
+    const tool = () => "adjusted"
+    const importRuntime = vi.fn(async () => ({ provider, tool }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:test",
+      entries: { "@acme/loyalty/runtime": importRuntime },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          references: [
+            {
+              id: "loyalty-provider",
+              unitId: "@acme/loyalty",
+              facet: "providers.runtime",
+              entityId: "provider",
+              runtime: { entry: "./runtime", export: "provider" },
+              importEntry: "@acme/loyalty/runtime",
+            },
+            {
+              id: "loyalty-tool",
+              unitId: "@acme/loyalty",
+              facet: "tools.runtime",
+              entityId: "tool",
+              runtime: { entry: "./runtime", export: "tool" },
+              importEntry: "@acme/loyalty/runtime",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importRuntime).not.toHaveBeenCalled()
+    await expect(runtime.loadReference<typeof provider>("loyalty-provider")).resolves.toBe(provider)
+    await expect(runtime.loadReference<typeof tool>("loyalty-tool")).resolves.toBe(tool)
+    expect(runtime.references.map((reference) => reference.facet)).toEqual([
+      "providers.runtime",
+      "tools.runtime",
+    ])
+    expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("rejects unknown reference ids before evaluating package imports", async () => {
+    const importRuntime = vi.fn(async () => ({ createLoyaltyModule: {} }))
+    const runtime = createVoyantGraphRuntime(runtimeInput(importRuntime))
+
+    await expect(runtime.loadReference("not-admitted")).rejects.toMatchObject({
+      code: "VOYANT_GRAPH_RUNTIME_REFERENCE_UNKNOWN",
+      context: { referenceId: "not-admitted" },
+    })
+    expect(importRuntime).not.toHaveBeenCalled()
+  })
+
+  it("does not mutate reusable generated runtime definitions", () => {
+    const input = runtimeInput(async () => ({ createLoyaltyModule: {} }))
+
+    expect(() => createVoyantGraphRuntime(input)).not.toThrow()
+    expect(() => createVoyantGraphRuntime(input)).not.toThrow()
+    expect(input.modules[0]?.routes[0]).not.toHaveProperty("referenceId")
+  })
+
   it("reports a missing package export with graph unit and route context", async () => {
     const runtime = createVoyantGraphRuntime(runtimeInput(async () => ({ otherExport: {} })))
 
