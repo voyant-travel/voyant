@@ -15,17 +15,24 @@ export interface VoyantDeploymentRuntimeEntryArtifact {
   profileSnapshot: string
 }
 
+export interface VoyantDeploymentMigrationSourceArtifact {
+  packageName: string
+  schema: string
+}
+
 export interface VoyantDeploymentArtifactManifest {
   schemaVersion: typeof VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION
   graphHash: string
   graph: string
   runtimeEntries: readonly VoyantDeploymentRuntimeEntryArtifact[]
+  migrationSources: readonly VoyantDeploymentMigrationSourceArtifact[]
 }
 
 export interface BuildDeploymentArtifactManifestInput {
   graph: ResolvedVoyantDeploymentGraph
   graphArtifactPath: string
   runtimeEntries: readonly VoyantDeploymentRuntimeEntryArtifact[]
+  migrationSources?: readonly VoyantDeploymentMigrationSourceArtifact[]
 }
 
 export interface BuildManagedNodeRuntimeEntryArtifactInput {
@@ -67,6 +74,7 @@ export function buildDeploymentArtifactManifest(
     runtimeEntries: [...input.runtimeEntries].sort((left, right) =>
       left.id.localeCompare(right.id),
     ),
+    migrationSources: normalizeMigrationSources(input.migrationSources ?? []),
   }
 }
 
@@ -138,6 +146,15 @@ function formatConstArray(values: readonly string[]): string {
 
 function quote(value: string | VoyantProjectDeploymentMode | undefined): string {
   return JSON.stringify(value ?? null)
+}
+
+function normalizeMigrationSources(
+  migrationSources: readonly VoyantDeploymentMigrationSourceArtifact[],
+): VoyantDeploymentMigrationSourceArtifact[] {
+  return migrationSources.map((source) => {
+    assertRelativeArtifactPath(source.schema, `migration source "${source.packageName}" schema`)
+    return { packageName: source.packageName, schema: source.schema }
+  })
 }
 
 function assertRelativeArtifactPath(value: string, label: string): void {

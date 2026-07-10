@@ -2,9 +2,8 @@
  * Deployment migration runner — D.2 package-owned migrations + topological
  * collector (`@voyant-travel/framework-migrations`). Each schema-owning package
  * SHIPS its own drizzle `migrations/` folder; this runner discovers them from
- * the same generated list `drizzle.config.ts` consumes
- * (`drizzle.schemas.generated.ts` ← `voyant.config.ts`), orders them deps-first
- * by `voyant.requiresSchemas`, and applies:
+ * the validated deployment graph artifact's migration source list, orders them
+ * deps-first by `voyant.requiresSchemas`, and applies:
  *
  *   1. each package source (topological order — a package's deps migrate first)
  *   2. this deployment's own `./migrations` (cross-module link tables + any
@@ -33,7 +32,6 @@ import {
 } from "@voyant-travel/framework-migrations"
 import { config } from "dotenv"
 import { Client } from "pg"
-import { schema } from "../drizzle.schemas.generated.ts"
 import {
   assertOperatorDeploymentGraphResourceEnv,
   loadOperatorDeploymentGraphArtifacts,
@@ -63,8 +61,9 @@ if (!databaseUrl) {
 }
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url))
-// The generated schema paths (`../../packages/…`) resolve from the deployment
-// root, where `drizzle.config` lives; the deployment's own migrations are `./migrations`.
+// The graph artifact's schema paths (`../../packages/…`) resolve from the
+// deployment root, where `drizzle.config` lives; the deployment's own migrations
+// are `./migrations`.
 const baseDir = path.resolve(scriptsDir, "..")
 const client = new Client({ connectionString: databaseUrl })
 
@@ -72,18 +71,21 @@ try {
   await client.connect()
 
   // Discover package sources (deps-first) + the deployment's ./migrations (last).
-  const discovered = discoverMigrationSources(schema, {
-    baseDir,
-    deploymentMigrationsDir: path.join(baseDir, "migrations"),
-  })
+  const discovered = discoverMigrationSources(
+    deploymentGraphArtifacts.migrationSources.map((source) => source.schema),
+    {
+      baseDir,
+      deploymentMigrationsDir: path.join(baseDir, "migrations"),
+    },
+  )
   const sources: MigrationSource[] = []
   for (let i = 0; i < discovered.length; i++) {
     const d = discovered[i] as (typeof discovered)[number]
     if (!d.hasMigrations) {
       throw new Error(
         `migration source '${d.name}' has no migrations folder at ${d.migrationsDir}. ` +
-          "Regenerate the schema list and verify the owning package publishes migrations/*.sql " +
-          "and migrations/meta/_journal.json.",
+          "Regenerate deployment graph artifacts and verify the owning package publishes " +
+          "migrations/*.sql and migrations/meta/_journal.json.",
       )
     }
     sources.push({

@@ -22,6 +22,7 @@ import {
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST,
   OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST,
 } from "../starters/operator/deployment-graph.local.ts"
+import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
 import {
   buildDeploymentGraphDoctorJson,
@@ -78,6 +79,7 @@ async function main(): Promise<void> {
         profileSnapshot: relativeToOperator(options.profilePath),
       }),
     ],
+    migrationSources: operatorMigrationSources(),
   })
   const manifestText = formatGeneratedText(
     options.manifestOutputPath,
@@ -205,6 +207,19 @@ function defineOperatorGraphProject(project: VoyantProjectManifest) {
     plugins: [...managedProject.plugins, ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MANIFEST.plugins],
     meta: managedProject.meta,
   })
+}
+
+function operatorMigrationSources() {
+  return operatorSchemaPaths
+    .map((schemaPath) => {
+      const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
+      if (!match?.[1]) return undefined
+      return {
+        packageName: `@voyant-travel/${match[1]}`,
+        schema: schemaPath,
+      }
+    })
+    .filter((source): source is { packageName: string; schema: string } => Boolean(source))
 }
 
 async function writeGeneratedFile(filePath: string, text: string): Promise<void> {
