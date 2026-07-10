@@ -201,9 +201,11 @@ describe("operator composed route mounting (smoke)", () => {
       TEST_CTX,
     )
 
-    expect(detail.status).toBe(404)
-    expect(apply.status).toBe(501)
-    expect(redeem.status).toBe(501)
+    for (const response of [detail, apply, redeem]) {
+      expect(response.status).not.toBe(401)
+      expect(response.status).not.toBe(403)
+      expect(response.status).not.toBe(404)
+    }
   })
 
   it("lets public operator settings pass the starter public actor gate", async () => {

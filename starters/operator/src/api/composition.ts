@@ -507,6 +507,50 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       anonymous: true,
     }
   },
+  "@voyant-travel/storefront": async ({ capabilities, runtimeExports, unit }) => {
+    const createStorefront = singleRuntimeFactory<
+      typeof import("@voyant-travel/storefront").createStorefrontHonoModule
+    >(unit.id, runtimeExports)
+    const { createCommerceStorefrontOfferResolvers } = await import("@voyant-travel/commerce")
+    return createStorefront({
+      offers: createCommerceStorefrontOfferResolvers(),
+      bookingIntents: { resolveDb: capabilities.resolveDb },
+      intake: { persistence: capabilities.storefrontIntakePersistence },
+    })
+  },
+  "@voyant-travel/public-document-delivery": ({ capabilities, runtimeExports, unit }) => ({
+    ...singleRuntimeFactory<
+      typeof import("@voyant-travel/public-document-delivery").createPublicDocumentDeliveryHonoModule
+    >(
+      unit.id,
+      runtimeExports,
+    )({
+      resolveStorage: capabilities.createOperatorDocumentStorage,
+    }),
+    anonymous: true,
+  }),
+  "@voyant-travel/cruises": ({ runtimeExports, unit }) =>
+    singleRuntimeFactory<typeof import("@voyant-travel/cruises").createCruisesHonoModule>(
+      unit.id,
+      runtimeExports,
+    )({
+      lazyAdminRoutes: () =>
+        import("./routes/cruises").then((routes) => routes.createCruiseAdminRoutes()),
+      lazyPublicRoutes: () =>
+        import("./routes/cruises").then((routes) => routes.createCruisePublicRoutes()),
+      anonymous: true,
+    }),
+  "@voyant-travel/charters": ({ runtimeExports, unit }) =>
+    singleRuntimeFactory<typeof import("@voyant-travel/charters").createChartersHonoModule>(
+      unit.id,
+      runtimeExports,
+    )({
+      lazyAdminRoutes: () =>
+        import("./routes/charters").then((routes) => routes.createCharterAdminRoutes()),
+      lazyPublicRoutes: () =>
+        import("./routes/charters").then((routes) => routes.createCharterPublicRoutes()),
+      anonymous: true,
+    }),
   "@voyant-travel/bookings": async ({ capabilities, runtimeExports, unit }) => {
     const createBookings = singleRuntimeFactory<
       typeof import("@voyant-travel/bookings").createBookingsHonoModule

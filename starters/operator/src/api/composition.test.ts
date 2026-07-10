@@ -1,17 +1,18 @@
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
-import { describe, expect, it } from "vitest"
+import type { HonoModule } from "@voyant-travel/hono/module"
+import { describe, expect, it, vi } from "vitest"
 
 import { graphIdFromSpecifier } from "../../../../packages/framework/src/deployment-graph"
 import {
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
 } from "../../deployment-graph.local"
-import { createGeneratedGraphRuntime } from "../graph-runtime.generated"
 import {
   OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS,
   OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS,
   OPERATOR_VOYANT_PROJECT,
 } from "../../voyant.project"
+import { createGeneratedGraphRuntime } from "../graph-runtime.generated"
 import {
   buildOperatorProviders,
   deploymentLocalExtensions,
@@ -29,6 +30,22 @@ async function composeOperatorGraph() {
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
   })
+}
+
+function graphModule(id: string) {
+  const unit = createGeneratedGraphRuntime().modules.find((candidate) => candidate.id === id)
+  if (!unit) throw new Error(`Missing generated graph module ${id}`)
+  return unit
+}
+
+async function invokeModuleBinding(
+  id: string,
+  factory: (options: Record<string, unknown>) => HonoModule,
+  capabilities = buildOperatorProviders(),
+) {
+  const binding = operatorGraphRuntimeBindings[id]
+  if (!binding) throw new Error(`Missing operator graph binding ${id}`)
+  return binding({ capabilities, unit: graphModule(id), runtimeExports: [factory] })
 }
 
 describe("operator graph runtime composition", () => {
@@ -117,9 +134,60 @@ describe("operator graph runtime composition", () => {
       expect(id).not.toMatch(/^@voyant-travel\/operator#/)
       expect(operatorGraphRuntimeBindings).toHaveProperty(id)
     }
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
+    for (const id of [
+      "@voyant-travel/storefront",
       "@voyant-travel/public-document-delivery",
+      "@voyant-travel/cruises",
+      "@voyant-travel/charters",
+    ]) {
+      expect(operatorGraphRuntimeBindings).toHaveProperty(id)
+    }
+  })
+
+  it("passes operator providers to storefront and public document graph modules", async () => {
+    const capabilities = buildOperatorProviders()
+    const createStorefront = vi.fn(() => ({ module: { name: "storefront" } }))
+    const createPublicDocuments = vi.fn(() => ({ module: { name: "documents" } }))
+
+    await invokeModuleBinding("@voyant-travel/storefront", createStorefront, capabilities)
+    const publicDocuments = await invokeModuleBinding(
+      "@voyant-travel/public-document-delivery",
+      createPublicDocuments,
+      capabilities,
     )
+
+    expect(createStorefront).toHaveBeenCalledOnce()
+    expect(createStorefront).toHaveBeenCalledWith({
+      offers: expect.objectContaining({
+        listApplicableOffers: expect.any(Function),
+        getOfferBySlug: expect.any(Function),
+        applyOffer: expect.any(Function),
+        redeemOffer: expect.any(Function),
+      }),
+      bookingIntents: { resolveDb: capabilities.resolveDb },
+      intake: { persistence: capabilities.storefrontIntakePersistence },
+    })
+    expect(createPublicDocuments).toHaveBeenCalledWith({
+      resolveStorage: capabilities.createOperatorDocumentStorage,
+    })
+    expect(publicDocuments).toMatchObject({ anonymous: true })
+  })
+
+  it("keeps cruise and charter operator route loaders anonymous", async () => {
+    const createCruises = vi.fn(() => ({ module: { name: "cruises" } }))
+    const createCharters = vi.fn(() => ({ module: { name: "charters" } }))
+
+    await invokeModuleBinding("@voyant-travel/cruises", createCruises)
+    await invokeModuleBinding("@voyant-travel/charters", createCharters)
+
+    for (const factory of [createCruises, createCharters]) {
+      expect(factory).toHaveBeenCalledOnce()
+      expect(factory).toHaveBeenCalledWith({
+        lazyAdminRoutes: expect.any(Function),
+        lazyPublicRoutes: expect.any(Function),
+        anonymous: true,
+      })
+    }
   })
 
   it("initializes the real operator app from the generated graph runtime", async () => {
