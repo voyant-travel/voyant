@@ -31,6 +31,10 @@ import {
   formatDeploymentGraphDoctorDiagnostics,
 } from "./lib/deployment-graph-doctor.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
+import {
+  OPERATOR_GRAPH_ADMISSION_POLICY,
+  withOperatorDeploymentLocalPackageRecords,
+} from "./lib/operator-deployment-graph-package-records.ts"
 
 interface CliOptions {
   emit: boolean
@@ -164,14 +168,16 @@ async function main(): Promise<void> {
 async function resolveGraph(profilePath: string) {
   const project = JSON.parse(await readFile(profilePath, "utf8")) as VoyantProjectManifest
   const discoveredGraph = await resolveOperatorDeploymentGraph(project)
-  const packageRecords = readPnpmLockfilePackageRecords({
-    repoRoot,
-    packageNames: [
-      "@voyant-travel/framework",
-      "@voyant-travel/framework-migrations",
-      ...discoveredGraph.packageRecords.map((record) => record.packageName),
-    ],
-  })
+  const packageRecords = withOperatorDeploymentLocalPackageRecords(
+    readPnpmLockfilePackageRecords({
+      repoRoot,
+      packageNames: [
+        "@voyant-travel/framework",
+        "@voyant-travel/framework-migrations",
+        ...discoveredGraph.packageRecords.map((record) => record.packageName),
+      ],
+    }),
+  )
   return resolveOperatorDeploymentGraph(project, { packageRecords })
 }
 
@@ -192,6 +198,7 @@ function resolveOperatorDeploymentGraph(
     frameworkVersion: options.frameworkVersion ?? project.frameworkVersion,
     target: options.target ?? deployment.target,
     mode: options.mode ?? deployment.mode,
+    admission: options.admission ?? OPERATOR_GRAPH_ADMISSION_POLICY,
   })
 }
 

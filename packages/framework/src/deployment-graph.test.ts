@@ -11,6 +11,7 @@ import {
   definePlugin,
   defineProject,
   graphIdFromSpecifier,
+  packageNameFromSpecifier,
   resolveDeploymentGraph,
   resolveManagedProfileDeploymentGraph,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
@@ -691,6 +692,12 @@ describe("deployment graph v1", () => {
     )
     expect(graphIdFromSpecifier("operator/payment-link")).toBe(
       "@voyant-travel/operator#payment-link",
+    )
+    expect(graphIdFromSpecifier("@voyant-travel/public-document-delivery")).toBe(
+      "@voyant-travel/public-document-delivery",
+    )
+    expect(packageNameFromSpecifier("@voyant-travel/public-document-delivery")).toBe(
+      "@voyant-travel/hono",
     )
   })
 
