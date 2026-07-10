@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.32.0
+
+### Minor Changes
+
+- 5786b55: Validate graph-declared Postgres, Redis, and HTTP endpoint environment values before managed runtime boot.
+
 ## 0.31.0
 
 ### Minor Changes
