@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.31.0
+
+### Minor Changes
+
+- ea82216: Allow graph resource requirements to declare compatible environment aliases, including `DATABASE_URL_DIRECT` for Postgres runtime validation.
+- d19cd34: Allow managed runtime entries to apply graph-resolved deployment mode and provider bindings instead of snapshot compatibility values.
+
 ## 0.30.0
 
 ### Minor Changes
