@@ -4774,6 +4774,9 @@ importers:
       '@voyant-travel/plugin-voyant-connect':
         specifier: ^0.3.2
         version: 0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.7.1)
+      '@voyant-travel/public-document-delivery':
+        specifier: workspace:^
+        version: link:../../packages/public-document-delivery
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes

@@ -106,6 +106,7 @@
     "@voyant-travel/plugin-netopia": "^0.105.18",
     "@voyant-travel/plugin-smartbill": "^0.137.3",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
+    "@voyant-travel/public-document-delivery": "workspace:^",
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/quotes-react": "workspace:^",
     "@voyant-travel/react": "workspace:^",

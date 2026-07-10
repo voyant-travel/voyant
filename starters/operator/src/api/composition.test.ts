@@ -1,4 +1,4 @@
-import { composeFromManifest, diffManifestRegistry } from "@voyant-travel/hono/composition"
+import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { describe, expect, it } from "vitest"
 
 import { graphIdFromSpecifier } from "../../../../packages/framework/src/deployment-graph"
@@ -6,7 +6,7 @@ import {
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
   OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
 } from "../../deployment-graph.local"
-import voyantConfig from "../../voyant.config"
+import { createGeneratedGraphRuntime } from "../graph-runtime.generated"
 import {
   OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS,
   OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS,
@@ -14,18 +14,24 @@ import {
 } from "../../voyant.project"
 import {
   buildOperatorProviders,
+  deploymentLocalExtensions,
   deploymentLocalModules,
-  OPERATOR_RUNTIME_MANIFEST,
-  operatorComposition,
+  operatorGraphCompatibilityExtensions,
+  operatorGraphCompatibilityModules,
+  operatorGraphRuntimeBindings,
 } from "./composition"
 import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
-function entryName(entry: string | { resolve: string }): string {
-  return typeof entry === "string" ? entry : entry.resolve
+async function composeOperatorGraph() {
+  return composeVoyantGraphRuntime({
+    runtime: createGeneratedGraphRuntime(),
+    capabilities: buildOperatorProviders(),
+    bindings: operatorGraphRuntimeBindings,
+  })
 }
 
-describe("operator runtime composition", () => {
+describe("operator graph runtime composition", () => {
   it("wires booking payment cleanup and paid-cancellation settlement providers", () => {
     const providers = buildOperatorProviders()
 
@@ -35,20 +41,18 @@ describe("operator runtime composition", () => {
     )
   })
 
-  it("registry covers the manifest exactly (no missing factories, no orphans)", () => {
-    const modules = diffManifestRegistry(
-      OPERATOR_RUNTIME_MANIFEST.modules,
-      Object.keys(operatorComposition.modules),
-    )
-    expect(modules.missingFactories).toEqual([])
-    expect(modules.orphanFactories).toEqual([])
+  it("mounts selected package exports once in graph order", async () => {
+    const composed = await composeOperatorGraph()
+    const moduleNames = composed.modules.map((module) => module.module.name)
+    const extensionNames = composed.extensions.map((extension) => extension.extension.name)
 
-    const extensions = diffManifestRegistry(
-      OPERATOR_RUNTIME_MANIFEST.extensions,
-      Object.keys(operatorComposition.extensions ?? {}),
-    )
-    expect(extensions.missingFactories).toEqual([])
-    expect(extensions.orphanFactories).toEqual([])
+    expect(moduleNames).toContain("bookings")
+    expect(moduleNames).toContain("finance")
+    expect(moduleNames).toContain("catalog")
+    expect(extensionNames).toContain("bookings-suppliers")
+    expect(extensionNames).toContain("booking-tax")
+    expect(new Set(moduleNames).size).toBe(moduleNames.length)
+    expect(new Set(extensionNames).size).toBe(extensionNames.length)
   })
 
   it("selects package-owned bridge units directly and keeps only genuine operator-local ids", () => {
@@ -57,7 +61,6 @@ describe("operator runtime composition", () => {
 
     for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS) {
       expect(moduleIds).toContain(graphIdFromSpecifier(specifier))
-      expect(deploymentLocalModules).toHaveProperty(specifier)
     }
     for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS) {
       expect(pluginIds).toContain(graphIdFromSpecifier(specifier))
@@ -74,123 +77,54 @@ describe("operator runtime composition", () => {
     )
   })
 
-  it("composes the full module + extension set in manifest order", () => {
-    const composed = composeFromManifest(
-      OPERATOR_RUNTIME_MANIFEST,
-      operatorComposition,
-      buildOperatorProviders(),
-    )
+  it("keeps invitations, team, and MCP explicitly deployment-local and graph-keyed", async () => {
+    expect(deploymentLocalModules).toHaveProperty("@voyant-travel/operator#invitations")
+    expect(deploymentLocalModules).toHaveProperty("@voyant-travel/operator#team")
+    expect(deploymentLocalModules).toHaveProperty("@voyant-travel/operator#mcp")
 
-    // Manifest entries expand to more mounted modules because Commerce and
-    // Distribution each mount multiple internal Hono modules.
-    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(34)
-    expect(composed.modules).toHaveLength(39)
-    expect(composed.extensions).toHaveLength(20)
+    const composed = await composeOperatorGraph()
+    const byName = (name: string) => composed.modules.find((module) => module.module.name === name)
 
-    // Every composed unit is a real HonoModule/HonoExtension.
-    for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")
-    for (const e of composed.extensions) expect(e.extension?.module).toBeTypeOf("string")
-
-    // Module names are unique (no double-mount).
-    const names = composed.modules.map((m) => m.module.name)
-    expect(new Set(names).size).toBe(names.length)
+    expect(byName("invitations")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(byName("invitations")?.lazyPublicRoutes).toBeTypeOf("function")
+    expect(byName("team")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(byName("mcp")?.lazyAdminRoutes).toBeTypeOf("function")
   })
 
-  it("composes the route families moved off additionalRoutes as extensions", () => {
-    // These route families moved off the additionalRoutes hop into the
-    // composition registry; createApp mounts each extension's routes under
-    // `/v1/admin/{module}` (+ publicPath for public routes), preserving URLs.
-    const composed = composeFromManifest(
-      OPERATOR_RUNTIME_MANIFEST,
-      operatorComposition,
-      buildOperatorProviders(),
-    )
-    const byName = (name: string) => composed.extensions.find((e) => e.extension.name === name)
+  it("composes graph package and local extensions without legacy duplicates", async () => {
+    const composed = await composeOperatorGraph()
+    const byName = (name: string) =>
+      composed.extensions.find((extension) => extension.extension.name === name)
 
-    const channelPush = byName("channel-push")
-    expect(channelPush?.extension.module).toBe("distribution")
-    expect(channelPush?.adminRoutes).toBeDefined()
+    expect(byName("channel-push")?.extension.module).toBe("distribution")
+    expect(byName("channel-push")?.adminRoutes).toBeDefined()
+    expect(byName("booking-tax")?.extension.module).toBe("bookings")
+    expect(byName("booking-tax")?.adminRoutes).toBeDefined()
+    expect(byName("mice-booking")?.extension.module).toBe("bookings")
+    expect(byName("booking-schedule")?.publicPath).toBe("payment-policy")
+    expect(byName("proposal")?.publicPath).toBe("proposals")
 
-    const bookingTax = byName("booking-tax")
-    expect(bookingTax?.extension.module).toBe("bookings")
-    expect(bookingTax?.lazyAdminRoutes).toBeTypeOf("function")
-
-    // Booking-schedule owns an admin route on bookings + a public route
-    // mounted at /v1/public/payment-policy via the publicPath override.
-    const bookingSchedule = byName("booking-schedule")
-    expect(bookingSchedule?.extension.module).toBe("bookings")
-    expect(bookingSchedule?.lazyAdminRoutes).toBeTypeOf("function")
-    expect(bookingSchedule?.lazyPublicRoutes).toBeTypeOf("function")
-    expect(bookingSchedule?.publicPath).toBe("payment-policy")
-
-    const snapshot = byName("quote-version-snapshot")
-    expect(snapshot?.extension.module).toBe("trips")
-    expect(snapshot?.lazyAdminRoutes).toBeTypeOf("function")
-
-    // Lazy extensions (loaded on demand, context bridged by createApp).
-    const actionLedgerHealth = byName("action-ledger-health")
-    expect(actionLedgerHealth?.extension.module).toBe("action-ledger")
-    expect(actionLedgerHealth?.lazyAdminRoutes).toBeTypeOf("function")
-
-    const proposal = byName("proposal")
-    expect(proposal?.extension.module).toBe("quote-versions")
-    expect(proposal?.publicPath).toBe("proposals")
-    expect(proposal?.lazyAdminRoutes).toBeTypeOf("function")
-    expect(proposal?.lazyPublicRoutes).toBeTypeOf("function")
-
-    expect(byName("catalog-offers")?.extension.module).toBe("catalog")
-    expect(byName("catalog-checkout")?.extension.module).toBe("catalog")
-
-    const miceBooking = byName("mice-booking")
-    expect(miceBooking?.extension.module).toBe("bookings")
-    expect(miceBooking?.adminRoutes).toBeDefined()
+    for (const id of Object.keys(deploymentLocalExtensions)) {
+      expect(operatorGraphRuntimeBindings).toHaveProperty(id)
+    }
   })
 
-  it("composes deployment-local route modules as lazy modules", () => {
-    const composed = composeFromManifest(
-      OPERATOR_RUNTIME_MANIFEST,
-      operatorComposition,
-      buildOperatorProviders(),
+  it("keeps deployment option wiring package-owned and graph-gated", () => {
+    for (const id of [
+      ...Object.keys(operatorGraphCompatibilityModules),
+      ...Object.keys(operatorGraphCompatibilityExtensions),
+    ]) {
+      expect(id).not.toMatch(/^@voyant-travel\/operator#/)
+      expect(operatorGraphRuntimeBindings).toHaveProperty(id)
+    }
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
+      "@voyant-travel/public-document-delivery",
     )
-    const mod = (name: string) => composed.modules.find((m) => m.module.name === name)
-
-    // flights/mcp/invitations route bundles live in the operator and load
-    // lazily; createApp mounts + caches them with the request context bridged.
-    expect(mod("flights")?.lazyAdminRoutes).toBeTypeOf("function")
-    expect(mod("mcp")?.lazyAdminRoutes).toBeTypeOf("function")
-    expect(mod("invitations")?.lazyAdminRoutes).toBeTypeOf("function")
-    expect(mod("invitations")?.lazyPublicRoutes).toBeTypeOf("function")
   })
 
-  it("every schema-migrated module (voyant.config) is actually mounted at runtime", () => {
-    // The dangerous drift: a module added to voyant.config (so its tables
-    // migrate) but never mounted — migrated-but-dead. Guard: voyant.config
-    // modules ⊆ runtime manifest modules. (Route-only modules like
-    // storefront is mounted-but-schema-less and lives only in the runtime
-    // manifest, which is fine.)
-    //
-    // Carve-out: modules whose API is mounted APP-LOCALLY instead of as a
-    // package Hono module. `@voyant-travel/flights` exports no Hono module — its
-    // routes live in src/api/flights.ts (adapter wiring is app-specific). The
-    // deployment graph independently selects its package-delivered admin
-    // surface. This is not migrated-but-dead: the flights reference tables are
-    // served by those app-local routes.
-    const APP_LOCAL_API_MODULES = new Set(["@voyant-travel/flights"])
-    const runtime = new Set(OPERATOR_RUNTIME_MANIFEST.modules)
-    const schemaModules = (voyantConfig.modules ?? []).map(entryName)
-    const migratedButNotMounted = schemaModules.filter(
-      (name) => !runtime.has(name) && !APP_LOCAL_API_MODULES.has(name),
-    )
-    expect(migratedButNotMounted).toEqual([])
-  })
+  it("initializes the real operator app from the generated graph runtime", async () => {
+    const { app } = await import("./app")
 
-  it("throws loudly when the manifest references an unregistered factory", () => {
-    expect(() =>
-      composeFromManifest(
-        { modules: ["@voyant-travel/does-not-exist"] },
-        operatorComposition,
-        buildOperatorProviders(),
-      ),
-    ).toThrow(/no module factory registered for "@voyant-travel\/does-not-exist"/)
+    expect(app.fetch).toBeTypeOf("function")
   })
 })

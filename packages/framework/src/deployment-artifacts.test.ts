@@ -149,6 +149,8 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("startManagedProfileRuntime")
     expect(source).toContain("deployment: resolveGeneratedRuntimeDeployment()")
     expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
+    expect(source).toContain("managed profile boot remains snapshot-manifest based")
+    expect(source).not.toContain("createGeneratedGraphRuntime")
     expect(source).not.toContain("starters/")
   })
 
@@ -213,6 +215,18 @@ describe("deployment graph artifacts", () => {
     expect(withoutCrm).toContain('import("@acme/voyant-loyalty")')
     expect(withoutCrm).toContain('import("@acme/voyant-loyalty/audit-runtime")')
     expect(withoutCrm).toContain('kind": "plugin"')
+  })
+
+  it("keeps selected local units graph-gated without generating package importers", async () => {
+    const local = defineModule({ id: "@acme/operator#invitations" })
+    const source = buildGraphRuntimeModule({
+      graph: await graphWithSelectedUnits([local], []),
+    })
+
+    expect(source).toContain('"@acme/operator#invitations"')
+    expect(source).toContain('"routes": []')
+    expect(source).toContain("{} satisfies Readonly<Record<string, () => Promise<unknown>>>")
+    expect(source).not.toContain('import("@acme/operator")')
   })
 
   it("does not import package runtime bodies during graph resolution or generation", async () => {

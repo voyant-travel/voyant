@@ -82,6 +82,14 @@ export {
   validateVoyantProject,
 } from "./profile.js"
 export {
+  type ComposeVoyantGraphRuntimeInput,
+  composeVoyantGraphRuntime,
+  type VoyantGraphRuntimeBinding,
+  type VoyantGraphRuntimeBindingContext,
+  type VoyantGraphRuntimeBindings,
+  type VoyantGraphRuntimeComposition,
+} from "./runtime-composition.js"
+export {
   type CreateVoyantGraphRuntimeInput,
   createVoyantGraphRuntime,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,

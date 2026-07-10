@@ -187,8 +187,10 @@ export const channelPushBundle: HonoBundle = {
  * hop; see docs/architecture/api-route-ownership-and-composition.md.
  * Per docs/architecture/channel-push-architecture.md §9 + §14.5.
  */
-export function createChannelPushExtension(): HonoExtension {
-  return createDistributionChannelPushExtension({
+export function createChannelPushExtension(
+  createExtension: typeof createDistributionChannelPushExtension = createDistributionChannelPushExtension,
+): HonoExtension {
+  return createExtension({
     resolveRegistry: getBookingEngineRegistryFromContext,
   })
 }
