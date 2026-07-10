@@ -76,6 +76,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
     "An API route bundle required scope does not match v1 resource:action syntax.",
   VOYANT_GRAPH_MISSING_CAPABILITY:
     "A selected graph unit requires a capability that no selected graph unit provides.",
+  VOYANT_GRAPH_MISSING_PORT:
+    "A selected graph unit requires a typed port that no selected graph unit provides.",
   VOYANT_GRAPH_PACKAGE_INCOMPATIBLE:
     "A package metadata record is incompatible with the selected target or deployment mode.",
   VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED:
@@ -375,6 +377,7 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
 
 const RESERVED_GRAPH_UNIT_KEYS = new Set<string>(VOYANT_GRAPH_RESERVED_FACETS)
 const CAPABILITY_TOKEN_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/
+const PORT_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/
 const GRAPH_ID_PATTERN =
   /^(?:@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*|[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*)(?:#[a-zA-Z0-9][a-zA-Z0-9._-]*)?$/
 const ROUTE_RESOURCE_PATTERN = /^[a-z][a-z0-9-]*(?:[.-][a-z][a-z0-9-]*)*$/
@@ -576,6 +579,7 @@ export async function resolveDeploymentGraph(
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
     ...validateCapabilityClosure(selectedUnits),
+    ...validatePortClosure(selectedUnits),
     ...validateDuplicateEntityIds(selectedUnits),
     ...validatePackageAdmission(packageRecords, {
       frameworkVersion: input.frameworkVersion,
@@ -1145,31 +1149,69 @@ function validateCapabilityDeclaration(
 ): VoyantGraphDiagnostic[] {
   if (!isRecord(value)) return []
   const capabilities = value.capabilities
-  if (!Array.isArray(capabilities)) return []
-
   const diagnostics: VoyantGraphDiagnostic[] = []
-  for (const token of capabilities) {
-    if (typeof token !== "string" || !CAPABILITY_TOKEN_PATTERN.test(token)) {
+  if (Array.isArray(capabilities)) {
+    for (const token of capabilities) {
+      if (typeof token !== "string" || !CAPABILITY_TOKEN_PATTERN.test(token)) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
+            source,
+            facet: `${facet}.capabilities`,
+            message: `Capability token "${String(token)}" must use dot-case namespace segments.`,
+            hint: 'Use a token such as "identity.people" or "acme.loyalty.points".',
+          }),
+        )
+        continue
+      }
+
+      if (!isFirstPartyPackage(packageName) && usesReservedCapabilityNamespace(token)) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
+            source,
+            facet: `${facet}.capabilities`,
+            message: `Capability token "${token}" uses a Voyant-reserved namespace.`,
+            hint: 'Third-party packages should prefix capabilities with a namespace they control, such as "acme.loyalty.points".',
+          }),
+        )
+      }
+    }
+  }
+
+  const ports = value.ports
+  if (ports === undefined) return diagnostics
+  if (!Array.isArray(ports)) {
+    diagnostics.push(
+      diagnostic({
+        code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+        source,
+        facet: `${facet}.ports`,
+        message: "Port declarations must be an array with stable dot-case ids.",
+      }),
+    )
+    return diagnostics
+  }
+  for (let index = 0; index < ports.length; index += 1) {
+    const port = ports[index]
+    if (!isRecord(port) || typeof port.id !== "string" || !PORT_ID_PATTERN.test(port.id)) {
       diagnostics.push(
         diagnostic({
-          code: "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
           source,
-          facet: `${facet}.capabilities`,
-          message: `Capability token "${String(token)}" must use dot-case namespace segments.`,
-          hint: 'Use a token such as "identity.people" or "acme.loyalty.points".',
+          facet: `${facet}.ports[${index}]`,
+          message: "Port declarations must include a stable dot-case id.",
         }),
       )
       continue
     }
-
-    if (!isFirstPartyPackage(packageName) && usesReservedCapabilityNamespace(token)) {
+    if (port.optional !== undefined && typeof port.optional !== "boolean") {
       diagnostics.push(
         diagnostic({
-          code: "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
           source,
-          facet: `${facet}.capabilities`,
-          message: `Capability token "${token}" uses a Voyant-reserved namespace.`,
-          hint: 'Third-party packages should prefix capabilities with a namespace they control, such as "acme.loyalty.points".',
+          facet: `${facet}.ports[${index}].optional`,
+          message: "Port declaration optional must be a boolean when provided.",
         }),
       )
     }
@@ -1373,6 +1415,28 @@ function validateCapabilityClosure(
           facet: "requires.capabilities",
           message: `Required capability ${capability} is not provided by the selected graph.`,
           hint: "Select a module or plugin that provides the required capability.",
+        }),
+      )
+    }
+  }
+  return diagnostics
+}
+
+function validatePortClosure(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphDiagnostic[] {
+  const providers = new Set(units.flatMap((unit) => unit.provides.ports.map((port) => port.id)))
+  const diagnostics: VoyantGraphDiagnostic[] = []
+  for (const unit of units) {
+    for (const port of unit.requires.ports) {
+      if (port.optional || providers.has(port.id)) continue
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_MISSING_PORT",
+          source: unit.id,
+          facet: "requires.ports",
+          message: `Required port ${port.id} is not provided by the selected graph.`,
+          hint: "Select a module or plugin that provides the required port.",
         }),
       )
     }
