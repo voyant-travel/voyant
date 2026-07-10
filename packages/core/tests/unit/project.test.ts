@@ -163,5 +163,11 @@ describe("defineProject", () => {
         deployment: { providers: { database: "" } },
       }),
     ).toThrow(/deployment\.providers\.database must be a non-empty string/)
+    expect(() =>
+      defineProject({
+        modules: [],
+        deployment: { target: "cloudflare-worker" },
+      } as never),
+    ).toThrow(/deployment\.target must be "node"/)
   })
 })

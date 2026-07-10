@@ -37,10 +37,6 @@ describe("framework project resolver", () => {
 
     const first = await resolve(root, project)
     const second = await resolve(root, project)
-    const anotherTarget = await resolve(root, {
-      ...project,
-      deployment: { ...project.deployment, target: "voyant-cloud" },
-    })
     const { contentHash: _contentHash, ...withoutHash } = first.graph
     const expectedHash = `sha256:${createHash("sha256")
       .update(canonicalJson(withoutHash))
@@ -48,7 +44,6 @@ describe("framework project resolver", () => {
 
     expect(first).toEqual(second)
     expect(first.graph.contentHash).toBe(expectedHash)
-    expect(anotherTarget.graph.contentHash).toBe(expectedHash)
     expect(first.graph.deployment).toEqual({
       mode: "self-hosted",
       providers: { database: "postgres" },
@@ -77,6 +72,22 @@ describe("framework project resolver", () => {
         },
       ],
     })
+  })
+
+  it("rejects non-Node application runtime targets", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
+    })
+    const project = defineProject({ modules: ["@acme/loyalty"] })
+
+    await expect(
+      resolve(root, {
+        ...project,
+        deployment: { target: "cloudflare-worker" },
+      } as unknown as typeof project),
+    ).rejects.toThrow("unified application deployment target must be node")
   })
 
   it("loads string and object selections from package-owned ./voyant exports", async () => {

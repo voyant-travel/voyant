@@ -84,6 +84,11 @@ interface PackageJson {
 /** Resolve a config-authored project through admitted package-owned manifests. */
 export async function resolveProject(input: ResolveProjectInput): Promise<ResolvedVoyantProject> {
   const project = requireProject(input.project)
+  if (project.deployment?.target !== undefined && project.deployment.target !== "node") {
+    throw new Error(
+      `resolveProject: unified application deployment target must be node, got ${String(project.deployment.target)}.`,
+    )
+  }
   const projectRoot = path.resolve(requireNonEmptyString(input.projectRoot, "projectRoot"))
   const configPath = path.resolve(requireNonEmptyString(input.configPath, "configPath"))
   assertPathInside(projectRoot, configPath, "configPath")

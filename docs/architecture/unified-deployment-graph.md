@@ -33,6 +33,14 @@ The rule is:
 The graph is validated by doctor/build tooling, then lowered into target-specific
 runtime artifacts.**
 
+For this document, the application runtime is **Node only**. "Target-neutral"
+means neutral across Node hosting substrates, not neutral across JavaScript
+runtimes. Voyant Cloud, Docker, Fly.io, Railway, Cloud Run, and custom adapters
+all lower the same graph to a Node application artifact. Cloudflare Workers do
+not host this composed application graph and must not add static-composition or
+runtime-loading constraints to its module/plugin model. Separate edge-native
+storefront or federated applications are outside this deployment graph.
+
 The current `voyant.resolved-graph.v1` implementation is the foundational
 substrate for this rule. It proves stable identity, deterministic artifacts,
 package admission, diagnostics, migration-source accounting, schedule lowering,
@@ -91,11 +99,12 @@ Package compatibility should target framework version, runtime target,
 deployment mode, and required capabilities/surfaces. It should not target
 `profiles: ["operator"]`.
 
-### 2. Default to Voyant Cloud, but keep target lowering separate
+### 2. Default to Voyant Cloud, but keep Node substrate lowering separate
 
-The authoring model should be target-neutral. `voyant deploy` can default to
-Voyant Cloud when no target is specified, but the same graph should lower to
-self-hosted Node, Fly.io, Railway, GCP, AWS, or another Node target.
+The authoring model should be Node-substrate-neutral. `voyant deploy` can
+default to Voyant Cloud when no target is specified, but the same Node graph
+should lower to self-hosted Docker, Fly.io, Railway, GCP, AWS, or another Node
+host. Target adapters never select a different application runtime.
 
 Voyant Cloud may provision database, Redis, auth, secrets, and platform API keys
 automatically. Self-hosted targets must provide equivalent config and secrets.

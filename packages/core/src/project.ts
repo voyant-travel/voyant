@@ -170,12 +170,12 @@ export interface VoyantGraphProjectSelections {
 export type VoyantGraphProjectDeploymentMode = "local" | "managed-cloud" | "self-hosted"
 
 /**
- * Target authoring stays on the project, while graph resolution consumes only
- * mode and provider choices. This keeps one product graph deployable to more
- * than one substrate without importing framework runtime types here.
+ * Unified application graphs always compile to the Node runtime. Hosting
+ * choices such as Voyant Cloud, Docker, Fly, or Railway are CLI target adapters
+ * for that Node artifact, not alternate application runtimes.
  */
 export interface VoyantGraphProjectDeployment {
-  target?: string
+  target?: "node"
   mode?: VoyantGraphProjectDeploymentMode
   providers?: Readonly<Record<string, string>>
 }
@@ -244,6 +244,9 @@ function normalizeProjectDeployment(
   if (!input) return undefined
 
   const target = normalizeOptionalString(input.target, "deployment.target")
+  if (target !== undefined && target !== "node") {
+    throw new Error('defineProject: deployment.target must be "node".')
+  }
   if (
     input.mode !== undefined &&
     input.mode !== "local" &&
