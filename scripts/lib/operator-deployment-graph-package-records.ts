@@ -154,6 +154,7 @@ export async function resolveOperatorDeploymentGraph(
   })
   const referencedPackageNames = runtimeReferencePackageNames([
     ...manifestedGraph.modules,
+    ...manifestedGraph.extensions,
     ...manifestedGraph.plugins,
   ])
   const packageRecords = withOperatorNodePackageCompatibility(
@@ -271,6 +272,7 @@ function projectFromResolvedGraph(
   graph: {
     project: { presetLineage?: string }
     modules: readonly ResolvedVoyantGraphUnit[]
+    extensions: readonly ResolvedVoyantGraphUnit[]
     plugins: readonly ResolvedVoyantGraphUnit[]
   },
   authored: OperatorAuthoredProject,
@@ -280,6 +282,9 @@ function projectFromResolvedGraph(
     schemaVersion: "voyant.project.v1",
     ...(presetLineage ? { presetLineage } : {}),
     modules: graph.modules.map((unit) => manifestFromResolvedUnit(unit, "voyant.module.v1")),
+    extensions: graph.extensions.map((unit) =>
+      manifestFromResolvedUnit(unit, "voyant.extension.v1"),
+    ),
     plugins: graph.plugins.map((unit) => manifestFromResolvedUnit(unit, "voyant.plugin.v1")),
     deployment: authored.deployment,
   }
@@ -326,6 +331,11 @@ async function loadLocalProjectSelections(
     projectRoot,
     "voyant.module.v1",
   )
+  const localExtensions = await localManifestReplacements(
+    project.selections?.extensions ?? [],
+    projectRoot,
+    "voyant.extension.v1",
+  )
   const localPlugins = await localManifestReplacements(
     project.selections?.plugins ?? [],
     projectRoot,
@@ -335,11 +345,13 @@ async function loadLocalProjectSelections(
   return {
     ...project,
     modules: project.modules.map((unit) => localModules.get(unit.id) ?? unit),
+    extensions: project.extensions.map((unit) => localExtensions.get(unit.id) ?? unit),
     plugins: project.plugins.map((unit) => localPlugins.get(unit.id) ?? unit),
     ...(project.selections
       ? {
           selections: {
             modules: resolvedSelections(project.selections.modules, localModules),
+            extensions: resolvedSelections(project.selections.extensions, localExtensions),
             plugins: resolvedSelections(project.selections.plugins, localPlugins),
           },
         }
@@ -421,6 +433,7 @@ function isGraphProject(value: unknown): value is VoyantGraphProject {
   return (
     record.schemaVersion === "voyant.project.v1" &&
     Array.isArray(record.modules) &&
+    Array.isArray(record.extensions) &&
     Array.isArray(record.plugins)
   )
 }
@@ -428,11 +441,17 @@ function isGraphProject(value: unknown): value is VoyantGraphProject {
 function isResolvedGraph(value: unknown): value is {
   project: { presetLineage?: string }
   modules: readonly ResolvedVoyantGraphUnit[]
+  extensions: readonly ResolvedVoyantGraphUnit[]
   plugins: readonly ResolvedVoyantGraphUnit[]
 } {
   if (!value || typeof value !== "object") return false
   const record = value as Record<string, unknown>
-  return Boolean(record.project && Array.isArray(record.modules) && Array.isArray(record.plugins))
+  return Boolean(
+    record.project &&
+      Array.isArray(record.modules) &&
+      Array.isArray(record.extensions) &&
+      Array.isArray(record.plugins),
+  )
 }
 
 function deploymentMode(value: unknown): OperatorAuthoredProject["deployment"]["mode"] | undefined {

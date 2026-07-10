@@ -23,6 +23,14 @@ afterEach(() => {
 describe("loadOperatorDeploymentGraphArtifacts", () => {
   it("loads the generated operator graph artifacts", () => {
     const summary = loadOperatorDeploymentGraphArtifacts()
+    const graph = JSON.parse(
+      readFileSync(join(process.cwd(), ".voyant", "deployment-graph.generated.json"), "utf8"),
+    ) as {
+      extensions: Array<{
+        id: string
+        api: Array<{ runtime?: { entry: string; export?: string } }>
+      }>
+    }
 
     expect(summary.graphHash).toMatch(/^sha256:[a-f0-9]{64}$/)
     expect(summary.moduleIds).toContain("@voyant-travel/bookings")
@@ -57,6 +65,18 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         }),
       ]),
     )
+    expect(
+      graph.extensions.find(
+        (extension) => extension.id === "@voyant-travel/distribution#channel-push-extension",
+      )?.api,
+    ).toEqual([
+      expect.objectContaining({
+        runtime: {
+          entry: "@voyant-travel/distribution",
+          export: "createChannelPushExtension",
+        },
+      }),
+    ])
   })
 
   it("fails when the artifact graph hash does not match the graph content hash", () => {

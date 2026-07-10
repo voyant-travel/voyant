@@ -142,6 +142,7 @@ function isVoyantGraphUnitManifest(value: unknown): value is VoyantGraphUnitMani
   return (
     typeof candidate.id === "string" &&
     (candidate.schemaVersion === "voyant.module.v1" ||
+      candidate.schemaVersion === "voyant.extension.v1" ||
       candidate.schemaVersion === "voyant.plugin.v1")
   )
 }
