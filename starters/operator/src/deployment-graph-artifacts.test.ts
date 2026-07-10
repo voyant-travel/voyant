@@ -127,6 +127,11 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(validateOperatorDeploymentGraphResourceEnv(summary, { DATABASE_URL: "   " })).toEqual([
       "secret DATABASE_URL is required for database:postgres",
     ])
+    expect(
+      validateOperatorDeploymentGraphResourceEnv(summary, {
+        DATABASE_URL_DIRECT: "postgres://user:pass@example.test:5432/voyant",
+      }),
+    ).toEqual([])
     expect(() => assertOperatorDeploymentGraphResourceEnv(summary, {})).toThrow(
       /Operator deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
     )
@@ -400,6 +405,7 @@ function writeFixture(
                   env: [
                     {
                       name: "DATABASE_URL",
+                      aliases: ["DATABASE_URL_DIRECT"],
                       kind: "secret",
                       required: true,
                       description: "Primary Postgres connection URL.",
@@ -483,7 +489,13 @@ interface FixtureDeploymentGraph {
       roles: string[]
       provider: string
       required: boolean
-      env: Array<{ name: string; kind: string; required: boolean; description: string }>
+      env: Array<{
+        name: string
+        aliases?: string[]
+        kind: string
+        required: boolean
+        description: string
+      }>
     }>
   }
   modules: Array<{ id: string }>

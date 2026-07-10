@@ -1180,9 +1180,9 @@ function managedProfileEnvIssues(
   for (const resource of requirements.resources) {
     for (const requirement of resource.env) {
       if (!requirement.required) continue
-      const value = getEnvValue(env, requirement.name)
-      const present =
-        typeof value === "string" ? value.trim().length > 0 : value !== null && value !== undefined
+      const present = [requirement.name, ...(requirement.aliases ?? [])].some((name) =>
+        hasEnvValue(env, name),
+      )
       if (!present) {
         issues.push(
           `${requirement.kind} ${requirement.name} is required for ${resource.resourceKey}`,
@@ -1207,6 +1207,11 @@ function formatIssues(issues: readonly string[]): string {
 
 function getEnvValue(env: ManagedProfileRuntimeEnv, name: string): unknown {
   return Reflect.get(env, name)
+}
+
+function hasEnvValue(env: ManagedProfileRuntimeEnv, name: string): boolean {
+  const value = getEnvValue(env, name)
+  return typeof value === "string" ? value.trim().length > 0 : value !== null && value !== undefined
 }
 
 function dbUrl(env: ManagedProfileRuntimeEnv): string {

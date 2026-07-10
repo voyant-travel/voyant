@@ -64,8 +64,23 @@ describe("resolveOperatorNodeProviderPlan", () => {
       "env R2_BUCKET_MEDIA is required by the operator Node provider plan",
       "env R2_BUCKET_DOCUMENTS is required by the operator Node provider plan",
       "env REDIS_URL is required by the operator Node provider plan",
-      "env DATABASE_URL is required by the operator Node provider plan",
+      "env DATABASE_URL or DATABASE_URL_DIRECT is required by the operator Node provider plan",
     ])
+  })
+
+  it("accepts DATABASE_URL_DIRECT for Postgres provider roles", () => {
+    const plan = resolveOperatorNodeProviderPlan({
+      storage: "memory",
+      cache: "postgres",
+      sharedState: "memory",
+      rateLimit: "memory",
+    })
+
+    expect(
+      validateOperatorNodeProviderPlanEnv(plan, {
+        DATABASE_URL_DIRECT: "postgres://user:pass@example.test:5432/voyant",
+      }),
+    ).toEqual([])
   })
 
   it("rejects unsupported graph providers", () => {

@@ -138,6 +138,30 @@ describe("managed profile runtime entry", () => {
     expect(runtime.app.fetch).toEqual(expect.any(Function))
   })
 
+  it("accepts DATABASE_URL_DIRECT for a graph-derived Postgres requirement", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
+    const snapshotPath = join(dir, "managed-profile.json")
+    await writeFile(
+      snapshotPath,
+      JSON.stringify(
+        defineVoyantProject({
+          profile: "operator",
+          frameworkVersion: "0.12.22",
+          mode: "local",
+          modules: ["catalog", "bookings", "finance", "relationships"],
+          providers: localProviders,
+        }),
+      ),
+    )
+
+    const runtime = await loadManagedProfileRuntime({
+      profileSnapshotPath: snapshotPath,
+      env: { DATABASE_URL_DIRECT: "managed-profile-test-db" },
+    })
+
+    expect(runtime.app.fetch).toEqual(expect.any(Function))
+  })
+
   it("validates the graph-supplied deployment requirements at startup", async () => {
     const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
     const snapshotPath = join(dir, "managed-profile.json")

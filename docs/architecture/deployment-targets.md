@@ -67,6 +67,8 @@ workload class well. On Node none of it is necessary.
   remain the fallback adapters. See
   [performance-enterprise-scale-assessment.md](./performance-enterprise-scale-assessment.md)
   §2.6.
+  The canonical graph `DATABASE_URL` requirement accepts `DATABASE_URL_DIRECT`
+  as a compatible alias, so either value satisfies pre-boot validation.
 - **Crons:** declared runtime-neutrally in `src/scheduled-crons.ts`
   (`OPERATOR_CRON_JOBS`). On Node they can't run on a timer inside the process, so
   `pnpm --filter operator emit:cloud-scheduler` fans them out to Cloud Scheduler

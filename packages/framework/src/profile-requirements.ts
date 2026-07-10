@@ -55,6 +55,8 @@ function envForProvider(
       secret(
         "DATABASE_URL",
         "Primary Postgres connection URL used by migrations and fallback DB clients.",
+        true,
+        ["DATABASE_URL_DIRECT"],
       ),
       secret("DATABASE_URL_DIRECT", "Direct Postgres URL for the resident Node pool.", false),
       secret(
@@ -84,7 +86,9 @@ function envForProvider(
     provider === "postgres"
   ) {
     return [
-      secret("DATABASE_URL", `Postgres URL used for ${role} shared-state storage.`),
+      secret("DATABASE_URL", `Postgres URL used for ${role} shared-state storage.`, true, [
+        "DATABASE_URL_DIRECT",
+      ]),
       secret("DATABASE_URL_DIRECT", "Direct Postgres URL for the resident Node pool.", false),
     ]
   }
@@ -179,8 +183,13 @@ function resourceKeyFor(role: VoyantProjectProviderRole, provider: string): stri
   return `${role}:${provider}`
 }
 
-function secret(name: string, description: string, required = true): VoyantProfileEnvRequirement {
-  return { name, kind: "secret", required, description }
+function secret(
+  name: string,
+  description: string,
+  required = true,
+  aliases: readonly string[] = [],
+): VoyantProfileEnvRequirement {
+  return { name, ...(aliases.length > 0 ? { aliases } : {}), kind: "secret", required, description }
 }
 
 function variable(name: string, description: string, required = true): VoyantProfileEnvRequirement {
