@@ -5,15 +5,19 @@ import { parse } from "yaml"
 
 const dependencySections = ["dependencies", "optionalDependencies", "devDependencies"]
 const ignoredWorkspaceDirs = new Set([".git", ".turbo", "build", "dist", "node_modules"])
+const voyantPackageMetadataSchemaVersion = "voyant.package.v1"
+const voyantPackageKinds = new Set(["module", "plugin"])
+const voyantDeploymentModes = new Set(["managed-cloud", "self-hosted", "local"])
 
 export function readPnpmLockfilePackageRecords(options) {
   const repoRoot = options.repoRoot ?? process.cwd()
   const lockfilePath = options.lockfilePath ?? path.join(repoRoot, "pnpm-lock.yaml")
+  const workspacePackageInfo = readWorkspacePackageInfo(repoRoot)
   return packageRecordsFromPnpmLockfile(readFileSync(lockfilePath, "utf8"), {
     packageNames: options.packageNames,
     importerPaths: options.importerPaths,
-    workspacePackageVersions:
-      options.workspacePackageVersions ?? readWorkspacePackageVersions(repoRoot),
+    workspacePackageVersions: options.workspacePackageVersions ?? workspacePackageInfo.versions,
+    workspacePackageMetadata: options.workspacePackageMetadata ?? workspacePackageInfo.metadata,
   })
 }
 
@@ -25,6 +29,11 @@ export function packageRecordsFromPnpmLockfile(lockfileText, options) {
       left.localeCompare(right),
     ),
   )
+  const workspacePackageMetadata = new Map(
+    Object.entries(options.workspacePackageMetadata ?? {})
+      .map(([packageName, metadata]) => [packageName, normalizeVoyantPackageMetadata(metadata)])
+      .filter(([, metadata]) => metadata),
+  )
 
   return [...new Set(options.packageNames)]
     .sort((left, right) => left.localeCompare(right))
@@ -33,18 +42,34 @@ export function packageRecordsFromPnpmLockfile(lockfileText, options) {
         lockfile,
         dependencies: dependencies.get(packageName) ?? [],
         workspacePackageVersions,
+        workspacePackageMetadata,
       }),
     )
 }
 
 export function readWorkspacePackageVersions(repoRoot) {
+  return readWorkspacePackageInfo(repoRoot).versions
+}
+
+export function readWorkspacePackageMetadata(repoRoot) {
+  return readWorkspacePackageInfo(repoRoot).metadata
+}
+
+function readWorkspacePackageInfo(repoRoot) {
   const versions = {}
+  const metadata = {}
   for (const packageJsonPath of listPackageJsonFiles(repoRoot)) {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-    if (typeof packageJson.name !== "string" || typeof packageJson.version !== "string") continue
-    versions[packageJson.name] = packageJson.version
+    if (typeof packageJson.name !== "string") continue
+    if (typeof packageJson.version === "string") {
+      versions[packageJson.name] = packageJson.version
+    }
+    const packageMetadata = normalizeVoyantPackageMetadata(packageJson.voyant)
+    if (packageMetadata) {
+      metadata[packageJson.name] = packageMetadata
+    }
   }
-  return versions
+  return { versions, metadata }
 }
 
 function packageRecordForPackage(packageName, context) {
@@ -54,44 +79,73 @@ function packageRecordForPackage(packageName, context) {
     context.workspacePackageVersions,
   )
   if (!dependency) {
-    return unknownPackageRecord(packageName, context.workspacePackageVersions.get(packageName))
+    return withPackageMetadata(
+      unknownPackageRecord(packageName, context.workspacePackageVersions.get(packageName)),
+      packageName,
+      context,
+    )
   }
 
   if (isWorkspaceDependency(dependency)) {
-    return {
-      packageName,
-      ...versionField(context.workspacePackageVersions.get(packageName)),
-      source: {
-        kind: "workspace",
-        reference: dependency.version,
+    return withPackageMetadata(
+      {
+        packageName,
+        ...versionField(context.workspacePackageVersions.get(packageName)),
+        source: {
+          kind: "workspace",
+          reference: dependency.version,
+        },
       },
-    }
+      packageName,
+      context,
+    )
   }
 
   if (dependency.version.startsWith("file:")) {
-    return {
+    return withPackageMetadata(
+      {
+        packageName,
+        source: { kind: "file", reference: dependency.version },
+      },
       packageName,
-      source: { kind: "file", reference: dependency.version },
-    }
+      context,
+    )
   }
 
   if (isGitReference(dependency.version)) {
-    return {
+    return withPackageMetadata(
+      {
+        packageName,
+        source: { kind: "git", reference: dependency.version },
+      },
       packageName,
-      source: { kind: "git", reference: dependency.version },
-    }
+      context,
+    )
   }
 
   const version = basePnpmVersion(dependency.version)
   const integrity = context.lockfile?.packages?.[`${packageName}@${version}`]?.resolution?.integrity
-  return {
-    packageName,
-    ...versionField(version),
-    source: {
-      kind: "registry",
-      reference: `pnpm-lock:${packageName}@${dependency.version}`,
-      ...(typeof integrity === "string" ? { integrity } : {}),
+  return withPackageMetadata(
+    {
+      packageName,
+      ...versionField(version),
+      source: {
+        kind: "registry",
+        reference: `pnpm-lock:${packageName}@${dependency.version}`,
+        ...(typeof integrity === "string" ? { integrity } : {}),
+      },
     },
+    packageName,
+    context,
+  )
+}
+
+function withPackageMetadata(record, packageName, context) {
+  const metadata = context.workspacePackageMetadata.get(packageName)
+  if (!metadata) return record
+  return {
+    ...record,
+    metadata,
   }
 }
 
@@ -165,6 +219,104 @@ function isGitReference(value) {
 
 function basePnpmVersion(value) {
   return value.split("(")[0] ?? value
+}
+
+function normalizeVoyantPackageMetadata(value) {
+  if (!isRecord(value)) return undefined
+  if (value.schemaVersion !== voyantPackageMetadataSchemaVersion) return undefined
+  if (!voyantPackageKinds.has(value.kind)) return undefined
+
+  const compatibleWith = normalizeCompatibleWith(value.compatibleWith)
+  const requires = normalizeCapabilityDeclaration(value.requires)
+  return {
+    schemaVersion: voyantPackageMetadataSchemaVersion,
+    kind: value.kind,
+    ...(compatibleWith ? { compatibleWith } : {}),
+    ...(requires ? { requires } : {}),
+  }
+}
+
+function normalizeCompatibleWith(value) {
+  if (!isRecord(value)) return undefined
+
+  const framework = normalizeString(value.framework)
+  const targets = normalizeStringList(value.targets)
+  const modes = normalizeStringList(value.modes, { allowedValues: voyantDeploymentModes })
+  const compatibleWith = {
+    ...(framework ? { framework } : {}),
+    ...(targets ? { targets } : {}),
+    ...(modes ? { modes } : {}),
+  }
+  return Object.keys(compatibleWith).length > 0 ? compatibleWith : undefined
+}
+
+function normalizeCapabilityDeclaration(value) {
+  if (!isRecord(value)) return undefined
+
+  const capabilities = normalizeStringList(value.capabilities)
+  const ports = normalizePorts(value.ports)
+  const declaration = {
+    ...(capabilities ? { capabilities } : {}),
+    ...(ports ? { ports } : {}),
+  }
+  return Object.keys(declaration).length > 0 ? declaration : undefined
+}
+
+function normalizePorts(value) {
+  const entries = Array.isArray(value) ? value : typeof value === "string" ? [value] : []
+  const ports = []
+  const seen = new Set()
+
+  for (const entry of entries) {
+    const port = normalizePort(entry)
+    if (!port || seen.has(port.id)) continue
+    seen.add(port.id)
+    ports.push(port)
+  }
+
+  return ports.length > 0 ? ports : undefined
+}
+
+function normalizePort(value) {
+  if (typeof value === "string") {
+    const id = normalizeString(value)
+    return id ? { id } : undefined
+  }
+
+  if (!isRecord(value)) return undefined
+  const id = normalizeString(value.id)
+  if (!id) return undefined
+  return {
+    id,
+    ...(typeof value.optional === "boolean" ? { optional: value.optional } : {}),
+  }
+}
+
+function normalizeStringList(value, options = {}) {
+  const entries = Array.isArray(value) ? value : typeof value === "string" ? [value] : []
+  const values = []
+  const seen = new Set()
+
+  for (const entry of entries) {
+    const normalized = normalizeString(entry)
+    if (!normalized || options.allowedValues?.has(normalized) === false || seen.has(normalized)) {
+      continue
+    }
+    seen.add(normalized)
+    values.push(normalized)
+  }
+
+  return values.length > 0 ? values : undefined
+}
+
+function normalizeString(value) {
+  if (typeof value !== "string") return undefined
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
 
 function listPackageJsonFiles(rootDir) {
