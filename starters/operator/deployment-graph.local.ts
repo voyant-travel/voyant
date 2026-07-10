@@ -23,7 +23,6 @@ export const OPERATOR_RUNTIME_DEPLOYMENT_GRAPH_PLUGIN_SPECIFIERS = [
 export const OPERATOR_SCHEMA_ONLY_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS = [
   "@voyant-travel/db",
   "@voyant-travel/availability",
-  "@voyant-travel/storefront",
   "@voyant-travel/catalog-authoring",
   "@voyant-travel/workflow-runs",
 ] as const

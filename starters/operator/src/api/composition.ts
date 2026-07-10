@@ -412,6 +412,10 @@ export const operatorGraphCompatibilityModules: Record<
   "@voyant-travel/storage": frameworkComposition.modules["@voyant-travel/storage"]!,
   "@voyant-travel/storefront#payment-link":
     frameworkComposition.modules["@voyant-travel/storefront/payment-link"]!,
+  "@voyant-travel/storefront#customer-portal":
+    frameworkComposition.modules["@voyant-travel/storefront/customer-portal"]!,
+  "@voyant-travel/storefront#verification":
+    frameworkComposition.modules["@voyant-travel/storefront/verification"]!,
   "@voyant-travel/legal#contract-document":
     frameworkComposition.modules["@voyant-travel/legal/contract-document"]!,
   "@voyant-travel/realtime": () =>
@@ -504,15 +508,13 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
     }
   },
   "@voyant-travel/bookings": async ({ capabilities, runtimeExports, unit }) => {
-    const selected = singleRuntimeValue<import("@voyant-travel/hono/module").HonoModule>(
-      unit.id,
-      runtimeExports,
+    const createBookings = singleRuntimeFactory<
+      typeof import("@voyant-travel/bookings").createBookingsHonoModule
+    >(unit.id, runtimeExports)
+    const accommodationsOverview = await import(
+      "@voyant-travel/accommodations/booking-overview-enricher"
     )
-    const [bookings, accommodationsOverview] = await Promise.all([
-      import("@voyant-travel/bookings"),
-      import("@voyant-travel/accommodations/booking-overview-enricher"),
-    ])
-    const configured = bookings.createBookingsHonoModule({
+    const configured = createBookings({
       resolveTravelSnapshot: (db, personId, { kms }) =>
         capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
       resolveBillingPerson: async (db, contact, ctx) =>
@@ -541,7 +543,7 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         accommodation: accommodationsOverview.enrichStayBookingOverviewItems,
       },
     })
-    return { ...selected, module: configured.module, anonymous: true }
+    return { ...configured, anonymous: true }
   },
   "@voyant-travel/finance": createOperatorFinanceGraphModule,
   "@voyant-travel/flights": async ({ runtimeExports, unit }) => {

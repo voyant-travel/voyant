@@ -6,7 +6,7 @@ import {
   type VoyantGraphRuntime,
 } from "@voyant-travel/framework/deployment-artifacts"
 
-export const GENERATED_GRAPH_RUNTIME_HASH = "sha256:1fd8231cb66f4a892a8af62d26ef3c46b49690658b7c4c2dd2d84868074d25b0" as const
+export const GENERATED_GRAPH_RUNTIME_HASH = "sha256:485c0519ec4b246a318c8db0f4012b0668060b859ca24ad9ac27f49734feac9d" as const
 export const GENERATED_GRAPH_RUNTIME_ENTRY_SPECIFIERS = [
   "@voyant-travel/accommodations",
   "@voyant-travel/accommodations/routes-content",
@@ -47,7 +47,9 @@ export const GENERATED_GRAPH_RUNTIME_ENTRY_SPECIFIERS = [
   "@voyant-travel/relationships",
   "@voyant-travel/storage/routes",
   "@voyant-travel/storefront",
+  "@voyant-travel/storefront/customer-portal",
   "@voyant-travel/storefront/payment-link",
+  "@voyant-travel/storefront/verification",
   "@voyant-travel/trips",
   "@voyant-travel/workflow-runs/hono-module",
 ] as const
@@ -85,7 +87,9 @@ export const GENERATED_GRAPH_RUNTIME_MODULE_IDS = [
   "@voyant-travel/relationships",
   "@voyant-travel/storage",
   "@voyant-travel/storefront",
+  "@voyant-travel/storefront#customer-portal",
   "@voyant-travel/storefront#payment-link",
+  "@voyant-travel/storefront#verification",
   "@voyant-travel/trips",
   "@voyant-travel/workflow-runs",
 ] as const
@@ -153,7 +157,9 @@ const GENERATED_GRAPH_RUNTIME_IMPORTERS = {
   "@voyant-travel/relationships": () => import("@voyant-travel/relationships"),
   "@voyant-travel/storage/routes": () => import("@voyant-travel/storage/routes"),
   "@voyant-travel/storefront": () => import("@voyant-travel/storefront"),
+  "@voyant-travel/storefront/customer-portal": () => import("@voyant-travel/storefront/customer-portal"),
   "@voyant-travel/storefront/payment-link": () => import("@voyant-travel/storefront/payment-link"),
+  "@voyant-travel/storefront/verification": () => import("@voyant-travel/storefront/verification"),
   "@voyant-travel/trips": () => import("@voyant-travel/trips"),
   "@voyant-travel/workflow-runs/hono-module": () => import("@voyant-travel/workflow-runs/hono-module"),
 } satisfies Readonly<Record<string, () => Promise<unknown>>>
@@ -1046,9 +1052,32 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
         ]
       },
       {
-        "id": "@voyant-travel/storefront#payment-link",
+        "id": "@voyant-travel/storefront#customer-portal",
         "kind": "module",
         "order": 33,
+        "packageName": "@voyant-travel/storefront",
+        "routes": [
+          {
+            "importEntry": "@voyant-travel/storefront/customer-portal",
+            "route": {
+              "anonymous": [
+                "/contact-exists"
+              ],
+              "id": "@voyant-travel/storefront#customer-portal.api",
+              "mount": "customer-portal",
+              "runtime": {
+                "entry": "@voyant-travel/storefront/customer-portal",
+                "export": "createCustomerPortalHonoModule"
+              },
+              "surface": "public"
+            }
+          }
+        ]
+      },
+      {
+        "id": "@voyant-travel/storefront#payment-link",
+        "kind": "module",
+        "order": 34,
         "packageName": "@voyant-travel/storefront",
         "routes": [
           {
@@ -1069,9 +1098,30 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
         ]
       },
       {
+        "id": "@voyant-travel/storefront#verification",
+        "kind": "module",
+        "order": 35,
+        "packageName": "@voyant-travel/storefront",
+        "routes": [
+          {
+            "importEntry": "@voyant-travel/storefront/verification",
+            "route": {
+              "anonymous": true,
+              "id": "@voyant-travel/storefront#verification.api",
+              "mount": "storefront-verification",
+              "runtime": {
+                "entry": "@voyant-travel/storefront/verification",
+                "export": "createStorefrontVerificationHonoModule"
+              },
+              "surface": "public"
+            }
+          }
+        ]
+      },
+      {
         "id": "@voyant-travel/trips",
         "kind": "module",
-        "order": 34,
+        "order": 36,
         "packageName": "@voyant-travel/trips",
         "routes": [
           {
@@ -1105,7 +1155,7 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
       {
         "id": "@voyant-travel/workflow-runs",
         "kind": "module",
-        "order": 35,
+        "order": 37,
         "packageName": "@voyant-travel/workflow-runs",
         "routes": [
           {

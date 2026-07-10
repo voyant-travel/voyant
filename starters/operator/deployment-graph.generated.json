@@ -3,7 +3,7 @@
     "provided": [],
     "required": []
   },
-  "contentHash": "sha256:1fd8231cb66f4a892a8af62d26ef3c46b49690658b7c4c2dd2d84868074d25b0",
+  "contentHash": "sha256:485c0519ec4b246a318c8db0f4012b0668060b859ca24ad9ac27f49734feac9d",
   "deployment": {
     "mode": "self-hosted",
     "providers": {
@@ -1803,6 +1803,39 @@
     {
       "api": [
         {
+          "anonymous": ["/contact-exists"],
+          "id": "@voyant-travel/storefront#customer-portal.api",
+          "mount": "customer-portal",
+          "runtime": {
+            "entry": "@voyant-travel/storefront/customer-portal",
+            "export": "createCustomerPortalHonoModule"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/storefront#customer-portal",
+      "kind": "module",
+      "links": [],
+      "localId": "storefront.customer-portal",
+      "migrations": [],
+      "order": 33,
+      "packageName": "@voyant-travel/storefront",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
           "anonymous": ["payment-link-config", "payment-link"],
           "id": "@voyant-travel/storefront#payment-link.api",
           "runtime": {
@@ -1818,7 +1851,40 @@
       "links": [],
       "localId": "storefront.payment-link",
       "migrations": [],
-      "order": 33,
+      "order": 34,
+      "packageName": "@voyant-travel/storefront",
+      "provides": {
+        "capabilities": [],
+        "ports": []
+      },
+      "requires": {
+        "capabilities": [],
+        "ports": []
+      },
+      "schema": [],
+      "subscribers": [],
+      "workflows": []
+    },
+    {
+      "api": [
+        {
+          "anonymous": true,
+          "id": "@voyant-travel/storefront#verification.api",
+          "mount": "storefront-verification",
+          "runtime": {
+            "entry": "@voyant-travel/storefront/verification",
+            "export": "createStorefrontVerificationHonoModule"
+          },
+          "surface": "public"
+        }
+      ],
+      "events": [],
+      "id": "@voyant-travel/storefront#verification",
+      "kind": "module",
+      "links": [],
+      "localId": "storefront.verification",
+      "migrations": [],
+      "order": 35,
       "packageName": "@voyant-travel/storefront",
       "provides": {
         "capabilities": [],
@@ -1866,7 +1932,7 @@
           "source": "./migrations"
         }
       ],
-      "order": 34,
+      "order": 36,
       "packageName": "@voyant-travel/trips",
       "provides": {
         "capabilities": [],
@@ -1908,7 +1974,7 @@
           "source": "./migrations"
         }
       ],
-      "order": 35,
+      "order": 37,
       "packageName": "@voyant-travel/workflow-runs",
       "provides": {
         "capabilities": [],

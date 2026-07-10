@@ -10,16 +10,8 @@ import {
   OPERATOR_SCHEMA_DEPLOYMENT_GRAPH_MANIFEST,
 } from "./deployment-graph.local.ts"
 
-const CUSTOMER_APP_MODULE_SPECIFIERS = new Set([
-  "@voyant-travel/storefront",
-  "@voyant-travel/storefront/customer-portal",
-  "@voyant-travel/storefront/verification",
-])
-
 export const OPERATOR_STANDARD_DEPLOYMENT_GRAPH_MODULE_SPECIFIERS =
-  FRAMEWORK_RUNTIME_MANIFEST.modules.filter(
-    (specifier) => !CUSTOMER_APP_MODULE_SPECIFIERS.has(specifier),
-  )
+  FRAMEWORK_RUNTIME_MANIFEST.modules
 
 export const OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS = [
   "@voyant-travel/charters",

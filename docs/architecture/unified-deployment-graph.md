@@ -832,8 +832,8 @@ Implementation note: workflows are facets of their package graph units rather
 than an aggregate operator module. Bookings owns hold expiry, notifications owns
 reminder delivery and due-reminder scheduling, and inventory owns product PDF
 generation. Their schedules are provisioned from the owning package ids while
-the operator runtime bundle continues to host the handlers until graph-generated
-runtime consumption lands.
+the generated runtime imports the owning package exports. The operator keeps
+only graph-id-keyed bindings for deployment capabilities and local units.
 
 ## Events And Webhooks
 
