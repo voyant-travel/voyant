@@ -1,13 +1,13 @@
 {
   "schemaVersion": "voyant.deployment-artifacts.v1",
-  "graphHash": "sha256:56062c2d62a4459d273f1bef99cf3abd64ffb7beeef2097e83099181bec18b07",
+  "graphHash": "sha256:36248162ea2a96b48ec42e9aaaf511cc9c1cad47586114a9130e598f8a37801f",
   "graph": "deployment-graph.generated.json",
   "runtimeEntries": [
     {
       "id": "@voyant-travel/framework#runtime.node",
       "target": "node",
       "file": "src/runtime-entry.generated.ts",
-      "graphHash": "sha256:56062c2d62a4459d273f1bef99cf3abd64ffb7beeef2097e83099181bec18b07",
+      "graphHash": "sha256:36248162ea2a96b48ec42e9aaaf511cc9c1cad47586114a9130e598f8a37801f",
       "kind": "managed-profile-node",
       "profileSnapshot": "managed-profile.json"
     }
