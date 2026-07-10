@@ -1,5 +1,13 @@
 # @voyant-travel/flights
 
+## 0.150.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.148.0
+- @voyant-travel/db@0.110.2
+- @voyant-travel/hono@0.122.3
+
 ## 0.149.1
 
 ### Patch Changes
