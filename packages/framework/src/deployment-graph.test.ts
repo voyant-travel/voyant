@@ -215,6 +215,8 @@ describe("deployment graph v1", () => {
           "Triggers workflow daily-rollup from graph schedule @acme/voyant-automation#schedule.daily-rollup.hourly.",
         route: "/__voyant/scheduled",
         module: "@acme/voyant-automation",
+        workflowId: "daily-rollup",
+        input: { kind: "hourly" },
       },
     ])
     expect(graph.diagnostics).toEqual([])

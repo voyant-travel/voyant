@@ -2,16 +2,11 @@
 // for the operator's scheduled work: `entry.ts` `scheduled()` resolves them, and
 // `scripts/emit-cloud-scheduler.ts` fans them out to Cloud Scheduler jobs that
 // POST `/__voyant/scheduled?schedule=<id>&cron=<expr>` on the Node runtime.
-//
-// The STANDARD job set is now owned by the framework and derived from the
-// composed module set (voyant#3032) — `@voyant-travel/framework/managed-jobs` —
-// so the operator and a source-free managed deployment provision the same jobs
-// from one source. The operator appends only its deployment-local jobs (the
-// external cruise refresh, since `@voyant-travel/cruises` is not a standard
-// framework module).
 
-import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "@voyant-travel/framework/managed-jobs"
-import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "./local-scheduled-jobs"
+import {
+  loadOperatorDeploymentGraphArtifacts,
+  type OperatorDeploymentGraphScheduledJob,
+} from "./deployment-graph-artifacts"
 
 /** One scheduled job: a stable id, its cron expression, and what it does. */
 export interface CronJob {
@@ -21,18 +16,24 @@ export interface CronJob {
   cron: string
   /** Human-readable description of the work this trigger drives. */
   description: string
+  route: string
+  module: string
+  workflowId?: string
+  input?: unknown
 }
 
+const GRAPH_OPERATOR_CRON_JOBS = loadOperatorDeploymentGraphArtifacts().scheduledJobs
+
 function standardCron(id: string): string {
-  const job = STANDARD_OPERATOR_SCHEDULED_JOBS.find((entry) => entry.id === id)
+  const job = GRAPH_OPERATOR_CRON_JOBS.find((entry) => entry.id === id)
   if (!job) {
-    throw new Error(`[scheduled-crons] unknown standard framework scheduled job "${id}".`)
+    throw new Error(`[scheduled-crons] unknown graph scheduled job "${id}".`)
   }
   return job.cron
 }
 
 // The cron expressions `entry.ts` `scheduled()` dispatches on. Sourced from the
-// framework's standard job set so the dispatch and the emitted Cloud Scheduler
+// generated deployment graph so the dispatch and the emitted Cloud Scheduler
 // jobs can never drift.
 export const CHANNEL_PUSH_BOOKING_LINK_CRON = standardCron("channel-push-booking-link")
 export const CHANNEL_PUSH_AVAILABILITY_CRON = standardCron("channel-push-availability")
@@ -42,19 +43,22 @@ export const PROMOTION_BOUNDARY_SCHEDULER_CRON = standardCron("promotion-boundar
 export const OUTBOX_DRAIN_CRON = standardCron("outbox-drain")
 
 /**
- * The full set of scheduled jobs, in declaration order: the framework's
- * standard set (from the composed module set) plus the operator's
- * deployment-local jobs. Consumed by the Cloud Scheduler emitter; kept in sync
- * with `entry.ts` `scheduled()` dispatch by the shared cron constants above.
+ * The full set of scheduled jobs, in generated graph order. Consumed by the
+ * Cloud Scheduler emitter and by `entry.ts` `scheduled()` dispatch.
  */
-export const OPERATOR_CRON_JOBS: readonly CronJob[] = [
-  ...STANDARD_OPERATOR_SCHEDULED_JOBS.map(
-    ({ id, cron, description }): CronJob => ({ id, cron, description }),
-  ),
-  ...OPERATOR_LOCAL_SCHEDULED_JOBS.map(
-    ({ id, cron, description }): CronJob => ({ id, cron, description }),
-  ),
-]
+export const OPERATOR_CRON_JOBS: readonly CronJob[] = GRAPH_OPERATOR_CRON_JOBS.map(toCronJob)
+
+function toCronJob(job: OperatorDeploymentGraphScheduledJob): CronJob {
+  return {
+    id: job.id,
+    cron: job.cron,
+    description: job.description,
+    route: job.route,
+    module: job.module,
+    ...(job.workflowId ? { workflowId: job.workflowId } : {}),
+    ...(Object.hasOwn(job, "input") ? { input: job.input } : {}),
+  }
+}
 
 export interface ScheduledDispatchKey {
   cron?: string
@@ -62,11 +66,15 @@ export interface ScheduledDispatchKey {
 }
 
 export function resolveOperatorCronJob(event: ScheduledDispatchKey) {
+  return resolveCronJobFromJobs(event, OPERATOR_CRON_JOBS)
+}
+
+export function resolveCronJobFromJobs(event: ScheduledDispatchKey, jobs: readonly CronJob[]) {
   if (event.scheduleId) {
-    return OPERATOR_CRON_JOBS.find((job) => job.id === event.scheduleId)
+    return jobs.find((job) => job.id === event.scheduleId)
   }
   if (event.cron) {
-    return OPERATOR_CRON_JOBS.find((job) => job.cron === event.cron)
+    return jobs.find((job) => job.cron === event.cron)
   }
   return undefined
 }

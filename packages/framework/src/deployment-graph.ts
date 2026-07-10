@@ -160,6 +160,8 @@ export interface VoyantGraphScheduledJob {
   description: string
   route: string
   module: string
+  workflowId?: string
+  input?: VoyantGraphJsonValue
 }
 
 export interface VoyantGraphUnitManifest {
@@ -878,6 +880,8 @@ function normalizeScheduledJobs(
       description: job.description,
       route: job.route,
       module: job.module,
+      ...("workflowId" in job && job.workflowId ? { workflowId: job.workflowId } : {}),
+      ...("input" in job && job.input !== undefined ? { input: job.input } : {}),
     }))
     .sort((left, right) => left.id.localeCompare(right.id))
 }
@@ -896,6 +900,8 @@ function deriveWorkflowScheduledJobs(
             description: `Triggers workflow ${workflow.id} from graph schedule ${schedule.id}.`,
             route: SCHEDULED_JOB_ROUTE,
             module: unit.localId ?? unit.id,
+            workflowId: workflow.id,
+            ...(schedule.input !== undefined ? { input: schedule.input } : {}),
           },
         ]
       }),

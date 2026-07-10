@@ -30,6 +30,8 @@ export interface OperatorDeploymentGraphScheduledJob {
   description: string
   route: string
   module: string
+  workflowId?: string
+  input?: unknown
 }
 
 export interface OperatorDeploymentGraphResourceRequirement {
@@ -280,6 +282,8 @@ function collectScheduledJobs(value: unknown): OperatorDeploymentGraphScheduledJ
       job.module,
       `deployment graph provisioning.scheduledJobs[${index}].module`,
     ),
+    ...(typeof job.workflowId === "string" ? { workflowId: job.workflowId } : {}),
+    ...(Object.hasOwn(job, "input") ? { input: job.input } : {}),
   }))
 }
 
