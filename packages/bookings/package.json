@@ -14,6 +14,7 @@
     "./requirements/routes": "./src/requirements/routes.ts",
     "./requirements/public-routes": "./src/requirements/routes-public.ts",
     "./tasks": "./src/tasks/index.ts",
+    "./workflows": "./src/workflow-entry.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
@@ -49,6 +50,7 @@
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:",
@@ -116,6 +118,11 @@
         "types": "./dist/tasks/index.d.ts",
         "import": "./dist/tasks/index.js",
         "default": "./dist/tasks/index.js"
+      },
+      "./workflows": {
+        "types": "./dist/workflow-entry.d.ts",
+        "import": "./dist/workflow-entry.js",
+        "default": "./dist/workflow-entry.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",

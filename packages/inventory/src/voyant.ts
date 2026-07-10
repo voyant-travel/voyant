@@ -43,6 +43,15 @@ export const inventoryVoyantModule = defineModule({
       source: "@voyant-travel/inventory/linkables",
     },
   ],
+  workflows: [
+    {
+      id: "products.generate-pdf",
+      config: {
+        defaultRuntime: "node",
+      },
+      source: "@voyant-travel/inventory/workflows",
+    },
+  ],
   meta: {
     ownership: "package",
   },
@@ -101,6 +110,55 @@ export const inventoryBookingVoyantPlugin = definePlugin({
       runtime: {
         entry: "@voyant-travel/inventory/booking-extension",
         export: "productsBookingExtension",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const inventoryContentVoyantPlugin = definePlugin({
+  id: "@voyant-travel/inventory#content-extension",
+  packageName: "@voyant-travel/inventory",
+  localId: "inventory.content-extension",
+  api: [
+    {
+      id: "@voyant-travel/inventory#content-extension.api.admin",
+      surface: "admin",
+      mount: "products",
+      runtime: {
+        entry: "@voyant-travel/inventory/routes-content",
+        export: "createProductContentHonoExtension",
+      },
+    },
+    {
+      id: "@voyant-travel/inventory#content-extension.api.public",
+      surface: "public",
+      mount: "products",
+      runtime: {
+        entry: "@voyant-travel/inventory/routes-content",
+        export: "createProductContentHonoExtension",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const inventoryBrochureVoyantPlugin = definePlugin({
+  id: "@voyant-travel/inventory#brochure-extension",
+  packageName: "@voyant-travel/inventory",
+  localId: "inventory.brochure-extension",
+  api: [
+    {
+      id: "@voyant-travel/inventory#brochure-extension.api.admin",
+      surface: "admin",
+      mount: "products",
+      runtime: {
+        entry: "@voyant-travel/inventory/routes-brochure",
+        export: "createProductBrochureHonoExtension",
       },
     },
   ],

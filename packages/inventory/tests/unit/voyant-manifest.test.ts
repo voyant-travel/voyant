@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest"
+import { createProductBrochureHonoExtension } from "../../src/routes-brochure.js"
+import { createProductContentHonoExtension } from "../../src/routes-content.js"
 import {
   inventoryAuthoringVoyantPlugin,
   inventoryBookingVoyantPlugin,
+  inventoryBrochureVoyantPlugin,
+  inventoryContentVoyantPlugin,
   inventoryExtrasVoyantModule,
   inventoryVoyantModule,
 } from "../../src/voyant.js"
+import { createProductsGeneratePdfWorkflow } from "../../src/workflow-entry.js"
 
 describe("inventory deployment manifests", () => {
   it("owns the inventory and extras module surfaces", () => {
@@ -27,6 +32,12 @@ describe("inventory deployment manifests", () => {
       schema: [{ id: "@voyant-travel/inventory#schema" }],
       migrations: [{ id: "@voyant-travel/inventory#migrations" }],
       links: [{ id: "@voyant-travel/inventory#linkable.product" }],
+      workflows: [
+        {
+          id: "products.generate-pdf",
+          source: "@voyant-travel/inventory/workflows",
+        },
+      ],
     })
 
     expect(inventoryExtrasVoyantModule).toMatchObject({
@@ -73,5 +84,52 @@ describe("inventory deployment manifests", () => {
         },
       ],
     })
+  })
+
+  it("owns the split content and brochure extensions", () => {
+    expect(inventoryContentVoyantPlugin).toMatchObject({
+      schemaVersion: "voyant.plugin.v1",
+      id: "@voyant-travel/inventory#content-extension",
+      api: [
+        {
+          surface: "admin",
+          mount: "products",
+          runtime: { export: "createProductContentHonoExtension" },
+        },
+        {
+          surface: "public",
+          mount: "products",
+          runtime: { export: "createProductContentHonoExtension" },
+        },
+      ],
+    })
+    expect(inventoryBrochureVoyantPlugin).toMatchObject({
+      schemaVersion: "voyant.plugin.v1",
+      id: "@voyant-travel/inventory#brochure-extension",
+      api: [
+        {
+          surface: "admin",
+          mount: "products",
+          runtime: { export: "createProductBrochureHonoExtension" },
+        },
+      ],
+    })
+
+    const resolveRegistry = () => ({}) as never
+    const content = createProductContentHonoExtension({
+      admin: { resolveRegistry, defaultAcceptMachineTranslated: false },
+      public: { resolveRegistry, defaultAcceptMachineTranslated: true },
+    })
+    const brochure = createProductBrochureHonoExtension({ resolveStorage: () => null })
+    expect(content.extension).toMatchObject({ name: "content", module: "products" })
+    expect(content.adminRoutes).toBeDefined()
+    expect(content.publicRoutes).toBeDefined()
+    expect(brochure.extension).toMatchObject({ name: "brochure", module: "products" })
+  })
+
+  it("exposes a configurable PDF workflow factory", () => {
+    const definition = createProductsGeneratePdfWorkflow({ resolveDb: () => ({}) as never })
+    expect(definition.id).toBe("products.generate-pdf")
+    expect(definition.config.defaultRuntime).toBe("node")
   })
 })

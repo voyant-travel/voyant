@@ -26,7 +26,9 @@
  */
 
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -186,6 +188,27 @@ export function createCruiseContentRoutes(
       currency,
       acceptMachineTranslated,
     }
+  }
+}
+
+export interface CruiseContentHonoExtensionOptions {
+  admin: CreateCruiseContentRoutesOptions
+  public: CreateCruiseContentRoutesOptions
+}
+
+export const cruiseContentExtension: Extension = {
+  name: "content",
+  module: "cruises",
+}
+
+/** Build sourced-aware cruise content routes for both API surfaces. */
+export function createCruiseContentHonoExtension(
+  options: CruiseContentHonoExtensionOptions,
+): HonoExtension {
+  return {
+    extension: cruiseContentExtension,
+    adminRoutes: createCruiseContentRoutes(options.admin),
+    publicRoutes: createCruiseContentRoutes(options.public),
   }
 }
 

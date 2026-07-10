@@ -27,8 +27,10 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import { productContentSchema } from "@voyant-travel/products-contracts/content-shape"
 import type { Context } from "hono"
 
@@ -215,3 +217,24 @@ export function parseAcceptLanguage(header: string): string[] {
 }
 
 export type ProductContentRoutes = ReturnType<typeof createProductContentRoutes>
+
+export interface ProductContentHonoExtensionOptions {
+  admin: CreateProductContentRoutesOptions
+  public: CreateProductContentRoutesOptions
+}
+
+export const productContentExtension: Extension = {
+  name: "content",
+  module: "products",
+}
+
+/** Build the product content routes for both operator and storefront surfaces. */
+export function createProductContentHonoExtension(
+  options: ProductContentHonoExtensionOptions,
+): HonoExtension {
+  return {
+    extension: productContentExtension,
+    adminRoutes: createProductContentRoutes(options.admin),
+    publicRoutes: createProductContentRoutes(options.public),
+  }
+}

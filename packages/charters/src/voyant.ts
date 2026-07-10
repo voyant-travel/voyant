@@ -1,10 +1,33 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the charters package. */
 export const chartersVoyantModule = defineModule({
   id: "@voyant-travel/charters",
   packageName: "@voyant-travel/charters",
   localId: "charters",
+  api: [
+    {
+      id: "@voyant-travel/charters#api.admin",
+      surface: "admin",
+      mount: "charters",
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/charters",
+        export: "createChartersHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/charters#api.public",
+      surface: "public",
+      mount: "charters",
+      anonymous: true,
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/charters",
+        export: "createChartersHonoModule",
+      },
+    },
+  ],
   schema: [
     {
       id: "@voyant-travel/charters#schema",
@@ -29,6 +52,26 @@ export const chartersVoyantModule = defineModule({
     {
       id: "@voyant-travel/charters#linkable.charter_yacht",
       source: "@voyant-travel/charters",
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const chartersBookingVoyantPlugin = definePlugin({
+  id: "@voyant-travel/charters#booking-extension",
+  packageName: "@voyant-travel/charters",
+  localId: "charters.booking-extension",
+  api: [
+    {
+      id: "@voyant-travel/charters#booking-extension.api.admin",
+      surface: "admin",
+      mount: "bookings",
+      runtime: {
+        entry: "@voyant-travel/charters/booking-extension",
+        export: "chartersBookingExtension",
+      },
     },
   ],
   meta: {

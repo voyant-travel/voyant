@@ -12,6 +12,7 @@
     "./routes": "./src/routes.ts",
     "./service": "./src/service.ts",
     "./tasks": "./src/tasks/index.ts",
+    "./workflows": "./src/workflow-entry.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
     "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts",
@@ -41,7 +42,8 @@
     "hono": "catalog:",
     "liquidjs": "^10.27.1",
     "zod": "catalog:",
-    "@voyant-travel/tools": "workspace:^"
+    "@voyant-travel/tools": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -96,6 +98,11 @@
         "types": "./dist/tasks/index.d.ts",
         "import": "./dist/tasks/index.js",
         "default": "./dist/tasks/index.js"
+      },
+      "./workflows": {
+        "types": "./dist/workflow-entry.d.ts",
+        "import": "./dist/workflow-entry.js",
+        "default": "./dist/workflow-entry.js"
       },
       "./providers/local": {
         "types": "./dist/providers/local.d.ts",

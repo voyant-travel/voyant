@@ -16,17 +16,18 @@ export const bookingsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/bookings",
-        export: "bookingsHonoModule",
+        export: "createBookingsHonoModule",
       },
     },
     {
       id: "@voyant-travel/bookings#api.public",
       surface: "public",
       mount: "bookings",
+      anonymous: true,
       transactional: true,
       runtime: {
         entry: "@voyant-travel/bookings",
-        export: "bookingsHonoModule",
+        export: "createBookingsHonoModule",
       },
     },
   ],
@@ -48,6 +49,19 @@ export const bookingsVoyantModule = defineModule({
       source: "@voyant-travel/bookings/linkables",
     },
   ],
+  workflows: [
+    {
+      id: "bookings.expire-stale-holds",
+      config: {
+        defaultRuntime: "node",
+        schedule: {
+          cron: "*/5 * * * *",
+          name: "every-5-minutes",
+        },
+      },
+      source: "@voyant-travel/bookings/workflows",
+    },
+  ],
   meta: {
     ownership: "package",
   },
@@ -61,7 +75,16 @@ export const bookingRequirementsVoyantModule = defineModule({
     {
       id: "@voyant-travel/bookings#requirements.api",
       surface: "admin",
-      mount: "@voyant-travel/bookings/requirements",
+      mount: "booking-requirements",
+      runtime: {
+        entry: "@voyant-travel/bookings/requirements",
+        export: "createBookingRequirementsHonoModule",
+      },
+    },
+    {
+      id: "@voyant-travel/bookings#requirements.api.public",
+      surface: "public",
+      mount: "booking-requirements",
       runtime: {
         entry: "@voyant-travel/bookings/requirements",
         export: "createBookingRequirementsHonoModule",
@@ -81,7 +104,7 @@ export const bookingsSupplierVoyantPlugin = definePlugin({
     {
       id: "@voyant-travel/bookings#booking-supplier-extension.api",
       surface: "admin",
-      mount: "@voyant-travel/bookings/booking-supplier-extension",
+      mount: "bookings",
       runtime: {
         entry: "@voyant-travel/bookings/extensions/suppliers",
         export: "bookingsSupplierExtension",

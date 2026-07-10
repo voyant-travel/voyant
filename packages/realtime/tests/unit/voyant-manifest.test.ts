@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest"
+import { createContainer, createEventBus } from "@voyant-travel/core"
+import { describe, expect, it, vi } from "vitest"
+import { createRealtimeHonoModule } from "../../src/index.js"
 import { realtimeVoyantModule } from "../../src/voyant.js"
 
 describe("realtime deployment manifest", () => {
@@ -26,5 +28,18 @@ describe("realtime deployment manifest", () => {
         },
       ],
     })
+  })
+
+  it("keeps provider resolution injectable through the manifest runtime factory", async () => {
+    const resolveProviders = vi.fn(() => [])
+    const module = createRealtimeHonoModule({ resolveProviders, bridgeRoutes: {} })
+
+    await module.module.bootstrap?.({
+      bindings: { REALTIME_API_KEY: "test" },
+      container: createContainer(),
+      eventBus: createEventBus(),
+    })
+
+    expect(resolveProviders).toHaveBeenCalledWith({ REALTIME_API_KEY: "test" })
   })
 })

@@ -116,11 +116,34 @@ export const chartersModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export const chartersHonoModule: HonoModule = {
-  module: chartersModule,
-  adminRoutes: chartersAdminRoutes,
-  publicRoutes: chartersPublicRoutes,
+export interface CreateChartersHonoModuleOptions {
+  adminRoutes?: HonoModule["adminRoutes"]
+  publicRoutes?: HonoModule["publicRoutes"]
+  lazyAdminRoutes?: HonoModule["lazyAdminRoutes"]
+  lazyPublicRoutes?: HonoModule["lazyPublicRoutes"]
+  anonymous?: HonoModule["anonymous"]
 }
+
+/**
+ * Assemble the charter module while allowing a deployment to retain lazy route
+ * bridges or middleware-wrapped bundles.
+ */
+export function createChartersHonoModule(
+  options: CreateChartersHonoModuleOptions = {},
+): HonoModule {
+  return {
+    module: chartersModule,
+    ...(options.lazyAdminRoutes
+      ? { lazyAdminRoutes: options.lazyAdminRoutes }
+      : { adminRoutes: options.adminRoutes ?? chartersAdminRoutes }),
+    ...(options.lazyPublicRoutes
+      ? { lazyPublicRoutes: options.lazyPublicRoutes }
+      : { publicRoutes: options.publicRoutes ?? chartersPublicRoutes }),
+    ...(options.anonymous !== undefined ? { anonymous: options.anonymous } : {}),
+  }
+}
+
+export const chartersHonoModule: HonoModule = createChartersHonoModule()
 
 // Unified key parser (admin routes accept TypeIDs or `<provider>:<ref>`).
 export { type ParsedKey, parseUnifiedKey } from "./lib/key.js"

@@ -1,4 +1,4 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the accommodations package. */
 export const accommodationsVoyantModule = defineModule({
@@ -9,7 +9,7 @@ export const accommodationsVoyantModule = defineModule({
     {
       id: "@voyant-travel/accommodations#api",
       surface: "admin",
-      mount: "@voyant-travel/accommodations",
+      mount: "accommodations",
       transactional: true,
       runtime: {
         entry: "@voyant-travel/accommodations",
@@ -33,6 +33,35 @@ export const accommodationsVoyantModule = defineModule({
     {
       id: "@voyant-travel/accommodations#linkable.roomBlock",
       source: "@voyant-travel/accommodations/linkables",
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const accommodationsContentVoyantPlugin = definePlugin({
+  id: "@voyant-travel/accommodations#content-extension",
+  packageName: "@voyant-travel/accommodations",
+  localId: "accommodations.content-extension",
+  api: [
+    {
+      id: "@voyant-travel/accommodations#content-extension.api.admin",
+      surface: "admin",
+      mount: "accommodations",
+      runtime: {
+        entry: "@voyant-travel/accommodations/routes-content",
+        export: "createAccommodationContentHonoExtension",
+      },
+    },
+    {
+      id: "@voyant-travel/accommodations#content-extension.api.public",
+      surface: "public",
+      mount: "accommodations",
+      runtime: {
+        entry: "@voyant-travel/accommodations/routes-content",
+        export: "createAccommodationContentHonoExtension",
+      },
     },
   ],
   meta: {

@@ -61,6 +61,31 @@ export const notificationsVoyantModule = defineModule({
       source: schemaSource,
     },
   ],
+  workflows: [
+    {
+      id: "notifications.deliver-reminder",
+      config: {
+        defaultRuntime: "node",
+        retry: {
+          max: 3,
+          backoff: "exponential",
+          maxDelay: "300s",
+        },
+      },
+      source: "@voyant-travel/notifications/workflows",
+    },
+    {
+      id: "notifications.send-due-reminders",
+      config: {
+        defaultRuntime: "node",
+        schedule: {
+          cron: "0 * * * *",
+          name: "hourly",
+        },
+      },
+      source: "@voyant-travel/notifications/workflows",
+    },
+  ],
   meta: {
     ownership: "package",
   },

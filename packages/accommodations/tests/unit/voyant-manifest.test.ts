@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { accommodationsVoyantModule } from "../../src/voyant.js"
+import { createAccommodationContentHonoExtension } from "../../src/routes-content.js"
+import { accommodationsContentVoyantPlugin, accommodationsVoyantModule } from "../../src/voyant.js"
 
 describe("accommodations deployment manifest", () => {
   it("owns its runtime, schema, migrations, and linkable", () => {
@@ -11,7 +12,7 @@ describe("accommodations deployment manifest", () => {
         {
           id: "@voyant-travel/accommodations#api",
           surface: "admin",
-          mount: "@voyant-travel/accommodations",
+          mount: "accommodations",
           transactional: true,
           runtime: {
             entry: "@voyant-travel/accommodations",
@@ -33,5 +34,33 @@ describe("accommodations deployment manifest", () => {
         },
       ],
     })
+  })
+
+  it("owns its catalog content extension", () => {
+    expect(accommodationsContentVoyantPlugin).toMatchObject({
+      schemaVersion: "voyant.plugin.v1",
+      id: "@voyant-travel/accommodations#content-extension",
+      api: [
+        {
+          surface: "admin",
+          mount: "accommodations",
+          runtime: { export: "createAccommodationContentHonoExtension" },
+        },
+        {
+          surface: "public",
+          mount: "accommodations",
+          runtime: { export: "createAccommodationContentHonoExtension" },
+        },
+      ],
+    })
+
+    const resolveRegistry = () => ({}) as never
+    const extension = createAccommodationContentHonoExtension({
+      admin: { resolveRegistry, defaultAcceptMachineTranslated: false },
+      public: { resolveRegistry, defaultAcceptMachineTranslated: true },
+    })
+    expect(extension.extension).toMatchObject({ name: "content", module: "accommodations" })
+    expect(extension.adminRoutes).toBeDefined()
+    expect(extension.publicRoutes).toBeDefined()
   })
 })

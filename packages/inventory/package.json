@@ -16,6 +16,7 @@
     "./public-routes": "./src/public-routes.ts",
     "./public-validation": "./src/public-validation.ts",
     "./tasks": "./src/tasks.ts",
+    "./workflows": "./src/workflow-entry.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
     "./catalog-policy-destinations": "./src/catalog-policy-destinations.ts",
@@ -63,6 +64,7 @@
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "marked": "^18.0.5",
@@ -145,6 +147,11 @@
         "types": "./dist/tasks.d.ts",
         "import": "./dist/tasks.js",
         "default": "./dist/tasks.js"
+      },
+      "./workflows": {
+        "types": "./dist/workflow-entry.d.ts",
+        "import": "./dist/workflow-entry.js",
+        "default": "./dist/workflow-entry.js"
       },
       "./booking-extension": {
         "types": "./dist/booking-extension.d.ts",

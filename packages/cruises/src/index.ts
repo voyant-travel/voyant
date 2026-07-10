@@ -178,11 +178,32 @@ export const cruisesModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export const cruisesHonoModule: HonoModule = {
-  module: cruisesModule,
-  adminRoutes: cruiseAdminRoutes,
-  publicRoutes: cruisePublicRoutes,
+export interface CreateCruisesHonoModuleOptions {
+  adminRoutes?: HonoModule["adminRoutes"]
+  publicRoutes?: HonoModule["publicRoutes"]
+  lazyAdminRoutes?: HonoModule["lazyAdminRoutes"]
+  lazyPublicRoutes?: HonoModule["lazyPublicRoutes"]
+  anonymous?: HonoModule["anonymous"]
 }
+
+/**
+ * Assemble the cruise module while preserving deployment-owned registry
+ * middleware through injected route bundles or lazy loaders.
+ */
+export function createCruisesHonoModule(options: CreateCruisesHonoModuleOptions = {}): HonoModule {
+  return {
+    module: cruisesModule,
+    ...(options.lazyAdminRoutes
+      ? { lazyAdminRoutes: options.lazyAdminRoutes }
+      : { adminRoutes: options.adminRoutes ?? cruiseAdminRoutes }),
+    ...(options.lazyPublicRoutes
+      ? { lazyPublicRoutes: options.lazyPublicRoutes }
+      : { publicRoutes: options.publicRoutes ?? cruisePublicRoutes }),
+    ...(options.anonymous !== undefined ? { anonymous: options.anonymous } : {}),
+  }
+}
+
+export const cruisesHonoModule: HonoModule = createCruisesHonoModule()
 
 export type {
   CruiseCabin,
