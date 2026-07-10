@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { bookingsVoyantModule } from "../../src/voyant.js"
+import {
+  bookingRequirementsVoyantModule,
+  bookingsSupplierVoyantPlugin,
+  bookingsVoyantModule,
+} from "../../src/voyant.js"
 
 describe("bookings deployment manifest", () => {
   it("owns the package deployment surfaces", () => {
@@ -22,6 +26,42 @@ describe("bookings deployment manifest", () => {
       schema: [{ id: "@voyant-travel/bookings#schema" }],
       migrations: [{ id: "@voyant-travel/bookings#migrations" }],
       links: [{ id: "@voyant-travel/bookings#linkable.booking" }],
+    })
+  })
+
+  it("owns the requirements module and supplier extension", () => {
+    expect(bookingRequirementsVoyantModule).toMatchObject({
+      schemaVersion: "voyant.module.v1",
+      id: "@voyant-travel/bookings#requirements",
+      packageName: "@voyant-travel/bookings",
+      api: [
+        {
+          id: "@voyant-travel/bookings#requirements.api",
+          surface: "admin",
+          mount: "@voyant-travel/bookings/requirements",
+          runtime: {
+            entry: "@voyant-travel/bookings/requirements",
+            export: "createBookingRequirementsHonoModule",
+          },
+        },
+      ],
+    })
+
+    expect(bookingsSupplierVoyantPlugin).toMatchObject({
+      schemaVersion: "voyant.plugin.v1",
+      id: "@voyant-travel/bookings#booking-supplier-extension",
+      packageName: "@voyant-travel/bookings",
+      api: [
+        {
+          id: "@voyant-travel/bookings#booking-supplier-extension.api",
+          surface: "admin",
+          mount: "@voyant-travel/bookings/booking-supplier-extension",
+          runtime: {
+            entry: "@voyant-travel/bookings/extensions/suppliers",
+            export: "bookingsSupplierExtension",
+          },
+        },
+      ],
     })
   })
 })

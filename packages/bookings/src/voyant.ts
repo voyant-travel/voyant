@@ -1,4 +1,4 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, definePlugin } from "@voyant-travel/core/project"
 
 /**
  * Import-cheap deployment declaration owned by the bookings package.
@@ -46,6 +46,46 @@ export const bookingsVoyantModule = defineModule({
     {
       id: "@voyant-travel/bookings#linkable.booking",
       source: "@voyant-travel/bookings/linkables",
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const bookingRequirementsVoyantModule = defineModule({
+  id: "@voyant-travel/bookings#requirements",
+  packageName: "@voyant-travel/bookings",
+  localId: "bookings.requirements",
+  api: [
+    {
+      id: "@voyant-travel/bookings#requirements.api",
+      surface: "admin",
+      mount: "@voyant-travel/bookings/requirements",
+      runtime: {
+        entry: "@voyant-travel/bookings/requirements",
+        export: "createBookingRequirementsHonoModule",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const bookingsSupplierVoyantPlugin = definePlugin({
+  id: "@voyant-travel/bookings#booking-supplier-extension",
+  packageName: "@voyant-travel/bookings",
+  localId: "bookings.booking-supplier-extension",
+  api: [
+    {
+      id: "@voyant-travel/bookings#booking-supplier-extension.api",
+      surface: "admin",
+      mount: "@voyant-travel/bookings/booking-supplier-extension",
+      runtime: {
+        entry: "@voyant-travel/bookings/extensions/suppliers",
+        export: "bookingsSupplierExtension",
+      },
     },
   ],
   meta: {
