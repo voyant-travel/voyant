@@ -1,5 +1,14 @@
 # @voyant-travel/identity-react
 
+## 0.149.1
+
+### Patch Changes
+
+- Updated dependencies [5e1d221]
+  - @voyant-travel/identity@0.149.1
+  - @voyant-travel/bookings-react@0.149.1
+  - @voyant-travel/distribution-react@0.139.1
+
 ## 0.149.0
 
 ### Patch Changes

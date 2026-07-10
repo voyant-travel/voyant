@@ -1,5 +1,14 @@
 # @voyant-travel/storefront-sdk
 
+## 0.151.1
+
+### Patch Changes
+
+- Updated dependencies [5e1d221]
+  - @voyant-travel/bookings@0.149.1
+  - @voyant-travel/finance@0.149.1
+  - @voyant-travel/storefront@0.151.1
+
 ## 0.151.0
 
 ### Patch Changes
