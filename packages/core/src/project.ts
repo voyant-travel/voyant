@@ -28,6 +28,14 @@ export const VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION = "voyant.plugin.v1" as const
 
 export type VoyantGraphUnitKind = "module" | "extension" | "plugin"
 export type VoyantGraphRouteSurface = "admin" | "public" | "webhook" | "internal"
+export type VoyantGraphRouteMethod =
+  | "DELETE"
+  | "GET"
+  | "HEAD"
+  | "OPTIONS"
+  | "PATCH"
+  | "POST"
+  | "PUT"
 
 export type VoyantGraphJsonValue =
   | null
@@ -58,6 +66,7 @@ export interface VoyantGraphRuntimeReference {
 export interface VoyantGraphRouteBundle {
   id: string
   surface: VoyantGraphRouteSurface
+  methods?: readonly VoyantGraphRouteMethod[]
   mount?: string
   resource?: string
   requiredScopes?: readonly string[]

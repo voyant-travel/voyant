@@ -25,6 +25,7 @@ import {
   type VoyantGraphProviderDeclaration,
   type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
+  type VoyantGraphRouteMethod,
   type VoyantGraphRouteSurface,
   type VoyantGraphRuntimeReference,
   type VoyantGraphSecretDeclaration,
@@ -104,6 +105,7 @@ export {
   type VoyantGraphProviderDeclaration,
   type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
+  type VoyantGraphRouteMethod,
   type VoyantGraphRouteSurface,
   type VoyantGraphRuntimeReference,
   type VoyantGraphSecretDeclaration,
@@ -444,6 +446,15 @@ const GRAPH_ID_PATTERN =
 const ROUTE_RESOURCE_PATTERN = /^[a-z][a-z0-9-]*(?:[.-][a-z][a-z0-9-]*)*$/
 const ROUTE_SCOPE_PATTERN =
   /^[a-z][a-z0-9-]*(?:[.-][a-z][a-z0-9-]*)*:[a-z][a-z0-9-]*(?:-[a-z][a-z0-9-]*)*$/
+const ROUTE_METHODS = new Set<VoyantGraphRouteMethod>([
+  "DELETE",
+  "GET",
+  "HEAD",
+  "OPTIONS",
+  "PATCH",
+  "POST",
+  "PUT",
+])
 const STANDARD_CAPABILITY_PREFIXES = new Set([
   "action-ledger",
   "booking",
@@ -1158,7 +1169,12 @@ function resolveUnit(
       capabilities: sortedUnique(unit.requires?.capabilities ?? []),
       ports: sortPorts(unit.requires?.ports ?? []),
     },
-    api: sortFacetEntities(unit.api ?? []) as VoyantGraphRouteBundle[],
+    api: sortFacetEntities(unit.api ?? []).map((route) => ({
+      ...route,
+      ...(route.methods
+        ? { methods: sortedUnique(route.methods) as VoyantGraphRouteMethod[] }
+        : {}),
+    })) as VoyantGraphRouteBundle[],
     schema: sortFacetEntities(unit.schema ?? []),
     migrations: sortFacetEntities(unit.migrations ?? []),
     links: sortFacetEntities(unit.links ?? []),
@@ -1749,6 +1765,26 @@ function validateRouteBundles(value: unknown, source: string | undefined): Voyan
           source,
           facet: `${facet}.surface`,
           message: `Route bundle "${route.id ?? index}" must declare surface as admin, public, webhook, or internal.`,
+        }),
+      )
+    }
+
+    if (
+      route.methods !== undefined &&
+      (!Array.isArray(route.methods) ||
+        route.methods.length === 0 ||
+        route.methods.some(
+          (method) =>
+            typeof method !== "string" || !ROUTE_METHODS.has(method as VoyantGraphRouteMethod),
+        ) ||
+        new Set(route.methods).size !== route.methods.length)
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          source,
+          facet: `${facet}.methods`,
+          message: `Route bundle "${route.id ?? index}" methods must be a non-empty array of unique supported uppercase HTTP methods.`,
         }),
       )
     }

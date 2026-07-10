@@ -16,7 +16,7 @@ import type { DriverFactory } from "@voyant-travel/workflows/driver"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Hono } from "hono"
+import type { Handler, Hono } from "hono"
 
 import type { HonoExtension, HonoModule } from "./module.js"
 import type { Reporter } from "./observability/reporter.js"
@@ -72,6 +72,12 @@ export type VoyantVariables = CoreVoyantVariables & {
   /** Per-request db metrics counter populated by the metrics middleware. */
   __voyantDbMetrics?: import("./middleware/metrics.js").RequestDbMetrics
 }
+
+/** Handler contract for application-authored Hono API routes. */
+export type VoyantRouteHandler<TBindings extends VoyantBindings = VoyantBindings> = Handler<{
+  Bindings: TBindings
+  Variables: VoyantVariables
+}>
 
 /**
  * Per-request handle returned by a {@link DbFactory} that owns its own
