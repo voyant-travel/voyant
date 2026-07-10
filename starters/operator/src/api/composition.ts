@@ -163,7 +163,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
         m.mountCatalogBookingRoutes(app)
         return app
       }),
-    loadCatalogContentRoutes: () =>
+    loadInventoryContentRoutes: () =>
       import("./routes/catalog-content").then((m) => {
         // OpenAPIHono parent so the product content sub-app's `.openapi()` def
         // (`GET /{id}/content`) surfaces in the operator spec via the build-time
@@ -172,11 +172,25 @@ export function buildOperatorProviders(): OperatorCapabilities {
         // factories are still plain `Hono`, so only the product content routes
         // are documented for now.
         const app = new OpenAPIHono()
-        m.mountCatalogContentRoutes(app)
+        m.mountInventoryContentRoutes(app)
         return app
       }),
-    loadMediaRoutes: () =>
-      import("./runtime/media-runtime").then((m) => m.buildOperatorMediaRoutes()),
+    loadCruisesContentRoutes: () =>
+      import("./routes/catalog-content").then((m) => {
+        const app = new OpenAPIHono()
+        m.mountCruisesContentRoutes(app)
+        return app
+      }),
+    loadAccommodationsContentRoutes: () =>
+      import("./routes/catalog-content").then((m) => {
+        const app = new OpenAPIHono()
+        m.mountAccommodationsContentRoutes(app)
+        return app
+      }),
+    loadStorageRoutes: () =>
+      import("./runtime/media-runtime").then((m) => m.buildOperatorStorageRoutes()),
+    loadInventoryBrochureRoutes: () =>
+      import("./runtime/media-runtime").then((m) => m.buildOperatorInventoryBrochureRoutes()),
     loadPaymentLinkRoutes: () =>
       import("./runtime/payment-link-runtime").then((m) => m.buildOperatorPaymentLinkRoutes()),
     loadContractDocumentRoutes: () =>
@@ -339,9 +353,10 @@ function createLazyCatalogIndexer(
 }
 
 /**
- * The deployment-local module factories — the only two families that aren't
- * package-owned standard (Better-Auth team invitations + the operator's own
- * Better-Auth team invitations — coupled to the deployment's auth client).
+ * Deployment-local factories plus canonical compatibility bridges. Only MCP,
+ * invitations, and team are deployment-owned; charters, cruises, realtime, and
+ * MICE retain starter-built factories under their package ownership keys until
+ * graph-generated runtime consumption lands.
  * `createVoyantApp` merges these onto the standard `frameworkComposition` set;
  * `app.ts` passes them as `modules`. (operator-settings is now a standard
  * package module owned by the framework.)
@@ -362,6 +377,10 @@ const discoveredModules = modulesFromGlob<OperatorCapabilities>(
 
 export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabilities>> = {
   ...discoveredModules,
+  "operator/mcp": () => ({
+    module: { name: "mcp" },
+    lazyAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
+  }),
   "operator/invitations": () => ({
     module: { name: "invitations" },
     lazyAdminRoutes: () =>
@@ -386,17 +405,17 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
   // Reuse the package's `cruisesModule` metadata (not a bare `{ name }`) so the
   // `requiresTransactionalDb` flag survives — createApp routes these prefixes to
   // the transactional DB, which the cruise mutation/booking handlers need.
-  "operator/cruises": () => ({
+  "@voyant-travel/cruises": () => ({
     module: cruisesModule,
     lazyAdminRoutes: () => import("./routes/cruises").then((m) => m.createCruiseAdminRoutes()),
     lazyPublicRoutes: () => import("./routes/cruises").then((m) => m.createCruisePublicRoutes()),
     // Storefront cruise detail/search is part of the auth-less journey (ADR-0008).
     anonymous: true,
   }),
-  // Charter admin/public routes mounted at /v1/{admin,public}/charters. Charters
-  // is operator-local (niche luxury-yacht vertical) — NOT in the framework
-  // standard set; the operator is the only deployment that surfaces it
-  // (voyant#2191). External charter providers resolve through the package's
+  // Charter admin/public routes mounted at /v1/{admin,public}/charters. The
+  // package owns the graph unit; the operator supplies its compatibility
+  // runtime bridge because it is the deployment that selects this vertical.
+  // External charter providers resolve through the package's
   // process-global adapter registry, so — unlike cruises — no
   // SourceAdapterRegistry injection is needed; local charters work unconditionally
   // and external keys 501 with no adapter registered. Reuse the package's
@@ -405,7 +424,7 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
   // mutation/booking/quote handlers need. The public `chartersPublicRoutes`
   // bundle is an OpenAPIHono, so its `.openapi()` defs surface in the operator
   // storefront spec via the build-time lazy-merge (voyant#2114).
-  "operator/charters": () => ({
+  "@voyant-travel/charters": () => ({
     module: chartersModule,
     lazyAdminRoutes: () => import("./routes/charters").then((m) => m.createCharterAdminRoutes()),
     lazyPublicRoutes: () => import("./routes/charters").then((m) => m.createCharterPublicRoutes()),
@@ -416,14 +435,13 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
   // /v1/{admin,public}/realtime/token and bridges domain events to channels as
   // invalidation hints. Provider-agnostic and fully optional: inert until
   // VOYANT_REALTIME_ENABLED is set (see lib/realtime.ts).
-  "operator/realtime": () =>
+  "@voyant-travel/realtime": () =>
     createRealtimeHonoModule({
       resolveProviders: resolveRealtimeProviders,
       bridgeRoutes: operatorRealtimeBridgeRoutes,
     }),
-  // MICE group-program spine (voyant#1489). Operator-local (niche) — NOT in the
-  // framework standard set. Room blocks (the standard allotment primitive it
-  // links to) ship in accommodations via the framework composition.
+  // MICE group-program spine (voyant#1489). Package-owned and selected directly
+  // in the operator graph; this factory remains the provider-wired runtime bridge.
   "@voyant-travel/mice": ({ capabilities }) =>
     createMiceHonoModule({
       resolveDelegatePersonById: async (db, personId) =>

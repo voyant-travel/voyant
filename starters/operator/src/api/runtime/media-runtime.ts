@@ -58,7 +58,13 @@ function buildBrochureRoutes() {
  * Storage upload/serve and inventory brochure generation now have separate
  * package ownership, while this loader preserves the existing mounted routes.
  */
-export async function buildOperatorMediaRoutes(): Promise<OpenAPIHono> {
+export async function buildOperatorStorageRoutes(): Promise<OpenAPIHono> {
+  const app = new OpenAPIHono()
+  app.route("/", await buildMediaUploadAndServeModule().lazyRoutes.load())
+  return app
+}
+
+export async function buildOperatorInventoryBrochureRoutes(): Promise<OpenAPIHono> {
   // OpenAPIHono parent so the brochure-generation sub-app's `.openapi()` def
   // (`POST /v1/admin/products/{id}/brochure/generate`) surfaces in the operator
   // spec via the build-time lazy-merge — `mergeLazyOpenApiPaths` skips plain
@@ -66,7 +72,12 @@ export async function buildOperatorMediaRoutes(): Promise<OpenAPIHono> {
   // serve routes from `@voyant-travel/storage` stay plain `Hono` (multipart /
   // wildcard byte streams), so they remain undocumented.
   const app = new OpenAPIHono()
-  app.route("/", await buildMediaUploadAndServeModule().lazyRoutes.load())
+  app.route("/v1/admin/products", buildBrochureRoutes())
+  return app
+}
+
+export async function buildOperatorMediaRoutes(): Promise<OpenAPIHono> {
+  const app = await buildOperatorStorageRoutes()
   app.route("/v1/admin/products", buildBrochureRoutes())
   return app
 }

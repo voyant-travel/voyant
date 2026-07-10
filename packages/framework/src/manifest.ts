@@ -40,30 +40,22 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "@voyant-travel/commerce",
     "@voyant-travel/inventory",
     "@voyant-travel/catalog",
+    "@voyant-travel/catalog/booking-engine",
     "@voyant-travel/accommodations",
     "@voyant-travel/bookings",
     "@voyant-travel/finance",
     "@voyant-travel/legal",
+    "@voyant-travel/legal/contract-document",
     "@voyant-travel/public-document-delivery",
     "@voyant-travel/notifications",
+    "@voyant-travel/storage",
     "@voyant-travel/storefront",
     "@voyant-travel/storefront/customer-portal",
     "@voyant-travel/storefront/verification",
+    "@voyant-travel/storefront/payment-link",
     "@voyant-travel/trips",
     "@voyant-travel/flights",
     "@voyant-travel/operator-settings",
-    // `operator/*` STANDARD families — routes are package-owned; they keep the
-    // `operator/*` specifier only because the deployment injects their provider
-    // wiring (see operator-registry-classification.md). The framework owns the
-    // factory (frameworkComposition) + manifest entry; the deployment injects
-    // the loaders. (operator/invitations + operator/operator-settings are
-    // genuinely deployment-local and stay appended in the deployment's manifest.)
-    "operator/mcp",
-    "operator/catalog-booking",
-    "operator/catalog-content",
-    "operator/media",
-    "operator/payment-link",
-    "operator/contract-document",
   ],
   extensions: [
     "@voyant-travel/bookings/booking-supplier-extension",
@@ -74,14 +66,17 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "@voyant-travel/distribution",
     "@voyant-travel/distribution/channel-push-extension",
     "@voyant-travel/finance/booking-tax-extension",
-    // `operator/*` STANDARD extensions (builders/loaders injected).
-    "operator/booking-schedule-extension",
-    "operator/quote-version-snapshot-extension",
-    "operator/booking-maintenance-extension",
-    "operator/action-ledger-health-extension",
-    "operator/proposal-extension",
-    "operator/catalog-offers-extension",
-    "operator/catalog-checkout-extension",
+    "@voyant-travel/inventory/content-extension",
+    "@voyant-travel/cruises/content-extension",
+    "@voyant-travel/accommodations/content-extension",
+    "@voyant-travel/inventory/brochure-extension",
+    "@voyant-travel/finance/booking-schedule-extension",
+    "@voyant-travel/quotes/quote-version-snapshot-extension",
+    "@voyant-travel/commerce/booking-maintenance-extension",
+    "@voyant-travel/action-ledger/health-extension",
+    "@voyant-travel/quotes/proposal-extension",
+    "@voyant-travel/catalog/offers-extension",
+    "@voyant-travel/commerce/catalog-checkout-extension",
   ],
 } as const satisfies FrameworkManifest
 
@@ -118,7 +113,7 @@ export const FRAMEWORK_CAPABILITY_GRAPH = {
  * Which standard module(s) each standard extension augments (voyant#2104,
  * ADR-0007 follow-up a). An extension's mount prefix is a *path*, not a foreign
  * key to a module `name` — the standard set legitimately ships path-mounted
- * extensions with no same-named module (e.g. `operator/proposal-extension`
+ * extensions with no same-named module (e.g. `@voyant-travel/quotes/proposal-extension`
  * mounts under `quote-versions`), so a name-match orphan check is unsound.
  * Ownership is therefore *declared* here, co-located with the manifest it is
  * typed against, so excluding a module can cascade to its extensions safely
@@ -146,21 +141,34 @@ export const FRAMEWORK_EXTENSION_OWNERSHIP = {
     "@voyant-travel/bookings",
     "@voyant-travel/operator-settings",
   ],
-  "operator/booking-schedule-extension": [
+  "@voyant-travel/inventory/content-extension": ["@voyant-travel/inventory"],
+  "@voyant-travel/cruises/content-extension": ["@voyant-travel/catalog"],
+  "@voyant-travel/accommodations/content-extension": ["@voyant-travel/accommodations"],
+  "@voyant-travel/inventory/brochure-extension": [
+    "@voyant-travel/inventory",
+    "@voyant-travel/storage",
+  ],
+  "@voyant-travel/finance/booking-schedule-extension": [
     "@voyant-travel/finance",
     "@voyant-travel/bookings",
     "@voyant-travel/operator-settings",
   ],
-  "operator/quote-version-snapshot-extension": ["@voyant-travel/quotes", "@voyant-travel/trips"],
-  "operator/booking-maintenance-extension": [
+  "@voyant-travel/quotes/quote-version-snapshot-extension": [
+    "@voyant-travel/quotes",
+    "@voyant-travel/trips",
+  ],
+  "@voyant-travel/commerce/booking-maintenance-extension": [
     "@voyant-travel/bookings",
     "@voyant-travel/commerce",
     "@voyant-travel/operator-settings",
   ],
-  "operator/action-ledger-health-extension": ["@voyant-travel/action-ledger"],
-  "operator/proposal-extension": ["@voyant-travel/quotes"],
-  "operator/catalog-offers-extension": ["@voyant-travel/catalog"],
-  "operator/catalog-checkout-extension": ["@voyant-travel/catalog", "@voyant-travel/commerce"],
+  "@voyant-travel/action-ledger/health-extension": ["@voyant-travel/action-ledger"],
+  "@voyant-travel/quotes/proposal-extension": ["@voyant-travel/quotes"],
+  "@voyant-travel/catalog/offers-extension": ["@voyant-travel/catalog"],
+  "@voyant-travel/commerce/catalog-checkout-extension": [
+    "@voyant-travel/catalog",
+    "@voyant-travel/commerce",
+  ],
 } as const satisfies Record<
   (typeof FRAMEWORK_RUNTIME_MANIFEST.extensions)[number],
   readonly (typeof FRAMEWORK_RUNTIME_MANIFEST.modules)[number][]

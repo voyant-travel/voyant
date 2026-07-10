@@ -1,9 +1,20 @@
 import { composeFromManifest, diffManifestRegistry } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
 
+import { graphIdFromSpecifier } from "../../../../packages/framework/src/deployment-graph"
+import {
+  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
+  OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
+} from "../../deployment-graph.local"
 import voyantConfig from "../../voyant.config"
 import {
+  OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS,
+  OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS,
+  OPERATOR_VOYANT_PROJECT,
+} from "../../voyant.project"
+import {
   buildOperatorProviders,
+  deploymentLocalModules,
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
@@ -40,6 +51,29 @@ describe("operator runtime composition", () => {
     expect(extensions.orphanFactories).toEqual([])
   })
 
+  it("selects package-owned bridge units directly and keeps only genuine operator-local ids", () => {
+    const moduleIds = new Set(OPERATOR_VOYANT_PROJECT.modules.map((unit) => unit.id))
+    const pluginIds = new Set(OPERATOR_VOYANT_PROJECT.plugins.map((unit) => unit.id))
+
+    for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_MODULE_SPECIFIERS) {
+      expect(moduleIds).toContain(graphIdFromSpecifier(specifier))
+      expect(deploymentLocalModules).toHaveProperty(specifier)
+    }
+    for (const specifier of OPERATOR_COMPATIBILITY_BRIDGE_PLUGIN_SPECIFIERS) {
+      expect(pluginIds).toContain(graphIdFromSpecifier(specifier))
+    }
+
+    const operatorIds = [...moduleIds, ...pluginIds].filter((id) =>
+      id.startsWith("@voyant-travel/operator#"),
+    )
+    expect(operatorIds.sort()).toEqual(
+      [
+        ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_MODULE_IDS,
+        ...OPERATOR_LOCAL_DEPLOYMENT_GRAPH_PLUGIN_IDS,
+      ].sort(),
+    )
+  })
+
   it("composes the full module + extension set in manifest order", () => {
     const composed = composeFromManifest(
       OPERATOR_RUNTIME_MANIFEST,
@@ -49,9 +83,9 @@ describe("operator runtime composition", () => {
 
     // Manifest entries expand to more mounted modules because Commerce and
     // Distribution each mount multiple internal Hono modules.
-    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(35)
-    expect(composed.modules).toHaveLength(40)
-    expect(composed.extensions).toHaveLength(16)
+    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(34)
+    expect(composed.modules).toHaveLength(39)
+    expect(composed.extensions).toHaveLength(20)
 
     // Every composed unit is a real HonoModule/HonoExtension.
     for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")

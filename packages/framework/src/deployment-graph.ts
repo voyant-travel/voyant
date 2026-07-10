@@ -852,7 +852,7 @@ export function graphIdFromSpecifier(specifier: string): string {
 }
 
 export function packageNameFromSpecifier(specifier: string): string {
-  return SPECIFIER_PACKAGE_OWNERS[specifier] ?? splitPackageSpecifier(specifier).packageName
+  return splitPackageSpecifier(specifier).packageName
 }
 
 export function childGraphEntityId(parentId: string, childId: string): string {
@@ -1855,10 +1855,6 @@ function splitPackageSpecifier(specifier: string): { packageName: string; subpat
     packageName: packageName ?? trimmed,
     ...(subpathParts.length > 0 ? { subpath: subpathParts.join("/") } : {}),
   }
-}
-
-const SPECIFIER_PACKAGE_OWNERS: Record<string, string> = {
-  "@voyant-travel/public-document-delivery": "@voyant-travel/hono",
 }
 
 function packageNameFromGraphId(id: string): string {

@@ -828,10 +828,12 @@ operator scheduled entrypoint can route them through the workflow runtime by
 stable schedule id. Runtime maintenance jobs remain explicit scheduled-job
 metadata.
 
-Implementation note: booking hold expiry, product PDF generation, and
-notification reminder workflows are declared by their owning package manifests.
-The operator keeps only deployment adapter wiring for their handler bodies; it
-does not declare an aggregate workflow graph unit.
+Implementation note: workflows are facets of their package graph units rather
+than an aggregate operator module. Bookings owns hold expiry, notifications owns
+reminder delivery and due-reminder scheduling, and inventory owns product PDF
+generation. Their schedules are provisioned from the owning package ids while
+the operator runtime bundle continues to host the handlers until graph-generated
+runtime consumption lands.
 
 ## Events And Webhooks
 

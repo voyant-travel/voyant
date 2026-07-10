@@ -979,14 +979,12 @@ describe("deployment graph v1", () => {
     expect(graphIdFromSpecifier("@voyant-travel/inventory/extras")).toBe(
       "@voyant-travel/inventory#extras",
     )
-    expect(graphIdFromSpecifier("operator/payment-link")).toBe(
-      "@voyant-travel/operator#payment-link",
-    )
+    expect(graphIdFromSpecifier("operator/mcp")).toBe("@voyant-travel/operator#mcp")
     expect(graphIdFromSpecifier("@voyant-travel/public-document-delivery")).toBe(
       "@voyant-travel/public-document-delivery",
     )
     expect(packageNameFromSpecifier("@voyant-travel/public-document-delivery")).toBe(
-      "@voyant-travel/hono",
+      "@voyant-travel/public-document-delivery",
     )
   })
 
