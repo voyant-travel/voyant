@@ -149,6 +149,7 @@ describe("managed profile contract", () => {
         expect.objectContaining({
           name: "DATABASE_URL",
           aliases: ["DATABASE_URL_DIRECT"],
+          format: "postgres-url",
           kind: "secret",
           required: true,
         }),

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: operator; artifact fixtures, canonical-hash checks, and resource-contract validation stay co-located around the deployment graph reader.
 import { createHash } from "node:crypto"
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -132,9 +133,59 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         DATABASE_URL_DIRECT: "postgres://user:pass@example.test:5432/voyant",
       }),
     ).toEqual([])
+    expect(
+      validateOperatorDeploymentGraphResourceEnv(summary, { DATABASE_URL: "not-a-postgres-url" }),
+    ).toEqual(["secret DATABASE_URL must be a Postgres URL for database:postgres"])
     expect(() => assertOperatorDeploymentGraphResourceEnv(summary, {})).toThrow(
       /Operator deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
     )
+  })
+
+  it("validates Redis and HTTP resource configuration formats before boot", () => {
+    const summary = {
+      resourceRequirements: [
+        {
+          resourceKey: "redis",
+          roles: ["cache"],
+          provider: "redis",
+          required: true,
+          env: [
+            {
+              name: "REDIS_URL",
+              format: "redis-url" as const,
+              kind: "secret",
+              required: true,
+              description: "Redis URL.",
+            },
+          ],
+        },
+        {
+          resourceKey: "object-storage",
+          roles: ["storage"],
+          provider: "s3",
+          required: true,
+          env: [
+            {
+              name: "R2_S3_ENDPOINT",
+              format: "http-url" as const,
+              kind: "variable",
+              required: true,
+              description: "S3 endpoint.",
+            },
+          ],
+        },
+      ],
+    }
+
+    expect(
+      validateOperatorDeploymentGraphResourceEnv(summary, {
+        REDIS_URL: "https://redis.example.test",
+        R2_S3_ENDPOINT: "redis://r2.example.test",
+      }),
+    ).toEqual([
+      "secret REDIS_URL must be a Redis URL for redis",
+      "variable R2_S3_ENDPOINT must be an HTTP(S) URL for object-storage",
+    ])
   })
 
   it("loads graph-derived scheduled jobs for provisioning", () => {
@@ -406,6 +457,7 @@ function writeFixture(
                     {
                       name: "DATABASE_URL",
                       aliases: ["DATABASE_URL_DIRECT"],
+                      format: "postgres-url",
                       kind: "secret",
                       required: true,
                       description: "Primary Postgres connection URL.",
@@ -492,6 +544,7 @@ interface FixtureDeploymentGraph {
       env: Array<{
         name: string
         aliases?: string[]
+        format?: "postgres-url" | "redis-url" | "http-url"
         kind: string
         required: boolean
         description: string

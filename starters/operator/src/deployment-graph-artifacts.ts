@@ -53,6 +53,7 @@ export interface OperatorDeploymentGraphMigrationSource {
 export interface OperatorDeploymentGraphEnvRequirement {
   name: string
   aliases?: readonly string[]
+  format?: "postgres-url" | "redis-url" | "http-url"
   kind: string
   required: boolean
   description: string
@@ -245,13 +246,19 @@ export function validateOperatorDeploymentGraphResourceEnv(
   const issues: string[] = []
   for (const resource of summary.resourceRequirements) {
     for (const requirement of resource.env) {
-      if (!requirement.required) continue
-      const present = [requirement.name, ...(requirement.aliases ?? [])].some((name) =>
-        hasEnvValue(env, name),
-      )
-      if (!present) {
+      const values = [requirement.name, ...(requirement.aliases ?? [])]
+        .map((name) => env[name])
+        .filter(hasValue)
+      if (requirement.required && values.length === 0) {
         issues.push(
           `${requirement.kind} ${requirement.name} is required for ${resource.resourceKey}`,
+        )
+        continue
+      }
+      const format = requirement.format
+      if (format && values.length > 0 && !values.every((value) => hasFormat(value, format))) {
+        issues.push(
+          `${requirement.kind} ${requirement.name} must be ${formatDescription(format)} for ${resource.resourceKey}`,
         )
       }
     }
@@ -365,6 +372,14 @@ function collectResourceRequirements(value: unknown): OperatorDeploymentGraphRes
               `deployment graph requirements.resources[${index}].env[${envIndex}].aliases`,
             ),
           }),
+      ...(entry.format === undefined
+        ? {}
+        : {
+            format: requireEnvFormat(
+              entry.format,
+              `deployment graph requirements.resources[${index}].env[${envIndex}].format`,
+            ),
+          }),
       kind: requireString(
         entry.kind,
         `deployment graph requirements.resources[${index}].env[${envIndex}].kind`,
@@ -418,9 +433,40 @@ function readJsonFile<T>(url: URL, label: string): T {
   }
 }
 
-function hasEnvValue(env: OperatorDeploymentGraphEnv, name: string): boolean {
-  const value = env[name]
+function hasValue(value: unknown): boolean {
   return typeof value === "string" ? value.trim().length > 0 : value !== null && value !== undefined
+}
+
+function hasFormat(
+  value: unknown,
+  format: NonNullable<OperatorDeploymentGraphEnvRequirement["format"]>,
+): boolean {
+  if (typeof value !== "string" || value.trim().length === 0) return false
+  try {
+    const parsed = new URL(value)
+    if (format === "postgres-url")
+      return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
+    if (format === "redis-url") return parsed.protocol === "redis:" || parsed.protocol === "rediss:"
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+  } catch {
+    return false
+  }
+}
+
+function formatDescription(
+  format: NonNullable<OperatorDeploymentGraphEnvRequirement["format"]>,
+): string {
+  if (format === "postgres-url") return "a Postgres URL"
+  if (format === "redis-url") return "a Redis URL"
+  return "an HTTP(S) URL"
+}
+
+function requireEnvFormat(
+  value: unknown,
+  label: string,
+): NonNullable<OperatorDeploymentGraphEnvRequirement["format"]> {
+  if (value === "postgres-url" || value === "redis-url" || value === "http-url") return value
+  throw new Error(`${label} must be a supported environment value format`)
 }
 
 function relativeArtifactUrl(value: string, baseUrl: URL): URL {

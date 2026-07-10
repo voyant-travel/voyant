@@ -57,8 +57,15 @@ function envForProvider(
         "Primary Postgres connection URL used by migrations and fallback DB clients.",
         true,
         ["DATABASE_URL_DIRECT"],
+        "postgres-url",
       ),
-      secret("DATABASE_URL_DIRECT", "Direct Postgres URL for the resident Node pool.", false),
+      secret(
+        "DATABASE_URL_DIRECT",
+        "Direct Postgres URL for the resident Node pool.",
+        false,
+        [],
+        "postgres-url",
+      ),
       secret(
         "DATABASE_URL_REPLICAS",
         "Comma-separated read replica URLs for the HTTP data plane.",
@@ -68,7 +75,12 @@ function envForProvider(
   }
   if (role === "storage" && (provider === "s3" || provider === "r2")) {
     return [
-      variable("R2_S3_ENDPOINT", "S3-compatible endpoint for media and document buckets."),
+      variable(
+        "R2_S3_ENDPOINT",
+        "S3-compatible endpoint for media and document buckets.",
+        true,
+        "http-url",
+      ),
       variable("R2_BUCKET_MEDIA", "Object bucket for public media."),
       variable("R2_BUCKET_DOCUMENTS", "Object bucket for private/generated documents."),
       secret(R2_ACCESS_KEY_ID_ENV, R2_STORAGE_ID_COPY),
@@ -79,17 +91,35 @@ function envForProvider(
     (role === "cache" || role === "sharedState" || role === "rateLimit") &&
     provider === "redis"
   ) {
-    return [secret("REDIS_URL", "Redis URL used for cache, shared state, and rate limiting.")]
+    return [
+      secret(
+        "REDIS_URL",
+        "Redis URL used for cache, shared state, and rate limiting.",
+        true,
+        [],
+        "redis-url",
+      ),
+    ]
   }
   if (
     (role === "cache" || role === "sharedState" || role === "rateLimit") &&
     provider === "postgres"
   ) {
     return [
-      secret("DATABASE_URL", `Postgres URL used for ${role} shared-state storage.`, true, [
+      secret(
+        "DATABASE_URL",
+        `Postgres URL used for ${role} shared-state storage.`,
+        true,
+        ["DATABASE_URL_DIRECT"],
+        "postgres-url",
+      ),
+      secret(
         "DATABASE_URL_DIRECT",
-      ]),
-      secret("DATABASE_URL_DIRECT", "Direct Postgres URL for the resident Node pool.", false),
+        "Direct Postgres URL for the resident Node pool.",
+        false,
+        [],
+        "postgres-url",
+      ),
     ]
   }
   if (role === "search" && (provider === "typesense" || provider === "algolia")) {
@@ -188,10 +218,23 @@ function secret(
   description: string,
   required = true,
   aliases: readonly string[] = [],
+  format?: VoyantProfileEnvRequirement["format"],
 ): VoyantProfileEnvRequirement {
-  return { name, ...(aliases.length > 0 ? { aliases } : {}), kind: "secret", required, description }
+  return {
+    name,
+    ...(aliases.length > 0 ? { aliases } : {}),
+    ...(format ? { format } : {}),
+    kind: "secret",
+    required,
+    description,
+  }
 }
 
-function variable(name: string, description: string, required = true): VoyantProfileEnvRequirement {
-  return { name, kind: "variable", required, description }
+function variable(
+  name: string,
+  description: string,
+  required = true,
+  format?: VoyantProfileEnvRequirement["format"],
+): VoyantProfileEnvRequirement {
+  return { name, ...(format ? { format } : {}), kind: "variable", required, description }
 }

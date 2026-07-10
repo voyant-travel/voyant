@@ -111,10 +111,13 @@ export interface VoyantProfileEnvRequirement {
   name: string
   /** Alternate environment names that satisfy the canonical requirement. */
   aliases?: readonly string[]
+  format?: VoyantProfileEnvValueFormat
   kind: "secret" | "variable" | "binding"
   required: boolean
   description: string
 }
+
+export type VoyantProfileEnvValueFormat = "postgres-url" | "redis-url" | "http-url"
 
 export interface VoyantProfileResourceRequirement {
   resourceKey: string
