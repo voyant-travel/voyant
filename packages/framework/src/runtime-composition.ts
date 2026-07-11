@@ -4,7 +4,11 @@ import type {
   SubscriberRuntimeDescriptor,
   WorkflowDescriptor,
 } from "@voyant-travel/core"
-import { isGraphRuntimeFactory, type VoyantPort } from "@voyant-travel/core/project"
+import {
+  isGraphRuntimeFactory,
+  type VoyantGraphRuntimeFactoryContext,
+  type VoyantPort,
+} from "@voyant-travel/core/project"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
@@ -66,11 +70,18 @@ export async function composeVoyantGraphRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
   ports?: VoyantGraphRuntimePorts,
 ): Promise<HonoModule[]> {
+  return composeRuntimeFacetModules(runtime, createRuntimeFactoryContexts(runtime, ports))
+}
+
+async function composeRuntimeFacetModules(
+  runtime: VoyantGraphRuntime,
+  factoryContexts: ReadonlyMap<VoyantGraphRuntimeUnitLoader, VoyantGraphRuntimeFactoryContext>,
+): Promise<HonoModule[]> {
   const modules: HonoModule[] = []
   for (const unit of [...runtime.modules, ...runtime.extensions, ...runtime.plugins]) {
     const module = await resolveRuntimeFacetModule(
-      { runtime, capabilities: undefined, ports },
       unit,
+      requireRuntimeFactoryContext(factoryContexts, unit),
     )
     if (module) modules.push(module)
   }
@@ -87,9 +98,14 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
 ): Promise<VoyantGraphRuntimeComposition> {
   const modules: HonoModule[] = []
   const extensions: HonoExtension[] = []
+  const factoryContexts = createRuntimeFactoryContexts(input.runtime, input.ports)
 
   for (const unit of input.runtime.modules) {
-    const outputs = await resolveRuntimeUnit(input, unit)
+    const outputs = await resolveRuntimeUnit(
+      input,
+      unit,
+      requireRuntimeFactoryContext(factoryContexts, unit),
+    )
     assertWebhookRoutePosture(input.runtime, unit, outputs)
     const routePosture = deriveUnitRoutePosture(unit)
     for (const output of outputs) {
@@ -101,7 +117,11 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   }
 
   for (const unit of [...input.runtime.extensions, ...input.runtime.plugins]) {
-    const outputs = await resolveRuntimeUnit(input, unit)
+    const outputs = await resolveRuntimeUnit(
+      input,
+      unit,
+      requireRuntimeFactoryContext(factoryContexts, unit),
+    )
     assertWebhookRoutePosture(input.runtime, unit, outputs)
     const routePosture = deriveUnitRoutePosture(unit)
     for (const output of outputs) {
@@ -112,7 +132,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
-  modules.push(...(await composeVoyantGraphRuntimeFacetModules(input.runtime, input.ports)))
+  modules.push(...(await composeRuntimeFacetModules(input.runtime, factoryContexts)))
   const outboundWebhookModule = createGraphOutboundWebhookModule(input)
   if (outboundWebhookModule) modules.push(outboundWebhookModule)
 
@@ -294,14 +314,14 @@ function assertWebhookRoutePosture(
 }
 
 async function resolveRuntimeFacetModule(
-  input: Pick<ComposeVoyantGraphRuntimeInput<unknown>, "runtime" | "capabilities" | "ports">,
   unit: VoyantGraphRuntimeUnitLoader,
+  factoryContext: VoyantGraphRuntimeFactoryContext,
 ): Promise<HonoModule | undefined> {
   const workflows =
     unit.workflows.length > 0
       ? await Promise.all(unit.workflows.map((workflow) => workflow.load<WorkflowDescriptor>()))
       : await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
-  const subscriberFacets = await loadSubscriberFacets(input, unit)
+  const subscriberFacets = await loadSubscriberFacets(unit, factoryContext)
   if (
     workflows.length === 0 &&
     subscriberFacets.eventFilters.length === 0 &&
@@ -331,8 +351,8 @@ async function resolveRuntimeFacetModule(
 }
 
 async function loadSubscriberFacets(
-  input: Pick<ComposeVoyantGraphRuntimeInput<unknown>, "runtime" | "capabilities" | "ports">,
   unit: VoyantGraphRuntimeUnitLoader,
+  factoryContext: VoyantGraphRuntimeFactoryContext,
 ): Promise<{
   eventFilters: EventFilterDescriptor[]
   subscribers: SubscriberRuntimeDescriptor[]
@@ -345,7 +365,7 @@ async function loadSubscriberFacets(
   )) {
     const runtimeExport = await reference.load<unknown>()
     const value = isGraphRuntimeFactory(runtimeExport)
-      ? await runtimeExport(createRuntimeFactoryContext(input, unit))
+      ? await runtimeExport(factoryContext)
       : runtimeExport
     if (isSubscriberRuntimeDescriptor(value)) {
       if (value.id !== reference.entityId) {
@@ -382,6 +402,7 @@ async function loadFacetReferences<T>(
 async function resolveRuntimeUnit<TCapabilities>(
   input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
   unit: VoyantGraphRuntimeUnitLoader,
+  factoryContext: VoyantGraphRuntimeFactoryContext,
 ): Promise<unknown[]> {
   const runtimeExports = uniqueRuntimeExports(await unit.load())
   const binding = input.bindings?.[unit.id]
@@ -394,7 +415,7 @@ async function resolveRuntimeUnit<TCapabilities>(
   const outputs: unknown[] = []
   for (const runtimeExport of runtimeExports) {
     const output = isGraphRuntimeFactory(runtimeExport)
-      ? await runtimeExport(createRuntimeFactoryContext(input, unit))
+      ? await runtimeExport(factoryContext)
       : typeof runtimeExport === "function"
         ? await runtimeExport()
         : runtimeExport
@@ -403,19 +424,20 @@ async function resolveRuntimeUnit<TCapabilities>(
   return outputs
 }
 
-function createRuntimeFactoryContext<TCapabilities>(
-  input: Pick<ComposeVoyantGraphRuntimeInput<TCapabilities>, "ports">,
+function createRuntimeFactoryContext(
+  ports: VoyantGraphRuntimePorts | undefined,
   unit: VoyantGraphRuntimeUnitLoader,
-) {
+): VoyantGraphRuntimeFactoryContext {
   return {
     unitId: unit.id,
+    projectConfig: unit.projectConfig,
     hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
       assertDeclaredRuntimePort(unit, port)
-      return Object.hasOwn(input.ports ?? {}, port.id)
+      return Object.hasOwn(ports ?? {}, port.id)
     },
     getPort: async <TProvider>(port: VoyantPort<TProvider>): Promise<TProvider> => {
       assertDeclaredRuntimePort(unit, port)
-      if (!Object.hasOwn(input.ports ?? {}, port.id)) {
+      if (!Object.hasOwn(ports ?? {}, port.id)) {
         const requirement = unit.requiredRuntimePorts.includes(port.id)
           ? "requires runtime port"
           : "optional runtime port"
@@ -423,11 +445,36 @@ function createRuntimeFactoryContext<TCapabilities>(
           `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" ${requirement} "${port.id}", but the deployment did not bind it.`,
         )
       }
-      const provider = await (input.ports![port.id] as TProvider | Promise<TProvider>)
+      const provider = await (ports![port.id] as TProvider | Promise<TProvider>)
       await port.test(provider)
       return provider
     },
   }
+}
+
+function createRuntimeFactoryContexts(
+  runtime: VoyantGraphRuntime,
+  ports: VoyantGraphRuntimePorts | undefined,
+): ReadonlyMap<VoyantGraphRuntimeUnitLoader, VoyantGraphRuntimeFactoryContext> {
+  return new Map(
+    [...runtime.modules, ...runtime.extensions, ...runtime.plugins].map((unit) => [
+      unit,
+      createRuntimeFactoryContext(ports, unit),
+    ]),
+  )
+}
+
+function requireRuntimeFactoryContext(
+  contexts: ReadonlyMap<VoyantGraphRuntimeUnitLoader, VoyantGraphRuntimeFactoryContext>,
+  unit: VoyantGraphRuntimeUnitLoader,
+): VoyantGraphRuntimeFactoryContext {
+  const context = contexts.get(unit)
+  if (!context) {
+    throw new Error(
+      `composeVoyantGraphRuntime: no runtime factory context for ${unit.kind} "${unit.id}".`,
+    )
+  }
+  return context
 }
 
 function assertDeclaredRuntimePort<TProvider>(

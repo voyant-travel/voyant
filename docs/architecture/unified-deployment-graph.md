@@ -574,7 +574,11 @@ provider selection and must be satisfied by graph provider declarations. Before
 exposing a bound implementation, composition runs the port's public conformance
 kit. Factories use `hasPort(...)` before requesting an optional runtime port;
 required and optional declarations remain distinct in lowered graph metadata.
-Legacy
+The framework creates one factory context per selected runtime unit and reuses
+that exact context across the unit's API and subscriber facets. The context also
+exposes the owning loader's normalized, JSON-safe `projectConfig`; config from
+another selected unit is never merged into it. Deselected units remain behind
+their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
 public factories have not adopted this contract.
 

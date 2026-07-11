@@ -91,7 +91,9 @@ export async function assertPortConforms<TProvider>(
 }
 
 export interface VoyantGraphRuntimeFactoryContext {
-  unitId: string
+  readonly unitId: string
+  /** Validated JSON config authored on this package-scoped project selection. */
+  readonly projectConfig: Readonly<VoyantGraphJsonObject>
   hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
   getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
 }
