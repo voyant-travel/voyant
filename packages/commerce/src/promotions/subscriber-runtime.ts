@@ -1,4 +1,4 @@
-import type { SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import type { BootstrapContext, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 
@@ -71,7 +71,7 @@ export const createPromotionRedemptionSubscriberGraphRuntime = defineGraphRuntim
 
     return {
       ...descriptor,
-      register: async (context) => {
+      register: async (context: BootstrapContext) => {
         context.container.register(
           BULK_REINDEX_SERVICE_KEY,
           await bulkReindex.createService(context.bindings),
