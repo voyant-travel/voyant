@@ -109,8 +109,8 @@ export const createTripsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPo
   }
 })
 
-export { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 export type { TripsDatabaseRuntime } from "./runtime-port.js"
+export { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 
 function memoizeTripsRouteOptionsInput(options: TripsRoutesOptionsInput): TripsRoutesOptionsInput {
   if (typeof options !== "function") return options
