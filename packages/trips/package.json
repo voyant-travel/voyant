@@ -13,6 +13,7 @@
     "./catalog-component": "./src/catalog-component.ts",
     "./flight-component": "./src/flight-component.ts",
     "./cruise-extension": "./src/cruise-extension.ts",
+    "./payment-subscribers": "./src/payment-subscriber-runtime.ts",
     "./routes": "./src/routes.ts",
     "./voyant": "./src/voyant.ts"
   },
@@ -119,6 +120,11 @@
         "types": "./dist/cruise-extension.d.ts",
         "import": "./dist/cruise-extension.js",
         "default": "./dist/cruise-extension.js"
+      },
+      "./payment-subscribers": {
+        "types": "./dist/payment-subscriber-runtime.d.ts",
+        "import": "./dist/payment-subscriber-runtime.js",
+        "default": "./dist/payment-subscriber-runtime.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",
