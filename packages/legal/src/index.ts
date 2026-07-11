@@ -1,15 +1,9 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import {
-  LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY,
-  type LegalBookingConfirmedEvent,
-  type LegalBookingContractSubscriberRuntime,
-  legalBookingContractConfirmedSubscriber,
-} from "./contracts/booking-contract-subscriber-runtime.js"
 import {
   buildContractsRouteRuntime,
   CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -22,6 +16,7 @@ import {
 import type { AutoGenerateContractOptions } from "./contracts/service-auto-generate.js"
 import { legalLinkable } from "./linkables.js"
 import { policiesAdminRoutes, policiesPublicRoutes } from "./policies/routes.js"
+import { legalRuntimePort } from "./runtime-port.js"
 import { legalTermsAdminRoutes, legalTermsPublicRoutes } from "./terms/routes.js"
 
 export { legalLinkable } from "./linkables.js"
@@ -74,49 +69,6 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
       const contractsRuntime = buildContractsRouteRuntime(bindingsRecord, options)
       contractsRuntime.eventBus ??= eventBus
       container.register(CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY, contractsRuntime)
-
-      // Auto-generate wiring — opt-in. Mirrors the notifications
-      // autoConfirmAndDispatch subscriber pattern. Both fire on the same
-      // booking.confirmed event; legal's handler just needs to run first
-      // so the contract attachment exists before notifications looks it
-      // up via listLegalBookingDocuments. The selected-graph cutover must
-      // replace this compatibility path with explicit ordering semantics.
-      const auto = options.autoGenerateContractOnConfirmed
-      if (auto?.enabled && options.resolveDb) {
-        const resolveDb = options.resolveDb
-        if (!contractsRuntime.documentGenerator) {
-          // Mis-configuration — don't silently drop contracts. Log and
-          // skip; the template operator will notice on the first confirm.
-          console.error(
-            "[legal] autoGenerateContractOnConfirmed.enabled=true but no documentGenerator resolved; skipping subscriber.",
-          )
-          return
-        }
-        const subscriberRuntime: LegalBookingContractSubscriberRuntime = {
-          options: auto,
-          withDb: async (runtimeBindings, operation) =>
-            operation(
-              // The generator queries support both deployed drizzle flavors;
-              // this legacy resolver narrows at the package-owned boundary.
-              resolveDb(runtimeBindings as Record<string, unknown>) as PostgresJsDatabase,
-            ),
-          documentGenerator: contractsRuntime.documentGenerator,
-          documentStorage: contractsRuntime.documentStorage,
-          bookingPiiService: contractsRuntime.bookingPiiService,
-          resolveBookingPiiService: () =>
-            contractsRuntime.resolveBookingPiiService?.(bindingsRecord),
-          lifecycleHooks: contractsRuntime.lifecycleHooks,
-          resolveVariables: auto.resolveVariables,
-          resolveActionLedgerContext: (event: LegalBookingConfirmedEvent) => ({
-            userId: event.actorId,
-            actor: event.actorId ? "staff" : "system",
-            callerType: "internal",
-            isInternalRequest: true,
-          }),
-        }
-        container.register(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY, subscriberRuntime)
-        legalBookingContractConfirmedSubscriber.register({ bindings, container, eventBus })
-      }
     },
   }
 
@@ -128,6 +80,11 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
 }
 
 export const legalHonoModule: HonoModule = createLegalHonoModule()
+
+/** Package-owned adapter from the graph port registry to the public module factory. */
+export const createLegalVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createLegalHonoModule(await getPort(legalRuntimePort)),
+)
 
 export {
   CONTRACT_DOCUMENT_ROUTE_PATHS,
@@ -142,8 +99,11 @@ export {
   LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY,
   type LegalBookingConfirmedEvent,
   type LegalBookingContractSubscriberDependencies,
+  type LegalBookingContractSubscriberHost,
   type LegalBookingContractSubscriberRuntime,
   legalBookingContractConfirmedSubscriber,
+  legalBookingContractSubscriberRuntimePort,
+  registerLegalBookingContractSubscriberRuntime,
 } from "./contracts/booking-contract-subscriber-runtime.js"
 export {
   type ContractDocumentService,
@@ -177,4 +137,5 @@ export {
   type ResolveContractVariablesFn,
 } from "./contracts/service-auto-generate.js"
 export * from "./policies/index.js"
+export { legalRuntimePort } from "./runtime-port.js"
 export * from "./terms/index.js"

@@ -1,6 +1,7 @@
 import { defineConfig } from "@voyant-travel/framework/project"
 
 export default defineConfig({
+  extensions: [{ resolve: "@voyant-travel/legal/booking-contract-extension" }],
   plugins: [
     { resolve: "@voyant-travel/plugin-netopia" },
     { resolve: "@voyant-travel/plugin-smartbill" },
