@@ -384,6 +384,40 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("rejects action bindings that reference the wrong selected facet kind", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-actions",
+      tools: [
+        {
+          id: "@acme/voyant-actions#tool.run",
+          name: "run_action",
+          runtime: { entry: "./tools", export: "runAction" },
+        },
+      ],
+      actions: [
+        {
+          id: "@acme/voyant-actions#action.run",
+          version: "v1",
+          kind: "execute",
+          targetType: "task",
+          risk: "medium",
+          ledger: "required",
+          from: { routes: ["@acme/voyant-actions#tool.run"] },
+        },
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+
+    expect(graph.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+        facet: "@acme/voyant-actions#action.run.from.routes",
+        message: expect.stringContaining("is not a routes declaration in the selected graph"),
+      }),
+    )
+  })
+
   it("resolves a package-owned module manifest without starter synthesis", async () => {
     expect(validateGraphUnitManifest(bookingsVoyantModule, "module")).toEqual([])
 

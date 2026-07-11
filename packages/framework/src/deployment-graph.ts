@@ -2155,6 +2155,13 @@ function validateFacetReferences(
   const eventById = new Map(
     units.flatMap((unit) => unit.events.map((event) => [event.id, event] as const)),
   )
+  const actionBindings = {
+    routes: new Set(units.flatMap((unit) => unit.api.map((entry) => entry.id))),
+    tools: new Set(units.flatMap((unit) => (unit.tools ?? []).map((entry) => entry.id))),
+    workflows: new Set(units.flatMap((unit) => unit.workflows.map((entry) => entry.id))),
+    events: new Set(units.flatMap((unit) => unit.events.map((entry) => entry.id))),
+    webhooks: new Set(units.flatMap((unit) => (unit.webhooks ?? []).map((entry) => entry.id))),
+  } as const
   const scopes = new Set(
     units.flatMap((unit) =>
       (unit.access?.resources ?? []).flatMap((resource) =>
@@ -2316,8 +2323,18 @@ function validateFacetReferences(
         requireScope(unit.id, `${action.id}.requiredScopes`, scope)
       }
       for (const copy of action.copy ?? []) requireCopy(unit.id, `${action.id}.copy`, copy)
-      for (const [kind, ids] of Object.entries(action.from ?? {})) {
-        for (const id of ids ?? []) reference(unit.id, `${action.id}.from.${kind}`, id)
+      for (const kind of Object.keys(actionBindings) as (keyof typeof actionBindings)[]) {
+        for (const id of action.from?.[kind] ?? []) {
+          if (actionBindings[kind].has(id)) continue
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${action.id}.from.${kind}`,
+              message: `Action ${kind} reference "${id}" is not a ${kind} declaration in the selected graph.`,
+            }),
+          )
+        }
       }
     }
   }
