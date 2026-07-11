@@ -47,6 +47,10 @@ export const miceVoyantModule = defineModule({
     },
   ],
   admin: {
+    runtime: {
+      entry: "@voyant-travel/mice-react/admin",
+      export: "createMiceAdminExtension",
+    },
     routes: [
       {
         id: "@voyant-travel/mice#admin.route.programs-index",

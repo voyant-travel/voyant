@@ -626,7 +626,7 @@ function createQuotesExtension(messages: AdminExtensionNavMessages) {
 // program's per-currency cost sheet lives. The app only supplies the localized
 // label and the icon.
 function createMiceExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.mice({
+  return selectedGraphAdminExtensionFactories["@voyant-travel/mice"]({
     labels: { programs: messages.mice },
     icon: CalendarRange,
   })

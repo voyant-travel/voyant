@@ -10,7 +10,6 @@ import { createFinanceAdminExtension } from "@voyant-travel/finance-react/admin"
 import { createFlightsAdminExtension } from "@voyant-travel/flights-react/admin"
 import { createInventoryAdminExtension } from "@voyant-travel/inventory-react/admin"
 import { createLegalAdminExtension } from "@voyant-travel/legal-react/admin"
-import { createMiceAdminExtension } from "@voyant-travel/mice-react/admin"
 import { createNotificationsAdminExtension } from "@voyant-travel/notifications-react/admin"
 import { createOperationsAdminExtension } from "@voyant-travel/operations-react/admin"
 import { createQuotesAdminExtension } from "@voyant-travel/quotes-react/admin"
@@ -31,7 +30,6 @@ export const generatedAdminExtensionFactories = {
   flights: createFlightsAdminExtension,
   inventory: createInventoryAdminExtension,
   legal: createLegalAdminExtension,
-  mice: createMiceAdminExtension,
   notifications: createNotificationsAdminExtension,
   operations: createOperationsAdminExtension,
   quotes: createQuotesAdminExtension,
