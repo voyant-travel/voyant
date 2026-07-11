@@ -109,6 +109,7 @@ export {
   type ComposeVoyantGraphRuntimeInput,
   composeVoyantGraphRuntime,
   composeVoyantGraphRuntimeFacetModules,
+  resolveVoyantGraphRouteMountPath,
   type VoyantGraphRuntimeBinding,
   type VoyantGraphRuntimeBindingContext,
   type VoyantGraphRuntimeBindings,

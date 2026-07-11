@@ -10,6 +10,7 @@ export function buildDeploymentGraphOpenApiCoverageReport(input, relativePath) {
     localId: bundle.localId,
     packageName: bundle.packageName,
     mount: bundle.mount,
+    ...(bundle.openapiDocument ? { openapiDocument: bundle.openapiDocument } : {}),
     candidateModules: [...bundle.candidateModules].sort(),
   })
   const sortedBundles = (bundles) =>

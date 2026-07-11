@@ -1,8 +1,8 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { selectSurface } from "@voyant-travel/hono/openapi"
+import { type OpenApiDocument, selectSurface } from "@voyant-travel/hono/openapi"
 import { describe, expect, it } from "vitest"
-import { buildOperatorOpenApiDocuments } from "./openapi.js"
+import { buildOperatorOpenApiDocuments, mergeOperatorOpenApiModuleDocuments } from "./openapi.js"
 
 /**
  * OpenAPI drift gate for the operator deployment (voyant#2733, was #2114).
@@ -88,6 +88,103 @@ describe("operator openapi spec", () => {
 
   it("emits at least one per-module document", () => {
     expect(Object.keys(perModule).length).toBeGreaterThan(0)
+  })
+
+  it("emits identity from its exact selected graph API authority", () => {
+    const identity = docs.modules.get("identity")
+    const operations = Object.values(identity?.paths ?? {}).flatMap((pathItem) =>
+      Object.values(pathItem ?? {}).filter(
+        (value): value is Record<string, unknown> =>
+          typeof value === "object" && value !== null && "responses" in value,
+      ),
+    )
+
+    expect(operations.length).toBeGreaterThan(0)
+    expect(new Set(operations.map((operation) => operation["x-voyant-api-id"]))).toEqual(
+      new Set(["@voyant-travel/identity#api.admin"]),
+    )
+    expect(
+      operations.every(
+        (operation) =>
+          operation["x-voyant-unit-id"] === "@voyant-travel/identity" &&
+          operation["x-voyant-package-name"] === "@voyant-travel/identity",
+      ),
+    ).toBe(true)
+  })
+
+  it("keeps every module path in exactly one Scalar-discoverable document", () => {
+    const owners = new Map<string, string>()
+    for (const [document, moduleDoc] of docs.modules) {
+      for (const path of Object.keys(moduleDoc.paths ?? {})) {
+        expect(
+          owners.get(path),
+          `${path} appears in ${owners.get(path)} and ${document}`,
+        ).toBeUndefined()
+        owners.set(path, document)
+      }
+    }
+  })
+
+  it("rejects graph replacement drift and cross-document duplicate paths", () => {
+    const operation = { operationId: "getAdminIdentity", responses: { 200: { description: "OK" } } }
+    const compatibility = new Map([
+      [
+        "identity",
+        {
+          openapi: "3.1.0",
+          info: { title: "x", version: "1" },
+          paths: { "/v1/admin/identity": { get: operation } },
+        },
+      ],
+      [
+        "bookings",
+        {
+          openapi: "3.1.0",
+          info: { title: "x", version: "1" },
+          paths: { "/v1/admin/bookings": { get: operation } },
+        },
+      ],
+    ]) as never
+    const graphIdentity: OpenApiDocument = {
+      openapi: "3.1.0",
+      info: { title: "x", version: "1" },
+      paths: {
+        "/v1/admin/identity": {
+          get: {
+            ...operation,
+            "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+            "x-voyant-unit-id": "@voyant-travel/identity",
+            "x-voyant-package-name": "@voyant-travel/identity",
+          },
+        },
+      },
+    } as OpenApiDocument
+    const identityPath = graphIdentity.paths?.["/v1/admin/identity"]
+    if (!identityPath) throw new Error("expected identity fixture path")
+
+    expect(
+      mergeOperatorOpenApiModuleDocuments(compatibility, new Map([["identity", graphIdentity]])),
+    ).toHaveProperty("size", 2)
+    expect(() =>
+      mergeOperatorOpenApiModuleDocuments(
+        compatibility,
+        new Map([
+          [
+            "other",
+            {
+              ...graphIdentity,
+              paths: { "/v1/admin/bookings": identityPath },
+            } as never,
+          ],
+        ]),
+      ),
+    ).toThrow(/duplicates path/)
+    expect(() =>
+      mergeOperatorOpenApiModuleDocuments(
+        compatibility,
+        new Map([["identity", { ...graphIdentity, paths: {} } as never]]),
+      ),
+    ).toThrow(/does not preserve/)
   })
 
   it("keeps every per-module path within the aggregate (no invented routes)", () => {

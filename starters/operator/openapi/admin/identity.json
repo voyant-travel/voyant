@@ -358,7 +358,10 @@
         },
         "operationId": "getAdminIdentityContactPoints",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": [
@@ -559,7 +562,10 @@
         },
         "operationId": "postAdminIdentityContactPoints",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/contact-points/{id}": {
@@ -694,7 +700,10 @@
         },
         "operationId": "getAdminIdentityContactPointsById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
         "tags": [
@@ -917,7 +926,10 @@
         },
         "operationId": "patchAdminIdentityContactPointsById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
         "tags": [
@@ -977,7 +989,10 @@
         },
         "operationId": "deleteAdminIdentityContactPointsById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/addresses": {
@@ -1234,7 +1249,10 @@
         },
         "operationId": "getAdminIdentityAddresses",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": [
@@ -1526,7 +1544,10 @@
         },
         "operationId": "postAdminIdentityAddresses",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/addresses/{id}": {
@@ -1712,7 +1733,10 @@
         },
         "operationId": "getAdminIdentityAddressesById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
         "tags": [
@@ -2028,7 +2052,10 @@
         },
         "operationId": "patchAdminIdentityAddressesById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
         "tags": [
@@ -2088,7 +2115,10 @@
         },
         "operationId": "deleteAdminIdentityAddressesById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/named-contacts": {
@@ -2304,7 +2334,10 @@
         },
         "operationId": "getAdminIdentityNamedContacts",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": [
@@ -2521,7 +2554,10 @@
         },
         "operationId": "postAdminIdentityNamedContacts",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/named-contacts/{id}": {
@@ -2664,7 +2700,10 @@
         },
         "operationId": "getAdminIdentityNamedContactsById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
         "tags": [
@@ -2904,7 +2943,10 @@
         },
         "operationId": "patchAdminIdentityNamedContactsById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
         "tags": [
@@ -2964,7 +3006,10 @@
         },
         "operationId": "deleteAdminIdentityNamedContactsById",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/contact-points": {
@@ -3092,7 +3137,10 @@
         },
         "operationId": "getAdminIdentityEntitiesByEntityTypeByEntityIdContactPoints",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": [
@@ -3299,7 +3347,10 @@
         },
         "operationId": "postAdminIdentityEntitiesByEntityTypeByEntityIdContactPoints",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/addresses": {
@@ -3478,7 +3529,10 @@
         },
         "operationId": "getAdminIdentityEntitiesByEntityTypeByEntityIdAddresses",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": [
@@ -3774,7 +3828,10 @@
         },
         "operationId": "postAdminIdentityEntitiesByEntityTypeByEntityIdAddresses",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/named-contacts": {
@@ -3910,7 +3967,10 @@
         },
         "operationId": "getAdminIdentityEntitiesByEntityTypeByEntityIdNamedContacts",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": [
@@ -4133,7 +4193,10 @@
         },
         "operationId": "postAdminIdentityEntitiesByEntityTypeByEntityIdNamedContacts",
         "x-voyant-module": "identity",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/identity",
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     }
   },

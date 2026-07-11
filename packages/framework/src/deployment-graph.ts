@@ -448,6 +448,7 @@ const GRAPH_ID_PATTERN =
 const ROUTE_RESOURCE_PATTERN = /^[a-z][a-z0-9-]*(?:[.-][a-z][a-z0-9-]*)*$/
 const ROUTE_SCOPE_PATTERN =
   /^[a-z][a-z0-9-]*(?:[.-][a-z][a-z0-9-]*)*:[a-z][a-z0-9-]*(?:-[a-z][a-z0-9-]*)*$/
+const OPENAPI_DOCUMENT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const ROUTE_METHODS = new Set<VoyantGraphRouteMethod>([
   "DELETE",
   "GET",
@@ -1853,6 +1854,23 @@ function validateRouteBundles(value: unknown, source: string | undefined): Voyan
           message: `Route bundle "${route.id ?? index}" mount must be a non-empty string when present.`,
         }),
       )
+    }
+
+    if (route.openapi !== undefined) {
+      if (
+        !isRecord(route.openapi) ||
+        typeof route.openapi.document !== "string" ||
+        !OPENAPI_DOCUMENT_SLUG_PATTERN.test(route.openapi.document)
+      ) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+            source,
+            facet: `${facet}.openapi.document`,
+            message: `Route bundle "${route.id ?? index}" OpenAPI document must be a non-empty lowercase slug.`,
+          }),
+        )
+      }
     }
 
     if (

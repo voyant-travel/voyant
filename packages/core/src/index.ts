@@ -100,6 +100,7 @@ export type {
   VoyantGraphProjectSelections,
   VoyantGraphRouteBundle,
   VoyantGraphRouteMethod,
+  VoyantGraphRouteOpenApi,
   VoyantGraphRouteSurface,
   VoyantGraphRuntimeReference,
   VoyantGraphSubscriber,

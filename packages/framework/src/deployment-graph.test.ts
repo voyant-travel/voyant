@@ -669,6 +669,7 @@ describe("deployment graph v1", () => {
             surface: "public",
             methods: ["POST", "GET"],
             mount: "loyalty",
+            openapi: { document: "loyalty" },
             resource: "loyalty.points",
             requiredScopes: ["loyalty:read", "loyalty-points:write"],
             anonymous: ["/status", "health"],
@@ -694,6 +695,7 @@ describe("deployment graph v1", () => {
             surface: "worker",
             methods: ["get", "GET", "GET"],
             mount: "",
+            openapi: { document: "Loyalty API" },
             resource: "Loyalty Points",
             requiredScopes: ["loyalty.points.read", "loyalty:Read"],
             anonymous: true,
@@ -714,6 +716,10 @@ describe("deployment graph v1", () => {
         expect.objectContaining({
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
           facet: "api[0].mount",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].openapi.document",
         }),
         expect.objectContaining({
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
@@ -889,7 +895,13 @@ describe("deployment graph v1", () => {
         defineModule({
           id: "@acme/voyant-crm",
           provides: { capabilities: ["acme.crm.people"] },
-          api: [{ id: "@acme/voyant-crm#api.admin", surface: "admin" }],
+          api: [
+            {
+              id: "@acme/voyant-crm#api.admin",
+              surface: "admin",
+              openapi: { document: "crm" },
+            },
+          ],
         }),
         defineModule({
           id: "@acme/voyant-loyalty",
@@ -933,6 +945,7 @@ describe("deployment graph v1", () => {
     expect(first.diagnostics).toEqual([])
     expect(first.contentHash).toMatch(/^sha256:[a-f0-9]{64}$/)
     expect(second.contentHash).toBe(first.contentHash)
+    expect(first.modules[0]?.api[0]?.openapi).toEqual({ document: "crm" })
   })
 
   it("keeps resolved unit ordering independent of declaration order", async () => {

@@ -843,6 +843,38 @@ RBAC/API-key/tool/action-ledger unification ships.
 OpenAPI metadata belongs with route declarations. The graph resolver should
 collect it after package admission, not require a separate OpenAPI facet first.
 
+The first selected-graph OpenAPI authority is active for
+`@voyant-travel/identity#api.admin`. A route bundle opts in with a stable
+document slug:
+
+```ts
+{
+  id: "@voyant-travel/identity#api.admin",
+  surface: "admin",
+  mount: "identity",
+  openapi: { document: "identity" },
+  runtime: {
+    entry: "@voyant-travel/identity",
+    export: "identityHonoModule",
+  },
+}
+```
+
+At build time, the framework considers opted-in routes from selected modules,
+extensions, and plugins only. It resolves their absolute mounts through the
+same normalization used by runtime route posture, replays eager and lazy Hono
+OpenAPI registries, and emits only matching operations. Every emitted operation
+carries exact `x-voyant-api-id`, `x-voyant-unit-id`, and
+`x-voyant-package-name` ownership. Zero-operation bundles, duplicate document
+slugs, and overlapping operation claims are build failures.
+
+The Operator still emits compatibility documents for unmigrated bundles. Its
+`identity.json` entry is replaced by the graph-derived document only after a
+parity check proves that paths, schemas, operation ids, and all pre-existing
+content are unchanged apart from the graph ownership extensions. Coverage uses
+exact API ids for opted-in bundles; filename/module heuristics and temporary
+allowlists remain available only to unmigrated bundles.
+
 API scopes, staff RBAC, user scopes, tool permissions, and action-ledger
 capabilities should converge toward one permission catalog, but that is a
 later dependency-ordered phase. It is high leverage and should be designed once,
@@ -1407,7 +1439,8 @@ Progress: the action-ledger, MICE, and Quotes nav/route/page factories are
 lowered into the selected-graph admin bundle. The Operator still owns their
 lightweight localization/icon wrappers. Slots/contributions, copy, and the
 remaining first-party Operator compatibility registry are not part of this
-slice.
+slice. Identity admin routes are the first package-owned selected-graph OpenAPI
+authority; other API documents remain on the Operator compatibility path.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.

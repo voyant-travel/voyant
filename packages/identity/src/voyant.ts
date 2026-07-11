@@ -10,6 +10,7 @@ export const identityVoyantModule = defineModule({
       id: "@voyant-travel/identity#api.admin",
       surface: "admin",
       mount: "identity",
+      openapi: { document: "identity" },
       runtime: {
         entry: "@voyant-travel/identity",
         export: "identityHonoModule",
