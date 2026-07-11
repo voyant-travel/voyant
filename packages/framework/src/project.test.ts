@@ -59,8 +59,10 @@ describe("framework project resolver", () => {
       "admin/project-admin.generated.ts",
       "runtime/project-api.generated.ts",
       "runtime/project-jobs.generated.ts",
+      "runtime/project-links.generated.ts",
       "runtime/project-migrations.generated.mjs",
       "runtime/project-runtime.generated.ts",
+      "runtime/project-subscribers.generated.ts",
       "runtime/project-workflows.generated.ts",
     ])
     const runtimeSource = first.artifacts.files.find(
@@ -589,7 +591,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     expect(composed.modules.map((module) => module.module.name)).toEqual(["concierge"])
   })
 
-  it("compiles project API, admin, workflow, and job conventions into graph artifacts", async () => {
+  it("compiles every project source convention into graph artifacts", async () => {
     const root = projectRoot()
     writeFile(
       root,
@@ -607,6 +609,27 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     )
     writeFile(
       root,
+      "src/subscribers/health-updated.ts",
+      [
+        "export default {",
+        '  id: "health.updated.sync",',
+        '  eventType: "health.updated",',
+        '  manifest: { id: "health.updated.sync", eventType: "health.updated", payloadHash: "hash", targetWorkflowId: "health.sync" },',
+        "}",
+      ].join("\n"),
+    )
+    writeFile(
+      root,
+      "src/links/health-owner.ts",
+      [
+        'import { defineLink } from "@voyant-travel/core"',
+        'import { left, right } from "../linkables.js"',
+        "export default defineLink(left, right)",
+      ].join("\n"),
+    )
+    writeFile(root, "src/linkables.ts", "export const left = {}; export const right = {}\n")
+    writeFile(
+      root,
       "src/jobs/cleanup.ts",
       [
         'export const schedule = { cron: "0 3 * * *", input: { source: "project" } }',
@@ -618,6 +641,9 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     const projectApi = resolution.graph.modules.find(({ localId }) => localId === "project-api")
     const projectWorkflows = resolution.graph.modules.find(
       ({ localId }) => localId === "project-workflows",
+    )
+    const projectSubscriberLinks = resolution.graph.modules.find(
+      ({ localId }) => localId === "project-subscribers-links",
     )
 
     expect(projectApi).toMatchObject({
@@ -669,6 +695,27 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
         },
       ],
     })
+    expect(projectSubscriberLinks).toMatchObject({
+      id: "npm/fixture#project-subscribers-links",
+      subscribers: [
+        {
+          id: "health.updated.sync",
+          eventType: "health.updated",
+          eventFilterId: "health.updated.sync",
+          workflowId: "health.sync",
+          runtime: {
+            entry: "./.voyant/runtime/project-subscribers.generated.ts",
+            export: "projectSubscriber0",
+          },
+        },
+      ],
+      links: [
+        {
+          id: "project.link.health-owner",
+          source: "src/links/health-owner.ts",
+        },
+      ],
+    })
     expect(resolution.graph.provisioning.scheduledJobs).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ cron: "0 * * * *", workflowId: "health.sync" }),
@@ -697,6 +744,15 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
         ?.contents,
     ).toContain("export const projectJobWorkflow0 = defineWorkflow({")
     expect(
+      resolution.artifacts.files.find(
+        ({ path }) => path === "runtime/project-subscribers.generated.ts",
+      )?.contents,
+    ).toContain("export { subscriber0 as projectSubscriber0 }")
+    expect(
+      resolution.artifacts.files.find(({ path }) => path === "runtime/project-links.generated.ts")
+        ?.contents,
+    ).toContain("export { link0 as projectLink0 }")
+    expect(
       resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
         ?.contents,
     ).toContain('"./project-api.generated.ts": () => import("./project-api.generated.ts")')
@@ -705,6 +761,12 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
         ?.contents,
     ).toContain(
       '"./project-workflows.generated.ts": () => import("./project-workflows.generated.ts")',
+    )
+    expect(
+      resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
+        ?.contents,
+    ).toContain(
+      '"./project-subscribers.generated.ts": () => import("./project-subscribers.generated.ts")',
     )
   })
 

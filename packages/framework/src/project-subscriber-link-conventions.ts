@@ -1,5 +1,10 @@
 import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
+import type {
+  VoyantGraphFacetEntity,
+  VoyantGraphJsonObject,
+  VoyantGraphSubscriber,
+} from "@voyant-travel/core/project"
 import ts from "typescript"
 
 import {
@@ -10,6 +15,7 @@ import {
   resolveInsideProject,
 } from "./project-convention-compiler-utils.js"
 import {
+  durableJsonValue,
   isDurableExpression,
   resolveExpression,
   stringProperty,
@@ -35,6 +41,8 @@ export const PROJECT_SUBSCRIBER_LINK_DIAGNOSTIC_CODES = {
   PROJECT_SUBSCRIBER_ID_COLLISION: "Subscriber descriptor ids must be unique.",
   PROJECT_SUBSCRIBER_INVALID_DESCRIPTOR:
     "Subscriber files must default-export an EventFilterDescriptor object with literal id and eventType fields.",
+  PROJECT_SUBSCRIBER_MISSING_MANIFEST:
+    "Subscriber descriptors must include a complete durable event-filter manifest.",
   PROJECT_SUBSCRIBER_NON_DURABLE_DESCRIPTOR:
     "Subscriber descriptors must contain only durable, serializable data.",
 } as const
@@ -57,6 +65,8 @@ export interface ProjectSubscriberConvention extends ProjectConventionFileContri
   kind: "subscriber"
   subscriberId: string
   eventType: string
+  descriptor: VoyantGraphJsonObject
+  manifest: VoyantGraphJsonObject
 }
 
 export interface ProjectLinkConvention extends ProjectConventionFileContribution {
@@ -66,6 +76,8 @@ export interface ProjectLinkConvention extends ProjectConventionFileContribution
 export interface ProjectSubscriberLinkConventionAnalysis {
   subscribers: readonly ProjectSubscriberConvention[]
   links: readonly ProjectLinkConvention[]
+  graphSubscribers: readonly VoyantGraphSubscriber[]
+  graphLinks: readonly VoyantGraphFacetEntity[]
   diagnostics: readonly ProjectSubscriberLinkDiagnostic[]
 }
 
@@ -138,7 +150,7 @@ export async function analyzeProjectSubscriberLinkConventions(
       true,
       ts.ScriptKind.TS,
     )
-    const common = analyzeConventionModule(sourceFile, contribution.sourcePath, projectRoot)
+    const common = analyzeConventionModule(sourceFile, contribution.sourcePath, realProjectRoot)
     diagnostics.push(...common.diagnostics)
     if (!common.defaultExport) continue
 
@@ -176,6 +188,18 @@ export async function compileProjectSubscriberLinkConventions(
   return {
     subscribers: analysis.subscribers,
     links: analysis.links,
+    graphSubscribers: analysis.subscribers.map((subscriber, index) => ({
+      id: subscriber.subscriberId,
+      eventType: subscriber.eventType,
+      eventFilterId: subscriber.manifest.id as string,
+      workflowId: subscriber.manifest.targetWorkflowId as string,
+      filter: subscriber.descriptor,
+      runtime: {
+        entry: `./.voyant/${PROJECT_SUBSCRIBERS_GENERATED_PATH}`,
+        export: `projectSubscriber${index}`,
+      },
+    })),
+    graphLinks: analysis.links.map((link) => ({ id: link.id, source: link.sourcePath })),
     generatedFiles: [
       {
         path: PROJECT_SUBSCRIBERS_GENERATED_PATH,
@@ -306,8 +330,41 @@ function analyzeSubscriber(
   if (!isDurableExpression(resolved, constants)) {
     return { diagnostics: [nonDurableSubscriberDiagnostic(contribution.sourcePath, subscriberId)] }
   }
+  const descriptor = durableJsonValue(resolved, constants)
+  if (!isJsonObject(descriptor)) {
+    return { diagnostics: [nonDurableSubscriberDiagnostic(contribution.sourcePath, subscriberId)] }
+  }
+  const manifest = descriptor.manifest
+  if (
+    !isJsonObject(manifest) ||
+    manifest.id !== subscriberId ||
+    manifest.eventType !== eventType ||
+    typeof manifest.payloadHash !== "string" ||
+    manifest.payloadHash.length === 0 ||
+    typeof manifest.targetWorkflowId !== "string" ||
+    manifest.targetWorkflowId.length === 0
+  ) {
+    return {
+      diagnostics: [
+        {
+          code: "PROJECT_SUBSCRIBER_MISSING_MANIFEST",
+          severity: "error",
+          subscriberId,
+          sourcePaths: [contribution.sourcePath],
+          message: `Subscriber "${subscriberId}" in "${contribution.sourcePath}" must include a manifest with matching id/eventType, payloadHash, and targetWorkflowId.`,
+        },
+      ],
+    }
+  }
   return {
-    value: { ...contribution, kind: "subscriber", subscriberId, eventType },
+    value: {
+      ...contribution,
+      kind: "subscriber",
+      subscriberId,
+      eventType,
+      descriptor,
+      manifest,
+    },
     diagnostics: [],
   }
 }
@@ -385,9 +442,18 @@ function generatedCollectionSource(
         `import ${importName}${index} from ${JSON.stringify(generatedImportSpecifier(sourcePath))}`,
     ),
     "",
+    ...contributions.map(
+      (_, index) =>
+        `export { ${importName}${index} as project${importName[0]!.toUpperCase()}${importName.slice(1)}${index} }`,
+    ),
+    ...(contributions.length > 0 ? [""] : []),
     `export const ${exportName} = [${contributions.map((_, index) => `${importName}${index}`).join(", ")}] as const satisfies readonly ${typeName}[]`,
     "",
   ].join("\n")
+}
+
+function isJsonObject(value: unknown): value is VoyantGraphJsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function generatedImportSpecifier(sourcePath: string): string {
