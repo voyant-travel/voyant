@@ -1,5 +1,5 @@
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
-import type { Extension } from "@voyant-travel/core"
+import type { BootstrapContext, Extension } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
@@ -51,7 +51,7 @@ export const createChannelPushVoyantRuntime = defineGraphRuntimeFactory(async ({
     ...configured,
     extension: {
       ...configured.extension,
-      bootstrap: async (context) => {
+      bootstrap: async (context: BootstrapContext) => {
         await runtime.registerWorkflowService(context)
         await bootstrap?.(context)
       },
