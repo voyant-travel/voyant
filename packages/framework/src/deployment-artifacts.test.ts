@@ -151,6 +151,9 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"@acme/voyant-loyalty": selectedAdminFactory0')
     expect(source).not.toContain("createReportsAdminExtension")
     expect(source).toContain("Page bodies stay lazy in package UI exports")
+    expect(source).toContain("satisfies Readonly<Record<string, SelectedAdminExtensionFactory>>")
+    expect(source).toContain("export function createSelectedGraphAdminExtensions(")
+    expect(source).toContain("Object.values(selectedGraphAdminExtensionFactories)")
   })
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {

@@ -153,7 +153,11 @@ export function buildGraphAdminBundleModule(input: BuildGraphAdminBundleModuleIn
 
   const units = [...input.graph.modules, ...input.graph.extensions, ...input.graph.plugins]
     .filter((unit) => unit.admin?.runtime)
-    .sort((left, right) => left.id.localeCompare(right.id))
+    .sort(
+      (left, right) =>
+        (left.admin?.compositionOrder ?? 0) - (right.admin?.compositionOrder ?? 0) ||
+        left.id.localeCompare(right.id),
+    )
   const command = input.command ?? "voyant project resolve"
   const imports = units.map((unit, index) => {
     const runtime = unit.admin?.runtime
@@ -170,6 +174,12 @@ export function buildGraphAdminBundleModule(input: BuildGraphAdminBundleModuleIn
 // Contains only graph-selected, import-cheap admin factories. Page bodies stay lazy in package UI exports.
 
 ${imports.join("\n")}${imports.length > 0 ? "\n" : ""}
+import type {
+  AdminExtension,
+  SelectedAdminExtensionFactory,
+  SelectedAdminExtensionFactoryContext,
+} from "@voyant-travel/admin"
+
 export const GENERATED_SELECTED_GRAPH_ADMIN_HASH = ${quote(input.graph.contentHash)} as const
 export const GENERATED_SELECTED_GRAPH_ADMIN_UNIT_IDS = ${formatConstArray(
     units.map((unit) => unit.id),
@@ -177,7 +187,13 @@ export const GENERATED_SELECTED_GRAPH_ADMIN_UNIT_IDS = ${formatConstArray(
 
 export const selectedGraphAdminExtensionFactories = {
 ${factories.join("\n")}
-} as const
+} as const satisfies Readonly<Record<string, SelectedAdminExtensionFactory>>
+
+export function createSelectedGraphAdminExtensions(
+  context: SelectedAdminExtensionFactoryContext,
+): ReadonlyArray<AdminExtension> {
+  return Object.values(selectedGraphAdminExtensionFactories).map((factory) => factory(context))
+}
 `
 }
 

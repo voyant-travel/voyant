@@ -22,7 +22,7 @@ describe("action-ledger deployment manifest", () => {
       admin: {
         runtime: {
           entry: "@voyant-travel/action-ledger-react/admin",
-          export: "createActionLedgerAdminExtension",
+          export: "createSelectedActionLedgerAdminExtension",
         },
         routes: [
           {

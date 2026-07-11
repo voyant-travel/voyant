@@ -47,9 +47,10 @@ export const miceVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 20,
     runtime: {
       entry: "@voyant-travel/mice-react/admin",
-      export: "createMiceAdminExtension",
+      export: "createSelectedMiceAdminExtension",
     },
     routes: [
       {
@@ -57,7 +58,7 @@ export const miceVoyantModule = defineModule({
         path: "/mice",
         runtime: {
           entry: "@voyant-travel/mice-react/admin",
-          export: "createMiceAdminExtension",
+          export: "createSelectedMiceAdminExtension",
         },
       },
       {
@@ -65,7 +66,7 @@ export const miceVoyantModule = defineModule({
         path: "/mice/$id",
         runtime: {
           entry: "@voyant-travel/mice-react/admin",
-          export: "createMiceAdminExtension",
+          export: "createSelectedMiceAdminExtension",
         },
       },
     ],

@@ -1224,6 +1224,9 @@ function resolveUnit(
       ? {
           admin: {
             ...(unit.admin.runtime ? { runtime: unit.admin.runtime } : {}),
+            ...(unit.admin.compositionOrder !== undefined
+              ? { compositionOrder: unit.admin.compositionOrder }
+              : {}),
             ...(unit.admin.copy?.length ? { copy: sortFacetEntities(unit.admin.copy) } : {}),
             ...(unit.admin.routes?.length ? { routes: sortFacetEntities(unit.admin.routes) } : {}),
             ...(unit.admin.nav?.length ? { nav: sortFacetEntities(unit.admin.nav) } : {}),
@@ -1756,6 +1759,17 @@ function validateAdminFacet(
   }
   if (value.runtime !== undefined) {
     validateRuntimeReference(value.runtime, "admin.runtime", source, diagnostics)
+  }
+  if (
+    value.compositionOrder !== undefined &&
+    (!Number.isInteger(value.compositionOrder) || !Number.isSafeInteger(value.compositionOrder))
+  ) {
+    invalidFacet(
+      "admin.compositionOrder",
+      source,
+      diagnostics,
+      "Admin composition order must be a safe integer.",
+    )
   }
   for (const facet of ["copy", "routes", "nav", "slots", "contributions"] as const) {
     diagnostics.push(...validateFacetEntities(value[facet], `admin.${facet}`, source))

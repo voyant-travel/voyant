@@ -118,6 +118,8 @@ export interface VoyantGraphAdminContribution extends VoyantGraphFacetEntity {
 export interface VoyantGraphAdminDeclaration {
   /** Import-cheap factory for this unit's complete nav/route/page extension. */
   runtime?: VoyantGraphRuntimeReference
+  /** Stable ordering for selected factories that contribute at the same host anchor. */
+  compositionOrder?: number
   copy?: readonly VoyantGraphAdminCopy[]
   routes?: readonly VoyantGraphAdminRoute[]
   nav?: readonly VoyantGraphAdminNavItem[]

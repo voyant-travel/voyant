@@ -5,11 +5,13 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
+  type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin"
 // Lean static only: the shared fetcher fallback. The page-data helpers resolve
 // via dynamic import inside the loaders so the REST query options stay out of
 // the workspace-chrome chunk that evaluates this factory.
 import { defaultFetcher } from "@voyant-travel/react"
+import { CalendarRange } from "lucide-react"
 
 /**
  * Semantic destinations the MICE admin surfaces navigate to (packaged-admin
@@ -119,6 +121,16 @@ export function createMiceAdminExtension(
         },
       },
     ],
+  })
+}
+
+/** Selected-graph adapter owning the standard Operator copy key and icon. */
+export function createSelectedMiceAdminExtension(
+  { navMessages }: SelectedAdminExtensionFactoryContext = { navMessages: {} },
+): AdminExtension {
+  return createMiceAdminExtension({
+    labels: { programs: navMessages.mice ?? "Programs" },
+    icon: CalendarRange,
   })
 }
 

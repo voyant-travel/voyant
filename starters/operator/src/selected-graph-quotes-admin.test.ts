@@ -2,9 +2,11 @@ import { operatorAdminNavMessages } from "@voyant-travel/i18n"
 import { FileText } from "lucide-react"
 import { describe, expect, it } from "vitest"
 
-import { selectedGraphAdminExtensionFactories } from "../.voyant/admin/selected-graph-admin.generated.js"
+import {
+  createSelectedGraphAdminExtensions,
+  selectedGraphAdminExtensionFactories,
+} from "../.voyant/admin/selected-graph-admin.generated.js"
 import { generatedAdminExtensionFactories } from "./admin.extensions.generated.js"
-import { createOperatorAdminExtensions } from "./lib/admin-extensions.js"
 
 describe("selected-graph Quotes admin composition", () => {
   it("uses the selected package factory without compatibility duplication", () => {
@@ -12,10 +14,10 @@ describe("selected-graph Quotes admin composition", () => {
     expect("quotes" in generatedAdminExtensionFactories).toBe(false)
   })
 
-  it("preserves Quotes navigation, routes, destinations, and host wrappers", () => {
-    const extension = createOperatorAdminExtensions(operatorAdminNavMessages.ro.nav).find(
-      ({ id }) => id === "quotes",
-    )
+  it("preserves Quotes navigation, routes, destinations, and package copy", () => {
+    const extension = createSelectedGraphAdminExtensions({
+      navMessages: operatorAdminNavMessages.ro.nav,
+    }).find(({ id }) => id === "quotes")
 
     expect(extension?.navigation).toEqual([
       {

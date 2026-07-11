@@ -149,6 +149,8 @@ export {
   requireImplementedAdminRoute,
   resolveAdminNavigation,
   resolveAdminWidgets,
+  type SelectedAdminExtensionFactory,
+  type SelectedAdminExtensionFactoryContext,
 } from "./extensions.js"
 export {
   composeLocaleMessageDefinitions,
