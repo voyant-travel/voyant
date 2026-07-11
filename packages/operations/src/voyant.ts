@@ -105,6 +105,13 @@ export const operationsVoyantModule = defineModule({
       path,
       runtime: operationsAdminRuntime,
     })),
+    contributions: [
+      {
+        id: "@voyant-travel/operations#admin.contribution.product-option-resource-templates",
+        slotId: "product.details.option-extras",
+        runtime: operationsAdminRuntime,
+      },
+    ],
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },

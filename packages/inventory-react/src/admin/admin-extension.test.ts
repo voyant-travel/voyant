@@ -3,13 +3,26 @@ import { describe, expect, it } from "vitest"
 import { inventoryVoyantModule } from "../../../inventory/src/voyant.js"
 import {
   createInventoryAdminExtension,
+  createSelectedInventoryAdminExtension,
   ProductDetailSkeleton,
   ProductsListSkeleton,
+  productDetailOptionExtrasSlot,
 } from "./index.js"
 import { ProductCategoriesHost } from "./product-categories-host.js"
 import { ProductsHost } from "./products-host.js"
 
 describe("createInventoryAdminExtension", () => {
+  it("owns selected copy and the option-extras slot", () => {
+    const extension = createSelectedInventoryAdminExtension({
+      navMessages: { products: "Produse", categories: "Categorii" },
+    })
+    expect(extension.routes?.every((route) => route.routeMessagesProvider)).toBe(true)
+    expect(productDetailOptionExtrasSlot).toBe("product.details.option-extras")
+    expect(inventoryVoyantModule.admin?.slots?.map((slot) => slot.id)).toContain(
+      productDetailOptionExtrasSlot,
+    )
+  })
+
   it("keeps the package-owned deployment facets aligned with the admin extension", () => {
     const extension = createInventoryAdminExtension()
     expect(inventoryVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
@@ -80,16 +93,6 @@ describe("createInventoryAdminExtension", () => {
       expect(typeof module?.default).toBe("function")
     }
   }, 15_000)
-
-  it("resolves the detail page through the detailPageComponent seam", async () => {
-    const Substitute = () => null
-    const extension = createInventoryAdminExtension({
-      detailPageComponent: () => Promise.resolve({ default: Substitute }),
-    })
-    const detail = extension.routes?.find((route) => route.id === "products-detail")
-    const module = await detail?.page?.()
-    expect(typeof module?.default).toBe("function")
-  })
 
   it("attaches data loaders to every route and marks them data-only for SSR", () => {
     const extension = createInventoryAdminExtension()

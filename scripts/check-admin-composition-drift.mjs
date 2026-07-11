@@ -4,18 +4,16 @@
  * docs/architecture/unified-deployment-graph.md (Phase 4).
  *
  * The silent-failure this prevents (the #1 upgrade risk in the deployment-DX
- * assessment): a graph-selected package exposes a packaged admin
- * (`@voyant-travel/<m>-react/admin`), but is missing from the generated
- * `admin.extensions.generated.ts` — so its nav/pages silently vanish. And the
- * reverse: a generated admin entry whose package is no longer graph-selected.
+ * assessment): a graph-selected package exposes a packaged admin but does not
+ * declare admin.runtime, so its nav/pages silently vanish or fall back to a
+ * starter-owned compatibility catalog.
  *
  * Rule:
  *   expected = graph-selected module/plugin packages with an admin route
  *              surface whose `<m>-react` package exposes a `./admin` export.
- *   actual   = the `@voyant-travel/<m>-react/admin` imports wired into
- *              admin.extensions.generated.ts.
- *   FAIL on  (expected \ actual) [silently dropped admin]
- *        or  (actual not graph-selected) [admin for an unselected package].
+ *   actual   = the package imports in the selected-graph admin bundle.
+ *   FAIL when any expected package is absent, or when a compatibility
+ *        registry exists at all.
  */
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -127,25 +125,24 @@ function selectedFactoryReferencesIn(file) {
 
 const violations = []
 
-if (!existsSync(EXTENSIONS)) {
+if (existsSync(EXTENSIONS)) {
   violations.push(
-    "starters/operator/src/admin.extensions.generated.ts is missing — run `voyant admin generate`",
+    "starters/operator/src/admin.extensions.generated.ts must not exist; all admin factories must be selected-graph owned",
   )
 }
 
 const { packages: selected, bundledPackages } = readGraphSelectedAdminPackages()
-const selectedSet = new Set(selected)
 const expected = selected.filter(hasAdminSurface)
-const actual = adminImportsIn(EXTENSIONS)
 const bundled = new Set(bundledPackages)
 const actualBundle = adminImportsIn(BUNDLE)
+const compatibilityImports = adminImportsIn(COMPATIBILITY)
 const compatibilitySelectedFactories = selectedFactoryReferencesIn(COMPATIBILITY)
 
-// Silently-dropped admin: graph-selected + has ./admin, but not wired.
+// Silently-dropped admin: graph-selected + has ./admin, but not bundled.
 for (const name of expected) {
-  if (!bundled.has(name) && !actual.has(name)) {
+  if (!bundled.has(name)) {
     violations.push(
-      `${name} is selected by the deployment graph and exposes ${name}-react/admin but is missing from admin.extensions.generated.ts — run \`voyant admin generate\` (its admin nav/pages would silently disappear)`,
+      `${name} is selected by the deployment graph and exposes ${name}-react/admin but does not declare admin.runtime`,
     )
   }
 }
@@ -156,11 +153,6 @@ for (const name of bundled) {
       `${name} declares admin.runtime but is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
     )
   }
-  if (actual.has(name)) {
-    violations.push(
-      `${name} is duplicated in admin.extensions.generated.ts after migration to the selected-graph admin bundle`,
-    )
-  }
   if (compatibilitySelectedFactories.has(name)) {
     violations.push(
       `${name} remains package-keyed in the Operator compatibility registry after migration to generic selected-admin composition`,
@@ -168,13 +160,10 @@ for (const name of bundled) {
   }
 }
 
-// Orphan admin: wired for a package the graph did not select.
-for (const name of actual) {
-  if (!selectedSet.has(name)) {
-    violations.push(
-      `admin.extensions.generated.ts wires ${name}-react/admin but ${name} is not selected by the deployment graph — remove it or select the package`,
-    )
-  }
+for (const name of compatibilityImports) {
+  violations.push(
+    `${name} remains imported by the Operator admin compatibility composition after selected-graph migration`,
+  )
 }
 
 for (const name of actualBundle) {

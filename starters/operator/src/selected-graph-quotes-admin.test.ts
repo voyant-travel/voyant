@@ -6,12 +6,10 @@ import {
   createSelectedGraphAdminExtensions,
   selectedGraphAdminExtensionFactories,
 } from "../.voyant/admin/selected-graph-admin.generated.js"
-import { generatedAdminExtensionFactories } from "./admin.extensions.generated.js"
 
 describe("selected-graph Quotes admin composition", () => {
   it("uses the selected package factory without compatibility duplication", () => {
     expect(selectedGraphAdminExtensionFactories["@voyant-travel/quotes"]).toBeTypeOf("function")
-    expect("quotes" in generatedAdminExtensionFactories).toBe(false)
   })
 
   it("preserves Quotes navigation, routes, destinations, and package copy", () => {

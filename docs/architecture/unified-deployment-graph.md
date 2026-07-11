@@ -802,9 +802,8 @@ separate first-party admin catalog.
 
 ### Selected-graph admin bundle cutline
 
-The selected-graph admin bundle is active for Action Ledger, Commerce,
-Distribution, Finance, Flights, Legal, MICE, Notifications, Operations,
-Quotes, Relationships, and Trips:
+The selected-graph admin bundle is active for every first-party admin domain,
+including Bookings, Catalog, and Inventory:
 
 - the package manifest opts its import-cheap admin extension factory into
   `admin.runtime` and retains its stable route declarations
@@ -824,13 +823,12 @@ Quotes, Relationships, and Trips:
   from the selected-graph bundle, duplicated in the compatibility registry, or
   present without a selected `admin.runtime` declaration
 
-Package-owned slots and contributions are active where declared by Finance,
-Distribution, and Relationships. Deployment copy overrides and graph-generated
-copy-provider composition remain separate admin authorities. The compatibility
-registry now contains only Bookings, Catalog, and Inventory because their
-factories still receive deployment-specific page or scope overrides. Those
-overrides must move to generic local contributions before the compatibility
-registry can be deleted.
+Package-owned slots and contributions carry cross-domain admin behavior:
+Trips contributes the Bookings list action, Finance contributes the booking
+payment controller, and Operations contributes Inventory option extras. Catalog
+owns its standard deployment scope defaults. The Operator compatibility factory
+registry is deleted; graph-generated copy-provider composition and deployment
+copy overrides remain separate follow-up authorities.
 
 ## API, OpenAPI, Scopes, And RBAC
 
@@ -1544,15 +1542,13 @@ package surfaces in `voyant#3080`.
   namespaced copy and deployment overrides
 - generate the admin bundle only from selected package exports and graph data
 
-Progress: twelve first-party nav/route/page factories, their declared slots and
+Progress: all fifteen first-party nav/route/page factories, their declared slots and
 contributions, and their lightweight localization/icon adapters are lowered
 into the selected-graph admin bundle. The Operator composes these factories
 generically, with selection and deselection controlled only by the graph.
-Bookings, Catalog, and Inventory remain in the compatibility registry until
-their deployment-specific customization points are represented as local
-contributions. Identity admin routes are the first package-owned selected-graph
-OpenAPI authority; other API documents remain on the Operator compatibility
-path.
+No Operator admin factory compatibility registry remains. Identity admin routes
+are the first package-owned selected-graph OpenAPI authority; other API
+documents remain on the Operator compatibility path.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.

@@ -1,24 +1,14 @@
 "use client"
 
-import type { AdminRoutePageProps } from "@voyant-travel/admin"
-import type { ReactNode } from "react"
+import { type AdminRoutePageProps, AdminWidgetSlotRenderer } from "@voyant-travel/admin"
 
 import { BookingsHost } from "../bookings-host.js"
 import {
   type BookingsIndexSearchParams,
   bookingsFiltersToSearch,
+  bookingsListHeaderActionsSlot,
   bookingsSearchToFilters,
 } from "../index.js"
-
-export interface BookingsIndexPageProps extends AdminRoutePageProps {
-  /**
-   * App-owned extra header action(s) rendered alongside the primary
-   * "New booking" button — wired through
-   * `CreateBookingsAdminExtensionOptions.indexHeaderActions` by the
-   * extension factory's tiny page wrapper.
-   */
-  headerActions?: ReactNode
-}
 
 /**
  * Packaged bookings list page (packaged-admin RFC §4.8): binds the route's
@@ -27,14 +17,10 @@ export interface BookingsIndexPageProps extends AdminRoutePageProps {
  * (`bookingsIndexSearchSchema`), so the cast below narrows to a shape the
  * router already validated.
  */
-export default function BookingsIndexPage({
-  search,
-  updateSearch,
-  headerActions,
-}: BookingsIndexPageProps) {
+export default function BookingsIndexPage({ search, updateSearch }: AdminRoutePageProps) {
   return (
     <BookingsHost
-      headerActions={headerActions}
+      headerActions={<AdminWidgetSlotRenderer slot={bookingsListHeaderActionsSlot} />}
       initialFilters={bookingsSearchToFilters(search as BookingsIndexSearchParams)}
       onFiltersChange={(filters) =>
         // Full search replace on purpose: the projection re-derives the WHOLE

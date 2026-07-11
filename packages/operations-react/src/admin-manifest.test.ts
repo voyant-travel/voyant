@@ -25,5 +25,11 @@ describe("operations admin deployment facets", () => {
         export: "resourcesUiMessageDefinitions",
       },
     ])
+    expect(extension.widgets?.map((widget) => widget.slot)).toContain(
+      "product.details.option-extras",
+    )
+    expect(operationsVoyantModule.admin?.contributions?.map((item) => item.slotId)).toContain(
+      "product.details.option-extras",
+    )
   })
 })

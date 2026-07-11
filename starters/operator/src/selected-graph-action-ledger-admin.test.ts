@@ -6,19 +6,20 @@ import {
   createSelectedGraphAdminExtensions,
   selectedGraphAdminExtensionFactories,
 } from "../.voyant/admin/selected-graph-admin.generated.js"
-import { generatedAdminExtensionFactories } from "./admin.extensions.generated.js"
 
 describe("selected-graph Action Ledger admin composition", () => {
   it("uses the selected package factory without compatibility duplication", () => {
     expect(selectedGraphAdminExtensionFactories["@voyant-travel/action-ledger"]).toBeTypeOf(
       "function",
     )
-    expect("actionLedger" in generatedAdminExtensionFactories).toBe(false)
     expect(
       createSelectedGraphAdminExtensions({ navMessages: operatorAdminNavMessages.en.nav }).map(
         ({ id }) => id,
       ),
     ).toEqual([
+      "bookings",
+      "catalog",
+      "inventory",
       "operations",
       "relationships",
       "distribution",
@@ -31,11 +32,6 @@ describe("selected-graph Action Ledger admin composition", () => {
       "quotes",
       "mice",
       "action-ledger",
-    ])
-    expect(Object.keys(generatedAdminExtensionFactories)).toEqual([
-      "bookings",
-      "catalog",
-      "inventory",
     ])
   })
 
@@ -75,6 +71,9 @@ describe("selected-graph Action Ledger admin composition", () => {
     })
 
     for (const id of [
+      "bookings",
+      "catalog",
+      "inventory",
       "operations",
       "relationships",
       "distribution",
@@ -98,5 +97,15 @@ describe("selected-graph Action Ledger admin composition", () => {
       Tag,
     )
     expect(extensions.find(({ id }) => id === "trips")?.navigation?.[0]?.items[0]?.icon).toBe(Route)
+
+    expect(extensions.find(({ id }) => id === "trips")?.widgets?.map(({ slot }) => slot)).toContain(
+      "bookings.list.header-actions",
+    )
+    expect(
+      extensions.find(({ id }) => id === "finance")?.widgets?.map(({ slot }) => slot),
+    ).toContain("booking.details.payment-controller")
+    expect(
+      extensions.find(({ id }) => id === "operations")?.widgets?.map(({ slot }) => slot),
+    ).toContain("product.details.option-extras")
   })
 })

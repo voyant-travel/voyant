@@ -11,12 +11,38 @@ import {
 } from "./catalog-vertical-host.js"
 import { CruiseDetailHost } from "./cruise-detail-host.js"
 import { DynamicCatalogHost } from "./dynamic-catalog-host.js"
-import { createCatalogAdminExtension, productDetailSearchSchema } from "./index.js"
+import {
+  createCatalogAdminExtension,
+  createSelectedCatalogAdminExtension,
+  productDetailSearchSchema,
+  standardCatalogAdminScope,
+} from "./index.js"
 import { ProductDetailHost } from "./product-detail-host.js"
 import { ScheduledCatalogHost } from "./scheduled-catalog-host.js"
 import { VerticalDetailHost } from "./vertical-detail-host.js"
 
 describe("createCatalogAdminExtension", () => {
+  it("owns standard selected scope defaults and lazy copy", () => {
+    expect(standardCatalogAdminScope).toEqual({
+      defaultLocale: "en-GB",
+      defaultMarket: "default",
+      scopeStrategy: "deployment-default",
+      hideScopeControls: true,
+    })
+    const extension = createSelectedCatalogAdminExtension({
+      navMessages: {
+        catalogProducts: "Pachete",
+        catalogExcursions: "Excursii",
+        catalogTours: "Tururi",
+        catalogCruises: "Croaziere",
+        catalogAccommodations: "Cazari",
+      },
+    })
+    expect(
+      extension.routes?.every((route) => route.redirectTo || route.routeMessagesProvider),
+    ).toBe(true)
+  })
+
   it("contributes no navigation (catalog nav is base-nav-owned)", () => {
     const extension = createCatalogAdminExtension()
     expect(extension.id).toBe("catalog")

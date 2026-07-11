@@ -155,6 +155,16 @@ export const tripsVoyantModule = defineModule({
         },
       },
     ],
+    contributions: [
+      {
+        id: "@voyant-travel/trips#admin.contribution.compose-booking",
+        slotId: "bookings.list.header-actions",
+        runtime: {
+          entry: "@voyant-travel/trips-react/admin",
+          export: "createTripsAdminExtension",
+        },
+      },
+    ],
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },

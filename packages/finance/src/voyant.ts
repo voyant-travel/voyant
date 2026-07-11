@@ -181,6 +181,7 @@ export const financeVoyantModule = defineModule({
     })),
     contributions: (
       [
+        ["booking-payment-controller", "booking.details.payment-controller"],
         ["booking-invoices", "booking.details.invoices-tab"],
         ["booking-pending-payment-sessions", "booking.details.finance-start"],
         ["booking-payment-policy", "booking.details.finance-end"],

@@ -20,7 +20,6 @@ const browserRoots = [
 
 const browserFiles = [
   "starters/operator/src/admin.destinations.generated.ts",
-  "starters/operator/src/admin.extensions.generated.ts",
   "starters/operator/src/admin.routes.generated.tsx",
   "starters/operator/src/entry.ts",
   "starters/operator/src/lib/admin-destinations.ts",

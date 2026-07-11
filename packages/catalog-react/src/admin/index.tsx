@@ -3,6 +3,8 @@ import {
   type AdminRoutePageModule,
   type AdminRoutePageProps,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import type * as React from "react"
 import { z } from "zod"
@@ -336,4 +338,30 @@ export function createCatalogAdminExtension(
       },
     ],
   })
+}
+
+export const standardCatalogAdminScope = {
+  defaultLocale: "en-GB",
+  defaultMarket: "default",
+  scopeStrategy: "deployment-default",
+  hideScopeControls: true,
+} as const
+
+export function createSelectedCatalogAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createCatalogAdminExtension({
+      ...standardCatalogAdminScope,
+      labels: {
+        products: navMessages.catalogProducts,
+        excursions: navMessages.catalogExcursions,
+        tours: navMessages.catalogTours,
+        cruises: navMessages.catalogCruises,
+        accommodations: navMessages.catalogAccommodations,
+      },
+    }),
+    () =>
+      import("../i18n/index.js").then((module) => ({ default: module.CatalogUiMessagesProvider })),
+  )
 }
