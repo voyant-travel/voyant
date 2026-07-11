@@ -43,7 +43,7 @@
     "@voyant-travel/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.80.0",
+    "react-hook-form": "^7.81.0",
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
@@ -80,7 +80,7 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.101.2",
-    "@tiptap/core": "^3.27.1",
+    "@tiptap/core": "^3.27.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
@@ -95,10 +95,10 @@
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-hook-form": "^7.80.0",
+    "react-hook-form": "^7.81.0",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
