@@ -4,8 +4,10 @@ import {
   API_KEY_GRANT_PRESETS,
   API_KEY_PERMISSION_GROUPS,
   API_KEY_RESOURCES,
+  type AccessCatalog,
   areKnownPermissions,
   assertKnownPermissions,
+  createEffectiveAccessCatalog,
   hasApiKeyPermission,
   UnknownApiKeyPermissionError,
 } from "../src/api-keys.js"
@@ -88,10 +90,57 @@ describe("assertKnownPermissions", () => {
     )
   })
 
+  it("rejects known actions paired with unsupported resources", () => {
+    expect(() => assertKnownPermissions({ bookings: ["send"] })).toThrow(
+      UnknownApiKeyPermissionError,
+    )
+  })
+
   it("validates every grant preset's permissions", () => {
     for (const preset of Object.values(API_KEY_GRANT_PRESETS)) {
       expect(() => assertKnownPermissions(preset.permissions)).not.toThrow()
       expect(["staff", "customer", "partner", "supplier"]).toContain(preset.audience)
     }
+  })
+})
+
+describe("selected access catalog compatibility", () => {
+  const selected: AccessCatalog = {
+    resources: [
+      {
+        id: "bookings",
+        unitId: "@voyant-travel/bookings",
+        resource: "bookings",
+        label: "Bookings selected",
+        description: "Selected authority",
+        wildcard: "allow",
+        actions: [
+          { action: "read", label: "Read", description: "Read" },
+          { action: "write", label: "Write", description: "Write" },
+        ],
+        legacyActions: ["cancel"],
+      },
+    ],
+    presets: [],
+  }
+  const effective = createEffectiveAccessCatalog(selected)
+
+  it("lets selected resources replace legacy descriptors without shadowing", () => {
+    expect(effective.resources.find((resource) => resource.resource === "bookings")?.label).toBe(
+      "Bookings selected",
+    )
+    expect(effective.resources.filter((resource) => resource.resource === "bookings")).toHaveLength(
+      1,
+    )
+    expect(effective.resources.some((resource) => resource.resource === "finance")).toBe(true)
+  })
+
+  it("accepts legacy bookings:cancel without advertising it", () => {
+    expect(() => assertKnownPermissions({ bookings: ["cancel"] }, effective)).not.toThrow()
+    expect(
+      effective.resources
+        .find((resource) => resource.resource === "bookings")
+        ?.actions.some((action) => action.action === "cancel"),
+    ).toBe(false)
   })
 })

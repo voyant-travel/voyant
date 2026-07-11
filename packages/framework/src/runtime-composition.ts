@@ -52,6 +52,7 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
 export interface VoyantGraphRuntimeComposition {
   modules: HonoModule[]
   extensions: HonoExtension[]
+  accessResources: { path: string; resource: string }[]
   routePosture: VoyantGraphRuntimeRoutePosture
 }
 
@@ -115,12 +116,28 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   return {
     modules,
     extensions,
+    accessResources: deriveAccessResources(input.runtime),
     routePosture: mergeRoutePostures(
       [...input.runtime.modules, ...input.runtime.extensions, ...input.runtime.plugins].map(
         deriveUnitRoutePosture,
       ),
     ),
   }
+}
+
+function deriveAccessResources(runtime: VoyantGraphRuntime): { path: string; resource: string }[] {
+  return [...runtime.modules, ...runtime.extensions, ...runtime.plugins]
+    .flatMap((unit) =>
+      unit.routes.flatMap(({ route }) =>
+        route.resource
+          ? [{ path: resolveVoyantGraphRouteMountPath(unit, route), resource: route.resource }]
+          : [],
+      ),
+    )
+    .sort(
+      (left, right) =>
+        left.path.localeCompare(right.path) || left.resource.localeCompare(right.resource),
+    )
 }
 
 interface UnitRoutePosture extends VoyantGraphRuntimeRoutePosture {

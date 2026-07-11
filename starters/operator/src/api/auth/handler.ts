@@ -23,6 +23,7 @@ import {
   handleApiTokenManagementRequest,
   handleOrganizationMembersRequest,
 } from "@voyant-travel/auth/server"
+import { effectiveAccessCatalog } from "../../../.voyant/access/selected-access-catalog.generated"
 import { ensureCurrentUserProfile } from "@voyant-travel/auth/workspace"
 import {
   authUser,
@@ -338,6 +339,18 @@ function rewriteCustomerAuthRequest(request: Request): Request {
 
 const FULL_ACCESS_SCOPES = ["*"]
 
+function scopesForOperatorRole(role: string | null | undefined): string[] | null {
+  const base = scopesForRole(role)
+  if (!base) return null
+  const normalizedRole = (role ?? "").trim().toLowerCase()
+  const presetId =
+    normalizedRole === "member" ? "editor" : normalizedRole === "guest" ? "viewer" : normalizedRole
+  const selected = effectiveAccessCatalog.presets.find(
+    (preset) => preset.kind === "staff" && preset.id === presetId,
+  )
+  return [...new Set([...base, ...(selected?.grants ?? [])])].sort()
+}
+
 /**
  * Resolve a member's RBAC scope set for the request (`resource:action` strings,
  * shared with API keys — see @voyant-travel/types/member-roles, RFC voyant#2085).
@@ -361,7 +374,7 @@ async function resolveMemberScopes(
       .from(cloudAuthUserLinks)
       .where(eq(cloudAuthUserLinks.userId, userId))
       .limit(1)
-    return link?.scopes ?? scopesForRole(link?.roleSlug) ?? FULL_ACCESS_SCOPES
+    return link?.scopes ?? scopesForOperatorRole(link?.roleSlug) ?? FULL_ACCESS_SCOPES
   }
 
   const [profile] = await db
@@ -649,6 +662,7 @@ async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
     return (
       (await handleApiTokenManagementRequest(c.req.raw, betterAuth, {
         db,
+        accessCatalog: effectiveAccessCatalog,
       })) ?? c.json({ error: "Not found" }, 404)
     )
   } finally {

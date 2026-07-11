@@ -696,7 +696,11 @@ export function mountApp<TBindings extends VoyantBindings>(
   }
 
   // Actor guards for the two API surfaces
-  const actorOptions = { basePath: config.basePath }
+  const actorOptions = {
+    basePath: config.basePath,
+    resources: config.accessResources,
+    accessCatalog: config.accessCatalog,
+  }
   app.use("/v1/admin/*", requireActor(actorOptions, "staff"))
   app.use("/v1/public/*", requireActor(actorOptions, "customer", "partner", "supplier"))
 

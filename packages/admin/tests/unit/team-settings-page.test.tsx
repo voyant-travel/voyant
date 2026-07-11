@@ -5,6 +5,7 @@ import {
   TeamSettingsPage,
   type TeamSettingsPageApi,
 } from "../../src/components/team-settings-page.js"
+import { memberPermissionGroups } from "../../src/components/team-settings-cloud.js"
 import { AdminProvider } from "../../src/providers/admin-provider.js"
 import { OperatorAdminMessagesProvider } from "../../src/providers/operator-admin-messages.js"
 
@@ -30,5 +31,29 @@ describe("TeamSettingsPage", () => {
     )
 
     expect(html).toContain("Team")
+  })
+
+  it("uses selected resource descriptors in the member permission editor", () => {
+    const groups = memberPermissionGroups({
+      resources: [
+        {
+          id: "bookings",
+          unitId: "@voyant-travel/bookings",
+          resource: "bookings",
+          label: "Selected Bookings",
+          description: "Selected",
+          wildcard: "allow",
+          actions: [{ action: "read", label: "Selected read", description: "Read" }],
+        },
+      ],
+      presets: [],
+    })
+
+    expect(groups.filter((group) => group.resource === "bookings")).toEqual([
+      expect.objectContaining({
+        label: "Selected Bookings",
+        permissions: [expect.objectContaining({ action: "read", label: "Selected read" })],
+      }),
+    ])
   })
 })

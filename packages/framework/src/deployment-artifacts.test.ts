@@ -177,6 +177,7 @@ describe("deployment graph artifacts", () => {
       schemaVersion: VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
       graphHash: graph.contentHash,
       graph: "deployment-graph.generated.json",
+      accessCatalog: graph.accessCatalog,
       webhookPlan: { inbound: [], outbound: [] },
       runtimeEntries: [
         {

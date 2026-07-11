@@ -538,6 +538,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui

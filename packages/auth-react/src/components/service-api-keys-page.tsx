@@ -2,12 +2,15 @@
 
 import { formatMessage } from "@voyant-travel/i18n"
 import {
-  API_KEY_PERMISSION_GROUPS,
   API_KEY_PERMISSION_PRESETS,
+  type AccessCatalog,
   type ApiKeyPermissions,
+  accessCatalogPermissionGroups,
+  createEffectiveAccessCatalog,
   describePermissions,
   hasApiKeyPermission,
   permissionsToStrings,
+  permissionStringsToPermissions,
 } from "@voyant-travel/types/api-keys"
 import {
   Badge,
@@ -47,6 +50,7 @@ export interface ServiceApiKeysPageProps {
   pageSize?: number
   title?: string
   description?: string
+  accessCatalog?: AccessCatalog
 }
 
 export type ApiTokensPageProps = ServiceApiKeysPageProps
@@ -110,7 +114,41 @@ export function ServiceApiKeysPage({
   pageSize = 25,
   title,
   description,
+  accessCatalog,
 }: ServiceApiKeysPageProps) {
+  const catalog = useMemo(() => createEffectiveAccessCatalog(accessCatalog), [accessCatalog])
+  const permissionGroups = useMemo(() => accessCatalogPermissionGroups(catalog), [catalog])
+  const permissionPresets = useMemo(() => {
+    const merge = (base: ApiKeyPermissions, extra: ApiKeyPermissions): ApiKeyPermissions => {
+      const next = Object.fromEntries(
+        Object.entries(base).map(([resource, actions]) => [resource, [...actions]]),
+      )
+      for (const [resource, actions] of Object.entries(extra)) {
+        next[resource] = [...new Set([...(next[resource] ?? []), ...actions])].sort()
+      }
+      return next
+    }
+    return Object.fromEntries(
+      Object.entries(API_KEY_PERMISSION_PRESETS).map(([id, preset]) => {
+        const selected = catalog.presets.find(
+          (candidate) => candidate.kind === "api-token" && candidate.id === id,
+        )
+        return [
+          id,
+          {
+            ...preset,
+            permissions: merge(
+              preset.permissions,
+              permissionStringsToPermissions(selected?.grants ?? []),
+            ),
+          },
+        ]
+      }),
+    ) as Record<
+      keyof typeof API_KEY_PERMISSION_PRESETS,
+      (typeof API_KEY_PERMISSION_PRESETS)[keyof typeof API_KEY_PERMISSION_PRESETS]
+    >
+  }, [catalog])
   const messages = useAuthUiMessagesOrDefault().serviceApiKeysPage
   const pageTitle = title ?? messages.title
   const pageDescription = description ?? messages.description
@@ -128,7 +166,7 @@ export function ServiceApiKeysPage({
   const [name, setName] = useState("")
   const [expirationDays, setExpirationDays] = useState<number | null>(90)
   const [selectedPermissions, setSelectedPermissions] = useState<ApiKeyPermissions>({
-    ...API_KEY_PERMISSION_PRESETS["catalog-read"].permissions,
+    ...permissionPresets["catalog-read"].permissions,
   })
   const [issuedKey, setIssuedKey] = useState<ApiTokenWithSecret | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -143,7 +181,7 @@ export function ServiceApiKeysPage({
   }
 
   const applyPreset = (preset: keyof typeof API_KEY_PERMISSION_PRESETS) => {
-    setSelectedPermissions({ ...API_KEY_PERMISSION_PRESETS[preset].permissions })
+    setSelectedPermissions({ ...permissionPresets[preset].permissions })
   }
 
   const handleCreate = async (event: FormEvent) => {
@@ -259,13 +297,13 @@ export function ServiceApiKeysPage({
                 >
               ).map((key) => (
                 <Button key={key} type="button" variant="outline" onClick={() => applyPreset(key)}>
-                  {API_KEY_PERMISSION_PRESETS[key].label}
+                  {permissionPresets[key].label}
                 </Button>
               ))}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              {API_KEY_PERMISSION_GROUPS.map((group) => (
+              {permissionGroups.map((group) => (
                 <div key={group.resource} className="rounded-md border p-4">
                   <div className="mb-3">
                     <h2 className="text-sm font-medium">{group.label}</h2>
@@ -277,6 +315,7 @@ export function ServiceApiKeysPage({
                         selectedPermissions,
                         descriptor.resource,
                         descriptor.action,
+                        catalog,
                       )
                       const permissionId = `permission-${descriptor.resource}-${descriptor.action}`
                       return (

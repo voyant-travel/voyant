@@ -101,6 +101,38 @@ export interface ApiKeyPermissionGroup {
   permissions: ApiKeyPermissionDescriptor[]
 }
 
+export interface AccessCatalogAction {
+  action: string
+  label: string
+  description: string
+  wildcard?: "allow" | "explicit"
+}
+
+export interface AccessCatalogResource {
+  id: string
+  unitId: string
+  resource: string
+  label: string
+  description: string
+  wildcard: "allow" | "explicit-resource"
+  actions: readonly AccessCatalogAction[]
+  legacyActions?: readonly string[]
+}
+
+export interface AccessCatalogPreset {
+  id: string
+  kind: "api-token" | "api-token-grant" | "staff"
+  label: string
+  description: string
+  grants: readonly string[]
+  audience?: ApiKeyAudience
+}
+
+export interface AccessCatalog {
+  resources: readonly AccessCatalogResource[]
+  presets: readonly AccessCatalogPreset[]
+}
+
 function permission(resource: string, action: string, label: string, description: string) {
   return { resource, action, label, description }
 }
@@ -501,7 +533,6 @@ export const API_KEY_PERMISSION_PRESETS = {
     label: "Commerce read",
     description: "Read bookings, availability, products, pricing, and suppliers.",
     permissions: {
-      bookings: ["read"],
       availability: ["read"],
       products: ["read"],
       pricing: ["read"],
@@ -562,7 +593,6 @@ export const API_KEY_GRANT_PRESETS = {
       catalog: ["read", "search"],
       products: ["read"],
       trips: ["read", "write"],
-      bookings: ["read", "write"],
       quotes: ["read", "write"],
     },
   },
@@ -582,6 +612,77 @@ export const API_KEY_GRANT_PRESETS = {
 
 export type ApiKeyGrantPresetKey = keyof typeof API_KEY_GRANT_PRESETS
 
+export const LEGACY_ACCESS_CATALOG: AccessCatalog = {
+  resources: API_KEY_RESOURCES.map((resource) => {
+    const group = API_KEY_PERMISSION_GROUPS.find((candidate) => candidate.resource === resource)
+    const permissions =
+      group?.permissions ??
+      (["read", "write"] as const).map((action) =>
+        permission(
+          resource,
+          action,
+          `${action === "read" ? "Read" : "Write"} ${resource}`,
+          `${action === "read" ? "Read" : "Create or update"} ${resource} records.`,
+        ),
+      )
+    const wildcard: AccessCatalogResource["wildcard"] = PII_API_KEY_RESOURCES.has(resource)
+      ? "explicit-resource"
+      : "allow"
+    return {
+      id: `legacy:${resource}`,
+      unitId: "@voyant-travel/types#legacy-access-catalog",
+      resource,
+      label:
+        group?.label ??
+        resource
+          .replace(/(^|-)([a-z])/g, (_match, _dash, letter) => ` ${letter.toUpperCase()}`)
+          .trim(),
+      description: group?.description ?? `Read and manage ${resource} records.`,
+      wildcard,
+      actions: permissions.map((descriptor) => ({
+        action: descriptor.action,
+        label: descriptor.label,
+        description: descriptor.description,
+        ...(EXPLICIT_API_KEY_PERMISSIONS.has(`${descriptor.resource}:${descriptor.action}`)
+          ? { wildcard: "explicit" as const }
+          : {}),
+      })),
+    }
+  }).sort((left, right) => left.resource.localeCompare(right.resource)),
+  presets: [],
+}
+
+/** Selected resources replace legacy descriptors; legacy-only resources remain compatible. */
+export function createEffectiveAccessCatalog(selected?: AccessCatalog | null): AccessCatalog {
+  const selectedResources = new Map(
+    (selected?.resources ?? []).map((resource) => [resource.resource, resource] as const),
+  )
+  const resources = [
+    ...selectedResources.values(),
+    ...LEGACY_ACCESS_CATALOG.resources.filter(
+      (resource) => !selectedResources.has(resource.resource),
+    ),
+  ].sort((left, right) => left.resource.localeCompare(right.resource))
+  return {
+    resources,
+    presets: [...(selected?.presets ?? [])].sort((left, right) => left.id.localeCompare(right.id)),
+  }
+}
+
+export function accessCatalogPermissionGroups(catalog: AccessCatalog): ApiKeyPermissionGroup[] {
+  return catalog.resources.map((resource) => ({
+    resource: resource.resource,
+    label: resource.label,
+    description: resource.description,
+    permissions: resource.actions.map((action) => ({
+      resource: resource.resource,
+      action: action.action,
+      label: action.label,
+      description: action.description,
+    })),
+  }))
+}
+
 /** Thrown by `assertKnownPermissions` when a permission names an unknown resource or action. */
 export class UnknownApiKeyPermissionError extends Error {
   constructor(
@@ -594,9 +695,6 @@ export class UnknownApiKeyPermissionError extends Error {
   }
 }
 
-const KNOWN_API_KEY_RESOURCES = new Set<string>(API_KEY_RESOURCES)
-const KNOWN_API_KEY_ACTIONS = new Set<string>(API_KEY_ACTIONS)
-
 /**
  * Validate that every permission names a known resource + action (or a `*`
  * wildcard). Used at key-mint time so a typo'd scope is rejected instead of
@@ -605,19 +703,34 @@ const KNOWN_API_KEY_ACTIONS = new Set<string>(API_KEY_ACTIONS)
  */
 export function assertKnownPermissions(
   permissions: string | ApiKeyPermissions | null | undefined,
+  catalog: AccessCatalog = LEGACY_ACCESS_CATALOG,
 ): void {
   const normalized = normalizeApiKeyPermissions(permissions)
+  const resources = new Map(catalog.resources.map((resource) => [resource.resource, resource]))
+  const knownActions = new Set(
+    catalog.resources.flatMap((resource) => [
+      ...resource.actions.map((action) => action.action),
+      ...(resource.legacyActions ?? []),
+    ]),
+  )
   for (const [resource, actions] of Object.entries(normalized)) {
-    if (resource !== "*" && !KNOWN_API_KEY_RESOURCES.has(resource)) {
+    const descriptor = resources.get(resource)
+    if (resource !== "*" && !descriptor) {
       throw new UnknownApiKeyPermissionError(
-        `Unknown API key resource "${resource}". Known resources: ${API_KEY_RESOURCES.join(", ")}.`,
+        `Unknown API key resource "${resource}". Known resources: ${[...resources.keys()].join(", ")}.`,
         resource,
       )
     }
     for (const action of actions) {
-      if (action !== "*" && !KNOWN_API_KEY_ACTIONS.has(action)) {
+      const actionIsKnown =
+        action === "*" ||
+        (resource === "*"
+          ? knownActions.has(action)
+          : descriptor?.actions.some((candidate) => candidate.action === action) === true ||
+            descriptor?.legacyActions?.includes(action) === true)
+      if (!actionIsKnown) {
         throw new UnknownApiKeyPermissionError(
-          `Unknown API key action "${action}" for resource "${resource}". Known actions: ${API_KEY_ACTIONS.join(", ")}.`,
+          `Unknown API key action "${action}" for resource "${resource}".`,
           resource,
           action,
         )
@@ -629,9 +742,10 @@ export function assertKnownPermissions(
 /** Non-throwing variant of {@link assertKnownPermissions}. */
 export function areKnownPermissions(
   permissions: string | ApiKeyPermissions | null | undefined,
+  catalog?: AccessCatalog,
 ): boolean {
   try {
-    assertKnownPermissions(permissions)
+    assertKnownPermissions(permissions, catalog)
     return true
   } catch {
     return false
@@ -735,18 +849,22 @@ export function hasApiKeyPermission(
   permissions: string | ApiKeyPermissions | null | undefined,
   resource: string,
   action: string,
+  catalog: AccessCatalog = LEGACY_ACCESS_CATALOG,
 ): boolean {
   const normalized = normalizeApiKeyPermissions(permissions)
   const resourceKey = resource.trim().toLowerCase()
   const actionKey = action.trim().toLowerCase()
 
-  if (EXPLICIT_API_KEY_PERMISSIONS.has(`${resourceKey}:${actionKey}`)) {
+  const descriptor = catalog.resources.find((resource) => resource.resource === resourceKey)
+  const actionDescriptor = descriptor?.actions.find((candidate) => candidate.action === actionKey)
+
+  if (actionDescriptor?.wildcard === "explicit") {
     return normalized[resourceKey]?.includes(actionKey) === true
   }
 
   // PII-sensitive resources are never satisfied by the `*` resource wildcard;
   // only an explicit grant on the resource itself counts.
-  if (PII_API_KEY_RESOURCES.has(resourceKey)) {
+  if (descriptor?.wildcard === "explicit-resource") {
     return (
       normalized[resourceKey]?.includes("*") === true ||
       normalized[resourceKey]?.includes(actionKey) === true

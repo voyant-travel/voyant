@@ -1,6 +1,7 @@
 import type { getDb } from "@voyant-travel/db"
 import { authMember, authSession, authUser } from "@voyant-travel/db/schema/iam"
 import { and, asc, eq } from "drizzle-orm"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 
 import { ApiTokenValidationError, buildApiTokenCreateBody, pickFields } from "./api-token-create.js"
 import {
@@ -42,6 +43,7 @@ export interface HandleApiTokenManagementRequestOptions extends ApiTokenRotation
    * `/auth`, which makes the facade routes `/auth/api-tokens`.
    */
   basePath?: string
+  accessCatalog?: AccessCatalog
 }
 
 export interface HandleAccountProfileRequestOptions {
@@ -454,7 +456,7 @@ export async function handleApiTokenManagementRequest(
         const session = await requireApiTokenSession({ api }, request.headers)
         let createBody: Record<string, unknown>
         try {
-          createBody = buildApiTokenCreateBody(body)
+          createBody = buildApiTokenCreateBody(body, options.accessCatalog)
         } catch (error) {
           if (error instanceof ApiTokenValidationError) {
             return jsonResponse({ error: error.message }, 400)

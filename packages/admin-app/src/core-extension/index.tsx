@@ -3,6 +3,7 @@
 // dynamic imports of SPECIFIC modules (never barrels) inside `page`/`loader`
 // thunks, so the heavy chunks load on navigation, not with workspace chrome.
 import { DashboardSkeleton } from "@voyant-travel/admin/dashboard/skeleton"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -88,6 +89,8 @@ export interface AdminCoreAccountOptions {
 export interface AdminCoreSettingsOptions {
   /** Mount path of the settings area. Default `/settings`. */
   basePath?: string
+  /** Deployment-selected catalog supplied to API-token and member permission editors. */
+  accessCatalog?: AccessCatalog
   /**
    * Where the settings index redirects. Default `<basePath>/channels`
    * (skipped automatically when `channels` is omitted — then the first
@@ -212,7 +215,7 @@ function createSettingsContribution(options: AdminCoreSettingsOptions): AdminUiR
       title: "Settings",
       redirectTo: indexRedirectTo,
     },
-    ...entries.map((entry) => createBuiltInSettingsPage(entry.id)),
+    ...entries.map((entry) => createBuiltInSettingsPage(entry.id, options.accessCatalog)),
     ...extraPages.map((page) => ({
       id: `core-settings-${page.id}`,
       path: page.path,
@@ -238,7 +241,10 @@ function createSettingsContribution(options: AdminCoreSettingsOptions): AdminUiR
   }
 }
 
-function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteContribution {
+function createBuiltInSettingsPage(
+  id: AdminCoreSettingsPageId,
+  accessCatalog?: AccessCatalog,
+): AdminUiRouteContribution {
   const entry = adminCoreSettingsNavEntries.find((candidate) => candidate.id === id)
   if (!entry) {
     throw new Error(`[voyant-admin] Unknown core settings page "${id}".`)
@@ -250,17 +256,23 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
       return {
         ...base,
         page: () =>
-          import("@voyant-travel/admin/components/team-settings-page").then((module) =>
-            adminRoutePageModule(module.TeamSettingsPage),
-          ),
+          import("@voyant-travel/admin/components/team-settings-page").then((module) => {
+            function TeamSettingsPage() {
+              return <module.TeamSettingsPage accessCatalog={accessCatalog} />
+            }
+            return adminRoutePageModule(TeamSettingsPage)
+          }),
       }
     case "api-tokens":
       return {
         ...base,
         page: () =>
-          import("@voyant-travel/auth-react/components/service-api-keys-page").then((module) =>
-            adminRoutePageModule(module.ApiTokensPage),
-          ),
+          import("@voyant-travel/auth-react/components/service-api-keys-page").then((module) => {
+            function ApiTokensPage() {
+              return <module.ApiTokensPage accessCatalog={accessCatalog} />
+            }
+            return adminRoutePageModule(ApiTokensPage)
+          }),
       }
     case "channels":
       return {

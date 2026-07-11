@@ -17,6 +17,7 @@ import { CalendarRange, FileText, Route, ScrollText, SlidersHorizontal, Tag } fr
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 import { selectedGraphAdminExtensionFactories } from "../../.voyant/admin/selected-graph-admin.generated"
+import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.
@@ -298,6 +299,7 @@ function createCoreExtension() {
       },
     },
     settings: {
+      accessCatalog: effectiveAccessCatalog,
       extraPages: [
         // The Operator Profile page is now package-delivered
         // (@voyant-travel/operator-settings-react) so the source-free managed
