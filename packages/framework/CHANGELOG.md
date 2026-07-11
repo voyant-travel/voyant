@@ -1,5 +1,51 @@
 # @voyant-travel/framework
 
+## 0.38.0
+
+### Minor Changes
+
+- 062db9d: Make the standard Operator distribution the selection authority and derive the legacy runtime, extension ownership, capability, and managed-profile catalogs from it. Verify every standard selection against its package-owned `./voyant` manifest.
+- c66f9a5: Add package-owned typed runtime factories and deployment port binding, then migrate storage and realtime away from Operator package-id bindings.
+
+### Patch Changes
+
+- daecf67: Lower deployment migration sources directly from selected package manifests.
+- 3f5000a: Load graph workflow exports through facet-specific lazy loaders and emit a dedicated workflow-only runtime artifact without exposing API or module imports to workflow bundles.
+- Updated dependencies [e5aa097]
+- Updated dependencies [01d5034]
+- Updated dependencies [62b68aa]
+- Updated dependencies [2ec05ae]
+- Updated dependencies [1081483]
+- Updated dependencies [6e3ec4e]
+- Updated dependencies [c66f9a5]
+  - @voyant-travel/bookings@0.151.5
+  - @voyant-travel/distribution@0.141.5
+  - @voyant-travel/inventory@0.8.5
+  - @voyant-travel/notifications@0.123.5
+  - @voyant-travel/finance@0.151.4
+  - @voyant-travel/core@0.117.0
+  - @voyant-travel/storage@0.108.0
+  - @voyant-travel/accommodations@0.112.4
+  - @voyant-travel/action-ledger@0.106.4
+  - @voyant-travel/catalog@0.149.4
+  - @voyant-travel/commerce@0.33.5
+  - @voyant-travel/cruises@0.150.4
+  - @voyant-travel/db@0.112.1
+  - @voyant-travel/flights@0.151.4
+  - @voyant-travel/hono@0.124.1
+  - @voyant-travel/identity@0.151.4
+  - @voyant-travel/legal@0.151.4
+  - @voyant-travel/mice@0.7.4
+  - @voyant-travel/operations@0.6.4
+  - @voyant-travel/operator-settings@0.3.4
+  - @voyant-travel/quotes@0.126.4
+  - @voyant-travel/relationships@0.123.4
+  - @voyant-travel/storefront@0.153.4
+  - @voyant-travel/trips@0.142.4
+  - @voyant-travel/runtime@0.5.2
+  - @voyant-travel/workflows@0.115.2
+  - @voyant-travel/workflows-orchestrator@0.115.2
+
 ## 0.37.0
 
 ### Patch Changes

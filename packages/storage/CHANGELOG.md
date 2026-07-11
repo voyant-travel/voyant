@@ -1,5 +1,16 @@
 # @voyant-travel/storage
 
+## 0.108.0
+
+### Minor Changes
+
+- c66f9a5: Add package-owned typed runtime factories and deployment port binding, then migrate storage and realtime away from Operator package-id bindings.
+
+### Patch Changes
+
+- Updated dependencies [c66f9a5]
+  - @voyant-travel/core@0.117.0
+
 ## 0.107.2
 
 ### Patch Changes
