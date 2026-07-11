@@ -631,6 +631,9 @@
       "@voyant-travel/commerce/markets/validation": [
         "../../packages/commerce/dist/markets/validation.d.ts"
       ],
+      "@voyant-travel/commerce/promotion-redemption-subscriber": [
+        "../../packages/commerce/dist/promotions/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/commerce/promotions/validation": [
         "../../packages/commerce/dist/promotions/validation.d.ts"
       ],

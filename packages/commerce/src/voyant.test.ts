@@ -20,6 +20,11 @@ describe("commerce deployment manifest", () => {
     ])
     expect(commerceVoyantModule.subscribers).toEqual([
       {
+        id: "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
+        eventType: "booking.confirmed",
+        source: "@voyant-travel/commerce/promotion-redemption-subscriber",
+      },
+      {
         id: `@voyant-travel/commerce#subscriber.${promotionAffectedAllFilter.id}`,
         eventType: promotionAffectedAllFilter.eventType,
         eventFilterId: promotionAffectedAllFilter.id,
