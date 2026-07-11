@@ -68,6 +68,9 @@ export interface ProjectJobConvention extends ProjectConventionFileContribution 
   schedule: VoyantGraphJsonValue
 }
 
+type DiscoveredWorkflowConvention = ProjectConventionFileContribution & { kind: "workflow" }
+type DiscoveredJobConvention = ProjectConventionFileContribution & { kind: "job" }
+
 export interface ProjectWorkflowJobConventionAnalysis {
   workflows: readonly ProjectWorkflowConvention[]
   jobs: readonly ProjectJobConvention[]
@@ -107,12 +110,11 @@ export async function analyzeProjectWorkflowJobConventions(
   const realProjectRoot = await realpath(projectRoot)
   const discovery = await discoverProjectConventions(projectRoot)
   const discoveredWorkflows = discovery.contributions.filter(
-    (contribution): contribution is ProjectConventionFileContribution =>
+    (contribution): contribution is DiscoveredWorkflowConvention =>
       contribution.kind === "workflow",
   )
   const discoveredJobs = discovery.contributions.filter(
-    (contribution): contribution is ProjectConventionFileContribution =>
-      contribution.kind === "job",
+    (contribution): contribution is DiscoveredJobConvention => contribution.kind === "job",
   )
   const workflows: ProjectWorkflowConvention[] = []
   const jobs: ProjectJobConvention[] = []
@@ -399,7 +401,10 @@ function collectRuntimeExports(sourceFile: ts.SourceFile): RuntimeExports {
       }
       continue
     }
-    named.push("name" in statement && statement.name ? statement.name.text : "(anonymous)")
+    const declarationName = (statement as ts.NamedDeclaration).name
+    named.push(
+      declarationName && ts.isIdentifier(declarationName) ? declarationName.text : "(anonymous)",
+    )
   }
   return { hasDefault, defaultExpression, named: [...new Set(named)].sort(compareStrings) }
 }

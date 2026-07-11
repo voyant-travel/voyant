@@ -228,7 +228,9 @@ function analyzeRouteSource(
       }
       continue
     }
-    const name = "name" in statement && statement.name ? statement.name.text : "(anonymous)"
+    const declarationName = (statement as ts.NamedDeclaration).name
+    const name =
+      declarationName && ts.isIdentifier(declarationName) ? declarationName.text : "(anonymous)"
     recordExport(name, sourcePath, methods, diagnostics)
   }
 
