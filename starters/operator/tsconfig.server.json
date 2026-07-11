@@ -898,6 +898,9 @@
         "../../packages/distribution-react/dist/suppliers/ui.d.ts"
       ],
       "@voyant-travel/distribution-react/ui": ["../../packages/distribution-react/dist/ui.d.ts"],
+      "@voyant-travel/distribution/channel-push-runtime": [
+        "../../packages/distribution/dist/channel-push/types.d.ts"
+      ],
       "@voyant-travel/distribution/channel-push-workflows": [
         "../../packages/distribution/dist/channel-push/workflow-entry.d.ts"
       ],

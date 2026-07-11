@@ -8,6 +8,7 @@
  */
 
 export {
+  CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
   type ChannelPushDeps,
   type ChannelPushLogger,
   clearChannelPushDeps,

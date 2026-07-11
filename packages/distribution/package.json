@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./channel-push-workflows": "./src/channel-push/workflow-entry.ts",
+    "./channel-push-runtime": "./src/channel-push/types.ts",
     "./external-refs/validation": "./src/external-refs/validation.ts",
     "./suppliers/linkables": "./src/suppliers/linkables.ts",
     "./schema": "./src/schema.ts",
@@ -59,6 +60,11 @@
         "types": "./dist/channel-push/workflow-entry.d.ts",
         "import": "./dist/channel-push/workflow-entry.js",
         "default": "./dist/channel-push/workflow-entry.js"
+      },
+      "./channel-push-runtime": {
+        "types": "./dist/channel-push/types.d.ts",
+        "import": "./dist/channel-push/types.js",
+        "default": "./dist/channel-push/types.js"
       },
       "./external-refs/validation": {
         "types": "./dist/external-refs/validation.d.ts",
