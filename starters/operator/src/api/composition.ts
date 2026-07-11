@@ -38,6 +38,7 @@ import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
+import { withDbFromEnv } from "./lib/db"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
 import {
@@ -110,6 +111,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
     resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
     readDocumentContentBase64: readOperatorDocumentContentBase64,
     resolveDb: resolveOperatorDb,
+    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
     createOperatorDocumentStorage,
     createInvoiceExchangeRateResolver: createOperatorInvoiceExchangeRateResolver,
     createInvoiceSettlementPollers: createOperatorInvoiceSettlementPollers,
@@ -191,6 +193,8 @@ export function buildOperatorProviders(): OperatorCapabilities {
     loadContractDocumentRoutes: () =>
       import("./runtime/contract-document-runtime").then((m) => m.buildContractDocumentRoutes()),
     // Lazy `operator/*` standard extension builders/loaders.
+    createBookingScheduleRoutesOptions: () =>
+      import("./routes/booking-schedule").then((m) => m.createBookingScheduleRoutesOptions()),
     loadBookingScheduleAdminRoutes: () =>
       import("./routes/booking-schedule").then((m) =>
         m.createBookingScheduleAdminRoutesForOperator(),
@@ -609,7 +613,7 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         runtimeExports,
       ),
     )
-    return withExtensionWorkflowService(configured, registerDistributionWorkflowService)
+    return withExtensionRuntimeService(configured, registerDistributionWorkflowService)
   },
   "@voyant-travel/finance#booking-tax-extension": async ({ runtimeExports, unit }) => {
     const createBookingTax = singleRuntimeFactory<
@@ -664,14 +668,14 @@ function singleRuntimeValue<T>(unitId: string, runtimeExports: readonly unknown[
   return runtimeExports[0] as T
 }
 
-type WorkflowServiceRegistration = (
+type RuntimeServiceRegistration = (
   container: import("@voyant-travel/core").ModuleContainer,
   bindings: AppBindings,
 ) => Promise<void> | void
 
 function withModuleWorkflowService<T extends HonoModule>(
   configured: T,
-  register: WorkflowServiceRegistration,
+  register: RuntimeServiceRegistration,
 ): T {
   const bootstrap = configured.module.bootstrap
   return {
@@ -686,9 +690,9 @@ function withModuleWorkflowService<T extends HonoModule>(
   }
 }
 
-function withExtensionWorkflowService<T extends HonoExtension>(
+function withExtensionRuntimeService<T extends HonoExtension>(
   configured: T,
-  register: WorkflowServiceRegistration,
+  register: RuntimeServiceRegistration,
 ): T {
   const bootstrap = configured.extension.bootstrap
   return {

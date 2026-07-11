@@ -103,10 +103,13 @@ describe("finance deployment manifest", () => {
           id: "@voyant-travel/finance#subscriber.booking-schedule-confirmed",
           eventType: "booking.confirmed",
           source: "@voyant-travel/finance/booking-schedule-subscriber",
+          runtime: {
+            entry: "./booking-schedule-subscriber",
+            export: "bookingScheduleConfirmedSubscriber",
+          },
         },
       ],
     })
-    expect(financeBookingScheduleVoyantPlugin.subscribers?.[0]).not.toHaveProperty("runtime")
   })
 
   it("declares finance routes and existing cross-package widgets", () => {

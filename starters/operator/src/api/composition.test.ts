@@ -1,7 +1,9 @@
+import { createContainer, createEventBus } from "@voyant-travel/core"
+import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   createGeneratedGraphRuntime,
@@ -74,6 +76,54 @@ describe("operator graph runtime composition", () => {
         (module) => module.module.name === "distribution.channel-push-extension.graph-runtime",
       )?.module.bootstrap,
     ).toBeTypeOf("function")
+  })
+
+  it("registers the selected Finance booking-schedule subscriber exactly once", async () => {
+    const composed = await composeOperatorGraph()
+    const runtimeModule = composed.modules.find(
+      (module) => module.module.name === "finance.booking-schedule-extension.graph-runtime",
+    )
+    const extension = composed.extensions.find(
+      (candidate) => candidate.extension.name === "booking-schedule",
+    )
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const container = createContainer()
+    const context = { bindings: { DATABASE_URL: "postgres://test" }, container, eventBus }
+
+    await runtimeModule?.module.bootstrap?.(context)
+    await extension?.extension.bootstrap?.(context)
+
+    expect(runtimeModule?.module.bootstrap).toBeTypeOf("function")
+    expect(extension?.extension.bootstrap).toBeTypeOf("function")
+    expect(container.has(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY)).toBe(true)
+    expect(
+      subscribe.mock.calls.filter(([eventType]) => eventType === "booking.confirmed"),
+    ).toHaveLength(1)
+  })
+
+  it("does not lower or bind the Finance subscriber when its extension is deselected", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const composed = await composeVoyantGraphRuntime({
+      runtime: {
+        ...runtime,
+        extensions: runtime.extensions.filter(
+          (unit) => unit.id !== "@voyant-travel/finance#booking-schedule-extension",
+        ),
+      },
+      capabilities: buildOperatorProviders(),
+      bindings: operatorGraphRuntimeBindings,
+      ports: buildOperatorRuntimePorts(),
+    })
+
+    expect(
+      composed.modules.some(
+        (module) => module.module.name === "finance.booking-schedule-extension.graph-runtime",
+      ),
+    ).toBe(false)
+    expect(
+      composed.extensions.some((extension) => extension.extension.name === "booking-schedule"),
+    ).toBe(false)
   })
 
   it("selects package-owned bridge units and discovered project modules directly", () => {

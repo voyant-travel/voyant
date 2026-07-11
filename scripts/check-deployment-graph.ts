@@ -443,6 +443,34 @@ async function main(): Promise<void> {
       "expected package-owned distribution subscribers to stay absent from Operator hand lists and route wiring",
     )
   }
+  const bookingScheduleUnit = operatorGraph.extensions.find(
+    (unit) => unit.id === "@voyant-travel/finance#booking-schedule-extension",
+  )
+  const bookingScheduleSubscriber = bookingScheduleUnit?.subscribers.find(
+    (subscriber) =>
+      subscriber.id === "@voyant-travel/finance#subscriber.booking-schedule-confirmed",
+  )
+  if (
+    bookingScheduleSubscriber?.runtime?.entry !== "./booking-schedule-subscriber" ||
+    bookingScheduleSubscriber.runtime.export !== "bookingScheduleConfirmedSubscriber"
+  ) {
+    failures.push(
+      "expected Finance booking-schedule subscriber to retain its package-owned runtime reference",
+    )
+  }
+  const operatorBookingScheduleSource = await readFile(
+    join(operatorRoot, "src/api/routes/booking-schedule.ts"),
+    "utf8",
+  )
+  if (
+    operatorAppSource.includes("bookingScheduleBundle") ||
+    operatorBookingScheduleSource.includes("bookingScheduleBundle") ||
+    operatorBookingScheduleSource.includes("eventBus.subscribe")
+  ) {
+    failures.push(
+      "expected package-owned Finance booking-schedule subscriber to stay absent from Operator hand lists and route wiring",
+    )
+  }
   for (const specifier of OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorModuleIds.has(id)) {

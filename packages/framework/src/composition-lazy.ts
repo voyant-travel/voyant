@@ -9,6 +9,8 @@ import type {
 } from "@voyant-travel/bookings"
 import type { CatalogSearchRoutesOptions } from "@voyant-travel/catalog"
 import type { BootstrapHandler } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { BookingScheduleRoutesOptions } from "@voyant-travel/finance"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import type { LazyRoutesLoader } from "@voyant-travel/hono"
@@ -40,6 +42,8 @@ export interface FrameworkProviders {
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) => Promise<string | null>
   resolveNotificationProviders: NonNullable<StorefrontVerificationRoutesOptions["resolveProviders"]>
   createTripsRoutesOptions: TripsRoutesOptionsProvider
+  /** Runs out-of-request work with a deployment-owned database lifecycle. */
+  withDb?: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) => Promise<T>
   resolveDb: NonNullable<CreateLegalHonoModuleOptions["resolveDb"]>
   createOperatorDocumentStorage: NonNullable<CreateLegalHonoModuleOptions["resolveDocumentStorage"]>
   resolveContractDocumentGenerator: NonNullable<
@@ -92,6 +96,9 @@ export interface FrameworkProviders {
   loadInventoryBrochureRoutes: LazyRoutesLoader
   loadPaymentLinkRoutes: LazyRoutesLoader
   loadContractDocumentRoutes: LazyRoutesLoader
+  createBookingScheduleRoutesOptions: () =>
+    | BookingScheduleRoutesOptions
+    | Promise<BookingScheduleRoutesOptions>
   loadBookingScheduleAdminRoutes: LazyRoutesLoader
   loadPaymentPolicyPublicRoutes: LazyRoutesLoader
   loadQuoteVersionSnapshotRoutes: LazyRoutesLoader
@@ -943,7 +950,20 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       },
     }),
     "@voyant-travel/finance/booking-schedule-extension": ({ capabilities }) => ({
-      extension: { name: "booking-schedule", module: "bookings" },
+      extension: {
+        name: "booking-schedule",
+        module: "bookings",
+        bootstrap: async ({ container }) => {
+          const { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } = await import(
+            "@voyant-travel/finance/booking-schedule-subscriber"
+          )
+          container.register(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY, {
+            resolveRoutesOptions: capabilities.createBookingScheduleRoutesOptions,
+            withDb: <T>(runtimeBindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+              runWithFrameworkDb(capabilities, runtimeBindings, operation),
+          })
+        },
+      },
       publicPath: "payment-policy",
       lazyAdminRoutes: capabilities.loadBookingScheduleAdminRoutes,
       lazyPublicRoutes: capabilities.loadPaymentPolicyPublicRoutes,
@@ -976,4 +996,14 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       lazyPublicRoutes: capabilities.loadCatalogCheckoutRoutes,
     }),
   },
+}
+
+function runWithFrameworkDb<T>(
+  capabilities: FrameworkProviders,
+  bindings: unknown,
+  operation: (db: AnyDrizzleDb) => Promise<T>,
+): Promise<T> {
+  return capabilities.withDb
+    ? capabilities.withDb(bindings, operation)
+    : operation(capabilities.resolveDb(bindings as Record<string, unknown>))
 }

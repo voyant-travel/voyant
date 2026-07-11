@@ -1,3 +1,4 @@
+import { createContainer } from "@voyant-travel/core"
 import type { CompositionContext } from "@voyant-travel/hono/composition"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
@@ -195,5 +196,36 @@ describe("frameworkComposition policy injection", () => {
         "/v1/public/cruises/:id/sailings/:sailingExternalId/pricing",
       ]),
     )
+  })
+
+  it("registers the booking-schedule subscriber runtime for every graph host", async () => {
+    const db = { source: "managed" }
+    const options = { resolveDb: vi.fn() }
+    const withDb = vi.fn(async (_bindings, operation) => operation(db as never))
+    const extension = frameworkComposition.extensions?.[
+      "@voyant-travel/finance/booking-schedule-extension"
+    ]?.(
+      compositionContext({
+        createBookingScheduleRoutesOptions: () => options as never,
+        loadBookingScheduleAdminRoutes: vi.fn(),
+        loadPaymentPolicyPublicRoutes: vi.fn(),
+        resolveDb: () => db as never,
+        withDb,
+      }),
+    )
+    if (Array.isArray(extension)) throw new Error("expected one booking-schedule extension")
+    const container = createContainer()
+    await extension?.extension.bootstrap?.({ container, bindings: { host: "managed" } } as never)
+    const { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } = await import(
+      "@voyant-travel/finance/booking-schedule-subscriber"
+    )
+    const runtime = container.resolve<{
+      resolveRoutesOptions(): unknown
+      withDb<T>(bindings: unknown, operation: (value: unknown) => Promise<T>): Promise<T>
+    }>(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY)
+
+    expect(await runtime.resolveRoutesOptions()).toBe(options)
+    await expect(runtime.withDb({}, async (value) => value)).resolves.toBe(db)
+    expect(withDb).toHaveBeenCalledOnce()
   })
 })

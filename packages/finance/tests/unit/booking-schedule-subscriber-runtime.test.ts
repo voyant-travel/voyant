@@ -2,6 +2,7 @@ import type { EventEnvelope } from "@voyant-travel/core"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 import {
+  BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY,
   createBookingScheduleSubscriberRuntime,
   FINANCE_BOOKING_SCHEDULE_SUBSCRIBER_ID,
 } from "../../src/booking-schedule/subscriber-runtime.js"
@@ -27,19 +28,22 @@ describe("finance booking-schedule subscriber runtime", () => {
       return operation(db)
     })
     const eventBus = createEventBus()
+    const container = createContainer()
+    container.register(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY, {
+      resolveRoutesOptions,
+      withDb,
+    })
     let handler: ((event: EventEnvelope) => Promise<void> | void) | undefined
     vi.spyOn(eventBus, "subscribe").mockImplementation((_eventType, registeredHandler) => {
       handler = registeredHandler as typeof handler
       return { unsubscribe: vi.fn() }
     })
     const descriptor = createBookingScheduleSubscriberRuntime({
-      resolveRoutesOptions,
-      withDb,
       generateSchedule,
       settleCoveredSchedules,
     })
 
-    await descriptor.register({ bindings, container: createContainer(), eventBus })
+    await descriptor.register({ bindings, container, eventBus })
 
     expect({ id: descriptor.id, eventType: descriptor.eventType }).toEqual({
       id: FINANCE_BOOKING_SCHEDULE_SUBSCRIBER_ID,
@@ -64,19 +68,22 @@ describe("finance booking-schedule subscriber runtime", () => {
     const error = new Error("database unavailable")
     const logger = { error: vi.fn() }
     const eventBus = createEventBus()
+    const container = createContainer()
+    container.register(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY, {
+      resolveRoutesOptions: () => routesOptions,
+      withDb: async () => {
+        throw error
+      },
+    })
     let handler: ((event: EventEnvelope) => Promise<void> | void) | undefined
     vi.spyOn(eventBus, "subscribe").mockImplementation((_eventType, registeredHandler) => {
       handler = registeredHandler as typeof handler
       return { unsubscribe: vi.fn() }
     })
     const descriptor = createBookingScheduleSubscriberRuntime({
-      resolveRoutesOptions: () => routesOptions,
-      withDb: async () => {
-        throw error
-      },
       logger,
     })
-    await descriptor.register({ bindings: {}, container: createContainer(), eventBus })
+    await descriptor.register({ bindings: {}, container, eventBus })
 
     await expect(
       handler?.({
