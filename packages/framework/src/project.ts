@@ -2,10 +2,14 @@ import {
   type DefineVoyantGraphProjectInput,
   defineProject,
   type VoyantGraphProject,
+  type VoyantGraphProjectDeployment,
 } from "@voyant-travel/core/project"
 import {
   mergeOperatorDistributionDefaults,
   type OperatorDistributionDifferences,
+  STANDARD_OPERATOR_ACCESS,
+  STANDARD_OPERATOR_DEPLOYMENT,
+  STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
 } from "./operator-distribution.js"
 
 export * from "@voyant-travel/core/project"
@@ -35,7 +39,10 @@ export type {
   ProjectApiConventionsOptions,
   ProjectApiGeneratedFile,
 } from "./project-api-conventions.js"
-export { VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY } from "./project-artifact-paths.js"
+export {
+  VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
+  VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
+} from "./project-artifact-paths.js"
 export {
   type ProjectArtifactWriteEntry,
   type ProjectArtifactWriteMode,
@@ -87,6 +94,11 @@ export type {
   ProjectWorkflowJobConventionsOptions,
   ProjectWorkflowJobGeneratedFile,
 } from "./project-workflow-job-conventions.js"
+export {
+  buildStandardNodeStarterSnapshot,
+  STANDARD_NODE_STARTER,
+  VOYANT_STANDARD_NODE_STARTER_SCHEMA_VERSION,
+} from "./standard-node-starter.js"
 
 /** Application-owned differences from the standard Operator distribution. */
 export interface DefineVoyantConfigInput extends OperatorDistributionDifferences {
@@ -98,11 +110,24 @@ export interface DefineVoyantConfigInput extends OperatorDistributionDifferences
 /** Expand framework defaults into the explicit project consumed by resolvers. */
 export function defineConfig(input: DefineVoyantConfigInput = {}): VoyantGraphProject {
   const distribution = mergeOperatorDistributionDefaults(input)
+  const access = {
+    presets: [...(STANDARD_OPERATOR_ACCESS.presets ?? []), ...(input.access?.presets ?? [])],
+  }
+  const deployment: VoyantGraphProjectDeployment = {
+    ...STANDARD_OPERATOR_DEPLOYMENT,
+    ...input.deployment,
+    providers: {
+      ...STANDARD_OPERATOR_DEPLOYMENT.providers,
+      ...input.deployment?.providers,
+    },
+    migrations: input.deployment?.migrations ?? STANDARD_OPERATOR_DEPLOYMENT.migrations,
+  }
 
   return defineProject({
     ...distribution,
-    ...(input.access ? { access: input.access } : {}),
-    ...(input.deployment ? { deployment: input.deployment } : {}),
+    productBom: STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
+    access,
+    deployment,
     ...(input.meta ? { meta: input.meta } : {}),
   })
 }

@@ -256,6 +256,16 @@ export interface VoyantGraphProjectSelections {
   plugins: readonly VoyantGraphProjectSelection[]
 }
 
+export const VOYANT_PRODUCT_BOM_REFERENCE_SCHEMA_VERSION =
+  "voyant.product-bom-reference.v1" as const
+
+/** Identifies the versioned product declaration expanded into an explicit project graph. */
+export interface VoyantProductBomReference {
+  schemaVersion: typeof VOYANT_PRODUCT_BOM_REFERENCE_SCHEMA_VERSION
+  id: string
+  version: string
+}
+
 export type VoyantGraphProjectDeploymentMode = "local" | "managed-cloud" | "self-hosted"
 
 /** A migration folder owned by the deployment rather than an installed package. */
@@ -280,6 +290,7 @@ export interface VoyantGraphProjectDeployment {
 export interface DefineVoyantGraphProjectInput {
   schemaVersion?: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
   presetLineage?: string
+  productBom?: VoyantProductBomReference
   modules: readonly DefineVoyantGraphProjectUnitInput[]
   extensions?: readonly DefineVoyantGraphProjectUnitInput[]
   plugins?: readonly DefineVoyantGraphProjectUnitInput[]
@@ -291,6 +302,7 @@ export interface DefineVoyantGraphProjectInput {
 export interface VoyantGraphProject {
   schemaVersion: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
   presetLineage?: string
+  productBom?: VoyantProductBomReference
   modules: readonly VoyantGraphUnitManifest[]
   extensions: readonly VoyantGraphUnitManifest[]
   plugins: readonly VoyantGraphUnitManifest[]
@@ -332,6 +344,7 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
   return {
     schemaVersion,
     ...(input.presetLineage ? { presetLineage: input.presetLineage } : {}),
+    ...(input.productBom ? { productBom: normalizeProductBomReference(input.productBom) } : {}),
     modules: modules.units,
     extensions: extensions.units,
     plugins: plugins.units,
@@ -347,6 +360,19 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
     ...(input.access ? { access: normalizeProjectAccess(input.access) } : {}),
     ...(deployment ? { deployment } : {}),
     ...(input.meta ? { meta: input.meta } : {}),
+  }
+}
+
+function normalizeProductBomReference(input: VoyantProductBomReference): VoyantProductBomReference {
+  if (input.schemaVersion !== VOYANT_PRODUCT_BOM_REFERENCE_SCHEMA_VERSION) {
+    throw new Error(
+      `defineProject: productBom.schemaVersion must be "${VOYANT_PRODUCT_BOM_REFERENCE_SCHEMA_VERSION}".`,
+    )
+  }
+  return {
+    schemaVersion: input.schemaVersion,
+    id: normalizeOptionalString(input.id, "productBom.id")!,
+    version: normalizeOptionalString(input.version, "productBom.version")!,
   }
 }
 

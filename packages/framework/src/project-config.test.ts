@@ -8,6 +8,11 @@ describe("framework project config", () => {
     expect(project.modules).toHaveLength(35)
     expect(project.extensions).toHaveLength(22)
     expect(project.plugins).toEqual([])
+    expect(project.productBom).toEqual({
+      schemaVersion: "voyant.product-bom-reference.v1",
+      id: "@voyant-travel/operator-standard",
+      version: "1",
+    })
     expect(project.modules.map((unit) => unit.id).slice(0, 3)).toEqual([
       "@voyant-travel/action-ledger",
       "@voyant-travel/relationships",
@@ -51,10 +56,10 @@ describe("framework project config", () => {
     expect(project.selections?.plugins.map((selection) => selection.resolve)).toEqual([
       "@voyant-travel/plugin-netopia",
     ])
-    expect(project.deployment).toEqual({
+    expect(project.deployment).toMatchObject({
       target: "node",
       mode: "self-hosted",
-      providers: { database: "postgres" },
+      providers: { database: "postgres", cache: "postgres", storage: "memory" },
     })
   })
 })

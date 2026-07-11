@@ -12,6 +12,11 @@ describe("Operator project config", () => {
     expect(config.modules).toHaveLength(35)
     expect(config.extensions).toHaveLength(22)
     expect(config.plugins).toHaveLength(2)
+    expect(config.productBom).toEqual({
+      schemaVersion: "voyant.product-bom-reference.v1",
+      id: "@voyant-travel/operator-standard",
+      version: "1",
+    })
     expect(config).not.toHaveProperty("presetLineage")
     expect(config.access?.presets?.map((preset) => preset.id)).toEqual([
       "agent-staff",
@@ -34,7 +39,7 @@ describe("Operator project config", () => {
   })
 
   it("resolves Netopia from its package-owned Voyant manifest", async () => {
-    const { graph } = await resolveProject({
+    const { graph, artifacts } = await resolveProject({
       project: config,
       projectRoot: operatorRoot,
       configPath: path.join(operatorRoot, "voyant.config.ts"),
@@ -63,5 +68,16 @@ describe("Operator project config", () => {
       webhooks: expect.arrayContaining([...(netopiaVoyantPlugin.webhooks ?? [])]),
     })
     expect(graph.diagnostics).toEqual([])
+    const productBom = artifacts.files.find((file) => file.path === "product-bom.generated.json")
+    expect(JSON.parse(productBom?.contents ?? "null")).toMatchObject({
+      schemaVersion: "voyant.product-bom-expansion.v1",
+      productBom: config.productBom,
+      graph: {
+        contentHash: graph.contentHash,
+        deploymentTarget: "node",
+        modules: expect.arrayContaining(["@voyant-travel/identity"]),
+        plugins: expect.arrayContaining(["@voyant-travel/plugin-netopia"]),
+      },
+    })
   })
 })
