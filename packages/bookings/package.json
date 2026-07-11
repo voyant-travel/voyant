@@ -15,6 +15,7 @@
     "./requirements/public-routes": "./src/requirements/routes-public.ts",
     "./tasks": "./src/tasks/index.ts",
     "./workflows": "./src/workflow-entry.ts",
+    "./workflow-runtime": "./src/workflow-runtime.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
@@ -123,6 +124,11 @@
         "types": "./dist/workflow-entry.d.ts",
         "import": "./dist/workflow-entry.js",
         "default": "./dist/workflow-entry.js"
+      },
+      "./workflow-runtime": {
+        "types": "./dist/workflow-runtime.d.ts",
+        "import": "./dist/workflow-runtime.js",
+        "default": "./dist/workflow-runtime.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",

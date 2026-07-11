@@ -1,22 +1,13 @@
 import type { WorkflowDescriptor } from "@voyant-travel/core"
 import { workflow } from "@voyant-travel/workflows"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import type { BookingServiceRuntime } from "./service.js"
 import {
   type ExpireStaleBookingHoldsInput,
   type ExpireStaleBookingHoldsResult,
   expireStaleBookingHolds,
 } from "./tasks/expire-stale-holds.js"
+import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime.js"
 
-export interface CreateBookingsExpireStaleHoldsWorkflowOptions {
-  resolveDb: () => PostgresJsDatabase | Promise<PostgresJsDatabase>
-  resolveRuntime?: (
-    db: PostgresJsDatabase,
-    input: ExpireStaleBookingHoldsInput,
-  ) => BookingServiceRuntime | Promise<BookingServiceRuntime>
-  userId?: string
-}
+export type CreateBookingsExpireStaleHoldsWorkflowOptions = BookingsExpireStaleHoldsWorkflowRuntime
 
 export const bookingsExpireStaleHoldsWorkflowManifest = {
   id: "bookings.expire-stale-holds",
@@ -34,11 +25,18 @@ export function createBookingsExpireStaleHoldsWorkflow(
     ...bookingsExpireStaleHoldsWorkflowManifest.config,
     id: bookingsExpireStaleHoldsWorkflowManifest.id,
     async run(input) {
-      const db = await options.resolveDb()
-      const runtime = (await options.resolveRuntime?.(db, input)) ?? {}
-      return expireStaleBookingHolds(db, input, options.userId ?? "system", runtime)
+      return runExpireStaleBookingHolds(options, input)
     },
   })
+}
+
+async function runExpireStaleBookingHolds(
+  options: BookingsExpireStaleHoldsWorkflowRuntime,
+  input: ExpireStaleBookingHoldsInput,
+): Promise<ExpireStaleBookingHoldsResult> {
+  const db = await options.resolveDb()
+  const runtime = (await options.resolveRuntime?.(db, input)) ?? {}
+  return expireStaleBookingHolds(db, input, options.userId ?? "system", runtime)
 }
 
 export type { ExpireStaleBookingHoldsInput, ExpireStaleBookingHoldsResult }

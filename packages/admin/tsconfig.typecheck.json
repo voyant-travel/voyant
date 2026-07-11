@@ -183,6 +183,7 @@
       "@voyant-travel/bookings/tools": ["../bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../bookings/dist/voyant.d.ts"],
+      "@voyant-travel/bookings/workflow-runtime": ["../bookings/dist/workflow-runtime.d.ts"],
       "@voyant-travel/bookings/workflows": ["../bookings/dist/workflow-entry.d.ts"],
       "@voyant-travel/catalog": ["../catalog/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring": ["../catalog-authoring/dist/index.d.ts"],

@@ -317,6 +317,9 @@
       "@voyant-travel/bookings/tools": ["../../packages/bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../../packages/bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../../packages/bookings/dist/voyant.d.ts"],
+      "@voyant-travel/bookings/workflow-runtime": [
+        "../../packages/bookings/dist/workflow-runtime.d.ts"
+      ],
       "@voyant-travel/bookings/workflows": ["../../packages/bookings/dist/workflow-entry.d.ts"],
       "@voyant-travel/catalog": ["../../packages/catalog/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring": ["../../packages/catalog-authoring/dist/index.d.ts"],
