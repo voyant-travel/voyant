@@ -25,7 +25,6 @@ import operatorProject from "../starters/operator/voyant.config.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
   OPERATOR_GRAPH_ADMISSION_POLICY,
-  OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
   type OperatorAuthoredProject,
   resolveOperatorDeploymentGraph,
   withOperatorDeploymentLocalPackageRecords,
@@ -74,7 +73,6 @@ async function main(): Promise<void> {
   const packageRecords = withOperatorDeploymentLocalPackageRecords(
     readPnpmLockfilePackageRecords({
       packageNames: discoveredGraph.packageRecords.map((record) => record.packageName),
-      packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
     }),
   )
   const first = await resolveManagedProfileDeploymentGraph(project, {

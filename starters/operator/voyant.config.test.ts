@@ -1,5 +1,11 @@
+import path from "node:path"
+
+import { resolveProject } from "@voyant-travel/framework/project"
+import { netopiaVoyantPlugin } from "@voyant-travel/plugin-netopia/voyant"
 import { describe, expect, it } from "vitest"
 import config from "./voyant.config.js"
+
+const operatorRoot = process.cwd()
 
 describe("Operator project config", () => {
   it("authors only deployment differences and external plugins", () => {
@@ -19,5 +25,37 @@ describe("Operator project config", () => {
     expect(config.extensions.every((unit) => unit.schemaVersion === "voyant.extension.v1")).toBe(
       true,
     )
+  })
+
+  it("resolves Netopia from its package-owned Voyant manifest", async () => {
+    const { graph } = await resolveProject({
+      project: config,
+      projectRoot: operatorRoot,
+      configPath: path.join(operatorRoot, "voyant.config.ts"),
+    })
+    const plugin = graph.plugins.find((unit) => unit.id === netopiaVoyantPlugin.id)
+    const packageRecord = graph.packageRecords.find(
+      (record) => record.packageName === "@voyant-travel/plugin-netopia",
+    )
+
+    expect(config.plugins[0]).not.toHaveProperty("api")
+    expect(packageRecord).toMatchObject({
+      version: "0.105.20",
+      metadata: {
+        kind: "plugin",
+        manifest: "./voyant",
+      },
+    })
+    expect(plugin).toMatchObject({
+      id: netopiaVoyantPlugin.id,
+      packageName: netopiaVoyantPlugin.packageName,
+      provides: netopiaVoyantPlugin.provides,
+      requires: netopiaVoyantPlugin.requires,
+      api: expect.arrayContaining([...(netopiaVoyantPlugin.api ?? [])]),
+      config: expect.arrayContaining([...(netopiaVoyantPlugin.config ?? [])]),
+      secrets: expect.arrayContaining([...(netopiaVoyantPlugin.secrets ?? [])]),
+      webhooks: expect.arrayContaining([...(netopiaVoyantPlugin.webhooks ?? [])]),
+    })
+    expect(graph.diagnostics).toEqual([])
   })
 })

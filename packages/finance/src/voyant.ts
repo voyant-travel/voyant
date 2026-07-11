@@ -10,6 +10,7 @@ export const financeVoyantModule = defineModule({
   id: "@voyant-travel/finance",
   packageName: "@voyant-travel/finance",
   localId: "finance",
+  provides: { capabilities: ["finance.payment-sessions"] },
   api: [
     {
       id: "@voyant-travel/finance#api.admin",
