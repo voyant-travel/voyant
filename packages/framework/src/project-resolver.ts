@@ -13,6 +13,7 @@ import type {
   VoyantGraphUnitManifest,
 } from "@voyant-travel/core/project"
 import {
+  buildGraphAdminBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
 } from "./deployment-artifacts.js"
@@ -31,7 +32,10 @@ import {
   PROJECT_API_GENERATED_PATH,
   type ProjectApiConventionCompilation,
 } from "./project-api-conventions.js"
-import { VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY } from "./project-artifact-paths.js"
+import {
+  VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
+  VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
+} from "./project-artifact-paths.js"
 import {
   discoverProjectConventions,
   type ProjectConventionDiscovery,
@@ -210,6 +214,14 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const files: FrameworkGeneratedProjectFile[] = [
     projectApi.generatedFile,
     projectAdmin.file,
+    {
+      path: VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
+      contents: buildGraphAdminBundleModule({
+        graph: targetNeutralGraph,
+        command: "voyant project resolve",
+        runtimeEntryOverrides,
+      }),
+    },
     ...projectWorkflowJobs.generatedFiles,
     ...projectSubscriberLinks.generatedFiles,
     {
@@ -464,6 +476,7 @@ function runtimePackageReferences(
     for (const config of unit.config ?? []) add(unit, config.validator)
     for (const secret of unit.secrets ?? []) add(unit, secret.validator)
     for (const provider of unit.providers ?? []) add(unit, provider.runtime)
+    add(unit, unit.admin?.runtime)
     for (const copy of unit.admin?.copy ?? []) add(unit, copy.runtime)
     for (const route of unit.admin?.routes ?? []) add(unit, route.runtime)
     for (const contribution of unit.admin?.contributions ?? []) add(unit, contribution.runtime)

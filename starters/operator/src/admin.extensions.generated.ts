@@ -2,7 +2,6 @@
 // Recreate from the selected deployment graph:
 //   voyant admin generate --graph deployment-graph.generated.json
 
-import { createActionLedgerAdminExtension } from "@voyant-travel/action-ledger-react/admin"
 import { createBookingsAdminExtension } from "@voyant-travel/bookings-react/admin"
 import { createCatalogAdminExtension } from "@voyant-travel/catalog-react/admin"
 import { createCommerceAdminExtension } from "@voyant-travel/commerce-react/admin"
@@ -24,7 +23,6 @@ import { createTripsAdminExtension } from "@voyant-travel/trips-react/admin"
  * registering the result.
  */
 export const generatedAdminExtensionFactories = {
-  actionLedger: createActionLedgerAdminExtension,
   bookings: createBookingsAdminExtension,
   catalog: createCatalogAdminExtension,
   commerce: createCommerceAdminExtension,

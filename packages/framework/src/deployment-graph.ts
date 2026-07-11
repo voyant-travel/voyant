@@ -1205,6 +1205,7 @@ function resolveUnit(
     ...(unit.admin
       ? {
           admin: {
+            ...(unit.admin.runtime ? { runtime: unit.admin.runtime } : {}),
             ...(unit.admin.copy?.length ? { copy: sortFacetEntities(unit.admin.copy) } : {}),
             ...(unit.admin.routes?.length ? { routes: sortFacetEntities(unit.admin.routes) } : {}),
             ...(unit.admin.nav?.length ? { nav: sortFacetEntities(unit.admin.nav) } : {}),
@@ -1694,6 +1695,9 @@ function validateAdminFacet(
   if (!isRecord(value)) {
     invalidFacet("admin", source, diagnostics, "Admin metadata must be an object.")
     return
+  }
+  if (value.runtime !== undefined) {
+    validateRuntimeReference(value.runtime, "admin.runtime", source, diagnostics)
   }
   for (const facet of ["copy", "routes", "nav", "slots", "contributions"] as const) {
     diagnostics.push(...validateFacetEntities(value[facet], `admin.${facet}`, source))
@@ -2441,6 +2445,7 @@ function validateRuntimeReferenceAdmission(
     for (const provider of unit.providers ?? []) {
       add(`providers.runtime.${provider.id}.entry`, provider.runtime)
     }
+    add("admin.runtime.entry", unit.admin?.runtime)
     for (const copy of unit.admin?.copy ?? []) {
       add(`admin.copy.runtime.${copy.id}.entry`, copy.runtime)
     }

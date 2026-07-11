@@ -131,6 +131,10 @@ describe("deployment graph v1", () => {
         ],
       },
       admin: {
+        runtime: {
+          entry: "@acme/voyant-loyalty/admin",
+          export: "createLoyaltyAdminExtension",
+        },
         copy: [
           {
             id: "@acme/voyant-loyalty#copy.admin",
@@ -219,7 +223,13 @@ describe("deployment graph v1", () => {
       id: "@acme/voyant-loyalty",
       api: [{ id: "@acme/voyant-loyalty#api.admin", methods: ["GET", "POST"] }],
       tools: [{ id: "@acme/voyant-loyalty#tool.adjust-points" }],
-      admin: { routes: [{ id: "@acme/voyant-loyalty#admin.route.index" }] },
+      admin: {
+        runtime: {
+          entry: "@acme/voyant-loyalty/admin",
+          export: "createLoyaltyAdminExtension",
+        },
+        routes: [{ id: "@acme/voyant-loyalty#admin.route.index" }],
+      },
       lifecycle: { uninstall: { default: "retain-data" } },
     })
     expect(graph.webhookPlan.outbound).toEqual([

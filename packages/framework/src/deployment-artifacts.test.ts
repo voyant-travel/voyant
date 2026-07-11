@@ -1,8 +1,10 @@
+// agent-quality: file-size exception -- reason: generated deployment artifact fixtures and deterministic source assertions stay in one focused suite.
 import { describe, expect, it } from "vitest"
 import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
   buildDeploymentMigrationSources,
+  buildGraphAdminBundleModule,
   buildGraphRuntimeModule,
   buildGraphWorkflowRuntimeModule,
   buildManagedNodeRuntimeEntry,
@@ -110,6 +112,45 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
     expect(source).toContain('"eventType": "hooks.changed"')
     expect(source).toContain("webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
+  })
+
+  it("lowers only opted-in package admin factories into one selected bundle", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        admin: {
+          runtime: { entry: "./admin", export: "createLoyaltyAdminExtension" },
+          routes: [
+            {
+              id: "@acme/voyant-loyalty#admin.route.index",
+              path: "/loyalty",
+              runtime: { entry: "./admin", export: "createLoyaltyAdminExtension" },
+            },
+          ],
+        },
+      }),
+      defineModule({
+        id: "@acme/reports",
+        admin: {
+          routes: [
+            {
+              id: "@acme/reports#admin.route.index",
+              path: "/reports",
+              runtime: { entry: "./admin", export: "createReportsAdminExtension" },
+            },
+          ],
+        },
+      }),
+    ])
+
+    const source = buildGraphAdminBundleModule({ graph })
+
+    expect(source).toContain(
+      'import { createLoyaltyAdminExtension as selectedAdminFactory0 } from "@acme/voyant-loyalty/admin"',
+    )
+    expect(source).toContain('"@acme/voyant-loyalty": selectedAdminFactory0')
+    expect(source).not.toContain("createReportsAdminExtension")
+    expect(source).toContain("Page bodies stay lazy in package UI exports")
   })
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {

@@ -1,7 +1,7 @@
 /**
  * Guards against admin-composition drift between the resolved deployment graph
  * and the generated admin surface. RFC:
- * docs/architecture/unified-deployment-graph.md (Phase 3).
+ * docs/architecture/unified-deployment-graph.md (Phase 4).
  *
  * The silent-failure this prevents (the #1 upgrade risk in the deployment-DX
  * assessment): a graph-selected package exposes a packaged admin
@@ -31,6 +31,10 @@ const EXTENSIONS = optionPath(
   "--extensions",
   join(ROOT, "starters/operator/src/admin.extensions.generated.ts"),
 )
+const BUNDLE = optionPath(
+  "--bundle",
+  join(ROOT, "starters/operator/.voyant/admin/selected-graph-admin.generated.ts"),
+)
 const DESTINATIONS = join(ROOT, "starters/operator/src/admin.destinations.generated.ts")
 const ROUTES = join(ROOT, "starters/operator/src/admin.routes.generated.tsx")
 
@@ -50,10 +54,15 @@ function readGraphSelectedAdminPackages() {
   }
 
   const graph = JSON.parse(readFileSync(GRAPH, "utf-8"))
-  const units = [...(graph.modules ?? []), ...(graph.plugins ?? [])]
+  const units = [...(graph.modules ?? []), ...(graph.extensions ?? []), ...(graph.plugins ?? [])]
   const packages = new Set()
+  const bundledPackages = new Set()
 
   for (const unit of units) {
+    if (typeof unit?.packageName === "string" && unit.admin?.runtime) {
+      packages.add(unit.packageName)
+      bundledPackages.add(unit.packageName)
+    }
     if (
       typeof unit?.packageName === "string" &&
       unit.api?.some((route) => route?.surface === "admin")
@@ -62,7 +71,10 @@ function readGraphSelectedAdminPackages() {
     }
   }
 
-  return [...packages].sort()
+  return {
+    packages: [...packages].sort(),
+    bundledPackages: [...bundledPackages].sort(),
+  }
 }
 
 /** Does `<module>-react` expose a `./admin` export? */
@@ -104,16 +116,31 @@ if (!existsSync(EXTENSIONS)) {
   )
 }
 
-const selected = readGraphSelectedAdminPackages()
+const { packages: selected, bundledPackages } = readGraphSelectedAdminPackages()
 const selectedSet = new Set(selected)
 const expected = selected.filter(hasAdminSurface)
 const actual = adminImportsIn(EXTENSIONS)
+const bundled = new Set(bundledPackages)
+const actualBundle = adminImportsIn(BUNDLE)
 
 // Silently-dropped admin: graph-selected + has ./admin, but not wired.
 for (const name of expected) {
-  if (!actual.has(name)) {
+  if (!bundled.has(name) && !actual.has(name)) {
     violations.push(
       `${name} is selected by the deployment graph and exposes ${name}-react/admin but is missing from admin.extensions.generated.ts — run \`voyant admin generate\` (its admin nav/pages would silently disappear)`,
+    )
+  }
+}
+
+for (const name of bundled) {
+  if (!actualBundle.has(name)) {
+    violations.push(
+      `${name} declares admin.runtime but is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
+    )
+  }
+  if (actual.has(name)) {
+    violations.push(
+      `${name} is duplicated in admin.extensions.generated.ts after migration to the selected-graph admin bundle`,
     )
   }
 }
@@ -123,6 +150,14 @@ for (const name of actual) {
   if (!selectedSet.has(name)) {
     violations.push(
       `admin.extensions.generated.ts wires ${name}-react/admin but ${name} is not selected by the deployment graph — remove it or select the package`,
+    )
+  }
+}
+
+for (const name of actualBundle) {
+  if (!bundled.has(name)) {
+    violations.push(
+      `selected-graph-admin.generated.ts wires ${name} without a selected admin.runtime declaration`,
     )
   }
 }
@@ -142,11 +177,11 @@ for (const [label, file] of [
 
 if (violations.length) {
   console.error("Admin composition drift.")
-  console.error("See docs/architecture/unified-deployment-graph.md (Phase 3).\n")
+  console.error("See docs/architecture/unified-deployment-graph.md (Phase 4).\n")
   for (const v of violations) console.error(`  - ${v}`)
   process.exit(1)
 }
 
 console.log(
-  `check-admin-composition-drift: OK (${expected.length} admin domains in sync with the deployment graph)`,
+  `check-admin-composition-drift: OK (${expected.length} admin domains, ${bundled.size} selected-graph admin bundle)`,
 )

@@ -61,6 +61,7 @@ describe("framework project resolver", () => {
     expect(first.artifacts.migrationRunner).toBe("runtime/project-migrations.generated.mjs")
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
       "admin/project-admin.generated.ts",
+      "admin/selected-graph-admin.generated.ts",
       "runtime/project-api.generated.ts",
       "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
@@ -70,6 +71,10 @@ describe("framework project resolver", () => {
       "runtime/project-subscribers.generated.ts",
       "runtime/project-workflows.generated.ts",
     ])
+    expect(
+      first.artifacts.files.find((file) => file.path === "admin/selected-graph-admin.generated.ts")
+        ?.contents,
+    ).toContain("selectedGraphAdminExtensionFactories")
     const runtimeSource = first.artifacts.files.find(
       (file) => file.path === first.artifacts.runtimeEntry,
     )?.contents
