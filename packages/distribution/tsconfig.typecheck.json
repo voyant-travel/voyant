@@ -739,6 +739,9 @@
       "@voyant-travel/finance-react/query-keys": ["../finance-react/dist/query-keys.d.ts"],
       "@voyant-travel/finance-react/ui": ["../finance-react/dist/ui.d.ts"],
       "@voyant-travel/finance/action-ledger-drift": ["../finance/dist/action-ledger-drift.d.ts"],
+      "@voyant-travel/finance/booking-schedule-subscriber": [
+        "../finance/dist/booking-schedule/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/finance/booking-tax": ["../finance/dist/booking-tax.d.ts"],
       "@voyant-travel/finance/card-payment": ["../finance/dist/card-payment.d.ts"],
       "@voyant-travel/finance/checkout": ["../finance/dist/checkout-service.d.ts"],

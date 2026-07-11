@@ -19,6 +19,7 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./booking-tax": "./src/booking-tax.ts",
+    "./booking-schedule-subscriber": "./src/booking-schedule/subscriber-runtime.ts",
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
@@ -141,6 +142,11 @@
         "types": "./dist/booking-tax.d.ts",
         "import": "./dist/booking-tax.js",
         "default": "./dist/booking-tax.js"
+      },
+      "./booking-schedule-subscriber": {
+        "types": "./dist/booking-schedule/subscriber-runtime.d.ts",
+        "import": "./dist/booking-schedule/subscriber-runtime.js",
+        "default": "./dist/booking-schedule/subscriber-runtime.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",
