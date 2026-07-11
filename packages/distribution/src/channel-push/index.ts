@@ -39,6 +39,7 @@ export {
   type ChannelPushExtensionOptions,
   channelPushExtensionDef,
   createChannelPushExtension,
+  createChannelPushVoyantRuntime,
 } from "./extension.js"
 export {
   type ChannelPushPluginOptions,
@@ -54,6 +55,10 @@ export {
   reconcileContent,
   runAllReconcilers,
 } from "./reconciler.js"
+export {
+  type ChannelPushRuntime,
+  channelPushRuntimePort,
+} from "./runtime-port.js"
 export {
   type ChannelPushSubscribersOptions,
   createChannelPushSubscribers,

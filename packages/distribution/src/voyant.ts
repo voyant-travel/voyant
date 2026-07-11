@@ -1,4 +1,5 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
 
 /** Import-cheap deployment declarations owned by the distribution package. */
 export const distributionVoyantModule = defineModule({
@@ -148,6 +149,7 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
   id: "@voyant-travel/distribution#channel-push-extension",
   packageName: "@voyant-travel/distribution",
   localId: "distribution.channel-push-extension",
+  runtimePorts: [requirePort(channelPushRuntimePort)],
   api: [
     {
       id: "@voyant-travel/distribution#channel-push-extension.api",
@@ -155,7 +157,7 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       mount: "distribution",
       runtime: {
         entry: "@voyant-travel/distribution",
-        export: "createChannelPushExtension",
+        export: "createChannelPushVoyantRuntime",
       },
     },
   ],

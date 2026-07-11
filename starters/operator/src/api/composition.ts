@@ -18,6 +18,7 @@ import type {
   EmbeddingProvider,
   IndexerAdapter,
 } from "@voyant-travel/catalog"
+import { channelPushRuntimePort } from "@voyant-travel/distribution"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import {
@@ -30,7 +31,7 @@ import {
 } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
-import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
@@ -44,7 +45,6 @@ import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { withDbFromEnv } from "./lib/db"
-import { createChannelPushExtension } from "./routes/channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
 import {
   createOperatorBookingPiiService,
@@ -59,7 +59,6 @@ import {
 } from "./runtime/operator-runtime-adapter"
 import {
   registerBookingsWorkflowService,
-  registerDistributionWorkflowService,
   registerInventoryWorkflowService,
   registerNotificationsWorkflowService,
 } from "./runtime/operator-workflow-services"
@@ -102,7 +101,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
   createTripsRoutesOptions: FrameworkProviders["createTripsRoutesOptions"]
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
-  createChannelPushExtension: typeof createChannelPushExtension
 }
 
 /**
@@ -150,7 +148,6 @@ export function buildOperatorProviders(): OperatorCapabilities {
         import("@voyant-travel/plugin-netopia").then((m) => m.createNetopiaCheckoutStarter()),
       ),
     }),
-    createChannelPushExtension,
     // Lazy route-bundle loaders for the `operator/*` standard families — each
     // wires this deployment's providers into the package-owned route bundle.
     loadFlightAdminRoutes: () =>
@@ -248,6 +245,9 @@ export function buildOperatorProviders(): OperatorCapabilities {
 /** Deployment implementations for package-declared runtime ports. */
 export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
   return {
+    [channelPushRuntimePort.id]: import("./runtime/channel-push-runtime").then(
+      (runtime) => runtime.operatorChannelPushRuntime,
+    ),
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -620,19 +620,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
     })
   },
-  "@voyant-travel/distribution#channel-push-extension": ({
-    capabilities,
-    runtimeExports,
-    unit,
-  }) => {
-    const configured = capabilities.createChannelPushExtension(
-      singleRuntimeFactory<typeof import("@voyant-travel/distribution").createChannelPushExtension>(
-        unit.id,
-        runtimeExports,
-      ),
-    )
-    return withExtensionRuntimeService(configured, registerDistributionWorkflowService)
-  },
   "@voyant-travel/finance#booking-tax-extension": async ({ runtimeExports, unit }) => {
     const createBookingTax = singleRuntimeFactory<
       typeof import("@voyant-travel/finance").createBookingTaxHonoExtension
@@ -780,23 +767,6 @@ function withModuleRuntimeService<T extends HonoModule>(
     ...configured,
     module: {
       ...configured.module,
-      bootstrap: async (ctx) => {
-        await register(ctx.container, ctx.bindings as AppBindings)
-        await bootstrap?.(ctx)
-      },
-    },
-  }
-}
-
-function withExtensionRuntimeService<T extends HonoExtension>(
-  configured: T,
-  register: RuntimeServiceRegistration,
-): T {
-  const bootstrap = configured.extension.bootstrap
-  return {
-    ...configured,
-    extension: {
-      ...configured.extension,
       bootstrap: async (ctx) => {
         await register(ctx.container, ctx.bindings as AppBindings)
         await bootstrap?.(ctx)

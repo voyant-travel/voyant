@@ -1,0 +1,87 @@
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
+const pathOption = (name, fallback) => {
+  const index = process.argv.indexOf(name)
+  if (index === -1) return fallback
+  const value = process.argv[index + 1]
+  if (!value) throw new Error(`${name} requires a path`)
+  return value
+}
+const distributionRoot = pathOption("--distribution-root", join(ROOT, "packages/distribution"))
+const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
+const violations = []
+
+function readRequired(path) {
+  if (!existsSync(path)) {
+    throw new Error(`check-distribution-channel-push-runtime-authority: missing ${path}`)
+  }
+  return readFileSync(path, "utf8")
+}
+
+const manifest = readRequired(join(distributionRoot, "src/voyant.ts"))
+const extension = readRequired(join(distributionRoot, "src/channel-push/extension.ts"))
+const runtimePort = readRequired(join(distributionRoot, "src/channel-push/runtime-port.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
+const provider = readRequired(join(operatorRoot, "src/api/runtime/channel-push-runtime.ts"))
+const workflowServices = readRequired(
+  join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),
+)
+
+if (
+  !manifest.includes("runtimePorts: [requirePort(channelPushRuntimePort)]") ||
+  !manifest.includes('export: "createChannelPushVoyantRuntime"')
+) {
+  violations.push("Distribution manifest must declare the channel-push runtime port and factory")
+}
+if (
+  !extension.includes("defineGraphRuntimeFactory") ||
+  !extension.includes("getPort(channelPushRuntimePort)") ||
+  !extension.includes("runtime.registerWorkflowService(context)")
+) {
+  violations.push("Distribution must own channel-push route and workflow-service composition")
+}
+if (
+  !runtimePort.includes('id: "distribution.channel-push-runtime"') ||
+  !runtimePort.includes("resolveRegistry") ||
+  !runtimePort.includes("registerWorkflowService")
+) {
+  violations.push("Distribution must publish the typed channel-push runtime dependency contract")
+}
+if (!composition.includes("[channelPushRuntimePort.id]")) {
+  violations.push("Operator must bind the Distribution channel-push runtime port")
+}
+if (
+  composition.includes('"@voyant-travel/distribution#channel-push-extension"') ||
+  composition.includes("createChannelPushExtension")
+) {
+  violations.push("Operator must not restore the channel-push package-id compatibility binding")
+}
+if (
+  !provider.includes('import type { ChannelPushRuntime } from "@voyant-travel/distribution"') ||
+  !provider.includes("getBookingEngineRegistryFromContext") ||
+  !provider.includes("registerDistributionWorkflowService")
+) {
+  violations.push("Operator must provide only the typed Node-host channel-push dependencies")
+}
+if (
+  !workflowServices.includes("createLazyWorkflowDb") ||
+  !workflowServices.includes("selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)")
+) {
+  violations.push("Operator must preserve lazy DB lifecycle and selected workflow service gating")
+}
+if (existsSync(join(operatorRoot, "src/api/routes/channel-push.ts"))) {
+  violations.push("src/api/routes/channel-push.ts must stay deleted")
+}
+
+if (violations.length > 0) {
+  console.error("Distribution channel-push runtime authority check failed.\n")
+  for (const violation of violations) console.error(`  - ${violation}`)
+  process.exit(1)
+}
+
+console.log(
+  "check-distribution-channel-push-runtime-authority: OK (package factory authority; Operator typed-port provider only)",
+)
