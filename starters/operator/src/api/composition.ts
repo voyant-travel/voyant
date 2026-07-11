@@ -69,10 +69,7 @@ import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
-import {
-  TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
-  type TripsPaymentSubscriberRuntime,
-} from "@voyant-travel/trips/payment-subscribers"
+import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
 import {
   type WorkflowRunnerRegistryRuntime,
   workflowRunnerRegistryRuntimePort,
@@ -137,7 +134,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   relationshipsService: FrameworkProviders["relationshipsService"]
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
-  createTripsRoutesOptions: FrameworkProviders["createTripsRoutesOptions"]
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
 }
 
@@ -172,8 +168,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
     // Adapt the deployment's catalog context into the package's search runtime
     // shape (the framework catalog factory consumes this directly).
     resolveCatalogRuntime: createLazyCatalogSearchRuntime,
-    createTripsRoutesOptions: () =>
-      import("./runtime/trips-runtime").then((m) => m.createOperatorTripsRoutesOptions()),
+    createTripsRoutesOptions: createOperatorTripsRoutesOptions,
     resolveBookingRequirementsProductSnapshot,
     storefrontIntakePersistence: lazyProvider<StorefrontIntakePersistence>(async () =>
       import("./runtime/storefront-intake-runtime").then(
@@ -335,6 +330,10 @@ export function buildOperatorRuntimePorts(
     [channelPushRuntimePort.id]: import("./runtime/channel-push-runtime").then(
       (runtime) => runtime.operatorChannelPushRuntime,
     ),
+    [tripsRoutesRuntimePort.id]: createOperatorTripsRoutesOptions,
+    [tripsDatabaseRuntimePort.id]: {
+      withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
+    },
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -393,6 +392,9 @@ function createOperatorCatalogProjectionRuntimeProvider(): CatalogProjectionRunt
     },
   }
 }
+
+const createOperatorTripsRoutesOptions: FrameworkProviders["createTripsRoutesOptions"] = () =>
+  import("./runtime/trips-runtime").then((runtime) => runtime.createOperatorTripsRoutesOptions())
 
 function createLazyCatalogSearchRuntime(
   c: Parameters<OperatorCapabilities["resolveCatalogRuntime"]>[0],
@@ -666,26 +668,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       singleRuntimeValue<HonoModule>(unit.id, runtimeExports),
       registerInventoryWorkflowService,
     ),
-  "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) => {
-    const configured = singleRuntimeFactory<
-      typeof import("@voyant-travel/trips").createTripsHonoModule
-    >(
-      unit.id,
-      runtimeExports,
-    )({
-      routesOptions: capabilities.createTripsRoutesOptions,
-      publicRoutes: true,
-    })
-    return withModuleRuntimeService(configured, (container, bindings) => {
-      const runtime: TripsPaymentSubscriberRuntime = {
-        withDb: (operation) =>
-          capabilities.withDb
-            ? capabilities.withDb(bindings, operation)
-            : operation(capabilities.resolveDb(bindings)),
-      }
-      container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
-    })
-  },
   "@voyant-travel/finance#booking-tax-extension": async ({ runtimeExports, unit }) => {
     const createBookingTax = singleRuntimeFactory<
       typeof import("@voyant-travel/finance").createBookingTaxHonoExtension

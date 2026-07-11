@@ -95,6 +95,8 @@ export interface VoyantGraphRuntimeFactoryContext {
   readonly unitId: string
   /** Validated JSON config authored on this package-scoped project selection. */
   readonly projectConfig: Readonly<VoyantGraphJsonObject>
+  /** API facets selected for this runtime unit in the resolved graph. */
+  readonly api: readonly Readonly<Pick<VoyantGraphRouteBundle, "id" | "surface">>[]
   hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
   getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
 }

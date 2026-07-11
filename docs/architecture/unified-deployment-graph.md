@@ -1021,9 +1021,10 @@ selected unit's database/adapter service through its explicit container binding;
 it no longer lists or implements those three subscriber handlers.
 
 `@voyant-travel/trips` now owns its `payment.completed` subscriber through the
-same selected-graph lowering. Operator contributes only the graph-gated
-`TripsPaymentSubscriberRuntime` database-lifecycle adapter; deselecting Trips
-removes both that service registration and the subscriber runtime module.
+same selected-graph lowering. Its package-owned graph runtime factory registers
+the subscriber's database service from the declared `trips.database-runtime`
+port; deselecting Trips removes both that service registration and the
+subscriber runtime module.
 
 Storefront booking-bootstrap intent execution is also selected-graph-owned.
 `@voyant-travel/storefront` exports the executable
@@ -1506,6 +1507,14 @@ Flights now owns its route and order-payment-session runtime assembly through a
 The Operator supplies only the selected Node connector and card-payment
 providers by port id. Package selection therefore mounts Flights exactly once,
 while deselection leaves no compatibility module or route loader behind.
+
+Progress: Trips now declares typed `trips.routes-runtime` and
+`trips.database-runtime` dependencies and exports the package-owned graph
+factory that consumes them. The Node host supplies only route adapters and its
+database lifecycle through the generic port registry; it no longer selects or
+constructs Trips behavior by package id. Selected graph membership mounts the
+admin/public route module exactly once, and deselection omits both routes and
+subscriber runtime support.
 
 - migrate API bundles, anonymous/transactional posture, subscribers, workflow
   descriptors, schedules, and event filters to package manifests

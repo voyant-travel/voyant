@@ -448,6 +448,7 @@ function createRuntimeFactoryContext(
   return {
     unitId: unit.id,
     projectConfig: unit.projectConfig,
+    api: unit.routes.map(({ route }) => ({ id: route.id, surface: route.surface })),
     hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
       assertDeclaredRuntimePort(unit, port)
       return Object.hasOwn(ports ?? {}, port.id)

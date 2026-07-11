@@ -26,6 +26,7 @@ import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voya
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
+import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
 import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
@@ -402,7 +403,8 @@ describe("operator graph runtime composition", () => {
     const runtime = createGeneratedGraphRuntime()
     const trips = runtime.modules.find((unit) => unit.id === "@voyant-travel/trips")
     const composed = await composeOperatorGraph(runtime)
-    const tripsModule = composed.modules.find((module) => module.module.name === "trips")
+    const tripsModules = composed.modules.filter((module) => module.module.name === "trips")
+    const tripsModule = tripsModules[0]
     const tripsSubscriberModule = composed.modules.find(
       (module) => module.module.name === "trips.graph-runtime",
     )
@@ -415,6 +417,10 @@ describe("operator graph runtime composition", () => {
         .filter((reference) => reference.facet === "subscribers.runtime")
         .map((reference) => reference.entityId),
     ).toEqual(["@voyant-travel/trips#subscriber.payment-completed"])
+    expect(tripsModules).toHaveLength(1)
+    expect(tripsModule?.module.requiresTransactionalDb).toBe(true)
+    expect(tripsModule?.adminRoutes).toBeDefined()
+    expect(tripsModule?.publicRoutes).toBeDefined()
     expect(tripsSubscriberModule?.module.bootstrap).toBeTypeOf("function")
 
     await tripsModule?.module.bootstrap?.({
@@ -720,11 +726,14 @@ describe("operator graph runtime composition", () => {
         promotionRedemptionDatabaseRuntimePort.id,
         promotionsBulkReindexRuntimePort.id,
         channelPushRuntimePort.id,
+        tripsDatabaseRuntimePort.id,
+        tripsRoutesRuntimePort.id,
       ]),
     )
     expect(operatorGraphRuntimeBindings).not.toHaveProperty(
       "@voyant-travel/distribution#channel-push-extension",
     )
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/trips")
     await expect(composeOperatorGraph()).resolves.toBeDefined()
   })
 
