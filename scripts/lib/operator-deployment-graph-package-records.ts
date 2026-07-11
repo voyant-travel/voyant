@@ -14,7 +14,6 @@ import {
   type VoyantGraphProject,
   type VoyantGraphRuntimeTarget,
   type VoyantGraphUnitManifest,
-  type VoyantPackageMetadata,
 } from "../../packages/framework/src/deployment-graph.ts"
 import type { ManagedScheduledJob } from "../../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectProviders } from "../../packages/framework/src/profile-types.ts"
@@ -58,14 +57,6 @@ const OPERATOR_GRAPH_COMPATIBILITY = {
   targets: ["node"],
   modes: ["local", "managed-cloud", "self-hosted"],
 } as const
-
-export const OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES = {
-  "@voyant-travel/plugin-netopia": {
-    schemaVersion: VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION,
-    kind: "plugin",
-    compatibleWith: OPERATOR_GRAPH_COMPATIBILITY,
-  },
-} as const satisfies Record<string, VoyantPackageMetadata>
 
 const OPERATOR_LOCAL_PACKAGE_RECORDS = [
   {
@@ -139,7 +130,6 @@ export async function resolveOperatorDeploymentGraph(
           "@voyant-travel/framework-migrations",
           ...discoveredGraph.packageRecords.map((record) => record.packageName),
         ],
-        packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
       }),
     ),
   )
@@ -168,7 +158,6 @@ export async function resolveOperatorDeploymentGraph(
             ...manifestedGraph.packageRecords.map((record) => record.packageName),
             ...referencedPackageNames,
           ],
-          packageMetadata: OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES,
         }),
       ),
       referencedPackageNames,
@@ -203,28 +192,14 @@ async function resolveOperatorProject(
   project: OperatorAuthoredProject,
   projectRoot: string,
 ): Promise<ResolvedOperatorProject> {
-  const frameworkProjectInput = withoutCompatibilityMetadataSelections(project)
   return normalizeFrameworkResolution(
     await frameworkProject.resolveProject({
-      project: frameworkProjectInput,
+      project,
       projectRoot,
       configPath: path.join(projectRoot, "voyant.config.ts"),
     }),
     project,
   )
-}
-
-function withoutCompatibilityMetadataSelections(
-  project: OperatorAuthoredProject,
-): OperatorAuthoredProject {
-  if (!project.selections) return project
-  const plugins = project.selections.plugins.filter(
-    (selection) => !(selection.packageName in OPERATOR_GRAPH_PACKAGE_METADATA_OVERRIDES),
-  )
-  return {
-    ...project,
-    selections: { ...project.selections, plugins },
-  }
 }
 
 function normalizeFrameworkResolution(

@@ -7,6 +7,7 @@ export const notificationsVoyantModule = defineModule({
   id: "@voyant-travel/notifications",
   packageName: "@voyant-travel/notifications",
   localId: "notifications",
+  provides: { capabilities: ["notifications.delivery"] },
   api: [
     {
       id: "@voyant-travel/notifications#api.admin",
