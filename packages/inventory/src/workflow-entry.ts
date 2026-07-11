@@ -1,26 +1,13 @@
 import type { WorkflowDescriptor } from "@voyant-travel/core"
 import { workflow } from "@voyant-travel/workflows"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import { generateProductPdf } from "./tasks/generate-pdf.js"
+import type {
+  ProductsGeneratePdfWorkflowInput,
+  ProductsGeneratePdfWorkflowOutput,
+  ProductsGeneratePdfWorkflowRuntime,
+} from "./workflow-runtime.js"
 
-export interface ProductsGeneratePdfWorkflowInput {
-  productId: string
-}
-
-export interface ProductsGeneratePdfWorkflowOutput {
-  base64: string
-  filename: string
-  sizeBytes: number
-}
-
-export interface CreateProductsGeneratePdfWorkflowOptions {
-  resolveDb: () => PostgresJsDatabase | Promise<PostgresJsDatabase>
-  render?: (
-    db: PostgresJsDatabase,
-    input: ProductsGeneratePdfWorkflowInput,
-  ) => ProductsGeneratePdfWorkflowOutput | Promise<ProductsGeneratePdfWorkflowOutput>
-}
+export type CreateProductsGeneratePdfWorkflowOptions = ProductsGeneratePdfWorkflowRuntime
 
 export const productsGeneratePdfWorkflowManifest = {
   id: "products.generate-pdf",
@@ -37,17 +24,24 @@ export function createProductsGeneratePdfWorkflow(
     ...productsGeneratePdfWorkflowManifest.config,
     id: productsGeneratePdfWorkflowManifest.id,
     async run(input) {
-      const db = await options.resolveDb()
-      if (options.render) return options.render(db, input)
-
-      const generated = await generateProductPdf(db, input.productId)
-      return {
-        base64: bytesToBase64(generated.pdfBytes),
-        filename: generated.filename,
-        sizeBytes: generated.sizeBytes,
-      }
+      return runGenerateProductPdf(options, input)
     },
   })
+}
+
+async function runGenerateProductPdf(
+  options: ProductsGeneratePdfWorkflowRuntime,
+  input: ProductsGeneratePdfWorkflowInput,
+): Promise<ProductsGeneratePdfWorkflowOutput> {
+  const db = await options.resolveDb()
+  if (options.render) return options.render(db, input)
+
+  const generated = await generateProductPdf(db, input.productId)
+  return {
+    base64: bytesToBase64(generated.pdfBytes),
+    filename: generated.filename,
+    sizeBytes: generated.sizeBytes,
+  }
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -58,3 +52,9 @@ function bytesToBase64(bytes: Uint8Array): string {
   }
   return btoa(binary)
 }
+
+export type {
+  ProductsGeneratePdfWorkflowInput,
+  ProductsGeneratePdfWorkflowOutput,
+  ProductsGeneratePdfWorkflowRuntime,
+} from "./workflow-runtime.js"

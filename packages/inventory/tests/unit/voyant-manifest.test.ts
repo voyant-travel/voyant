@@ -132,4 +132,8 @@ describe("inventory deployment manifests", () => {
     expect(definition.id).toBe("products.generate-pdf")
     expect(definition.config.defaultRuntime).toBe("node")
   })
+
+  it("defers executable PDF workflow runtime activation", () => {
+    expect(inventoryVoyantModule.workflows?.[0]).not.toHaveProperty("runtime")
+  })
 })
