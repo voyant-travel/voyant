@@ -350,4 +350,87 @@ describe("mountApp surface mounting", () => {
     expect(linkService.list).toHaveBeenCalledWith(link.tableName, { leftId: "pers_1" })
     expect(fetcher.list).toHaveBeenCalledWith({ filters: undefined, pagination: undefined })
   })
+
+  it("rejects an explicit link service combined with link definitions", () => {
+    const definition = defineLink(
+      { module: "crm", entity: "person", table: "people" },
+      { module: "catalog", entity: "product", table: "products" },
+    )
+    const linkService: LinkService = {
+      create: vi.fn(),
+      dismiss: vi.fn(),
+      delete: vi.fn(),
+      list: vi.fn(async () => []),
+      // biome-ignore lint/suspicious/noExplicitAny: LinkService has overloaded signatures -- owner: hono; test only needs identity.
+    } as any
+
+    expect(() =>
+      mountApp({
+        // biome-ignore lint/suspicious/noExplicitAny: startup validation does not use db -- owner: hono.
+        db: () => ({}) as any,
+        link: linkService,
+        linkDefinitions: [definition],
+      }),
+    ).toThrow("cannot configure both an explicit link service and link definitions")
+  })
+
+  it("validates duplicate configured and eager-bundle link tables at startup", () => {
+    const definition = defineLink(
+      { module: "crm", entity: "person", table: "people" },
+      { module: "catalog", entity: "product", table: "products" },
+    )
+
+    expect(() =>
+      mountApp({
+        // biome-ignore lint/suspicious/noExplicitAny: startup validation does not use db -- owner: hono.
+        db: () => ({}) as any,
+        linkDefinitions: [definition],
+        plugins: [{ name: "catalog-links", links: [definition] }],
+      }),
+    ).toThrow(`duplicate link definition for table "${definition.tableName}"`)
+  })
+
+  it("combines configured and eager-bundle links in a service bound to each request db", async () => {
+    const personProduct = defineLink(
+      { module: "crm", entity: "person", table: "people" },
+      { module: "catalog", entity: "product", table: "products" },
+    )
+    const organizationOrder = defineLink(
+      { module: "crm", entity: "organization", table: "organizations" },
+      { module: "sales", entity: "order", table: "orders" },
+    )
+    const requestDbs: Array<{ execute: ReturnType<typeof vi.fn> }> = []
+    const requestServices: LinkService[] = []
+    const adminRoutes = new Hono().get("/inspect", async (c) => {
+      const link = c.var.link
+      if (!link) return c.json({ error: "missing link service" }, 500)
+      requestServices.push(link)
+      await link.list(personProduct.tableName)
+      await link.list(organizationOrder.tableName)
+      return c.json({ ok: true })
+    })
+    const app = mountApp({
+      db: () => {
+        const requestDb = { execute: vi.fn(async () => []) }
+        requestDbs.push(requestDb)
+        // biome-ignore lint/suspicious/noExplicitAny: structural Drizzle client for request-scoping test -- owner: hono.
+        return requestDb as any
+      },
+      linkDefinitions: [personProduct],
+      plugins: [{ name: "sales-links", links: [organizationOrder] }],
+      modules: [{ module: { name: "runtime" }, adminRoutes }],
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    const first = await app.request("/v1/admin/runtime/inspect", {}, TEST_ENV, TEST_CTX)
+    const second = await app.request("/v1/admin/runtime/inspect", {}, TEST_ENV, TEST_CTX)
+
+    expect(first.status).toBe(200)
+    expect(second.status).toBe(200)
+    expect(requestServices).toHaveLength(2)
+    expect(requestServices[0]).not.toBe(requestServices[1])
+    expect(requestDbs).toHaveLength(2)
+    expect(requestDbs[0]?.execute).toHaveBeenCalledTimes(2)
+    expect(requestDbs[1]?.execute).toHaveBeenCalledTimes(2)
+  })
 })

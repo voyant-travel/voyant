@@ -10,6 +10,7 @@ import {
   createGeneratedGraphRuntime,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } from "../../.voyant/runtime/graph-runtime.generated"
+import { projectLinks } from "../../.voyant/runtime/project-links.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
   hasAuthPermission,
@@ -81,6 +82,7 @@ export const app = mountApp<AppBindings>({
   db: (env) =>
     env.DB_FORCE_TRANSACTIONAL === "1" ? dbFromEnvForApp(env) : httpDbFromEnvForApp(env),
   dbTransactional: (env) => dbFromEnvForApp(env),
+  linkDefinitions: projectLinks,
   // Workflow runtime — managed Cloud forwarding. App code forwards
   // trigger/event calls to Voyant Cloud; workflow bundles execute in the
   // hosted Node runtime.

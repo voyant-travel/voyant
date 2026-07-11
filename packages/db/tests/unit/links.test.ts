@@ -3,7 +3,7 @@ import type { SQL } from "drizzle-orm"
 import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, it, vi } from "vitest"
 
-import { createLinkService, syncLinks } from "../../src/links.js"
+import { createLinkService, createLinkServiceFactory, syncLinks } from "../../src/links.js"
 
 const person: LinkableDefinition = {
   module: "crm",
@@ -59,6 +59,29 @@ function makeRawRow(
     deleted_at: null,
   }
 }
+
+describe("createLinkServiceFactory", () => {
+  it("validates duplicate table names when the factory is created", () => {
+    const link = defineLink(person, product)
+
+    expect(() => createLinkServiceFactory([link, link])).toThrow(
+      `duplicate link definition for table "${link.tableName}"`,
+    )
+  })
+
+  it("builds independent services against request-local databases", async () => {
+    const link = defineLink(person, product)
+    const first = makeMockDb()
+    const second = makeMockDb()
+    const createForRequest = createLinkServiceFactory([link])
+
+    await createForRequest(() => first.db).list(link.tableName)
+    await createForRequest(() => second.db).list(link.tableName)
+
+    expect(first.execute).toHaveBeenCalledTimes(1)
+    expect(second.execute).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe("list — batched ID filters", () => {
   const link = defineLink(person, { linkable: product, isList: true })
