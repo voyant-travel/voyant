@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
+import * as workflowConfig from "../config.js"
 
 interface ConditionalExport {
   types: string
@@ -35,6 +36,11 @@ const publicSubpaths = [
 ]
 
 describe("@voyant-travel/workflows package exports", () => {
+  it("uses a domain-qualified workflow runtime config helper", () => {
+    expect(workflowConfig).toHaveProperty("defineWorkflowConfig")
+    expect(workflowConfig).not.toHaveProperty("defineConfig")
+  })
+
   it("publishes the events subpath with resolver-compatible conditions", () => {
     expect(packageJson.publishConfig.exports["./events"]).toEqual({
       types: "./dist/events/index.d.ts",

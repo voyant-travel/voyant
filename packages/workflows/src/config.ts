@@ -1,6 +1,6 @@
 // @voyant-travel/workflows/config
 //
-// Types and `defineConfig` helper for `voyant.config.ts`.
+// Runtime configuration for standalone workflow deployments.
 // Contract defined in docs/sdk-surface.md §10 and docs/design.md §5.4.3.
 
 export type Duration = number | `${number}${"ms" | "s" | "m" | "h" | "d" | "w"}`
@@ -97,7 +97,7 @@ export interface WorkflowsConfig {
   }
 }
 
-export interface VoyantConfig {
+export interface VoyantWorkflowConfig {
   projectId: string
   entry: {
     worker: string
@@ -108,6 +108,7 @@ export interface VoyantConfig {
   workflows?: WorkflowsConfig
 }
 
-export function defineConfig(config: VoyantConfig): VoyantConfig {
+/** Define runtime settings for a standalone workflow deployment. */
+export function defineWorkflowConfig(config: VoyantWorkflowConfig): VoyantWorkflowConfig {
   return config
 }

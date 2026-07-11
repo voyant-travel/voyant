@@ -18,8 +18,7 @@
     "./query": "./src/query.ts",
     "./workflows": "./src/workflows.ts",
     "./plugin": "./src/plugin.ts",
-    "./project": "./src/project.ts",
-    "./config": "./src/config.ts"
+    "./project": "./src/project.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -114,11 +113,6 @@
         "types": "./dist/project.d.ts",
         "import": "./dist/project.js",
         "default": "./dist/project.js"
-      },
-      "./config": {
-        "types": "./dist/config.d.ts",
-        "import": "./dist/config.js",
-        "default": "./dist/config.js"
       }
     },
     "main": "./dist/index.js",

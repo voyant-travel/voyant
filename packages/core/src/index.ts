@@ -1,15 +1,3 @@
-export type {
-  AdminConfig,
-  AdminRoutesConfig,
-  ConfigValidationIssue,
-  ConfigValidationResult,
-  DeploymentTarget,
-  ModuleEntry,
-  PluginEntry,
-  ProjectConfig,
-  VoyantConfig,
-} from "./config.js"
-export { defineVoyantConfig, resolveEntry, validateVoyantConfig } from "./config.js"
 export type { ModuleContainer } from "./container.js"
 export { createContainer } from "./container.js"
 export type {

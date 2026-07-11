@@ -48,6 +48,9 @@ the generated graph expresses the complete deployment.**
 8. The public configuration helper is `defineConfig`. Authored definitions and
    resolved manifests are separate types; placeholder manifests are not part of
    the public application interface.
+9. Runtime-specific settings use domain-qualified helpers and types. In
+   particular, standalone workflow runtime settings use `defineWorkflowConfig`
+   and `VoyantWorkflowConfig`; they are not a second application config API.
 
 The initial standard Operator remains the only composed application runtime and
 always lowers to Node. This decision does not create a managed-operator variant

@@ -86,6 +86,7 @@ export {
   type VoyantProjectSettings,
   validateVoyantProject,
 } from "./profile.js"
+export { type DefineVoyantConfigInput, defineConfig } from "./project.js"
 export {
   type ProjectArtifactWriteEntry,
   type ProjectArtifactWriteMode,

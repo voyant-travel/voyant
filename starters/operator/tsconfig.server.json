@@ -643,7 +643,6 @@
       ],
       "@voyant-travel/commerce/voyant": ["../../packages/commerce/dist/voyant.d.ts"],
       "@voyant-travel/core": ["../../packages/core/dist/index.d.ts"],
-      "@voyant-travel/core/config": ["../../packages/core/dist/config.d.ts"],
       "@voyant-travel/core/container": ["../../packages/core/dist/container.d.ts"],
       "@voyant-travel/core/custom-fields": ["../../packages/core/dist/custom-fields.d.ts"],
       "@voyant-travel/core/env": ["../../packages/core/dist/env.d.ts"],

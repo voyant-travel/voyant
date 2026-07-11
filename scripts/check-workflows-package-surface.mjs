@@ -48,6 +48,46 @@ if (fs.existsSync(appsDir)) {
 
 const problems = []
 
+const workflowsConfigPath = path.join(repoRoot, "packages/workflows/src/config.ts")
+const workflowsConfigSource = fs.readFileSync(workflowsConfigPath, "utf8")
+if (!workflowsConfigSource.includes("export function defineWorkflowConfig(")) {
+  problems.push("packages/workflows/src/config.ts: missing defineWorkflowConfig export")
+}
+if (!workflowsConfigSource.includes("export interface VoyantWorkflowConfig")) {
+  problems.push("packages/workflows/src/config.ts: missing VoyantWorkflowConfig export")
+}
+if (/export (?:function|const) defineConfig\b/.test(workflowsConfigSource)) {
+  problems.push(
+    "packages/workflows/src/config.ts: generic defineConfig competes with the framework application config API",
+  )
+}
+if (/export (?:interface|type) VoyantConfig\b/.test(workflowsConfigSource)) {
+  problems.push(
+    "packages/workflows/src/config.ts: generic VoyantConfig obscures the workflow runtime boundary",
+  )
+}
+
+const corePackageJsonPath = path.join(repoRoot, "packages/core/package.json")
+const corePackageJson = JSON.parse(fs.readFileSync(corePackageJsonPath, "utf8"))
+if (corePackageJson.exports?.["./config"] || corePackageJson.publishConfig?.exports?.["./config"]) {
+  problems.push(
+    "packages/core/package.json: ./config competes with @voyant-travel/framework application config",
+  )
+}
+
+if (fs.existsSync(path.join(repoRoot, "packages/core/src/config.ts"))) {
+  problems.push(
+    "packages/core/src/config.ts: legacy application config must remain framework-owned",
+  )
+}
+
+const coreIndexSource = fs.readFileSync(path.join(repoRoot, "packages/core/src/index.ts"), "utf8")
+if (/\b(?:defineVoyantConfig|validateVoyantConfig|VoyantConfig)\b/.test(coreIndexSource)) {
+  problems.push(
+    "packages/core/src/index.ts: legacy application config exports must not be restored",
+  )
+}
+
 for (const packageJsonPath of packageJsonFiles.sort()) {
   const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
   if (typeof pkg.name !== "string") continue

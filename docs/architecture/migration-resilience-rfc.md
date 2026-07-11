@@ -212,18 +212,20 @@ a CI gate.
 
 ## 4. Design
 
-### 4.1 The manifest is the single source of truth (modules + extensions)
+### 4.1 The project definition is the single source of truth
 
-Extend `VoyantConfig` (`packages/core/src/config.ts`) so extensions are
-first-class manifest entries, not a runtime-only array:
+This RFC originally introduced a core-owned `VoyantConfig` manifest. ADR-0012
+supersedes that application authoring surface: package and application
+extensions are now first-class selections in the project definition returned by
+`@voyant-travel/framework` `defineConfig`.
 
 ```ts
-export interface VoyantConfig {
-  // ...existing...
-  modules?: ModuleEntry[]
-  extensions?: ExtensionEntry[]   // NEW — e.g. "@voyant-travel/inventory/booking-extension"
-  plugins?: PluginEntry[]
-}
+import { defineConfig } from "@voyant-travel/framework"
+
+export default defineConfig({
+  modules: [{ resolve: "@acme/voyant-loyalty" }],
+  plugins: [{ resolve: "@acme/voyant-payments" }],
+})
 ```
 
 Both consumers read from it:
@@ -398,9 +400,9 @@ defer runtime derivation (the hard part) to last.
   appear in the snapshot.
 - *Outcome:* §1.3 closed; link cardinality changes produce real migrations.
 
-### Phase 4 — extensions in the manifest (schema dimension)
-- Add `extensions` to `VoyantConfig`; have the schema resolver include
-  extension-owned tables via each extension's `package.json#voyant`.
+### Phase 4 — extensions in the project definition (schema dimension)
+- Include extension-owned tables selected by framework project definitions via
+  each extension's `package.json#voyant`.
 - *Outcome:* the §1.1 trap closed on the **migration side** — an extension's
   tables can no longer be silently omitted from a migration.
 
