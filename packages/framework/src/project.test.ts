@@ -63,6 +63,9 @@ describe("framework project resolver", () => {
       "access/selected-access-catalog.generated.ts",
       "admin/project-admin.generated.ts",
       "admin/selected-graph-admin.generated.ts",
+      "manifests/actions.json",
+      "manifests/tools.json",
+      "manifests/webhooks.json",
       "runtime/project-api.generated.ts",
       "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
@@ -83,6 +86,18 @@ describe("framework project resolver", () => {
     expect(runtimeSource).toContain('GENERATED_PROJECT_RUNTIME_KIND = "application"')
     expect(runtimeSource).toContain('"database": "postgres"')
     expect(runtimeSource).not.toContain('"target"')
+    for (const path of [
+      "manifests/actions.json",
+      "manifests/tools.json",
+      "manifests/webhooks.json",
+    ]) {
+      expect(
+        JSON.parse(first.artifacts.files.find((file) => file.path === path)?.contents ?? ""),
+      ).toMatchObject({
+        schemaVersion: "voyant.selected-executable-facets.v1",
+        graphHash: expectedHash,
+      })
+    }
     expect(first.artifacts.migrationPlan).toEqual({
       schemaVersion: "voyant.migration-plan.v1",
       contentHash: expectedHash,

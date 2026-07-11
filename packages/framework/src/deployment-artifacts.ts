@@ -61,6 +61,8 @@ export {
 } from "./runtime-values.js"
 
 export const VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION = "voyant.deployment-artifacts.v1" as const
+export const VOYANT_SELECTED_EXECUTABLE_FACETS_SCHEMA_VERSION =
+  "voyant.selected-executable-facets.v1" as const
 export const VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node" as const
 
 export type VoyantDeploymentRuntimeEntryKind = "managed-profile-node"
@@ -123,6 +125,58 @@ export interface BuildProjectRuntimeModuleInput extends BuildGraphRuntimeModuleI
 export interface BuildGraphWorkflowRuntimeModuleInput extends BuildGraphRuntimeModuleInput {}
 
 export interface BuildGraphAdminBundleModuleInput extends BuildGraphRuntimeModuleInput {}
+
+export interface SelectedGraphExecutableFacetArtifacts {
+  tools: string
+  actions: string
+  outboundWebhooks: string
+}
+
+/** Emit inspectable eligibility metadata from the same selected graph used for runtime lowering. */
+export function buildSelectedGraphExecutableFacetArtifacts(
+  graph: ResolvedVoyantDeploymentGraph,
+): SelectedGraphExecutableFacetArtifacts {
+  assertGraphRuntimeLowerable(graph)
+  const loweredUnits = [
+    ...lowerGraphRuntimeUnits(graph.modules, graph, undefined),
+    ...lowerGraphRuntimeUnits(graph.extensions, graph, undefined),
+    ...lowerGraphRuntimeUnits(graph.plugins, graph, undefined),
+  ]
+  const tools = loweredUnits
+    .flatMap((unit) =>
+      unit.tools.map((tool) => ({
+        owner: { unitId: unit.id, packageName: unit.packageName },
+        ...tool,
+      })),
+    )
+    .sort((left, right) => left.id.localeCompare(right.id))
+  const actions = loweredUnits
+    .flatMap((unit) =>
+      unit.actions.map((action) => ({
+        owner: { unitId: unit.id, packageName: unit.packageName },
+        ...action,
+      })),
+    )
+    .sort(
+      (left, right) => left.id.localeCompare(right.id) || left.version.localeCompare(right.version),
+    )
+  const outboundWebhooks = [...graph.webhookPlan.outbound].sort(
+    (left, right) => left.id.localeCompare(right.id) || left.unitId.localeCompare(right.unitId),
+  )
+  const artifact = (facet: string, entries: readonly unknown[]) =>
+    `${canonicalJson({
+      schemaVersion: VOYANT_SELECTED_EXECUTABLE_FACETS_SCHEMA_VERSION,
+      graphHash: graph.contentHash,
+      facet,
+      entries,
+    })}\n`
+
+  return {
+    tools: artifact("tools.mcp", tools),
+    actions: artifact("actions", actions),
+    outboundWebhooks: artifact("webhooks.outbound", outboundWebhooks),
+  }
+}
 
 export interface BuildGraphAccessCatalogModuleInput {
   graph: ResolvedVoyantDeploymentGraph
