@@ -1,4 +1,58 @@
+import type { VoyantGraphJsonValue } from "@voyant-travel/core/project"
 import ts from "typescript"
+
+export function durableJsonValue(
+  expression: ts.Expression,
+  constants: ReadonlyMap<string, ts.Expression>,
+  seen: ReadonlySet<string> = new Set(),
+): VoyantGraphJsonValue | undefined {
+  const value = unwrapExpression(expression)
+  if (ts.isIdentifier(value)) {
+    if (value.text === "undefined" || seen.has(value.text)) return undefined
+    const initializer = constants.get(value.text)
+    if (!initializer) return undefined
+    return durableJsonValue(initializer, constants, new Set([...seen, value.text]))
+  }
+  if (ts.isStringLiteralLike(value)) return value.text
+  if (ts.isNumericLiteral(value)) return Number(value.text)
+  if (value.kind === ts.SyntaxKind.TrueKeyword) return true
+  if (value.kind === ts.SyntaxKind.FalseKeyword) return false
+  if (value.kind === ts.SyntaxKind.NullKeyword) return null
+  if (
+    ts.isPrefixUnaryExpression(value) &&
+    value.operator === ts.SyntaxKind.MinusToken &&
+    ts.isNumericLiteral(value.operand)
+  ) {
+    return -Number(value.operand.text)
+  }
+  if (ts.isArrayLiteralExpression(value)) {
+    const items: VoyantGraphJsonValue[] = []
+    for (const element of value.elements) {
+      if (ts.isSpreadElement(element)) return undefined
+      const item = durableJsonValue(element, constants, seen)
+      if (item === undefined) return undefined
+      items.push(item)
+    }
+    return items
+  }
+  if (!ts.isObjectLiteralExpression(value)) return undefined
+  const object: Record<string, VoyantGraphJsonValue> = {}
+  for (const property of value.properties) {
+    if (ts.isPropertyAssignment(property)) {
+      const name = propertyName(property.name)
+      const item = durableJsonValue(property.initializer, constants, seen)
+      if (!name || item === undefined) return undefined
+      object[name] = item
+    } else if (ts.isShorthandPropertyAssignment(property)) {
+      const item = durableJsonValue(property.name, constants, seen)
+      if (item === undefined) return undefined
+      object[property.name.text] = item
+    } else {
+      return undefined
+    }
+  }
+  return object
+}
 
 export function isDurableExpression(
   expression: ts.Expression,

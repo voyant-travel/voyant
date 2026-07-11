@@ -29,7 +29,7 @@ describe("project subscriber and link conventions", () => {
         "export default manifest",
       ].join("\n"),
       "src/subscribers/alpha/created.ts":
-        'export default { id: "filter.alpha", eventType: "person.created" }\n',
+        'export default { id: "filter.alpha", eventType: "person.created", manifest: { id: "filter.alpha", eventType: "person.created", payloadHash: "def", targetWorkflowId: "workflow.alpha" } }\n',
       "src/links/zeta.ts": [
         'import { defineLink as link } from "@voyant-travel/core/links"',
         'import { left, right } from "../linkables.js"',
@@ -48,18 +48,20 @@ describe("project subscriber and link conventions", () => {
     const second = await compileProjectSubscriberLinkConventions({ projectRoot: root })
 
     expect(first).toEqual(second)
-    expect(first.subscribers).toEqual([
+    expect(
+      first.subscribers.map(({ subscriberId, eventType, sourcePath }) => ({
+        subscriberId,
+        eventType,
+        sourcePath,
+      })),
+    ).toEqual([
       {
         eventType: "person.created",
-        id: "project.subscriber.alpha.created",
-        kind: "subscriber",
         sourcePath: "src/subscribers/alpha/created.ts",
         subscriberId: "filter.alpha",
       },
       {
         eventType: "booking.created",
-        id: "project.subscriber.zeta",
-        kind: "subscriber",
         sourcePath: "src/subscribers/zeta.ts",
         subscriberId: "filter.zeta",
       },
@@ -76,6 +78,9 @@ describe("project subscriber and link conventions", () => {
           'import subscriber0 from "../../src/subscribers/alpha/created.js"',
           'import subscriber1 from "../../src/subscribers/zeta.js"',
           "",
+          "export { subscriber0 as projectSubscriber0 }",
+          "export { subscriber1 as projectSubscriber1 }",
+          "",
           "export const projectSubscribers = [subscriber0, subscriber1] as const satisfies readonly EventFilterDescriptor[]",
           "",
         ].join("\n"),
@@ -87,10 +92,39 @@ describe("project subscriber and link conventions", () => {
           'import link0 from "../../src/links/alpha.js"',
           'import link1 from "../../src/links/zeta.js"',
           "",
+          "export { link0 as projectLink0 }",
+          "export { link1 as projectLink1 }",
+          "",
           "export const projectLinks = [link0, link1] as const satisfies readonly LinkDefinition[]",
           "",
         ].join("\n"),
       },
+    ])
+    expect(first.graphSubscribers).toEqual([
+      expect.objectContaining({
+        id: "filter.alpha",
+        eventType: "person.created",
+        eventFilterId: "filter.alpha",
+        workflowId: "workflow.alpha",
+        runtime: {
+          entry: "./.voyant/runtime/project-subscribers.generated.ts",
+          export: "projectSubscriber0",
+        },
+      }),
+      expect.objectContaining({
+        id: "filter.zeta",
+        eventType: "booking.created",
+        eventFilterId: "filter.zeta",
+        workflowId: "workflow.zeta",
+        runtime: {
+          entry: "./.voyant/runtime/project-subscribers.generated.ts",
+          export: "projectSubscriber1",
+        },
+      }),
+    ])
+    expect(first.graphLinks).toEqual([
+      { id: "project.link.alpha", source: "src/links/alpha.ts" },
+      { id: "project.link.zeta", source: "src/links/zeta.ts" },
     ])
   })
 
@@ -101,9 +135,9 @@ describe("project subscriber and link conventions", () => {
       "src/subscribers/function.ts":
         'export default { id: "function-filter", eventType: "x", input: () => true }\n',
       "src/subscribers/literals.ts":
-        'const id = "literal-filter"; const eventType = "x"; export default { id, eventType }\n',
+        'const id = "literal-filter"; const eventType = "x"; export default { id, eventType, manifest: { id, eventType, payloadHash: "a", targetWorkflowId: "target" } }\n',
       "src/subscribers/named-destructuring.ts":
-        'export const { named } = { named: true }; export default { id: "named", eventType: "x" }\n',
+        'export const { named } = { named: true }; export default { id: "named", eventType: "x", manifest: { id: "named", eventType: "x", payloadHash: "a", targetWorkflowId: "target" } }\n',
       "src/links/plain.ts": "export default { tableName: 'plain' }\n",
       "src/links/wrong-helper.ts": [
         'import { defineLink } from "./helper.js"',
@@ -156,9 +190,10 @@ describe("project subscriber and link conventions", () => {
     const root = await projectFixture({
       "src/subscribers/a.ts": [
         'import "../../../outside.js"',
-        'export default { id: "duplicate", eventType: "a" }',
+        'export default { id: "duplicate", eventType: "a", manifest: { id: "duplicate", eventType: "a", payloadHash: "a", targetWorkflowId: "target" } }',
       ].join("\n"),
-      "src/subscribers/b.ts": 'export default { id: "duplicate", eventType: "b" }\n',
+      "src/subscribers/b.ts":
+        'export default { id: "duplicate", eventType: "b", manifest: { id: "duplicate", eventType: "b", payloadHash: "b", targetWorkflowId: "target" } }\n',
       "src/links/escaped.ts": [
         'import { defineLink } from "@voyant-travel/core"',
         'import left from "file:///tmp/left.js"',

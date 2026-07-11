@@ -897,8 +897,11 @@ Application-local `src/subscribers` and `src/links` contributions are compiled
 with the TypeScript AST. Subscriber files default-export durable
 `EventFilterDescriptor` data, while link files default-export `defineLink`
 definitions. The compiler emits deterministic static TypeScript imports under
-`.voyant/runtime`; it does not import application source, mutate runtime wiring,
-or defer discovery to application startup.
+`.voyant/runtime`; it does not import application source or defer discovery to
+application startup. `resolveProject()` promotes complete subscriber manifests
+to graph subscriber facets with named runtime references and promotes links to
+path-owned graph facets while retaining the generated link collection for
+migration/query consumers.
 
 The broader event catalog is beyond the foundational substrate:
 

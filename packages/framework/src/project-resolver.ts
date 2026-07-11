@@ -34,6 +34,12 @@ import {
   type ProjectConventionFileContribution,
 } from "./project-conventions.js"
 import {
+  compileProjectSubscriberLinkConventions,
+  PROJECT_LINKS_GENERATED_PATH,
+  PROJECT_SUBSCRIBERS_GENERATED_PATH,
+  type ProjectSubscriberLinkConventionCompilation,
+} from "./project-subscriber-link-conventions.js"
+import {
   compileProjectWorkflowJobConventions,
   PROJECT_JOBS_GENERATED_PATH,
   PROJECT_WORKFLOWS_GENERATED_PATH,
@@ -141,19 +147,27 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   assertPathInside(projectRoot, configPath, "configPath")
   const conventions = await discoverProjectConventions({ projectRoot })
   assertProjectConventionDiagnostics(conventions)
-  const [projectApi, projectAdmin, projectWorkflowJobs] = await Promise.all([
-    compileProjectApiConventions({ projectRoot }),
-    compileProjectAdminConventions({
-      projectRoot,
-      contributions: conventions.contributions,
-    }),
-    compileProjectWorkflowJobConventions({ projectRoot }),
-  ])
+  const [projectApi, projectAdmin, projectWorkflowJobs, projectSubscriberLinks] = await Promise.all(
+    [
+      compileProjectApiConventions({ projectRoot }),
+      compileProjectAdminConventions({
+        projectRoot,
+        contributions: conventions.contributions,
+      }),
+      compileProjectWorkflowJobConventions({ projectRoot }),
+      compileProjectSubscriberLinkConventions({ projectRoot }),
+    ],
+  )
 
   const materialized = await materializeProjectSelections(project, projectRoot)
   await materializeProjectModuleConventions(materialized, conventions, projectRoot)
   await materializeProjectApiConventions(materialized, projectApi, projectRoot)
   await materializeProjectWorkflowJobConventions(materialized, projectWorkflowJobs, projectRoot)
+  await materializeProjectSubscriberLinkConventions(
+    materialized,
+    projectSubscriberLinks,
+    projectRoot,
+  )
   const providers = { ...(project.deployment?.providers ?? {}) }
   const mode = project.deployment?.mode
   const frameworkVersion = await readFrameworkVersion()
@@ -191,6 +205,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     projectApi.generatedFile,
     projectAdmin.file,
     ...projectWorkflowJobs.generatedFiles,
+    ...projectSubscriberLinks.generatedFiles,
     {
       path: runtimeEntry,
       contents: buildProjectRuntimeModule({
@@ -217,6 +232,33 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,
     },
+  }
+}
+
+async function materializeProjectSubscriberLinkConventions(
+  materialized: MaterializedProject,
+  compilation: ProjectSubscriberLinkConventionCompilation,
+  projectRoot: string,
+): Promise<void> {
+  if (compilation.graphSubscribers.length === 0 && compilation.graphLinks.length === 0) return
+  const packageName = await admitProjectSourcePackage(materialized, projectRoot)
+  materialized.project = {
+    ...materialized.project,
+    modules: [
+      ...materialized.project.modules,
+      {
+        schemaVersion: "voyant.module.v1",
+        id: graphIdForSelection(packageName, `${packageName}#project-subscribers-links`),
+        packageName,
+        localId: "project-subscribers-links",
+        subscribers: compilation.graphSubscribers,
+        links: compilation.graphLinks,
+        meta: {
+          source: "project-convention",
+          generatedPaths: [PROJECT_SUBSCRIBERS_GENERATED_PATH, PROJECT_LINKS_GENERATED_PATH],
+        },
+      },
+    ],
   }
 }
 
@@ -714,6 +756,7 @@ function isGeneratedProjectRuntimeEntry(entry: string): boolean {
     PROJECT_API_GENERATED_PATH,
     PROJECT_WORKFLOWS_GENERATED_PATH,
     PROJECT_JOBS_GENERATED_PATH,
+    PROJECT_SUBSCRIBERS_GENERATED_PATH,
   ].some((generatedPath) => entry === `./.voyant/${generatedPath}`)
 }
 

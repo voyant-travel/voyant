@@ -208,6 +208,14 @@ and duplicate subscriber IDs, then emits deterministic static imports in
 these directories are not convention entries. Runtime directory scanning is
 not part of this contract.
 
+`resolveProject()` adds both generated files to the disposable artifact set.
+Subscribers must include a complete durable `manifest` whose `id` and
+`eventType` match the descriptor and whose `payloadHash` and
+`targetWorkflowId` are non-empty. Each subscriber becomes a graph runtime
+reference; each link becomes a path-owned graph facet. This makes missing
+workflow targets and duplicate graph identities resolver errors instead of
+runtime surprises.
+
 ## Custom routes on an *existing* module (extensions)
 
 A `HonoExtension` adds routes to an **existing** module's surface (e.g. a
