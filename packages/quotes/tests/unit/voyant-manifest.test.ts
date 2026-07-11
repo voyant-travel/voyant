@@ -18,7 +18,7 @@ describe("quotes deployment manifests", () => {
           surface: "admin",
           mount: "quotes",
           transactional: true,
-          runtime: { entry: "@voyant-travel/quotes", export: "createQuotesHonoModule" },
+          runtime: { entry: "@voyant-travel/quotes", export: "createQuotesVoyantRuntime" },
         },
       ],
       schema: [{ id: "@voyant-travel/quotes#schema" }],
@@ -81,7 +81,7 @@ describe("quotes deployment manifests", () => {
             mount: "quote-versions",
             runtime: {
               entry: "@voyant-travel/quotes",
-              export: "createQuoteProposalHonoExtension",
+              export: "createQuoteProposalVoyantRuntime",
             },
           },
           {
@@ -90,7 +90,7 @@ describe("quotes deployment manifests", () => {
             anonymous: true,
             runtime: {
               entry: "@voyant-travel/quotes",
-              export: "createQuoteProposalHonoExtension",
+              export: "createQuoteProposalVoyantRuntime",
             },
           },
         ],
@@ -104,7 +104,7 @@ describe("quotes deployment manifests", () => {
             mount: "trips",
             runtime: {
               entry: "@voyant-travel/quotes",
-              export: "createQuoteVersionSnapshotHonoExtension",
+              export: "createQuoteVersionSnapshotVoyantRuntime",
             },
           },
         ],

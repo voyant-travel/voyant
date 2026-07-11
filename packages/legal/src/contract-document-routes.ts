@@ -19,9 +19,11 @@
  * `CONTRACT_DOCUMENT_ROUTE_PATHS`.
  */
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
+import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 
 /** Minimal structural view of the deployment's document storage backend. */
 export interface ContractDocumentStorageLike {
@@ -282,3 +284,7 @@ export function createContractDocumentHonoModule(
     },
   }
 }
+
+export const createContractDocumentVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createContractDocumentHonoModule(await getPort(legalContractDocumentRuntimePort)),
+)

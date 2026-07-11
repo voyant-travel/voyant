@@ -12,16 +12,16 @@
  * `runActionLedgerCanary`). Swapping a drift check, or adding a vertical, is a
  * change here — never in the route implementation.
  */
-import { createActionLedgerHealthRoutes } from "@voyant-travel/action-ledger/health"
+import type { ActionLedgerHealthRoutesOptions } from "@voyant-travel/action-ledger/health"
 import { checkBookingActionLedgerDrift } from "@voyant-travel/bookings/action-ledger-drift"
 import { checkFinanceActionLedgerDrift } from "@voyant-travel/finance/action-ledger-drift"
 import { checkProductActionLedgerDrift } from "@voyant-travel/inventory/action-ledger-drift"
 
 /** Build the action-ledger health admin routes wired with this deployment's drift checks. */
-export function createActionLedgerHealthAdminRoutes() {
-  return createActionLedgerHealthRoutes({
+export function createOperatorActionLedgerHealthRuntime(): ActionLedgerHealthRoutesOptions {
+  return {
     checkBookingDrift: checkBookingActionLedgerDrift,
     checkFinanceDrift: checkFinanceActionLedgerDrift,
     checkProductDrift: checkProductActionLedgerDrift,
-  })
+  }
 }

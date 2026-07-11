@@ -174,6 +174,11 @@ describe("commerce deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/commerce#booking-maintenance-extension",
       packageName: "@voyant-travel/commerce",
+      runtime: {
+        entry: "@voyant-travel/commerce/checkout",
+        export: "createBookingMaintenanceVoyantRuntime",
+      },
+      runtimePorts: [{ id: "commerce.booking-maintenance.runtime" }],
       api: [
         {
           id: "@voyant-travel/commerce#booking-maintenance-extension.api",

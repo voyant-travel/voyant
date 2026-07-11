@@ -1,4 +1,10 @@
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
+import {
+  createCatalogBookingVoyantRuntime,
+  createCatalogOffersVoyantRuntime,
+  createCatalogSearchVoyantRuntime,
+} from "../../src/graph-runtime.js"
 import {
   catalogBookingEngineVoyantModule,
   catalogOffersVoyantPlugin,
@@ -16,8 +22,8 @@ describe("catalog deployment manifest", () => {
           id: "@voyant-travel/catalog#api.admin",
           surface: "admin",
           runtime: {
-            entry: "@voyant-travel/catalog",
-            export: "createCatalogSearchHonoModule",
+            entry: "@voyant-travel/catalog/graph-runtime",
+            export: "createCatalogSearchVoyantRuntime",
           },
         },
         {
@@ -25,8 +31,8 @@ describe("catalog deployment manifest", () => {
           surface: "public",
           anonymous: true,
           runtime: {
-            entry: "@voyant-travel/catalog",
-            export: "createCatalogSearchHonoModule",
+            entry: "@voyant-travel/catalog/graph-runtime",
+            export: "createCatalogSearchVoyantRuntime",
           },
         },
       ],
@@ -67,6 +73,7 @@ describe("catalog deployment manifest", () => {
       })),
     )
     expect(catalogVoyantModule.runtimePorts).toEqual([
+      { id: "catalog.search-runtime" },
       { id: "catalog.projection-runtime" },
       { id: "catalog.booking-snapshot-runtime" },
     ])
@@ -84,8 +91,8 @@ describe("catalog deployment manifest", () => {
           mount: "catalog",
           transactional: ["/book", "/holds", "/orders", "/quote", "/quotes/batch"],
           runtime: {
-            entry: "@voyant-travel/catalog/booking-engine",
-            export: "createCatalogBookingEngineHonoModule",
+            entry: "@voyant-travel/catalog/graph-runtime",
+            export: "createCatalogBookingVoyantRuntime",
           },
         },
         {
@@ -94,11 +101,12 @@ describe("catalog deployment manifest", () => {
           mount: "catalog",
           transactional: ["/book", "/holds", "/quote", "/quotes/batch"],
           runtime: {
-            entry: "@voyant-travel/catalog/booking-engine",
-            export: "createCatalogBookingEngineHonoModule",
+            entry: "@voyant-travel/catalog/graph-runtime",
+            export: "createCatalogBookingVoyantRuntime",
           },
         },
       ],
+      runtimePorts: [{ id: "catalog.booking-runtime" }],
     })
 
     expect(catalogOffersVoyantPlugin).toMatchObject({
@@ -111,12 +119,17 @@ describe("catalog deployment manifest", () => {
           surface: "admin",
           mount: "catalog",
           runtime: {
-            entry: "@voyant-travel/catalog/offers",
-            export: "createCatalogOffersHonoExtension",
+            entry: "@voyant-travel/catalog/graph-runtime",
+            export: "createCatalogOffersVoyantRuntime",
           },
         },
       ],
+      runtimePorts: [{ id: "catalog.offers-runtime" }],
     })
+
+    expect(isGraphRuntimeFactory(createCatalogSearchVoyantRuntime)).toBe(true)
+    expect(isGraphRuntimeFactory(createCatalogBookingVoyantRuntime)).toBe(true)
+    expect(isGraphRuntimeFactory(createCatalogOffersVoyantRuntime)).toBe(true)
   })
 
   it("declares every route in the packaged catalog admin extension", () => {

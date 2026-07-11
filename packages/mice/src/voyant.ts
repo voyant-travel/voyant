@@ -1,10 +1,12 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { miceRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declarations owned by the MICE package. */
 export const miceVoyantModule = defineModule({
   id: "@voyant-travel/mice",
   packageName: "@voyant-travel/mice",
   localId: "mice",
+  runtimePorts: [requirePort(miceRuntimePort)],
   api: [
     {
       id: "@voyant-travel/mice#api.admin",
@@ -13,7 +15,7 @@ export const miceVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/mice",
-        export: "createMiceHonoModule",
+        export: "createMiceVoyantRuntime",
       },
     },
   ],

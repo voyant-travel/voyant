@@ -1,9 +1,11 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { miceLinkable } from "./linkables.js"
 import type { MiceRouteRuntimeOptions } from "./route-runtime.js"
 import { createMiceAdminRoutes } from "./routes.js"
+import { miceRuntimePort } from "./runtime-port.js"
 
 /**
  * The MICE spine is operator-local (niche) — registered in the deployment, NOT
@@ -36,6 +38,14 @@ export function createMiceHonoModule(options: MiceHonoModuleOptions = {}): HonoM
     adminRoutes: createMiceAdminRoutes(options),
   }
 }
+
+/** Package-owned adapter from graph runtime ports to the MICE route factory. */
+export const createMiceVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createMiceHonoModule(await getPort(miceRuntimePort)),
+)
+
+export type { MiceRuntime } from "./runtime-port.js"
+export { miceRuntimePort } from "./runtime-port.js"
 
 export const miceHonoModule: HonoModule = createMiceHonoModule()
 

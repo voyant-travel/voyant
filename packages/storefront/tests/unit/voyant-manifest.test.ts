@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { createStorefrontVoyantRuntime } from "../../src/index.js"
 import {
   storefrontCustomerPortalVoyantModule,
   storefrontPaymentLinkVoyantModule,
@@ -12,6 +13,8 @@ describe("storefront deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront",
       packageName: "@voyant-travel/storefront",
+      runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
+      runtimePorts: [{ id: "storefront.runtime" }],
       api: [
         {
           id: "@voyant-travel/storefront#api.admin",
@@ -77,6 +80,19 @@ describe("storefront deployment manifest", () => {
     })
   })
 
+  it("mounts only selected Storefront API surfaces", async () => {
+    const runtime = await createStorefrontVoyantRuntime({
+      unitId: "@voyant-travel/storefront",
+      projectConfig: {},
+      api: [{ id: "storefront.public", surface: "public" }],
+      hasPort: () => true,
+      getPort: async <TProvider>() => ({}) as TProvider,
+    })
+
+    expect(runtime.adminRoutes).toBeUndefined()
+    expect(runtime.publicRoutes).toBeDefined()
+  })
+
   it("owns package-namespaced storefront fragments", () => {
     expect([
       storefrontCustomerPortalVoyantModule,
@@ -86,6 +102,11 @@ describe("storefront deployment manifest", () => {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/storefront#customer-portal",
         packageName: "@voyant-travel/storefront",
+        runtime: {
+          entry: "@voyant-travel/storefront/customer-portal",
+          export: "createCustomerPortalVoyantRuntime",
+        },
+        runtimePorts: [{ id: "storefront.customer-portal.runtime" }],
         api: [
           {
             id: "@voyant-travel/storefront#customer-portal.api",
@@ -103,6 +124,11 @@ describe("storefront deployment manifest", () => {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/storefront#verification",
         packageName: "@voyant-travel/storefront",
+        runtime: {
+          entry: "@voyant-travel/storefront/verification",
+          export: "createStorefrontVerificationVoyantRuntime",
+        },
+        runtimePorts: [{ id: "storefront.verification.runtime" }],
         api: [
           {
             id: "@voyant-travel/storefront#verification.api",
@@ -124,6 +150,11 @@ describe("storefront deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront#payment-link",
       packageName: "@voyant-travel/storefront",
+      runtime: {
+        entry: "@voyant-travel/storefront/payment-link",
+        export: "createPaymentLinkVoyantRuntime",
+      },
+      runtimePorts: [{ id: "storefront.payment-link.runtime" }],
       api: [
         {
           id: "@voyant-travel/storefront#payment-link.api",

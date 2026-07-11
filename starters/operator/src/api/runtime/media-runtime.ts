@@ -45,14 +45,16 @@ function buildMediaUploadAndServeModule() {
 }
 
 /** Build the brochure route (`/v1/admin/products/:id/brochure/generate`). */
+export const operatorInventoryBrochureRuntime = {
+  resolveStorage,
+  // Use the Voyant Cloud browser printer only when Cloud is configured;
+  // otherwise the task falls back to its built-in pdf-lib printer.
+  resolvePrinter: (c: Context) =>
+    tryGetCloudClient(c.env) ? createProductBrochurePrinter(c.env) : null,
+}
+
 function buildBrochureRoutes() {
-  return createProductBrochureRoutes({
-    resolveStorage,
-    // Use the Voyant Cloud browser printer only when Cloud is configured;
-    // otherwise the task falls back to its built-in pdf-lib printer.
-    resolvePrinter: (c: Context) =>
-      tryGetCloudClient(c.env) ? createProductBrochurePrinter(c.env) : null,
-  })
+  return createProductBrochureRoutes(operatorInventoryBrochureRuntime)
 }
 
 /**

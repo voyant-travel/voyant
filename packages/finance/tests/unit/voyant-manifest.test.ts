@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { createFinanceVoyantRuntime } from "../../src/index.js"
 import {
   financeBookingScheduleVoyantPlugin,
   financeBookingsCreateVoyantPlugin,
@@ -12,6 +13,8 @@ describe("finance deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/finance",
       packageName: "@voyant-travel/finance",
+      runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
+      runtimePorts: [{ id: "finance.runtime" }],
       api: [
         {
           id: "@voyant-travel/finance#api.admin",
@@ -46,11 +49,26 @@ describe("finance deployment manifest", () => {
     })
   })
 
+  it("mounts only selected Finance API surfaces", async () => {
+    const runtime = await createFinanceVoyantRuntime({
+      unitId: "@voyant-travel/finance",
+      projectConfig: {},
+      api: [{ id: "finance.admin", surface: "admin" }],
+      hasPort: () => true,
+      getPort: async <TProvider>() => ({}) as TProvider,
+    })
+
+    expect(runtime.adminRoutes).toBeDefined()
+    expect(runtime.publicRoutes).toBeUndefined()
+  })
+
   it("owns the finance extensions", () => {
     expect([financeBookingTaxVoyantPlugin, financeBookingsCreateVoyantPlugin]).toMatchObject([
       {
         schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/finance#booking-tax-extension",
+        runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxVoyantRuntime" },
+        runtimePorts: [{ id: "finance.booking-tax.runtime" }],
         api: [
           {
             runtime: {
@@ -77,6 +95,11 @@ describe("finance deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/finance#booking-schedule-extension",
       packageName: "@voyant-travel/finance",
+      runtime: {
+        entry: "@voyant-travel/finance",
+        export: "createBookingScheduleVoyantRuntime",
+      },
+      runtimePorts: [{ id: "finance.booking-schedule.runtime" }],
       api: [
         {
           id: "@voyant-travel/finance#booking-schedule-extension.api.admin",

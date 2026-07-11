@@ -1,4 +1,6 @@
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
+import { createAccommodationsContentVoyantRuntime } from "../../src/graph-runtime.js"
 import { createAccommodationContentHonoExtension } from "../../src/routes-content.js"
 import { accommodationsContentVoyantPlugin, accommodationsVoyantModule } from "../../src/voyant.js"
 
@@ -44,15 +46,16 @@ describe("accommodations deployment manifest", () => {
         {
           surface: "admin",
           mount: "accommodations",
-          runtime: { export: "createAccommodationContentHonoExtension" },
+          runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "accommodations",
           anonymous: true,
-          runtime: { export: "createAccommodationContentHonoExtension" },
+          runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
       ],
+      runtimePorts: [{ id: "accommodations.content-runtime" }],
     })
 
     const resolveRegistry = () => ({}) as never
@@ -63,5 +66,6 @@ describe("accommodations deployment manifest", () => {
     expect(extension.extension).toMatchObject({ name: "content", module: "accommodations" })
     expect(extension.adminRoutes).toBeDefined()
     expect(extension.publicRoutes).toBeDefined()
+    expect(isGraphRuntimeFactory(createAccommodationsContentVoyantRuntime)).toBe(true)
   })
 })

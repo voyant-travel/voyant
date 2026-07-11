@@ -1,5 +1,7 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import { storefrontCustomerPortalRuntimePort } from "../runtime-port.js"
 
 import {
   buildPublicCustomerPortalRouteRuntime,
@@ -100,6 +102,10 @@ export function createCustomerPortalHonoModule(
 }
 
 export const customerPortalHonoModule: HonoModule = createCustomerPortalHonoModule()
+
+export const createCustomerPortalVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+  return createCustomerPortalHonoModule(await getPort(storefrontCustomerPortalRuntimePort))
+})
 
 export type {
   CustomerPortalRouteRuntime,

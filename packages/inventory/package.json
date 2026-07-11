@@ -40,6 +40,7 @@
     "./authoring/schema": "./src/authoring/schema.ts",
     "./authoring/spec": "./src/authoring/spec.ts",
     "./authoring/extension": "./src/authoring/extension.ts",
+    "./graph-runtime": "./src/graph-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -268,6 +269,11 @@
         "types": "./dist/authoring/extension.d.ts",
         "import": "./dist/authoring/extension.js",
         "default": "./dist/authoring/extension.js"
+      },
+      "./graph-runtime": {
+        "types": "./dist/graph-runtime.d.ts",
+        "import": "./dist/graph-runtime.js",
+        "default": "./dist/graph-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

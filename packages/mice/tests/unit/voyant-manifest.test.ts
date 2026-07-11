@@ -15,7 +15,7 @@ describe("MICE deployment manifests", () => {
           surface: "admin",
           mount: "mice",
           transactional: true,
-          runtime: { entry: "@voyant-travel/mice", export: "createMiceHonoModule" },
+          runtime: { entry: "@voyant-travel/mice", export: "createMiceVoyantRuntime" },
         },
       ],
       schema: [{ id: "@voyant-travel/mice#schema" }],

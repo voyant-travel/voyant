@@ -41,6 +41,7 @@
     "./offers": "./src/offers/operator-routes.ts",
     "./index-subscribers": "./src/index-subscriber-runtime.ts",
     "./projection-runtime": "./src/projection-runtime.ts",
+    "./graph-runtime": "./src/graph-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "voyant": {
@@ -264,6 +265,11 @@
         "types": "./dist/projection-runtime.d.ts",
         "import": "./dist/projection-runtime.js",
         "default": "./dist/projection-runtime.js"
+      },
+      "./graph-runtime": {
+        "types": "./dist/graph-runtime.d.ts",
+        "import": "./dist/graph-runtime.js",
+        "default": "./dist/graph-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

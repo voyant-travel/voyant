@@ -126,9 +126,19 @@ export function createVoyantApp<
   // explicit `exclude`, then cascaded to owned extensions by subsetStandardManifest.
   const resolvedExclude = [...(exclude ?? []), ...optionalFamiliesToExclude(providers)]
 
-  const { modules: standardModules, extensions: standardExtensions } = subsetStandardManifest({
-    exclude: resolvedExclude,
-  })
+  const { modules: selectedStandardModules, extensions: selectedStandardExtensions } =
+    subsetStandardManifest({
+      exclude: resolvedExclude,
+    })
+  // This legacy front door can only compose registry-owned units. Package-owned
+  // graph factories are selected by the deployment graph and deliberately no
+  // longer have duplicate entries in `frameworkComposition`.
+  const standardModules = selectedStandardModules.filter(
+    (specifier) => frameworkComposition.modules[specifier] !== undefined,
+  )
+  const standardExtensions = selectedStandardExtensions.filter(
+    (specifier) => frameworkComposition.extensions?.[specifier] !== undefined,
+  )
 
   const registry: CompositionRegistry<TProviders> = {
     // The framework factories read only the `FrameworkProviders` slice; a
