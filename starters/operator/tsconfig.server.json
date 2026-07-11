@@ -956,6 +956,9 @@
       "@voyant-travel/finance/action-ledger-drift": [
         "../../packages/finance/dist/action-ledger-drift.d.ts"
       ],
+      "@voyant-travel/finance/booking-schedule-subscriber": [
+        "../../packages/finance/dist/booking-schedule/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/finance/booking-tax": ["../../packages/finance/dist/booking-tax.d.ts"],
       "@voyant-travel/finance/card-payment": ["../../packages/finance/dist/card-payment.d.ts"],
       "@voyant-travel/finance/checkout": ["../../packages/finance/dist/checkout-service.d.ts"],

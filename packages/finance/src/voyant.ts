@@ -252,6 +252,13 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
       },
     },
   ],
+  subscribers: [
+    {
+      id: "@voyant-travel/finance#subscriber.booking-schedule-confirmed",
+      eventType: "booking.confirmed",
+      source: "@voyant-travel/finance/booking-schedule-subscriber",
+    },
+  ],
   meta: {
     ownership: "package",
   },

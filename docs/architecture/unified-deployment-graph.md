@@ -985,13 +985,20 @@ The remaining Operator subscriber authorities are intentionally explicit:
 - `tripsPaymentBundle`: `payment.completed`
 - `smartbillOperatorBundle`: `invoice.issued`, `invoice.proforma.issued`, and
   `invoice.payment.recorded`
-- the graph-gated Netopia lazy bundle, whose packaged callback/subscriber runtime
-  is still adapted through the Operator plugin list
 
 These entries remain until each owning package manifest has executable runtime
 references and direct selected-graph parity. Deployment-local ordering,
 configuration, or orchestration is not sufficient reason to relabel a standard
 package subscriber as migrated.
+
+Finance now owns the inert `booking.confirmed` declaration for booking-schedule
+generation and exports a subscriber descriptor factory from
+`@voyant-travel/finance/booking-schedule-subscriber`. The factory preserves the
+existing generation-then-covered-settlement behavior through deployment-injected
+booking-schedule options and database lifecycle resolution. Its manifest entry
+intentionally omits a runtime reference while the central Operator bundle
+remains active; direct selected-graph activation must remove that central
+registration in the same change to avoid duplicate event handling.
 
 The broader event catalog is beyond the foundational substrate:
 
