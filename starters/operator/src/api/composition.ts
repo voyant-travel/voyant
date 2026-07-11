@@ -465,19 +465,16 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       typeof import("@voyant-travel/catalog").createCatalogSearchHonoModule
     >(unit.id, runtimeExports)
     const { executeSemanticSearch } = await import("@voyant-travel/catalog")
-    return {
-      ...createCatalog({
-        resolveRuntime: capabilities.resolveCatalogRuntime,
-        executeSearch: ({ adapter, embeddings, slice, request }) =>
-          executeSemanticSearch({
-            adapter,
-            embeddings: embeddings as Parameters<typeof executeSemanticSearch>[0]["embeddings"],
-            slice,
-            request,
-          }),
-      }),
-      anonymous: true,
-    }
+    return createCatalog({
+      resolveRuntime: capabilities.resolveCatalogRuntime,
+      executeSearch: ({ adapter, embeddings, slice, request }) =>
+        executeSemanticSearch({
+          adapter,
+          embeddings: embeddings as Parameters<typeof executeSemanticSearch>[0]["embeddings"],
+          slice,
+          request,
+        }),
+    })
   },
   "@voyant-travel/bookings": async ({ capabilities, runtimeExports, unit }) => {
     const createBookings = singleRuntimeFactory<
@@ -515,10 +512,7 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         accommodation: accommodationsOverview.enrichStayBookingOverviewItems,
       },
     })
-    return withModuleWorkflowService(
-      { ...configured, anonymous: true },
-      registerBookingsWorkflowService,
-    )
+    return withModuleWorkflowService(configured, registerBookingsWorkflowService)
   },
   "@voyant-travel/finance": createOperatorFinanceGraphModule,
   "@voyant-travel/flights": async ({ runtimeExports, unit }) => {
@@ -529,8 +523,8 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       runtime.createOperatorFlightsHonoModule(createFlights),
     )
   },
-  "@voyant-travel/legal": ({ capabilities, runtimeExports, unit }) => ({
-    ...singleRuntimeFactory<typeof import("@voyant-travel/legal").createLegalHonoModule>(
+  "@voyant-travel/legal": ({ capabilities, runtimeExports, unit }) =>
+    singleRuntimeFactory<typeof import("@voyant-travel/legal").createLegalHonoModule>(
       unit.id,
       runtimeExports,
     )({
@@ -542,8 +536,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       resolveBookingPiiService: capabilities.createBookingPiiService,
       autoGenerateContractOnConfirmed: capabilities.autoGenerateContractOnConfirmed,
     }),
-    anonymous: true,
-  }),
   "@voyant-travel/mice": ({ capabilities, runtimeExports, unit }) =>
     singleRuntimeFactory<typeof import("@voyant-travel/mice").createMiceHonoModule>(
       unit.id,
@@ -598,16 +590,14 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
     })
     return withModuleWorkflowService(configured, registerNotificationsWorkflowService)
   },
-  "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) => {
-    const trips = singleRuntimeFactory<typeof import("@voyant-travel/trips").createTripsHonoModule>(
+  "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) =>
+    singleRuntimeFactory<typeof import("@voyant-travel/trips").createTripsHonoModule>(
       unit.id,
       runtimeExports,
     )({
       routesOptions: capabilities.createTripsRoutesOptions,
       publicRoutes: true,
-    })
-    return { ...trips, module: { ...trips.module, requiresTransactionalDb: true } }
-  },
+    }),
   "@voyant-travel/distribution#channel-push-extension": ({
     capabilities,
     runtimeExports,
@@ -725,64 +715,60 @@ async function createOperatorFinanceGraphModule({
     import("@voyant-travel/notifications"),
     import("@voyant-travel/operator-settings"),
   ])
-  return {
-    ...createFinance({
-      resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-        capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-      resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
-      resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
-      invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
-        bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
-      resolveNotificationDispatcher: (bindings) => {
-        const providers = capabilities.resolveNotificationProviders(bindings)
-        if (providers.length === 0) return null
-        const dispatcher = notifications.createNotificationService(providers)
-        return {
-          sendInvoiceNotification: async (db, invoiceId, input) =>
-            toCheckoutNotificationDelivery(
-              await notifications.notificationsService.sendInvoiceNotification(
-                db,
-                dispatcher,
-                invoiceId,
-                input,
-              ),
+  return createFinance({
+    resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
+      capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+    resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
+    resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
+    invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
+      bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
+    resolveNotificationDispatcher: (bindings) => {
+      const providers = capabilities.resolveNotificationProviders(bindings)
+      if (providers.length === 0) return null
+      const dispatcher = notifications.createNotificationService(providers)
+      return {
+        sendInvoiceNotification: async (db, invoiceId, input) =>
+          toCheckoutNotificationDelivery(
+            await notifications.notificationsService.sendInvoiceNotification(
+              db,
+              dispatcher,
+              invoiceId,
+              input,
             ),
-          sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
-            toCheckoutNotificationDelivery(
-              await notifications.notificationsService.sendPaymentSessionNotification(
-                db,
-                dispatcher,
-                paymentSessionId,
-                input,
-              ),
+          ),
+        sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
+          toCheckoutNotificationDelivery(
+            await notifications.notificationsService.sendPaymentSessionNotification(
+              db,
+              dispatcher,
+              paymentSessionId,
+              input,
             ),
-        }
-      },
-      resolvePaymentStarters: capabilities.resolvePaymentStarters,
-      policy: capabilities.financeCheckoutPolicy,
-      paymentScheduleLineDescriptionFormat:
-        capabilities.financePaymentScheduleLineDescriptionFormat,
-      resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
-      updateBookingTaxSettings: settings.updateBookingTaxSettings,
-      resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
-      resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-      listBookingReminderRuns: async (db, bookingId, query) => {
-        const result = await notifications.notificationsService.listReminderRuns(db, {
-          bookingId,
-          status: query.status,
-          limit: query.limit,
-          offset: query.offset,
-        })
-        return {
-          data: result.data.map(toCheckoutReminderRun),
-          total: result.total,
-          limit: result.limit,
-          offset: result.offset,
-        }
-      },
-    }),
-    anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
-  }
+          ),
+      }
+    },
+    resolvePaymentStarters: capabilities.resolvePaymentStarters,
+    policy: capabilities.financeCheckoutPolicy,
+    paymentScheduleLineDescriptionFormat: capabilities.financePaymentScheduleLineDescriptionFormat,
+    resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
+    updateBookingTaxSettings: settings.updateBookingTaxSettings,
+    resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
+    resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
+    listBookingReminderRuns: async (db, bookingId, query) => {
+      const result = await notifications.notificationsService.listReminderRuns(db, {
+        bookingId,
+        status: query.status,
+        limit: query.limit,
+        offset: query.offset,
+      })
+      return {
+        data: result.data.map(toCheckoutReminderRun),
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+      }
+    },
+  })
 }
 
 type NotificationDeliveryLike = {

@@ -12,7 +12,7 @@
 import type { Actor } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import {
@@ -20,20 +20,20 @@ import {
   buildOperatorRuntimePorts,
   operatorGraphRuntimeBindings,
 } from "./composition"
-import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never
 
 async function build() {
-  const { modules, extensions } = await buildGraphComposition()
+  const composition = await buildGraphComposition()
   return mountApp({
     // Stub db — enough to be leased + bridged; handlers may 5xx using it, which
     // still proves the route is mounted and the context reached the sub-app.
     // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test -- owner: operator API tests.
     db: () => ({}) as any,
-    modules,
-    extensions,
+    modules: composition.modules,
+    extensions: composition.extensions,
+    ...mountRoutePosture(composition),
     auth: {
       resolve: ({ request }) => {
         const actor: Actor = new URL(request.url).pathname.startsWith("/v1/public/")
@@ -46,12 +46,13 @@ async function build() {
 }
 
 async function buildWithSessionActor(actor: Actor) {
-  const { modules, extensions } = await buildGraphComposition()
+  const composition = await buildGraphComposition()
   return mountApp({
     // biome-ignore lint/suspicious/noExplicitAny: stub db for auth-surface regression -- owner: operator API tests.
     db: () => ({}) as any,
-    modules,
-    extensions,
+    modules: composition.modules,
+    extensions: composition.extensions,
+    ...mountRoutePosture(composition),
     auth: {
       resolve: () => ({ userId: "u1", actor }),
     },
@@ -59,11 +60,11 @@ async function buildWithSessionActor(actor: Actor) {
 }
 
 async function buildWithLiveFrontDoor(actor: Actor = "staff") {
-  const { modules, extensions } = await buildGraphComposition()
+  const composition = await buildGraphComposition()
   return mountApp({
-    modules,
-    extensions,
-    publicPaths: [...OPERATOR_PUBLIC_PATHS],
+    modules: composition.modules,
+    extensions: composition.extensions,
+    ...mountRoutePosture(composition),
     // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test -- owner: operator API tests.
     db: () => ({}) as any,
     auth: {
@@ -100,6 +101,13 @@ function buildGraphComposition() {
     bindings: operatorGraphRuntimeBindings,
     ports: buildOperatorRuntimePorts(),
   })
+}
+
+function mountRoutePosture(composition: Awaited<ReturnType<typeof buildGraphComposition>>) {
+  return {
+    publicPaths: [...composition.routePosture.publicPaths],
+    dbTransactionalPaths: [...composition.routePosture.transactionalPaths],
+  }
 }
 
 describe("operator composed route mounting (smoke)", () => {
@@ -217,5 +225,87 @@ describe("operator composed route mounting (smoke)", () => {
     expect(settings).not.toBe(401)
     expect(settings).not.toBe(403)
     expect(settings).not.toBe(404)
+  })
+
+  it("admits graph-declared anonymous routes without resolving a session", async () => {
+    const composition = await buildGraphComposition()
+    const resolve = vi.fn(() => ({ userId: "u1", actor: "staff" as const }))
+    const anonymousApp = mountApp({
+      modules: composition.modules,
+      extensions: composition.extensions,
+      ...mountRoutePosture(composition),
+      // biome-ignore lint/suspicious/noExplicitAny: stub db for auth posture regression -- owner: operator API tests.
+      db: () => ({}) as any,
+      auth: { resolve },
+    })
+
+    for (const path of ["/v1/public/settings/operator", "/v1/public/payment-link-config"]) {
+      const response = await anonymousApp.request(path, {}, TEST_ENV, TEST_CTX)
+      expect(response.status).not.toBe(401)
+      expect(response.status).not.toBe(403)
+      expect(response.status).not.toBe(404)
+    }
+    expect(resolve).not.toHaveBeenCalled()
+  })
+
+  it("mounts the graph-selected Netopia callback with anonymous transactional posture", async () => {
+    const composition = await buildGraphComposition()
+    const defaultDb = vi.fn(() => ({}))
+    const transactionalDb = vi.fn(() => ({}))
+    const resolve = vi.fn(() => ({ userId: "u1", actor: "staff" as const }))
+    const netopiaApp = mountApp({
+      modules: composition.modules,
+      extensions: composition.extensions,
+      ...mountRoutePosture(composition),
+      // biome-ignore lint/suspicious/noExplicitAny: stub db factories for graph-owned plugin posture regression -- owner: operator API tests.
+      db: defaultDb as any,
+      // biome-ignore lint/suspicious/noExplicitAny: stub db factories for graph-owned plugin posture regression -- owner: operator API tests.
+      dbTransactional: transactionalDb as any,
+      auth: { resolve },
+    })
+
+    const response = await netopiaApp.request(
+      "/v1/finance/providers/netopia/callback",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      },
+      TEST_ENV,
+      TEST_CTX,
+    )
+
+    expect(response.status).not.toBe(401)
+    expect(response.status).not.toBe(404)
+    expect(resolve).not.toHaveBeenCalled()
+    expect(transactionalDb).toHaveBeenCalled()
+    expect(defaultDb).not.toHaveBeenCalled()
+  })
+
+  it("routes graph-declared transactional prefixes to the transactional db", async () => {
+    const composition = await buildGraphComposition()
+    const defaultDb = vi.fn(() => ({}))
+    const transactionalDb = vi.fn(() => ({}))
+    const dbRoutingApp = mountApp({
+      modules: composition.modules,
+      extensions: composition.extensions,
+      ...mountRoutePosture(composition),
+      // biome-ignore lint/suspicious/noExplicitAny: stub db factories for route selection regression -- owner: operator API tests.
+      db: defaultDb as any,
+      // biome-ignore lint/suspicious/noExplicitAny: stub db factories for route selection regression -- owner: operator API tests.
+      dbTransactional: transactionalDb as any,
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    await dbRoutingApp.request("/v1/admin/bookings/book_123/mice-details", {}, TEST_ENV, TEST_CTX)
+
+    expect(transactionalDb).toHaveBeenCalled()
+    expect(defaultDb).not.toHaveBeenCalled()
+
+    transactionalDb.mockClear()
+    await dbRoutingApp.request("/v1/admin/flights/reference/airports", {}, TEST_ENV, TEST_CTX)
+
+    expect(defaultDb).toHaveBeenCalled()
+    expect(transactionalDb).not.toHaveBeenCalled()
   })
 })

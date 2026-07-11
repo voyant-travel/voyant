@@ -1287,6 +1287,14 @@ also applies representable public-mount and transactional metadata to the Hono
 module or extension output. Deployment-local escape hatches remain separate and
 must not be folded back into package manifests.
 
+The Operator mounts both graph unions directly as `publicPaths` and
+`dbTransactionalPaths`. Its standard package bindings must not restate
+`anonymous`, `requiresTransactionalDb`, or transactional path/module metadata.
+The external Netopia plugin and root-mounted payment-link family are graph-owned.
+The deployment-local invitations unit continues to own its anonymous posture
+locally. `check-operator-route-posture` prevents graph-derived posture from
+being replaced by starter hand-lists.
+
 - migrate API bundles, anonymous/transactional posture, subscribers, workflow
   descriptors, schedules, and event filters to package manifests
 - lower package factories into the existing Hono composition and explicit
