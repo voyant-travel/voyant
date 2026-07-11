@@ -27,4 +27,13 @@ describe("@voyant-travel/catalog package exports", () => {
       default: "./dist/projection-runtime.js",
     })
   })
+
+  it("publishes the inert index subscriber descriptors", () => {
+    expect(packageJson.exports["./index-subscribers"]).toBe("./src/index-subscriber-runtime.ts")
+    expect(packageJson.publishConfig.exports["./index-subscribers"]).toEqual({
+      types: "./dist/index-subscriber-runtime.d.ts",
+      import: "./dist/index-subscriber-runtime.js",
+      default: "./dist/index-subscriber-runtime.js",
+    })
+  })
 })

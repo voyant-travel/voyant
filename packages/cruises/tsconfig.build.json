@@ -330,6 +330,7 @@
       ],
       "@voyant-travel/catalog/embeddings/openai": ["../catalog/dist/embeddings/openai.d.ts"],
       "@voyant-travel/catalog/events/taxonomy": ["../catalog/dist/events/taxonomy.d.ts"],
+      "@voyant-travel/catalog/index-subscribers": ["../catalog/dist/index-subscriber-runtime.d.ts"],
       "@voyant-travel/catalog/indexer/contract": ["../catalog/dist/indexer/contract.d.ts"],
       "@voyant-travel/catalog/indexer/typesense": ["../catalog/dist/indexer/typesense.d.ts"],
       "@voyant-travel/catalog/offers": ["../catalog/dist/offers/operator-routes.d.ts"],

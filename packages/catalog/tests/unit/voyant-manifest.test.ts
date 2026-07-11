@@ -35,6 +35,26 @@ describe("catalog deployment manifest", () => {
     })
   })
 
+  it("owns inert declarations for the central Catalog indexing subscribers", () => {
+    expect(catalogVoyantModule.subscribers).toEqual(
+      [
+        ["index-product-created", "product.created"],
+        ["index-product-updated", "product.updated"],
+        ["delete-product", "product.deleted"],
+        ["index-product-content-changed", "product.content.changed"],
+        ["index-product-availability-changed", "availability.slot.changed"],
+        ["index-product-pricing-changed", "pricing.rule.changed"],
+        ["index-product-publication-changed", "product.publication.changed"],
+        ["index-product-promotion-changed", "promotion.changed"],
+      ].map(([localId, eventType]) => ({
+        id: `@voyant-travel/catalog#subscriber.${localId}`,
+        eventType,
+        source: "@voyant-travel/catalog/index-subscribers",
+      })),
+    )
+    expect(catalogVoyantModule.subscribers?.every((subscriber) => !subscriber.runtime)).toBe(true)
+  })
+
   it("owns the booking engine and offers bridge declarations", () => {
     expect(catalogBookingEngineVoyantModule).toMatchObject({
       schemaVersion: "voyant.module.v1",
