@@ -35,6 +35,20 @@ export {
   type VoyantGraphActionRiskEvaluator,
 } from "./graph-action-ledger.js"
 export {
+  type CreateVoyantGraphLifecyclePlanInput,
+  createVoyantGraphLifecyclePlan,
+  executeVoyantGraphLifecyclePlan,
+  type VoyantGraphLifecycleExecutionState,
+  type VoyantGraphLifecycleExecutor,
+  type VoyantGraphLifecycleOperation,
+  type VoyantGraphLifecyclePlan,
+  VoyantGraphLifecyclePlanError,
+  type VoyantGraphLifecycleStateStore,
+  type VoyantGraphLifecycleStep,
+  type VoyantGraphLifecycleStepState,
+  validateVoyantGraphEventCompatibility,
+} from "./graph-lifecycle.js"
+export {
   FRAMEWORK_CAPABILITY_GRAPH,
   FRAMEWORK_EXTENSION_OWNERSHIP,
   FRAMEWORK_RUNTIME_MANIFEST,

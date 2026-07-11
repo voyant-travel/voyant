@@ -148,6 +148,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_ARTIFACT_STALE: "A generated deployment graph artifact is stale.",
   VOYANT_GRAPH_DUPLICATE_ENTITY_ID: "Two v1 graph entities resolved to the same stable entity id.",
   VOYANT_GRAPH_DUPLICATE_ID: "Two selected graph units resolved to the same graph id.",
+  VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA:
+    "An emitted-event payload schema is incompatible with its previous major-version contract.",
   VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN:
     "A provides/requires capability token does not match v1 namespace rules.",
   VOYANT_GRAPH_INVALID_ENTITY_ID: "A v1 facet entity is missing a stable id or uses an invalid id.",
@@ -1658,22 +1660,84 @@ function validatePromotedFacets(
       )
     }
   })
+  validateEntityArray(input.events, "events", source, diagnostics, (entry, facet) => {
+    if (entry.eventType !== undefined) {
+      requireNonEmptyString(entry.eventType, `${facet}.eventType`, source, diagnostics)
+    }
+    const hasVersion = entry.version !== undefined
+    const hasSchema = entry.payloadSchema !== undefined
+    if (hasVersion !== hasSchema) {
+      invalidFacet(
+        facet,
+        source,
+        diagnostics,
+        "Versioned events must declare both version and payloadSchema.",
+      )
+    }
+    if (hasVersion && (typeof entry.version !== "string" || parseVersion(entry.version) === null)) {
+      invalidFacet(
+        `${facet}.version`,
+        source,
+        diagnostics,
+        "Event contract versions must use semantic versioning.",
+      )
+    }
+    if (hasSchema && !isRecord(entry.payloadSchema)) {
+      invalidFacet(
+        `${facet}.payloadSchema`,
+        source,
+        diagnostics,
+        "Event payloadSchema must be a JSON Schema object.",
+      )
+    }
+  })
 
   validateAccessFacet(input.access, source, diagnostics)
   validateAdminFacet(input.admin, source, diagnostics)
   if (input.lifecycle !== undefined) {
     if (!isRecord(input.lifecycle)) {
       invalidFacet("lifecycle", source, diagnostics, "Lifecycle metadata must be an object.")
-    } else if (input.lifecycle.uninstall !== undefined) {
-      const uninstall = input.lifecycle.uninstall
-      if (!isRecord(uninstall) || uninstall.default !== "retain-data") {
-        invalidFacet(
-          "lifecycle.uninstall.default",
-          source,
-          diagnostics,
-          'Uninstall metadata must default to "retain-data".',
-        )
+    } else {
+      if (input.lifecycle.uninstall !== undefined) {
+        const uninstall = input.lifecycle.uninstall
+        if (!isRecord(uninstall) || uninstall.default !== "retain-data") {
+          invalidFacet(
+            "lifecycle.uninstall.default",
+            source,
+            diagnostics,
+            'Uninstall metadata must default to "retain-data".',
+          )
+        }
       }
+      validateEntityArray(
+        input.lifecycle.cleanup,
+        "lifecycle.cleanup",
+        source,
+        diagnostics,
+        (entry, facet) => {
+          requireNonEmptyString(entry.resourceId, `${facet}.resourceId`, source, diagnostics)
+          if (entry.action !== "release") {
+            invalidFacet(
+              `${facet}.action`,
+              source,
+              diagnostics,
+              'Lifecycle cleanup action must be "release".',
+            )
+          }
+          if (
+            !Array.isArray(entry.on) ||
+            entry.on.length === 0 ||
+            entry.on.some((operation) => operation !== "upgrade" && operation !== "uninstall")
+          ) {
+            invalidFacet(
+              `${facet}.on`,
+              source,
+              diagnostics,
+              "Lifecycle cleanup must name at least one supported operation.",
+            )
+          }
+        },
+      )
     }
   }
   return diagnostics
@@ -2311,6 +2375,9 @@ function validateFacetReferences(
         reference(unit.id, `${migration.id}.dependsOn`, id)
       }
     }
+    for (const cleanup of unit.lifecycle?.cleanup ?? []) {
+      reference(unit.id, `${cleanup.id}.resourceId`, cleanup.resourceId)
+    }
     for (const action of unit.actions ?? []) {
       for (const scope of action.requiredScopes ?? []) {
         requireScope(unit.id, `${action.id}.requiredScopes`, scope)
@@ -2853,6 +2920,7 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
     ...(unit.tools ?? []).map((entry) => entry.id),
     ...(unit.webhooks ?? []).map((entry) => entry.id),
     ...(unit.actions ?? []).map((entry) => entry.id),
+    ...(unit.lifecycle?.cleanup ?? []).map((entry) => entry.id),
     ...unit.workflows.flatMap((entry) => [
       entry.id,
       ...(entry.schedules ?? []).map((schedule) => schedule.id),

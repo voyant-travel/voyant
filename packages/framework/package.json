@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./deployment-artifacts": "./src/deployment-artifacts.ts",
     "./deployment-graph": "./src/deployment-graph.ts",
+    "./graph-lifecycle": "./src/graph-lifecycle.ts",
     "./selected-graph-openapi": "./src/selected-graph-openapi.ts",
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
@@ -117,6 +118,10 @@
       "./deployment-graph": {
         "types": "./dist/deployment-graph.d.ts",
         "import": "./dist/deployment-graph.js"
+      },
+      "./graph-lifecycle": {
+        "types": "./dist/graph-lifecycle.d.ts",
+        "import": "./dist/graph-lifecycle.js"
       },
       "./operator-distribution": {
         "types": "./dist/operator-distribution.d.ts",

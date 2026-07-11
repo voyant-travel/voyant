@@ -72,6 +72,46 @@ describe("deployment graph v1", () => {
     expect(graph.plugins.map((unit) => unit.id)).toEqual(["@acme/voyant-fiscal#smartbill"])
   })
 
+  it("validates versioned event contracts and declarative lifecycle cleanup", () => {
+    const diagnostics = validateGraphUnitManifest({
+      ...defineModule({
+        id: "@acme/voyant-loyalty",
+        resources: [{ id: "@acme/voyant-loyalty#resource.cache", kind: "cache" }],
+        events: [
+          {
+            id: "@acme/voyant-loyalty#event.changed",
+            eventType: "loyalty.changed",
+            version: "not-semver",
+          },
+        ],
+        lifecycle: {
+          cleanup: [
+            {
+              id: "@acme/voyant-loyalty#cleanup.cache",
+              resourceId: "@acme/voyant-loyalty#resource.cache",
+              on: [],
+              action: "release",
+            },
+          ],
+        },
+      }),
+    })
+
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ facet: "events[0]" }),
+        expect.objectContaining({ facet: "events[0].version" }),
+        expect.objectContaining({ facet: "lifecycle.cleanup[0].on" }),
+      ]),
+    )
+    expect(() =>
+      validateGraphUnitManifest({
+        ...defineModule({ id: "@acme/voyant-loyalty" }),
+        lifecycle: null,
+      }),
+    ).not.toThrow()
+  })
+
   it("resolves the full package-owned facet contract without starter catalogs", async () => {
     const module = defineModule({
       id: "@acme/voyant-loyalty",
@@ -1420,6 +1460,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_ARTIFACT_STALE",
       "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
       "VOYANT_GRAPH_DUPLICATE_ID",
+      "VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA",
       "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
       "VOYANT_GRAPH_INVALID_ENTITY_ID",
       "VOYANT_GRAPH_INVALID_FACET",
