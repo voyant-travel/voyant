@@ -7,7 +7,7 @@ import { functionSpaceLinkable } from "@voyant-travel/operations/places/linkable
  * sessions. Backs the loose `mice_program_sessions.function_space_id` column.
  * See RFC voyant#1489 (Phase 2).
  */
-export const sessionFunctionSpaceLink = defineLink(functionSpaceLinkable, {
+export default defineLink(functionSpaceLinkable, {
   linkable: sessionLinkable,
   isList: true,
 })

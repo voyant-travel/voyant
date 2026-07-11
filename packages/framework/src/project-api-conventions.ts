@@ -2,7 +2,7 @@ import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
 import type { VoyantGraphRouteBundle, VoyantGraphRouteMethod } from "@voyant-travel/core/project"
 import ts from "typescript"
-
+import { statementIdentifierName } from "./project-convention-static-data.js"
 import {
   discoverProjectConventions,
   type ProjectConventionApiRoute,
@@ -228,10 +228,12 @@ function analyzeRouteSource(
       }
       continue
     }
-    const declarationName = (statement as ts.NamedDeclaration).name
-    const name =
-      declarationName && ts.isIdentifier(declarationName) ? declarationName.text : "(anonymous)"
-    recordExport(name, sourcePath, methods, diagnostics)
+    recordExport(
+      statementIdentifierName(statement) ?? "(anonymous)",
+      sourcePath,
+      methods,
+      diagnostics,
+    )
   }
 
   if (methods.size === 0) {

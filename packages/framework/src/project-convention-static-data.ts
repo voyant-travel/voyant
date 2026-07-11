@@ -1,6 +1,18 @@
 import type { VoyantGraphJsonValue } from "@voyant-travel/core/project"
 import ts from "typescript"
 
+export function statementIdentifierName(statement: ts.Statement): string | undefined {
+  if (
+    ts.isClassDeclaration(statement) ||
+    ts.isEnumDeclaration(statement) ||
+    ts.isFunctionDeclaration(statement) ||
+    ts.isModuleDeclaration(statement)
+  ) {
+    return statement.name && ts.isIdentifier(statement.name) ? statement.name.text : undefined
+  }
+  return undefined
+}
+
 export function durableJsonValue(
   expression: ts.Expression,
   constants: ReadonlyMap<string, ts.Expression>,

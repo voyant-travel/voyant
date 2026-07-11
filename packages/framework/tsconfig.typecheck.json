@@ -834,8 +834,19 @@
       "@voyant-travel/framework/deployment-graph": ["./dist/deployment-graph.d.ts"],
       "@voyant-travel/framework/managed-jobs": ["./dist/managed-jobs.d.ts"],
       "@voyant-travel/framework/managed-runtime": ["./dist/managed-runtime.d.ts"],
+      "@voyant-travel/framework/operator-distribution": ["./dist/operator-distribution.d.ts"],
       "@voyant-travel/framework/profile": ["./dist/profile.d.ts"],
       "@voyant-travel/framework/project": ["./dist/project.d.ts"],
+      "@voyant-travel/framework/project-admin-conventions": [
+        "./dist/project-admin-conventions.d.ts"
+      ],
+      "@voyant-travel/framework/project-api-conventions": ["./dist/project-api-conventions.d.ts"],
+      "@voyant-travel/framework/project-subscriber-link-conventions": [
+        "./dist/project-subscriber-link-conventions.d.ts"
+      ],
+      "@voyant-travel/framework/project-workflow-job-conventions": [
+        "./dist/project-workflow-job-conventions.d.ts"
+      ],
       "@voyant-travel/hono": ["../hono/dist/index.d.ts"],
       "@voyant-travel/hono/app": ["../hono/dist/app.d.ts"],
       "@voyant-travel/hono/auth": ["../hono/dist/auth/index.d.ts"],

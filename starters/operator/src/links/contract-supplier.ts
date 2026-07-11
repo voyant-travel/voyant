@@ -8,7 +8,4 @@ import { contractLinkable } from "@voyant-travel/legal/linkables"
  * `contracts.supplier_id → suppliers.id` cross-package FK (module decoupling:
  * links, not FKs).
  */
-export const contractSupplierLink = defineLink(
-  { linkable: contractLinkable, isList: true },
-  supplierLinkable,
-)
+export default defineLink({ linkable: contractLinkable, isList: true }, supplierLinkable)

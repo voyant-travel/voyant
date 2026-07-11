@@ -6,6 +6,6 @@ import { quoteLinkable } from "@voyant-travel/quotes/linkables"
  * A MICE program proposal is a quote (the deal primitive); accepting it drives
  * the program. One quote ↔ one program. See RFC voyant#1489.
  */
-export const quoteProgramLink = defineLink(quoteLinkable, {
+export default defineLink(quoteLinkable, {
   linkable: programLinkable,
 })

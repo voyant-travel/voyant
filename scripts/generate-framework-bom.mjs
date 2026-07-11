@@ -45,6 +45,7 @@ const frameworkRuntimeEntryDeps = {
   "@voyant-travel/workflows-orchestrator": "workspace:*",
   "drizzle-orm": "catalog:",
   pg: "^8.22.0",
+  typescript: "catalog:",
 }
 
 // BOM dependencies: one entry per runtime module, pinned via workspace:* (pnpm

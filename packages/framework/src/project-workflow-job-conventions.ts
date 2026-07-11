@@ -6,7 +6,7 @@ import type {
   VoyantGraphWorkflow,
 } from "@voyant-travel/core/project"
 import ts from "typescript"
-
+import { statementIdentifierName } from "./project-convention-static-data.js"
 import {
   discoverProjectConventions,
   type ProjectConventionFileContribution,
@@ -401,10 +401,7 @@ function collectRuntimeExports(sourceFile: ts.SourceFile): RuntimeExports {
       }
       continue
     }
-    const declarationName = (statement as ts.NamedDeclaration).name
-    named.push(
-      declarationName && ts.isIdentifier(declarationName) ? declarationName.text : "(anonymous)",
-    )
+    named.push(statementIdentifierName(statement) ?? "(anonymous)")
   }
   return { hasDefault, defaultExpression, named: [...new Set(named)].sort(compareStrings) }
 }

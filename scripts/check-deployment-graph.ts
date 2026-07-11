@@ -53,7 +53,7 @@ const OPERATOR_BRIDGE_MODULE_SPECIFIERS = [
   "@voyant-travel/realtime",
   "@voyant-travel/mice",
 ] as const
-const OPERATOR_BRIDGE_PLUGIN_SPECIFIERS = ["@voyant-travel/mice/booking-extension"] as const
+const OPERATOR_BRIDGE_EXTENSION_SPECIFIERS = ["@voyant-travel/mice/booking-extension"] as const
 
 const project = defineVoyantProject({
   profile: "operator",
@@ -215,8 +215,12 @@ async function main(): Promise<void> {
   })
   const operatorGraph = resolvedOperator.graph
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
+  const operatorExtensionIds = new Set(operatorGraph.extensions.map((unit) => unit.id))
   const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
   const declaredOperatorModuleIds = new Set(resolvedOperator.project.modules.map((unit) => unit.id))
+  const declaredOperatorExtensionIds = new Set(
+    resolvedOperator.project.extensions.map((unit) => unit.id),
+  )
   const declaredOperatorPluginIds = new Set(resolvedOperator.project.plugins.map((unit) => unit.id))
   if (operatorGraph.deployment.target !== "node") {
     failures.push(
@@ -236,6 +240,11 @@ async function main(): Promise<void> {
       failures.push(`expected resolved operator graph to include declared plugin ${id}`)
     }
   }
+  for (const id of declaredOperatorExtensionIds) {
+    if (!operatorExtensionIds.has(id)) {
+      failures.push(`expected resolved operator graph to include declared extension ${id}`)
+    }
+  }
   for (const id of operatorModuleIds) {
     if (!declaredOperatorModuleIds.has(id)) {
       failures.push(`expected resolved operator graph module ${id} to come from the declaration`)
@@ -244,6 +253,11 @@ async function main(): Promise<void> {
   for (const id of operatorPluginIds) {
     if (!declaredOperatorPluginIds.has(id)) {
       failures.push(`expected resolved operator graph plugin ${id} to come from the declaration`)
+    }
+  }
+  for (const id of operatorExtensionIds) {
+    if (!declaredOperatorExtensionIds.has(id)) {
+      failures.push(`expected resolved operator graph extension ${id} to come from the declaration`)
     }
   }
   const operatorPackageRecords = new Map(
@@ -335,11 +349,12 @@ async function main(): Promise<void> {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorModuleIds.has(id)) failures.push(`expected direct package graph module ${id}`)
   }
-  for (const specifier of OPERATOR_BRIDGE_PLUGIN_SPECIFIERS) {
+  for (const specifier of OPERATOR_BRIDGE_EXTENSION_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
-    if (!operatorPluginIds.has(id)) failures.push(`expected direct package graph plugin ${id}`)
+    if (!operatorExtensionIds.has(id))
+      failures.push(`expected direct package graph extension ${id}`)
   }
-  for (const id of [...operatorModuleIds, ...operatorPluginIds]) {
+  for (const id of [...operatorModuleIds, ...operatorExtensionIds, ...operatorPluginIds]) {
     if (id.startsWith("@voyant-travel/operator#")) {
       failures.push(`expected no nonlocal operator graph id, found ${id}`)
     }

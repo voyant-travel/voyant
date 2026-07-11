@@ -6,7 +6,7 @@ import { organizationLinkable } from "@voyant-travel/relationships/linkables"
  * The buyer org behind a MICE program. One organization runs many programs;
  * each program has one buyer org. See RFC voyant#1489.
  */
-export const organizationProgramLink = defineLink(organizationLinkable, {
+export default defineLink(organizationLinkable, {
   linkable: programLinkable,
   isList: true,
 })

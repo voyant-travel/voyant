@@ -18,6 +18,7 @@ import {
   durableJsonValue,
   isDurableExpression,
   resolveExpression,
+  statementIdentifierName,
   stringProperty,
   unwrapExpression,
 } from "./project-convention-static-data.js"
@@ -76,8 +77,6 @@ export interface ProjectLinkConvention extends ProjectConventionFileContribution
 export interface ProjectSubscriberLinkConventionAnalysis {
   subscribers: readonly ProjectSubscriberConvention[]
   links: readonly ProjectLinkConvention[]
-  graphSubscribers: readonly VoyantGraphSubscriber[]
-  graphLinks: readonly VoyantGraphFacetEntity[]
   diagnostics: readonly ProjectSubscriberLinkDiagnostic[]
 }
 
@@ -89,6 +88,8 @@ export interface ProjectSubscriberLinkGeneratedFile {
 export interface ProjectSubscriberLinkConventionCompilation {
   subscribers: readonly ProjectSubscriberConvention[]
   links: readonly ProjectLinkConvention[]
+  graphSubscribers: readonly VoyantGraphSubscriber[]
+  graphLinks: readonly VoyantGraphFacetEntity[]
   generatedFiles: readonly [ProjectSubscriberLinkGeneratedFile, ProjectSubscriberLinkGeneratedFile]
 }
 
@@ -297,10 +298,9 @@ function analyzeConventionModule(
       continue
     }
     if (ts.isInterfaceDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) continue
-    const declarationName = (statement as ts.NamedDeclaration).name
-    const name =
-      declarationName && ts.isIdentifier(declarationName) ? declarationName.text : "(anonymous)"
-    diagnostics.push(unsupportedExportDiagnostic(sourcePath, name))
+    diagnostics.push(
+      unsupportedExportDiagnostic(sourcePath, statementIdentifierName(statement) ?? "(anonymous)"),
+    )
   }
 
   if (defaultExports.length === 0) diagnostics.push(missingDefaultExportDiagnostic(sourcePath))
