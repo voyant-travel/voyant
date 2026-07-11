@@ -37,7 +37,11 @@ const ALLOWED_EXTERNAL_IMPORT_PATTERNS = [
   /\/workflow-[^/]+-manifest$/,
   /\/[^/]+-workflow-manifest$/,
 ]
-const ALLOWED_PACKAGE_MANIFEST_IMPORT_PATTERNS = [/\/ports$/, /\/[^/]+-manifest$/]
+const ALLOWED_PACKAGE_MANIFEST_IMPORT_PATTERNS = [
+  /\/ports$/,
+  /\/runtime-port$/,
+  /\/[^/]+-manifest$/,
+]
 
 const FORBIDDEN_EXTERNAL_IMPORTS = new Map([
   [
@@ -165,6 +169,7 @@ function forbiddenImport(specifier, importer, entry) {
           "package manifests may import only project authoring helpers, port contracts, or dedicated manifest subpaths",
       }
     }
+    return undefined
   }
   if (ALLOWED_EXTERNAL_IMPORTS.has(specifier)) return undefined
   if (ALLOWED_EXTERNAL_IMPORT_PATTERNS.some((pattern) => pattern.test(specifier))) {
