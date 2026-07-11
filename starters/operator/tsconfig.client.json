@@ -1319,6 +1319,9 @@
       "@voyant-travel/legal-react/provider": ["../../packages/legal-react/dist/provider.d.ts"],
       "@voyant-travel/legal-react/query-keys": ["../../packages/legal-react/dist/query-keys.d.ts"],
       "@voyant-travel/legal-react/ui": ["../../packages/legal-react/dist/ui.d.ts"],
+      "@voyant-travel/legal/booking-contract-subscriber": [
+        "../../packages/legal/dist/contracts/booking-contract-subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/legal/contract-document": [
         "../../packages/legal/dist/contracts/contract-document-service.d.ts"
       ],
