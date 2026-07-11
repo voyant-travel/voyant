@@ -1,4 +1,4 @@
-import type { BootstrapContext } from "@voyant-travel/core"
+import type { SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { PaymentCompletedEvent } from "@voyant-travel/finance"
 
@@ -12,11 +12,10 @@ export interface TripsPaymentSubscriberRuntime {
   withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>
 }
 
-/** Executable descriptor staged for the graph cutover after central bundle removal. */
-export const tripsPaymentCompletedSubscriber = {
+export const tripsPaymentCompletedSubscriber: SubscriberRuntimeDescriptor = {
   id: TRIPS_PAYMENT_COMPLETED_SUBSCRIBER_ID,
   eventType: "payment.completed",
-  register: ({ container, eventBus }: BootstrapContext) => {
+  register: ({ container, eventBus }) => {
     eventBus.subscribe<PaymentCompletedEvent>("payment.completed", async ({ data }) => {
       if (data.targetType !== "other" || !data.targetId?.startsWith("trip_")) return
 

@@ -26,6 +26,14 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     const graph = JSON.parse(
       readFileSync(join(process.cwd(), ".voyant", "deployment-graph.generated.json"), "utf8"),
     ) as {
+      modules: Array<{
+        id: string
+        subscribers: Array<{
+          id: string
+          eventType: string
+          runtime?: { entry: string; export?: string }
+        }>
+      }>
       extensions: Array<{
         id: string
         api: Array<{ runtime?: { entry: string; export?: string } }>
@@ -114,6 +122,18 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         runtime: {
           entry: "./booking-schedule-subscriber",
           export: "bookingScheduleConfirmedSubscriber",
+        },
+      }),
+    ])
+
+    const trips = graph.modules.find((module) => module.id === "@voyant-travel/trips")
+    expect(trips?.subscribers).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/trips#subscriber.payment-completed",
+        eventType: "payment.completed",
+        runtime: {
+          entry: "./payment-subscribers",
+          export: "tripsPaymentCompletedSubscriber",
         },
       }),
     ])

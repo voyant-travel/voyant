@@ -974,6 +974,11 @@ declared and executed from `@voyant-travel/distribution`. Operator supplies the
 selected unit's database/adapter service through its explicit container binding;
 it no longer lists or implements those three subscriber handlers.
 
+`@voyant-travel/trips` now owns its `payment.completed` subscriber through the
+same selected-graph lowering. Operator contributes only the graph-gated
+`TripsPaymentSubscriberRuntime` database-lifecycle adapter; deselecting Trips
+removes both that service registration and the subscriber runtime module.
+
 The remaining Operator subscriber authorities are intentionally explicit:
 
 - `catalogBridgeBundle`: `product.created`, `product.updated`,
@@ -982,7 +987,6 @@ The remaining Operator subscriber authorities are intentionally explicit:
   and two distinct `booking.confirmed` handlers
 - `createCatalogCheckoutBundle`: `contract.document.generated` and
   `payment.completed`
-- `tripsPaymentBundle`: `payment.completed`
 - `smartbillOperatorBundle`: `invoice.issued`, `invoice.proforma.issued`, and
   `invoice.payment.recorded`
 

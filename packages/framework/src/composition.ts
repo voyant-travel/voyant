@@ -59,6 +59,8 @@ import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
 } from "@voyant-travel/commerce"
+import type { ModuleContainer } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   distributionBookingExtension,
   distributionHonoModule,
@@ -117,6 +119,10 @@ import {
   type StorefrontVerificationRoutesOptions,
 } from "@voyant-travel/storefront/verification"
 import { createTripsHonoModule, type TripsRoutesOptionsProvider } from "@voyant-travel/trips"
+import {
+  TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
+  type TripsPaymentSubscriberRuntime,
+} from "@voyant-travel/trips/payment-subscribers"
 
 /**
  * Combined "extras" surface — inventory + bookings package extras routes mounted
@@ -318,6 +324,8 @@ export interface FrameworkProviders {
   resolveNotificationProviders: NonNullable<StorefrontVerificationRoutesOptions["resolveProviders"]>
   /** Deployment-built trips route options (connector, payment wiring, ...). */
   createTripsRoutesOptions: TripsRoutesOptionsProvider
+  /** Runs out-of-request work with a deployment-owned database lifecycle. */
+  withDb?: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) => Promise<T>
   /** Out-of-request db handle for legal's booking.confirmed subscriber. */
   resolveDb: NonNullable<CreateLegalHonoModuleOptions["resolveDb"]>
   /** Per-request document storage backend (legal contract documents). */
@@ -700,10 +708,18 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       // Trips reserves trips via injected bookings deps — every trips surface
       // (admin/public/legacy) needs the transactional client, so the whole
       // module is name-based transactional (ADR-0008); no deployment path list.
-      const trips = createTripsHonoModule({
-        routesOptions: capabilities.createTripsRoutesOptions,
-        publicRoutes: true,
-      })
+      const trips = withModuleRuntimeService(
+        createTripsHonoModule({
+          routesOptions: capabilities.createTripsRoutesOptions,
+          publicRoutes: true,
+        }),
+        (container, bindings) => {
+          const runtime: TripsPaymentSubscriberRuntime = {
+            withDb: (operation) => runWithFrameworkDb(capabilities, bindings, operation),
+          }
+          container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
+        },
+      )
       return { ...trips, module: { ...trips.module, requiresTransactionalDb: true } }
     },
     // Standard settings module — schema-owning + lazy absolute-path routes, no
@@ -824,4 +840,36 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       lazyPublicRoutes: capabilities.loadCatalogCheckoutRoutes,
     }),
   },
+}
+
+type RuntimeServiceRegistration = (
+  container: ModuleContainer,
+  bindings: unknown,
+) => Promise<void> | void
+
+function withModuleRuntimeService<T extends HonoModule>(
+  configured: T,
+  register: RuntimeServiceRegistration,
+): T {
+  const bootstrap = configured.module.bootstrap
+  return {
+    ...configured,
+    module: {
+      ...configured.module,
+      bootstrap: async (ctx) => {
+        await register(ctx.container, ctx.bindings)
+        await bootstrap?.(ctx)
+      },
+    },
+  }
+}
+
+function runWithFrameworkDb<T>(
+  capabilities: FrameworkProviders,
+  bindings: unknown,
+  operation: (db: AnyDrizzleDb) => Promise<T>,
+): Promise<T> {
+  return capabilities.withDb
+    ? capabilities.withDb(bindings, operation)
+    : operation(capabilities.resolveDb(bindings as Record<string, unknown>))
 }

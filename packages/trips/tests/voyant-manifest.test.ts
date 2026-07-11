@@ -29,12 +29,16 @@ describe("trips deployment manifest", () => {
           id: "@voyant-travel/trips#subscriber.payment-completed",
           eventType: "payment.completed",
           source: "@voyant-travel/trips",
+          runtime: {
+            entry: "./payment-subscribers",
+            export: "tripsPaymentCompletedSubscriber",
+          },
         },
       ],
     })
   })
 
-  it("keeps payment completion graph-declared but inert", () => {
-    expect(tripsVoyantModule.subscribers?.[0]).not.toHaveProperty("runtime")
+  it("owns the executable payment completion runtime reference", () => {
+    expect(tripsVoyantModule.subscribers?.[0]).toHaveProperty("runtime")
   })
 })

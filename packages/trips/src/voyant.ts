@@ -121,6 +121,10 @@ export const tripsVoyantModule = defineModule({
       id: "@voyant-travel/trips#subscriber.payment-completed",
       eventType: "payment.completed",
       source: "@voyant-travel/trips",
+      runtime: {
+        entry: "./payment-subscribers",
+        export: "tripsPaymentCompletedSubscriber",
+      },
     },
   ],
   admin: {
