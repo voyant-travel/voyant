@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest"
 import {
   mergeOperatorDistributionDefaults,
   STANDARD_OPERATOR_DISTRIBUTION,
+  STANDARD_OPERATOR_DISTRIBUTION_POLICY,
+  STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
+  selectStandardOperatorDistribution,
 } from "./operator-distribution.js"
 
 describe("standard Operator distribution", () => {
@@ -40,6 +43,36 @@ describe("standard Operator distribution", () => {
       extensions: STANDARD_OPERATOR_DISTRIBUTION.extensions,
       plugins: [],
     })
+  })
+
+  it("projects the legacy runtime catalog from the standard distribution policy", () => {
+    expect(selectStandardOperatorDistribution({ legacyRuntimeOnly: true })).toEqual(
+      STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
+    )
+    expect(STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST.modules).toHaveLength(27)
+    expect(STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST.extensions).toHaveLength(19)
+  })
+
+  it("removes a module and every distribution extension that declares it as an owner", () => {
+    const selected = selectStandardOperatorDistribution({
+      exclude: ["@voyant-travel/bookings"],
+    })
+    const ownedExtensions = STANDARD_OPERATOR_DISTRIBUTION_POLICY.extensions
+      .filter((extension) => extension.owners.includes("@voyant-travel/bookings"))
+      .map((extension) => extension.resolve)
+
+    expect(selected.modules).not.toContain("@voyant-travel/bookings")
+    for (const extension of ownedExtensions) expect(selected.extensions).not.toContain(extension)
+    expect(selected.extensions).toContain("@voyant-travel/catalog/offers-extension")
+  })
+
+  it("does not allow required or unknown selections to be removed", () => {
+    expect(() =>
+      selectStandardOperatorDistribution({ exclude: ["@voyant-travel/identity"] }),
+    ).toThrow(/cannot exclude required module/)
+    expect(() =>
+      selectStandardOperatorDistribution({ exclude: ["@voyant-travel/not-real"] }),
+    ).toThrow(/not in the standard set/)
   })
 
   it("appends each consumer-owned unit kind independently and deterministically", () => {
