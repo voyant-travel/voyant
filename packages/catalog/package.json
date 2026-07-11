@@ -38,6 +38,7 @@
     "./booking-engine/contracts": "./src/booking-engine/contracts.ts",
     "./booking-engine/drafts-schema": "./src/booking-engine/drafts-schema.ts",
     "./offers": "./src/offers/operator-routes.ts",
+    "./projection-runtime": "./src/projection-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "voyant": {
@@ -246,6 +247,11 @@
         "types": "./dist/offers/operator-routes.d.ts",
         "import": "./dist/offers/operator-routes.js",
         "default": "./dist/offers/operator-routes.js"
+      },
+      "./projection-runtime": {
+        "types": "./dist/projection-runtime.d.ts",
+        "import": "./dist/projection-runtime.js",
+        "default": "./dist/projection-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

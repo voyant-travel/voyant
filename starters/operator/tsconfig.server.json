@@ -437,6 +437,9 @@
         "../../packages/catalog/dist/overlay/resolver.d.ts"
       ],
       "@voyant-travel/catalog/overlay/schema": ["../../packages/catalog/dist/overlay/schema.d.ts"],
+      "@voyant-travel/catalog/projection-runtime": [
+        "../../packages/catalog/dist/projection-runtime.d.ts"
+      ],
       "@voyant-travel/catalog/provenance": ["../../packages/catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../../packages/catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [
