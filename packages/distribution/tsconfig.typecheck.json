@@ -492,6 +492,12 @@
       "@voyant-travel/commerce-react/sellability/ui": [
         "../commerce-react/dist/sellability/ui.d.ts"
       ],
+      "@voyant-travel/commerce/catalog-checkout-runner": [
+        "../commerce/dist/checkout/runner-runtime.d.ts"
+      ],
+      "@voyant-travel/commerce/catalog-checkout-subscribers": [
+        "../commerce/dist/checkout/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/commerce/checkout": ["../commerce/dist/checkout/index.d.ts"],
       "@voyant-travel/commerce/markets/validation": ["../commerce/dist/markets/validation.d.ts"],
       "@voyant-travel/commerce/promotion-redemption-subscriber": [

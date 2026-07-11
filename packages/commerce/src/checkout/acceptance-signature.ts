@@ -13,6 +13,42 @@ interface StoredAcceptance {
   renderedHtmlLength: number
 }
 
+export interface AcceptanceSignatureContract {
+  id: string
+  bookingId: string | null
+  metadata: unknown
+  status: string
+}
+
+export interface AcceptanceSignatureInput {
+  signerName: string
+  signerEmail: string | null
+  method: "electronic"
+  ipAddress: string | null
+  userAgent: string | null
+  metadata: Record<string, unknown>
+}
+
+/** Legal operations required by checkout acceptance-signature promotion. */
+export interface AcceptanceSignatureLegalPort {
+  getContract(
+    db: PostgresJsDatabase,
+    contractId: string,
+  ): Promise<AcceptanceSignatureContract | null>
+  listSignatures(db: PostgresJsDatabase, contractId: string): Promise<ReadonlyArray<unknown>>
+  sendContract(
+    db: PostgresJsDatabase,
+    contractId: string,
+    eventBus?: EventBus,
+  ): Promise<{ status: string }>
+  signContract(
+    db: PostgresJsDatabase,
+    contractId: string,
+    input: AcceptanceSignatureInput,
+    eventBus?: EventBus,
+  ): Promise<{ status: string }>
+}
+
 const ACCEPTANCE_MARKER_PREFIX = "__contract_acceptance__:"
 
 function readContractAcceptance(
@@ -41,14 +77,10 @@ export async function persistAcceptanceSignature(
   db: PostgresJsDatabase,
   contractId: string,
   eventBus?: EventBus,
+  legalPort?: AcceptanceSignatureLegalPort,
 ): Promise<void> {
-  const { contractsService } = await import("@voyant-travel/legal/contracts")
-  const { contracts: contractsTable } = await import("@voyant-travel/legal/contracts")
-  const [contract] = await db
-    .select()
-    .from(contractsTable)
-    .where(eq(contractsTable.id, contractId))
-    .limit(1)
+  const legal = legalPort ?? (await createDefaultAcceptanceSignatureLegalPort())
+  const contract = await legal.getContract(db, contractId)
   if (!contract?.bookingId) return
 
   const [booking] = await db
@@ -61,11 +93,11 @@ export async function persistAcceptanceSignature(
   const acceptance = readContractAcceptance(contract.metadata, booking.internalNotes)
   if (!acceptance) return
 
-  const existing = await contractsService.listSignatures(db, contractId)
+  const existing = await legal.listSignatures(db, contractId)
   if (existing.length > 0) return
 
   if (contract.status === "issued") {
-    const sent = await contractsService.sendContract(db, contractId, { eventBus })
+    const sent = await legal.sendContract(db, contractId, eventBus)
     if (sent.status !== "sent") {
       console.warn(
         `[catalog-checkout] could not send contract before acceptance signature for ${contractId}: ${sent.status}`,
@@ -82,7 +114,7 @@ export async function persistAcceptanceSignature(
     contactName ||
     `Storefront customer${booking.bookingNumber ? ` (${booking.bookingNumber})` : ""}`
 
-  const result = await contractsService.signContract(
+  const result = await legal.signContract(
     db,
     contractId,
     {
@@ -99,8 +131,8 @@ export async function persistAcceptanceSignature(
         acceptedMarketing: acceptance.acceptedMarketing,
         renderedHtmlLength: acceptance.renderedHtmlLength,
       },
-    } as never,
-    { eventBus },
+    },
+    eventBus,
   )
 
   if (result.status !== "signed") {
@@ -113,7 +145,7 @@ export async function persistAcceptanceSignature(
   if (booking.internalNotes?.includes(ACCEPTANCE_MARKER_PREFIX)) {
     const cleanedNotes = booking.internalNotes
       .split("\n")
-      .filter((line) => !line.startsWith(ACCEPTANCE_MARKER_PREFIX))
+      .filter((line: string) => !line.startsWith(ACCEPTANCE_MARKER_PREFIX))
       .join("\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim()
@@ -124,5 +156,27 @@ export async function persistAcceptanceSignature(
         updatedAt: new Date(),
       })
       .where(eq(bookings.id, booking.id))
+  }
+}
+
+async function createDefaultAcceptanceSignatureLegalPort(): Promise<AcceptanceSignatureLegalPort> {
+  const { contracts: contractsTable, contractsService } = await import(
+    "@voyant-travel/legal/contracts"
+  )
+
+  return {
+    async getContract(db, contractId) {
+      const [contract] = await db
+        .select()
+        .from(contractsTable)
+        .where(eq(contractsTable.id, contractId))
+        .limit(1)
+      return contract ?? null
+    },
+    listSignatures: (db, contractId) => contractsService.listSignatures(db, contractId),
+    sendContract: (db, contractId, eventBus) =>
+      contractsService.sendContract(db, contractId, { eventBus }),
+    signContract: (db, contractId, input, eventBus) =>
+      contractsService.signContract(db, contractId, input as never, { eventBus }),
   }
 }

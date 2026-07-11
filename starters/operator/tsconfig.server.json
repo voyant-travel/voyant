@@ -633,6 +633,12 @@
       "@voyant-travel/commerce-react/sellability/ui": [
         "../../packages/commerce-react/dist/sellability/ui.d.ts"
       ],
+      "@voyant-travel/commerce/catalog-checkout-runner": [
+        "../../packages/commerce/dist/checkout/runner-runtime.d.ts"
+      ],
+      "@voyant-travel/commerce/catalog-checkout-subscribers": [
+        "../../packages/commerce/dist/checkout/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/commerce/checkout": ["../../packages/commerce/dist/checkout/index.d.ts"],
       "@voyant-travel/commerce/markets/validation": [
         "../../packages/commerce/dist/markets/validation.d.ts"
