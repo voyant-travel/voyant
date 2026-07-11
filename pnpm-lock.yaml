@@ -1863,6 +1863,9 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/flights-contracts':
         specifier: workspace:^
         version: link:../flights-contracts

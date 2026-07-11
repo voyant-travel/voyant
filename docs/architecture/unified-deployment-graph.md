@@ -1442,6 +1442,12 @@ The deployment-local invitations unit continues to own its anonymous posture
 locally. `check-operator-route-posture` prevents graph-derived posture from
 being replaced by starter hand-lists.
 
+Flights now owns its route and order-payment-session runtime assembly through a
+`defineGraphRuntimeFactory(...)` export and the typed `flights.runtime` port.
+The Operator supplies only the selected Node connector and card-payment
+providers by port id. Package selection therefore mounts Flights exactly once,
+while deselection leaves no compatibility module or route loader behind.
+
 - migrate API bundles, anonymous/transactional posture, subscribers, workflow
   descriptors, schedules, and event filters to package manifests
 - lower package factories into the existing Hono composition and explicit

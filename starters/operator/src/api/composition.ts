@@ -20,6 +20,7 @@ import type {
 } from "@voyant-travel/catalog"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
+import { flightsRuntimePort } from "@voyant-travel/flights"
 import {
   extensionsFromGlob,
   type FrameworkProviders,
@@ -153,8 +154,6 @@ export function buildOperatorProviders(): OperatorCapabilities {
     createChannelPushExtension,
     // Lazy route-bundle loaders for the `operator/*` standard families — each
     // wires this deployment's providers into the package-owned route bundle.
-    loadFlightAdminRoutes: () =>
-      import("./runtime/flights-runtime").then((m) => m.buildFlightAdminRoutes()),
     loadMcpAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
     loadCatalogBookingRoutes: () =>
       import("./runtime/catalog-booking-runtime").then((m) => {
@@ -248,6 +247,9 @@ export function buildOperatorProviders(): OperatorCapabilities {
 /** Deployment implementations for package-declared runtime ports. */
 export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
   return {
+    [flightsRuntimePort.id]: import("./runtime/flights-runtime").then(
+      (runtime) => runtime.operatorFlightsRuntime,
+    ),
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -526,14 +528,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
     return withModuleWorkflowService(configured, registerBookingsWorkflowService)
   },
   "@voyant-travel/finance": createOperatorFinanceGraphModule,
-  "@voyant-travel/flights": async ({ runtimeExports, unit }) => {
-    const createFlights = singleRuntimeFactory<
-      typeof import("@voyant-travel/flights").createFlightsHonoModule
-    >(unit.id, runtimeExports)
-    return import("./runtime/flights-runtime").then((runtime) =>
-      runtime.createOperatorFlightsHonoModule(createFlights),
-    )
-  },
   "@voyant-travel/legal": ({ capabilities, runtimeExports, unit }) =>
     singleRuntimeFactory<typeof import("@voyant-travel/legal").createLegalHonoModule>(
       unit.id,
