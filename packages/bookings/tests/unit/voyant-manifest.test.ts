@@ -38,6 +38,8 @@ describe("bookings deployment manifest", () => {
         },
       ],
     })
+
+    expect(bookingsVoyantModule.workflows[0]).not.toHaveProperty("runtime")
   })
 
   it("owns the requirements module and supplier extension", () => {
