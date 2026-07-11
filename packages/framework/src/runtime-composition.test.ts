@@ -229,6 +229,47 @@ describe("graph runtime composition", () => {
     expect(importSubscriber).toHaveBeenCalledTimes(1)
   })
 
+  it("loads legacy workflow facet references when generated workflow loaders are absent", async () => {
+    const workflow = {
+      id: "commerce.reconcile",
+      config: { id: "commerce.reconcile", run: vi.fn() },
+    }
+    const importWorkflow = vi.fn(async () => ({ workflow }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:legacy-workflow-reference",
+      entries: { "@voyant-travel/commerce/workflows": importWorkflow },
+      modules: [
+        {
+          id: "@voyant-travel/commerce",
+          localId: "commerce",
+          kind: "module",
+          packageName: "@voyant-travel/commerce",
+          order: 0,
+          references: [
+            {
+              id: "commerce-workflow",
+              unitId: "@voyant-travel/commerce",
+              facet: "workflows.runtime",
+              entityId: workflow.id,
+              runtime: { entry: "./workflows", export: "workflow" },
+              importEntry: "@voyant-travel/commerce/workflows",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(runtime.modules[0]?.workflows).toEqual([])
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.modules).toContainEqual({
+      module: { name: "commerce.graph-runtime", workflows: [workflow] },
+    })
+    expect(importWorkflow).toHaveBeenCalledOnce()
+  })
+
   it("keeps workflow exports out of primary module bindings", async () => {
     const createCommerceModule = vi.fn(() => ({ module: { name: "commerce" } }))
     const reconcileWorkflow = {

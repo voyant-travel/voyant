@@ -496,7 +496,7 @@ function createRuntimeUnitLoader(
     )
     return {
       ...definition,
-      load: <T = unknown>() => reference.load<T>(),
+      load: <T = unknown>() => loadDeclaredWorkflow<T>(definition, reference),
     }
   })
 
@@ -865,6 +865,28 @@ async function loadDeclaredTool<T>(
       definition,
       reference,
       `loaded tool requiredScopes must match [${definition.requiredScopes.join(", ")}]`,
+    )
+  }
+  return value as T
+}
+
+async function loadDeclaredWorkflow<T>(
+  definition: VoyantGraphRuntimeWorkflowDefinition,
+  reference: VoyantGraphRuntimeReferenceLoader,
+): Promise<T> {
+  const value = await reference.load<unknown>()
+  if (!isRecord(value) || value.id !== definition.declaration.id) {
+    throw new VoyantGraphRuntimeLoadError(
+      "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
+      {
+        referenceId: reference.id,
+        unitId: definition.unitId,
+        facet: "workflows.runtime",
+        entityId: definition.declaration.id,
+        entry: reference.importEntry,
+        ...(reference.runtime.export ? { exportName: reference.runtime.export } : {}),
+      },
+      `loaded workflow must declare id "${definition.declaration.id}"`,
     )
   }
   return value as T
