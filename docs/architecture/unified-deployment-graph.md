@@ -582,6 +582,12 @@ their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
 public factories have not adopted this contract.
 
+Progress: the Distribution channel-push extension now declares its route and
+workflow-service runtime dependency as a typed port and adapts that port through
+a package-owned graph runtime factory. The Operator supplies only the Node host
+provider for registry resolution and lazy workflow DB registration; it no
+longer owns a package-id runtime binding or channel-push route wrapper.
+
 This matters for replacement promises. If a future external CRM can replace
 `relationships`, it must pass the people-directory port tests. Otherwise doctor
 would give false confidence.

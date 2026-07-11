@@ -25,13 +25,17 @@ const runtimeBindings = section(
   "function bindingsFromModuleFactories",
 )
 
-for (const port of ["storageMediaRuntimePort", "realtimeRuntimePort"]) {
+for (const port of ["channelPushRuntimePort", "storageMediaRuntimePort", "realtimeRuntimePort"]) {
   if (!runtimePorts.includes(`[${port}.id]`)) {
     throw new Error(`check-operator-runtime-ports: buildOperatorRuntimePorts must bind ${port}.id`)
   }
 }
 
-for (const packageId of ["@voyant-travel/storage", "@voyant-travel/realtime"]) {
+for (const packageId of [
+  "@voyant-travel/distribution#channel-push-extension",
+  "@voyant-travel/storage",
+  "@voyant-travel/realtime",
+]) {
   if (compatibilityModules.includes(`"${packageId}"`)) {
     throw new Error(
       `check-operator-runtime-ports: ${packageId} must compose through its declared runtime port, not operatorGraphCompatibilityModules`,
@@ -44,4 +48,6 @@ for (const packageId of ["@voyant-travel/storage", "@voyant-travel/realtime"]) {
   }
 }
 
-console.log("check-operator-runtime-ports: OK (storage and realtime are bound by typed ports)")
+console.log(
+  "check-operator-runtime-ports: OK (channel-push, storage, and realtime are bound by typed ports)",
+)

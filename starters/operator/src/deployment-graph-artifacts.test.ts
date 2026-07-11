@@ -85,7 +85,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       expect.objectContaining({
         runtime: {
           entry: "@voyant-travel/distribution",
-          export: "createChannelPushExtension",
+          export: "createChannelPushVoyantRuntime",
         },
       }),
     ])

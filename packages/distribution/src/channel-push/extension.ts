@@ -1,10 +1,12 @@
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
-import type { Extension } from "@voyant-travel/core"
+import type { BootstrapContext, Extension } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
 import { createChannelPushAdminRoutes } from "./admin-routes.js"
+import { channelPushRuntimePort } from "./runtime-port.js"
 import { type ChannelPushDeps, type ChannelPushLogger, setChannelPushDeps } from "./types.js"
 
 type ChannelPushExtensionEnv = {
@@ -38,3 +40,21 @@ export function createChannelPushExtension(options: ChannelPushExtensionOptions)
   adminRoutes.route("/", createChannelPushAdminRoutes())
   return { extension: channelPushExtensionDef, adminRoutes }
 }
+
+/** Package-owned adapter from graph runtime dependencies to channel-push routes and services. */
+export const createChannelPushVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+  const runtime = await getPort(channelPushRuntimePort)
+  const configured = createChannelPushExtension({ resolveRegistry: runtime.resolveRegistry })
+  const bootstrap = configured.extension.bootstrap
+
+  return {
+    ...configured,
+    extension: {
+      ...configured.extension,
+      bootstrap: async (context: BootstrapContext) => {
+        await runtime.registerWorkflowService(context)
+        await bootstrap?.(context)
+      },
+    },
+  }
+})

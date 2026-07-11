@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest"
+import { createContainer, createEventBus } from "@voyant-travel/core"
+import { assertPortConforms } from "@voyant-travel/core/project"
+import { describe, expect, it, vi } from "vitest"
+import { channelPushRuntimePort } from "../../src/channel-push/runtime-port.js"
 import {
   channelAvailabilityPushWorkflow,
   channelBookingPushWorkflow,
@@ -6,6 +9,7 @@ import {
 } from "../../src/channel-push/workflow-entry.js"
 import {
   createChannelPushExtension,
+  createChannelPushVoyantRuntime,
   distributionBookingExtension,
   distributionHonoModule,
   externalRefsHonoModule,
@@ -80,6 +84,7 @@ describe("distribution deployment manifests", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/distribution#channel-push-extension",
       localId: "distribution.channel-push-extension",
+      runtimePorts: [{ id: "distribution.channel-push-runtime" }],
       api: [
         {
           id: "@voyant-travel/distribution#channel-push-extension.api",
@@ -87,7 +92,7 @@ describe("distribution deployment manifests", () => {
           mount: "distribution",
           runtime: {
             entry: "@voyant-travel/distribution",
-            export: "createChannelPushExtension",
+            export: "createChannelPushVoyantRuntime",
           },
         },
       ],
@@ -100,6 +105,37 @@ describe("distribution deployment manifests", () => {
     expect(suppliersHonoModule.module.name).toBe("suppliers")
     expect(distributionBookingExtension.extension.module).toBe("bookings")
     expect(createChannelPushExtension).toBeTypeOf("function")
+    expect(createChannelPushVoyantRuntime).toBeTypeOf("function")
+  })
+
+  it("owns typed channel-push route and workflow-service composition", async () => {
+    const registerWorkflowService = vi.fn()
+    const provider = {
+      resolveRegistry: vi.fn(() => ({ resolveByConnection: vi.fn() })),
+      registerWorkflowService,
+    }
+
+    await expect(assertPortConforms(channelPushRuntimePort, provider)).resolves.toBeUndefined()
+    await expect(assertPortConforms(channelPushRuntimePort, {} as never)).rejects.toThrow(
+      /resolveRegistry/,
+    )
+
+    const extension = await createChannelPushVoyantRuntime({
+      unitId: distributionChannelPushVoyantPlugin.id,
+      hasPort: () => true,
+      getPort: vi.fn(async () => provider) as never,
+    })
+    const context = {
+      bindings: { DATABASE_URL: "postgres://test" },
+      container: createContainer(),
+      eventBus: createEventBus(),
+    }
+
+    expect(extension.extension).toMatchObject({ name: "channel-push", module: "distribution" })
+    expect(extension.adminRoutes).toBeDefined()
+    await extension.extension.bootstrap?.(context)
+    expect(registerWorkflowService).toHaveBeenCalledOnce()
+    expect(registerWorkflowService).toHaveBeenCalledWith(context)
   })
 
   it("references each package-owned workflow definition", () => {

@@ -5,6 +5,10 @@ import {
   promotionsBulkReindexRuntimePort,
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import { createContainer, createEventBus } from "@voyant-travel/core"
+import {
+  CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
+  channelPushRuntimePort,
+} from "@voyant-travel/distribution"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
@@ -95,12 +99,18 @@ describe("operator graph runtime composition", () => {
     )
   })
 
-  it("lowers selected distribution subscribers without an Operator plugin entry", async () => {
+  it("selects channel-push routes, workflow service, and subscribers exactly once", async () => {
     const runtime = createGeneratedGraphRuntime()
     const channelPush = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/distribution#channel-push-extension",
     )
     const composed = await composeOperatorGraph()
+    const channelPushExtension = composed.extensions.find(
+      (extension) => extension.extension.name === "channel-push",
+    )
+    const channelPushRuntime = composed.modules.find(
+      (module) => module.module.name === "distribution.channel-push-extension.graph-runtime",
+    )
 
     expect(
       channelPush?.references
@@ -111,11 +121,61 @@ describe("operator graph runtime composition", () => {
       "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
       "@voyant-travel/distribution#subscriber.channel-push-content-changed",
     ])
+    expect(channelPushRuntime?.module.bootstrap).toBeTypeOf("function")
     expect(
-      composed.modules.find(
+      composed.extensions.filter((extension) => extension.extension.name === "channel-push"),
+    ).toHaveLength(1)
+    expect(
+      composed.modules.filter(
         (module) => module.module.name === "distribution.channel-push-extension.graph-runtime",
-      )?.module.bootstrap,
-    ).toBeTypeOf("function")
+      ),
+    ).toHaveLength(1)
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
+      "@voyant-travel/distribution#channel-push-extension",
+    )
+    expect(buildOperatorRuntimePorts()).toHaveProperty(channelPushRuntimePort.id)
+
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const container = createContainer()
+    const context = {
+      bindings: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      container,
+      eventBus,
+    }
+    await channelPushExtension?.extension.bootstrap?.(context)
+    await channelPushRuntime?.module.bootstrap?.(context)
+
+    expect(container.has(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)).toBe(true)
+    expect(subscribe.mock.calls.map(([eventType]) => eventType).sort()).toEqual([
+      "availability.slot.changed",
+      "booking.confirmed",
+      "product.content.changed",
+    ])
+  })
+
+  it("omits channel-push routes and subscriber runtime when deselected", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const composed = await composeVoyantGraphRuntime({
+      runtime: {
+        ...runtime,
+        extensions: runtime.extensions.filter(
+          (unit) => unit.id !== "@voyant-travel/distribution#channel-push-extension",
+        ),
+      },
+      capabilities: buildOperatorProviders(),
+      bindings: operatorGraphRuntimeBindings,
+      ports: buildOperatorRuntimePorts(),
+    })
+
+    expect(
+      composed.extensions.some((extension) => extension.extension.name === "channel-push"),
+    ).toBe(false)
+    expect(
+      composed.modules.some(
+        (module) => module.module.name === "distribution.channel-push-extension.graph-runtime",
+      ),
+    ).toBe(false)
   })
 
   it("registers the selected Finance booking-schedule subscriber exactly once", async () => {
@@ -659,7 +719,11 @@ describe("operator graph runtime composition", () => {
         storageMediaRuntimePort.id,
         promotionRedemptionDatabaseRuntimePort.id,
         promotionsBulkReindexRuntimePort.id,
+        channelPushRuntimePort.id,
       ]),
+    )
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
+      "@voyant-travel/distribution#channel-push-extension",
     )
     await expect(composeOperatorGraph()).resolves.toBeDefined()
   })
