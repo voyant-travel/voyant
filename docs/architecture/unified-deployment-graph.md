@@ -1015,6 +1015,17 @@ runtime references must move with their domain-owning shards, and the Operator
 bridge must be removed in the same activation change to prevent duplicate
 invalidation hints.
 
+Notifications now stages package-owned executable descriptors for reminder-rule
+handling on `booking.confirmed`, `payment.completed`, `booking.cancelled`, and
+`booking.expired`, plus booking-confirmation auto-dispatch. All five resolve one
+narrow package runtime service for the database, dispatcher, and attachment
+resolver. The four reminder descriptors have runtime references on an inert,
+unselected Notifications extension; existing module bootstrap remains their
+only activation path in this slice. Auto-dispatch deliberately has no manifest
+runtime reference. Moving either path to selected-graph activation remains
+gated on explicit Legal document-ordering semantics for `booking.confirmed`, as
+ordinary event-bus subscribers run independently and provide no ordering.
+
 The broader event catalog is beyond the foundational substrate:
 
 - declared `events.emits` catalogs

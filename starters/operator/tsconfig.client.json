@@ -1423,6 +1423,9 @@
       "@voyant-travel/notifications/routes": ["../../packages/notifications/dist/routes.d.ts"],
       "@voyant-travel/notifications/schema": ["../../packages/notifications/dist/schema.d.ts"],
       "@voyant-travel/notifications/service": ["../../packages/notifications/dist/service.d.ts"],
+      "@voyant-travel/notifications/subscriber-runtime": [
+        "../../packages/notifications/dist/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/notifications/tasks": ["../../packages/notifications/dist/tasks/index.d.ts"],
       "@voyant-travel/notifications/template-authoring": [
         "../../packages/notifications/dist/template-authoring.d.ts"

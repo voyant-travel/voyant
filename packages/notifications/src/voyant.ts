@@ -1,4 +1,4 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 const schemaSource = "@voyant-travel/notifications/schema"
 
@@ -143,6 +143,58 @@ export const notificationsVoyantModule = defineModule({
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
+  meta: {
+    ownership: "package",
+  },
+})
+
+/**
+ * Inert until a deployment explicitly selects the extension and removes the
+ * legacy module-bootstrap registrations. Confirmation auto-dispatch is omitted
+ * until Legal document ordering has an explicit runtime contract.
+ */
+export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
+  id: "@voyant-travel/notifications#reminder-subscribers-extension",
+  packageName: "@voyant-travel/notifications",
+  localId: "notifications.reminder-subscribers-extension",
+  subscribers: [
+    {
+      id: "@voyant-travel/notifications#subscriber.reminder-booking-confirmed",
+      eventType: "booking.confirmed",
+      source: "@voyant-travel/notifications/subscriber-runtime",
+      runtime: {
+        entry: "./subscriber-runtime",
+        export: "notificationsBookingConfirmedReminderSubscriber",
+      },
+    },
+    {
+      id: "@voyant-travel/notifications#subscriber.reminder-payment-completed",
+      eventType: "payment.completed",
+      source: "@voyant-travel/notifications/subscriber-runtime",
+      runtime: {
+        entry: "./subscriber-runtime",
+        export: "notificationsPaymentCompletedReminderSubscriber",
+      },
+    },
+    {
+      id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",
+      eventType: "booking.cancelled",
+      source: "@voyant-travel/notifications/subscriber-runtime",
+      runtime: {
+        entry: "./subscriber-runtime",
+        export: "notificationsBookingCancelledReminderSubscriber",
+      },
+    },
+    {
+      id: "@voyant-travel/notifications#subscriber.reminder-booking-expired",
+      eventType: "booking.expired",
+      source: "@voyant-travel/notifications/subscriber-runtime",
+      runtime: {
+        entry: "./subscriber-runtime",
+        export: "notificationsBookingExpiredReminderSubscriber",
+      },
+    },
+  ],
   meta: {
     ownership: "package",
   },
