@@ -29,6 +29,9 @@ export interface ChannelPushDeps {
   logger?: ChannelPushLogger
 }
 
+export const CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY =
+  "distribution.workflows.channel-push.runtime" as const
+
 export interface ChannelPushLogger {
   info?: (message: string, meta?: Record<string, unknown>) => void
   warn?: (message: string, meta?: Record<string, unknown>) => void
