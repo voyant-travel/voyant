@@ -1,10 +1,18 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  storefrontCustomerPortalRuntimePort,
+  storefrontPaymentLinkRuntimePort,
+  storefrontRuntimePort,
+  storefrontVerificationRuntimePort,
+} from "./runtime-port.js"
 
 /** Import-cheap deployment declarations owned by the storefront package. */
 export const storefrontVoyantModule = defineModule({
   id: "@voyant-travel/storefront",
   packageName: "@voyant-travel/storefront",
   localId: "storefront",
+  runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
+  runtimePorts: [requirePort(storefrontRuntimePort)],
   api: [
     {
       id: "@voyant-travel/storefront#api.admin",
@@ -85,6 +93,11 @@ export const storefrontCustomerPortalVoyantModule = defineModule({
   id: "@voyant-travel/storefront#customer-portal",
   packageName: "@voyant-travel/storefront",
   localId: "storefront.customer-portal",
+  runtime: {
+    entry: "@voyant-travel/storefront/customer-portal",
+    export: "createCustomerPortalVoyantRuntime",
+  },
+  runtimePorts: [requirePort(storefrontCustomerPortalRuntimePort)],
   api: [
     {
       id: "@voyant-travel/storefront#customer-portal.api",
@@ -106,6 +119,11 @@ export const storefrontVerificationVoyantModule = defineModule({
   id: "@voyant-travel/storefront#verification",
   packageName: "@voyant-travel/storefront",
   localId: "storefront.verification",
+  runtime: {
+    entry: "@voyant-travel/storefront/verification",
+    export: "createStorefrontVerificationVoyantRuntime",
+  },
+  runtimePorts: [requirePort(storefrontVerificationRuntimePort)],
   api: [
     {
       id: "@voyant-travel/storefront#verification.api",
@@ -127,6 +145,11 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
   id: "@voyant-travel/storefront#payment-link",
   packageName: "@voyant-travel/storefront",
   localId: "storefront.payment-link",
+  runtime: {
+    entry: "@voyant-travel/storefront/payment-link",
+    export: "createPaymentLinkVoyantRuntime",
+  },
+  runtimePorts: [requirePort(storefrontPaymentLinkRuntimePort)],
   api: [
     {
       id: "@voyant-travel/storefront#payment-link.api",

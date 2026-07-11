@@ -1,6 +1,7 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
-
+import { bookingRequirementsRuntimePort } from "../runtime-port.js"
 import { bookingRequirementsRoutes } from "./routes.js"
 import {
   createPublicBookingRequirementsRoutes,
@@ -37,6 +38,22 @@ export function createBookingRequirementsHonoModule(
       : publicBookingRequirementsRoutes,
   }
 }
+
+export const createBookingRequirementsVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ api, getPort }) => {
+    const configured = createBookingRequirementsHonoModule(
+      await getPort(bookingRequirementsRuntimePort),
+    )
+    const selected: HonoModule = { module: configured.module }
+    if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
+      selected.adminRoutes = configured.adminRoutes
+    }
+    if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
+      selected.publicRoutes = configured.publicRoutes
+    }
+    return selected
+  },
+)
 
 export {
   createPublicBookingRequirementsRoutes,

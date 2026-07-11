@@ -1,4 +1,5 @@
-import type { Module } from "@voyant-travel/core"
+import type { BootstrapContext, Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { bookingsLinkable } from "./linkables.js"
 import {
@@ -8,6 +9,7 @@ import {
 } from "./route-runtime.js"
 import { bookingRoutes } from "./routes.js"
 import { publicBookingRoutes } from "./routes-public.js"
+import { bookingsRuntimePort } from "./runtime-port.js"
 
 export {
   BOOKING_ACTION_LEDGER_CAPABILITIES,
@@ -134,6 +136,29 @@ export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}
 
 export const bookingsHonoModule: HonoModule = createBookingsHonoModule()
 
+/** Package-owned adapter from graph ports to the complete Bookings runtime. */
+export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
+  const provider = await getPort(bookingsRuntimePort)
+  const configured = createBookingsHonoModule(provider.options)
+  const bootstrap = configured.module.bootstrap
+  const selected: HonoModule = {
+    module: {
+      ...configured.module,
+      bootstrap: async (context: BootstrapContext) => {
+        await provider.registerWorkflowService?.(context)
+        await bootstrap?.(context)
+      },
+    },
+  }
+  if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
+    selected.adminRoutes = configured.adminRoutes
+  }
+  if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
+    selected.publicRoutes = configured.publicRoutes
+  }
+  return selected
+})
+
 export type {
   BookingOverviewEnricherItem,
   BookingOverviewItemEnricher,
@@ -156,6 +181,8 @@ export {
 export type { BookingActionLedgerListResponse, BookingRoutes } from "./routes.js"
 export type { PublicBookingRoutes } from "./routes-public.js"
 export { publicBookingRoutes } from "./routes-public.js"
+export type { BookingsRuntimeProvider } from "./runtime-port.js"
+export { bookingRequirementsRuntimePort, bookingsRuntimePort } from "./runtime-port.js"
 export type {
   BookingTravelerBedPreference,
   BookingTravelerDietary,

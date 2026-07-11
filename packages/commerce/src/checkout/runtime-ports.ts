@@ -5,8 +5,24 @@ import type { Context } from "hono"
 
 import type { AcceptanceSignatureLegalPort } from "./acceptance-signature.js"
 import type { CheckoutStartOptions } from "./options.js"
+import type { BookingMaintenanceRoutesOptions } from "./routes.js"
 
 export type CatalogCheckoutApiRuntime = (context: Context) => CheckoutStartOptions
+
+export const bookingMaintenanceRuntimePort = definePort<BookingMaintenanceRoutesOptions>({
+  id: "commerce.booking-maintenance.runtime",
+  test(provider) {
+    if (
+      provider === null ||
+      typeof provider !== "object" ||
+      typeof provider.resolveBookingTaxSettings !== "function"
+    ) {
+      throw new Error(
+        "commerce.booking-maintenance.runtime provider must implement resolveBookingTaxSettings().",
+      )
+    }
+  },
+})
 
 export interface CatalogCheckoutDatabaseRuntime {
   withDb<T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>

@@ -20,12 +20,14 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { rebuildBookingItemTaxLines } from "./materialization-tax.js"
 import type { CheckoutModuleOptions, CheckoutStartOptions } from "./options.js"
+import { bookingMaintenanceRuntimePort } from "./runtime-ports.js"
 import {
   CatalogCheckoutStartError,
   type CheckoutStartRequestMeta,
@@ -227,6 +229,11 @@ export function createBookingMaintenanceHonoExtension(
     adminRoutes: createBookingMaintenanceRoutes(options),
   }
 }
+
+export const createBookingMaintenanceVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) =>
+    createBookingMaintenanceHonoExtension(await getPort(bookingMaintenanceRuntimePort)),
+)
 
 function checkoutRequestMeta(c: Context): CheckoutStartRequestMeta {
   return {

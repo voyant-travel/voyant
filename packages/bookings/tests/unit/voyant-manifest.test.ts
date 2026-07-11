@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { createBookingsVoyantRuntime } from "../../src/index.js"
+import { createBookingRequirementsVoyantRuntime } from "../../src/requirements/index.js"
 import {
   bookingRequirementsVoyantModule,
   bookingsSupplierVoyantPlugin,
@@ -15,6 +17,8 @@ describe("bookings deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/bookings",
       packageName: "@voyant-travel/bookings",
+      runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
+      runtimePorts: [{ id: "bookings.runtime" }],
       api: [
         {
           id: "@voyant-travel/bookings#api.admin",
@@ -94,6 +98,11 @@ describe("bookings deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/bookings#requirements",
       packageName: "@voyant-travel/bookings",
+      runtime: {
+        entry: "@voyant-travel/bookings/requirements",
+        export: "createBookingRequirementsVoyantRuntime",
+      },
+      runtimePorts: [{ id: "bookings.requirements.runtime" }],
       api: [
         {
           id: "@voyant-travel/bookings#requirements.api",
@@ -132,6 +141,27 @@ describe("bookings deployment manifest", () => {
         },
       ],
     })
+  })
+
+  it("mounts only selected Bookings API surfaces", async () => {
+    const context = {
+      unitId: "@voyant-travel/bookings",
+      projectConfig: {},
+      api: [{ id: "bookings.public", surface: "public" as const }],
+      hasPort: () => true,
+      getPort: async <TProvider>() => ({ options: {} }) as unknown as TProvider,
+    }
+    const bookings = await createBookingsVoyantRuntime(context)
+    const requirements = await createBookingRequirementsVoyantRuntime({
+      ...context,
+      unitId: "@voyant-travel/bookings#requirements",
+      getPort: async <TProvider>() => ({}) as TProvider,
+    })
+
+    expect(bookings.adminRoutes).toBeUndefined()
+    expect(bookings.publicRoutes).toBeDefined()
+    expect(requirements.adminRoutes).toBeUndefined()
+    expect(requirements.publicRoutes).toBeDefined()
   })
 
   it("declares the packaged booking routes, slots, and CRM contribution", () => {

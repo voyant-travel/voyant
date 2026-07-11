@@ -53,6 +53,11 @@ describe("legal deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/legal#contract-document",
       packageName: "@voyant-travel/legal",
+      runtime: {
+        entry: "@voyant-travel/legal/contract-document-routes",
+        export: "createContractDocumentVoyantRuntime",
+      },
+      runtimePorts: [{ id: "legal.contract-document.runtime" }],
       api: [
         {
           id: "@voyant-travel/legal#contract-document.api",

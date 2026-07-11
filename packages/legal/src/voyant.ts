@@ -1,4 +1,5 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 import { legalBookingContractSubscriberRuntimePort } from "./contracts/booking-contract-subscriber-port.js"
 import { legalRuntimePort } from "./runtime-port.js"
 
@@ -108,6 +109,11 @@ export const legalContractDocumentVoyantModule = defineModule({
   id: "@voyant-travel/legal#contract-document",
   packageName: "@voyant-travel/legal",
   localId: "legal.contract-document",
+  runtime: {
+    entry: "@voyant-travel/legal/contract-document-routes",
+    export: "createContractDocumentVoyantRuntime",
+  },
+  runtimePorts: [requirePort(legalContractDocumentRuntimePort)],
   api: [
     {
       id: "@voyant-travel/legal#contract-document.api",

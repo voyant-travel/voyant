@@ -27,6 +27,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
 import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { asc, eq } from "drizzle-orm"
@@ -40,6 +41,7 @@ import {
   resolveEffectivePaymentPolicy,
 } from "../payment-policy.js"
 import type { PaymentPolicyEntityContext } from "../payment-policy-cascade.js"
+import { financeBookingScheduleRuntimePort } from "../runtime-port.js"
 import { bookingPaymentSchedules } from "../schema/booking-billing.js"
 import { financeService } from "../service.js"
 
@@ -501,3 +503,21 @@ export function createBookingScheduleHonoExtension(
     anonymous: true,
   }
 }
+
+export const createBookingScheduleVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ api, getPort }) => {
+    const configured = createBookingScheduleHonoExtension(
+      await getPort(financeBookingScheduleRuntimePort),
+    )
+    const selected: HonoExtension = { extension: configured.extension }
+    if (api.some(({ surface }) => surface === "admin") && configured.lazyAdminRoutes) {
+      selected.lazyAdminRoutes = configured.lazyAdminRoutes
+    }
+    if (api.some(({ surface }) => surface === "public") && configured.lazyPublicRoutes) {
+      selected.lazyPublicRoutes = configured.lazyPublicRoutes
+      if (configured.publicPath !== undefined) selected.publicPath = configured.publicPath
+      if (configured.anonymous !== undefined) selected.anonymous = configured.anonymous
+    }
+    return selected
+  },
+)
