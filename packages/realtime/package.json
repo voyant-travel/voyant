@@ -8,6 +8,7 @@
     "./types": "./src/types.ts",
     "./service": "./src/service.ts",
     "./bridge": "./src/bridge.ts",
+    "./admin-invalidation-subscriber": "./src/admin-invalidation-subscriber.ts",
     "./capabilities": "./src/capabilities.ts",
     "./routes": "./src/routes.ts",
     "./providers/local": "./src/providers/local.ts",
@@ -57,6 +58,11 @@
         "types": "./dist/bridge.d.ts",
         "import": "./dist/bridge.js",
         "default": "./dist/bridge.js"
+      },
+      "./admin-invalidation-subscriber": {
+        "types": "./dist/admin-invalidation-subscriber.d.ts",
+        "import": "./dist/admin-invalidation-subscriber.js",
+        "default": "./dist/admin-invalidation-subscriber.js"
       },
       "./capabilities": {
         "types": "./dist/capabilities.d.ts",

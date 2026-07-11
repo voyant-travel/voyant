@@ -7,7 +7,7 @@ export const realtimeVoyantModule = defineModule({
   packageName: "@voyant-travel/realtime",
   localId: "realtime",
   provides: {
-    ports: [{ id: "realtime.transport" }],
+    ports: [{ id: "realtime.transport" }, { id: "realtime.admin-invalidation-publication" }],
   },
   runtimePorts: [requirePort(realtimeRuntimePort)],
   api: [

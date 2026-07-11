@@ -1000,6 +1000,17 @@ intentionally omits a runtime reference while the central Operator bundle
 remains active; direct selected-graph activation must remove that central
 registration in the same change to avoid duplicate event handling.
 
+Realtime now publishes a package-owned admin-invalidation subscriber runtime
+contract from `@voyant-travel/realtime/admin-invalidation-subscriber`. The
+contract resolves a narrow publication capability from the runtime container,
+registers deferred handlers exactly once per event bus, filters before routing,
+deduplicates channels per delivery, and reports transport failures without
+rejecting event delivery. The Realtime manifest advertises that capability but
+does not yet activate domain subscribers: event declarations and executable
+runtime references must move with their domain-owning shards, and the Operator
+bridge must be removed in the same activation change to prevent duplicate
+invalidation hints.
+
 The broader event catalog is beyond the foundational substrate:
 
 - declared `events.emits` catalogs

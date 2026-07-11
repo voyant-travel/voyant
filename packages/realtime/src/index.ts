@@ -1,7 +1,10 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
-
+import {
+  createAdminInvalidationPublicationPort,
+  registerAdminInvalidationPublicationPort,
+} from "./admin-invalidation-subscriber.js"
 import { createRealtimeBridge } from "./bridge.js"
 import {
   buildRealtimeRouteRuntime,
@@ -12,6 +15,21 @@ import {
 import { realtimeRuntimePort } from "./runtime-port.js"
 import type { RealtimeRoutes } from "./types.js"
 
+export type {
+  AdminInvalidationPublicationPort,
+  AdminInvalidationPublishErrorContext,
+  AdminInvalidationRoute,
+  CreateAdminInvalidationPublicationPortOptions,
+  CreateAdminInvalidationSubscriberOptions,
+  CreateAdminInvalidationSubscriberRuntimeOptions,
+} from "./admin-invalidation-subscriber.js"
+export {
+  ADMIN_INVALIDATION_PUBLICATION_RUNTIME_KEY,
+  createAdminInvalidationPublicationPort,
+  createAdminInvalidationSubscriber,
+  createAdminInvalidationSubscriberRuntime,
+  registerAdminInvalidationPublicationPort,
+} from "./admin-invalidation-subscriber.js"
 export type { CreateRealtimeBridgeOptions } from "./bridge.js"
 export { createRealtimeBridge } from "./bridge.js"
 export type {
@@ -91,6 +109,16 @@ export function createRealtimeHonoModule(
     bootstrap: ({ bindings, container, eventBus }) => {
       const runtime = buildRealtimeRouteRuntime(bindings as Record<string, unknown>, options)
       container.register(REALTIME_ROUTE_RUNTIME_CONTAINER_KEY, runtime)
+
+      if (runtime.service) {
+        registerAdminInvalidationPublicationPort(
+          container,
+          createAdminInvalidationPublicationPort({
+            provider: runtime.service.defaultProvider,
+            onError: options.onPublishError,
+          }),
+        )
+      }
 
       // No provider configured → nothing to publish to; stay inert.
       if (runtime.service && options.bridgeRoutes && Object.keys(options.bridgeRoutes).length > 0) {
