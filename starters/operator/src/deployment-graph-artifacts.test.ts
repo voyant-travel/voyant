@@ -77,6 +77,23 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         },
       }),
     ])
+
+    for (const artifactPath of [
+      "admin/project-admin.generated.ts",
+      "runtime/project-api.generated.ts",
+      "runtime/project-jobs.generated.ts",
+      "runtime/project-links.generated.ts",
+      "runtime/project-subscribers.generated.ts",
+      "runtime/project-workflows.generated.ts",
+    ]) {
+      expect(readFileSync(join(process.cwd(), ".voyant", artifactPath), "utf8")).not.toBe("")
+    }
+    const projectLinks = readFileSync(
+      join(process.cwd(), ".voyant", "runtime/project-links.generated.ts"),
+      "utf8",
+    )
+    expect(projectLinks).toContain('import link0 from "../../src/links/bid-supplier.js"')
+    expect(projectLinks).toContain('import link19 from "../../src/links/session-function-space.js"')
   })
 
   it("fails when the artifact graph hash does not match the graph content hash", () => {

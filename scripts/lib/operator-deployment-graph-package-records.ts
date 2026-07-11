@@ -20,8 +20,8 @@ import type { ManagedScheduledJob } from "../../packages/framework/src/managed-j
 import type { VoyantProjectProviders } from "../../packages/framework/src/profile-types.ts"
 import {
   inferredNodeRuntimePackageMetadata,
-  runtimeReferencePackageNames,
   type ResolvedProjectArtifacts,
+  runtimeReferencePackageNames,
 } from "../../packages/framework/src/project-resolver.ts"
 import { readPnpmLockfilePackageRecords } from "./deployment-graph-provenance.mjs"
 import { loadVoyantPackageManifests } from "./load-voyant-package-manifests.ts"

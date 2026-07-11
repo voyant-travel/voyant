@@ -10,10 +10,17 @@ import {
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
 } from "../packages/framework/src/deployment-artifacts.ts"
-import type { ResolvedVoyantDeploymentGraph } from "../packages/framework/src/deployment-graph.ts"
-import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
+import type {
+  ResolvedVoyantDeploymentGraph,
+  VoyantGraphDiagnostic,
+} from "../packages/framework/src/deployment-graph.ts"
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
+import {
+  type ProjectArtifactWriteResult,
+  writeProjectArtifacts,
+} from "../packages/framework/src/project-artifacts.ts"
+import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
 import {
@@ -97,6 +104,7 @@ async function main(): Promise<void> {
     options.manifestOutputPath,
     `${JSON.stringify(manifest, null, 2)}\n`,
   )
+  const conventionArtifacts = projectConventionArtifacts(projectArtifacts)
 
   const artifacts = [
     { path: options.profileOutputPath, expected: profileText, facet: "managed-profile" },
@@ -108,18 +116,14 @@ async function main(): Promise<void> {
     { path: options.graphOutputPath, expected: graphText, facet: "deployment-graph" },
     { path: options.entryOutputPath, expected: entryText, facet: "runtime-entry" },
     { path: options.runtimeOutputPath, expected: runtimeText, facet: "graph-runtime" },
-    ...projectConventionArtifacts(projectArtifacts).map((artifact) => ({
-      path: join(defaultOperatorRoot, ".voyant", artifact.path),
-      expected: formatGeneratedText(
-        join(defaultOperatorRoot, ".voyant", artifact.path),
-        artifact.contents,
-      ),
-      facet: "project-convention",
-    })),
   ]
 
   if (options.emit) {
     for (const artifact of artifacts) await writeGeneratedFile(artifact.path, artifact.expected)
+    const conventionResult = await writeProjectArtifacts({
+      projectRoot: defaultOperatorRoot,
+      artifacts: conventionArtifacts,
+    })
     const report = buildDeploymentGraphDoctorReport({ graph })
     if (options.json) {
       process.stdout.write(buildDeploymentGraphDoctorJson(report))
@@ -136,6 +140,11 @@ async function main(): Promise<void> {
     console.log(
       `emit-deployment-graph: wrote ${artifacts
         .map((artifact) => relativeToRepo(artifact.path))
+        .concat(
+          conventionResult.files.map((artifact) =>
+            relativeToRepo(join(conventionResult.outputRoot, artifact.path)),
+          ),
+        )
         .join(", ")} (${graph.contentHash})`,
     )
     return
@@ -148,7 +157,16 @@ async function main(): Promise<void> {
     })),
     { repoRoot },
   )
-  const report = buildDeploymentGraphDoctorReport({ graph, diagnostics: artifactDiagnostics })
+  const conventionResult = await writeProjectArtifacts({
+    projectRoot: defaultOperatorRoot,
+    artifacts: conventionArtifacts,
+    mode: "check",
+  })
+  const conventionDiagnostics = projectArtifactDiagnostics(conventionResult)
+  const report = buildDeploymentGraphDoctorReport({
+    graph,
+    diagnostics: [...artifactDiagnostics, ...conventionDiagnostics],
+  })
 
   if (options.json) {
     process.stdout.write(buildDeploymentGraphDoctorJson(report))
@@ -157,11 +175,13 @@ async function main(): Promise<void> {
   }
   if (!report.ok) {
     console.error("Deployment graph doctor failed.")
-    if (artifactDiagnostics.length > 0) {
+    if (artifactDiagnostics.length > 0 || conventionDiagnostics.length > 0) {
       console.error("Generated deployment graph artifacts are stale or missing.")
     }
     console.error(formatDeploymentGraphDoctorDiagnostics(report.diagnostics))
-    if (artifactDiagnostics.length > 0) console.error(`Run \`${command}\` to refresh them.`)
+    if (artifactDiagnostics.length > 0 || conventionDiagnostics.length > 0) {
+      console.error(`Run \`${command}\` to refresh them.`)
+    }
     process.exit(1)
   }
 
@@ -184,10 +204,31 @@ async function resolveGraph(configPath: string) {
   return { graph: resolved.graph, profile, projectArtifacts: resolved.artifacts }
 }
 
-function projectConventionArtifacts(artifacts: ResolvedProjectArtifacts) {
-  return artifacts.files.filter(
-    (file) => file.path !== artifacts.runtimeEntry && file.path !== artifacts.migrationRunner,
-  )
+function projectConventionArtifacts(artifacts: ResolvedProjectArtifacts): ResolvedProjectArtifacts {
+  return {
+    ...artifacts,
+    files: artifacts.files.filter(
+      (file) => file.path !== artifacts.runtimeEntry && file.path !== artifacts.migrationRunner,
+    ),
+  }
+}
+
+function projectArtifactDiagnostics(result: ProjectArtifactWriteResult): VoyantGraphDiagnostic[] {
+  return result.files.flatMap((artifact) => {
+    if (artifact.status === "unchanged" || artifact.status === "written") return []
+    const source = relativeToRepo(join(result.outputRoot, artifact.path))
+    const missing = artifact.status === "missing"
+    return [
+      {
+        code: missing ? "VOYANT_GRAPH_ARTIFACT_MISSING" : "VOYANT_GRAPH_ARTIFACT_STALE",
+        severity: "error",
+        source,
+        facet: "project-convention",
+        message: `${source} is ${missing ? "missing" : "stale"}.`,
+        hint: `Run \`${command}\` to refresh generated deployment graph artifacts.`,
+      },
+    ]
+  })
 }
 
 async function loadOperatorConfig(configPath: string): Promise<OperatorAuthoredProject> {
@@ -365,7 +406,9 @@ function projectRuntimeEntryOverrides(
       if (relativeTarget.startsWith("..") || path.isAbsolute(relativeTarget)) {
         throw new Error(`Project runtime entry ${runtime.entry} escapes ${projectRoot}`)
       }
-      let relativeImport = path.relative(dirname(runtimeOutputPath), target).replaceAll(path.sep, "/")
+      let relativeImport = path
+        .relative(dirname(runtimeOutputPath), target)
+        .replaceAll(path.sep, "/")
       if (!relativeImport.startsWith(".")) relativeImport = `./${relativeImport}`
       overrides[`${unit.packageName}/${runtime.entry.slice(2)}`] = relativeImport
     }
