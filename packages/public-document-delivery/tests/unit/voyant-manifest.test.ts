@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { createPublicDocumentDeliveryHonoModule } from "../../src/index.js"
+import {
+  createPublicDocumentDeliveryHonoModule,
+  PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID,
+} from "../../src/index.js"
 import { publicDocumentDeliveryVoyantModule } from "../../src/voyant.js"
 
 describe("public document delivery deployment manifest", () => {
@@ -16,6 +19,7 @@ describe("public document delivery deployment manifest", () => {
           surface: "public",
           mount: "documents",
           anonymous: true,
+          openapi: { document: "public-document-delivery" },
           runtime: {
             entry: "@voyant-travel/public-document-delivery",
             export: "createPublicDocumentDeliveryHonoModule",
@@ -33,4 +37,24 @@ describe("public document delivery deployment manifest", () => {
     })
     expect(createPublicDocumentDeliveryHonoModule().module.name).toBe("documents")
   })
+
+  it("publishes its anonymous route from a package-owned OpenAPI registry", () => {
+    const routes = createPublicDocumentDeliveryHonoModule().publicRoutes as OpenApiDocumentSource
+    const document = routes.getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "Public documents", version: "1" },
+    })
+
+    expect(
+      (document.paths?.["/{token}"]?.get as Record<string, unknown> | undefined)?.[
+        "x-voyant-api-id"
+      ],
+    ).toBe(PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID)
+  })
 })
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, unknown>>
+  }
+}

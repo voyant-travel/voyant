@@ -1,7 +1,12 @@
 import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 import type { FlightConnectorAdapter } from "./contract/adapter.js"
-import { createFlightsHonoModule, createFlightsVoyantRuntime, flightsRuntimePort } from "./hono.js"
+import {
+  createFlightsHonoModule,
+  createFlightsVoyantRuntime,
+  FLIGHTS_OPENAPI_API_ID,
+  flightsRuntimePort,
+} from "./hono.js"
 import { flightsVoyantModule } from "./voyant.js"
 
 describe("flights deployment manifest", () => {
@@ -17,6 +22,7 @@ describe("flights deployment manifest", () => {
           id: "@voyant-travel/flights#api",
           surface: "admin",
           mount: "flights",
+          openapi: { document: "flights" },
           runtime: {
             entry: "@voyant-travel/flights/hono",
             export: "createFlightsVoyantRuntime",
@@ -51,6 +57,7 @@ describe("flights deployment manifest", () => {
         id: "@voyant-travel/flights#api",
         surface: "admin",
         mount: "flights",
+        openapi: { document: "flights" },
         runtime: {
           entry: "@voyant-travel/flights/hono",
           export: "createFlightsVoyantRuntime",
@@ -67,6 +74,18 @@ describe("flights deployment manifest", () => {
     expect(runtime.adminRoutes).toBeDefined()
     expect(runtime.publicRoutes).toBeUndefined()
     expect(runtime.webhookRoutes).toBeUndefined()
+
+    const document = (runtime.adminRoutes as OpenApiDocumentSource).getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "Flights", version: "1" },
+    })
+    const operations = Object.values(document.paths ?? {}).flatMap((path) =>
+      Object.values(path).filter((operation) => typeof operation === "object"),
+    ) as Array<Record<string, unknown>>
+    expect(operations).toHaveLength(12)
+    expect(
+      operations.every((operation) => operation["x-voyant-api-id"] === FLIGHTS_OPENAPI_API_ID),
+    ).toBe(true)
   })
 
   it("owns runtime assembly and validates Node-host providers", async () => {
@@ -99,3 +118,9 @@ describe("flights deployment manifest", () => {
     expect(runtime.adminRoutes).toBeDefined()
   })
 })
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, unknown>>
+  }
+}

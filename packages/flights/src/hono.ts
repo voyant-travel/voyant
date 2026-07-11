@@ -23,12 +23,13 @@
  * `/v1/admin/flights` via `createFlightsHonoModule(...)`.
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { createOrderPaymentSessions } from "@voyant-travel/finance/order-payment-sessions"
 import type { HonoModule } from "@voyant-travel/hono"
 import { ilike, or } from "drizzle-orm"
-import { type Context, Hono } from "hono"
+import type { Context } from "hono"
 
 import type {
   FlightCancelReason,
@@ -89,6 +90,23 @@ export interface FlightsRouteOptions {
 }
 
 export type FlightsHonoModuleOptions = FlightsRouteOptions
+
+export const FLIGHTS_OPENAPI_API_ID = "@voyant-travel/flights#api"
+
+const FLIGHT_OPENAPI_OPERATIONS = [
+  ["post", "/search", "Search flights"],
+  ["post", "/ancillaries", "Get flight ancillaries"],
+  ["post", "/seatmap", "Get a flight seat map"],
+  ["post", "/price", "Price a flight offer"],
+  ["post", "/book", "Book a flight offer"],
+  ["get", "/orders", "List flight orders"],
+  ["get", "/orders/{orderId}", "Get a flight order"],
+  ["post", "/orders/{orderId}/ticket", "Ticket a flight order"],
+  ["post", "/orders/{orderId}/cancel", "Cancel a flight order"],
+  ["get", "/reference/airports", "List reference airports"],
+  ["get", "/reference/airlines", "List reference airlines"],
+  ["get", "/reference/aircraft", "List reference aircraft"],
+] as const
 
 function buildContext(c: Context): { connectionId: string; correlationId?: string } {
   return {
@@ -154,9 +172,9 @@ function adapterBookingRequestForIntent(body: FlightBookRequest): FlightBookRequ
 }
 
 /** Build the flight admin routes (relative paths; mount at `/v1/admin/flights`). */
-export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
+export function createFlightAdminRoutes(options: FlightsRouteOptions): OpenAPIHono {
   const { resolveAdapter, payment } = options
-  const hono = new Hono()
+  const hono = new OpenAPIHono()
 
   // ── Search ──────────────────────────────────────────────────────────────
   hono.post("/search", async (c) => {
@@ -415,6 +433,16 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
     const rows = await getDb(c).select().from(referenceAircraft)
     return c.json({ data: rows })
   })
+
+  for (const [method, path, summary] of FLIGHT_OPENAPI_OPERATIONS) {
+    hono.openAPIRegistry.registerPath({
+      method,
+      path,
+      summary,
+      responses: { 200: { description: "Successful response." } },
+      "x-voyant-api-id": FLIGHTS_OPENAPI_API_ID,
+    })
+  }
 
   return hono
 }

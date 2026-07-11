@@ -9,6 +9,7 @@ import { createRealtimeBridge } from "./bridge.js"
 import {
   buildRealtimeRouteRuntime,
   createRealtimeRoutes,
+  REALTIME_OPENAPI_API_IDS,
   REALTIME_ROUTE_RUNTIME_CONTAINER_KEY,
   type RealtimeRoutesOptions,
 } from "./routes.js"
@@ -57,6 +58,7 @@ export type {
 export {
   buildRealtimeRouteRuntime,
   createRealtimeRoutes,
+  REALTIME_OPENAPI_API_IDS,
   REALTIME_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "./routes.js"
 export type { RealtimeService } from "./service.js"
@@ -102,7 +104,8 @@ export interface CreateRealtimeHonoModuleOptions extends RealtimeRoutesOptions {
 export function createRealtimeHonoModule(
   options: CreateRealtimeHonoModuleOptions = {},
 ): HonoModule {
-  const routes = createRealtimeRoutes(options)
+  const adminRoutes = createRealtimeRoutes(options, REALTIME_OPENAPI_API_IDS.admin)
+  const publicRoutes = createRealtimeRoutes(options, REALTIME_OPENAPI_API_IDS.public)
 
   const module: Module = {
     ...realtimeModule,
@@ -138,8 +141,8 @@ export function createRealtimeHonoModule(
 
   return {
     module,
-    adminRoutes: routes,
-    publicRoutes: routes,
+    adminRoutes,
+    publicRoutes,
   }
 }
 

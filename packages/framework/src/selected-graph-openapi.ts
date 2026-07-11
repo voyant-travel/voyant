@@ -67,6 +67,9 @@ export async function buildSelectedGraphOpenApiDocuments(
         }
         if (!isRecord(value) || !routeClaimsMethod(claim, method)) continue
 
+        const explicitApiId = value["x-voyant-api-id"]
+        if (typeof explicitApiId === "string" && explicitApiId !== claim.route.id) continue
+
         const operation = `${method.toUpperCase()} ${path}`
         const previous = claimedOperations.get(operation)
         if (previous) {

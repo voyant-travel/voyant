@@ -1854,6 +1854,9 @@ importers:
 
   packages/flights:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: 'catalog:'
+        version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -3291,6 +3294,9 @@ importers:
 
   packages/public-document-delivery:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: 'catalog:'
+        version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -3466,6 +3472,9 @@ importers:
 
   packages/realtime:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: 'catalog:'
+        version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -3691,6 +3700,9 @@ importers:
 
   packages/storage:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: 'catalog:'
+        version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core

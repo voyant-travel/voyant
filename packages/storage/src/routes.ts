@@ -23,8 +23,9 @@
  * The package never imports the deployment's R2 binding or video provider.
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { type Context, Hono } from "hono"
+import type { Context } from "hono"
 import { z } from "zod"
 import { storageMediaRuntimePort } from "./runtime-port.js"
 import type { StorageProvider } from "./types.js"
@@ -101,12 +102,18 @@ export const STORAGE_MEDIA_ROUTE_PATHS = [
   "/v1/admin/media/*",
 ] as const
 
+export const STORAGE_OPENAPI_API_IDS = {
+  uploads: "@voyant-travel/storage#api.admin.uploads",
+  videoUploadTicket: "@voyant-travel/storage#api.admin.video-upload-ticket",
+  media: "@voyant-travel/storage#api.admin.media",
+} as const
+
 /** Structural module shape kept local so storage does not depend on the Hono adapter package. */
 export interface MediaHonoModule {
   module: { name: "media" }
   lazyRoutes: {
     paths: typeof STORAGE_MEDIA_ROUTE_PATHS
-    load: () => Promise<Hono>
+    load: () => Promise<ReturnType<typeof createMediaRoutes>>
   }
 }
 
@@ -261,8 +268,8 @@ function parseMediaKey(path: string) {
  * root). The deployment supplies the storage provider + video signer via
  * `options`.
  */
-export function createMediaRoutes(options: MediaRoutesOptions): Hono {
-  const hono = new Hono()
+export function createMediaRoutes(options: MediaRoutesOptions) {
+  const hono = new OpenAPIHono()
   const guessServedMimeType = options.guessServedMimeType ?? guessMimeType
 
   function safeServedContentType(key: string) {
@@ -357,6 +364,42 @@ export function createMediaRoutes(options: MediaRoutesOptions): Hono {
   }
 
   hono.get("/v1/admin/media/*", handleMediaServe)
+
+  hono.openAPIRegistry.registerPath({
+    method: "post",
+    path: "/v1/admin/uploads",
+    summary: "Upload media",
+    responses: {
+      200: { description: "The stored media reference." },
+      400: { description: "The multipart request is invalid." },
+      413: { description: "The upload exceeds the configured limit." },
+      415: { description: "The uploaded media type is not supported." },
+      503: { description: "Object storage is not configured." },
+    },
+    "x-voyant-api-id": STORAGE_OPENAPI_API_IDS.uploads,
+  })
+  hono.openAPIRegistry.registerPath({
+    method: "post",
+    path: "/v1/admin/uploads/video",
+    summary: "Create a video upload ticket",
+    responses: {
+      200: { description: "A provider-specific video upload ticket." },
+      400: { description: "The ticket request is invalid." },
+    },
+    "x-voyant-api-id": STORAGE_OPENAPI_API_IDS.videoUploadTicket,
+  })
+  hono.openAPIRegistry.registerPath({
+    method: "get",
+    path: "/v1/admin/media/{key}",
+    summary: "Download stored media",
+    responses: {
+      200: { description: "The stored media bytes." },
+      400: { description: "The storage key is invalid." },
+      404: { description: "The object does not exist." },
+      503: { description: "Object storage is not configured." },
+    },
+    "x-voyant-api-id": STORAGE_OPENAPI_API_IDS.media,
+  })
 
   return hono
 }

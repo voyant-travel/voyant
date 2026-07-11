@@ -208,6 +208,60 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     ).rejects.toThrow(/path "\/v1\/admin\/identity\/contacts" method "GET" is claimed by both/)
   })
 
+  it("prefers exact operation API ids when route mount prefixes overlap", async () => {
+    const uploadsApiId = "@voyant-travel/storage#api.admin.uploads"
+    const videoApiId = "@voyant-travel/storage#api.admin.video-upload-ticket"
+    const uploadsPath = "/v1/admin/uploads"
+    const videoPath = "/v1/admin/uploads/video"
+    const app = documentedApp([])
+
+    for (const [path, apiId] of [
+      [uploadsPath, uploadsApiId],
+      [videoPath, videoApiId],
+    ] as const) {
+      app.openapi(
+        createRoute({
+          method: "post",
+          path,
+          responses: {
+            200: {
+              content: { "application/json": { schema: z.object({ ok: z.boolean() }) } },
+              description: "OK",
+            },
+          },
+          "x-voyant-api-id": apiId,
+        }),
+        (context) => context.json({ ok: true }),
+      )
+    }
+
+    const storage = unit("@voyant-travel/storage", [
+      route(uploadsApiId, "uploads", "storage-uploads", ["POST"]),
+      route(videoApiId, "uploads/video", "storage-video-upload-ticket", ["POST"]),
+    ])
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([storage]),
+      app,
+      options,
+    })
+
+    expect(Object.keys(documents.get("storage-uploads")?.paths ?? {})).toEqual([uploadsPath])
+    expect(Object.keys(documents.get("storage-video-upload-ticket")?.paths ?? {})).toEqual([
+      videoPath,
+    ])
+
+    for (const [path, apiId] of [
+      [uploadsPath, uploadsApiId],
+      [videoPath, videoApiId],
+    ] as const) {
+      const owners = [...documents.values()].flatMap((document) => {
+        const operation = document.paths?.[path]?.post as Record<string, unknown> | undefined
+        return operation ? [operation["x-voyant-api-id"]] : []
+      })
+      expect(owners).toEqual([apiId])
+    }
+  })
+
   it("allows separate bundles to claim different methods on the same path", async () => {
     const path = "/v1/admin/identity/contacts"
     const app = methodSplitApp(path)

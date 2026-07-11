@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
+  createQuoteProposalPublicRoutes,
+  QUOTE_PROPOSAL_OPENAPI_API_IDS,
+} from "../../src/proposal-routes.js"
+import {
   quotesBookingVoyantPlugin,
   quotesProposalVoyantPlugin,
   quotesVersionSnapshotVoyantPlugin,
@@ -88,6 +92,7 @@ describe("quotes deployment manifests", () => {
             surface: "public",
             mount: "proposals",
             anonymous: true,
+            openapi: { document: "quotes-proposal-public" },
             runtime: {
               entry: "@voyant-travel/quotes",
               export: "createQuoteProposalVoyantRuntime",
@@ -110,5 +115,27 @@ describe("quotes deployment manifests", () => {
         ],
       },
     ])
+
+    const document = (
+      createQuoteProposalPublicRoutes({} as never) as OpenApiDocumentSource
+    ).getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "Public quote proposals", version: "1" },
+    })
+    const operations = Object.values(document.paths ?? {}).flatMap((path) =>
+      Object.values(path).filter((operation) => typeof operation === "object"),
+    ) as Array<Record<string, unknown>>
+    expect(operations).toHaveLength(4)
+    expect(
+      operations.every(
+        (operation) => operation["x-voyant-api-id"] === QUOTE_PROPOSAL_OPENAPI_API_IDS.public,
+      ),
+    ).toBe(true)
   })
 })
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, unknown>>
+  }
+}

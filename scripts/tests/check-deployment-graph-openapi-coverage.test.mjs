@@ -358,6 +358,129 @@ describe("check-deployment-graph-openapi-coverage", () => {
     assert.match(result.stdout, /1 covered graph API bundles/)
   })
 
+  it("covers overlapping opted-in routes only by their exact operation API ids", async () => {
+    const uploadsApiId = "@voyant-travel/storage#api.admin.uploads"
+    const videoApiId = "@voyant-travel/storage#api.admin.video-upload-ticket"
+    const root = await createFixture({
+      "graph.json": graph([
+        {
+          id: "@voyant-travel/storage",
+          localId: "storage",
+          packageName: "@voyant-travel/storage",
+          api: [
+            {
+              id: uploadsApiId,
+              surface: "admin",
+              mount: "uploads",
+              openapi: { document: "storage-uploads" },
+            },
+            {
+              id: videoApiId,
+              surface: "admin",
+              mount: "uploads/video",
+              openapi: { document: "storage-video-upload-ticket" },
+            },
+          ],
+        },
+      ]),
+      "openapi/admin/storage.json": openapi({
+        "/v1/admin/uploads": {
+          post: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": uploadsApiId,
+          },
+        },
+        "/v1/admin/uploads/video": {
+          post: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": videoApiId,
+          },
+        },
+      }),
+    })
+
+    const result = await runChecker(root)
+
+    assert.match(result.stdout, /2 covered graph API bundles/)
+  })
+
+  it("covers the final first-party package documents by exact operation API id", async () => {
+    const apiIds = {
+      accommodations: "@voyant-travel/accommodations#content-extension.api.public",
+      flights: "@voyant-travel/flights#api",
+      quotes: "@voyant-travel/quotes#proposal-extension.api.public",
+    }
+    const root = await createFixture({
+      "graph.json": graph(
+        [
+          {
+            id: "@voyant-travel/flights",
+            localId: "flights",
+            packageName: "@voyant-travel/flights",
+            api: [
+              {
+                id: apiIds.flights,
+                surface: "admin",
+                mount: "flights",
+                openapi: { document: "flights" },
+              },
+            ],
+          },
+        ],
+        [
+          {
+            id: "@voyant-travel/accommodations#content-extension",
+            localId: "accommodations.content-extension",
+            packageName: "@voyant-travel/accommodations",
+            api: [
+              {
+                id: apiIds.accommodations,
+                surface: "public",
+                mount: "accommodations",
+                openapi: { document: "accommodations-content-public" },
+              },
+            ],
+          },
+          {
+            id: "@voyant-travel/quotes#proposal-extension",
+            localId: "quotes.proposal-extension",
+            packageName: "@voyant-travel/quotes",
+            api: [
+              {
+                id: apiIds.quotes,
+                surface: "public",
+                mount: "proposals",
+                openapi: { document: "quotes-proposal-public" },
+              },
+            ],
+          },
+        ],
+      ),
+      "openapi/admin/flights.json": openapi({
+        "/v1/admin/flights/search": {
+          post: { responses: { 200: { description: "OK" } }, "x-voyant-api-id": apiIds.flights },
+        },
+      }),
+      "openapi/storefront/accommodations-content-public.json": openapi({
+        "/v1/public/accommodations/{id}/content": {
+          get: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": apiIds.accommodations,
+          },
+        },
+      }),
+      "openapi/storefront/quotes-proposal-public.json": openapi({
+        "/v1/public/proposals/{quoteVersionId}": {
+          get: { responses: { 200: { description: "OK" } }, "x-voyant-api-id": apiIds.quotes },
+        },
+      }),
+    })
+
+    const result = await runChecker(root)
+
+    assert.match(result.stdout, /3 covered graph API bundles, 0 allowlisted gaps/)
+  })
+
   it("rejects allowlist exceptions for opted-in bundles", async () => {
     const root = await createFixture({
       "graph.json": graph([

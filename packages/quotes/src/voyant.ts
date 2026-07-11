@@ -202,6 +202,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
       mount: "proposals",
       anonymous: true,
       transactional: true,
+      openapi: { document: "quotes-proposal-public" },
       runtime: {
         entry: "@voyant-travel/quotes",
         export: "createQuoteProposalVoyantRuntime",
