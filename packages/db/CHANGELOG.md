@@ -1,5 +1,11 @@
 # @voyant-travel/db
 
+## 0.112.0
+
+### Minor Changes
+
+- ca90eb5: Activate link definitions as request-scoped link services backed by each request's database.
+
 ## 0.111.2
 
 ### Patch Changes

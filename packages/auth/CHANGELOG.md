@@ -1,5 +1,13 @@
 # @voyant-travel/auth
 
+## 0.124.2
+
+### Patch Changes
+
+- Updated dependencies [ca90eb5]
+  - @voyant-travel/db@0.112.0
+  - @voyant-travel/types@0.107.3
+
 ## 0.124.1
 
 ### Patch Changes
