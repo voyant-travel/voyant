@@ -26,8 +26,8 @@
  * profile via `QuoteProposalRoutesOptions` — all generic / structural so this
  * package stays free of operator types and CloudflareBindings.
  */
-import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { OpenAPIHono } from "@hono/zod-openapi"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { parseJsonBody, parseOptionalJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import {

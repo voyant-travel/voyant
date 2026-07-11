@@ -125,7 +125,7 @@ describe("operator openapi spec", () => {
     }
   })
 
-  it("rejects graph replacement drift and cross-document duplicate paths", () => {
+  it("rejects graph drift while replacing compatibility path ownership", () => {
     const operation = { operationId: "getAdminIdentity", responses: { 200: { description: "OK" } } }
     const compatibility = new Map([
       [
@@ -165,20 +165,29 @@ describe("operator openapi spec", () => {
     expect(
       mergeOperatorOpenApiModuleDocuments(compatibility, new Map([["identity", graphIdentity]])),
     ).toHaveProperty("size", 2)
+    const migrated = mergeOperatorOpenApiModuleDocuments(
+      compatibility,
+      new Map([
+        [
+          "other",
+          {
+            ...graphIdentity,
+            paths: { "/v1/admin/bookings": identityPath },
+          } as never,
+        ],
+      ]),
+    )
+    expect(migrated.has("bookings")).toBe(false)
+    expect(migrated.get("other")?.paths).toHaveProperty("/v1/admin/bookings")
     expect(() =>
       mergeOperatorOpenApiModuleDocuments(
         compatibility,
         new Map([
-          [
-            "other",
-            {
-              ...graphIdentity,
-              paths: { "/v1/admin/bookings": identityPath },
-            } as never,
-          ],
+          ["first", graphIdentity],
+          ["second", graphIdentity],
         ]),
       ),
-    ).toThrow(/duplicates path/)
+    ).toThrow(/owned by both/)
     expect(() =>
       mergeOperatorOpenApiModuleDocuments(
         compatibility,

@@ -96,9 +96,14 @@ function checkKvCacheBindings() {
   // are concrete Node providers in `src/server.ts`, while consumers still type
   // against the KVStore-compatible CACHE/RATE_LIMIT env members.
   requireContains(
-    "starters/operator/voyant.config.ts",
+    "packages/framework/src/operator-distribution.ts",
     'cache: "postgres"',
-    "operator cache backend declaration",
+    "standard Node product cache backend",
+  )
+  requireNotContains(
+    "starters/operator/voyant.config.ts",
+    "cache:",
+    "the standard cache backend must not be repeated in authored project config",
   )
   requireContains("starters/operator/env.d.ts", "CACHE: KVNamespace", "operator CACHE binding type")
   requireContains(

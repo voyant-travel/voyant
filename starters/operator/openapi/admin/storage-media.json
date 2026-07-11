@@ -1,0 +1,187 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CatalogSearchFilter": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "eq"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "value"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "in"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "values"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "range"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "gte": {
+                "type": "number"
+              },
+              "lte": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "field"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "and"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "or"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          }
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/admin/media/{key}": {
+      "get": {
+        "summary": "Download stored media",
+        "x-voyant-api-id": "@voyant-travel/storage#api.admin.media",
+        "responses": {
+          "200": {
+            "description": "The stored media bytes."
+          },
+          "400": {
+            "description": "The storage key is invalid."
+          },
+          "404": {
+            "description": "The object does not exist."
+          },
+          "503": {
+            "description": "Object storage is not configured."
+          }
+        },
+        "operationId": "getAdminMediaByKey",
+        "tags": [
+          "media"
+        ],
+        "x-voyant-module": "media",
+        "x-voyant-surface": "admin",
+        "x-voyant-unit-id": "@voyant-travel/storage",
+        "x-voyant-package-name": "@voyant-travel/storage"
+      }
+    }
+  },
+  "webhooks": {}
+}

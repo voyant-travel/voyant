@@ -25,8 +25,9 @@ container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
     "starters/operator/src/api/composition.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
-    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
-  },
+    withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+      withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+  } satisfies TripsDatabaseRuntime,
 }
 `,
     ...overrides,
@@ -73,8 +74,9 @@ eventBus.subscribe("payment.completed", handler)
       "starters/operator/src/api/composition.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
-    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
-  },
+    withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+      withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+  } satisfies TripsDatabaseRuntime,
 }
 tripsPaymentCompletedSubscriber.register(context)
 `,

@@ -861,6 +861,7 @@
         "../framework/dist/deployment-artifacts.d.ts"
       ],
       "@voyant-travel/framework/deployment-graph": ["../framework/dist/deployment-graph.d.ts"],
+      "@voyant-travel/framework/graph-lifecycle": ["../framework/dist/graph-lifecycle.d.ts"],
       "@voyant-travel/framework/managed-jobs": ["../framework/dist/managed-jobs.d.ts"],
       "@voyant-travel/framework/managed-runtime": ["../framework/dist/managed-runtime.d.ts"],
       "@voyant-travel/framework/operator-distribution": [

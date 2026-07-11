@@ -91,7 +91,7 @@ describe("graph action-ledger lowering", () => {
   it("rejects action scopes outside the selected graph", () => {
     expect(() =>
       lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime({ accessScopes: [] })),
-    ).toThrow(/requires undeclared selected-graph scope "loyalty:write"/)
+    ).toThrow(/requires undeclared access scope "loyalty:write"/)
   })
 
   it.each([
@@ -105,7 +105,7 @@ describe("graph action-ledger lowering", () => {
 
     expect(() =>
       lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime({ selectedIds: withoutBinding })),
-    ).toThrow(new RegExp(`binds unknown selected-graph ${binding} id`))
+    ).toThrow(new RegExp(`selects undeclared ${binding} reference`))
   })
 
   it("keeps the bookings manifest in parity with its canonical request registry", () => {
@@ -120,7 +120,7 @@ describe("graph action-ledger lowering", () => {
       { id: "booking.status.override", capabilityId: "bookings:status:override" },
     ])
     const accessScopes = (bookingsVoyantModule.access?.resources ?? []).flatMap((resource) =>
-      resource.actions.map((action) => `${resource.resource}:${action}`),
+      resource.actions.map((action) => `${resource.resource}:${action.action}`),
     )
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:bookings-action-parity",

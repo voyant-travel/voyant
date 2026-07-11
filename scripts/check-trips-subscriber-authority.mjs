@@ -48,7 +48,7 @@ rejectMatch(
 )
 requireMatch(
   sources.composition,
-  /\[tripsDatabaseRuntimePort\.id\]:\s*\{[\s\S]*withDb:\s*\(bindings, operation\)\s*=>\s*withDbFromEnv\(bindings as AppBindings, operation\)/,
+  /\[tripsDatabaseRuntimePort\.id\]:\s*\{[\s\S]*withDbFromEnv\(operatorBindings\(bindings\),[\s\S]*operation\(operatorPostgresDb\(db\)\)[\s\S]*satisfies TripsDatabaseRuntime/,
   "Trips payment runtime service must preserve Operator DB lifecycle handling",
 )
 requireMatch(

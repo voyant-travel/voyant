@@ -4,9 +4,9 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { listInvoicesTool } from "@voyant-travel/finance/tools"
+import { createStorefrontVoyantRuntime, storefrontRuntimePort } from "@voyant-travel/storefront"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
-import { frameworkComposition } from "./composition-lazy.js"
 import {
   createManagedCloudAuthApp,
   createManagedProfileApp,
@@ -16,7 +16,7 @@ import {
   type ManagedProfileRuntimeEnv,
 } from "./managed-runtime.js"
 import { defineVoyantProject, type VoyantProjectProviders } from "./profile.js"
-import { composeVoyantGraphRuntimeFacetModules } from "./runtime-composition.js"
+import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 const localProviders = {
@@ -120,6 +120,7 @@ describe("managed profile runtime entry", () => {
     const selectedRuntime = createVoyantGraphRuntime({
       graphHash: "sha256:managed-storefront-subscriber",
       entries: {
+        "@voyant-travel/storefront": async () => ({ createStorefrontVoyantRuntime }),
         "@voyant-travel/storefront/booking-bootstrap-subscriber": () =>
           import("@voyant-travel/storefront/booking-bootstrap-subscriber"),
       },
@@ -130,7 +131,20 @@ describe("managed profile runtime entry", () => {
           kind: "module",
           packageName: "@voyant-travel/storefront",
           order: 0,
+          runtimePorts: [storefrontRuntimePort.id],
+          runtimeReferenceId: "storefront-runtime",
           references: [
+            {
+              id: "storefront-runtime",
+              unitId: "@voyant-travel/storefront",
+              facet: "runtime",
+              entityId: "@voyant-travel/storefront",
+              runtime: {
+                entry: "@voyant-travel/storefront",
+                export: "createStorefrontVoyantRuntime",
+              },
+              importEntry: "@voyant-travel/storefront",
+            },
             {
               id: "storefront-booking-bootstrap-subscriber",
               unitId: "@voyant-travel/storefront",
@@ -148,18 +162,18 @@ describe("managed profile runtime entry", () => {
       ],
       plugins: [],
     })
-    const providers = createManagedProfileProviders({
-      withDb: vi.fn(async (_bindings, operation) => operation({} as never)),
+    const graphComposition = await composeVoyantGraphRuntime({
+      runtime: selectedRuntime,
+      capabilities: {},
+      ports: {
+        [storefrontRuntimePort.id]: {
+          bookingIntents: {
+            withDb: vi.fn(async (_bindings, operation) => operation({} as never)),
+          },
+        },
+      },
     })
-    const storefront = frameworkComposition.modules["@voyant-travel/storefront"]?.({
-      capabilities: providers,
-      options: {},
-    })
-    if (!storefront || Array.isArray(storefront)) {
-      throw new Error("expected the managed Storefront module")
-    }
-    const graphModules = await composeVoyantGraphRuntimeFacetModules(selectedRuntime)
-    const graphModule = graphModules.find(
+    const graphModule = graphComposition.modules.find(
       (module) => module.module.name === "storefront.graph-runtime",
     )
     const container = createContainer()
@@ -167,8 +181,7 @@ describe("managed profile runtime entry", () => {
     const subscribe = vi.spyOn(eventBus, "subscribe")
     const context = { bindings: {}, container, eventBus }
 
-    await storefront.module.bootstrap?.(context)
-    await graphModule?.module.bootstrap?.(context)
+    for (const module of graphComposition.modules) await module.module.bootstrap?.(context)
 
     expect(graphModule).toBeDefined()
     expect(
@@ -181,7 +194,9 @@ describe("managed profile runtime entry", () => {
       modules: [],
       plugins: [],
     })
-    expect(await composeVoyantGraphRuntimeFacetModules(deselectedRuntime)).toEqual([])
+    await expect(
+      composeVoyantGraphRuntime({ runtime: deselectedRuntime, capabilities: {} }),
+    ).resolves.toMatchObject({ modules: [] })
   }, 15_000)
 
   it("loads a local source-free profile snapshot without starter-local glue", async () => {

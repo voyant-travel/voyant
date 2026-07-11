@@ -10,7 +10,6 @@ const paths = {
   manifest: "packages/storefront/src/voyant.ts",
   descriptor: "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts",
   storefrontModule: "packages/storefront/src/index.ts",
-  frameworkLazy: "packages/framework/src/composition-lazy.ts",
   operatorComposition: "starters/operator/src/api/composition.ts",
   operatorApp: "starters/operator/src/api/app.ts",
 }
@@ -64,25 +63,25 @@ requireMatch(
 )
 
 requireMatch(
-  sources.frameworkLazy,
-  /bookingIntents:\s*capabilities\.withDb\s*\?\s*\{[\s\S]*?withDb:[\s\S]*?capabilities\.withDb!\(bindings/,
-  "Lazy framework composition must enable Storefront intents only through the generic database lifecycle capability",
-)
-rejectMatch(
-  sources.frameworkLazy,
-  /storefrontBookingBootstrapSubscriber|STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY|bookingIntents:\s*\{\s*resolveDb/,
-  "Lazy framework composition must not register or directly resolve the Storefront subscriber",
+  sources.manifest,
+  /runtime:\s*\{\s*entry:\s*["']@voyant-travel\/storefront["'],\s*export:\s*["']createStorefrontVoyantRuntime["']\s*\}[\s\S]*runtimePorts:\s*\[requirePort\(storefrontRuntimePort\)\]/,
+  "Storefront manifest must compose through its typed runtime port",
 )
 
 requireMatch(
   sources.operatorComposition,
-  /withDb:\s*\(bindings, operation\)\s*=>[\s\S]*withDbFromEnv\(bindings as AppBindings/,
-  "Operator composition must provide lifecycle-aware generic withDb",
+  /\[storefrontRuntimePort\.id\]:\s*createOperatorStorefrontRuntimeProvider\(capabilities\)/,
+  "Operator must bind the typed Storefront runtime port",
 )
 requireMatch(
   sources.operatorComposition,
-  /["']@voyant-travel\/storefront["']:\s*frameworkComposition\.modules\[["']@voyant-travel\/storefront["']\]/,
-  "Operator must configure the selected Storefront unit through shared framework composition",
+  /function createOperatorStorefrontRuntimeProvider[\s\S]*bookingIntents:[\s\S]*withDbFromEnv\(/,
+  "Operator Storefront host must preserve lifecycle-aware booking-intent database access",
+)
+rejectMatch(
+  sources.operatorComposition,
+  /["']@voyant-travel\/storefront["']\s*:/,
+  "Operator must not restore a package-id Storefront compatibility binding",
 )
 rejectMatch(
   sources.operatorComposition,

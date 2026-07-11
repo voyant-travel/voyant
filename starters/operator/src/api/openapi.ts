@@ -12,11 +12,6 @@ import {
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import { app } from "./app.js"
 
-const GRAPH_OWNERSHIP_FIELDS = [
-  "x-voyant-api-id",
-  "x-voyant-unit-id",
-  "x-voyant-package-name",
-] as const
 const OPENAPI_HTTP_METHODS = new Set([
   "delete",
   "get",
@@ -97,50 +92,58 @@ export function mergeOperatorOpenApiModuleDocuments(
   compatibility: ReadonlyMap<string, OpenApiDocument>,
   graph: ReadonlyMap<string, OpenApiDocument>,
 ): Map<string, OpenApiDocument> {
-  const merged = new Map(compatibility)
+  const graphPathOwners = new Map<string, string>()
+  for (const [document, graphDocument] of graph) {
+    for (const path of Object.keys(graphDocument.paths ?? {})) {
+      const existing = graphPathOwners.get(path)
+      if (existing) {
+        throw new Error(
+          `Selected graph OpenAPI path "${path}" is owned by both "${existing}" and "${document}".`,
+        )
+      }
+      graphPathOwners.set(path, document)
+    }
+  }
+
+  const merged = new Map<string, OpenApiDocument>()
+  for (const [document, compatibilityDocument] of compatibility) {
+    const paths = Object.fromEntries(
+      Object.entries(compatibilityDocument.paths ?? {}).filter(
+        ([path]) => !graphPathOwners.has(path),
+      ),
+    )
+    if (Object.keys(paths).length > 0) {
+      merged.set(document, { ...compatibilityDocument, paths } as OpenApiDocument)
+    }
+  }
+
   for (const [document, graphDocument] of graph) {
     const compatibilityDocument = compatibility.get(document)
     if (compatibilityDocument) {
-      const expected = JSON.stringify(compatibilityDocument)
-      const actual = JSON.stringify(withoutGraphOwnership(graphDocument))
-      if (actual !== expected) {
+      const graphOperations = documentOperationKeys(graphDocument)
+      const missing = [...documentOperationKeys(compatibilityDocument)].filter(
+        (operation) => !graphOperations.has(operation),
+      )
+      if (missing.length > 0) {
         throw new Error(
-          `Selected graph OpenAPI document "${document}" does not preserve its Operator compatibility document.`,
+          `Selected graph OpenAPI document "${document}" does not preserve compatibility operations: ${missing.join(", ")}.`,
         )
       }
     }
 
-    const graphPaths = new Set(Object.keys(graphDocument.paths ?? {}))
-    for (const [compatibilityName, compatibilityDoc] of compatibility) {
-      if (compatibilityName === document) continue
-      const duplicate = Object.keys(compatibilityDoc.paths ?? {}).find((path) =>
-        graphPaths.has(path),
-      )
-      if (duplicate) {
-        throw new Error(
-          `Selected graph OpenAPI document "${document}" duplicates path "${duplicate}" from compatibility document "${compatibilityName}".`,
-        )
-      }
-    }
     merged.set(document, graphDocument)
   }
   return merged
 }
 
-function withoutGraphOwnership(document: OpenApiDocument): OpenApiDocument {
-  const paths = Object.fromEntries(
-    Object.entries(document.paths ?? {}).map(([path, pathItem]) => {
-      if (!pathItem || typeof pathItem !== "object") return [path, pathItem]
-      const nextItem = { ...pathItem } as Record<string, unknown>
-      for (const [method, value] of Object.entries(nextItem)) {
-        if (!OPENAPI_HTTP_METHODS.has(method.toLowerCase())) continue
-        if (!value || typeof value !== "object") continue
-        const operation = { ...value } as Record<string, unknown>
-        for (const field of GRAPH_OWNERSHIP_FIELDS) Reflect.deleteProperty(operation, field)
-        nextItem[method] = operation
-      }
-      return [path, nextItem]
-    }),
-  )
-  return { ...document, paths } as OpenApiDocument
+function documentOperationKeys(document: OpenApiDocument): Set<string> {
+  const operations = new Set<string>()
+  for (const [path, pathItem] of Object.entries(document.paths ?? {})) {
+    if (!pathItem || typeof pathItem !== "object") continue
+    for (const method of Object.keys(pathItem)) {
+      if (OPENAPI_HTTP_METHODS.has(method.toLowerCase()))
+        operations.add(`${method.toUpperCase()} ${path}`)
+    }
+  }
+  return operations
 }

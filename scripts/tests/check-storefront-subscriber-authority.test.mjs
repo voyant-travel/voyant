@@ -14,7 +14,11 @@ const checker = path.join(repoRoot, "scripts/check-storefront-subscriber-authori
 async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-storefront-subscriber-authority-"))
   const files = {
-    "packages/storefront/src/voyant.ts": `runtime: { entry: "./booking-bootstrap-subscriber", export: "storefrontBookingBootstrapSubscriber" }`,
+    "packages/storefront/src/voyant.ts": `
+runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
+runtimePorts: [requirePort(storefrontRuntimePort)],
+subscribers: [{ runtime: { entry: "./booking-bootstrap-subscriber", export: "storefrontBookingBootstrapSubscriber" } }]
+`,
     "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts": `
 export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor = {
   register: ({ eventBus }) => {
@@ -26,11 +30,11 @@ export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor =
 `,
     "packages/storefront/src/index.ts":
       "registerStorefrontBookingBootstrapRuntime(container, runtime)\n",
-    "packages/framework/src/composition-lazy.ts":
-      "createStorefrontHonoModule({ bookingIntents: capabilities.withDb ? { withDb: (bindings, operation) => capabilities.withDb!(bindings, operation) } : undefined })\n",
     "starters/operator/src/api/composition.ts": `
-withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation)
-"@voyant-travel/storefront": frameworkComposition.modules["@voyant-travel/storefront"]
+[storefrontRuntimePort.id]: createOperatorStorefrontRuntimeProvider(capabilities)
+function createOperatorStorefrontRuntimeProvider() {
+  return { bookingIntents: { withDb: (bindings, operation) => withDbFromEnv(bindings, operation) } }
+}
 `,
     "starters/operator/src/api/app.ts": "export const app = {}\n",
     ...overrides,
