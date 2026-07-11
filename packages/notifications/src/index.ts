@@ -376,7 +376,7 @@ export const createNotificationsVoyantRuntime = defineGraphRuntimeFactory(async 
     ...configured,
     module: {
       ...configured.module,
-      bootstrap: async (context) => {
+      bootstrap: async (context: BootstrapContext) => {
         context.container.register(
           NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
           provider.resolveReminderWorkflowRuntime(context.bindings as Record<string, unknown>),
