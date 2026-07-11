@@ -1,4 +1,11 @@
+import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import { describe, expect, it } from "vitest"
+import {
+  catalogCheckoutApiRuntimePort,
+  catalogCheckoutContractPdfRuntimePort,
+  catalogCheckoutDatabaseRuntimePort,
+  catalogCheckoutLegalRuntimePort,
+} from "../../src/checkout/runtime-ports.js"
 import {
   commerceBookingMaintenanceVoyantPlugin,
   commerceCatalogCheckoutVoyantPlugin,
@@ -111,6 +118,13 @@ describe("commerce deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/commerce#catalog-checkout-extension",
       packageName: "@voyant-travel/commerce",
+      runtimePorts: [
+        { id: catalogCheckoutApiRuntimePort.id },
+        { id: catalogCheckoutDatabaseRuntimePort.id },
+        { id: catalogCheckoutLegalRuntimePort.id },
+        { id: catalogCheckoutContractPdfRuntimePort.id },
+        { id: workflowRunnerRegistryRuntimePort.id },
+      ],
       api: [
         {
           id: "@voyant-travel/commerce#catalog-checkout-extension.api",
@@ -118,7 +132,7 @@ describe("commerce deployment manifest", () => {
           mount: "catalog",
           runtime: {
             entry: "@voyant-travel/commerce/checkout",
-            export: "createCatalogCheckoutHonoExtension",
+            export: "createCatalogCheckoutGraphExtension",
           },
         },
       ],
@@ -127,18 +141,23 @@ describe("commerce deployment manifest", () => {
           id: "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated",
           eventType: "contract.document.generated",
           source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+          runtime: {
+            entry: "./catalog-checkout-subscribers",
+            export: "createAcceptanceSignatureSubscriberGraphRuntime",
+          },
         },
         {
           id: "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed",
           eventType: "payment.completed",
           source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+          runtime: {
+            entry: "./catalog-checkout-subscribers",
+            export: "createCheckoutFinalizeSubscriberGraphRuntime",
+          },
         },
       ],
     })
     expect(commerceCatalogCheckoutVoyantPlugin.subscribers).toHaveLength(2)
-    for (const subscriber of commerceCatalogCheckoutVoyantPlugin.subscribers ?? []) {
-      expect(subscriber).not.toHaveProperty("runtime")
-    }
 
     expect(commerceBookingMaintenanceVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",

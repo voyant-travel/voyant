@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
+import {
+  catalogCheckoutContractPdfRuntimePort,
+  catalogCheckoutDatabaseRuntimePort,
+  catalogCheckoutLegalRuntimePort,
+  createAcceptanceSignatureSubscriberGraphRuntime,
+  createCheckoutFinalizeSubscriberGraphRuntime,
+} from "../../src/checkout/subscriber-runtime.js"
+
 interface PublishedExport {
   types: string
   import: string
@@ -33,6 +41,14 @@ describe("@voyant-travel/commerce package exports", () => {
       import: `./dist/${dist}.js`,
       default: `./dist/${dist}.js`,
     })
+  })
+
+  it("publishes selected-graph checkout factories and typed host ports", () => {
+    expect(createAcceptanceSignatureSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(createCheckoutFinalizeSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(catalogCheckoutDatabaseRuntimePort.id).toBe("commerce.checkout-database")
+    expect(catalogCheckoutLegalRuntimePort.id).toBe("legal.acceptance-signature")
+    expect(catalogCheckoutContractPdfRuntimePort.id).toBe("legal.booking-contract-pdf")
   })
 
   it("publishes the promotion-redemption subscriber runtime subpath", () => {
