@@ -1058,6 +1058,16 @@ runtime reference. Moving either path to selected-graph activation remains
 gated on explicit Legal document-ordering semantics for `booking.confirmed`, as
 ordinary event-bus subscribers run independently and provide no ordering.
 
+Legal now stages its booking-contract auto-generation handler as an executable
+package-owned subscriber descriptor on the unselected
+`@voyant-travel/legal#booking-contract-extension`. The existing Legal module
+bootstrap remains the compatibility activation path until a separate graph
+cutover removes it. That activation must coordinate contract generation with
+Notifications through explicit ordering semantics, such as a durable workflow
+dependency or a follow-up document-generated event. Registration order is not
+an ordering contract: the in-process event bus runs `booking.confirmed`
+subscribers independently and in parallel.
+
 The broader event catalog is beyond the foundational substrate:
 
 - declared `events.emits` catalogs

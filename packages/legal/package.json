@@ -9,6 +9,7 @@
     "./contract-document-routes": "./src/contract-document-routes.ts",
     "./contract-document": "./src/contracts/contract-document-service.ts",
     "./contract-variables": "./src/contracts/contract-variables.ts",
+    "./booking-contract-subscriber": "./src/contracts/booking-contract-subscriber-runtime.ts",
     "./schema": "./src/schema.ts",
     "./contracts": "./src/contracts/index.ts",
     "./contracts/linkables": "./src/contracts/linkables.ts",
@@ -94,6 +95,11 @@
         "types": "./dist/contracts/contract-variables.d.ts",
         "import": "./dist/contracts/contract-variables.js",
         "default": "./dist/contracts/contract-variables.js"
+      },
+      "./booking-contract-subscriber": {
+        "types": "./dist/contracts/booking-contract-subscriber-runtime.d.ts",
+        "import": "./dist/contracts/booking-contract-subscriber-runtime.js",
+        "default": "./dist/contracts/booking-contract-subscriber-runtime.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
