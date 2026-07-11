@@ -33,6 +33,7 @@ import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/compos
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
+import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import {
@@ -248,6 +249,9 @@ export function buildOperatorProviders(): OperatorCapabilities {
 /** Deployment implementations for package-declared runtime ports. */
 export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
   return {
+    [relationshipsRouteRuntimePort.id]: {
+      customFields: resolveOperatorCustomFields,
+    },
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -445,13 +449,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
     ...deploymentLocalExtensions,
     ...operatorGraphCompatibilityExtensions,
   }),
-  "@voyant-travel/relationships": ({ capabilities, runtimeExports, unit }) =>
-    singleRuntimeFactory<
-      typeof import("@voyant-travel/relationships").createRelationshipsHonoModule
-    >(
-      unit.id,
-      runtimeExports,
-    )({ customFields: capabilities.customFields }),
   "@voyant-travel/quotes": ({ capabilities, runtimeExports, unit }) =>
     singleRuntimeFactory<typeof import("@voyant-travel/quotes").createQuotesHonoModule>(
       unit.id,

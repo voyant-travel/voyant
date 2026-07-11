@@ -2,6 +2,7 @@ import { createContainer, createEventBus } from "@voyant-travel/core"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
+import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
@@ -320,15 +321,35 @@ describe("operator graph runtime composition", () => {
     )
   })
 
-  it("binds storage and realtime by package-declared ports instead of package ids", async () => {
+  it("binds package route dependencies by declared ports instead of package ids", async () => {
     const ports = buildOperatorRuntimePorts()
 
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/relationships")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/storage")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/realtime")
     expect(Object.keys(ports).sort()).toEqual(
-      [realtimeRuntimePort.id, storageMediaRuntimePort.id].sort(),
+      [relationshipsRouteRuntimePort.id, realtimeRuntimePort.id, storageMediaRuntimePort.id].sort(),
     )
     await expect(composeOperatorGraph()).resolves.toBeDefined()
+  })
+
+  it("selects Relationships exactly once and omits it when deselected", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const selected = await composeOperatorGraph(runtime)
+    const relationshipsModules = selected.modules.filter(
+      (module) => module.module.name === "relationships",
+    )
+
+    expect(relationshipsModules).toHaveLength(1)
+    expect(relationshipsModules[0]?.module.requiresTransactionalDb).toBe(true)
+    expect(selected.routePosture.transactionalPaths).toContain("/v1/admin/relationships")
+
+    const deselected = await composeOperatorGraph({
+      ...runtime,
+      modules: runtime.modules.filter((unit) => unit.id !== "@voyant-travel/relationships"),
+    })
+    expect(deselected.modules.some((module) => module.module.name === "relationships")).toBe(false)
+    expect(deselected.routePosture.transactionalPaths).not.toContain("/v1/admin/relationships")
   })
 
   it("initializes the real operator app from the generated graph runtime", async () => {

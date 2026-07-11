@@ -1,4 +1,5 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated } from "./events.js"
 import { relationshipsLinkable } from "./linkables.js"
@@ -8,6 +9,7 @@ import {
   type RelationshipsRouteRuntimeOptions,
 } from "./route-runtime.js"
 import { relationshipsRoutes } from "./routes/index.js"
+import { relationshipsRouteRuntimePort } from "./runtime-port.js"
 import { relationshipsService } from "./service/index.js"
 
 export { organizationLinkable, personLinkable, relationshipsLinkable } from "./linkables.js"
@@ -44,7 +46,10 @@ export function createRelationshipsHonoModule(
   }
 }
 
-export const relationshipsHonoModule: HonoModule = createRelationshipsHonoModule()
+/** Package-owned adapter from the graph port registry to the Relationships route factory. */
+export const createRelationshipsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createRelationshipsHonoModule(await getPort(relationshipsRouteRuntimePort)),
+)
 
 export type {
   CustomerSignalCreatedEvent,
@@ -68,6 +73,7 @@ export {
   buildRelationshipsRouteRuntime,
   RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "./route-runtime.js"
+export { relationshipsRouteRuntimePort } from "./runtime-port.js"
 export type {
   Activity,
   ActivityLink,

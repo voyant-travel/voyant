@@ -1442,6 +1442,13 @@ The deployment-local invitations unit continues to own its anonymous posture
 locally. `check-operator-route-posture` prevents graph-derived posture from
 being replaced by starter hand-lists.
 
+Progress: Relationships now declares its route runtime dependency as the typed
+`relationships.route-runtime` port and exports the package-owned graph factory
+that consumes it. The Node host supplies only the custom-field resolver through
+the generic port registry; it no longer binds Relationships behavior by package
+id. Package selection remains the sole authority for mounting its transactional
+route module.
+
 - migrate API bundles, anonymous/transactional posture, subscribers, workflow
   descriptors, schedules, and event filters to package manifests
 - lower package factories into the existing Hono composition and explicit
