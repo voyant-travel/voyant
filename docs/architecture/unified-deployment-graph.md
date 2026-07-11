@@ -1075,6 +1075,12 @@ a resolver-private relative import. The operator resolver adapter requires
 `resolveProject({ project, projectRoot, configPath })` and then adds target
 admission, lockfile provenance, and runtime-maintenance schedules.
 
+The same resolver compiles `src/api/{admin,store}/**/route.ts` into individual
+graph API facets backed by one generated static Hono adapter, and compiles
+`src/admin/<name>/index.tsx` entries into a deterministic client module. Both
+artifacts use paths relative to `.voyant/`; no runtime filesystem scan or
+starter-owned project convention registry participates in resolution.
+
 Schema-owning first-party package manifests publish `voyant.package.v1`
 compatibility metadata alongside the existing migration-facing `schema` and
 `requiresSchemas` declarations. Graph checks require every package-backed

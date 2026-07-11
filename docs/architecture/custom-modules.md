@@ -160,6 +160,12 @@ it, requires a default export, and emits the client-only
 imports. The generated array is checked against `AdminExtension`, and duplicate
 extension IDs are reported when their string values can be read statically.
 
+`resolveProject()` owns this compilation. Its artifact contract uses paths
+relative to the disposable `.voyant/` root, and project API route files are
+also represented as individual API facets on a synthetic project-owned module.
+Generated route and admin entry modules are therefore inputs to the same graph
+resolution as package-owned facets, not separate starter scans.
+
 - **nav + widgets** merge via `adminExtensionsFromGlob` in
   `src/lib/admin-extensions.tsx` and resolve through the shared
   `resolveAdminNavigation` / `resolveAdminWidgets`.

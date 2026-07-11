@@ -66,7 +66,7 @@ describe("project API conventions", () => {
         surface: "public",
       },
     ])
-    expect(compilation.generatedFile.path).toBe(".voyant/runtime/project-api.generated.ts")
+    expect(compilation.generatedFile.path).toBe("runtime/project-api.generated.ts")
     expect(compilation.generatedFile.contents).toBe(
       [
         'import type { HonoModule } from "@voyant-travel/hono/module"',
