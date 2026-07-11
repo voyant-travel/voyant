@@ -104,7 +104,7 @@
     "@voyant-travel/plugin-catalog-demo": "workspace:^",
     "@voyant-travel/plugin-flights-demo": "workspace:^",
     "@voyant-travel/plugin-netopia": "^0.105.20",
-    "@voyant-travel/plugin-smartbill": "^0.137.3",
+    "@voyant-travel/plugin-smartbill": "^0.138.0",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/public-document-delivery": "workspace:^",
     "@voyant-travel/quotes": "workspace:^",

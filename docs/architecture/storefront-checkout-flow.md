@@ -77,7 +77,7 @@ need to write".
 | Bookings state machine | `packages/bookings/src/state-machine.ts` | `transitionBooking()`, status enum (we extend with `awaiting_payment`) |
 | Legal contracts | `packages/legal/src/contracts/` | template render service, `contract_signatures` table, `autoGenerateContractOptions` |
 | Finance | `packages/finance/src/` | `createInvoiceFromBooking`, invoice renditions, number series |
-| SmartBill plugin | `@voyant-travel/plugin-smartbill` | subscribers for `invoice.issued`, `invoice.voided`; `createInvoice`, `cancelInvoice`; `createSmartbillInvoiceSettlementPoller` |
+| SmartBill plugin | `@voyant-travel/plugin-smartbill` | graph-selected subscribers for `invoice.issued`, `invoice.proforma.issued`, `invoice.payment.recorded`; package admin sync route; `createSmartbillInvoiceSettlementPoller` |
 | Netopia plugin | `@voyant-travel/plugin-netopia` | `startPaymentSession`, finance routes, webhook callback |
 | EventBus | `packages/core/src/events.ts` | `emit / subscribe`, fire-and-forget |
 | Workflows | `@voyant-travel/workflows` + Node workflow runtime | `createWorkflow`, `step`, async via JobRunner |

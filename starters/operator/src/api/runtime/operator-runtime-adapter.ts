@@ -100,7 +100,7 @@ export function createOperatorInvoiceSettlementPollers(bindings: unknown) {
   return {
     smartbill: async (context: Parameters<InvoiceSettlementPoller>[0]) => {
       if (!poller) {
-        const { createSmartbillSettlementPollers } = await import("../subscribers/smartbill")
+        const { createSmartbillSettlementPollers } = await import("./smartbill-subscriber-runtime")
         poller = createSmartbillSettlementPollers(env).smartbill
       }
       if (!poller) {

@@ -61,6 +61,10 @@ const DEFAULT_ALLOWLIST = new Map([
     "@voyant-travel/storage#api.admin.video-upload-ticket",
     "storage video upload ticket routes do not yet expose a package OpenAPI registry",
   ],
+  [
+    "@voyant-travel/plugin-smartbill#api.admin",
+    "SmartBill 0.138.0 publishes a plain Hono admin route and does not yet expose a package OpenAPI registry",
+  ],
 ])
 
 const repoRoot = process.cwd()

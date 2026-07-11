@@ -242,6 +242,13 @@ Vendor routes should not force every deployment to write vendor-specific Hono
 handlers. The deployment supplies credentials, base URLs, and environment
 policy; the adapter package owns the route interface.
 
+For SmartBill, `@voyant-travel/plugin-smartbill/voyant` owns the transactional
+`/v1/admin/smartbill` declaration and `@voyant-travel/plugin-smartbill/hono`
+owns its handler factory. The Operator selected-graph binding adapts that
+package module into composition and resolves deployment credentials and
+database/storage capabilities; `app.ts` does not mount a SmartBill route or
+bundle independently.
+
 ### Deployments own composition and local policy
 
 Deployments should own:

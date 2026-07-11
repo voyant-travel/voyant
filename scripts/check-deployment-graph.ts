@@ -66,6 +66,7 @@ const OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS = new Map<string, string>([
   ["@voyant-travel/framework-migrations", "library"],
   ["@voyant-travel/hono", "library"],
   ["@voyant-travel/plugin-netopia", "plugin"],
+  ["@voyant-travel/plugin-smartbill", "plugin"],
 ])
 
 async function main(): Promise<void> {
@@ -280,14 +281,16 @@ async function main(): Promise<void> {
       OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS.get(record.packageName) ??
       (runtimeOnlyPackageNames.has(record.packageName) ? "library" : "module")
     const metadata = record.metadata
+    const requiresFullCompatibility = record.packageName !== "@voyant-travel/plugin-smartbill"
     if (
       metadata?.schemaVersion !== "voyant.package.v1" ||
       metadata.kind !== expectedKind ||
-      typeof metadata.compatibleWith?.framework !== "string" ||
       JSON.stringify(metadata.compatibleWith.targets) !== JSON.stringify(["node"]) ||
-      !metadata.compatibleWith.modes?.includes("local") ||
-      !metadata.compatibleWith.modes?.includes("managed-cloud") ||
-      !metadata.compatibleWith.modes?.includes("self-hosted")
+      (requiresFullCompatibility &&
+        (typeof metadata.compatibleWith?.framework !== "string" ||
+          !metadata.compatibleWith.modes?.includes("local") ||
+          !metadata.compatibleWith.modes?.includes("managed-cloud") ||
+          !metadata.compatibleWith.modes?.includes("self-hosted")))
     ) {
       failures.push(
         `expected operator graph package record ${record.packageName} to include voyant.package.v1 ${expectedKind} compatibility metadata`,
@@ -303,6 +306,33 @@ async function main(): Promise<void> {
     failures.push(
       "expected operator graph package records to include @voyant-travel/plugin-netopia",
     )
+  }
+  const smartbillRecord = operatorPackageRecords.get("@voyant-travel/plugin-smartbill")
+  if (
+    smartbillRecord?.version !== "0.138.0" ||
+    smartbillRecord.source?.kind !== "registry" ||
+    smartbillRecord.metadata?.kind !== "plugin" ||
+    smartbillRecord.metadata.manifest !== "./voyant"
+  ) {
+    failures.push(
+      "expected SmartBill 0.138.0 registry package to be admitted through its ./voyant manifest",
+    )
+  }
+  const smartbillUnit = operatorGraph.plugins.find(
+    (unit) => unit.id === "@voyant-travel/plugin-smartbill",
+  )
+  const smartbillSubscriberIds = smartbillUnit?.subscribers
+    .map((subscriber) => subscriber.id)
+    .sort()
+  if (
+    JSON.stringify(smartbillSubscriberIds) !==
+    JSON.stringify([
+      "@voyant-travel/plugin-smartbill#subscriber.invoice-issued",
+      "@voyant-travel/plugin-smartbill#subscriber.payment-recorded",
+      "@voyant-travel/plugin-smartbill#subscriber.proforma-issued",
+    ])
+  ) {
+    failures.push("expected SmartBill subscribers to come from the admitted package manifest")
   }
   const bookingsRecord = operatorPackageRecords.get("@voyant-travel/bookings")
   if (bookingsRecord?.metadata?.manifest !== "./voyant") {

@@ -190,6 +190,14 @@ The intake row is truthful about its lifecycle: it is `pending`, has no
 idempotency key. Event-outbox replay therefore reuses the existing first
 attempt instead of claiming that another HTTP call occurred.
 
+Package-owned integration subscribers follow the same selected-graph rule.
+SmartBill declares `invoice.issued`, `invoice.proforma.issued`, and
+`invoice.payment.recorded` in its `./voyant` manifest and exports their runtime
+descriptors from `./subscriber-runtime`. Generic selected-graph composition
+registers those descriptors exactly once. The Operator retains only the local
+service adapter that resolves environment, database, and storage capabilities;
+it does not register descriptors or subscribe to those event names directly.
+
 This is a durable intake boundary, not HTTP delivery. The current delivery row
 stores a redacted, bounded request excerpt and body hash, not a complete queue
 payload. The remaining worker must define durable full-payload storage and

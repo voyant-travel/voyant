@@ -1155,6 +1155,18 @@ event-filter subscriber that targets that workflow. This is intentionally a
 small facet slice: it proves the graph shape for declarative workflow/event
 routing without pulling runtime workflow bodies into graph discovery.
 
+SmartBill is a package-owned plugin example of states 2 and 3. The Operator
+selects `@voyant-travel/plugin-smartbill` directly, admission reads the
+installed package's `package.json#voyant.manifest` and public `./voyant`
+export, and the generated graph loads its admin API plus the three
+`./subscriber-runtime` descriptors. Generic selected-graph subscriber
+composition registers those descriptors exactly once. The deployment binding
+supplies only the environment, database, storage, and event-handler service
+registered under the package runtime key. The package-id admin factory binding
+remains API compatibility until plugin API factories compose without that
+adapter; it is not subscriber authority. The Operator app must not maintain a
+parallel SmartBill bundle, event-name list, or compatibility mount.
+
 Product-side tooling exposes the same graph diagnostics in human and JSON form
 through `scripts/emit-deployment-graph.ts --json`, using the checked-in
 diagnostic-code registry. The public `voyant doctor --json` command remains the
