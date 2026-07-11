@@ -58,7 +58,6 @@ import {
   createPostgresKvStore,
 } from "@voyant-travel/db/runtime"
 import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
-import { createChannelPushExtension as createDistributionChannelPushExtension } from "@voyant-travel/distribution"
 import {
   type BookingScheduleRoutesOptions,
   financeService,
@@ -78,7 +77,6 @@ import {
   type VoyantDb,
 } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
-import type { HonoExtension } from "@voyant-travel/hono/module"
 import { productsService } from "@voyant-travel/inventory"
 import { createProductContentRoutes } from "@voyant-travel/inventory/routes-content"
 import { getProductContent } from "@voyant-travel/inventory/service-content"
@@ -620,7 +618,6 @@ export function createManagedProfileProviders(
     storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
     resolvePaymentStarters: () => ({}),
     resolveCardPaymentStarter: () => null,
-    createChannelPushExtension: createManagedChannelPushExtension,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
     loadMcpAdminRoutes: () => createManagedMcpAdminRoutes(graphRuntime),
     loadCatalogBookingRoutes: createManagedCatalogBookingRoutes,
@@ -2827,12 +2824,6 @@ function guessMimeType(key: string): string {
     default:
       return "application/octet-stream"
   }
-}
-
-function createManagedChannelPushExtension(): HonoExtension {
-  return createDistributionChannelPushExtension({
-    resolveRegistry: resolveManagedSourceAdapterRegistry,
-  })
 }
 
 function resolveManagedSourceAdapterRegistry(): SourceAdapterRegistry {

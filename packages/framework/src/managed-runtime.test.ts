@@ -1140,15 +1140,6 @@ describe("managed profile runtime entry", () => {
     expect(app.routes.length).toBeGreaterThan(0)
   })
 
-  it("wires package-owned channel-push routes in the default managed providers", () => {
-    const extension = createManagedProfileProviders().createChannelPushExtension()
-
-    expect(extension.extension).toEqual({ name: "channel-push", module: "distribution" })
-    expect(extension.adminRoutes?.fetch).toEqual(expect.any(Function))
-    expect(extension.adminRoutes?.routes.length).toBeGreaterThan(0)
-    expect(extension.lazyAdminRoutes).toBeUndefined()
-  })
-
   it("resolves managed bootstrap status as voyant-cloud when in cloud auth mode", async () => {
     const app = createManagedCloudAuthApp()
     const env = managedCloudEnv()
