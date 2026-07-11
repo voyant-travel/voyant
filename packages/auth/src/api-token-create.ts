@@ -1,9 +1,9 @@
 import {
+  type AccessCatalog,
   API_KEY_AUDIENCES,
   API_KEY_GRANT_PRESETS,
   type ApiKeyGrantPresetKey,
   type ApiKeyPermissions,
-  type AccessCatalog,
   assertKnownPermissions,
   createEffectiveAccessCatalog,
   permissionStringsToPermissions,

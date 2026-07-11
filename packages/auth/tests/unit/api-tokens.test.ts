@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   type ApiTokenRotationStore,

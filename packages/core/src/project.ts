@@ -7,11 +7,11 @@
 
 import type {
   VoyantGraphAccessDeclaration,
-  VoyantGraphProjectAccessDeclaration,
   VoyantGraphActionDeclaration,
   VoyantGraphAdminDeclaration,
   VoyantGraphConfigDeclaration,
   VoyantGraphLifecycleDeclaration,
+  VoyantGraphProjectAccessDeclaration,
   VoyantGraphProviderDeclaration,
   VoyantGraphResourceDeclaration,
   VoyantGraphSecretDeclaration,

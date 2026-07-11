@@ -1,11 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
-
+import { memberPermissionGroups } from "../../src/components/team-settings-cloud.js"
 import {
   TeamSettingsPage,
   type TeamSettingsPageApi,
 } from "../../src/components/team-settings-page.js"
-import { memberPermissionGroups } from "../../src/components/team-settings-cloud.js"
 import { AdminProvider } from "../../src/providers/admin-provider.js"
 import { OperatorAdminMessagesProvider } from "../../src/providers/operator-admin-messages.js"
 

@@ -16,8 +16,8 @@ import { Button } from "@voyant-travel/ui/components/button"
 import { CalendarRange, FileText, Route, ScrollText, SlidersHorizontal, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
-import { selectedGraphAdminExtensionFactories } from "../../.voyant/admin/selected-graph-admin.generated"
 import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
+import { selectedGraphAdminExtensionFactories } from "../../.voyant/admin/selected-graph-admin.generated"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.

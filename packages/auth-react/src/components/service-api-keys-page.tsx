@@ -2,15 +2,15 @@
 
 import { formatMessage } from "@voyant-travel/i18n"
 import {
-  API_KEY_PERMISSION_PRESETS,
   type AccessCatalog,
+  API_KEY_PERMISSION_PRESETS,
   type ApiKeyPermissions,
   accessCatalogPermissionGroups,
   createEffectiveAccessCatalog,
   describePermissions,
   hasApiKeyPermission,
-  permissionsToStrings,
   permissionStringsToPermissions,
+  permissionsToStrings,
 } from "@voyant-travel/types/api-keys"
 import {
   Badge,

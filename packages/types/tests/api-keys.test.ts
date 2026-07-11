@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  type AccessCatalog,
   API_KEY_GRANT_PRESETS,
   API_KEY_PERMISSION_GROUPS,
   API_KEY_RESOURCES,
-  type AccessCatalog,
   areKnownPermissions,
   assertKnownPermissions,
   createEffectiveAccessCatalog,

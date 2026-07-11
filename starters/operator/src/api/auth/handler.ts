@@ -23,7 +23,6 @@ import {
   handleApiTokenManagementRequest,
   handleOrganizationMembersRequest,
 } from "@voyant-travel/auth/server"
-import { effectiveAccessCatalog } from "../../../.voyant/access/selected-access-catalog.generated"
 import { ensureCurrentUserProfile } from "@voyant-travel/auth/workspace"
 import {
   authUser,
@@ -41,6 +40,7 @@ import { getRequestId } from "@voyant-travel/hono/observability"
 import { scopesForRole } from "@voyant-travel/types/member-roles"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
+import { effectiveAccessCatalog } from "../../../.voyant/access/selected-access-catalog.generated"
 
 import type { BootstrapStatus, CurrentUser } from "../../lib/current-user-model"
 import { resolveEmailReplyTo } from "../../lib/notifications"

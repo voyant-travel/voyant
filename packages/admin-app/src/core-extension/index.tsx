@@ -3,7 +3,6 @@
 // dynamic imports of SPECIFIC modules (never barrels) inside `page`/`loader`
 // thunks, so the heavy chunks load on navigation, not with workspace chrome.
 import { DashboardSkeleton } from "@voyant-travel/admin/dashboard/skeleton"
-import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -12,6 +11,7 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
 } from "@voyant-travel/admin/extensions"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 
 import {
   type AdminCoreSettingsExtraNavEntry,

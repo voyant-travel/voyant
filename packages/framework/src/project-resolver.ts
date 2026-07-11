@@ -13,8 +13,8 @@ import type {
   VoyantGraphUnitManifest,
 } from "@voyant-travel/core/project"
 import {
-  buildGraphAdminBundleModule,
   buildGraphAccessCatalogModule,
+  buildGraphAdminBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
 } from "./deployment-artifacts.js"
