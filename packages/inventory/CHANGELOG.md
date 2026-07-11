@@ -1,5 +1,24 @@
 # @voyant-travel/inventory
 
+## 0.8.1
+
+### Patch Changes
+
+- e4e6621: Model package-owned Hono extensions as first-class deployment graph units while keeping externally distributed integrations in the plugin lane.
+- Updated dependencies [e4e6621]
+- Updated dependencies [953e418]
+- Updated dependencies [2153e48]
+- Updated dependencies [ec75753]
+  - @voyant-travel/core@0.115.0
+  - @voyant-travel/action-ledger@0.106.1
+  - @voyant-travel/catalog@0.149.1
+  - @voyant-travel/commerce@0.33.1
+  - @voyant-travel/hono@0.123.0
+  - @voyant-travel/workflows@0.113.0
+  - @voyant-travel/db@0.111.1
+  - @voyant-travel/operations@0.6.1
+  - @voyant-travel/storage@0.107.1
+
 ## 0.8.0
 
 ### Minor Changes

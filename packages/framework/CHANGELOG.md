@@ -1,5 +1,56 @@
 # @voyant-travel/framework
 
+## 0.36.0
+
+### Minor Changes
+
+- 2f403d1: Resolve project subscribers and links into graph facets and explicit generated runtime artifacts.
+- 8ee3a45: Resolve project workflows and scheduled jobs into graph facets, provisioning metadata, and explicit generated runtime definitions.
+- e4e6621: Model package-owned Hono extensions as first-class deployment graph units while keeping externally distributed integrations in the plugin lane.
+- 965cc84: Add the framework-owned standard Operator distribution declaration and resolver-facing defaults for modules, extensions, and external plugins.
+- 953e418: Add the application-local API route authoring contract, method-aware graph metadata, and build-time convention compiler.
+- 7e969cc: Add the public import-cheap `defineConfig` project authoring helper, which expands the standard Operator distribution before returning an explicit resolver-ready project.
+- 1092bf9: Activate index-only application modules from `src/modules` during project resolution and lower their generated runtime imports to project-relative source files.
+- 2153e48: Add unit-level graph runtime references for single-entry application modules and extensions while retaining route runtime fallback.
+- 2680d96: Add the build-time compiler and deterministic static artifacts for application-local subscriber descriptors and link definitions.
+- 9563ade: Add build-time project workflow and job convention analysis with deterministic static registry generation.
+- 1abde76: Compile project API and admin source conventions into the resolved deployment graph and disposable project artifacts.
+
+### Patch Changes
+
+- 3dce1bc: Compile app-local admin conventions into a deterministic, type-checked client module.
+- 70691c2: Add build-time discovery for source-backed project conventions.
+- Updated dependencies [e4e6621]
+- Updated dependencies [953e418]
+- Updated dependencies [2153e48]
+- Updated dependencies [ec75753]
+  - @voyant-travel/core@0.115.0
+  - @voyant-travel/accommodations@0.112.1
+  - @voyant-travel/action-ledger@0.106.1
+  - @voyant-travel/bookings@0.151.1
+  - @voyant-travel/catalog@0.149.1
+  - @voyant-travel/commerce@0.33.1
+  - @voyant-travel/cruises@0.150.1
+  - @voyant-travel/distribution@0.141.1
+  - @voyant-travel/finance@0.151.1
+  - @voyant-travel/inventory@0.8.1
+  - @voyant-travel/mice@0.7.1
+  - @voyant-travel/quotes@0.126.1
+  - @voyant-travel/hono@0.123.0
+  - @voyant-travel/workflows@0.113.0
+  - @voyant-travel/db@0.111.1
+  - @voyant-travel/flights@0.151.1
+  - @voyant-travel/identity@0.151.1
+  - @voyant-travel/legal@0.151.1
+  - @voyant-travel/notifications@0.123.1
+  - @voyant-travel/operations@0.6.1
+  - @voyant-travel/operator-settings@0.3.1
+  - @voyant-travel/relationships@0.123.1
+  - @voyant-travel/storage@0.107.1
+  - @voyant-travel/storefront@0.153.1
+  - @voyant-travel/trips@0.142.1
+  - @voyant-travel/workflows-orchestrator@0.113.0
+
 ## 0.35.0
 
 ### Minor Changes

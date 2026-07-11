@@ -1,5 +1,22 @@
 # @voyant-travel/hono
 
+## 0.123.0
+
+### Minor Changes
+
+- 953e418: Add the application-local API route authoring contract, method-aware graph metadata, and build-time convention compiler.
+
+### Patch Changes
+
+- Updated dependencies [e4e6621]
+- Updated dependencies [953e418]
+- Updated dependencies [2153e48]
+- Updated dependencies [ec75753]
+  - @voyant-travel/core@0.115.0
+  - @voyant-travel/workflows@0.113.0
+  - @voyant-travel/db@0.111.1
+  - @voyant-travel/public-document-delivery@0.2.1
+
 ## 0.122.4
 
 ### Patch Changes
