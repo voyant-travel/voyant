@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { defineConfig } from "./project.js"
+import { defineConfig } from "./index.js"
 
 describe("framework project config", () => {
   it("expands an empty authored config to the standard distribution", () => {
