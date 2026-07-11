@@ -12,13 +12,12 @@
  *   - destination-name resolution (`@voyant-travel/plugin-voyant-connect`).
  */
 
-import {
-  type CatalogOffersAirportLabel,
-  type CatalogOffersConnectClient,
-  type CatalogOffersIndexFields,
-  type CatalogOffersRouteModuleOptions,
-  type CatalogOffersSearchDestination,
-  createCatalogOffersAdminRoutes,
+import type {
+  CatalogOffersAirportLabel,
+  CatalogOffersConnectClient,
+  CatalogOffersIndexFields,
+  CatalogOffersRouteModuleOptions,
+  CatalogOffersSearchDestination,
 } from "@voyant-travel/catalog/offers"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
@@ -166,22 +165,11 @@ async function resolveAirportLabels(
 }
 
 /** Build the catalog offer route-module options for this deployment. */
-function createOperatorCatalogOffersRouteModuleOptions(): CatalogOffersRouteModuleOptions {
+export function createOperatorCatalogOffersRouteModuleOptions(): CatalogOffersRouteModuleOptions {
   return {
     resolveConnectClient,
     fetchIndexFields,
     resolveDynamicHotelIds,
     resolveAirportLabels,
   }
-}
-
-/**
- * The catalog offer admin routes, wired with this deployment's options. Returns
- * an `OpenAPIHono` so the package-owned `.openapi()` defs surface in the
- * operator spec via the build-time lazy-merge (voyant#2114 / voyant#2208).
- */
-export function createCatalogOffersAdminRoutesForOperator(): ReturnType<
-  typeof createCatalogOffersAdminRoutes
-> {
-  return createCatalogOffersAdminRoutes(createOperatorCatalogOffersRouteModuleOptions())
 }

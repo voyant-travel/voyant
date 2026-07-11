@@ -11,8 +11,6 @@ import type { CatalogSearchRoutesOptions } from "@voyant-travel/catalog"
 import type { BootstrapHandler } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { BookingScheduleRoutesOptions } from "@voyant-travel/finance"
-import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
-import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import type { LazyRoutesLoader } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
@@ -22,7 +20,6 @@ import type { relationshipsService } from "@voyant-travel/relationships"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import type { StorefrontVerificationRoutesOptions } from "@voyant-travel/storefront/verification"
 import type { TripsRoutesOptionsProvider } from "@voyant-travel/trips"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 
 // biome-ignore lint/suspicious/noExplicitAny: lazy sub-apps keep route-specific Hono env generics -- owner: framework composition.
@@ -88,25 +85,25 @@ export interface FrameworkProviders {
    */
   loadFlightAdminRoutes?: LazyRoutesLoader
   loadMcpAdminRoutes: LazyRoutesLoader
-  loadCatalogBookingRoutes: LazyRoutesLoader
-  loadInventoryContentRoutes: LazyRoutesLoader
-  loadCruisesContentRoutes: LazyRoutesLoader
-  loadAccommodationsContentRoutes: LazyRoutesLoader
+  loadCatalogBookingRoutes?: LazyRoutesLoader
+  loadInventoryContentRoutes?: LazyRoutesLoader
+  loadCruisesContentRoutes?: LazyRoutesLoader
+  loadAccommodationsContentRoutes?: LazyRoutesLoader
   loadStorageRoutes?: LazyRoutesLoader
-  loadInventoryBrochureRoutes: LazyRoutesLoader
-  loadPaymentLinkRoutes: LazyRoutesLoader
-  loadContractDocumentRoutes: LazyRoutesLoader
-  createBookingScheduleRoutesOptions: () =>
+  loadInventoryBrochureRoutes?: LazyRoutesLoader
+  loadPaymentLinkRoutes?: LazyRoutesLoader
+  loadContractDocumentRoutes?: LazyRoutesLoader
+  createBookingScheduleRoutesOptions?: () =>
     | BookingScheduleRoutesOptions
     | Promise<BookingScheduleRoutesOptions>
-  loadBookingScheduleAdminRoutes: LazyRoutesLoader
-  loadPaymentPolicyPublicRoutes: LazyRoutesLoader
-  loadQuoteVersionSnapshotRoutes: LazyRoutesLoader
-  loadBookingMaintenanceRoutes: LazyRoutesLoader
-  loadActionLedgerHealthRoutes: LazyRoutesLoader
-  loadProposalAdminRoutes: LazyRoutesLoader
-  loadProposalPublicRoutes: LazyRoutesLoader
-  loadCatalogOffersRoutes: LazyRoutesLoader
+  loadBookingScheduleAdminRoutes?: LazyRoutesLoader
+  loadPaymentPolicyPublicRoutes?: LazyRoutesLoader
+  loadQuoteVersionSnapshotRoutes?: LazyRoutesLoader
+  loadBookingMaintenanceRoutes?: LazyRoutesLoader
+  loadActionLedgerHealthRoutes?: LazyRoutesLoader
+  loadProposalAdminRoutes?: LazyRoutesLoader
+  loadProposalPublicRoutes?: LazyRoutesLoader
+  loadCatalogOffersRoutes?: LazyRoutesLoader
   loadCatalogCheckoutRoutes: LazyRoutesLoader
 }
 
@@ -175,155 +172,11 @@ function withAnonymous(module: HonoModule, anonymous: HonoModule["anonymous"]): 
   return { ...module, anonymous }
 }
 
-const CATALOG_BOOKING_ROUTE_PATHS = [
-  "/v1/admin/catalog/quote",
-  "/v1/admin/catalog/quotes/batch",
-  "/v1/admin/catalog/book",
-  "/v1/admin/catalog/drafts/:id",
-  "/v1/admin/catalog/holds/place",
-  "/v1/admin/catalog/holds/release",
-  "/v1/admin/catalog/slots",
-  "/v1/admin/catalog/orders",
-  "/v1/admin/catalog/orders/:id",
-  "/v1/admin/catalog/orders/:id/cancel",
-  "/v1/admin/bookings/:id/catalog-snapshot",
-  "/v1/public/catalog/quote",
-  "/v1/public/catalog/quotes/batch",
-  "/v1/public/catalog/book",
-  "/v1/public/catalog/drafts/:id",
-  "/v1/public/catalog/holds/place",
-  "/v1/public/catalog/holds/release",
-  "/v1/public/catalog/slots",
-] as const
-
-const CATALOG_BOOKING_TRANSACTIONAL_PATHS = [
-  "/v1/admin/catalog/quote",
-  "/v1/admin/catalog/quotes/batch",
-  "/v1/admin/catalog/book",
-  "/v1/admin/catalog/holds",
-  "/v1/admin/catalog/orders",
-  "/v1/public/catalog/quote",
-  "/v1/public/catalog/quotes/batch",
-  "/v1/public/catalog/book",
-  "/v1/public/catalog/holds",
-] as const
-
-const INVENTORY_CONTENT_ROUTE_PATHS = [
-  "/v1/admin/products/:id/content",
-  "/v1/public/products/:id/content",
-] as const
-
-const CRUISES_CONTENT_ROUTE_PATHS = [
-  "/v1/admin/cruises/:id/content",
-  "/v1/public/cruises/:id/content",
-  "/v1/admin/cruises/:id/sailings/:sailingExternalId/pricing",
-  "/v1/public/cruises/:id/sailings/:sailingExternalId/pricing",
-] as const
-
-const ACCOMMODATIONS_CONTENT_ROUTE_PATHS = [
-  "/v1/admin/accommodations/:id/content",
-  "/v1/public/accommodations/:id/content",
-] as const
-
 const STORAGE_ROUTE_PATHS = [
   "/v1/admin/uploads",
   "/v1/admin/uploads/video",
   "/v1/admin/media/*",
 ] as const
-
-const INVENTORY_BROCHURE_ROUTE_PATHS = ["/v1/admin/products/:id/brochure/generate"] as const
-
-const PAYMENT_LINK_ROUTE_PATHS = [
-  "/v1/public/payment-link-config",
-  "/v1/public/payment-link/:sessionId/retry",
-  "/v1/public/payment-link/resolve",
-  "/v1/public/payment-link/:sessionId/start-card",
-  "/v1/public/payment-link/:sessionId/trip-summary",
-  "/v1/public/payment-link/:sessionId/booking-summary",
-  "/v1/public/bookings/:bookingId/checkout-status",
-] as const
-
-type NotificationDeliveryLike = {
-  id: string
-  templateSlug: string | null
-  channel: "email" | "sms"
-  provider: string
-  status: "pending" | "sent" | "failed" | "cancelled"
-  toAddress: string
-  subject: string | null
-  sentAt: Date | string | null
-  failedAt: Date | string | null
-  errorMessage: string | null
-}
-
-function optionalDateTime(value: Date | string | null | undefined) {
-  if (!value) return null
-  return value instanceof Date ? value.toISOString() : value
-}
-
-function toCheckoutNotificationDelivery(
-  delivery: NotificationDeliveryLike | null,
-): CheckoutNotificationDelivery | null {
-  if (!delivery) return null
-  return {
-    id: delivery.id,
-    templateSlug: delivery.templateSlug,
-    channel: delivery.channel,
-    provider: delivery.provider,
-    status: delivery.status,
-    toAddress: delivery.toAddress,
-    subject: delivery.subject,
-    sentAt: optionalDateTime(delivery.sentAt),
-    failedAt: optionalDateTime(delivery.failedAt),
-    errorMessage: delivery.errorMessage,
-  }
-}
-
-function toCheckoutReminderRun(run: {
-  id: string
-  reminderRuleId: string
-  reminderRule: { slug: string; name: string; channel: "email" | "sms"; provider: string | null }
-  targetType: CheckoutReminderRunRecord["targetType"]
-  targetId: string
-  links: {
-    bookingId: string | null
-    paymentSessionId: string | null
-    notificationDeliveryId: string | null
-  }
-  status: CheckoutReminderRunRecord["status"]
-  delivery?: {
-    status: CheckoutReminderRunRecord["deliveryStatus"]
-    channel: "email" | "sms"
-    provider: string | null
-  } | null
-  recipient: string | null
-  scheduledFor: Date | string
-  processedAt: Date | string | null
-  errorMessage: string | null
-  createdAt: Date | string
-}): CheckoutReminderRunRecord {
-  return {
-    id: run.id,
-    reminderRuleId: run.reminderRuleId,
-    reminderRuleSlug: run.reminderRule.slug,
-    reminderRuleName: run.reminderRule.name,
-    targetType: run.targetType,
-    targetId: run.targetId,
-    bookingId: run.links.bookingId,
-    paymentSessionId: run.links.paymentSessionId,
-    notificationDeliveryId: run.links.notificationDeliveryId,
-    status: run.status,
-    deliveryStatus: run.delivery?.status ?? null,
-    channel: run.delivery?.channel ?? run.reminderRule.channel,
-    provider: run.delivery?.provider ?? run.reminderRule.provider ?? null,
-    recipient: run.recipient,
-    scheduledFor: optionalDateTime(run.scheduledFor) ?? "",
-    processedAt: optionalDateTime(run.processedAt) ?? "",
-    errorMessage: run.errorMessage,
-    relativeDaysFromDueDate: null,
-    createdAt: optionalDateTime(run.createdAt) ?? "",
-  }
-}
 
 export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
   modules: {
@@ -344,20 +197,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       )
       return {
         module: { name: "relationships", requiresTransactionalDb: true },
-        lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-      }
-    },
-    "@voyant-travel/quotes": ({ capabilities }) => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/quotes").then((m) =>
-          m.createQuotesHonoModule({
-            resolveParticipantPersonById: async (db, personId) =>
-              (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-          }),
-        ),
-      )
-      return {
-        module: { name: "quotes", requiresTransactionalDb: true },
         lazyAdminRoutes: unit.route((m) => m.adminRoutes),
       }
     },
@@ -427,16 +266,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         )
       })
     },
-    "@voyant-travel/inventory": () => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/inventory").then((m) => m.inventoryHonoModule),
-      )
-      return {
-        module: { name: "products" },
-        lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-        lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-      }
-    },
     "@voyant-travel/inventory/extras": () => {
       const unit = createLazyUnit(async () => {
         const [{ OpenAPIHono }, { openApiValidationHook }, inventory, bookings] = await Promise.all(
@@ -453,192 +282,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         return { module: { name: "extras" }, adminRoutes } satisfies HonoModule
       })
       return { module: { name: "extras" }, lazyAdminRoutes: unit.route((m) => m.adminRoutes) }
-    },
-    "@voyant-travel/bookings/requirements": ({ capabilities }) => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/bookings/requirements").then((m) =>
-          m.createBookingRequirementsHonoModule({
-            publicRoutes: {
-              resolveProductSnapshot: capabilities.resolveBookingRequirementsProductSnapshot,
-            },
-          }),
-        ),
-      )
-      return {
-        module: { name: "booking-requirements" },
-        lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-        lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-      }
-    },
-    "@voyant-travel/catalog": ({ capabilities }) => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/catalog").then((m) =>
-          m.createCatalogSearchHonoModule({
-            resolveRuntime: capabilities.resolveCatalogRuntime,
-            executeSearch: ({ adapter, embeddings, slice, request }) =>
-              m.executeSemanticSearch({
-                adapter,
-                embeddings: embeddings as Parameters<
-                  typeof m.executeSemanticSearch
-                >[0]["embeddings"],
-                slice,
-                request,
-              }),
-          }),
-        ),
-      )
-      return withAnonymous(
-        {
-          module: { name: "catalog" },
-          lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-          lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-        },
-        true,
-      )
-    },
-    "@voyant-travel/storefront": ({ capabilities }) => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/storefront").then(async (m) => {
-          const commerce = await import("@voyant-travel/commerce")
-          return m.createStorefrontHonoModule({
-            offers: commerce.createCommerceStorefrontOfferResolvers(),
-            bookingIntents: capabilities.withDb
-              ? {
-                  withDb: (bindings, operation) =>
-                    capabilities.withDb!(bindings, (db) => operation(db as PostgresJsDatabase)),
-                }
-              : undefined,
-            intake: { persistence: capabilities.storefrontIntakePersistence },
-          })
-        }),
-      )
-      return {
-        module: { name: "storefront", bootstrap: unit.bootstrap },
-        publicPath: "/",
-        lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-        lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-        anonymous: ["/leads", "/newsletter", "/offers"],
-      }
-    },
-    "@voyant-travel/finance": ({ capabilities }) => {
-      const unit = createLazyUnit(async () => {
-        const [finance, notifications, settings] = await Promise.all([
-          import("@voyant-travel/finance"),
-          import("@voyant-travel/notifications"),
-          import("@voyant-travel/operator-settings"),
-        ])
-        return finance.createFinanceHonoModule({
-          resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-            capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-          resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
-          resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
-          invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
-            bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
-          resolveNotificationDispatcher: (bindings) => {
-            const providers = capabilities.resolveNotificationProviders(bindings)
-            if (providers.length === 0) return null
-            const dispatcher = notifications.createNotificationService(providers)
-            return {
-              sendInvoiceNotification: async (db, invoiceId, input) =>
-                toCheckoutNotificationDelivery(
-                  await notifications.notificationsService.sendInvoiceNotification(
-                    db,
-                    dispatcher,
-                    invoiceId,
-                    input,
-                  ),
-                ),
-              sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
-                toCheckoutNotificationDelivery(
-                  await notifications.notificationsService.sendPaymentSessionNotification(
-                    db,
-                    dispatcher,
-                    paymentSessionId,
-                    input,
-                  ),
-                ),
-            }
-          },
-          resolvePaymentStarters: capabilities.resolvePaymentStarters,
-          policy: capabilities.financeCheckoutPolicy,
-          paymentScheduleLineDescriptionFormat:
-            capabilities.financePaymentScheduleLineDescriptionFormat,
-          resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
-          updateBookingTaxSettings: settings.updateBookingTaxSettings,
-          resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
-          resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-          listBookingReminderRuns: async (db, bookingId, query) => {
-            const result = await notifications.notificationsService.listReminderRuns(db, {
-              bookingId,
-              status: query.status,
-              limit: query.limit,
-              offset: query.offset,
-            })
-            return {
-              data: result.data.map(toCheckoutReminderRun),
-              total: result.total,
-              limit: result.limit,
-              offset: result.offset,
-            }
-          },
-        })
-      })
-      return withAnonymous(
-        {
-          module: { name: "finance", requiresTransactionalDb: true },
-          lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-          lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-        },
-        ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
-      )
-    },
-    "@voyant-travel/bookings": ({ capabilities }) => {
-      const unit = createLazyUnit(async () => {
-        const [bookings, accommodationsOverview] = await Promise.all([
-          import("@voyant-travel/bookings"),
-          import("@voyant-travel/accommodations/booking-overview-enricher"),
-        ])
-        return bookings.createBookingsHonoModule({
-          resolveTravelSnapshot: (db, personId, { kms }) =>
-            capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
-          resolveBillingPerson: async (db, contact, ctx) =>
-            (
-              await capabilities.relationshipsService.upsertPersonFromContact(db, contact, {
-                source: ctx.source,
-                sourceRef: ctx.sourceRef,
-              })
-            )?.id ?? null,
-          resolveTravelerPerson: async (db, contact, ctx) =>
-            (
-              await capabilities.relationshipsService.upsertPersonFromContact(db, contact, {
-                source: ctx.source,
-                sourceRef: ctx.sourceRef,
-                requireContactPoint: true,
-              })
-            )?.id ?? null,
-          resolveBillingPersonById: async (db, personId) =>
-            (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-          resolveBillingOrganizationById: async (db, organizationId) =>
-            (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) !=
-            null,
-          closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
-          recordCancellationFinancialSettlement: capabilities.recordCancellationFinancialSettlement,
-          customFields: capabilities.customFields,
-          // Vertical enrichment seam (issue #2969): keep lazy composition in
-          // sync with the eager registry used by non-lazy deployments.
-          overviewItemEnrichers: {
-            accommodation: accommodationsOverview.enrichStayBookingOverviewItems,
-          },
-        })
-      })
-      return withAnonymous(
-        {
-          module: { name: "bookings", requiresTransactionalDb: true },
-          lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-          lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-        },
-        true,
-      )
     },
     "@voyant-travel/public-document-delivery": ({ capabilities }) => {
       const unit = createLazyUnit(() =>
@@ -726,40 +369,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         true,
       )
     },
-    "@voyant-travel/storefront/customer-portal": ({ capabilities }) => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/storefront/customer-portal").then((m) =>
-          m.createCustomerPortalHonoModule({
-            resolveDocumentDownloadUrl: (bindings, storageKey) =>
-              capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-          }),
-        ),
-      )
-      return withAnonymous(
-        {
-          module: { name: "customer-portal" },
-          lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-        },
-        ["/contact-exists"],
-      )
-    },
-    "@voyant-travel/storefront/verification": ({ capabilities }) => {
-      const unit = createLazyUnit(() =>
-        import("@voyant-travel/storefront/verification").then((m) =>
-          m.createStorefrontVerificationHonoModule({
-            resolveProviders: capabilities.resolveNotificationProviders,
-            email: { subject: "Your verification code" },
-          }),
-        ),
-      )
-      return withAnonymous(
-        {
-          module: { name: "storefront-verification" },
-          lazyPublicRoutes: unit.route((m) => m.publicRoutes),
-        },
-        true,
-      )
-    },
     "@voyant-travel/trips": ({ capabilities }) => {
       const unit = createLazyUnit(() =>
         import("@voyant-travel/trips").then((m) => {
@@ -826,14 +435,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         lazyAdminRoutes: capabilities.loadFlightAdminRoutes,
       }
     },
-    "@voyant-travel/catalog/booking-engine": ({ capabilities }) => ({
-      module: { name: "catalog-booking" },
-      lazyRoutes: {
-        paths: CATALOG_BOOKING_ROUTE_PATHS,
-        load: capabilities.loadCatalogBookingRoutes,
-      },
-      transactionalPaths: CATALOG_BOOKING_TRANSACTIONAL_PATHS,
-    }),
     "@voyant-travel/storage": ({ capabilities }) => {
       if (!capabilities.loadStorageRoutes) {
         throw new Error(
@@ -845,19 +446,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         lazyRoutes: { paths: STORAGE_ROUTE_PATHS, load: capabilities.loadStorageRoutes },
       }
     },
-    "@voyant-travel/storefront/payment-link": ({ capabilities }) => ({
-      module: { name: "payment-link" },
-      publicPath: "/",
-      lazyRoutes: { paths: PAYMENT_LINK_ROUTE_PATHS, load: capabilities.loadPaymentLinkRoutes },
-      anonymous: ["payment-link-config", "payment-link"],
-    }),
-    "@voyant-travel/legal/contract-document": ({ capabilities }) => ({
-      module: { name: "contract-document" },
-      lazyRoutes: {
-        paths: ["/v1/admin/bookings/:bookingId/generate-contract", "/v1/admin/documents/files/*"],
-        load: capabilities.loadContractDocumentRoutes,
-      },
-    }),
   },
   extensions: {
     "@voyant-travel/bookings/booking-supplier-extension": () => {
@@ -924,92 +512,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     // its extension identity on the legacy manifest path until this catalog is deleted.
     "@voyant-travel/distribution/channel-push-extension": () => ({
       extension: { name: "channel-push", module: "distribution" },
-    }),
-    "@voyant-travel/finance/booking-tax-extension": () => {
-      const unit = createLazyUnit(async () => {
-        const [finance, settings] = await Promise.all([
-          import("@voyant-travel/finance"),
-          import("@voyant-travel/operator-settings"),
-        ])
-        return finance.createBookingTaxHonoExtension({
-          resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
-          updateBookingTaxSettings: settings.updateBookingTaxSettings,
-        })
-      })
-      return {
-        extension: { name: "booking-tax", module: "bookings" },
-        lazyAdminRoutes: unit.route((m) => m.adminRoutes),
-      }
-    },
-    "@voyant-travel/inventory/content-extension": ({ capabilities }) => ({
-      extension: { name: "inventory-content", module: "products" },
-      lazyRoutes: {
-        paths: INVENTORY_CONTENT_ROUTE_PATHS,
-        load: capabilities.loadInventoryContentRoutes,
-      },
-    }),
-    "@voyant-travel/cruises/content-extension": ({ capabilities }) => ({
-      extension: { name: "cruises-content", module: "cruises" },
-      lazyRoutes: {
-        paths: CRUISES_CONTENT_ROUTE_PATHS,
-        load: capabilities.loadCruisesContentRoutes,
-      },
-    }),
-    "@voyant-travel/accommodations/content-extension": ({ capabilities }) => ({
-      extension: { name: "accommodations-content", module: "accommodations" },
-      lazyRoutes: {
-        paths: ACCOMMODATIONS_CONTENT_ROUTE_PATHS,
-        load: capabilities.loadAccommodationsContentRoutes,
-      },
-    }),
-    "@voyant-travel/inventory/brochure-extension": ({ capabilities }) => ({
-      extension: { name: "inventory-brochure", module: "products" },
-      lazyRoutes: {
-        paths: INVENTORY_BROCHURE_ROUTE_PATHS,
-        load: capabilities.loadInventoryBrochureRoutes,
-      },
-    }),
-    "@voyant-travel/finance/booking-schedule-extension": ({ capabilities }) => ({
-      extension: {
-        name: "booking-schedule",
-        module: "bookings",
-        bootstrap: async ({ container }) => {
-          const { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } = await import(
-            "@voyant-travel/finance/booking-schedule-subscriber"
-          )
-          container.register(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY, {
-            resolveRoutesOptions: capabilities.createBookingScheduleRoutesOptions,
-            withDb: <T>(runtimeBindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
-              runWithFrameworkDb(capabilities, runtimeBindings, operation),
-          })
-        },
-      },
-      publicPath: "payment-policy",
-      lazyAdminRoutes: capabilities.loadBookingScheduleAdminRoutes,
-      lazyPublicRoutes: capabilities.loadPaymentPolicyPublicRoutes,
-    }),
-    "@voyant-travel/quotes/quote-version-snapshot-extension": ({ capabilities }) => ({
-      extension: { name: "quote-version-snapshot", module: "trips" },
-      lazyAdminRoutes: capabilities.loadQuoteVersionSnapshotRoutes,
-    }),
-    "@voyant-travel/commerce/booking-maintenance-extension": ({ capabilities }) => ({
-      extension: { name: "booking-maintenance", module: "bookings" },
-      lazyAdminRoutes: capabilities.loadBookingMaintenanceRoutes,
-    }),
-    "@voyant-travel/action-ledger/health-extension": ({ capabilities }) => ({
-      extension: { name: "action-ledger-health", module: "action-ledger" },
-      lazyAdminRoutes: capabilities.loadActionLedgerHealthRoutes,
-    }),
-    "@voyant-travel/quotes/proposal-extension": ({ capabilities }) => ({
-      extension: { name: "proposal", module: "quote-versions" },
-      publicPath: "proposals",
-      lazyAdminRoutes: capabilities.loadProposalAdminRoutes,
-      lazyPublicRoutes: capabilities.loadProposalPublicRoutes,
-      anonymous: true,
-    }),
-    "@voyant-travel/catalog/offers-extension": ({ capabilities }) => ({
-      extension: { name: "catalog-offers", module: "catalog" },
-      lazyAdminRoutes: capabilities.loadCatalogOffersRoutes,
     }),
     "@voyant-travel/commerce/catalog-checkout-extension": ({ capabilities }) => ({
       extension: { name: "catalog-checkout", module: "catalog" },

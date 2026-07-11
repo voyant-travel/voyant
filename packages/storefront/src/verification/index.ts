@@ -1,5 +1,7 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import { storefrontVerificationRuntimePort } from "../runtime-port.js"
 import {
   buildStorefrontVerificationSenders,
   createStorefrontVerificationPublicRoutes,
@@ -86,3 +88,8 @@ export function createStorefrontVerificationHonoModule(
     publicRoutes: createStorefrontVerificationPublicRoutes(options),
   }
 }
+
+export const createStorefrontVerificationVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) =>
+    createStorefrontVerificationHonoModule(await getPort(storefrontVerificationRuntimePort)),
+)

@@ -1,31 +1,63 @@
 // agent-quality: file-size exception -- owner: operator; this temporary cross-package
 // authority suite is deleted with operatorGraphRuntimeBindings in the central cutover.
+import { accommodationsContentRuntimePort } from "@voyant-travel/accommodations/graph-runtime"
+import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
+import { bookingRequirementsRuntimePort, bookingsRuntimePort } from "@voyant-travel/bookings"
+import {
+  catalogBookingRuntimePort,
+  catalogOffersRuntimePort,
+  catalogSearchRuntimePort,
+} from "@voyant-travel/catalog/graph-runtime"
 import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { catalogCheckoutApiRuntimePort } from "@voyant-travel/commerce/catalog-checkout-subscribers"
+import { bookingMaintenanceRuntimePort } from "@voyant-travel/commerce/checkout"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import { createContainer, createEventBus } from "@voyant-travel/core"
+import { cruisesContentRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import {
   CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
   channelPushRuntimePort,
 } from "@voyant-travel/distribution"
+import {
+  financeBookingScheduleRuntimePort,
+  financeBookingTaxRuntimePort,
+  financeRuntimePort,
+} from "@voyant-travel/finance"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
-import { legalRuntimePort } from "@voyant-travel/legal"
+import {
+  inventoryBrochureRuntimePort,
+  inventoryContentRuntimePort,
+  inventoryRuntimePort,
+} from "@voyant-travel/inventory/graph-runtime"
+import { legalContractDocumentRuntimePort, legalRuntimePort } from "@voyant-travel/legal"
 import {
   LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY,
   legalBookingContractSubscriberRuntimePort,
 } from "@voyant-travel/legal/booking-contract-subscriber"
+import { miceRuntimePort } from "@voyant-travel/mice"
 import {
   NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
   notificationsRuntimePort,
 } from "@voyant-travel/notifications"
+import {
+  quotesProposalRuntimePort,
+  quotesRuntimePort,
+  quotesSnapshotRuntimePort,
+} from "@voyant-travel/quotes"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
+import {
+  storefrontCustomerPortalRuntimePort,
+  storefrontPaymentLinkRuntimePort,
+  storefrontRuntimePort,
+  storefrontVerificationRuntimePort,
+} from "@voyant-travel/storefront"
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
@@ -42,8 +74,6 @@ import {
   buildOperatorProviders,
   buildOperatorRuntimePorts,
   deploymentLocalExtensions,
-  operatorGraphCompatibilityExtensions,
-  operatorGraphCompatibilityModules,
   operatorGraphRuntimeBindings,
 } from "./composition"
 import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
@@ -255,7 +285,7 @@ describe("operator graph runtime composition", () => {
     expect(subscriberExtension?.extension.bootstrap).toBeTypeOf("function")
     expect(container.has(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY)).toBe(true)
     expect(subscribe.mock.calls.map(([eventType]) => eventType)).toEqual([
-      "booking.confirmed",
+      "booking.contract.generated",
       "booking.cancelled",
       "booking.confirmed",
       "booking.expired",
@@ -266,7 +296,7 @@ describe("operator graph runtime composition", () => {
         .map(([eventType], index) => ({ eventType, index }))
         .filter(({ eventType }) => eventType === "booking.confirmed")
         .map(({ index }) => index),
-    ).toEqual([0, 2])
+    ).toEqual([2])
   })
 
   it("removes Notifications subscriber services and handlers when deselected", async () => {
@@ -328,8 +358,8 @@ describe("operator graph runtime composition", () => {
         .filter((reference) => reference.facet === "subscribers.runtime")
         .map((reference) => reference.entityId),
     ).toEqual(["@voyant-travel/legal#subscriber.booking-contract-confirmed"])
-    await runtimeModule?.module.bootstrap?.(context)
     await extension?.extension.bootstrap?.(context)
+    await runtimeModule?.module.bootstrap?.(context)
 
     expect(runtimeModule?.module.bootstrap).toBeTypeOf("function")
     expect(extension?.extension.bootstrap).toBeTypeOf("function")
@@ -695,17 +725,21 @@ describe("operator graph runtime composition", () => {
     }
   })
 
-  it("keeps deployment option wiring package-owned and graph-gated", () => {
+  it("keeps migrated package option wiring out of package-id bindings", () => {
     for (const id of [
-      ...Object.keys(operatorGraphCompatibilityModules),
-      ...Object.keys(operatorGraphCompatibilityExtensions),
+      "@voyant-travel/bookings",
+      "@voyant-travel/bookings#requirements",
+      "@voyant-travel/catalog",
+      "@voyant-travel/finance",
+      "@voyant-travel/inventory",
+      "@voyant-travel/mice",
+      "@voyant-travel/quotes",
+      "@voyant-travel/finance#booking-tax-extension",
+      "@voyant-travel/quotes#proposal-extension",
+      "@voyant-travel/quotes#quote-version-snapshot-extension",
     ]) {
-      expect(id).not.toMatch(/^@voyant-travel\/operator#/)
-      expect(operatorGraphRuntimeBindings).toHaveProperty(id)
+      expect(operatorGraphRuntimeBindings).not.toHaveProperty(id)
     }
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
-      "@voyant-travel/public-document-delivery",
-    )
   })
 
   it("binds host runtimes by package-declared ports instead of package ids", async () => {
@@ -721,14 +755,38 @@ describe("operator graph runtime composition", () => {
     )
     expect(Object.keys(ports)).toEqual(
       expect.arrayContaining([
+        accommodationsContentRuntimePort.id,
+        actionLedgerHealthRuntimePort.id,
+        bookingMaintenanceRuntimePort.id,
+        bookingRequirementsRuntimePort.id,
+        bookingsRuntimePort.id,
+        catalogBookingRuntimePort.id,
+        catalogOffersRuntimePort.id,
+        catalogSearchRuntimePort.id,
         catalogCheckoutApiRuntimePort.id,
+        cruisesContentRuntimePort.id,
+        financeBookingScheduleRuntimePort.id,
+        financeBookingTaxRuntimePort.id,
+        financeRuntimePort.id,
         flightsRuntimePort.id,
+        inventoryBrochureRuntimePort.id,
+        inventoryContentRuntimePort.id,
+        inventoryRuntimePort.id,
         relationshipsRouteRuntimePort.id,
         legalBookingContractSubscriberRuntimePort.id,
+        legalContractDocumentRuntimePort.id,
         legalRuntimePort.id,
+        miceRuntimePort.id,
         notificationsRuntimePort.id,
+        quotesProposalRuntimePort.id,
+        quotesRuntimePort.id,
+        quotesSnapshotRuntimePort.id,
         realtimeRuntimePort.id,
         storageMediaRuntimePort.id,
+        storefrontCustomerPortalRuntimePort.id,
+        storefrontPaymentLinkRuntimePort.id,
+        storefrontRuntimePort.id,
+        storefrontVerificationRuntimePort.id,
         promotionRedemptionDatabaseRuntimePort.id,
         promotionsBulkReindexRuntimePort.id,
         channelPushRuntimePort.id,

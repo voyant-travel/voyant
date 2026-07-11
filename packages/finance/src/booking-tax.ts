@@ -1,4 +1,5 @@
 import type { Extension } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { ApiHttpError, parseJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { and, asc, eq, sql } from "drizzle-orm"
@@ -7,6 +8,7 @@ import type { Hono } from "hono"
 import { Hono as HonoApp } from "hono"
 import { z } from "zod"
 
+import { financeBookingTaxRuntimePort } from "./runtime-port.js"
 import { taxClasses, taxPolicyProfiles, taxPolicyRules, taxRegimes } from "./schema.js"
 import { executeBoundaryRows } from "./service-boundary-sql.js"
 
@@ -387,3 +389,7 @@ export function createBookingTaxHonoExtension(options: BookingTaxRouteOptions = 
     adminRoutes: createBookingTaxRoutes(options),
   }
 }
+
+export const createBookingTaxVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+  return createBookingTaxHonoExtension(await getPort(financeBookingTaxRuntimePort))
+})

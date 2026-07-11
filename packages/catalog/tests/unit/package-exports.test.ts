@@ -19,6 +19,14 @@ const packageJson = JSON.parse(
 ) as PackageJson
 
 describe("@voyant-travel/catalog package exports", () => {
+  it("publishes package-owned API graph runtimes", () => {
+    expect(packageJson.exports["./graph-runtime"]).toBe("./src/graph-runtime.ts")
+    expect(packageJson.publishConfig.exports["./graph-runtime"]).toEqual({
+      types: "./dist/graph-runtime.d.ts",
+      import: "./dist/graph-runtime.js",
+      default: "./dist/graph-runtime.js",
+    })
+  })
   it("publishes the projection subscriber runtime contract", () => {
     expect(packageJson.exports["./projection-runtime"]).toBe("./src/projection-runtime.ts")
     expect(packageJson.publishConfig.exports["./projection-runtime"]).toEqual({

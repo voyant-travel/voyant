@@ -1,9 +1,11 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { registerStorefrontBookingBootstrapRuntime } from "./booking-bootstrap-subscriber-runtime.js"
 import { createStorefrontAdminRoutes } from "./routes-admin.js"
 import { createStorefrontPublicRoutes } from "./routes-public.js"
+import { storefrontRuntimePort } from "./runtime-port.js"
 
 export type {
   GuestBookingGuardOptions,
@@ -202,9 +204,9 @@ export const storefrontModule: Module = {
 
 export const storefrontAnonymousPublicPaths = ["/leads", "/newsletter", "/offers"] as const
 
-export function createStorefrontHonoModule(
-  options?: Parameters<typeof createStorefrontPublicRoutes>[0],
-): HonoModule {
+export type StorefrontHonoModuleOptions = Parameters<typeof createStorefrontPublicRoutes>[0]
+
+export function createStorefrontHonoModule(options?: StorefrontHonoModuleOptions): HonoModule {
   return {
     module: {
       ...storefrontModule,
@@ -222,6 +224,21 @@ export function createStorefrontHonoModule(
     anonymous: storefrontAnonymousPublicPaths,
   }
 }
+
+export const createStorefrontVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
+  const configured = createStorefrontHonoModule(await getPort(storefrontRuntimePort))
+  const selected: HonoModule = { module: configured.module }
+  if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
+    selected.adminRoutes = configured.adminRoutes
+  }
+  if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
+    selected.publicRoutes = configured.publicRoutes
+    if (configured.publicPath !== undefined) selected.publicPath = configured.publicPath
+    if (configured.anonymous !== undefined) selected.anonymous = configured.anonymous
+  }
+  return selected
+})
+
 export {
   registerStorefrontBookingBootstrapRuntime,
   STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY,
@@ -236,3 +253,9 @@ export {
   type BookingBootstrapIntentPayload,
   createBookingBootstrapIntentHandler,
 } from "./booking-intents.js"
+export {
+  storefrontCustomerPortalRuntimePort,
+  storefrontPaymentLinkRuntimePort,
+  storefrontRuntimePort,
+  storefrontVerificationRuntimePort,
+} from "./runtime-port.js"

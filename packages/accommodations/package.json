@@ -17,6 +17,7 @@
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
     "./routes-content": "./src/routes-content.ts",
+    "./graph-runtime": "./src/graph-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -120,6 +121,11 @@
         "types": "./dist/routes-content.d.ts",
         "import": "./dist/routes-content.js",
         "default": "./dist/routes-content.js"
+      },
+      "./graph-runtime": {
+        "types": "./dist/graph-runtime.d.ts",
+        "import": "./dist/graph-runtime.js",
+        "default": "./dist/graph-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

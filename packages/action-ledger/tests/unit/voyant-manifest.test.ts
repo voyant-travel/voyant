@@ -1,4 +1,6 @@
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
+import { createActionLedgerHealthVoyantRuntime } from "../../src/graph-runtime.js"
 import { actionLedgerHealthVoyantPlugin, actionLedgerVoyantModule } from "../../src/voyant.js"
 
 describe("action-ledger deployment manifest", () => {
@@ -45,11 +47,13 @@ describe("action-ledger deployment manifest", () => {
           surface: "admin",
           mount: "action-ledger",
           runtime: {
-            entry: "@voyant-travel/action-ledger/health",
-            export: "createActionLedgerHealthHonoExtension",
+            entry: "@voyant-travel/action-ledger/graph-runtime",
+            export: "createActionLedgerHealthVoyantRuntime",
           },
         },
       ],
+      runtimePorts: [{ id: "action-ledger.health-runtime" }],
     })
+    expect(isGraphRuntimeFactory(createActionLedgerHealthVoyantRuntime)).toBe(true)
   })
 })

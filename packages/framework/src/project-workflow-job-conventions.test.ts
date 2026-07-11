@@ -20,7 +20,7 @@ describe("project workflow and job conventions", () => {
   it("compiles deterministic static registries without evaluating project source", async () => {
     const root = await projectFixture({
       "src/workflows/z-send-reminder.ts": [
-        'import { defineWorkflow } from "@voyant-travel/workflows"',
+        'import { defineWorkflow } from "@voyant-travel/framework/project-runtime"',
         'throw new Error("compiler must not evaluate this module")',
         "export type ReminderInput = { bookingId: string }",
         'export default defineWorkflow({ id: "send-reminder", run: async () => undefined })',
@@ -62,7 +62,7 @@ describe("project workflow and job conventions", () => {
       {
         path: "runtime/project-workflows.generated.ts",
         contents: [
-          'import type { WorkflowDefinition } from "@voyant-travel/workflows"',
+          'import type { WorkflowDefinition } from "@voyant-travel/framework/project-runtime"',
           'import workflow0 from "../../src/workflows/booking/a-confirm.js"',
           'import workflow1 from "../../src/workflows/z-send-reminder.js"',
           "",
@@ -79,7 +79,7 @@ describe("project workflow and job conventions", () => {
       {
         path: "runtime/project-jobs.generated.ts",
         contents: [
-          'import { defineWorkflow, type ScheduleDeclaration, type WorkflowContext } from "@voyant-travel/workflows"',
+          'import { defineWorkflow, type ScheduleDeclaration, type WorkflowContext } from "@voyant-travel/framework/project-runtime"',
           'import job0, { schedule as schedule0 } from "../../src/jobs/a-cleanup.js"',
           'import job1, { schedule as schedule1 } from "../../src/jobs/z-reconcile.js"',
           "",

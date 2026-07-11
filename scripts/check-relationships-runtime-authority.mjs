@@ -37,11 +37,13 @@ const runtimePorts = section(
   "export function buildOperatorRuntimePorts",
   "function createLazyCatalogSearchRuntime",
 )
-const runtimeBindings = section(
-  composition,
-  "export const operatorGraphRuntimeBindings",
-  "function bindingsFromModuleFactories",
-)
+const runtimeBindingsStart = composition.indexOf("export const operatorGraphRuntimeBindings")
+if (runtimeBindingsStart < 0) {
+  throw new Error(
+    "check-relationships-runtime-authority: could not locate operatorGraphRuntimeBindings",
+  )
+}
+const runtimeBindings = composition.slice(runtimeBindingsStart)
 
 if (
   !manifest.includes("runtimePorts: [requirePort(relationshipsRouteRuntimePort)]") ||

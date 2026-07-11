@@ -92,7 +92,9 @@ export {
   type ContractDocumentStorageLike,
   createContractDocumentHonoModule,
   createContractDocumentRoutes,
+  createContractDocumentVoyantRuntime,
 } from "./contract-document-routes.js"
+export { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 export {
   createLegalBookingContractSubscriberDescriptor,
   LEGAL_BOOKING_CONTRACT_SUBSCRIBER_ID,

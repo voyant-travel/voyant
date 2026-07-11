@@ -58,10 +58,12 @@ export {
   type BookingMaintenanceRoutesOptions,
   createBookingMaintenanceHonoExtension,
   createBookingMaintenanceRoutes,
+  createBookingMaintenanceVoyantRuntime,
   createCatalogCheckoutHonoExtension,
   createCatalogCheckoutRoutes,
 } from "./routes.js"
 export {
+  bookingMaintenanceRuntimePort,
   type CatalogCheckoutApiRuntime,
   catalogCheckoutApiRuntimePort,
 } from "./runtime-ports.js"

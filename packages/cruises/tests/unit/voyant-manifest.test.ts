@@ -1,4 +1,6 @@
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
+import { createCruisesContentVoyantRuntime } from "../../src/graph-runtime.js"
 import { createCruisesHonoModule } from "../../src/index.js"
 import { createCruiseContentHonoExtension } from "../../src/routes-content.js"
 import {
@@ -47,14 +49,15 @@ describe("cruises deployment manifest", () => {
         {
           surface: "admin",
           mount: "cruises",
-          runtime: { export: "createCruiseContentHonoExtension" },
+          runtime: { export: "createCruisesContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "cruises",
-          runtime: { export: "createCruiseContentHonoExtension" },
+          runtime: { export: "createCruisesContentVoyantRuntime" },
         },
       ],
+      runtimePorts: [{ id: "cruises.content-runtime" }],
     })
     expect(cruisesBookingVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",
@@ -72,6 +75,7 @@ describe("cruises deployment manifest", () => {
     expect(extension.extension).toMatchObject({ name: "content", module: "cruises" })
     expect(extension.adminRoutes).toBeDefined()
     expect(extension.publicRoutes).toBeDefined()
+    expect(isGraphRuntimeFactory(createCruisesContentVoyantRuntime)).toBe(true)
   })
 
   it("preserves deployment-injected lazy route bridges", () => {

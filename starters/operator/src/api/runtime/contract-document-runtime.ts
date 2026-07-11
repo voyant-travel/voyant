@@ -1,10 +1,6 @@
 import { buildBookingRouteRuntime, createBookingPiiService } from "@voyant-travel/bookings"
 import type { EventBus } from "@voyant-travel/core"
-import {
-  type ContractDocumentGenerator,
-  type ContractDocumentRoutesOptions,
-  createContractDocumentRoutes,
-} from "@voyant-travel/legal"
+import type { ContractDocumentGenerator, ContractDocumentRoutesOptions } from "@voyant-travel/legal"
 import { createContractDocumentService } from "@voyant-travel/legal/contract-document"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { tryGetCloudPdfClient } from "../../lib/voyant-cloud"
@@ -101,8 +97,8 @@ function previewContractForBooking(
  * generator/preview (above), the private document storage resolver, and the
  * MIME guesser (from `./lib/storage`).
  */
-export function buildContractDocumentRoutes() {
-  const options: ContractDocumentRoutesOptions = {
+export function createOperatorContractDocumentRoutesOptions(): ContractDocumentRoutesOptions {
+  return {
     generateContract: (env, db, eventBus, bookingId, opts) =>
       generateContractPdfForBooking(
         env as AppBindings,
@@ -116,7 +112,6 @@ export function buildContractDocumentRoutes() {
     resolveStorage: (env) => createDocumentStorage(env as AppBindings),
     guessMimeType,
   }
-  return createContractDocumentRoutes(options)
 }
 
 async function createContractBookingPiiService(env: AppBindings) {

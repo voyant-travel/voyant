@@ -1,6 +1,7 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import {
+  bookingMaintenanceRuntimePort,
   catalogCheckoutApiRuntimePort,
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
@@ -257,6 +258,11 @@ export const commerceBookingMaintenanceVoyantPlugin = defineExtension({
   id: "@voyant-travel/commerce#booking-maintenance-extension",
   packageName: "@voyant-travel/commerce",
   localId: "commerce.booking-maintenance-extension",
+  runtime: {
+    entry: "@voyant-travel/commerce/checkout",
+    export: "createBookingMaintenanceVoyantRuntime",
+  },
+  runtimePorts: [requirePort(bookingMaintenanceRuntimePort)],
   api: [
     {
       id: "@voyant-travel/commerce#booking-maintenance-extension.api",

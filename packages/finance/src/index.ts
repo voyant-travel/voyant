@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: finance; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { type BookingTaxRouteOptions, createBookingTaxRoutes } from "./booking-tax.js"
@@ -24,6 +25,7 @@ import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
 import { supplierInvoiceRoutes } from "./routes-supplier-invoices.js"
+import { financeRuntimePort } from "./runtime-port.js"
 
 export type {
   CheckoutRouteRuntime,
@@ -180,12 +182,25 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
 
 export const financeHonoModule: HonoModule = createFinanceHonoModule()
 
+export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
+  const configured = createFinanceHonoModule(await getPort(financeRuntimePort))
+  const selected: HonoModule = { module: configured.module }
+  if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
+    selected.adminRoutes = configured.adminRoutes
+  }
+  if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
+    selected.publicRoutes = configured.publicRoutes
+  }
+  return selected
+})
+
 export {
   type BookingTaxRouteOptions,
   type BookingTaxSettings,
   computeBookingItemTaxLine,
   createBookingTaxHonoExtension,
   createBookingTaxRoutes,
+  createBookingTaxVoyantRuntime,
   loadProductTaxFacts,
   matchesTaxPolicyCondition,
   mountBookingTaxRoutes,
@@ -269,6 +284,7 @@ export {
   type BookingScheduleRoutesOptions,
   createBookingScheduleAdminRoutes,
   createBookingScheduleHonoExtension,
+  createBookingScheduleVoyantRuntime,
   createPaymentPolicyPublicRoutes,
   generatePaymentScheduleForBooking,
   type PaymentPolicyEntityContext,
@@ -289,6 +305,11 @@ export {
   type FinanceSettlementRouteOptions,
   type InvoiceSettlementPoller,
 } from "./routes-settlement.js"
+export {
+  financeBookingScheduleRuntimePort,
+  financeBookingTaxRuntimePort,
+  financeRuntimePort,
+} from "./runtime-port.js"
 export type {
   BookingGuarantee,
   BookingItemCommission,

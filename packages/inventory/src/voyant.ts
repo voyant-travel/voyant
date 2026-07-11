@@ -1,18 +1,24 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  inventoryBrochureRuntimePort,
+  inventoryContentRuntimePort,
+  inventoryRuntimePort,
+} from "./runtime-ports.js"
 
 /** Import-cheap deployment declarations owned by the inventory package. */
 export const inventoryVoyantModule = defineModule({
   id: "@voyant-travel/inventory",
   packageName: "@voyant-travel/inventory",
   localId: "inventory",
+  runtimePorts: [requirePort(inventoryRuntimePort)],
   api: [
     {
       id: "@voyant-travel/inventory#api.admin",
       surface: "admin",
       mount: "products",
       runtime: {
-        entry: "@voyant-travel/inventory",
-        export: "inventoryHonoModule",
+        entry: "@voyant-travel/inventory/graph-runtime",
+        export: "createInventoryVoyantRuntime",
       },
     },
     {
@@ -21,8 +27,8 @@ export const inventoryVoyantModule = defineModule({
       mount: "products",
       anonymous: true,
       runtime: {
-        entry: "@voyant-travel/inventory",
-        export: "inventoryHonoModule",
+        entry: "@voyant-travel/inventory/graph-runtime",
+        export: "createInventoryVoyantRuntime",
       },
     },
   ],
@@ -242,14 +248,15 @@ export const inventoryContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#content-extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.content-extension",
+  runtimePorts: [requirePort(inventoryContentRuntimePort)],
   api: [
     {
       id: "@voyant-travel/inventory#content-extension.api.admin",
       surface: "admin",
       mount: "products",
       runtime: {
-        entry: "@voyant-travel/inventory/routes-content",
-        export: "createProductContentHonoExtension",
+        entry: "@voyant-travel/inventory/graph-runtime",
+        export: "createInventoryContentVoyantRuntime",
       },
     },
     {
@@ -258,8 +265,8 @@ export const inventoryContentVoyantPlugin = defineExtension({
       mount: "products",
       anonymous: true,
       runtime: {
-        entry: "@voyant-travel/inventory/routes-content",
-        export: "createProductContentHonoExtension",
+        entry: "@voyant-travel/inventory/graph-runtime",
+        export: "createInventoryContentVoyantRuntime",
       },
     },
   ],
@@ -272,14 +279,15 @@ export const inventoryBrochureVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#brochure-extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.brochure-extension",
+  runtimePorts: [requirePort(inventoryBrochureRuntimePort)],
   api: [
     {
       id: "@voyant-travel/inventory#brochure-extension.api.admin",
       surface: "admin",
       mount: "products",
       runtime: {
-        entry: "@voyant-travel/inventory/routes-brochure",
-        export: "createProductBrochureHonoExtension",
+        entry: "@voyant-travel/inventory/graph-runtime",
+        export: "createInventoryBrochureVoyantRuntime",
       },
     },
   ],

@@ -29,6 +29,7 @@
  */
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import { openApiValidationHook } from "@voyant-travel/hono"
@@ -36,6 +37,7 @@ import type { HonoModule } from "@voyant-travel/hono/module"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
+import { storefrontPaymentLinkRuntimePort } from "../runtime-port.js"
 
 const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
 
@@ -874,6 +876,10 @@ export function createPaymentLinkHonoModule(options: PaymentLinkRoutesOptions): 
     anonymous: ["payment-link-config", "payment-link"],
   }
 }
+
+export const createPaymentLinkVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+  return createPaymentLinkHonoModule(await getPort(storefrontPaymentLinkRuntimePort))
+})
 
 // ─────────────────────────────────────────────────────────────────
 // Pure schedule resolution helpers

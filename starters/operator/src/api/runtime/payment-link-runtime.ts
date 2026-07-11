@@ -20,16 +20,15 @@ import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
 } from "@voyant-travel/operator-settings"
-import {
-  createPaymentLinkRoutes,
-  type PaymentLinkRoutesOptions,
-  type PaymentLinkTripData,
+import type {
+  PaymentLinkRoutesOptions,
+  PaymentLinkTripData,
 } from "@voyant-travel/storefront/payment-link"
 import { tripsService } from "@voyant-travel/trips"
 import { tripComponents, tripEnvelopes } from "@voyant-travel/trips/schema"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
+import type { Context } from "hono"
 import { cardPaymentStarter } from "./card-payment"
 import {
   bankTransferDetailsFromOperatorSettings,
@@ -190,7 +189,7 @@ const resolveTripData: PaymentLinkRoutesOptions["resolveTripData"] = async (
 }
 
 /** Build the payment-link route-module options for this deployment. */
-function createOperatorPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
+export function createOperatorPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
   return {
     resolveBankTransferDetails,
     resolvePublicCheckoutBaseUrl: (c) =>
@@ -198,10 +197,4 @@ function createOperatorPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
     startCardPayment,
     resolveTripData,
   }
-}
-
-/** The public payment-link routes, wired with this deployment's options. */
-// biome-ignore lint/suspicious/noExplicitAny: createPaymentLinkRoutes now returns an OpenAPIHono (non-blank Env), assignable to Hono<any> for the lazy loader (voyant#2114)
-export function buildOperatorPaymentLinkRoutes(): Hono<any> {
-  return createPaymentLinkRoutes(createOperatorPaymentLinkRouteOptions())
 }

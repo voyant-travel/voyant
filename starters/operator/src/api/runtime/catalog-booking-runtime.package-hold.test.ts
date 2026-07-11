@@ -1,21 +1,8 @@
 import { describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
-  capturedOptions: { current: undefined as unknown },
   lockPackage: vi.fn(async () => ({ id: "hold_pkg_1" })),
 }))
-
-vi.mock("@voyant-travel/catalog/booking-engine", async () => {
-  const actual = await vi.importActual<typeof import("@voyant-travel/catalog/booking-engine")>(
-    "@voyant-travel/catalog/booking-engine",
-  )
-  return {
-    ...actual,
-    mountCatalogBookingRoutes: vi.fn((_hono, options) => {
-      mocks.capturedOptions.current = options
-    }),
-  }
-})
 
 vi.mock("@voyant-travel/connect-sdk", () => ({
   createVoyantConnectClient: vi.fn(() => ({
@@ -39,16 +26,11 @@ vi.mock("@voyant-travel/plugin-voyant-connect", async () => {
   }
 })
 
-import { mountCatalogBookingRoutes } from "./catalog-booking-runtime"
+import { createOperatorCatalogBookingRouteModuleOptions } from "./catalog-booking-runtime"
 
 describe("operator Connect package hold preparation", () => {
   it("locks stored package offers that do not include hold status", async () => {
-    mountCatalogBookingRoutes({} as never)
-    const options = mocks.capturedOptions.current as {
-      booking: {
-        prepareBookParameters: (input: unknown) => Promise<Record<string, unknown>>
-      }
-    }
+    const options = createOperatorCatalogBookingRouteModuleOptions()
     const offer = {
       id: "offer_pkg_1",
       connectionId: "conn_1",
@@ -61,7 +43,10 @@ describe("operator Connect package hold preparation", () => {
       expiresAt: "2026-07-03T12:00:00.000Z",
     }
 
-    const next = await options.booking.prepareBookParameters({
+    const prepareBookParameters = options.booking.prepareBookParameters
+    if (!prepareBookParameters) throw new Error("Expected package hold preparation")
+    type PrepareInput = Parameters<typeof prepareBookParameters>[0]
+    const next = await prepareBookParameters({
       c: { env: {} },
       parameters: { connectRoute: "packages" },
       provenance: {
@@ -71,7 +56,7 @@ describe("operator Connect package hold preparation", () => {
       quote: {
         upstream_payload: { offer },
       },
-    })
+    } as unknown as PrepareInput)
 
     expect(mocks.lockPackage).toHaveBeenCalledWith("conn_1", offer)
     expect(next.holdId).toBe("hold_pkg_1")

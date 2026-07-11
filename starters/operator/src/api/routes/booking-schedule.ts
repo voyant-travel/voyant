@@ -15,8 +15,6 @@
  */
 
 import type { BookingScheduleRoutesOptions } from "@voyant-travel/finance"
-import type { LazyRoutesLoader } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -43,41 +41,4 @@ export async function createBookingScheduleRoutesOptions(): Promise<BookingSched
     stampPolicySourceOnBooking: runtime.stampPolicySourceOnBooking,
     readPolicySourceFromInternalNotes: runtime.readPolicySourceFromInternalNotes,
   }
-}
-
-/**
- * Booking payment-schedule routes as a composed extension on the
- * `bookings` module.
- *
- * - admin: `POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate`
- * - public: `POST /v1/public/payment-policy/resolve` (anonymous storefront
- *   preview; the public mount path is overridden to `payment-policy`).
- *
- * The handler bodies + operator-local policy cascade live in
- * `@voyant-travel/finance`; this file injects the deployment-specific
- * resolvers. See docs/architecture/api-route-ownership-and-composition.md.
- */
-export function createBookingScheduleExtension(): HonoExtension {
-  return {
-    extension: { name: "booking-schedule", module: "bookings" },
-    lazyAdminRoutes: createBookingScheduleAdminRoutesForOperator,
-    lazyPublicRoutes: createPaymentPolicyPublicRoutesForOperator,
-    publicPath: "payment-policy",
-  }
-}
-
-export const createBookingScheduleAdminRoutesForOperator: LazyRoutesLoader = async () => {
-  const [{ createBookingScheduleAdminRoutes }, options] = await Promise.all([
-    import("@voyant-travel/finance"),
-    createBookingScheduleRoutesOptions(),
-  ])
-  return createBookingScheduleAdminRoutes(options)
-}
-
-export const createPaymentPolicyPublicRoutesForOperator: LazyRoutesLoader = async () => {
-  const [{ createPaymentPolicyPublicRoutes }, options] = await Promise.all([
-    import("@voyant-travel/finance"),
-    createBookingScheduleRoutesOptions(),
-  ])
-  return createPaymentPolicyPublicRoutes(options)
 }

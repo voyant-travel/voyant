@@ -1,4 +1,10 @@
-import { createVoyantApp } from "@voyant-travel/framework"
+import {
+  composeVoyantGraphRuntime,
+  createVoyantApp,
+  createVoyantGraphRuntimePortStubs,
+  frameworkComposition,
+  resolveStandardNodeGraphRuntime,
+} from "@voyant-travel/framework"
 import {
   buildModulePathOwnership,
   type GenerateOpenApiOptions,
@@ -65,7 +71,38 @@ const OPENAPI_OPTIONS: GenerateOpenApiOptions = {
 }
 
 export async function buildFrameworkOpenApiDocuments(): Promise<FrameworkOpenApiDocuments> {
-  const app = createVoyantApp({ providers: deepStub, db: deepStub })
+  const runtime = await resolveStandardNodeGraphRuntime()
+  const composition = await composeVoyantGraphRuntime({
+    runtime,
+    capabilities: deepStub,
+    ports: createVoyantGraphRuntimePortStubs(runtime),
+  })
+  const modules = Object.fromEntries([
+    ...runtime.modules.flatMap((unit) => {
+      const factory = frameworkComposition.modules[unit.id.replace("#", "/")]
+      return factory ? [[`legacy:${unit.id}`, factory] as const] : []
+    }),
+    ...composition.modules.map(
+      (module, index) => [`graph:${index}:${module.module.name}`, () => module] as const,
+    ),
+  ])
+  const extensions = Object.fromEntries([
+    ...[...runtime.extensions, ...runtime.plugins].flatMap((unit) => {
+      const factory = frameworkComposition.extensions?.[unit.id.replace("#", "/")]
+      return factory ? [[`legacy:${unit.id}`, factory] as const] : []
+    }),
+    ...composition.extensions.map(
+      (extension, index) =>
+        [`graph:${index}:${extension.extension.name}`, () => extension] as const,
+    ),
+  ])
+  const app = createVoyantApp({
+    providers: deepStub,
+    db: deepStub,
+    standard: false,
+    modules,
+    extensions,
+  })
   const eager = generateOpenApiDocument(app, OPENAPI_OPTIONS)
   // Lazy families mount as runtime wildcard stubs, so their `.openapi()` routes
   // never reach the composed registry — replay their loaders and merge, matching

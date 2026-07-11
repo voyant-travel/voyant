@@ -4,13 +4,11 @@ import {
   type CatalogAvailabilitySlotsScope,
   type CatalogBookingBookBody,
   type CatalogBookingCommittedEvent,
-  type CatalogBookingMountTarget,
   type CatalogBookingPrepareBookParametersInput,
   type CatalogBookingRouteModuleOptions,
   type CatalogBookingRoutesOptions,
   catalogQuotesTable,
   getOrderById,
-  mountCatalogBookingRoutes as mountPackageCatalogBookingRoutes,
   OWNED_SOURCE_KIND,
   type QuoteEntityResult,
   type SlotRow,
@@ -374,7 +372,7 @@ async function listAvailabilitySlots(
  * deployment, including the three cross-package readers the package can't
  * import statically (would cycle through inventory/operations → catalog).
  */
-function createOperatorCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
+export function createOperatorCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
   return {
     booking: createOperatorCatalogBookingRoutesOptions(),
     resolveRegistry: getBookingEngineRegistryFromContext,
@@ -386,15 +384,6 @@ function createOperatorCatalogBookingRouteModuleOptions(): CatalogBookingRouteMo
       return { name: product.name, description: product.description }
     },
   }
-}
-
-/**
- * Mount the full catalog booking-engine surface (lifecycle + orders + slots +
- * catalog-snapshot) onto an absolute-path Hono app, wired with this
- * deployment's options + cross-package readers.
- */
-export function mountCatalogBookingRoutes(hono: CatalogBookingMountTarget): void {
-  mountPackageCatalogBookingRoutes(hono, createOperatorCatalogBookingRouteModuleOptions())
 }
 
 function positiveMinutes(value: number | null | undefined) {

@@ -42,7 +42,7 @@ const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   capabilities: operatorProviders,
   bindings: operatorGraphRuntimeBindings,
-  ports: buildOperatorRuntimePorts(workflowRunnerRegistry),
+  ports: buildOperatorRuntimePorts(workflowRunnerRegistry, operatorProviders),
   outboundWebhooks: {
     enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
   },

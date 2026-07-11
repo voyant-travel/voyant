@@ -1,4 +1,10 @@
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
+import {
+  createInventoryBrochureVoyantRuntime,
+  createInventoryContentVoyantRuntime,
+  createInventoryVoyantRuntime,
+} from "../../src/graph-runtime.js"
 import { createProductBrochureHonoExtension } from "../../src/routes-brochure.js"
 import { createProductContentHonoExtension } from "../../src/routes-content.js"
 import {
@@ -24,15 +30,22 @@ describe("inventory deployment manifests", () => {
         {
           id: "@voyant-travel/inventory#api.admin",
           surface: "admin",
-          runtime: { entry: "@voyant-travel/inventory", export: "inventoryHonoModule" },
+          runtime: {
+            entry: "@voyant-travel/inventory/graph-runtime",
+            export: "createInventoryVoyantRuntime",
+          },
         },
         {
           id: "@voyant-travel/inventory#api.public",
           surface: "public",
           anonymous: true,
-          runtime: { entry: "@voyant-travel/inventory", export: "inventoryHonoModule" },
+          runtime: {
+            entry: "@voyant-travel/inventory/graph-runtime",
+            export: "createInventoryVoyantRuntime",
+          },
         },
       ],
+      runtimePorts: [{ id: "inventory.runtime" }],
       schema: [{ id: "@voyant-travel/inventory#schema" }],
       migrations: [{ id: "@voyant-travel/inventory#migrations" }],
       links: [{ id: "@voyant-travel/inventory#linkable.product" }],
@@ -102,15 +115,16 @@ describe("inventory deployment manifests", () => {
         {
           surface: "admin",
           mount: "products",
-          runtime: { export: "createProductContentHonoExtension" },
+          runtime: { export: "createInventoryContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "products",
           anonymous: true,
-          runtime: { export: "createProductContentHonoExtension" },
+          runtime: { export: "createInventoryContentVoyantRuntime" },
         },
       ],
+      runtimePorts: [{ id: "inventory.content-runtime" }],
     })
     expect(inventoryBrochureVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",
@@ -119,9 +133,10 @@ describe("inventory deployment manifests", () => {
         {
           surface: "admin",
           mount: "products",
-          runtime: { export: "createProductBrochureHonoExtension" },
+          runtime: { export: "createInventoryBrochureVoyantRuntime" },
         },
       ],
+      runtimePorts: [{ id: "inventory.brochure-runtime" }],
     })
 
     const resolveRegistry = () => ({}) as never
@@ -134,6 +149,9 @@ describe("inventory deployment manifests", () => {
     expect(content.adminRoutes).toBeDefined()
     expect(content.publicRoutes).toBeDefined()
     expect(brochure.extension).toMatchObject({ name: "brochure", module: "products" })
+    expect(isGraphRuntimeFactory(createInventoryVoyantRuntime)).toBe(true)
+    expect(isGraphRuntimeFactory(createInventoryContentVoyantRuntime)).toBe(true)
+    expect(isGraphRuntimeFactory(createInventoryBrochureVoyantRuntime)).toBe(true)
   })
 
   it("exposes a configurable PDF workflow factory", () => {

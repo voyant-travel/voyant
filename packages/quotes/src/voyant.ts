@@ -1,10 +1,16 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  quotesProposalRuntimePort,
+  quotesRuntimePort,
+  quotesSnapshotRuntimePort,
+} from "./runtime-port.js"
 
 /** Import-cheap deployment declarations owned by the quotes package. */
 export const quotesVoyantModule = defineModule({
   id: "@voyant-travel/quotes",
   packageName: "@voyant-travel/quotes",
   localId: "quotes",
+  runtimePorts: [requirePort(quotesRuntimePort)],
   api: [
     {
       id: "@voyant-travel/quotes#api",
@@ -13,7 +19,7 @@ export const quotesVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
-        export: "createQuotesHonoModule",
+        export: "createQuotesVoyantRuntime",
       },
     },
   ],
@@ -178,6 +184,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
   id: "@voyant-travel/quotes#proposal-extension",
   packageName: "@voyant-travel/quotes",
   localId: "quotes.proposal-extension",
+  runtimePorts: [requirePort(quotesProposalRuntimePort)],
   api: [
     {
       id: "@voyant-travel/quotes#proposal-extension.api.admin",
@@ -186,7 +193,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
-        export: "createQuoteProposalHonoExtension",
+        export: "createQuoteProposalVoyantRuntime",
       },
     },
     {
@@ -197,7 +204,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
-        export: "createQuoteProposalHonoExtension",
+        export: "createQuoteProposalVoyantRuntime",
       },
     },
   ],
@@ -210,6 +217,7 @@ export const quotesVersionSnapshotVoyantPlugin = defineExtension({
   id: "@voyant-travel/quotes#quote-version-snapshot-extension",
   packageName: "@voyant-travel/quotes",
   localId: "quotes.quote-version-snapshot-extension",
+  runtimePorts: [requirePort(quotesSnapshotRuntimePort)],
   api: [
     {
       id: "@voyant-travel/quotes#quote-version-snapshot-extension.api",
@@ -218,7 +226,7 @@ export const quotesVersionSnapshotVoyantPlugin = defineExtension({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
-        export: "createQuoteVersionSnapshotHonoExtension",
+        export: "createQuoteVersionSnapshotVoyantRuntime",
       },
     },
   ],

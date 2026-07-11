@@ -20,6 +20,7 @@
     "./service-external-refresh": "./src/service-external-refresh.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
+    "./graph-runtime": "./src/graph-runtime.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
     "./service-pricing": "./src/service-pricing.ts",
@@ -156,6 +157,11 @@
         "types": "./dist/service-pricing.d.ts",
         "import": "./dist/service-pricing.js",
         "default": "./dist/service-pricing.js"
+      },
+      "./graph-runtime": {
+        "types": "./dist/graph-runtime.d.ts",
+        "import": "./dist/graph-runtime.js",
+        "default": "./dist/graph-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

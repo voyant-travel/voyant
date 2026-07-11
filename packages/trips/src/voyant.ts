@@ -1,7 +1,11 @@
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 
-export { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
+export {
+  type TripsDatabaseRuntime,
+  tripsDatabaseRuntimePort,
+  tripsRoutesRuntimePort,
+} from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the trips package. */
 export const tripsVoyantModule = defineModule({

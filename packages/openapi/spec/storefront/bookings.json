@@ -6209,6 +6209,132 @@
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
+    },
+    "/v1/public/payment-policy/resolve": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityModule": {
+                    "type": "string"
+                  },
+                  "entityId": {
+                    "type": "string"
+                  },
+                  "sailingId": {
+                    "type": "string"
+                  },
+                  "cabinCategoryId": {
+                    "type": "string"
+                  },
+                  "ratePlanId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "entityModule",
+                  "entityId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolved effective payment policy + cascade source for an entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "policy": {
+                          "type": "object",
+                          "properties": {
+                            "deposit": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "none",
+                                    "percent",
+                                    "fixed_cents"
+                                  ]
+                                },
+                                "percent": {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 100
+                                },
+                                "amountCents": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ]
+                            },
+                            "minDaysBeforeDepartureForDeposit": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "balanceDueDaysBeforeDeparture": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "balanceDueMinDaysFromNow": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "deposit",
+                            "minDaysBeforeDepartureForDeposit",
+                            "balanceDueDaysBeforeDeparture",
+                            "balanceDueMinDaysFromNow"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "booking",
+                            "listing",
+                            "category",
+                            "supplier",
+                            "operator_default"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "policy",
+                        "source"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postPublicPaymentPolicyResolve",
+        "summary": "POST /v1/public/payment-policy/resolve",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "storefront"
+      }
     }
   },
   "webhooks": {}

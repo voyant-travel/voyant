@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-import { optionalFamiliesToExclude } from "./create-app.js"
+import { createVoyantApp, optionalFamiliesToExclude } from "./create-app.js"
 
 /** Cast a loose record to the providers slice the helper reads (avoids stubbing every field). */
 function providersWith(fields: Record<string, unknown>): Partial<FrameworkProviders> {
@@ -8,6 +8,12 @@ function providersWith(fields: Record<string, unknown>): Partial<FrameworkProvid
 }
 
 describe("optionalFamiliesToExclude (auto-exclude unwired optional families)", () => {
+  it("fails loudly when the legacy registry cannot compose selected standard units", () => {
+    expect(() => createVoyantApp({ providers: {} as never, db: {} as never })).toThrow(
+      /cannot compose graph-owned standard units.*@voyant-travel\/bookings/,
+    )
+  })
+
   it("excludes @voyant-travel/flights when loadFlightAdminRoutes is not provided", () => {
     expect(optionalFamiliesToExclude({})).toContain("@voyant-travel/flights")
   })

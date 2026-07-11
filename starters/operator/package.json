@@ -8,6 +8,7 @@
     "build": "pnpm run graph:emit && pnpm run admin:check && vite build && pnpm run copy:deployment-artifacts",
     "copy:deployment-artifacts": "rm -rf dist/.voyant dist/server/.voyant && mkdir -p dist/server && cp -R .voyant dist/.voyant && cp -R .voyant dist/server/.voyant",
     "preview": "pnpm run build && vite preview",
+    "measure": "node ../../scripts/measure-standard-node-starter.mjs --require-build",
     "start": "node -r ./scripts/env-preload.cjs dist/server/server.js",
     "typecheck": "pnpm run graph:emit && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.client.json",
     "test": "pnpm run graph:emit && vitest run --passWithNoTests",
