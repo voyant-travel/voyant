@@ -20,6 +20,7 @@ import type {
   RunSummary,
   TriggerOptions,
 } from "@voyant-travel/workflows"
+import { getWorkflow } from "@voyant-travel/workflows"
 import {
   type DriverFactory,
   type DriverFactoryDeps,
@@ -31,7 +32,11 @@ import {
   type WorkflowDriver,
 } from "@voyant-travel/workflows/driver"
 import { deriveStableEventId } from "@voyant-travel/workflows/events"
-import { handleStepRequest, type WorkflowStepRequest } from "@voyant-travel/workflows/handler"
+import {
+  handleStepRequest,
+  type WorkflowResolver,
+  type WorkflowStepRequest,
+} from "@voyant-travel/workflows/handler"
 import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 
 import {
@@ -58,6 +63,13 @@ export interface InMemoryDriverOptions {
   tenantMeta?: RunRecord["tenantMeta"]
   /** Injectable clock; defaults to `Date.now`. */
   now?: () => number
+  /**
+   * Executable workflow lookup for this driver instance.
+   *
+   * Omitting this dependency is deprecated and falls back to the process-global
+   * authoring registry for backward compatibility with existing consumers.
+   */
+  workflowResolver?: WorkflowResolver
   /** Step handler override — defaults to in-process `handleStepRequest`. */
   handler?: StepHandler
   /** Schedule runner tick interval. Defaults to 1_000 ms. */
@@ -70,6 +82,10 @@ const DEFAULT_TENANT_META: RunRecord["tenantMeta"] = {
   tenantId: "default",
   projectId: "default",
   organizationId: "default",
+}
+
+const legacyWorkflowResolver: WorkflowResolver = {
+  resolve: getWorkflow,
 }
 
 /**
@@ -91,13 +107,14 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
     const now = opts.now ?? deps.now ?? (() => Date.now())
     const tenantMeta = opts.tenantMeta ?? DEFAULT_TENANT_META
     const defaultEnv: EnvironmentName = opts.defaultEnvironment ?? "development"
+    const workflowResolver = opts.workflowResolver ?? legacyWorkflowResolver
     // Wire the framework-supplied service container through to step bodies.
     // The handler closes over `deps.services` so every step invocation
     // surfaces it as `ctx.services` inside the workflow body.
     const handler: StepHandler =
       opts.handler ??
       (async (req: WorkflowStepRequest, stepOpts) =>
-        handleStepRequest(req, { services: deps.services }, stepOpts))
+        handleStepRequest(req, { workflowResolver, services: deps.services }, stepOpts))
 
     let shuttingDown = false
     const concurrency = createInProcessConcurrencyCoordinator({

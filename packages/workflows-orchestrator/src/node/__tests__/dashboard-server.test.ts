@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
+import { __resetRegistry } from "@voyant-travel/workflows"
 import { describe, expect, it } from "vitest"
 import { createSelfHostDeps, handleRequest } from "../dashboard-server.js"
 import type { SnapshotRunStore } from "../snapshot-run-store.js"
@@ -210,6 +211,55 @@ describe("createSelfHostDeps validation", () => {
       })
     } finally {
       await deps?.shutdown?.()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("executes from the entry snapshot after the global registry is cleared", async () => {
+    const root = await mkdtemp(join(process.cwd(), ".tmp-resolver-workflow-entry-"))
+    let deps: Awaited<ReturnType<typeof createSelfHostDeps>> | undefined
+    try {
+      const entryFile = join(root, "resolver-workflows.mjs")
+      const staticDir = join(root, "static")
+      await mkdir(staticDir, { recursive: true })
+      await writeFile(
+        entryFile,
+        [
+          'import { workflow } from "@voyant-travel/workflows";',
+          'workflow({ id: "resolver_probe", async run() {',
+          '  return { source: "entry snapshot" };',
+          "}});",
+        ].join("\n"),
+        "utf8",
+      )
+
+      deps = await createSelfHostDeps({
+        entryFile,
+        staticDir,
+        cacheBustEntry: true,
+        store: createFsSnapshotRunStore({ rootDir: join(root, "runs") }),
+      })
+      __resetRegistry()
+
+      const response = await handleRequest(
+        {
+          method: "POST",
+          url: "http://local/api/runs",
+          body: JSON.stringify({ workflowId: "resolver_probe", input: {} }),
+        },
+        deps,
+      )
+
+      expect(response.status).toBe(200)
+      expect(JSON.parse(String(response.body))).toMatchObject({
+        saved: {
+          status: "completed",
+          result: { output: { source: "entry snapshot" } },
+        },
+      })
+    } finally {
+      await deps?.shutdown?.()
+      __resetRegistry()
       await rm(root, { recursive: true, force: true })
     }
   })

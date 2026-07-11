@@ -1,5 +1,5 @@
-import { __resetRegistry, workflow } from "@voyant-travel/workflows"
-import { handleStepRequest } from "@voyant-travel/workflows/handler"
+import { __resetRegistry, getWorkflow, workflow } from "@voyant-travel/workflows"
+import { handleStepRequest, type WorkflowResolver } from "@voyant-travel/workflows/handler"
 import { describe, expect, it } from "vitest"
 import { createHttpStepHandler } from "../http-step-handler.js"
 
@@ -19,7 +19,10 @@ describe("createHttpStepHandler", () => {
           url: "https://tenant.internal/__voyant/workflow-step",
           async fetch(req: Request): Promise<Response> {
             const body = await req.json()
-            const out = await handleStepRequest(body)
+            const workflowResolver: WorkflowResolver = {
+              resolve: (workflowId) => getWorkflow(workflowId),
+            }
+            const out = await handleStepRequest(body, { workflowResolver })
             return new Response(JSON.stringify(out.body), {
               status: out.status,
               headers: { "content-type": "application/json" },
