@@ -1,4 +1,4 @@
-import type { EventBus, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import type { BootstrapContext, EventBus, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -152,7 +152,7 @@ export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFa
     return {
       id: COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
       eventType: "payment.completed",
-      register: async (context) => {
+      register: async (context: BootstrapContext) => {
         const generateContractPdf: CatalogCheckoutContractPdfGenerator = (input) =>
           contractPdf.generate({ ...input, bindings: context.bindings })
         const descriptor = createCheckoutFinalizeSubscriberRuntime({
