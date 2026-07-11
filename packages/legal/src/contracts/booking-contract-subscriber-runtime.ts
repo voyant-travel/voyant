@@ -1,6 +1,10 @@
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import type { BookingPiiService } from "@voyant-travel/bookings"
-import type { ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import type {
+  BootstrapContext,
+  ModuleContainer,
+  SubscriberRuntimeDescriptor,
+} from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { StorageProvider } from "@voyant-travel/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -145,7 +149,7 @@ export const createLegalBookingContractVoyantRuntime = defineGraphRuntimeFactory
       extension: {
         name: "booking-contract",
         module: "legal",
-        bootstrap: async ({ bindings, container }) => {
+        bootstrap: async ({ bindings, container }: BootstrapContext) => {
           const runtime = await host.createRuntime(bindings)
           if (runtime) registerLegalBookingContractSubscriberRuntime(container, runtime)
         },
