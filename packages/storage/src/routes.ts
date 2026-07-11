@@ -392,6 +392,19 @@ export function createMediaRoutes(options: MediaRoutesOptions) {
     method: "get",
     path: "/v1/admin/media/{key}",
     summary: "Download stored media",
+    parameters: [
+      {
+        in: "path",
+        name: "key",
+        required: true,
+        allowReserved: true,
+        description: "Nested object key under uploads/ or brochures/products/.",
+        schema: {
+          type: "string",
+          pattern: "^(?:uploads|brochures/products)/.+$",
+        },
+      },
+    ],
     responses: {
       200: { description: "The stored media bytes." },
       400: { description: "The storage key is invalid." },

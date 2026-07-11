@@ -157,6 +157,19 @@
     "/v1/admin/media/{key}": {
       "get": {
         "summary": "Download stored media",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "allowReserved": true,
+            "description": "Nested object key under uploads/ or brochures/products/.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:uploads|brochures/products)/.+$"
+            }
+          }
+        ],
         "x-voyant-api-id": "@voyant-travel/storage#api.admin.media",
         "responses": {
           "200": {

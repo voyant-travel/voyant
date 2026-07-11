@@ -69,6 +69,19 @@ describe("storage deployment manifest", () => {
       STORAGE_OPENAPI_API_IDS.videoUploadTicket,
     )
     expect(readApiId(document, "/v1/admin/media/{key}", "get")).toBe(STORAGE_OPENAPI_API_IDS.media)
+    expect(document.paths?.["/v1/admin/media/{key}"]?.get?.parameters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          in: "path",
+          name: "key",
+          required: true,
+          allowReserved: true,
+          schema: expect.objectContaining({
+            pattern: "^(?:uploads|brochures/products)/.+$",
+          }),
+        }),
+      ]),
+    )
   })
 
   it("ships a conformance kit for deployment media providers", async () => {
