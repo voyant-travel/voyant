@@ -58,8 +58,10 @@ describe("framework project resolver", () => {
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
       "admin/project-admin.generated.ts",
       "runtime/project-api.generated.ts",
+      "runtime/project-jobs.generated.ts",
       "runtime/project-migrations.generated.mjs",
       "runtime/project-runtime.generated.ts",
+      "runtime/project-workflows.generated.ts",
     ])
     const runtimeSource = first.artifacts.files.find(
       (file) => file.path === first.artifacts.runtimeEntry,
@@ -587,7 +589,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     expect(composed.modules.map((module) => module.module.name)).toEqual(["concierge"])
   })
 
-  it("compiles project API and admin conventions into the resolved graph artifacts", async () => {
+  it("compiles project API, admin, workflow, and job conventions into graph artifacts", async () => {
     const root = projectRoot()
     writeFile(
       root,
@@ -595,9 +597,28 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
       "export const GET = (c: { json(value: unknown): unknown }) => c.json({ ok: true })\n",
     )
     writeFile(root, "src/admin/dashboard/index.tsx", 'export default { id: "project.dashboard" }\n')
+    writeFile(
+      root,
+      "src/workflows/sync-health.ts",
+      [
+        'import { defineWorkflow } from "@voyant-travel/workflows"',
+        'export default defineWorkflow({ id: "health.sync", schedule: { cron: "0 * * * *" }, run: async () => undefined })',
+      ].join("\n"),
+    )
+    writeFile(
+      root,
+      "src/jobs/cleanup.ts",
+      [
+        'export const schedule = { cron: "0 3 * * *", input: { source: "project" } }',
+        "export default async function cleanup() {}",
+      ].join("\n"),
+    )
 
     const resolution = await resolve(root, defineProject({ modules: [] }))
     const projectApi = resolution.graph.modules.find(({ localId }) => localId === "project-api")
+    const projectWorkflows = resolution.graph.modules.find(
+      ({ localId }) => localId === "project-workflows",
+    )
 
     expect(projectApi).toMatchObject({
       id: "npm/fixture#project-api",
@@ -621,6 +642,43 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
         source: { kind: "file", reference: "." },
       }),
     )
+    expect(projectWorkflows).toMatchObject({
+      id: "npm/fixture#project-workflows",
+      workflows: [
+        {
+          id: "health.sync",
+          runtime: {
+            entry: "./.voyant/runtime/project-workflows.generated.ts",
+            export: "projectWorkflow0",
+          },
+          schedules: [expect.objectContaining({ cron: "0 * * * *", workflowId: "health.sync" })],
+        },
+        {
+          id: "project.job.cleanup",
+          runtime: {
+            entry: "./.voyant/runtime/project-jobs.generated.ts",
+            export: "projectJobWorkflow0",
+          },
+          schedules: [
+            expect.objectContaining({
+              cron: "0 3 * * *",
+              input: { source: "project" },
+              workflowId: "project.job.cleanup",
+            }),
+          ],
+        },
+      ],
+    })
+    expect(resolution.graph.provisioning.scheduledJobs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ cron: "0 * * * *", workflowId: "health.sync" }),
+        expect.objectContaining({
+          cron: "0 3 * * *",
+          input: { source: "project" },
+          workflowId: "project.job.cleanup",
+        }),
+      ]),
+    )
     expect(
       resolution.artifacts.files.find(({ path }) => path === "runtime/project-api.generated.ts")
         ?.contents,
@@ -630,9 +688,24 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
         ?.contents,
     ).toContain('import projectAdminExtension0 from "../../src/admin/dashboard/index.js"')
     expect(
+      resolution.artifacts.files.find(
+        ({ path }) => path === "runtime/project-workflows.generated.ts",
+      )?.contents,
+    ).toContain("export { workflow0 as projectWorkflow0 }")
+    expect(
+      resolution.artifacts.files.find(({ path }) => path === "runtime/project-jobs.generated.ts")
+        ?.contents,
+    ).toContain("export const projectJobWorkflow0 = defineWorkflow({")
+    expect(
       resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
         ?.contents,
     ).toContain('"./project-api.generated.ts": () => import("./project-api.generated.ts")')
+    expect(
+      resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
+        ?.contents,
+    ).toContain(
+      '"./project-workflows.generated.ts": () => import("./project-workflows.generated.ts")',
+    )
   })
 
   it("rejects convention diagnostics and config paths outside the project root", async () => {
