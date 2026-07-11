@@ -10,6 +10,7 @@ import {
   catalogBookingConfirmedSnapshotSubscriber,
   catalogBookingSnapshotRuntimePort,
   createCatalogBookingSnapshotSubscriberDescriptor,
+  createCatalogBookingSnapshotSubscriberGraphRuntime,
 } from "./booking-snapshot-subscriber-runtime.js"
 import type { CaptureSnapshotInput } from "./services/snapshot-service.js"
 
@@ -58,18 +59,21 @@ describe("Catalog booking snapshot subscriber runtime", () => {
     })
     await expect(
       assertPortConforms(catalogBookingSnapshotRuntimePort, {
-        withContext: async (operation) =>
-          operation({
-            db: {} as AnyDrizzleDb,
-            sellerOperatorId: "seller_123",
-            findBookingProductIds: async () => [],
-            buildSnapshotInput: async () => null,
-          }),
+        createRuntime: () => ({
+          withContext: async (operation) =>
+            operation({
+              db: {} as AnyDrizzleDb,
+              sellerOperatorId: "seller_123",
+              findBookingProductIds: async () => [],
+              buildSnapshotInput: async () => null,
+            }),
+        }),
       }),
     ).resolves.toBeUndefined()
     await expect(
       assertPortConforms(catalogBookingSnapshotRuntimePort, {} as never),
-    ).rejects.toThrow(/withContext/)
+    ).rejects.toThrow(/createRuntime/)
+    expect(createCatalogBookingSnapshotSubscriberGraphRuntime).toBeTypeOf("function")
   })
 
   it("deduplicates booking products and captures the idempotent snapshot graph", async () => {

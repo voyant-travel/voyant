@@ -1,4 +1,5 @@
-import type { BootstrapContext } from "@voyant-travel/core"
+import type { BootstrapContext, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { z } from "zod"
 
 import { catalogIndexSubscriberDeclarations } from "./index-subscriber-declarations.js"
@@ -6,13 +7,14 @@ import {
   CATALOG_PROJECTION_RUNTIME_CONTAINER_KEY,
   type CatalogProjectionRuntime,
   type CatalogProjectionTarget,
+  catalogProjectionRuntimePort,
   parseCatalogProjectionTarget,
 } from "./projection-runtime.js"
 
 const PRODUCTS_ENTITY_MODULE = "products"
 
 const entityIdPayloadSchema = z.object({ id: z.string().min(1) }).passthrough()
-const productIdPayloadSchema = z.object({ productId: z.string().min(1).optional() }).passthrough()
+const productIdPayloadSchema = z.object({ productId: z.string().optional() }).passthrough()
 const promotionPayloadSchema = z
   .object({
     affected: z.discriminatedUnion("kind", [
@@ -174,3 +176,36 @@ export const catalogIndexSubscriberRuntimeDescriptors = [
   catalogPublicationChangedIndexSubscriber,
   catalogPromotionChangedIndexSubscriber,
 ] as const
+
+function createCatalogIndexSubscriberGraphRuntime(descriptor: SubscriberRuntimeDescriptor) {
+  return defineGraphRuntimeFactory(async ({ getPort }) => {
+    const provider = await getPort(catalogProjectionRuntimePort)
+    return {
+      ...descriptor,
+      register: async (context: BootstrapContext) => {
+        context.container.register(
+          CATALOG_PROJECTION_RUNTIME_CONTAINER_KEY,
+          await provider.createRuntime(context.bindings),
+        )
+        await descriptor.register(context)
+      },
+    }
+  })
+}
+
+export const createCatalogProductCreatedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogProductCreatedIndexSubscriber)
+export const createCatalogProductUpdatedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogProductUpdatedIndexSubscriber)
+export const createCatalogProductDeletedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogProductDeletedIndexSubscriber)
+export const createCatalogProductContentChangedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogProductContentChangedIndexSubscriber)
+export const createCatalogAvailabilityChangedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogAvailabilityChangedIndexSubscriber)
+export const createCatalogPricingChangedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogPricingChangedIndexSubscriber)
+export const createCatalogPublicationChangedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogPublicationChangedIndexSubscriber)
+export const createCatalogPromotionChangedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogPromotionChangedIndexSubscriber)

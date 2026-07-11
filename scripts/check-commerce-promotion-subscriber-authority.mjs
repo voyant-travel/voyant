@@ -18,7 +18,10 @@ const sources = Object.fromEntries(
   await Promise.all(
     Object.entries(paths).map(async ([name, relativePath]) => [
       name,
-      await readFile(path.join(repoRoot, relativePath), "utf8"),
+      await readFile(path.join(repoRoot, relativePath), "utf8").catch((error) => {
+        if (name === "catalogBridge" && error?.code === "ENOENT") return ""
+        throw error
+      }),
     ]),
   ),
 )

@@ -979,17 +979,16 @@ same selected-graph lowering. Operator contributes only the graph-gated
 `TripsPaymentSubscriberRuntime` database-lifecycle adapter; deselecting Trips
 removes both that service registration and the subscriber runtime module.
 
-The remaining Operator subscriber authorities are intentionally explicit:
-
-- `catalogBridgeBundle`: `product.created`, `product.updated`,
-  `product.deleted`, `product.content.changed`, `availability.slot.changed`,
-  `pricing.rule.changed`, `product.publication.changed`, `promotion.changed`,
-  and the catalog snapshot `booking.confirmed` handler
-
-These entries remain until each owning package manifest has executable runtime
-references and direct selected-graph parity. Deployment-local ordering,
-configuration, or orchestration is not sufficient reason to relabel a standard
-package subscriber as migrated.
+Catalog now owns and executes its eight index subscribers and idempotent booking
+snapshot subscriber through direct manifest runtime references. Its package
+factories validate event payloads, preserve sequential multi-product indexing,
+and register only the selected descriptor. Node hosts provide Typesense/indexer
+composition and snapshot database access through required typed runtime ports.
+The Operator no longer carries `catalogBridgeBundle`; deselecting Catalog removes
+all nine subscriber registrations and does not resolve either host port. Catalog
+snapshot capture remains ordered before the Commerce promotion-redemption
+subscriber in the standard generated module graph, while both handlers retain
+independent idempotency and outbox retry behavior.
 
 Finance owns and executes booking-schedule generation from its selected
 `booking.confirmed` subscriber runtime. Operator contributes only the payment
