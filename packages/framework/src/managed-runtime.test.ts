@@ -104,7 +104,9 @@ async function mountManagedPaymentLinkApp(
   providers: ReturnType<typeof createManagedProfileProviders>,
   db: unknown,
 ) {
-  const routes = await providers.loadPaymentLinkRoutes()
+  const loadPaymentLinkRoutes = providers.loadPaymentLinkRoutes
+  if (!loadPaymentLinkRoutes) throw new Error("Expected managed payment-link routes")
+  const routes = await loadPaymentLinkRoutes()
   const app = new Hono()
   app.use("*", async (c, next) => {
     c.set("db" as never, db as never)
@@ -837,7 +839,9 @@ describe("managed profile runtime entry", () => {
   })
 
   it("wires package-owned payment-link routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadPaymentLinkRoutes()
+    const loadPaymentLinkRoutes = createManagedProfileProviders().loadPaymentLinkRoutes
+    if (!loadPaymentLinkRoutes) throw new Error("Expected managed payment-link routes")
+    const app = await loadPaymentLinkRoutes()
     const response = await app.request(
       "/v1/public/payment-link-config",
       {},
@@ -933,7 +937,9 @@ describe("managed profile runtime entry", () => {
   it("wires package-owned contract document routes in the default managed providers", async () => {
     const env = createManagedProfileNodeEnv({ DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL })
     await env.DOCUMENTS_BUCKET?.put("contracts/test.pdf", new TextEncoder().encode("%PDF-1.4"))
-    const app = await createManagedProfileProviders().loadContractDocumentRoutes()
+    const loadContractDocumentRoutes = createManagedProfileProviders().loadContractDocumentRoutes
+    if (!loadContractDocumentRoutes) throw new Error("Expected managed contract document routes")
+    const app = await loadContractDocumentRoutes()
 
     const response = await app.request("/v1/admin/documents/files/contracts/test.pdf", {}, env)
 
@@ -962,7 +968,11 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned booking maintenance routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadBookingMaintenanceRoutes()
+    const loadBookingMaintenanceRoutes =
+      createManagedProfileProviders().loadBookingMaintenanceRoutes
+    if (!loadBookingMaintenanceRoutes)
+      throw new Error("Expected managed booking maintenance routes")
+    const app = await loadBookingMaintenanceRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
@@ -1075,7 +1085,9 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned catalog offers routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadCatalogOffersRoutes()
+    const loadCatalogOffersRoutes = createManagedProfileProviders().loadCatalogOffersRoutes
+    if (!loadCatalogOffersRoutes) throw new Error("Expected managed catalog offers routes")
+    const app = await loadCatalogOffersRoutes()
     const response = await app.request("/departure-airports", {
       method: "POST",
       body: JSON.stringify({ destination: { countryCode: "RO" } }),
@@ -1089,14 +1101,18 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned catalog booking routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadCatalogBookingRoutes()
+    const loadCatalogBookingRoutes = createManagedProfileProviders().loadCatalogBookingRoutes
+    if (!loadCatalogBookingRoutes) throw new Error("Expected managed catalog booking routes")
+    const app = await loadCatalogBookingRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
   }, 10000)
 
   it("wires package-owned catalog content routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadCruisesContentRoutes()
+    const loadCruisesContentRoutes = createManagedProfileProviders().loadCruisesContentRoutes
+    if (!loadCruisesContentRoutes) throw new Error("Expected managed cruises content routes")
+    const app = await loadCruisesContentRoutes()
     const response = await app.request("/v1/admin/cruises/!!!invalid/content")
 
     expect(app.fetch).toEqual(expect.any(Function))
@@ -1116,7 +1132,10 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned quote-version snapshot routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadQuoteVersionSnapshotRoutes()
+    const loadQuoteVersionSnapshotRoutes =
+      createManagedProfileProviders().loadQuoteVersionSnapshotRoutes
+    if (!loadQuoteVersionSnapshotRoutes) throw new Error("Expected managed quote snapshot routes")
+    const app = await loadQuoteVersionSnapshotRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
@@ -1124,9 +1143,14 @@ describe("managed profile runtime entry", () => {
 
   it("wires package-owned proposal routes in the default managed providers", async () => {
     const providers = createManagedProfileProviders()
+    const loadProposalAdminRoutes = providers.loadProposalAdminRoutes
+    const loadProposalPublicRoutes = providers.loadProposalPublicRoutes
+    if (!loadProposalAdminRoutes || !loadProposalPublicRoutes) {
+      throw new Error("Expected managed proposal routes")
+    }
     const [adminApp, publicApp] = await Promise.all([
-      providers.loadProposalAdminRoutes(),
-      providers.loadProposalPublicRoutes(),
+      loadProposalAdminRoutes(),
+      loadProposalPublicRoutes(),
     ])
 
     expect(adminApp.fetch).toEqual(expect.any(Function))
@@ -1137,9 +1161,14 @@ describe("managed profile runtime entry", () => {
 
   it("wires package-owned booking schedule routes in the default managed providers", async () => {
     const providers = createManagedProfileProviders()
+    const loadBookingScheduleAdminRoutes = providers.loadBookingScheduleAdminRoutes
+    const loadPaymentPolicyPublicRoutes = providers.loadPaymentPolicyPublicRoutes
+    if (!loadBookingScheduleAdminRoutes || !loadPaymentPolicyPublicRoutes) {
+      throw new Error("Expected managed booking schedule routes")
+    }
     const [adminApp, publicApp] = await Promise.all([
-      providers.loadBookingScheduleAdminRoutes(),
-      providers.loadPaymentPolicyPublicRoutes(),
+      loadBookingScheduleAdminRoutes(),
+      loadPaymentPolicyPublicRoutes(),
     ])
 
     expect(adminApp.fetch).toEqual(expect.any(Function))
@@ -1149,7 +1178,10 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned action-ledger health routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()
+    const loadActionLedgerHealthRoutes =
+      createManagedProfileProviders().loadActionLedgerHealthRoutes
+    if (!loadActionLedgerHealthRoutes) throw new Error("Expected managed action-ledger routes")
+    const app = await loadActionLedgerHealthRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)

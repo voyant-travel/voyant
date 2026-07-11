@@ -13,6 +13,15 @@ const packageJson = JSON.parse(
 ) as PackageJson
 
 describe("@voyant-travel/finance package exports", () => {
+  it("publishes the import-cheap runtime port subpath", () => {
+    expect(packageJson.exports["./runtime-port"]).toBe("./src/runtime-port.ts")
+    expect(packageJson.publishConfig.exports["./runtime-port"]).toEqual({
+      types: "./dist/runtime-port.d.ts",
+      import: "./dist/runtime-port.js",
+      default: "./dist/runtime-port.js",
+    })
+  })
+
   it("publishes the booking-schedule subscriber runtime subpath", () => {
     expect(packageJson.exports["./booking-schedule-subscriber"]).toBe(
       "./src/booking-schedule/subscriber-runtime.ts",

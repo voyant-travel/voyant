@@ -1009,6 +1009,7 @@
         "../../packages/finance/dist/validation-public.d.ts"
       ],
       "@voyant-travel/finance/routes": ["../../packages/finance/dist/routes.d.ts"],
+      "@voyant-travel/finance/runtime-port": ["../../packages/finance/dist/runtime-port.d.ts"],
       "@voyant-travel/finance/schema": ["../../packages/finance/dist/schema.d.ts"],
       "@voyant-travel/finance/setup/vouchers": [
         "../../packages/finance/dist/service-vouchers-migration.d.ts"
