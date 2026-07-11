@@ -11,6 +11,7 @@ import {
   buildManagedNodeRuntimeEntryArtifact,
 } from "../packages/framework/src/deployment-artifacts.ts"
 import type { ResolvedVoyantDeploymentGraph } from "../packages/framework/src/deployment-graph.ts"
+import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
 import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
@@ -44,7 +45,7 @@ const command = "pnpm --filter operator graph:emit"
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
-  const { graph, profile } = await resolveGraph(options.configPath)
+  const { graph, profile, projectArtifacts } = await resolveGraph(options.configPath)
   const graphText = formatGeneratedText(options.graphOutputPath, buildDeploymentGraphJson(graph))
   const graphArtifactPath = toPosixRelativePath(
     dirname(options.entryOutputPath),
@@ -107,6 +108,14 @@ async function main(): Promise<void> {
     { path: options.graphOutputPath, expected: graphText, facet: "deployment-graph" },
     { path: options.entryOutputPath, expected: entryText, facet: "runtime-entry" },
     { path: options.runtimeOutputPath, expected: runtimeText, facet: "graph-runtime" },
+    ...projectConventionArtifacts(projectArtifacts).map((artifact) => ({
+      path: join(defaultOperatorRoot, ".voyant", artifact.path),
+      expected: formatGeneratedText(
+        join(defaultOperatorRoot, ".voyant", artifact.path),
+        artifact.contents,
+      ),
+      facet: "project-convention",
+    })),
   ]
 
   if (options.emit) {
@@ -172,7 +181,13 @@ async function resolveGraph(configPath: string) {
     frameworkVersion,
     scheduledJobs: [...getManagedProfileScheduledJobs(profile), ...OPERATOR_LOCAL_SCHEDULED_JOBS],
   })
-  return { graph: resolved.graph, profile }
+  return { graph: resolved.graph, profile, projectArtifacts: resolved.artifacts }
+}
+
+function projectConventionArtifacts(artifacts: ResolvedProjectArtifacts) {
+  return artifacts.files.filter(
+    (file) => file.path !== artifacts.runtimeEntry && file.path !== artifacts.migrationRunner,
+  )
 }
 
 async function loadOperatorConfig(configPath: string): Promise<OperatorAuthoredProject> {
@@ -342,17 +357,39 @@ function projectRuntimeEntryOverrides(
   )
   const overrides: Record<string, string> = {}
   for (const unit of [...graph.modules, ...graph.extensions, ...graph.plugins]) {
-    if (!projectPackages.has(unit.packageName) || !unit.runtime?.entry.startsWith("./")) continue
-    const target = resolve(projectRoot, unit.runtime.entry)
-    const relativeTarget = path.relative(projectRoot, target)
-    if (relativeTarget.startsWith("..") || path.isAbsolute(relativeTarget)) {
-      throw new Error(`Project runtime entry ${unit.runtime.entry} escapes ${projectRoot}`)
+    if (!projectPackages.has(unit.packageName)) continue
+    for (const runtime of unitRuntimeReferences(unit)) {
+      if (!runtime.entry.startsWith("./")) continue
+      const target = resolve(projectRoot, runtime.entry)
+      const relativeTarget = path.relative(projectRoot, target)
+      if (relativeTarget.startsWith("..") || path.isAbsolute(relativeTarget)) {
+        throw new Error(`Project runtime entry ${runtime.entry} escapes ${projectRoot}`)
+      }
+      let relativeImport = path.relative(dirname(runtimeOutputPath), target).replaceAll(path.sep, "/")
+      if (!relativeImport.startsWith(".")) relativeImport = `./${relativeImport}`
+      overrides[`${unit.packageName}/${runtime.entry.slice(2)}`] = relativeImport
     }
-    let relativeImport = path.relative(dirname(runtimeOutputPath), target).replaceAll(path.sep, "/")
-    if (!relativeImport.startsWith(".")) relativeImport = `./${relativeImport}`
-    overrides[`${unit.packageName}/${unit.runtime.entry.slice(2)}`] = relativeImport
   }
   return overrides
+}
+
+function unitRuntimeReferences(
+  unit: ResolvedVoyantDeploymentGraph["modules"][number],
+): Array<{ entry: string }> {
+  return [
+    unit.runtime,
+    ...unit.api.map((route) => route.runtime),
+    ...(unit.config ?? []).map((entry) => entry.validator),
+    ...(unit.secrets ?? []).map((entry) => entry.validator),
+    ...(unit.providers ?? []).map((entry) => entry.runtime),
+    ...(unit.admin?.copy ?? []).map((entry) => entry.runtime),
+    ...(unit.admin?.routes ?? []).map((entry) => entry.runtime),
+    ...(unit.admin?.contributions ?? []).map((entry) => entry.runtime),
+    ...(unit.tools ?? []).map((entry) => entry.runtime),
+    ...(unit.setupMigrations ?? []).map((entry) => entry.runtime),
+    ...unit.workflows.map((entry) => entry.runtime),
+    ...unit.subscribers.map((entry) => entry.runtime),
+  ].filter((entry): entry is { entry: string } => Boolean(entry))
 }
 
 function printHelp(): void {

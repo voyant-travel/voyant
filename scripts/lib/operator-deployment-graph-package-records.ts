@@ -21,6 +21,7 @@ import type { VoyantProjectProviders } from "../../packages/framework/src/profil
 import {
   inferredNodeRuntimePackageMetadata,
   runtimeReferencePackageNames,
+  type ResolvedProjectArtifacts,
 } from "../../packages/framework/src/project-resolver.ts"
 import { readPnpmLockfilePackageRecords } from "./deployment-graph-provenance.mjs"
 import { loadVoyantPackageManifests } from "./load-voyant-package-manifests.ts"
@@ -37,6 +38,7 @@ export interface OperatorAuthoredProject extends VoyantGraphProject {
 export interface ResolvedOperatorProject {
   project: VoyantGraphProject
   deployment: Omit<VoyantGraphDeployment, "project">
+  artifacts: ResolvedProjectArtifacts
 }
 
 interface ResolveOperatorDeploymentGraphOptions {
@@ -252,7 +254,24 @@ function normalizeFrameworkResolution(
   return {
     project,
     deployment: deploymentFromSettings(project, { mode, providers }),
+    artifacts: requireResolvedProjectArtifacts(record.artifacts),
   }
+}
+
+function requireResolvedProjectArtifacts(value: unknown): ResolvedProjectArtifacts {
+  if (!value || typeof value !== "object") {
+    throw new Error("resolveProject did not return generated project artifacts")
+  }
+  const artifacts = value as Partial<ResolvedProjectArtifacts>
+  if (
+    typeof artifacts.runtimeEntry !== "string" ||
+    typeof artifacts.migrationRunner !== "string" ||
+    !Array.isArray(artifacts.files) ||
+    !artifacts.migrationPlan
+  ) {
+    throw new Error("resolveProject returned an invalid generated project artifact contract")
+  }
+  return artifacts as ResolvedProjectArtifacts
 }
 
 function projectFromResolvedGraph(
