@@ -120,7 +120,9 @@ describe("graph action-ledger lowering", () => {
       { id: "booking.status.override", capabilityId: "bookings:status:override" },
     ])
     const accessScopes = (bookingsVoyantModule.access?.resources ?? []).flatMap((resource) =>
-      resource.actions.map((action) => `${resource.resource}:${action.action}`),
+      resource.actions.map(
+        (action) => `${resource.resource}:${typeof action === "string" ? action : action.action}`,
+      ),
     )
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:bookings-action-parity",
