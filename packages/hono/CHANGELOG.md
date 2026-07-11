@@ -1,5 +1,19 @@
 # @voyant-travel/hono
 
+## 0.124.0
+
+### Minor Changes
+
+- ca90eb5: Activate link definitions as request-scoped link services backed by each request's database.
+
+### Patch Changes
+
+- Updated dependencies [ca90eb5]
+  - @voyant-travel/db@0.112.0
+  - @voyant-travel/public-document-delivery@0.2.3
+  - @voyant-travel/types@0.107.3
+  - @voyant-travel/workflows@0.115.1
+
 ## 0.123.2
 
 ### Patch Changes
