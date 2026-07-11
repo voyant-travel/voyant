@@ -17,6 +17,10 @@ import {
 } from "./runtime-ports.js"
 
 export type { AcceptanceSignatureLegalPort } from "./acceptance-signature.js"
+export type {
+  CatalogCheckoutContractPdfRuntime,
+  CatalogCheckoutDatabaseRuntime,
+} from "./runtime-ports.js"
 export {
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
