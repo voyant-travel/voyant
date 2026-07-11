@@ -1,5 +1,13 @@
 # @voyant-travel/workflow-runs
 
+## 0.114.0
+
+### Patch Changes
+
+- Updated dependencies [d41872a]
+  - @voyant-travel/workflows@0.114.0
+  - @voyant-travel/hono@0.123.1
+
 ## 0.113.0
 
 ### Patch Changes

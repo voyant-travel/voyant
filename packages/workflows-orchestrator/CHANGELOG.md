@@ -1,5 +1,14 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.114.0
+
+### Patch Changes
+
+- d41872a: Add an explicit workflow resolver dependency to step handlers and runtime
+  drivers, and use an entry-scoped workflow registry for self-host execution.
+- Updated dependencies [d41872a]
+  - @voyant-travel/workflows@0.114.0
+
 ## 0.113.0
 
 ### Patch Changes
