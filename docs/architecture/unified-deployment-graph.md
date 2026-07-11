@@ -790,6 +790,31 @@ ids and package UI exports. Generated operator route modules are an acceptable
 bridge, but the generator must read selected package manifests and may not keep a
 separate first-party admin catalog.
 
+### Selected-graph admin bundle cutline
+
+The first Phase 4 admin slice is active for `@voyant-travel/action-ledger`:
+
+- the package manifest opts its import-cheap admin extension factory into
+  `admin.runtime` and retains the stable Logs route declaration
+- project resolution emits `.voyant/admin/selected-graph-admin.generated.ts`
+  from only selected units with `admin.runtime`; package page modules remain
+  behind the lazy imports owned by the UI export
+- the Operator consumes that generated factory while retaining its existing
+  localized label and icon inputs, and the compatibility admin generator removes
+  the migrated factory from `admin.extensions.generated.ts`
+- deployment-local `src/admin/*/index.ts[x]` pages remain independently
+  discovered and composed; package migration must not remove that local surface
+- `verify:admin-composition-drift` rejects a migrated factory that is missing
+  from the selected-graph bundle, duplicated in the compatibility registry, or
+  present without a selected `admin.runtime` declaration
+
+This cut does not activate admin slots or contributions, namespaced copy,
+message-provider lowering, or deployment copy overrides. Those remain separate
+admin authorities. The Operator factory wrappers and generated registry entries
+for all other first-party packages also remain compatibility authorities until
+each package proves equivalent nav, route, page, host-option, and destination
+behavior through the selected graph.
+
 ## API, OpenAPI, Scopes, And RBAC
 
 API route declarations should distinguish:
@@ -1312,6 +1337,11 @@ package surfaces in `voyant#3080`.
 - migrate admin nav/routes/pages, then stable slots/contributions, then
   namespaced copy and deployment overrides
 - generate the admin bundle only from selected package exports and graph data
+
+Progress: the action-ledger nav/route/page factory is the first package lowered
+into the selected-graph admin bundle. Slots/contributions, copy, and the
+remaining first-party Operator compatibility registry are not part of this
+slice.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.

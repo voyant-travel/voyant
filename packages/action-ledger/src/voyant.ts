@@ -29,6 +29,10 @@ export const actionLedgerVoyantModule = defineModule({
     },
   ],
   admin: {
+    runtime: {
+      entry: "@voyant-travel/action-ledger-react/admin",
+      export: "createActionLedgerAdminExtension",
+    },
     routes: [
       {
         id: "@voyant-travel/action-ledger#admin.route.index",

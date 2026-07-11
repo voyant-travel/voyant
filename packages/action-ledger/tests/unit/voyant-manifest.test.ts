@@ -19,6 +19,18 @@ describe("action-ledger deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/action-ledger#schema" }],
       migrations: [{ id: "@voyant-travel/action-ledger#migrations" }],
+      admin: {
+        runtime: {
+          entry: "@voyant-travel/action-ledger-react/admin",
+          export: "createActionLedgerAdminExtension",
+        },
+        routes: [
+          {
+            id: "@voyant-travel/action-ledger#admin.route.index",
+            path: "/action-ledger",
+          },
+        ],
+      },
     })
   })
 

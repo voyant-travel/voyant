@@ -80,6 +80,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
 
     for (const artifactPath of [
       "admin/project-admin.generated.ts",
+      "admin/selected-graph-admin.generated.ts",
       "runtime/project-api.generated.ts",
       "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
@@ -88,6 +89,12 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     ]) {
       expect(readFileSync(join(process.cwd(), ".voyant", artifactPath), "utf8")).not.toBe("")
     }
+    const selectedGraphAdmin = readFileSync(
+      join(process.cwd(), ".voyant", "admin/selected-graph-admin.generated.ts"),
+      "utf8",
+    )
+    expect(selectedGraphAdmin).toContain('"@voyant-travel/action-ledger": selectedAdminFactory0')
+    expect(selectedGraphAdmin).not.toContain("createBookingsAdminExtension")
     const projectLinks = readFileSync(
       join(process.cwd(), ".voyant", "runtime/project-links.generated.ts"),
       "utf8",

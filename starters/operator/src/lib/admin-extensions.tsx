@@ -16,6 +16,7 @@ import { Button } from "@voyant-travel/ui/components/button"
 import { CalendarRange, FileText, Route, ScrollText, SlidersHorizontal, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
+import { selectedGraphAdminExtensionFactories } from "../../.voyant/admin/selected-graph-admin.generated"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.
@@ -598,7 +599,7 @@ function createTripsExtension(messages: AdminExtensionNavMessages) {
 // cursor-paginated Logs page. The app only supplies the localized label and
 // the icon.
 function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.actionLedger({
+  return selectedGraphAdminExtensionFactories["@voyant-travel/action-ledger"]({
     labels: { actionLedger: messages.actionLedger },
     icon: ScrollText,
   })
