@@ -1,4 +1,9 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  catalogBookingRuntimePort,
+  catalogOffersRuntimePort,
+  catalogSearchRuntimePort,
+} from "./api-runtime-ports.js"
 import { catalogBookingSnapshotSubscriberDeclaration } from "./booking-snapshot-subscriber-declaration.js"
 import { catalogIndexSubscriberDeclarations } from "./index-subscriber-declarations.js"
 import {
@@ -28,6 +33,7 @@ export const catalogVoyantModule = defineModule({
   packageName: "@voyant-travel/catalog",
   localId: "catalog",
   runtimePorts: [
+    requirePort(catalogSearchRuntimePort),
     requirePort(catalogProjectionRuntimePort),
     requirePort(catalogBookingSnapshotRuntimePort),
   ],
@@ -37,8 +43,8 @@ export const catalogVoyantModule = defineModule({
       surface: "admin",
       mount: "catalog",
       runtime: {
-        entry: "@voyant-travel/catalog",
-        export: "createCatalogSearchHonoModule",
+        entry: "@voyant-travel/catalog/graph-runtime",
+        export: "createCatalogSearchVoyantRuntime",
       },
     },
     {
@@ -47,8 +53,8 @@ export const catalogVoyantModule = defineModule({
       mount: "catalog",
       anonymous: true,
       runtime: {
-        entry: "@voyant-travel/catalog",
-        export: "createCatalogSearchHonoModule",
+        entry: "@voyant-travel/catalog/graph-runtime",
+        export: "createCatalogSearchVoyantRuntime",
       },
     },
   ],
@@ -235,6 +241,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
   id: "@voyant-travel/catalog#booking-engine",
   packageName: "@voyant-travel/catalog",
   localId: "catalog.booking-engine",
+  runtimePorts: [requirePort(catalogBookingRuntimePort)],
   api: [
     {
       id: "@voyant-travel/catalog#booking-engine.api.admin",
@@ -242,8 +249,8 @@ export const catalogBookingEngineVoyantModule = defineModule({
       mount: "catalog",
       transactional: ["/book", "/holds", "/orders", "/quote", "/quotes/batch"],
       runtime: {
-        entry: "@voyant-travel/catalog/booking-engine",
-        export: "createCatalogBookingEngineHonoModule",
+        entry: "@voyant-travel/catalog/graph-runtime",
+        export: "createCatalogBookingVoyantRuntime",
       },
     },
     {
@@ -252,8 +259,8 @@ export const catalogBookingEngineVoyantModule = defineModule({
       mount: "catalog",
       transactional: ["/book", "/holds", "/quote", "/quotes/batch"],
       runtime: {
-        entry: "@voyant-travel/catalog/booking-engine",
-        export: "createCatalogBookingEngineHonoModule",
+        entry: "@voyant-travel/catalog/graph-runtime",
+        export: "createCatalogBookingVoyantRuntime",
       },
     },
   ],
@@ -266,14 +273,15 @@ export const catalogOffersVoyantPlugin = defineExtension({
   id: "@voyant-travel/catalog#offers-extension",
   packageName: "@voyant-travel/catalog",
   localId: "catalog.offers-extension",
+  runtimePorts: [requirePort(catalogOffersRuntimePort)],
   api: [
     {
       id: "@voyant-travel/catalog#offers-extension.api",
       surface: "admin",
       mount: "catalog",
       runtime: {
-        entry: "@voyant-travel/catalog/offers",
-        export: "createCatalogOffersHonoExtension",
+        entry: "@voyant-travel/catalog/graph-runtime",
+        export: "createCatalogOffersVoyantRuntime",
       },
     },
   ],

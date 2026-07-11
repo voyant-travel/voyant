@@ -1,4 +1,5 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { accommodationsContentRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the accommodations package. */
 export const accommodationsVoyantModule = defineModule({
@@ -47,14 +48,15 @@ export const accommodationsContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/accommodations#content-extension",
   packageName: "@voyant-travel/accommodations",
   localId: "accommodations.content-extension",
+  runtimePorts: [requirePort(accommodationsContentRuntimePort)],
   api: [
     {
       id: "@voyant-travel/accommodations#content-extension.api.admin",
       surface: "admin",
       mount: "accommodations",
       runtime: {
-        entry: "@voyant-travel/accommodations/routes-content",
-        export: "createAccommodationContentHonoExtension",
+        entry: "@voyant-travel/accommodations/graph-runtime",
+        export: "createAccommodationsContentVoyantRuntime",
       },
     },
     {
@@ -63,8 +65,8 @@ export const accommodationsContentVoyantPlugin = defineExtension({
       mount: "accommodations",
       anonymous: true,
       runtime: {
-        entry: "@voyant-travel/accommodations/routes-content",
-        export: "createAccommodationContentHonoExtension",
+        entry: "@voyant-travel/accommodations/graph-runtime",
+        export: "createAccommodationsContentVoyantRuntime",
       },
     },
   ],

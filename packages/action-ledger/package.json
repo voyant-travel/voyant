@@ -12,6 +12,7 @@
     "./service": "./src/service.ts",
     "./fingerprint": "./src/fingerprint.ts",
     "./health": "./src/health-routes.ts",
+    "./graph-runtime": "./src/graph-runtime.ts",
     "./timeline": "./src/timeline.ts",
     "./request-context": "./src/request-context.ts",
     "./routes": "./src/routes.ts",
@@ -100,6 +101,11 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
+      },
+      "./graph-runtime": {
+        "types": "./dist/graph-runtime.d.ts",
+        "import": "./dist/graph-runtime.js",
+        "default": "./dist/graph-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

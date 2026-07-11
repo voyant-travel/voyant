@@ -1,4 +1,5 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { actionLedgerHealthRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the action-ledger package. */
 export const actionLedgerVoyantModule = defineModule({
@@ -57,14 +58,15 @@ export const actionLedgerHealthVoyantPlugin = defineExtension({
   id: "@voyant-travel/action-ledger#health-extension",
   packageName: "@voyant-travel/action-ledger",
   localId: "action-ledger.health-extension",
+  runtimePorts: [requirePort(actionLedgerHealthRuntimePort)],
   api: [
     {
       id: "@voyant-travel/action-ledger#health-extension.api",
       surface: "admin",
       mount: "action-ledger",
       runtime: {
-        entry: "@voyant-travel/action-ledger/health",
-        export: "createActionLedgerHealthHonoExtension",
+        entry: "@voyant-travel/action-ledger/graph-runtime",
+        export: "createActionLedgerHealthVoyantRuntime",
       },
     },
   ],
