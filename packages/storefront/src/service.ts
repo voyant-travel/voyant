@@ -59,15 +59,13 @@ import type {
 export interface StorefrontServiceOptions {
   /**
    * Enables the async booking-bootstrap mode (queued write pipeline,
-   * RFC voyant#1687 §3.2). When set, `createStorefrontHonoModule`'s
-   * bootstrap registers the intent handler on the app bus AND the
-   * public bootstrap route honors `?async=1` / `Prefer: respond-async`.
-   * When omitted, async-mode requests fall back to the SYNC path — an
-   * intent with no registered handler would otherwise 202 and then
-   * stale-fail, which is strictly worse than just doing the work.
+   * RFC voyant#1687 §3.2). The selected-graph subscriber owns event-bus
+   * registration; this option supplies only the deployment-owned database
+   * lifecycle used when the subscriber executes. When omitted, async-mode
+   * requests fall back to the sync path.
    */
   bookingIntents?: {
-    resolveDb: (bindings: Record<string, unknown>) => unknown
+    withDb: <T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>) => Promise<T>
   }
   settings?: StorefrontSettingsInput
   resolveSettings?: (

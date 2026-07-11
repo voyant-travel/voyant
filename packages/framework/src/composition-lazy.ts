@@ -22,6 +22,7 @@ import type { relationshipsService } from "@voyant-travel/relationships"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import type { StorefrontVerificationRoutesOptions } from "@voyant-travel/storefront/verification"
 import type { TripsRoutesOptionsProvider } from "@voyant-travel/trips"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 
 // biome-ignore lint/suspicious/noExplicitAny: lazy sub-apps keep route-specific Hono env generics -- owner: framework composition.
@@ -502,7 +503,12 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
           const commerce = await import("@voyant-travel/commerce")
           return m.createStorefrontHonoModule({
             offers: commerce.createCommerceStorefrontOfferResolvers(),
-            bookingIntents: { resolveDb: capabilities.resolveDb },
+            bookingIntents: capabilities.withDb
+              ? {
+                  withDb: (bindings, operation) =>
+                    capabilities.withDb!(bindings, (db) => operation(db as PostgresJsDatabase)),
+                }
+              : undefined,
             intake: { persistence: capabilities.storefrontIntakePersistence },
           })
         }),

@@ -1868,6 +1868,9 @@
       "@voyant-travel/storefront/admin-routes": [
         "../../packages/storefront/dist/routes-admin.d.ts"
       ],
+      "@voyant-travel/storefront/booking-bootstrap-subscriber": [
+        "../../packages/storefront/dist/booking-bootstrap-subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/storefront/customer-portal": [
         "../../packages/storefront/dist/customer-portal/index.d.ts"
       ],

@@ -1435,6 +1435,9 @@
       "@voyant-travel/storefront-sdk/operations": ["../storefront-sdk/dist/operations.d.ts"],
       "@voyant-travel/storefront-sdk/schemas": ["../storefront-sdk/dist/schemas.d.ts"],
       "@voyant-travel/storefront/admin-routes": ["../storefront/dist/routes-admin.d.ts"],
+      "@voyant-travel/storefront/booking-bootstrap-subscriber": [
+        "../storefront/dist/booking-bootstrap-subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/storefront/customer-portal": [
         "../storefront/dist/customer-portal/index.d.ts"
       ],

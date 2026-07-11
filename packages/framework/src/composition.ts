@@ -123,6 +123,7 @@ import {
   TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
   type TripsPaymentSubscriberRuntime,
 } from "@voyant-travel/trips/payment-subscribers"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
  * Combined "extras" surface — inventory + bookings package extras routes mounted
@@ -502,10 +503,12 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       // its own anonymous public paths next to the routes it owns.
       createStorefrontHonoModule({
         offers: createCommerceStorefrontOfferResolvers(),
-        // Async booking-bootstrap intents (queued write pipeline, RFC
-        // voyant#1687 §3.2) — the handler runs on the app bus with outbox-grade
-        // retries; the */2min cron sweeps stale intents.
-        bookingIntents: { resolveDb: capabilities.resolveDb },
+        bookingIntents: capabilities.withDb
+          ? {
+              withDb: (bindings, operation) =>
+                capabilities.withDb!(bindings, (db) => operation(db as PostgresJsDatabase)),
+            }
+          : undefined,
         intake: { persistence: capabilities.storefrontIntakePersistence },
       }),
     "@voyant-travel/finance": ({ capabilities }) =>

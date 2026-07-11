@@ -3,6 +3,7 @@ import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
+import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { describe, expect, it, vi } from "vitest"
 
@@ -207,6 +208,48 @@ describe("operator graph runtime composition", () => {
     )
     expect(
       deselectedComposition.modules.some((module) => module.module.name === "trips.graph-runtime"),
+    ).toBe(false)
+  })
+
+  it("graph-gates the Storefront booking-bootstrap subscriber and registers it once", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const storefrontUnit = runtime.modules.find((unit) => unit.id === "@voyant-travel/storefront")
+    const composed = await composeOperatorGraph(runtime)
+    const storefront = composed.modules.find((module) => module.module.name === "storefront")
+    const subscriberModule = composed.modules.find(
+      (module) => module.module.name === "storefront.graph-runtime",
+    )
+    const container = createContainer()
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const context = { bindings: {} as AppBindings, container, eventBus }
+
+    expect(
+      storefrontUnit?.references
+        .filter((reference) => reference.facet === "subscribers.runtime")
+        .map((reference) => reference.entityId),
+    ).toEqual(["@voyant-travel/storefront#subscriber.booking-bootstrap"])
+
+    await storefront?.module.bootstrap?.(context)
+    expect(container.has(STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY)).toBe(true)
+    await subscriberModule?.module.bootstrap?.(context)
+
+    expect(
+      subscribe.mock.calls.filter(([event]) => event === "storefront.booking.bootstrap.requested"),
+    ).toHaveLength(1)
+
+    const deselected = {
+      ...runtime,
+      modules: runtime.modules.filter((unit) => unit.id !== "@voyant-travel/storefront"),
+    }
+    const deselectedComposition = await composeOperatorGraph(deselected)
+    expect(
+      deselectedComposition.modules.some((module) => module.module.name === "storefront"),
+    ).toBe(false)
+    expect(
+      deselectedComposition.modules.some(
+        (module) => module.module.name === "storefront.graph-runtime",
+      ),
     ).toBe(false)
   })
 

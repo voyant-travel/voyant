@@ -2,10 +2,11 @@
 import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { createContainer, createEventBus } from "@voyant-travel/core"
 import { listInvoicesTool } from "@voyant-travel/finance/tools"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
-
+import { frameworkComposition } from "./composition-lazy.js"
 import {
   createManagedCloudAuthApp,
   createManagedProfileApp,
@@ -15,6 +16,7 @@ import {
   type ManagedProfileRuntimeEnv,
 } from "./managed-runtime.js"
 import { defineVoyantProject, type VoyantProjectProviders } from "./profile.js"
+import { composeVoyantGraphRuntimeFacetModules } from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 const localProviders = {
@@ -113,6 +115,75 @@ async function mountManagedPaymentLinkApp(
 }
 
 describe("managed profile runtime entry", () => {
+  it("activates the Storefront subscriber exactly once only while its graph unit is selected", async () => {
+    const subscriberId = "@voyant-travel/storefront#subscriber.booking-bootstrap"
+    const selectedRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:managed-storefront-subscriber",
+      entries: {
+        "@voyant-travel/storefront/booking-bootstrap-subscriber": () =>
+          import("@voyant-travel/storefront/booking-bootstrap-subscriber"),
+      },
+      modules: [
+        {
+          id: "@voyant-travel/storefront",
+          localId: "storefront",
+          kind: "module",
+          packageName: "@voyant-travel/storefront",
+          order: 0,
+          references: [
+            {
+              id: "storefront-booking-bootstrap-subscriber",
+              unitId: "@voyant-travel/storefront",
+              facet: "subscribers.runtime",
+              entityId: subscriberId,
+              runtime: {
+                entry: "./booking-bootstrap-subscriber",
+                export: "storefrontBookingBootstrapSubscriber",
+              },
+              importEntry: "@voyant-travel/storefront/booking-bootstrap-subscriber",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+    const providers = createManagedProfileProviders({
+      withDb: vi.fn(async (_bindings, operation) => operation({} as never)),
+    })
+    const storefront = frameworkComposition.modules["@voyant-travel/storefront"]?.({
+      capabilities: providers,
+      options: {},
+    })
+    if (!storefront || Array.isArray(storefront)) {
+      throw new Error("expected the managed Storefront module")
+    }
+    const graphModules = await composeVoyantGraphRuntimeFacetModules(selectedRuntime)
+    const graphModule = graphModules.find(
+      (module) => module.module.name === "storefront.graph-runtime",
+    )
+    const container = createContainer()
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const context = { bindings: {}, container, eventBus }
+
+    await storefront.module.bootstrap?.(context)
+    await graphModule?.module.bootstrap?.(context)
+
+    expect(graphModule).toBeDefined()
+    expect(
+      subscribe.mock.calls.filter(([event]) => event === "storefront.booking.bootstrap.requested"),
+    ).toHaveLength(1)
+
+    const deselectedRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:managed-storefront-deselected",
+      entries: {},
+      modules: [],
+      plugins: [],
+    })
+    expect(await composeVoyantGraphRuntimeFacetModules(deselectedRuntime)).toEqual([])
+  }, 15_000)
+
   it("loads a local source-free profile snapshot without starter-local glue", async () => {
     const dir = await mkdtemp(join(tmpdir(), "voyant-profile-"))
     const snapshotPath = join(dir, "managed-profile.json")
