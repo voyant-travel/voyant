@@ -404,6 +404,45 @@ async function main(): Promise<void> {
   if (operatorModuleIds.has("@voyant-travel/operator#workflows")) {
     failures.push("expected package-owned workflows to replace the operator workflow aggregate")
   }
+  const channelPushUnit = operatorGraph.extensions.find(
+    (unit) => unit.id === "@voyant-travel/distribution#channel-push-extension",
+  )
+  const channelPushSubscriberRuntimes = new Map(
+    (channelPushUnit?.subscribers ?? []).map((subscriber) => [subscriber.id, subscriber.runtime]),
+  )
+  for (const [id, exportName] of [
+    [
+      "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
+      "channelPushBookingConfirmedSubscriber",
+    ],
+    [
+      "@voyant-travel/distribution#subscriber.channel-push-availability-changed",
+      "channelPushAvailabilityChangedSubscriber",
+    ],
+    [
+      "@voyant-travel/distribution#subscriber.channel-push-content-changed",
+      "channelPushContentChangedSubscriber",
+    ],
+  ] as const) {
+    const runtime = channelPushSubscriberRuntimes.get(id)
+    if (runtime?.entry !== "./channel-push-subscribers" || runtime.export !== exportName) {
+      failures.push(`expected ${id} to retain its package-owned subscriber runtime reference`)
+    }
+  }
+  const operatorAppSource = await readFile(join(operatorRoot, "src/api/app.ts"), "utf8")
+  const operatorChannelPushSource = await readFile(
+    join(operatorRoot, "src/api/routes/channel-push.ts"),
+    "utf8",
+  )
+  if (
+    operatorAppSource.includes("channelPushBundle") ||
+    operatorChannelPushSource.includes("channelPushBundle") ||
+    operatorChannelPushSource.includes("eventBus.subscribe")
+  ) {
+    failures.push(
+      "expected package-owned distribution subscribers to stay absent from Operator hand lists and route wiring",
+    )
+  }
   for (const specifier of OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorModuleIds.has(id)) {

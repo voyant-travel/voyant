@@ -87,6 +87,16 @@ export interface EventFilterDescriptor {
   readonly manifest?: EventFilterManifestDescriptor
 }
 
+/** Executable subscriber selected from a package-owned deployment manifest. */
+export interface SubscriberRuntimeDescriptor {
+  /** Stable graph subscriber id from the owning package manifest. */
+  readonly id: string
+  /** Event name registered by this runtime descriptor. */
+  readonly eventType: string
+  /** Registers the subscriber against the app runtime available at bootstrap. */
+  readonly register: BootstrapHandler
+}
+
 export interface BootstrapContext<TBindings = unknown> {
   /** Runtime bindings/environment available to the current app/isolate. */
   bindings: TBindings

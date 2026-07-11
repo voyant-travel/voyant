@@ -29,6 +29,11 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       extensions: Array<{
         id: string
         api: Array<{ runtime?: { entry: string; export?: string } }>
+        subscribers: Array<{
+          id: string
+          eventType: string
+          runtime?: { entry: string; export?: string }
+        }>
       }>
     }
 
@@ -65,15 +70,37 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         }),
       ]),
     )
-    expect(
-      graph.extensions.find(
-        (extension) => extension.id === "@voyant-travel/distribution#channel-push-extension",
-      )?.api,
-    ).toEqual([
+    const channelPush = graph.extensions.find(
+      (extension) => extension.id === "@voyant-travel/distribution#channel-push-extension",
+    )
+    expect(channelPush?.api).toEqual([
       expect.objectContaining({
         runtime: {
           entry: "@voyant-travel/distribution",
           export: "createChannelPushExtension",
+        },
+      }),
+    ])
+    expect(channelPush?.subscribers).toEqual([
+      expect.objectContaining({
+        eventType: "availability.slot.changed",
+        runtime: {
+          entry: "./channel-push-subscribers",
+          export: "channelPushAvailabilityChangedSubscriber",
+        },
+      }),
+      expect.objectContaining({
+        eventType: "booking.confirmed",
+        runtime: {
+          entry: "./channel-push-subscribers",
+          export: "channelPushBookingConfirmedSubscriber",
+        },
+      }),
+      expect.objectContaining({
+        eventType: "product.content.changed",
+        runtime: {
+          entry: "./channel-push-subscribers",
+          export: "channelPushContentChangedSubscriber",
         },
       }),
     ])

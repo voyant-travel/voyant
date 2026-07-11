@@ -53,6 +53,29 @@ describe("operator graph runtime composition", () => {
     expect(new Set(extensionNames).size).toBe(extensionNames.length)
   })
 
+  it("lowers selected distribution subscribers without an Operator plugin entry", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const channelPush = runtime.extensions.find(
+      (unit) => unit.id === "@voyant-travel/distribution#channel-push-extension",
+    )
+    const composed = await composeOperatorGraph()
+
+    expect(
+      channelPush?.references
+        .filter((reference) => reference.facet === "subscribers.runtime")
+        .map((reference) => reference.entityId),
+    ).toEqual([
+      "@voyant-travel/distribution#subscriber.channel-push-availability-changed",
+      "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
+      "@voyant-travel/distribution#subscriber.channel-push-content-changed",
+    ])
+    expect(
+      composed.modules.find(
+        (module) => module.module.name === "distribution.channel-push-extension.graph-runtime",
+      )?.module.bootstrap,
+    ).toBeTypeOf("function")
+  })
+
   it("selects package-owned bridge units and discovered project modules directly", () => {
     const moduleIds = new Set(GENERATED_GRAPH_RUNTIME_MODULE_IDS)
     const pluginIds = new Set(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS)

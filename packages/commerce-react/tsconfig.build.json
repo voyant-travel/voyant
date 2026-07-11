@@ -624,6 +624,9 @@
       "@voyant-travel/distribution/channel-push-runtime": [
         "../distribution/dist/channel-push/types.d.ts"
       ],
+      "@voyant-travel/distribution/channel-push-subscribers": [
+        "../distribution/dist/channel-push/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/distribution/channel-push-workflows": [
         "../distribution/dist/channel-push/workflow-entry.d.ts"
       ],

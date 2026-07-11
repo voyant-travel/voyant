@@ -127,4 +127,33 @@ describe("distribution deployment manifests", () => {
       }),
     ])
   })
+
+  it("owns executable channel-push subscriber runtime references", () => {
+    expect(distributionChannelPushVoyantPlugin.subscribers).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
+        eventType: "booking.confirmed",
+        runtime: {
+          entry: "./channel-push-subscribers",
+          export: "channelPushBookingConfirmedSubscriber",
+        },
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/distribution#subscriber.channel-push-availability-changed",
+        eventType: "availability.slot.changed",
+        runtime: {
+          entry: "./channel-push-subscribers",
+          export: "channelPushAvailabilityChangedSubscriber",
+        },
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/distribution#subscriber.channel-push-content-changed",
+        eventType: "product.content.changed",
+        runtime: {
+          entry: "./channel-push-subscribers",
+          export: "channelPushContentChangedSubscriber",
+        },
+      }),
+    ])
+  })
 })

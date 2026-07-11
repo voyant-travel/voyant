@@ -230,6 +230,96 @@ describe("graph runtime composition", () => {
     expect(importSubscriber).toHaveBeenCalledTimes(1)
   })
 
+  it("registers ordinary graph subscribers without treating them as workflow filters", async () => {
+    const handler = vi.fn(async () => {})
+    const subscriber = {
+      id: "@acme/alerts#subscriber.booking-confirmed",
+      eventType: "booking.confirmed",
+      register: vi.fn(({ eventBus }) => {
+        eventBus.subscribe("booking.confirmed", handler)
+      }),
+    }
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:subscriber-runtime",
+      entries: {
+        "@acme/alerts/subscribers": async () => ({ subscriber }),
+      },
+      modules: [
+        {
+          id: "@acme/alerts",
+          localId: "alerts",
+          kind: "module",
+          packageName: "@acme/alerts",
+          order: 0,
+          references: [
+            {
+              id: "alerts-subscriber",
+              unitId: "@acme/alerts",
+              facet: "subscribers.runtime",
+              entityId: subscriber.id,
+              runtime: { entry: "./subscribers", export: "subscriber" },
+              importEntry: "@acme/alerts/subscribers",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+    const module = composition.modules.find(
+      (candidate) => candidate.module.name === "alerts.graph-runtime",
+    )
+    const eventBus = createEventBus()
+
+    expect(module?.module.eventFilters).toBeUndefined()
+    await module?.module.bootstrap?.({ bindings: {}, container: {} as never, eventBus })
+    await eventBus.emit("booking.confirmed", { bookingId: "booking_1" })
+
+    expect(subscriber.register).toHaveBeenCalledOnce()
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it("rejects an ordinary subscriber runtime with a mismatched graph id", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:subscriber-runtime-mismatch",
+      entries: {
+        "@acme/alerts/subscribers": async () => ({
+          subscriber: {
+            id: "@acme/alerts#subscriber.wrong",
+            eventType: "booking.confirmed",
+            register: vi.fn(),
+          },
+        }),
+      },
+      modules: [
+        {
+          id: "@acme/alerts",
+          kind: "module",
+          packageName: "@acme/alerts",
+          order: 0,
+          references: [
+            {
+              id: "alerts-subscriber",
+              unitId: "@acme/alerts",
+              facet: "subscribers.runtime",
+              entityId: "@acme/alerts#subscriber.booking-confirmed",
+              runtime: { entry: "./subscribers", export: "subscriber" },
+              importEntry: "@acme/alerts/subscribers",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(composeVoyantGraphRuntime({ runtime, capabilities: {} })).rejects.toThrow(
+      /does not match graph subscriber/,
+    )
+  })
+
   it("loads legacy workflow facet references when generated workflow loaders are absent", async () => {
     const workflow = {
       id: "commerce.reconcile",

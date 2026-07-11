@@ -69,6 +69,7 @@ export type {
   EventFilterManifestDescriptor,
   Extension,
   Module,
+  SubscriberRuntimeDescriptor,
   WorkflowConcurrencyDescriptor,
   WorkflowDescriptor,
   WorkflowManifestConfigDescriptor,
