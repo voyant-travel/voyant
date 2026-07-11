@@ -1,9 +1,11 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { quotesLinkable } from "./linkables.js"
 import type { QuotesRouteRuntimeOptions } from "./route-runtime.js"
 import { createQuotesRoutes } from "./routes/index.js"
+import { quotesRuntimePort } from "./runtime-port.js"
 
 export { quoteLinkable, quotesLinkable, quoteVersionLinkable } from "./linkables.js"
 export type { QuotesRoutes } from "./routes/index.js"
@@ -22,6 +24,22 @@ export function createQuotesHonoModule(options: QuotesHonoModuleOptions = {}): H
     adminRoutes: createQuotesRoutes(options),
   }
 }
+
+/** Package-owned adapter from graph runtime ports to the Quotes route factory. */
+export const createQuotesVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createQuotesHonoModule(await getPort(quotesRuntimePort)),
+)
+
+export type {
+  QuotesProposalRuntime,
+  QuotesRuntime,
+  QuotesSnapshotRuntime,
+} from "./runtime-port.js"
+export {
+  quotesProposalRuntimePort,
+  quotesRuntimePort,
+  quotesSnapshotRuntimePort,
+} from "./runtime-port.js"
 
 export const quotesHonoModule: HonoModule = createQuotesHonoModule()
 

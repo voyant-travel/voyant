@@ -26,6 +26,8 @@
  * profile via `QuoteProposalRoutesOptions` — all generic / structural so this
  * package stays free of operator types and CloudflareBindings.
  */
+
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { parseJsonBody, parseOptionalJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import {
@@ -44,7 +46,7 @@ import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
-
+import { quotesProposalRuntimePort, quotesSnapshotRuntimePort } from "./runtime-port.js"
 import type { QuoteVersion, QuoteVersionLine } from "./schema.js"
 import { QuoteVersionConflictError, quotesService } from "./service/index.js"
 import { sendQuoteVersionSchema } from "./validation.js"
@@ -339,6 +341,17 @@ export function createQuoteVersionSnapshotHonoExtension(
     lazyAdminRoutes: async () => createQuoteVersionSnapshotRoutes(options),
   }
 }
+
+/** Package-owned graph adapter for the proposal extension. */
+export const createQuoteProposalVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createQuoteProposalHonoExtension(await getPort(quotesProposalRuntimePort)),
+)
+
+/** Package-owned graph adapter for the quote-version snapshot extension. */
+export const createQuoteVersionSnapshotVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) =>
+    createQuoteVersionSnapshotHonoExtension(await getPort(quotesSnapshotRuntimePort)),
+)
 
 async function handleSendQuoteVersion(
   c: Context<OperatorProposalRouteEnv>,
