@@ -19,6 +19,7 @@
       ],
       "@voyant-travel/accommodations/content-shape": ["../accommodations/dist/content-shape.d.ts"],
       "@voyant-travel/accommodations/draft-shape": ["../accommodations/dist/draft-shape.d.ts"],
+      "@voyant-travel/accommodations/graph-runtime": ["../accommodations/dist/graph-runtime.d.ts"],
       "@voyant-travel/accommodations/linkables": ["../accommodations/dist/linkables.d.ts"],
       "@voyant-travel/accommodations/routes-content": [
         "../accommodations/dist/routes-content.d.ts"
@@ -44,6 +45,7 @@
       "@voyant-travel/action-ledger/canary": ["../action-ledger/dist/canary.d.ts"],
       "@voyant-travel/action-ledger/capability": ["../action-ledger/dist/capability.d.ts"],
       "@voyant-travel/action-ledger/fingerprint": ["../action-ledger/dist/fingerprint.d.ts"],
+      "@voyant-travel/action-ledger/graph-runtime": ["../action-ledger/dist/graph-runtime.d.ts"],
       "@voyant-travel/action-ledger/health": ["../action-ledger/dist/health-routes.d.ts"],
       "@voyant-travel/action-ledger/request-context": [
         "../action-ledger/dist/request-context.d.ts"
@@ -334,6 +336,7 @@
       ],
       "@voyant-travel/catalog/embeddings/openai": ["../catalog/dist/embeddings/openai.d.ts"],
       "@voyant-travel/catalog/events/taxonomy": ["../catalog/dist/events/taxonomy.d.ts"],
+      "@voyant-travel/catalog/graph-runtime": ["../catalog/dist/graph-runtime.d.ts"],
       "@voyant-travel/catalog/index-subscribers": ["../catalog/dist/index-subscriber-runtime.d.ts"],
       "@voyant-travel/catalog/indexer/contract": ["../catalog/dist/indexer/contract.d.ts"],
       "@voyant-travel/catalog/indexer/typesense": ["../catalog/dist/indexer/typesense.d.ts"],
@@ -764,6 +767,7 @@
       "@voyant-travel/finance/public-routes": ["../finance/dist/routes-public.d.ts"],
       "@voyant-travel/finance/public-validation": ["../finance/dist/validation-public.d.ts"],
       "@voyant-travel/finance/routes": ["../finance/dist/routes.d.ts"],
+      "@voyant-travel/finance/runtime-port": ["../finance/dist/runtime-port.d.ts"],
       "@voyant-travel/finance/schema": ["../finance/dist/schema.d.ts"],
       "@voyant-travel/finance/setup/vouchers": ["../finance/dist/service-vouchers-migration.d.ts"],
       "@voyant-travel/finance/tools": ["../finance/dist/tools.d.ts"],
@@ -952,6 +956,7 @@
       "@voyant-travel/inventory/content-shape": ["../inventory/dist/content-shape.d.ts"],
       "@voyant-travel/inventory/draft-shape": ["../inventory/dist/draft-shape.d.ts"],
       "@voyant-travel/inventory/extras": ["../inventory/dist/extras.d.ts"],
+      "@voyant-travel/inventory/graph-runtime": ["../inventory/dist/graph-runtime.d.ts"],
       "@voyant-travel/inventory/linkables": ["../inventory/dist/linkables.d.ts"],
       "@voyant-travel/inventory/public-routes": ["../inventory/dist/public-routes.d.ts"],
       "@voyant-travel/inventory/public-validation": ["../inventory/dist/public-validation.d.ts"],

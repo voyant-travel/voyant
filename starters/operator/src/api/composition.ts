@@ -61,7 +61,7 @@ import {
   financeBookingScheduleRuntimePort,
   financeBookingTaxRuntimePort,
   financeRuntimePort,
-} from "@voyant-travel/finance"
+} from "@voyant-travel/finance/runtime-port"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import { flightsRuntimePort } from "@voyant-travel/flights"
