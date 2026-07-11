@@ -1221,6 +1221,9 @@
       ],
       "@voyant-travel/realtime-react/provider": ["../realtime-react/dist/provider.d.ts"],
       "@voyant-travel/realtime-react/query-keys": ["../realtime-react/dist/query-keys.d.ts"],
+      "@voyant-travel/realtime/admin-invalidation-subscriber": [
+        "../realtime/dist/admin-invalidation-subscriber.d.ts"
+      ],
       "@voyant-travel/realtime/bridge": ["../realtime/dist/bridge.d.ts"],
       "@voyant-travel/realtime/capabilities": ["../realtime/dist/capabilities.d.ts"],
       "@voyant-travel/realtime/providers/local": ["../realtime/dist/providers/local.d.ts"],

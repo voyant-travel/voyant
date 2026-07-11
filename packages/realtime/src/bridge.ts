@@ -1,12 +1,9 @@
 import type { Subscriber } from "@voyant-travel/core"
-
-import type {
-  RealtimeInvalidationHint,
-  RealtimeProvider,
-  RealtimeRoute,
-  RealtimeRouteResult,
-  RealtimeRoutes,
-} from "./types.js"
+import {
+  createAdminInvalidationPublicationPort,
+  createAdminInvalidationSubscriber,
+} from "./admin-invalidation-subscriber.js"
+import type { RealtimeProvider, RealtimeRoute, RealtimeRoutes } from "./types.js"
 
 export interface CreateRealtimeBridgeOptions {
   /** Transport to publish through. */
@@ -19,18 +16,6 @@ export interface CreateRealtimeBridgeOptions {
    * blip must not break the emitting transaction.
    */
   onError?: (error: unknown, context: { event: string; channel: string }) => void
-}
-
-function isRouteResult(
-  value: ReadonlyArray<string> | RealtimeRouteResult,
-): value is RealtimeRouteResult {
-  return !Array.isArray(value)
-}
-
-/** Derive the entity family from an event name (`booking.confirmed` → `booking`). */
-function resourceOf(event: string): string {
-  const dot = event.indexOf(".")
-  return dot === -1 ? event : event.slice(0, dot)
 }
 
 /**
@@ -46,37 +31,16 @@ function resourceOf(event: string): string {
  * client refetch.
  */
 export function createRealtimeBridge(options: CreateRealtimeBridgeOptions): Subscriber[] {
-  const { provider, routes } = options
-  const onError =
-    options.onError ??
-    ((error, context) => {
-      const message = error instanceof Error ? error.message : String(error)
-      console.warn(
-        `[realtime] publish failed for ${context.event} → ${context.channel}: ${message}`,
-      )
-    })
+  const port = createAdminInvalidationPublicationPort({
+    provider: options.provider,
+    onError: options.onError,
+  })
 
-  return Object.entries(routes).map(([event, route]) => ({
-    event,
-    inline: false,
-    handler: async (envelope) => {
-      const result = (route as RealtimeRoute)(envelope.data, envelope)
-      const channels = isRouteResult(result) ? result.channels : result
-      if (channels.length === 0) return
-
-      const hint: RealtimeInvalidationHint = {
-        event,
-        entity: resourceOf(event),
-        ...(isRouteResult(result) ? result.hint : undefined),
-      }
-
-      await Promise.all(
-        channels.map((channel) =>
-          provider
-            .publish(channel, { event, data: hint })
-            .catch((error: unknown) => onError(error, { event, channel })),
-        ),
-      )
-    },
-  }))
+  return Object.entries(options.routes).map(([event, route]) =>
+    createAdminInvalidationSubscriber({
+      port,
+      eventType: event,
+      route: route as RealtimeRoute,
+    }),
+  )
 }
