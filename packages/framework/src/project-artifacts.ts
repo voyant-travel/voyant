@@ -90,6 +90,7 @@ function validateArtifacts(artifacts: ResolvedProjectArtifacts): ValidatedArtifa
   }
 
   validatePortablePath(artifacts.runtimeEntry, "artifacts.runtimeEntry")
+  validatePortablePath(artifacts.workflowRuntimeEntry, "artifacts.workflowRuntimeEntry")
   validatePortablePath(artifacts.migrationRunner, "artifacts.migrationRunner")
 
   const seen = new Map<string, string>()

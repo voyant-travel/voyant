@@ -12,7 +12,10 @@ import type {
   VoyantGraphUnitKind,
   VoyantGraphUnitManifest,
 } from "@voyant-travel/core/project"
-import { buildProjectRuntimeModule } from "./deployment-artifacts.js"
+import {
+  buildGraphWorkflowRuntimeModule,
+  buildProjectRuntimeModule,
+} from "./deployment-artifacts.js"
 import {
   deriveDeploymentRequirements,
   packageNameFromSpecifier,
@@ -28,6 +31,7 @@ import {
   PROJECT_API_GENERATED_PATH,
   type ProjectApiConventionCompilation,
 } from "./project-api-conventions.js"
+import { VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY } from "./project-artifact-paths.js"
 import {
   discoverProjectConventions,
   type ProjectConventionDiscovery,
@@ -102,6 +106,7 @@ export interface VoyantProjectMigrationPlan {
 
 export interface ResolvedProjectArtifacts {
   runtimeEntry: string
+  workflowRuntimeEntry: string
   migrationRunner: string
   files: readonly FrameworkGeneratedProjectFile[]
   migrationPlan: VoyantProjectMigrationPlan
@@ -193,6 +198,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const targetNeutralGraph = requireTargetNeutralGraph(graph)
 
   const runtimeEntry = VOYANT_PROJECT_RUNTIME_ENTRY
+  const workflowRuntimeEntry = VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY
   const migrationRunner = VOYANT_PROJECT_MIGRATION_RUNNER
   const migrationPlan = buildMigrationPlan(targetNeutralGraph)
   const runtimeEntryOverrides = await buildLocalRuntimeEntryOverrides(
@@ -215,6 +221,14 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       }),
     },
     {
+      path: workflowRuntimeEntry,
+      contents: buildGraphWorkflowRuntimeModule({
+        graph: targetNeutralGraph,
+        command: "voyant project resolve",
+        runtimeEntryOverrides,
+      }),
+    },
+    {
       path: migrationRunner,
       contents: buildProjectMigrationRunnerModule({
         migrationPlan,
@@ -228,6 +242,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     conventions,
     artifacts: {
       runtimeEntry,
+      workflowRuntimeEntry,
       migrationRunner,
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,

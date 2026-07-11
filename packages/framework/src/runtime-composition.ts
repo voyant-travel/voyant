@@ -138,7 +138,10 @@ function assertWebhookRoutePosture(
 async function resolveRuntimeFacetModule(
   unit: VoyantGraphRuntimeUnitLoader,
 ): Promise<HonoModule | undefined> {
-  const workflows = await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
+  const workflows =
+    unit.workflows.length > 0
+      ? await Promise.all(unit.workflows.map((workflow) => workflow.load<WorkflowDescriptor>()))
+      : await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
   const eventFilters = await loadFacetReferences<EventFilterDescriptor>(unit, "subscribers.runtime")
   if (workflows.length === 0 && eventFilters.length === 0) return undefined
 

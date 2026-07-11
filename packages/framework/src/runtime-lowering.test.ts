@@ -162,6 +162,117 @@ describe("graph runtime lowering", () => {
     expect(importRuntime).toHaveBeenCalledTimes(1)
   })
 
+  it("loads workflow exports independently from the unit runtime", async () => {
+    const unitFactory = () => ({ module: { name: "commerce" } })
+    const workflow = { id: "commerce.reconcile", config: { id: "commerce.reconcile" } }
+    const importRuntime = vi.fn(async () => ({ unitFactory, workflow }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:workflow-runtime",
+      entries: { "@acme/commerce/runtime": importRuntime },
+      modules: [
+        {
+          id: "@acme/commerce",
+          kind: "module",
+          packageName: "@acme/commerce",
+          order: 0,
+          runtimeReferenceId: "commerce-runtime",
+          references: [
+            {
+              id: "commerce-runtime",
+              unitId: "@acme/commerce",
+              facet: "runtime",
+              entityId: "@acme/commerce",
+              runtime: { entry: "./runtime", export: "unitFactory" },
+              importEntry: "@acme/commerce/runtime",
+            },
+            {
+              id: "commerce-workflow",
+              unitId: "@acme/commerce",
+              facet: "workflows.runtime",
+              entityId: workflow.id,
+              runtime: { entry: "./runtime", export: "workflow" },
+              importEntry: "@acme/commerce/runtime",
+            },
+          ],
+          workflows: [
+            {
+              unitId: "@acme/commerce",
+              declaration: {
+                id: workflow.id,
+                runtime: { entry: "./runtime", export: "workflow" },
+              },
+              referenceId: "commerce-workflow",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importRuntime).not.toHaveBeenCalled()
+    await expect(runtime.modules[0]?.load()).resolves.toEqual([unitFactory])
+    await expect(runtime.modules[0]?.workflows[0]?.load()).resolves.toBe(workflow)
+    await expect(runtime.workflows[0]?.load()).resolves.toBe(workflow)
+    expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("rejects workflow exports whose id differs from the graph declaration", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:mismatched-workflow-runtime",
+      entries: {
+        "@acme/commerce/workflows": async () => ({
+          workflow: { id: "commerce.wrong-workflow", config: {} },
+        }),
+      },
+      modules: [
+        {
+          id: "@acme/commerce",
+          kind: "module",
+          packageName: "@acme/commerce",
+          order: 0,
+          references: [
+            {
+              id: "commerce-workflow",
+              unitId: "@acme/commerce",
+              facet: "workflows.runtime",
+              entityId: "commerce.reconcile",
+              runtime: { entry: "./workflows", export: "workflow" },
+              importEntry: "@acme/commerce/workflows",
+            },
+          ],
+          workflows: [
+            {
+              unitId: "@acme/commerce",
+              declaration: {
+                id: "commerce.reconcile",
+                runtime: { entry: "./workflows", export: "workflow" },
+              },
+              referenceId: "commerce-workflow",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(runtime.modules[0]?.workflows[0]?.load()).rejects.toMatchObject({
+      code: "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
+      context: {
+        referenceId: "commerce-workflow",
+        unitId: "@acme/commerce",
+        facet: "workflows.runtime",
+        entityId: "commerce.reconcile",
+        entry: "@acme/commerce/workflows",
+        exportName: "workflow",
+      },
+    })
+    await expect(runtime.modules[0]?.workflows[0]?.load()).rejects.toThrow(
+      'loaded workflow must declare id "commerce.reconcile"',
+    )
+  })
+
   it("loads typed package exports for non-route facets by stable reference id", async () => {
     const provider = { kind: "ledger-provider" }
     const tool = () => "adjusted"

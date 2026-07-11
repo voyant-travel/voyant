@@ -54,6 +54,9 @@ describe("framework project resolver", () => {
     })
     expect(first.graph.deployment).not.toHaveProperty("target")
     expect(first.artifacts.runtimeEntry).toBe("runtime/project-runtime.generated.ts")
+    expect(first.artifacts.workflowRuntimeEntry).toBe(
+      "runtime/project-package-workflows.generated.ts",
+    )
     expect(first.artifacts.migrationRunner).toBe("runtime/project-migrations.generated.mjs")
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
       "admin/project-admin.generated.ts",
@@ -61,6 +64,7 @@ describe("framework project resolver", () => {
       "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
       "runtime/project-migrations.generated.mjs",
+      "runtime/project-package-workflows.generated.ts",
       "runtime/project-runtime.generated.ts",
       "runtime/project-subscribers.generated.ts",
       "runtime/project-workflows.generated.ts",
@@ -768,6 +772,16 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     ).toContain(
       '"./project-subscribers.generated.ts": () => import("./project-subscribers.generated.ts")',
     )
+    const workflowRuntimeSource = resolution.artifacts.files.find(
+      ({ path }) => path === resolution.artifacts.workflowRuntimeEntry,
+    )?.contents
+    expect(workflowRuntimeSource).toContain(
+      '"./project-workflows.generated.ts": () => import("./project-workflows.generated.ts")',
+    )
+    expect(workflowRuntimeSource).toContain(
+      '"./project-subscribers.generated.ts": () => import("./project-subscribers.generated.ts")',
+    )
+    expect(workflowRuntimeSource).not.toContain("project-api.generated.ts")
   })
 
   it("rejects convention diagnostics and config paths outside the project root", async () => {

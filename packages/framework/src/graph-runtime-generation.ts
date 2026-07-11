@@ -12,6 +12,7 @@ import type {
   VoyantGraphRuntimeResourceDefinition,
   VoyantGraphRuntimeSecretDefinition,
   VoyantGraphRuntimeToolDefinition,
+  VoyantGraphRuntimeWorkflowDefinition,
 } from "./runtime-lowering.js"
 
 interface GeneratedRuntimeRouteDefinition {
@@ -36,6 +37,7 @@ export interface GeneratedRuntimeUnitDefinition {
   requiredPorts: string[]
   accessScopes: string[]
   tools: VoyantGraphRuntimeToolDefinition[]
+  workflows: VoyantGraphRuntimeWorkflowDefinition[]
   actions: VoyantGraphRuntimeActionDefinition[]
   selectedIds: {
     routes: string[]
@@ -118,6 +120,14 @@ export function lowerGraphRuntimeUnits(
           ...(tool.risk ? { risk: tool.risk } : {}),
         }))
         .sort((left, right) => left.id.localeCompare(right.id))
+      const workflows = unit.workflows
+        .filter((workflow) => workflow.runtime !== undefined)
+        .map((workflow) => ({
+          unitId: unit.id,
+          declaration: workflow,
+          referenceId: runtimeReferenceId(unit.id, "workflows.runtime", workflow.id),
+        }))
+        .sort((left, right) => left.declaration.id.localeCompare(right.declaration.id))
       const actions = (unit.actions ?? [])
         .map((action) => ({
           ...action,
@@ -158,6 +168,7 @@ export function lowerGraphRuntimeUnits(
           .sort(),
         accessScopes,
         tools,
+        workflows,
         actions,
         selectedIds: {
           routes: unit.api.map(({ id }) => id).sort(),

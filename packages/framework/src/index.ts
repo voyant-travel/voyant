@@ -86,7 +86,11 @@ export {
   type VoyantProjectSettings,
   validateVoyantProject,
 } from "./profile.js"
-export { type DefineVoyantConfigInput, defineConfig } from "./project.js"
+export {
+  type DefineVoyantConfigInput,
+  defineConfig,
+  VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
+} from "./project.js"
 export {
   type ProjectArtifactWriteEntry,
   type ProjectArtifactWriteMode,
@@ -128,6 +132,8 @@ export {
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
   type VoyantGraphRuntimeWebhookPlan,
+  type VoyantGraphRuntimeWorkflowDefinition,
+  type VoyantGraphRuntimeWorkflowLoader,
 } from "./runtime-lowering.js"
 export {
   FRAMEWORK_RUNTIME_PACKAGES,
