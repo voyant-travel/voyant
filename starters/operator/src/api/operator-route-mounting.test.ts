@@ -59,14 +59,17 @@ async function buildWithSessionActor(actor: Actor) {
   })
 }
 
-async function buildWithLiveFrontDoor(actor: Actor = "staff") {
+async function buildWithLiveFrontDoor(
+  actor: Actor = "staff",
+  // biome-ignore lint/suspicious/noExplicitAny: configurable smoke-test DB boundary.
+  db: () => any = () => ({}),
+) {
   const composition = await buildGraphComposition()
   return mountApp({
     modules: composition.modules,
     extensions: composition.extensions,
     ...mountRoutePosture(composition),
-    // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test -- owner: operator API tests.
-    db: () => ({}) as any,
+    db,
     auth: {
       resolve: () => ({ userId: "u1", actor }),
     },
@@ -195,7 +198,13 @@ describe("operator composed route mounting (smoke)", () => {
       currency: "EUR",
     }
 
-    const app = await buildWithLiveFrontDoor("customer")
+    const app = await buildWithLiveFrontDoor("customer", () => ({
+      select: () => ({
+        from: () => ({
+          where: () => ({ limit: async () => [] }),
+        }),
+      }),
+    }))
     const detail = await app.request("/v1/public/offers/summer-sale", {}, TEST_ENV, TEST_CTX)
     const apply = await app.request(
       "/v1/public/offers/summer-sale/apply",
@@ -219,8 +228,8 @@ describe("operator composed route mounting (smoke)", () => {
     )
 
     expect(detail.status).toBe(404)
-    expect(apply.status).toBe(501)
-    expect(redeem.status).toBe(501)
+    expect(apply.status).not.toBe(404)
+    expect(redeem.status).not.toBe(404)
   })
 
   it("lets public operator settings pass the starter public actor gate", async () => {

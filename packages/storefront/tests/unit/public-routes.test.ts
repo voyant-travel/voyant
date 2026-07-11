@@ -1,8 +1,10 @@
 // agent-quality: file-size exception -- owner: storefront; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
+import { createContainer } from "@voyant-travel/core"
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
+import { storefrontBookingBootstrapSubscriber } from "../../src/booking-bootstrap-subscriber-runtime.js"
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
 import { storefrontBookingSessionBootstrapInputSchema } from "../../src/validation.js"
 
@@ -252,14 +254,25 @@ describe("createStorefrontPublicRoutes", () => {
   })
 
   it("requires an idempotency key before accepting async booking bootstrap", async () => {
-    const app = new Hono().route(
-      "/",
-      createStorefrontPublicRoutes({
-        bookingIntents: {
-          resolveDb: () => ({}),
-        },
-      }),
-    )
+    const container = createContainer()
+    storefrontBookingBootstrapSubscriber.register({
+      bindings: {},
+      container,
+      eventBus: { subscribe: vi.fn() },
+    } as never)
+    const app = new Hono()
+      .use("*", async (c, next) => {
+        c.set("container" as never, container)
+        await next()
+      })
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          bookingIntents: {
+            withDb: async (_bindings, operation) => operation({} as never),
+          },
+        }),
+      )
 
     const res = await app.request("/bookings/sessions/bootstrap?async=1", {
       method: "POST",
