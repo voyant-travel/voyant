@@ -46,10 +46,14 @@ describe("catalog deployment manifest", () => {
         ["index-product-pricing-changed", "pricing.rule.changed"],
         ["index-product-publication-changed", "product.publication.changed"],
         ["index-product-promotion-changed", "promotion.changed"],
+        ["capture-booking-snapshot", "booking.confirmed"],
       ].map(([localId, eventType]) => ({
         id: `@voyant-travel/catalog#subscriber.${localId}`,
         eventType,
-        source: "@voyant-travel/catalog/index-subscribers",
+        source:
+          eventType === "booking.confirmed"
+            ? "@voyant-travel/catalog/booking-snapshot-subscriber"
+            : "@voyant-travel/catalog/index-subscribers",
       })),
     )
     expect(catalogVoyantModule.subscribers?.every((subscriber) => !subscriber.runtime)).toBe(true)
