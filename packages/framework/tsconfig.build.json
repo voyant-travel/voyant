@@ -978,6 +978,7 @@
       "@voyant-travel/inventory/tools": ["../inventory/dist/tools.d.ts"],
       "@voyant-travel/inventory/validation": ["../inventory/dist/validation.d.ts"],
       "@voyant-travel/inventory/voyant": ["../inventory/dist/voyant.d.ts"],
+      "@voyant-travel/inventory/workflow-runtime": ["../inventory/dist/workflow-runtime.d.ts"],
       "@voyant-travel/inventory/workflows": ["../inventory/dist/workflow-entry.d.ts"],
       "@voyant-travel/legal": ["../legal/dist/index.d.ts"],
       "@voyant-travel/legal-contracts": ["../legal-contracts/dist/index.d.ts"],
