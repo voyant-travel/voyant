@@ -265,6 +265,7 @@ function requireResolvedProjectArtifacts(value: unknown): ResolvedProjectArtifac
   const artifacts = value as Partial<ResolvedProjectArtifacts>
   if (
     typeof artifacts.runtimeEntry !== "string" ||
+    typeof artifacts.workflowRuntimeEntry !== "string" ||
     typeof artifacts.migrationRunner !== "string" ||
     !Array.isArray(artifacts.files) ||
     !artifacts.migrationPlan

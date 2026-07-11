@@ -140,6 +140,7 @@ function projectArtifacts(
 ): ResolvedProjectArtifacts {
   return {
     runtimeEntry: "runtime/project-runtime.generated.ts",
+    workflowRuntimeEntry: "runtime/project-package-workflows.generated.ts",
     migrationRunner: "runtime/project-migrations.generated.mjs",
     files,
     migrationPlan: {

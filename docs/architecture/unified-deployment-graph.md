@@ -855,6 +855,12 @@ top-level unit `runtime` remains reserved for the package's Hono module or
 extension factory. Generated importers may deduplicate a shared entry, but each
 facet selects and memoizes its own named export.
 
+`resolveProject()` also emits `runtime/project-package-workflows.generated.ts`.
+This workflow-only artifact contains selected workflow and event-filter imports,
+but no API, admin, module, provider, or tool runtime imports. Node workflow
+bundles consume this narrow artifact so build-time bundling cannot pull the
+application server graph into the workflow executor.
+
 Implementation note: application convention compilation validates
 `src/workflows` and `src/jobs` without evaluating source. Workflow files
 directly default-export the pure `defineWorkflow(...)` result; job files export

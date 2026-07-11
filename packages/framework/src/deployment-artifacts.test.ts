@@ -3,6 +3,7 @@ import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
   buildGraphRuntimeModule,
+  buildGraphWorkflowRuntimeModule,
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
@@ -195,6 +196,36 @@ describe("deployment graph artifacts", () => {
     expect(first).toContain('"createLoyaltyModule"')
     expect(first).toContain("createGeneratedGraphRuntime")
     expect(first).not.toContain("FRAMEWORK_RUNTIME_MANIFEST")
+  })
+
+  it("emits a workflow-only runtime without API or module loaders", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        runtime: { entry: "./runtime", export: "createLoyaltyModule" },
+        api: [
+          {
+            id: "loyalty.api",
+            surface: "admin",
+            runtime: { entry: "./api", export: "loyaltyRoutes" },
+          },
+        ],
+        workflows: [
+          {
+            id: "loyalty.reconcile",
+            runtime: { entry: "./workflows", export: "reconcileWorkflow" },
+          },
+        ],
+      }),
+    ])
+    const source = buildGraphWorkflowRuntimeModule({ graph })
+
+    expect(source).toContain("createGeneratedWorkflowRuntime")
+    expect(source).toContain('"workflows.runtime"')
+    expect(source).toContain('"reconcileWorkflow"')
+    expect(source).not.toContain('"createLoyaltyModule"')
+    expect(source).not.toContain('"loyaltyRoutes"')
+    expect(source).not.toContain('import("@acme/voyant-loyalty/api")')
   })
 
   it("preserves and lowers unit runtimes for modules, extensions, and plugins", async () => {

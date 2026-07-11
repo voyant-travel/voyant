@@ -35,6 +35,7 @@ export type {
   ProjectApiConventionsOptions,
   ProjectApiGeneratedFile,
 } from "./project-api-conventions.js"
+export { VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY } from "./project-artifact-paths.js"
 export {
   type ProjectArtifactWriteEntry,
   type ProjectArtifactWriteMode,
