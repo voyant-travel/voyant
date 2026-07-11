@@ -10,7 +10,6 @@ const paths = {
   manifest: "packages/storefront/src/voyant.ts",
   descriptor: "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts",
   storefrontModule: "packages/storefront/src/index.ts",
-  framework: "packages/framework/src/composition.ts",
   frameworkLazy: "packages/framework/src/composition-lazy.ts",
   operatorComposition: "starters/operator/src/api/composition.ts",
   operatorApp: "starters/operator/src/api/app.ts",
@@ -64,21 +63,16 @@ requireMatch(
   "Storefront module must register its package runtime adapter",
 )
 
-for (const [name, source] of [
-  ["framework composition", sources.framework],
-  ["lazy framework composition", sources.frameworkLazy],
-]) {
-  requireMatch(
-    source,
-    /bookingIntents:\s*capabilities\.withDb\s*\?\s*\{[\s\S]*?withDb:[\s\S]*?capabilities\.withDb!\(bindings/,
-    `${name} must enable Storefront intents only through the generic database lifecycle capability`,
-  )
-  rejectMatch(
-    source,
-    /storefrontBookingBootstrapSubscriber|STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY|bookingIntents:\s*\{\s*resolveDb/,
-    `${name} must not register or directly resolve the Storefront subscriber`,
-  )
-}
+requireMatch(
+  sources.frameworkLazy,
+  /bookingIntents:\s*capabilities\.withDb\s*\?\s*\{[\s\S]*?withDb:[\s\S]*?capabilities\.withDb!\(bindings/,
+  "Lazy framework composition must enable Storefront intents only through the generic database lifecycle capability",
+)
+rejectMatch(
+  sources.frameworkLazy,
+  /storefrontBookingBootstrapSubscriber|STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY|bookingIntents:\s*\{\s*resolveDb/,
+  "Lazy framework composition must not register or directly resolve the Storefront subscriber",
+)
 
 requireMatch(
   sources.operatorComposition,

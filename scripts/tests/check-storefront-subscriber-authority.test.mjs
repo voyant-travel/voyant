@@ -26,8 +26,6 @@ export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor =
 `,
     "packages/storefront/src/index.ts":
       "registerStorefrontBookingBootstrapRuntime(container, runtime)\n",
-    "packages/framework/src/composition.ts":
-      "createStorefrontHonoModule({ bookingIntents: capabilities.withDb ? { withDb: (bindings, operation) => capabilities.withDb!(bindings, operation) } : undefined })\n",
     "packages/framework/src/composition-lazy.ts":
       "createStorefrontHonoModule({ bookingIntents: capabilities.withDb ? { withDb: (bindings, operation) => capabilities.withDb!(bindings, operation) } : undefined })\n",
     "starters/operator/src/api/composition.ts": `
