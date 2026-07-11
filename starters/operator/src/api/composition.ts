@@ -31,6 +31,7 @@ import {
 import { lazyProvider } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import { notificationsRuntimePort } from "@voyant-travel/notifications"
 import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
@@ -46,6 +47,7 @@ import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-require
 import { withDbFromEnv } from "./lib/db"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
+import { createOperatorNotificationsRuntimeProvider } from "./runtime/notifications-runtime"
 import {
   createOperatorBookingPiiService,
   createOperatorDocumentStorage,
@@ -61,7 +63,6 @@ import {
   registerBookingsWorkflowService,
   registerDistributionWorkflowService,
   registerInventoryWorkflowService,
-  registerNotificationsWorkflowService,
 } from "./runtime/operator-workflow-services"
 import {
   resolveBankTransferDetails,
@@ -248,6 +249,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
 /** Deployment implementations for package-declared runtime ports. */
 export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
   return {
+    [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider(),
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -560,47 +562,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       singleRuntimeValue<HonoModule>(unit.id, runtimeExports),
       registerInventoryWorkflowService,
     ),
-  "@voyant-travel/notifications": ({ capabilities, runtimeExports, unit }) => {
-    const createNotifications = singleRuntimeFactory<
-      typeof import("@voyant-travel/notifications").createNotificationsHonoModule
-    >(unit.id, runtimeExports)
-    const configured = createNotifications({
-      resolveProviders: capabilities.resolveNotificationProviders,
-      resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-      resolveDocumentAttachmentResolver: (bindings) => async (document) => {
-        const notifications = await import("@voyant-travel/notifications")
-        if (document.storageKey) {
-          const contentBase64 = await capabilities.readDocumentContentBase64(
-            bindings,
-            document.storageKey,
-          )
-          if (contentBase64) {
-            return {
-              filename: document.name,
-              contentBase64,
-              contentType: document.mimeType ?? undefined,
-            }
-          }
-          const path = await capabilities.resolveDocumentDownloadUrl(bindings, document.storageKey)
-          if (path) {
-            return {
-              filename: document.name,
-              path,
-              contentType: document.mimeType ?? undefined,
-            }
-          }
-        }
-        return notifications.createDefaultBookingDocumentAttachment(document)
-      },
-      resolveDb: capabilities.resolveDb,
-      autoConfirmAndDispatch: {
-        enabled: true,
-        templateSlug: "booking-confirmation",
-        ...capabilities.notificationsAutoConfirmAndDispatch,
-      },
-    })
-    return withModuleWorkflowService(configured, registerNotificationsWorkflowService)
-  },
   "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) => {
     const configured = singleRuntimeFactory<
       typeof import("@voyant-travel/trips").createTripsHonoModule
@@ -616,7 +577,7 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         withDb: (operation) =>
           capabilities.withDb
             ? capabilities.withDb(bindings, operation)
-            : operation(capabilities.resolveDb(bindings as unknown as Record<string, unknown>)),
+            : operation(capabilities.resolveDb(bindings)),
       }
       container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
     })

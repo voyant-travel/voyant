@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: notifications; existing module stays co-located until a dedicated split preserves behavior and tests.
-import type { Module } from "@voyant-travel/core"
+import type { BootstrapContext, Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -10,6 +11,7 @@ import {
   NOTIFICATIONS_ROUTE_RUNTIME_CONTAINER_KEY,
   type NotificationsRoutesOptions,
 } from "./routes.js"
+import { notificationsRuntimePort } from "./runtime-port.js"
 import { notificationsModule } from "./schema.js"
 import { createNotificationService } from "./service.js"
 import {
@@ -21,11 +23,11 @@ import {
 } from "./service-booking-document-lifecycle.js"
 import { bookingIsPaidInFullForNotification } from "./service-reminders.js"
 import {
-  createBookingConfirmationAutoDispatchSubscriberRuntime,
   NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
   type NotificationsAutoConfirmAndDispatchOptions,
-  notificationsReminderSubscriberRuntimeDescriptors,
+  type NotificationsSubscriberRuntime,
 } from "./subscriber-runtime.js"
+import { NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY } from "./workflow-runtime.js"
 
 export {
   notificationLiquidEngine,
@@ -49,6 +51,8 @@ export {
   createNotificationsRoutes,
   NOTIFICATIONS_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "./routes.js"
+export type { NotificationsRuntimeProvider } from "./runtime-port.js"
+export { notificationsRuntimePort } from "./runtime-port.js"
 export type {
   NewNotificationDelivery,
   NewNotificationReminderRule,
@@ -264,26 +268,6 @@ export function createNotificationsHonoModule(
         buildNotificationsRouteRuntime(bindings as Record<string, unknown>, options),
       )
 
-      if (options?.resolveDb) {
-        const resolveDb = options.resolveDb
-        const runtime = buildNotificationsRouteRuntime(bindings as Record<string, unknown>, options)
-        container.register(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY, {
-          resolveDb: (runtimeBindings: unknown) =>
-            resolveDb(runtimeBindings as Record<string, unknown>) as PostgresJsDatabase,
-          dispatcher: createNotificationService(runtime.providers),
-          documentAttachmentResolver: runtime.documentAttachmentResolver,
-          autoConfirmAndDispatch: options.autoConfirmAndDispatch,
-        })
-      }
-
-      if (options?.autoConfirmAndDispatch?.enabled && options.resolveDb) {
-        createBookingConfirmationAutoDispatchSubscriberRuntime().register({
-          bindings,
-          container,
-          eventBus,
-        })
-      }
-
       if (options?.documentBundleLifecycle?.enabled && options.resolveDb) {
         const resolveDb = options.resolveDb
         const lifecycleOptions = options.documentBundleLifecycle
@@ -373,17 +357,65 @@ export function createNotificationsHonoModule(
           },
         )
       }
-
-      if (options?.resolveDb) {
-        for (const descriptor of notificationsReminderSubscriberRuntimeDescriptors) {
-          descriptor.register({ bindings, container, eventBus })
-        }
-      }
     },
   }
 
   return {
     module,
     adminRoutes: routes,
+  }
+}
+
+/** Package-owned adapter from the selected graph's typed Node host port. */
+export const createNotificationsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+  const provider = await getPort(notificationsRuntimePort)
+  const configured = createNotificationsHonoModule(provider)
+  const bootstrap = configured.module.bootstrap
+
+  return {
+    ...configured,
+    module: {
+      ...configured.module,
+      bootstrap: async (context) => {
+        context.container.register(
+          NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+          provider.resolveReminderWorkflowRuntime(context.bindings as Record<string, unknown>),
+        )
+        await bootstrap?.(context)
+      },
+    },
+  }
+})
+
+/** Selected-extension adapter that gates subscriber services with subscriber selection. */
+export const createNotificationsSubscribersVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    const provider = await getPort(notificationsRuntimePort)
+    return {
+      extension: {
+        name: "notifications-reminder-subscribers",
+        module: "notifications",
+        bootstrap: ({ bindings, container }: BootstrapContext) => {
+          container.register(
+            NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
+            createNotificationsSubscriberRuntime(bindings as Record<string, unknown>, provider),
+          )
+        },
+      },
+    }
+  },
+)
+
+function createNotificationsSubscriberRuntime(
+  bindings: Record<string, unknown>,
+  provider: import("./runtime-port.js").NotificationsRuntimeProvider,
+): NotificationsSubscriberRuntime {
+  const runtime = buildNotificationsRouteRuntime(bindings, provider)
+  return {
+    resolveDb: (runtimeBindings) =>
+      provider.resolveDb(runtimeBindings as Record<string, unknown>) as PostgresJsDatabase,
+    dispatcher: createNotificationService(runtime.providers),
+    documentAttachmentResolver: runtime.documentAttachmentResolver,
+    autoConfirmAndDispatch: provider.autoConfirmAndDispatch,
   }
 }

@@ -208,6 +208,10 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
       resolve: "@voyant-travel/mice/booking-extension",
       owners: ["@voyant-travel/mice", "@voyant-travel/bookings"],
     },
+    {
+      resolve: "@voyant-travel/notifications/reminder-subscribers-extension",
+      owners: ["@voyant-travel/notifications"],
+    },
   ],
 }
 

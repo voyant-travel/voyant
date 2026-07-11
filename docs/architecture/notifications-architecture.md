@@ -145,13 +145,18 @@ Different trigger points are fine. Delivery should still converge on one shared
 notification model.
 
 Notifications owns executable subscriber descriptors for its reminder rules
-and booking-confirmation auto-dispatch. Deployments supply their database,
-dispatcher, and attachment resolver through the single
-`NotificationsSubscriberRuntime` contract. The package manifest keeps the
-reminder runtime references on an inert extension, and does not reference the
-auto-dispatch descriptor. Selected-graph activation must wait until Legal's
-document generation and Notifications delivery have explicit ordering
-semantics; event-bus registration order is not an ordering contract.
+and booking-confirmation auto-dispatch. The standard Node Operator selects one
+Notifications extension that declares all five runtime references. Its manifest
+orders confirmation auto-dispatch before booking-confirmed reminder evaluation,
+matching the prior registration priority; handlers remain independent and no
+completion ordering is implied by that priority.
+
+The Notifications module and subscriber extension consume the manifest-declared
+`notifications.runtime` port. Node hosts provide database, delivery, attachment,
+checkout URL, confirmation policy, and reminder-workflow services through that
+typed contract. The selected extension alone registers the narrow
+`NotificationsSubscriberRuntime` container service. Deselecting it therefore
+removes both the service adapter and all five subscriber registrations.
 
 ## Attachments And Documents
 

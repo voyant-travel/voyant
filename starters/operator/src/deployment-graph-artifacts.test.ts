@@ -149,6 +149,32 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       }),
     ])
 
+    const notifications = graph.extensions.find(
+      (extension) => extension.id === "@voyant-travel/notifications#reminder-subscribers-extension",
+    )
+    expect(notifications?.subscribers).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.booking-confirmation-auto-dispatch",
+        eventType: "booking.confirmed",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",
+        eventType: "booking.cancelled",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-booking-confirmed",
+        eventType: "booking.confirmed",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-booking-expired",
+        eventType: "booking.expired",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-payment-completed",
+        eventType: "payment.completed",
+      }),
+    ])
+
     for (const artifactPath of [
       "admin/project-admin.generated.ts",
       "admin/selected-graph-admin.generated.ts",

@@ -112,13 +112,21 @@ export function registerNotificationsWorkflowService(
   container: ModuleContainer,
   bindings: OperatorWorkflowBindings,
 ): void {
+  container.register(
+    NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+    createNotificationsWorkflowRuntime(bindings),
+  )
+}
+
+export function createNotificationsWorkflowRuntime(
+  bindings: OperatorWorkflowBindings,
+): NotificationReminderWorkflowRuntime {
   const env = workflowEnvironment(bindings)
-  const runtime: NotificationReminderWorkflowRuntime = {
+  return {
     resolveDb: () => createWorkflowDb(env),
     resolveEnv: () => env,
     resolveRuntimeOptions: (runtimeEnv) => getNotificationTaskRuntime(runtimeEnv),
   }
-  container.register(NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY, runtime)
 }
 
 export async function createOperatorWorkflowServiceResolver(

@@ -1058,16 +1058,22 @@ runtime references must move with their domain-owning shards, and the Operator
 bridge must be removed in the same activation change to prevent duplicate
 invalidation hints.
 
-Notifications now stages package-owned executable descriptors for reminder-rule
-handling on `booking.confirmed`, `payment.completed`, `booking.cancelled`, and
-`booking.expired`, plus booking-confirmation auto-dispatch. All five resolve one
-narrow package runtime service for the database, dispatcher, and attachment
-resolver. The four reminder descriptors have runtime references on an inert,
-unselected Notifications extension; existing module bootstrap remains their
-only activation path in this slice. Auto-dispatch deliberately has no manifest
-runtime reference. Moving either path to selected-graph activation remains
-gated on explicit Legal document-ordering semantics for `booking.confirmed`, as
-ordinary event-bus subscribers run independently and provide no ordering.
+Notifications reminder-rule handling on `booking.confirmed`,
+`payment.completed`, `booking.cancelled`, and `booking.expired`, plus
+booking-confirmation auto-dispatch, now executes exclusively from one selected
+package extension. Its descriptor order keeps confirmation auto-dispatch ahead
+of the booking-confirmed reminder handler, preserving registration priority
+without claiming serial completion: ordinary event-bus handlers still run
+independently.
+
+The Notifications module and subscriber extension consume the typed,
+manifest-declared `notifications.runtime` port. Operator supplies generic Node
+host providers for database access, delivery, attachments, checkout URL policy,
+and reminder workflows; it no longer owns a Notifications package-id runtime
+binding. Subscriber service registration is extension-owned, so a selected
+extension contributes each handler exactly once and a deselected extension
+contributes neither the service nor handlers. Module-bootstrap compatibility
+registration and its tests have been removed.
 
 Legal now stages its booking-contract auto-generation handler as an executable
 package-owned subscriber descriptor on the unselected

@@ -1,4 +1,5 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { notificationsRuntimePort } from "./runtime-port.js"
 
 const schemaSource = "@voyant-travel/notifications/schema"
 
@@ -7,6 +8,7 @@ export const notificationsVoyantModule = defineModule({
   id: "@voyant-travel/notifications",
   packageName: "@voyant-travel/notifications",
   localId: "notifications",
+  runtimePorts: [requirePort(notificationsRuntimePort)],
   provides: { capabilities: ["notifications.delivery"] },
   api: [
     {
@@ -16,7 +18,7 @@ export const notificationsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/notifications",
-        export: "createNotificationsHonoModule",
+        export: "createNotificationsVoyantRuntime",
       },
     },
   ],
@@ -149,15 +151,28 @@ export const notificationsVoyantModule = defineModule({
 })
 
 /**
- * Inert until a deployment explicitly selects the extension and removes the
- * legacy module-bootstrap registrations. Confirmation auto-dispatch is omitted
- * until Legal document ordering has an explicit runtime contract.
+ * Selected by Node deployments that activate reminder and confirmation delivery.
+ * Declaration order preserves confirmation dispatch ahead of reminder rules.
  */
 export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
   id: "@voyant-travel/notifications#reminder-subscribers-extension",
   packageName: "@voyant-travel/notifications",
   localId: "notifications.reminder-subscribers-extension",
+  runtime: {
+    entry: "@voyant-travel/notifications",
+    export: "createNotificationsSubscribersVoyantRuntime",
+  },
+  runtimePorts: [requirePort(notificationsRuntimePort)],
   subscribers: [
+    {
+      id: "@voyant-travel/notifications#subscriber.booking-confirmation-auto-dispatch",
+      eventType: "booking.confirmed",
+      source: "@voyant-travel/notifications/subscriber-runtime",
+      runtime: {
+        entry: "./subscriber-runtime",
+        export: "notificationsBookingConfirmationAutoDispatchSubscriber",
+      },
+    },
     {
       id: "@voyant-travel/notifications#subscriber.reminder-booking-confirmed",
       eventType: "booking.confirmed",
