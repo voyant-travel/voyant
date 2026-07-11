@@ -57,13 +57,13 @@ import {
 import { cruisesContentRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { channelPushRuntimePort } from "@voyant-travel/distribution"
+import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
+import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import {
   financeBookingScheduleRuntimePort,
   financeBookingTaxRuntimePort,
   financeRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
-import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import {
   extensionsFromGlob,
