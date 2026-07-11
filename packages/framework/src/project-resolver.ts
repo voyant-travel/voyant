@@ -277,8 +277,10 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     },
   ]
 
-  const resolved = {
+  const runtime = createResolvedGraphRuntime({ graph: targetNeutralGraph, runtimeEntryOverrides })
+  const resolved: ResolvedVoyantProject = {
     graph: targetNeutralGraph,
+    runtime,
     conventions,
     artifacts: {
       runtimeEntry,
@@ -287,10 +289,10 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,
     },
-  } as ResolvedVoyantProject
+  }
   Object.defineProperty(resolved, "runtime", {
     enumerable: false,
-    value: createResolvedGraphRuntime({ graph: targetNeutralGraph, runtimeEntryOverrides }),
+    value: runtime,
   })
   return resolved
 }
