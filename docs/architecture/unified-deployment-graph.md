@@ -780,6 +780,15 @@ Rules:
 - setup/seed work is modeled as idempotent data migrations with an applied-work
   ledger
 
+Graph-lowered lifecycle execution uses deterministic, host-executed steps rather
+than package callbacks. Upgrade plans migrate, detach changed runtime units,
+release only explicitly declared non-durable resources, and activate the next
+units. Uninstall plans detach removed units and retain durable data by default.
+Every step carries a stable idempotency key; durable execution state records
+completed steps and rollback progress so a retry resumes execution or rollback
+without inventing a second lifecycle path. Destructive purge remains out of
+scope.
+
 ## Admin Surface
 
 Admin composition is beyond the foundational v1 substrate but required for the
@@ -1124,6 +1133,13 @@ The broader event catalog is beyond the foundational substrate:
 - visibility policy for event fields
 - outbound webhook subscription and delivery policy
 - event-to-OpenAPI or event-to-SDK generation
+
+The first event-contract slice allows an emitted event to carry a semantic
+version and inline JSON payload schema. Graph upgrade tooling rejects
+same-major changes that remove properties or enum values, narrow types, or make
+previously optional properties required. Breaking payload changes require a new
+major contract version. This validates package compatibility only: outbound
+webhook subscription and delivery transport remain a separate later slice.
 
 Inbound webhook routes remain API route declarations. Outbound webhook delivery
 ships after the package-owned event catalog, not inside the foundational slice.

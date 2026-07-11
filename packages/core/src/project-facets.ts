@@ -182,4 +182,15 @@ export interface VoyantGraphLifecycleDeclaration {
     default: "retain-data"
     purge?: "not-supported" | "explicit"
   }
+  /**
+   * Explicit non-durable resources released by graph lifecycle execution.
+   * Durable package data remains retained; destructive purge is not modeled here.
+   */
+  cleanup?: readonly VoyantGraphLifecycleResourceCleanup[]
+}
+
+export interface VoyantGraphLifecycleResourceCleanup extends VoyantGraphFacetEntity {
+  resourceId: string
+  on: readonly ("upgrade" | "uninstall")[]
+  action: "release"
 }

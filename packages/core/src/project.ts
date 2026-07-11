@@ -152,6 +152,10 @@ export interface VoyantGraphFacetEntity {
 
 export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
   eventType?: string
+  /** Semantic version of the emitted payload contract. Required with payloadSchema. */
+  version?: string
+  /** JSON Schema used by graph tooling to validate payload compatibility before upgrade. */
+  payloadSchema?: VoyantGraphJsonObject
 }
 
 export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
