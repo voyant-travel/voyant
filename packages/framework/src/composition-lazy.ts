@@ -920,6 +920,11 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         lazyAdminRoutes: unit.route((m) => m.adminRoutes),
       }
     },
+    // The selected graph loads the package-owned channel-push runtime. Keep only
+    // its extension identity on the legacy manifest path until this catalog is deleted.
+    "@voyant-travel/distribution/channel-push-extension": () => ({
+      extension: { name: "channel-push", module: "distribution" },
+    }),
     "@voyant-travel/finance/booking-tax-extension": () => {
       const unit = createLazyUnit(async () => {
         const [finance, settings] = await Promise.all([
