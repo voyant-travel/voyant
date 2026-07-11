@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it } from "vitest"
 import {
   analyzeProjectAdminConventions,
   compileProjectAdminConventions,
-  type ProjectAdminConventionError,
   VOYANT_PROJECT_ADMIN_GENERATED_FILE,
 } from "./project-admin-conventions.js"
 import type { ProjectConventionContribution } from "./project-conventions.js"
@@ -113,8 +112,8 @@ describe("project admin conventions", () => {
 
     await expect(compilation).rejects.toMatchObject({
       name: "ProjectAdminConventionError",
-      diagnostics: [{ code: "PROJECT_ADMIN_DUPLICATE_ENTRY" }],
-    } satisfies Partial<ProjectAdminConventionError>)
+      diagnostics: [expect.objectContaining({ code: "PROJECT_ADMIN_DUPLICATE_ENTRY" })],
+    })
   })
 
   it("generates deterministic sorted client source and metadata", async () => {
