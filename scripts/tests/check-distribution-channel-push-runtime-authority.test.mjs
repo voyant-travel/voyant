@@ -29,6 +29,8 @@ async function createFixture(overrides = {}) {
       'import type { ChannelPushRuntime } from "@voyant-travel/distribution"\ngetBookingEngineRegistryFromContext\nregisterDistributionWorkflowService\n',
     "operator/src/api/runtime/operator-workflow-services.ts":
       "createLazyWorkflowDb\nselectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)\n",
+    "scripts/check-deployment-graph.ts":
+      'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -48,6 +50,8 @@ async function runChecker(root) {
       path.join(root, "distribution"),
       "--operator-root",
       path.join(root, "operator"),
+      "--deployment-graph-checker",
+      path.join(root, "scripts/check-deployment-graph.ts"),
     ],
     { cwd: root },
   )
@@ -74,6 +78,18 @@ describe("check-distribution-channel-push-runtime-authority", () => {
         /must not restore the channel-push package-id compatibility binding/,
       )
       assert.match(error.stderr, /channel-push\.ts must stay deleted/)
+      return true
+    })
+  })
+
+  it("rejects deployment-graph verification that reads the deleted route", async () => {
+    const root = await createFixture({
+      "scripts/check-deployment-graph.ts":
+        'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) readFile(operatorChannelPushRoutePath)\n',
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /must not read the deleted channel-push route/)
       return true
     })
   })

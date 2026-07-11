@@ -460,17 +460,15 @@ async function main(): Promise<void> {
     }
   }
   const operatorAppSource = await readFile(join(operatorRoot, "src/api/app.ts"), "utf8")
-  const operatorChannelPushSource = await readFile(
-    join(operatorRoot, "src/api/routes/channel-push.ts"),
-    "utf8",
-  )
-  if (
-    operatorAppSource.includes("channelPushBundle") ||
-    operatorChannelPushSource.includes("channelPushBundle") ||
-    operatorChannelPushSource.includes("eventBus.subscribe")
-  ) {
+  const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")
+  if (existsSync(operatorChannelPushRoutePath)) {
     failures.push(
-      "expected package-owned distribution subscribers to stay absent from Operator hand lists and route wiring",
+      "expected the package-owned Distribution channel-push runtime to replace the Operator compatibility route",
+    )
+  }
+  if (operatorAppSource.includes("channelPushBundle")) {
+    failures.push(
+      "expected package-owned distribution subscribers to stay absent from Operator hand lists",
     )
   }
   const bookingScheduleUnit = operatorGraph.extensions.find(

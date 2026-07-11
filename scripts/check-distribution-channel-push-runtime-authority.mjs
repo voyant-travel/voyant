@@ -12,6 +12,10 @@ const pathOption = (name, fallback) => {
 }
 const distributionRoot = pathOption("--distribution-root", join(ROOT, "packages/distribution"))
 const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
+const deploymentGraphCheckerPath = pathOption(
+  "--deployment-graph-checker",
+  join(ROOT, "scripts/check-deployment-graph.ts"),
+)
 const violations = []
 
 function readRequired(path) {
@@ -29,6 +33,7 @@ const provider = readRequired(join(operatorRoot, "src/api/runtime/channel-push-r
 const workflowServices = readRequired(
   join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),
 )
+const deploymentGraphChecker = readRequired(deploymentGraphCheckerPath)
 
 if (
   !manifest.includes("runtimePorts: [requirePort(channelPushRuntimePort)]") ||
@@ -72,8 +77,22 @@ if (
 ) {
   violations.push("Operator must preserve lazy DB lifecycle and selected workflow service gating")
 }
-if (existsSync(join(operatorRoot, "src/api/routes/channel-push.ts"))) {
+const compatibilityRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")
+if (existsSync(compatibilityRoutePath)) {
   violations.push("src/api/routes/channel-push.ts must stay deleted")
+}
+if (
+  !deploymentGraphChecker.includes(
+    'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")',
+  ) ||
+  !deploymentGraphChecker.includes("if (existsSync(operatorChannelPushRoutePath))")
+) {
+  violations.push(
+    "Deployment-graph verification must model the Operator channel-push compatibility route as deleted",
+  )
+}
+if (/readFile\s*\(\s*operatorChannelPushRoutePath/.test(deploymentGraphChecker)) {
+  violations.push("Deployment-graph verification must not read the deleted channel-push route")
 }
 
 if (violations.length > 0) {
