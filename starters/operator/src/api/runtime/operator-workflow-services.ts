@@ -37,7 +37,7 @@ export const OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS = {
   notifications: "@voyant-travel/notifications",
 } as const
 
-type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv
+type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string, unknown>
 
 export function registerBookingsWorkflowService(
   container: ModuleContainer,

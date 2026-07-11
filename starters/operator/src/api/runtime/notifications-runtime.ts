@@ -43,7 +43,6 @@ export function createOperatorNotificationsRuntimeProvider(): NotificationsRunti
       enabled: true,
       templateSlug: "booking-confirmation",
     },
-    resolveReminderWorkflowRuntime: (bindings) =>
-      createNotificationsWorkflowRuntime(bindings as AppBindings),
+    resolveReminderWorkflowRuntime: createNotificationsWorkflowRuntime,
   }
 }
