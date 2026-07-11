@@ -506,9 +506,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
             bookingIntents: capabilities.withDb
               ? {
                   withDb: (bindings, operation) =>
-                    capabilities.withDb!(bindings, (db) =>
-                      operation(db as PostgresJsDatabase),
-                    ),
+                    capabilities.withDb!(bindings, (db) => operation(db as PostgresJsDatabase)),
                 }
               : undefined,
             intake: { persistence: capabilities.storefrontIntakePersistence },

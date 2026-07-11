@@ -55,7 +55,6 @@ import {
   type EmbeddingProvider,
   executeSemanticSearch,
 } from "@voyant-travel/catalog"
-import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
