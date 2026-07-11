@@ -4,6 +4,7 @@ import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
+import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -168,7 +169,8 @@ describe("operator graph runtime composition", () => {
     const runtime = createGeneratedGraphRuntime()
     const trips = runtime.modules.find((unit) => unit.id === "@voyant-travel/trips")
     const composed = await composeOperatorGraph(runtime)
-    const tripsModule = composed.modules.find((module) => module.module.name === "trips")
+    const tripsModules = composed.modules.filter((module) => module.module.name === "trips")
+    const tripsModule = tripsModules[0]
     const tripsSubscriberModule = composed.modules.find(
       (module) => module.module.name === "trips.graph-runtime",
     )
@@ -181,6 +183,10 @@ describe("operator graph runtime composition", () => {
         .filter((reference) => reference.facet === "subscribers.runtime")
         .map((reference) => reference.entityId),
     ).toEqual(["@voyant-travel/trips#subscriber.payment-completed"])
+    expect(tripsModules).toHaveLength(1)
+    expect(tripsModule?.module.requiresTransactionalDb).toBe(true)
+    expect(tripsModule?.adminRoutes).toBeDefined()
+    expect(tripsModule?.publicRoutes).toBeDefined()
     expect(tripsSubscriberModule?.module.bootstrap).toBeTypeOf("function")
 
     await tripsModule?.module.bootstrap?.({
@@ -277,13 +283,19 @@ describe("operator graph runtime composition", () => {
     )
   })
 
-  it("binds storage and realtime by package-declared ports instead of package ids", async () => {
+  it("binds package runtime dependencies by declared ports instead of package ids", async () => {
     const ports = buildOperatorRuntimePorts()
 
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/trips")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/storage")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/realtime")
     expect(Object.keys(ports).sort()).toEqual(
-      [realtimeRuntimePort.id, storageMediaRuntimePort.id].sort(),
+      [
+        realtimeRuntimePort.id,
+        storageMediaRuntimePort.id,
+        tripsDatabaseRuntimePort.id,
+        tripsRoutesRuntimePort.id,
+      ].sort(),
     )
     await expect(composeOperatorGraph()).resolves.toBeDefined()
   })

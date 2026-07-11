@@ -15,15 +15,19 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-trips-subscriber-authority-"))
   const files = {
     "packages/trips/src/voyant.ts": `subscribers: [{ runtime: { entry: "./payment-subscribers", export: "tripsPaymentCompletedSubscriber" } }]`,
+    "packages/trips/src/index.ts": `
+const runtime = { withDb: (operation) => databaseRuntime.withDb(context.bindings, operation) }
+container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
+`,
     "starters/operator/src/api/app.ts": "export const app = {}\n",
     "starters/operator/src/api/runtime/trips-runtime.ts":
       "export function createOperatorTripsRoutesOptions() {}\n",
     "starters/operator/src/api/composition.ts": `
-const providers = { withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation) }
-return withModuleRuntimeService(configured, () => {
-  const runtime = { withDb: (operation) => capabilities.withDb(bindings, operation) }
-  container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
-})
+const ports = {
+  [tripsDatabaseRuntimePort.id]: {
+    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
+  },
+}
 `,
     ...overrides,
   }
@@ -67,12 +71,12 @@ eventBus.subscribe("payment.completed", handler)
   it("rejects manual descriptor registration in composition", async () => {
     const root = await createFixture({
       "starters/operator/src/api/composition.ts": `
-const providers = { withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation) }
-return withModuleRuntimeService(configured, () => {
-  const runtime = { withDb: (operation) => capabilities.withDb(bindings, operation) }
-  container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
-  tripsPaymentCompletedSubscriber.register(context)
-})
+const ports = {
+  [tripsDatabaseRuntimePort.id]: {
+    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
+  },
+}
+tripsPaymentCompletedSubscriber.register(context)
 `,
     })
     await assert.rejects(runChecker(root), /must leave subscriber registration to selected-graph/)

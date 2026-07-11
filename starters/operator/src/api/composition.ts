@@ -35,10 +35,7 @@ import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
-import {
-  TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
-  type TripsPaymentSubscriberRuntime,
-} from "@voyant-travel/trips/payment-subscribers"
+import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
@@ -100,7 +97,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   relationshipsService: FrameworkProviders["relationshipsService"]
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
-  createTripsRoutesOptions: FrameworkProviders["createTripsRoutesOptions"]
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
   createChannelPushExtension: typeof createChannelPushExtension
 }
@@ -136,8 +132,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
     // Adapt the deployment's catalog context into the package's search runtime
     // shape (the framework catalog factory consumes this directly).
     resolveCatalogRuntime: createLazyCatalogSearchRuntime,
-    createTripsRoutesOptions: () =>
-      import("./runtime/trips-runtime").then((m) => m.createOperatorTripsRoutesOptions()),
+    createTripsRoutesOptions: createOperatorTripsRoutesOptions,
     resolveBookingRequirementsProductSnapshot,
     storefrontIntakePersistence: lazyProvider<StorefrontIntakePersistence>(async () =>
       import("./runtime/storefront-intake-runtime").then(
@@ -248,6 +243,10 @@ export function buildOperatorProviders(): OperatorCapabilities {
 /** Deployment implementations for package-declared runtime ports. */
 export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
   return {
+    [tripsRoutesRuntimePort.id]: createOperatorTripsRoutesOptions,
+    [tripsDatabaseRuntimePort.id]: {
+      withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
+    },
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -257,6 +256,9 @@ export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
     },
   }
 }
+
+const createOperatorTripsRoutesOptions: FrameworkProviders["createTripsRoutesOptions"] = () =>
+  import("./runtime/trips-runtime").then((runtime) => runtime.createOperatorTripsRoutesOptions())
 
 function createLazyCatalogSearchRuntime(
   c: Parameters<OperatorCapabilities["resolveCatalogRuntime"]>[0],
@@ -599,26 +601,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       },
     })
     return withModuleWorkflowService(configured, registerNotificationsWorkflowService)
-  },
-  "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) => {
-    const configured = singleRuntimeFactory<
-      typeof import("@voyant-travel/trips").createTripsHonoModule
-    >(
-      unit.id,
-      runtimeExports,
-    )({
-      routesOptions: capabilities.createTripsRoutesOptions,
-      publicRoutes: true,
-    })
-    return withModuleRuntimeService(configured, (container, bindings) => {
-      const runtime: TripsPaymentSubscriberRuntime = {
-        withDb: (operation) =>
-          capabilities.withDb
-            ? capabilities.withDb(bindings, operation)
-            : operation(capabilities.resolveDb(bindings as unknown as Record<string, unknown>)),
-      }
-      container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
-    })
   },
   "@voyant-travel/distribution#channel-push-extension": ({
     capabilities,

@@ -1,12 +1,17 @@
-import type { Module } from "@voyant-travel/core"
+import type { BootstrapContext, Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import {
+  TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
+  type TripsPaymentSubscriberRuntime,
+} from "./payment-subscriber-runtime.js"
 import {
   createTripsRoutes,
   type TripsRoutesOptions,
   type TripsRoutesOptionsInput,
-  tripsRoutes,
 } from "./routes.js"
+import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 
 export {
   type CatalogAdapterContext,
@@ -58,11 +63,6 @@ export const tripsModule: Module = {
   name: "trips",
 }
 
-export const tripsHonoModule: HonoModule = {
-  module: tripsModule,
-  adminRoutes: tripsRoutes,
-}
-
 export interface TripsHonoModuleOptions extends TripsRoutesOptions {
   publicRoutes?: boolean
   routesOptions?: TripsRoutesOptionsInput
@@ -83,6 +83,34 @@ export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
   }
   return honoModule
 }
+
+/** Package-owned adapter from graph ports to the complete Trips runtime. */
+export const createTripsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+  const [routesOptions, databaseRuntime] = await Promise.all([
+    getPort(tripsRoutesRuntimePort),
+    getPort(tripsDatabaseRuntimePort),
+  ])
+  const configured = createTripsHonoModule({ routesOptions, publicRoutes: true })
+  const bootstrap = configured.module.bootstrap
+
+  return {
+    ...configured,
+    module: {
+      ...configured.module,
+      requiresTransactionalDb: true,
+      bootstrap: async (context: BootstrapContext) => {
+        const runtime: TripsPaymentSubscriberRuntime = {
+          withDb: (operation) => databaseRuntime.withDb(context.bindings, operation),
+        }
+        context.container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
+        await bootstrap?.(context)
+      },
+    },
+  }
+})
+
+export { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
+export type { TripsDatabaseRuntime } from "./runtime-port.js"
 
 function memoizeTripsRouteOptionsInput(options: TripsRoutesOptionsInput): TripsRoutesOptionsInput {
   if (typeof options !== "function") return options
