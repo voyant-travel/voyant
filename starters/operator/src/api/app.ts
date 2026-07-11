@@ -20,17 +20,12 @@ import {
   operatorGraphRuntimeBindings,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import {
-  createOperatorWorkflowDriver,
-  generateContractPdfForBooking,
-  resolveOperatorDb,
-} from "./runtime/operator-runtime-adapter"
+import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/operator-runtime-adapter"
 import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
-import { createCatalogCheckoutBundle } from "./subscribers/catalog-checkout-finalize-runtime"
 
 /**
- * Process-wide registry of workflow runners. Bundles register their
- * runners on bootstrap (see `createCatalogCheckoutBundle`) so the
+ * Process-wide registry of workflow runners. Selected package runtimes register
+ * their runners on bootstrap so the
  * `/v1/admin/workflow-runs/:id/{rerun,resume}` endpoints can dispatch
  * a workflow by name. The dashboard's "Rerun" / "Resume" buttons are
  * powered by this registry. Self-hosted workflow services should
@@ -48,7 +43,7 @@ const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   capabilities: operatorProviders,
   bindings: operatorGraphRuntimeBindings,
-  ports: buildOperatorRuntimePorts(),
+  ports: buildOperatorRuntimePorts(workflowRunnerRegistry),
   outboundWebhooks: {
     enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
   },
@@ -105,11 +100,6 @@ export const app = mountApp<AppBindings>({
       },
     },
     catalogBridgeBundle,
-    createCatalogCheckoutBundle({
-      workflowRunnerRegistry,
-      generateContractPdf: ({ env, db, eventBus, bookingId, force }) =>
-        generateContractPdfForBooking(env, db, eventBus, bookingId, { force }),
-    }),
   ],
   auth: {
     handler: () => ({
@@ -124,12 +114,12 @@ export const app = mountApp<AppBindings>({
     // Every domain + deployment-local route family is now composed through the
     // registry (see composition.ts). The only thing left here is the workflow-
     // runs admin surface, which is coupled to the app-level runner registry that
-    // bundle bootstraps populate at construction time.
+    // selected graph bootstraps populate at construction time.
 
     // Workflow runs admin surface — list/get + rerun/resume actions
     // feeding the `WorkflowRunsPage` UI from
     // `@voyant-travel/workflows-react/ui`. The registry is populated by
-    // bundle bootstraps (e.g. catalog-checkout registers the
+    // package bootstraps (e.g. catalog-checkout registers the
     // `checkout-finalize` runner).
     mountWorkflowRunsAdminRoutes(hono, {
       runners: workflowRunnerRegistry,

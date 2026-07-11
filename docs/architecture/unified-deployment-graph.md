@@ -1028,10 +1028,6 @@ The remaining Operator subscriber authorities are intentionally explicit:
   `product.deleted`, `product.content.changed`, `availability.slot.changed`,
   `pricing.rule.changed`, `product.publication.changed`, `promotion.changed`,
   and two distinct `booking.confirmed` handlers
-- `createCatalogCheckoutBundle`: `contract.document.generated` and
-  `payment.completed`
-- `smartbillOperatorBundle`: `invoice.issued`, `invoice.proforma.issued`, and
-  `invoice.payment.recorded`
 
 These entries remain until each owning package manifest has executable runtime
 references and direct selected-graph parity. Deployment-local ordering,
@@ -1068,6 +1064,16 @@ only activation path in this slice. Auto-dispatch deliberately has no manifest
 runtime reference. Moving either path to selected-graph activation remains
 gated on explicit Legal document-ordering semantics for `booking.confirmed`, as
 ordinary event-bus subscribers run independently and provide no ordering.
+
+Commerce owns and executes catalog checkout's `contract.document.generated`
+acceptance-signature promotion and inline `payment.completed` finalization from
+the selected catalog-checkout extension. The same package runtime registers the
+`checkout-finalize` rerun/resume runner. Node hosts supply database lifecycle,
+Legal contract operations, booking contract PDF generation, and the process
+workflow-runner registry through required typed runtime ports. Selection without
+those services fails during composition; deselecting the extension loads none of
+its subscribers or ports. Operator no longer carries a parallel bundle or
+Commerce package-id binding.
 
 The broader event catalog is beyond the foundational substrate:
 

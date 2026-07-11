@@ -261,6 +261,8 @@ export interface ManagedProfileRuntimeOptions {
   deploymentRequirements?: VoyantGraphDeploymentRequirements
   /** Admitted generated runtime for graph-owned tools and other executable facets. */
   graphRuntime?: VoyantGraphRuntime
+  /** Host implementations for graph-selected package runtime ports. */
+  runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
   env?: Record<string, unknown> | ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
   providers?: Partial<FrameworkProviders>
@@ -384,7 +386,7 @@ export async function loadManagedProfileRuntime(
     customSourceOptions,
   )
   const graphFacetModules = options.graphRuntime
-    ? await composeVoyantGraphRuntimeFacetModules(options.graphRuntime)
+    ? await composeVoyantGraphRuntimeFacetModules(options.graphRuntime, options.runtimePorts)
     : []
   const actionLedgerCapabilities = options.graphRuntime
     ? lowerVoyantGraphActionsToActionLedgerRegistry(options.graphRuntime)

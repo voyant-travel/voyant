@@ -501,6 +501,38 @@ async function main(): Promise<void> {
       "expected package-owned Finance booking-schedule subscriber to stay absent from Operator hand lists and route wiring",
     )
   }
+  const catalogCheckoutUnit = operatorGraph.extensions.find(
+    (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
+  )
+  const expectedCatalogCheckoutSubscribers = new Map([
+    [
+      "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated",
+      "createAcceptanceSignatureSubscriberGraphRuntime",
+    ],
+    [
+      "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed",
+      "createCheckoutFinalizeSubscriberGraphRuntime",
+    ],
+  ])
+  for (const [id, exportName] of expectedCatalogCheckoutSubscribers) {
+    const subscriber = catalogCheckoutUnit?.subscribers.find((candidate) => candidate.id === id)
+    if (
+      subscriber?.runtime?.entry !== "./catalog-checkout-subscribers" ||
+      subscriber.runtime.export !== exportName
+    ) {
+      failures.push(
+        `expected Commerce checkout subscriber ${id} to retain package runtime ${exportName}`,
+      )
+    }
+  }
+  if (
+    existsSync(join(operatorRoot, "src/api/subscribers/catalog-checkout-finalize-runtime.ts")) ||
+    operatorAppSource.includes("createCatalogCheckoutBundle")
+  ) {
+    failures.push(
+      "expected package-owned Commerce checkout subscribers to stay absent from Operator app and subscriber authority",
+    )
+  }
   for (const specifier of OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorModuleIds.has(id)) {

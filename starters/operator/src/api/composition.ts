@@ -18,6 +18,11 @@ import type {
   EmbeddingProvider,
   IndexerAdapter,
 } from "@voyant-travel/catalog"
+import {
+  catalogCheckoutContractPdfRuntimePort,
+  catalogCheckoutDatabaseRuntimePort,
+  catalogCheckoutLegalRuntimePort,
+} from "@voyant-travel/commerce/catalog-checkout-subscribers"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import {
@@ -39,6 +44,10 @@ import {
   TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
   type TripsPaymentSubscriberRuntime,
 } from "@voyant-travel/trips/payment-subscribers"
+import {
+  type WorkflowRunnerRegistryRuntime,
+  workflowRunnerRegistryRuntimePort,
+} from "@voyant-travel/workflow-runs/runtime-port"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
@@ -51,6 +60,8 @@ import {
   createOperatorDocumentStorage,
   createOperatorInvoiceExchangeRateResolver,
   createOperatorInvoiceSettlementPollers,
+  generateContractPdfForBooking,
+  operatorBindings,
   operatorPostgresDb,
   readOperatorDocumentContentBase64,
   resolveOperatorContractDocumentGenerator,
@@ -246,7 +257,9 @@ export function buildOperatorProviders(): OperatorCapabilities {
 }
 
 /** Deployment implementations for package-declared runtime ports. */
-export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
+export function buildOperatorRuntimePorts(
+  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
+): VoyantGraphRuntimePorts {
   return {
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
@@ -255,6 +268,29 @@ export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
       resolveProviders: resolveRealtimeProviders,
       bridgeRoutes: operatorRealtimeBridgeRoutes,
     },
+    [catalogCheckoutDatabaseRuntimePort.id]: {
+      withDb: (bindings: unknown, operation: Parameters<typeof withDbFromEnv>[1]) =>
+        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+    },
+    [catalogCheckoutLegalRuntimePort.id]: import("@voyant-travel/legal/contracts").then(
+      ({ contractsService }) => ({
+        getContract: contractsService.getContractById,
+        listSignatures: contractsService.listSignatures,
+        sendContract: (db, contractId, eventBus) =>
+          contractsService.sendContract(db, contractId, { eventBus }),
+        signContract: (db, contractId, input, eventBus) =>
+          contractsService.signContract(db, contractId, input as never, { eventBus }),
+      }),
+    ),
+    [catalogCheckoutContractPdfRuntimePort.id]: {
+      generate: ({ bindings, db, eventBus, bookingId, force }) =>
+        generateContractPdfForBooking(operatorBindings(bindings), db, eventBus, bookingId, {
+          force,
+        }),
+    },
+    ...(workflowRunnerRegistry
+      ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
+      : {}),
   }
 }
 
@@ -421,8 +457,6 @@ export const operatorGraphCompatibilityExtensions: Record<
     frameworkComposition.extensions!["@voyant-travel/catalog/offers-extension"]!,
   "@voyant-travel/commerce#booking-maintenance-extension":
     frameworkComposition.extensions!["@voyant-travel/commerce/booking-maintenance-extension"]!,
-  "@voyant-travel/commerce#catalog-checkout-extension":
-    frameworkComposition.extensions!["@voyant-travel/commerce/catalog-checkout-extension"]!,
   "@voyant-travel/cruises#content-extension":
     frameworkComposition.extensions!["@voyant-travel/cruises/content-extension"]!,
   "@voyant-travel/finance#booking-schedule-extension":

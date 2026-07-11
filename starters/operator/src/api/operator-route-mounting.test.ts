@@ -12,6 +12,7 @@
 import type { Actor } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
+import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
@@ -102,7 +103,7 @@ function buildGraphComposition() {
     runtime: createGeneratedGraphRuntime(),
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
-    ports: buildOperatorRuntimePorts(),
+    ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
   })
 }
 

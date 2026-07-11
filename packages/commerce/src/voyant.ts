@@ -1,4 +1,10 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
+import {
+  catalogCheckoutContractPdfRuntimePort,
+  catalogCheckoutDatabaseRuntimePort,
+  catalogCheckoutLegalRuntimePort,
+} from "./checkout/runtime-ports.js"
 
 const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-index"
 const commerceAdminRuntime = {
@@ -191,6 +197,12 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
   id: "@voyant-travel/commerce#catalog-checkout-extension",
   packageName: "@voyant-travel/commerce",
   localId: "commerce.catalog-checkout-extension",
+  runtimePorts: [
+    requirePort(catalogCheckoutDatabaseRuntimePort),
+    requirePort(catalogCheckoutLegalRuntimePort),
+    requirePort(catalogCheckoutContractPdfRuntimePort),
+    requirePort(workflowRunnerRegistryRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/commerce#catalog-checkout-extension.api",
@@ -207,11 +219,19 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
       id: "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated",
       eventType: "contract.document.generated",
       source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+      runtime: {
+        entry: "./catalog-checkout-subscribers",
+        export: "createAcceptanceSignatureSubscriberGraphRuntime",
+      },
     },
     {
       id: "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed",
       eventType: "payment.completed",
       source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+      runtime: {
+        entry: "./catalog-checkout-subscribers",
+        export: "createCheckoutFinalizeSubscriberGraphRuntime",
+      },
     },
   ],
   meta: {

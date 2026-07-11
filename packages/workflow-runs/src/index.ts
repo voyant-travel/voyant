@@ -42,6 +42,10 @@ export {
   type WorkflowTriggerContext,
 } from "./runner.js"
 export {
+  type WorkflowRunnerRegistryRuntime,
+  workflowRunnerRegistryRuntimePort,
+} from "./runtime-port.js"
+export {
   type NewWorkflowRun,
   type NewWorkflowRunStep,
   type WorkflowRun,

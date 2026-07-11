@@ -35,6 +35,16 @@ describe("@voyant-travel/commerce package exports", () => {
     })
   })
 
+  it("publishes selected-graph checkout factories and typed host ports", async () => {
+    const runtime = await import("../../src/checkout/subscriber-runtime.js")
+
+    expect(runtime.createAcceptanceSignatureSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(runtime.createCheckoutFinalizeSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(runtime.catalogCheckoutDatabaseRuntimePort.id).toBe("commerce.checkout-database")
+    expect(runtime.catalogCheckoutLegalRuntimePort.id).toBe("legal.acceptance-signature")
+    expect(runtime.catalogCheckoutContractPdfRuntimePort.id).toBe("legal.booking-contract-pdf")
+  })
+
   it("publishes the promotion-redemption subscriber runtime subpath", () => {
     expect(packageJson.exports["./promotion-redemption-subscriber"]).toBe(
       "./src/promotions/subscriber-runtime.ts",
