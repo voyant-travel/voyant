@@ -17,7 +17,11 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import { buildOperatorProviders, operatorGraphRuntimeBindings } from "./composition"
+import {
+  buildOperatorProviders,
+  buildOperatorRuntimePorts,
+  operatorGraphRuntimeBindings,
+} from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
@@ -52,6 +56,7 @@ const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   capabilities: operatorProviders,
   bindings: operatorGraphRuntimeBindings,
+  ports: buildOperatorRuntimePorts(),
   outboundWebhooks: {
     enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
   },

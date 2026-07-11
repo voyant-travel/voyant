@@ -57,6 +57,63 @@ export interface VoyantGraphPortDeclaration {
   optional?: boolean
 }
 
+export interface VoyantPort<TProvider> {
+  readonly id: string
+  readonly test: (provider: TProvider) => void | Promise<void>
+}
+
+export function definePort<TProvider>(input: VoyantPort<TProvider>): VoyantPort<TProvider> {
+  if (!/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/.test(input.id)) {
+    throw new Error(`Port id "${input.id}" must use dot-case namespace segments.`)
+  }
+  if (typeof input.test !== "function") {
+    throw new Error(`Port "${input.id}" must provide a conformance test kit.`)
+  }
+  return Object.freeze({ id: input.id, test: input.test })
+}
+
+export function providePort<TProvider>(port: VoyantPort<TProvider>): VoyantGraphPortDeclaration {
+  return { id: port.id }
+}
+
+export function requirePort<TProvider>(
+  port: VoyantPort<TProvider>,
+  options: { optional?: boolean } = {},
+): VoyantGraphPortDeclaration {
+  return { id: port.id, ...(options.optional ? { optional: true } : {}) }
+}
+
+export async function assertPortConforms<TProvider>(
+  port: VoyantPort<TProvider>,
+  provider: TProvider,
+): Promise<void> {
+  await port.test(provider)
+}
+
+export interface VoyantGraphRuntimeFactoryContext {
+  unitId: string
+  hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
+  getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
+}
+
+export type VoyantGraphRuntimeFactory<TResult = unknown> = (
+  context: VoyantGraphRuntimeFactoryContext,
+) => TResult | Promise<TResult>
+
+const VOYANT_GRAPH_RUNTIME_FACTORY = Symbol.for("voyant.graph-runtime-factory.v1")
+
+/** Mark an executable package export that consumes its manifest-declared ports. */
+export function defineGraphRuntimeFactory<TResult>(
+  factory: VoyantGraphRuntimeFactory<TResult>,
+): VoyantGraphRuntimeFactory<TResult> {
+  Object.defineProperty(factory, VOYANT_GRAPH_RUNTIME_FACTORY, { value: true })
+  return factory
+}
+
+export function isGraphRuntimeFactory(value: unknown): value is VoyantGraphRuntimeFactory {
+  return typeof value === "function" && Reflect.get(value, VOYANT_GRAPH_RUNTIME_FACTORY) === true
+}
+
 /** A symbolic package export resolved only after package admission. */
 export interface VoyantGraphRuntimeReference {
   entry: string
@@ -121,6 +178,8 @@ export interface VoyantGraphUnitManifest {
   packageName?: string
   /** The package export that creates this unit's runtime module or extension. */
   runtime?: VoyantGraphRuntimeReference
+  /** Deployment-supplied ports available only to this unit's runtime factories. */
+  runtimePorts?: readonly VoyantGraphPortDeclaration[]
   provides?: VoyantGraphCapabilityDeclaration
   requires?: VoyantGraphCapabilityDeclaration
   api?: readonly VoyantGraphRouteBundle[]

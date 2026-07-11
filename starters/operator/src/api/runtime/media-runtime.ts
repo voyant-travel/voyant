@@ -27,6 +27,13 @@ import { createVideoUploadTicket } from "../../lib/video-uploads"
 import { tryGetCloudClient } from "../../lib/voyant-cloud"
 import { createMediaStorage, guessMimeType } from "../lib/storage"
 
+export const operatorStorageMediaRuntime = {
+  resolveStorage: (c: Context) => createMediaStorage(c.env),
+  guessServedMimeType: guessMimeType,
+  signVideoUploadTicket: (c: Context, input: VideoUploadTicketRequest) =>
+    createVideoUploadTicket(c.env, input),
+}
+
 /** Resolve the R2-backed media storage provider for a request (or null → 503). */
 function resolveStorage(c: Context) {
   return createMediaStorage(c.env)
@@ -34,12 +41,7 @@ function resolveStorage(c: Context) {
 
 /** Build the upload + serve routes (`/v1/admin/uploads`, `/v1/admin/media/*`, …). */
 function buildMediaUploadAndServeModule() {
-  return createMediaHonoModule({
-    resolveStorage,
-    guessServedMimeType: guessMimeType,
-    signVideoUploadTicket: (c: Context, input: VideoUploadTicketRequest) =>
-      createVideoUploadTicket(c.env, input),
-  })
+  return createMediaHonoModule(operatorStorageMediaRuntime)
 }
 
 /** Build the brochure route (`/v1/admin/products/:id/brochure/generate`). */

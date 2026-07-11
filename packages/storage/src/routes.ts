@@ -23,10 +23,13 @@
  * The package never imports the deployment's R2 binding or video provider.
  */
 
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
-
+import { storageMediaRuntimePort } from "./runtime-port.js"
 import type { StorageProvider } from "./types.js"
+
+export { storageMediaRuntimePort } from "./runtime-port.js"
 
 // ─────────────────────────────────────────────────────────────────
 // Tuning constants (preserved byte-for-byte from the operator origin)
@@ -120,6 +123,11 @@ export function createMediaHonoModule(options: MediaRoutesOptions): MediaHonoMod
     },
   }
 }
+
+/** Package-owned adapter from the graph port registry to the public route factory. */
+export const createStorageVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createMediaHonoModule(await getPort(storageMediaRuntimePort)),
+)
 
 // ─────────────────────────────────────────────────────────────────
 // Default MIME guessing (so a deployment can omit `guessServedMimeType`)

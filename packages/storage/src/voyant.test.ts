@@ -1,6 +1,11 @@
+import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 
-import { createMediaHonoModule, STORAGE_MEDIA_ROUTE_PATHS } from "./routes.js"
+import {
+  createMediaHonoModule,
+  STORAGE_MEDIA_ROUTE_PATHS,
+  storageMediaRuntimePort,
+} from "./routes.js"
 import { storageVoyantModule } from "./voyant.js"
 
 describe("storage deployment manifest", () => {
@@ -10,6 +15,7 @@ describe("storage deployment manifest", () => {
       id: "@voyant-travel/storage",
       packageName: "@voyant-travel/storage",
       provides: { ports: [{ id: "storage.object" }] },
+      runtimePorts: [{ id: "storage.media-runtime" }],
       resources: [
         {
           id: "@voyant-travel/storage#resource.object-storage",
@@ -26,7 +32,7 @@ describe("storage deployment manifest", () => {
           mount,
           runtime: {
             entry: "@voyant-travel/storage/routes",
-            export: "createMediaHonoModule",
+            export: "createStorageVoyantRuntime",
           },
         }),
       ),
@@ -39,6 +45,18 @@ describe("storage deployment manifest", () => {
     expect(module.module.name).toBe("media")
     expect(module.lazyRoutes.paths).toEqual(STORAGE_MEDIA_ROUTE_PATHS)
     expect(module.lazyRoutes.paths).not.toContain("/v1/admin/products/:id/brochure/generate")
+  })
+
+  it("ships a conformance kit for deployment media providers", async () => {
+    await expect(
+      assertPortConforms(storageMediaRuntimePort, {
+        resolveStorage: () => null,
+        signVideoUploadTicket: async () => null,
+      }),
+    ).resolves.toBeUndefined()
+    await expect(assertPortConforms(storageMediaRuntimePort, {} as never)).rejects.toThrow(
+      /resolveStorage/,
+    )
   })
 
   it("declares only Node-usable local and S3 provider factories", () => {

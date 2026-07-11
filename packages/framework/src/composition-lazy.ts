@@ -88,7 +88,7 @@ export interface FrameworkProviders {
   loadInventoryContentRoutes: LazyRoutesLoader
   loadCruisesContentRoutes: LazyRoutesLoader
   loadAccommodationsContentRoutes: LazyRoutesLoader
-  loadStorageRoutes: LazyRoutesLoader
+  loadStorageRoutes?: LazyRoutesLoader
   loadInventoryBrochureRoutes: LazyRoutesLoader
   loadPaymentLinkRoutes: LazyRoutesLoader
   loadContractDocumentRoutes: LazyRoutesLoader
@@ -810,10 +810,17 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       },
       transactionalPaths: CATALOG_BOOKING_TRANSACTIONAL_PATHS,
     }),
-    "@voyant-travel/storage": ({ capabilities }) => ({
-      module: { name: "media" },
-      lazyRoutes: { paths: STORAGE_ROUTE_PATHS, load: capabilities.loadStorageRoutes },
-    }),
+    "@voyant-travel/storage": ({ capabilities }) => {
+      if (!capabilities.loadStorageRoutes) {
+        throw new Error(
+          "frameworkComposition: @voyant-travel/storage requires loadStorageRoutes on the legacy composition path.",
+        )
+      }
+      return {
+        module: { name: "media" },
+        lazyRoutes: { paths: STORAGE_ROUTE_PATHS, load: capabilities.loadStorageRoutes },
+      }
+    },
     "@voyant-travel/storefront/payment-link": ({ capabilities }) => ({
       module: { name: "payment-link" },
       publicPath: "/",

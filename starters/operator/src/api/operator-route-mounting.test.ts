@@ -15,7 +15,11 @@ import { mountApp } from "@voyant-travel/hono"
 import { describe, expect, it } from "vitest"
 
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
-import { buildOperatorProviders, operatorGraphRuntimeBindings } from "./composition"
+import {
+  buildOperatorProviders,
+  buildOperatorRuntimePorts,
+  operatorGraphRuntimeBindings,
+} from "./composition"
 import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
@@ -94,6 +98,7 @@ function buildGraphComposition() {
     runtime: createGeneratedGraphRuntime(),
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
+    ports: buildOperatorRuntimePorts(),
   })
 }
 

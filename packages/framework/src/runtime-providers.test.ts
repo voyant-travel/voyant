@@ -82,6 +82,30 @@ function createRuntime(options: {
 }
 
 describe("graph runtime providers", () => {
+  it("does not treat runtime-factory ports as provider requirements", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:runtime-only-port",
+      entries: {},
+      modules: [
+        {
+          id: "@acme/media",
+          kind: "module",
+          packageName: "@acme/media",
+          order: 0,
+          runtimePorts: ["media.runtime"],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(resolveVoyantGraphRuntimeProviders(runtime, {})).resolves.toMatchObject({
+      selectedProviders: [],
+    })
+    expect(runtime.modules[0]?.runtimePorts).toEqual(["media.runtime"])
+    expect(runtime.requiredPorts).toEqual([])
+  })
+
   it("selects explicitly, stays lazy, memoizes, and redacts runtime values", async () => {
     const secret = "private-token"
     const { importProvider, runtime } = createRuntime({ selection: "remote" })

@@ -1,6 +1,7 @@
 import { createContainer, createEventBus } from "@voyant-travel/core"
+import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
-import { createRealtimeHonoModule } from "../../src/index.js"
+import { createRealtimeHonoModule, realtimeRuntimePort } from "../../src/index.js"
 import { realtimeVoyantModule } from "../../src/voyant.js"
 
 describe("realtime deployment manifest", () => {
@@ -10,13 +11,14 @@ describe("realtime deployment manifest", () => {
       id: "@voyant-travel/realtime",
       packageName: "@voyant-travel/realtime",
       provides: { ports: [{ id: "realtime.transport" }] },
+      runtimePorts: [{ id: "realtime.runtime" }],
       api: [
         {
           id: "@voyant-travel/realtime#api.admin",
           surface: "admin",
           runtime: {
             entry: "@voyant-travel/realtime",
-            export: "createRealtimeHonoModule",
+            export: "createRealtimeVoyantRuntime",
           },
         },
         {
@@ -24,7 +26,7 @@ describe("realtime deployment manifest", () => {
           surface: "public",
           runtime: {
             entry: "@voyant-travel/realtime",
-            export: "createRealtimeHonoModule",
+            export: "createRealtimeVoyantRuntime",
           },
         },
       ],
@@ -45,6 +47,15 @@ describe("realtime deployment manifest", () => {
         },
       ],
     })
+  })
+
+  it("ships a conformance kit for deployment realtime providers", async () => {
+    await expect(
+      assertPortConforms(realtimeRuntimePort, { resolveProviders: () => [] }),
+    ).resolves.toBeUndefined()
+    await expect(
+      assertPortConforms(realtimeRuntimePort, { resolveProviders: true } as never),
+    ).rejects.toThrow(/resolveProviders/)
   })
 
   it("keeps provider resolution injectable through the manifest runtime factory", async () => {

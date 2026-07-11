@@ -113,6 +113,7 @@ export {
   type VoyantGraphRuntimeBindingContext,
   type VoyantGraphRuntimeBindings,
   type VoyantGraphRuntimeComposition,
+  type VoyantGraphRuntimePorts,
 } from "./runtime-composition.js"
 export {
   type CreateVoyantGraphRuntimeInput,
