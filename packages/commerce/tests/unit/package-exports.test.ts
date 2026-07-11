@@ -8,6 +8,11 @@ import {
   createAcceptanceSignatureSubscriberGraphRuntime,
   createCheckoutFinalizeSubscriberGraphRuntime,
 } from "../../src/checkout/subscriber-runtime.js"
+import {
+  createPromotionRedemptionSubscriberGraphRuntime,
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "../../src/promotions/subscriber-runtime.js"
 
 interface PublishedExport {
   types: string
@@ -60,5 +65,8 @@ describe("@voyant-travel/commerce package exports", () => {
       import: "./dist/promotions/subscriber-runtime.js",
       default: "./dist/promotions/subscriber-runtime.js",
     })
+    expect(createPromotionRedemptionSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(promotionRedemptionDatabaseRuntimePort.id).toBe("commerce.promotion-redemption-database")
+    expect(promotionsBulkReindexRuntimePort.id).toBe("commerce.promotions-bulk-reindex")
   })
 })

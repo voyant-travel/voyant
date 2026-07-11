@@ -6,6 +6,10 @@ import {
   catalogCheckoutLegalRuntimePort,
 } from "../../src/checkout/runtime-ports.js"
 import {
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "../../src/promotions/runtime-ports.js"
+import {
   commerceBookingMaintenanceVoyantPlugin,
   commerceCatalogCheckoutVoyantPlugin,
   commerceVoyantModule,
@@ -17,6 +21,10 @@ describe("commerce deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/commerce",
       packageName: "@voyant-travel/commerce",
+      runtimePorts: [
+        { id: promotionRedemptionDatabaseRuntimePort.id },
+        { id: promotionsBulkReindexRuntimePort.id },
+      ],
       api: [
         {
           id: "@voyant-travel/commerce#api.pricing.admin",
@@ -95,6 +103,10 @@ describe("commerce deployment manifest", () => {
           id: "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
           eventType: "booking.confirmed",
           source: "@voyant-travel/commerce/promotion-redemption-subscriber",
+          runtime: {
+            entry: "./promotion-redemption-subscriber",
+            export: "createPromotionRedemptionSubscriberGraphRuntime",
+          },
         },
         {
           id: "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
@@ -109,7 +121,6 @@ describe("commerce deployment manifest", () => {
         },
       ],
     })
-    expect(commerceVoyantModule.subscribers?.[0]).not.toHaveProperty("runtime")
   })
 
   it("owns the catalog checkout and booking maintenance bridges", () => {

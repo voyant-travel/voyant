@@ -984,7 +984,7 @@ The remaining Operator subscriber authorities are intentionally explicit:
 - `catalogBridgeBundle`: `product.created`, `product.updated`,
   `product.deleted`, `product.content.changed`, `availability.slot.changed`,
   `pricing.rule.changed`, `product.publication.changed`, `promotion.changed`,
-  and two distinct `booking.confirmed` handlers
+  and the catalog snapshot `booking.confirmed` handler
 
 These entries remain until each owning package manifest has executable runtime
 references and direct selected-graph parity. Deployment-local ordering,
@@ -1020,6 +1020,15 @@ workflow-runner registry through required typed runtime ports. Selection without
 those services fails during composition; deselecting the extension loads none of
 its subscribers or ports. Operator no longer carries a parallel bundle or
 Commerce package-id binding.
+
+Commerce also owns and executes promotion redemption from its selected module's
+`booking.confirmed` subscriber. The module requires typed database-lifecycle and
+bulk-reindex service ports; its package runtime registers the bulk-reindex host
+service before subscribing, preserving the former Operator bootstrap ordering.
+The redemption handler still reads quotes independently of catalog snapshot
+capture, records idempotently, and warns without rejecting recorder failures.
+Deselecting Commerce removes both the subscriber and service bootstrap, and the
+Operator no longer lists a promotions runtime plugin or redemption handler.
 
 The broader event catalog is beyond the foundational substrate:
 

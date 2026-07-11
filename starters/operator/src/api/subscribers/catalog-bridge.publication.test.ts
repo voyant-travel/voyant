@@ -19,10 +19,6 @@ vi.mock("@voyant-travel/catalog", () => ({
   captureSnapshotGraphIdempotent: vi.fn(async () => {}),
 }))
 
-vi.mock("@voyant-travel/commerce", () => ({
-  recordPromotionRedemptionsForBooking: vi.fn(async () => {}),
-}))
-
 vi.mock("@voyant-travel/inventory/service-catalog-plane", () => ({
   buildProductSnapshotInput: vi.fn(async () => null),
 }))

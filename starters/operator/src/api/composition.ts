@@ -26,6 +26,13 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "@voyant-travel/commerce/catalog-checkout-subscribers"
+import {
+  type PromotionRedemptionDatabaseRuntime,
+  type PromotionsBulkReindexRuntime,
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "@voyant-travel/commerce/promotion-redemption-subscriber"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import {
@@ -296,6 +303,16 @@ export function buildOperatorRuntimePorts(
           force,
         }),
     } satisfies CatalogCheckoutContractPdfRuntime,
+    [promotionRedemptionDatabaseRuntimePort.id]: {
+      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
+        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+    } satisfies PromotionRedemptionDatabaseRuntime,
+    [promotionsBulkReindexRuntimePort.id]: {
+      createService: (bindings: unknown) =>
+        import("./lib/bulk-reindex-service").then((runtime) =>
+          runtime.createBulkReindexProductsService(operatorBindings(bindings)),
+        ),
+    } satisfies PromotionsBulkReindexRuntime,
     ...(workflowRunnerRegistry
       ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
       : {}),
@@ -657,7 +674,7 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         withDb: (operation) =>
           capabilities.withDb
             ? capabilities.withDb(bindings, operation)
-            : operation(capabilities.resolveDb(bindings as unknown as Record<string, unknown>)),
+            : operation(resolveOperatorDb(bindings)),
       }
       container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
     })
