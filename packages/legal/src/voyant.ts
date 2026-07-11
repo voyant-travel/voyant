@@ -1,4 +1,4 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule } from "@voyant-travel/core/project"
 
 const legalAdminRuntime = {
   entry: "@voyant-travel/legal-react/admin",
@@ -112,6 +112,27 @@ export const legalContractDocumentVoyantModule = defineModule({
       runtime: {
         entry: "@voyant-travel/legal/contract-document-routes",
         export: "createContractDocumentHonoModule",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+/** Staged declaration; standard composition does not select this extension yet. */
+export const legalBookingContractVoyantExtension = defineExtension({
+  id: "@voyant-travel/legal#booking-contract-extension",
+  packageName: "@voyant-travel/legal",
+  localId: "legal.booking-contract-extension",
+  subscribers: [
+    {
+      id: "@voyant-travel/legal#subscriber.booking-contract-confirmed",
+      eventType: "booking.confirmed",
+      source: "@voyant-travel/legal/booking-contract-subscriber",
+      runtime: {
+        entry: "./booking-contract-subscriber",
+        export: "legalBookingContractConfirmedSubscriber",
       },
     },
   ],

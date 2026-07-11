@@ -1015,6 +1015,16 @@ runtime references must move with their domain-owning shards, and the Operator
 bridge must be removed in the same activation change to prevent duplicate
 invalidation hints.
 
+Legal now stages its booking-contract auto-generation handler as an executable
+package-owned subscriber descriptor on the unselected
+`@voyant-travel/legal#booking-contract-extension`. The existing Legal module
+bootstrap remains the compatibility activation path until a separate graph
+cutover removes it. That activation must coordinate contract generation with
+Notifications through explicit ordering semantics, such as a durable workflow
+dependency or a follow-up document-generated event. Registration order is not
+an ordering contract: the in-process event bus runs `booking.confirmed`
+subscribers independently and in parallel.
+
 The broader event catalog is beyond the foundational substrate:
 
 - declared `events.emits` catalogs

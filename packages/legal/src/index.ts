@@ -5,6 +5,12 @@ import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
+  LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY,
+  type LegalBookingConfirmedEvent,
+  type LegalBookingContractSubscriberRuntime,
+  legalBookingContractConfirmedSubscriber,
+} from "./contracts/booking-contract-subscriber-runtime.js"
+import {
   buildContractsRouteRuntime,
   CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "./contracts/route-runtime.js"
@@ -13,10 +19,7 @@ import {
   createContractsAdminRoutes,
   createContractsPublicRoutes,
 } from "./contracts/routes.js"
-import {
-  type AutoGenerateContractOptions,
-  autoGenerateContractForBooking,
-} from "./contracts/service-auto-generate.js"
+import type { AutoGenerateContractOptions } from "./contracts/service-auto-generate.js"
 import { legalLinkable } from "./linkables.js"
 import { policiesAdminRoutes, policiesPublicRoutes } from "./policies/routes.js"
 import { legalTermsAdminRoutes, legalTermsPublicRoutes } from "./terms/routes.js"
@@ -76,8 +79,8 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
       // autoConfirmAndDispatch subscriber pattern. Both fire on the same
       // booking.confirmed event; legal's handler just needs to run first
       // so the contract attachment exists before notifications looks it
-      // up via listLegalBookingDocuments. Module-registration order in the
-      // template controls this.
+      // up via listLegalBookingDocuments. The selected-graph cutover must
+      // replace this compatibility path with explicit ordering semantics.
       const auto = options.autoGenerateContractOnConfirmed
       if (auto?.enabled && options.resolveDb) {
         const resolveDb = options.resolveDb
@@ -89,47 +92,30 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
           )
           return
         }
-        const generator = contractsRuntime.documentGenerator
-
-        eventBus.subscribe(
-          "booking.confirmed",
-          async (event: {
-            data: { bookingId: string; bookingNumber: string; actorId: string | null }
-          }) => {
-            try {
-              // The resolver may return either drizzle flavor; the queries
-              // autoGenerateContractForBooking runs are compatible with both
-              // at runtime, so we narrow at this internal boundary.
-              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
-              const result = await autoGenerateContractForBooking(db, event.data, auto, {
-                generator,
-                eventBus,
-                lifecycleHooks: contractsRuntime.lifecycleHooks,
-                bindings: bindingsRecord,
-                bookingPiiService:
-                  contractsRuntime.bookingPiiService ??
-                  (await contractsRuntime.resolveBookingPiiService?.(bindingsRecord)) ??
-                  null,
-                actionLedgerContext: {
-                  userId: event.data.actorId,
-                  actor: event.data.actorId ? "staff" : "system",
-                  callerType: "internal",
-                  isInternalRequest: true,
-                },
-              })
-              if (result.status !== "ok") {
-                console.error(
-                  `[legal] auto-generate contract skipped for booking ${event.data.bookingId}: ${result.status}`,
-                )
-              }
-            } catch (error) {
-              const message = error instanceof Error ? error.message : String(error)
-              console.error(
-                `[legal] auto-generate contract failed for booking ${event.data.bookingId}: ${message}`,
-              )
-            }
-          },
-        )
+        const subscriberRuntime: LegalBookingContractSubscriberRuntime = {
+          options: auto,
+          withDb: async (runtimeBindings, operation) =>
+            operation(
+              // The generator queries support both deployed drizzle flavors;
+              // this legacy resolver narrows at the package-owned boundary.
+              resolveDb(runtimeBindings as Record<string, unknown>) as PostgresJsDatabase,
+            ),
+          documentGenerator: contractsRuntime.documentGenerator,
+          documentStorage: contractsRuntime.documentStorage,
+          bookingPiiService: contractsRuntime.bookingPiiService,
+          resolveBookingPiiService: () =>
+            contractsRuntime.resolveBookingPiiService?.(bindingsRecord),
+          lifecycleHooks: contractsRuntime.lifecycleHooks,
+          resolveVariables: auto.resolveVariables,
+          resolveActionLedgerContext: (event: LegalBookingConfirmedEvent) => ({
+            userId: event.actorId,
+            actor: event.actorId ? "staff" : "system",
+            callerType: "internal",
+            isInternalRequest: true,
+          }),
+        }
+        container.register(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY, subscriberRuntime)
+        legalBookingContractConfirmedSubscriber.register({ bindings, container, eventBus })
       }
     },
   }
@@ -150,6 +136,15 @@ export {
   createContractDocumentHonoModule,
   createContractDocumentRoutes,
 } from "./contract-document-routes.js"
+export {
+  createLegalBookingContractSubscriberDescriptor,
+  LEGAL_BOOKING_CONTRACT_SUBSCRIBER_ID,
+  LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY,
+  type LegalBookingConfirmedEvent,
+  type LegalBookingContractSubscriberDependencies,
+  type LegalBookingContractSubscriberRuntime,
+  legalBookingContractConfirmedSubscriber,
+} from "./contracts/booking-contract-subscriber-runtime.js"
 export {
   type ContractDocumentService,
   type ContractDocumentServiceOptions,

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { legalContractDocumentVoyantModule, legalVoyantModule } from "../../src/voyant.js"
+import {
+  legalBookingContractVoyantExtension,
+  legalContractDocumentVoyantModule,
+  legalVoyantModule,
+} from "../../src/voyant.js"
 
 describe("legal deployment manifest", () => {
   it("owns the selected legal package surfaces", () => {
@@ -55,6 +59,26 @@ describe("legal deployment manifest", () => {
           runtime: {
             entry: "@voyant-travel/legal/contract-document-routes",
             export: "createContractDocumentHonoModule",
+          },
+        },
+      ],
+    })
+  })
+
+  it("stages the inert booking-contract subscriber on its package-owned extension", () => {
+    expect(legalVoyantModule.subscribers).toBeUndefined()
+    expect(legalBookingContractVoyantExtension).toMatchObject({
+      schemaVersion: "voyant.extension.v1",
+      id: "@voyant-travel/legal#booking-contract-extension",
+      packageName: "@voyant-travel/legal",
+      subscribers: [
+        {
+          id: "@voyant-travel/legal#subscriber.booking-contract-confirmed",
+          eventType: "booking.confirmed",
+          source: "@voyant-travel/legal/booking-contract-subscriber",
+          runtime: {
+            entry: "./booking-contract-subscriber",
+            export: "legalBookingContractConfirmedSubscriber",
           },
         },
       ],
