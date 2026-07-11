@@ -118,6 +118,13 @@ importing the bundle and before executing any workflow step. The bootstrap must
 be idempotent and process-local: it may cache clients/registries for the worker
 process, but it must not depend on request context or app middleware.
 
+Workflow execution resolves definitions through an explicit `WorkflowResolver`
+passed to the step handler. Runtime composition snapshots or constructs that
+resolver after loading the selected workflow bundle; step execution must not
+use the process-global authoring registry as its source of truth. The handler's
+global-registry fallback exists only for backward compatibility with direct SDK
+callers and is not the canonical runtime wiring.
+
 The operator starter uses this contract to wire channel-push workflow deps from
 `DATABASE_URL` and the booking-engine adapter registry. Channel-push workflow
 registration is opt-in through

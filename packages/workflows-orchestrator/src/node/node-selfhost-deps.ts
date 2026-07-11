@@ -1,6 +1,6 @@
 import { createServer } from "node:http"
 import { resolve as resolvePath } from "node:path"
-import { handleStepRequest } from "@voyant-travel/workflows/handler"
+import { handleStepRequest, type WorkflowResolver } from "@voyant-travel/workflows/handler"
 import { createInMemoryRateLimiter } from "@voyant-travel/workflows/rate-limit"
 import {
   createInMemoryRunStore,
@@ -94,17 +94,22 @@ export async function createSelfHostDeps(
   await loadEntryFile(entryAbs, { cacheBust: opts.cacheBustEntry })
 
   const _handlerMod = await import("@voyant-travel/workflows/handler")
+  const workflowDefinitions = wfMod.__listRegisteredWorkflows()
+  const workflowsById = new Map(workflowDefinitions.map((workflow) => [workflow.id, workflow]))
+  const workflowResolver: WorkflowResolver = {
+    resolve: (workflowId) => workflowsById.get(workflowId),
+  }
   const rateLimiter = createInMemoryRateLimiter()
   const chunkBus = createChunkBus()
 
   const stepHandler: StepHandler = async (req, stepOpts) =>
-    handleStepRequest(req, { rateLimiter, services: opts.services }, stepOpts)
+    handleStepRequest(req, { workflowResolver, rateLimiter, services: opts.services }, stepOpts)
 
   const wakeupStore = pg ? createPostgresWakeupStore({ db: pg.db }) : createFsWakeupStore()
   const leaseOwner = opts.wakeupLeaseOwner ?? createDefaultWakeupLeaseOwner()
 
   const listWorkflows = () =>
-    wfMod.__listRegisteredWorkflows().map((workflow) => ({
+    workflowDefinitions.map((workflow) => ({
       id: workflow.id,
       description: workflow.config.description,
     }))
@@ -227,7 +232,7 @@ export async function createSelfHostDeps(
     tags,
     triggeredByUserId,
   }) => {
-    const workflow = wfMod.__listRegisteredWorkflows().find((entry) => entry.id === workflowId)
+    const workflow = workflowResolver.resolve(workflowId)
     if (!workflow) {
       return {
         ok: false,
@@ -309,7 +314,7 @@ export async function createSelfHostDeps(
     }
 
     const workflowId = parent?.workflowId ?? requestedWorkflowId!
-    const workflow = wfMod.__listRegisteredWorkflows().find((entry) => entry.id === workflowId)
+    const workflow = workflowResolver.resolve(workflowId)
     if (!workflow) {
       return {
         ok: false,

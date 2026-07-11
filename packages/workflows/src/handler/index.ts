@@ -37,9 +37,23 @@ import type { RateLimiter } from "../rate-limit/index.js"
 import type { RuntimeEnvironment } from "../runtime/ctx.js"
 import type { JournalSlice, StepJournalEntry } from "../runtime/journal.js"
 import type { RunTrigger } from "../types.js"
-import { getWorkflow } from "../workflow.js"
+import { getWorkflow, type WorkflowDefinition } from "../workflow.js"
+
+/** Resolves executable workflow definitions at the step execution boundary. */
+export interface WorkflowResolver {
+  resolve(workflowId: string): WorkflowDefinition | undefined
+}
 
 export interface StepHandlerDeps {
+  /**
+   * Explicit workflow lookup for this runtime. Runtime composition should
+   * always provide this dependency so execution is isolated from the
+   * process-global authoring registry.
+   *
+   * When omitted, the handler falls back to the legacy process-global
+   * registry for backward compatibility with direct SDK callers.
+   */
+  workflowResolver?: WorkflowResolver
   /**
    * Optional. Called before parsing the body. Should throw / reject
    * if the request is not from a trusted orchestrator. In production
@@ -190,7 +204,9 @@ async function runStepInner(
     }
   }
 
-  const def = getWorkflow(reqBody.workflowId)
+  const def = deps.workflowResolver
+    ? deps.workflowResolver.resolve(reqBody.workflowId)
+    : getWorkflow(reqBody.workflowId)
   if (!def) {
     return {
       status: 404,

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { snapshotWorkflowWaitpoint } from "../../protocol/index.js"
 import { emptyJournal } from "../../runtime/journal.js"
 import type { RunTrigger } from "../../types.js"
@@ -342,6 +342,41 @@ describe("createStepHandler (fetch adapter)", () => {
 })
 
 describe("handleStepRequest (transport-free)", () => {
+  it("uses the explicit workflow resolver instead of the process-global registry", async () => {
+    const definition = workflow<void, string>({
+      id: "wf",
+      async run() {
+        return "resolved explicitly"
+      },
+    })
+    __resetRegistry()
+    const resolve = vi.fn(() => definition)
+
+    const out = await handleStepRequest(mkRequest(), {
+      workflowResolver: { resolve },
+    })
+
+    expect(out.status).toBe(200)
+    expect("output" in out.body && out.body.output).toBe("resolved explicitly")
+    expect(resolve).toHaveBeenCalledWith("wf")
+  })
+
+  it("does not fall back to the global registry when an explicit resolver misses", async () => {
+    workflow<void, string>({
+      id: "wf",
+      async run() {
+        return "global"
+      },
+    })
+
+    const out = await handleStepRequest(mkRequest(), {
+      workflowResolver: { resolve: () => undefined },
+    })
+
+    expect(out.status).toBe(404)
+    expect("error" in out.body && out.body.error).toBe("workflow_not_found")
+  })
+
   it("returns body + status without touching Request/Response", async () => {
     workflow<void, string>({
       id: "wf",
