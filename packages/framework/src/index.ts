@@ -91,8 +91,8 @@ export {
   type ProjectArtifactWriteMode,
   type ProjectArtifactWriteResult,
   type ProjectArtifactWriteStatus,
-  type WriteResolvedProjectArtifactsInput,
-  writeResolvedProjectArtifacts,
+  type WriteProjectArtifactsInput,
+  writeProjectArtifacts,
 } from "./project-artifacts.js"
 export {
   type ComposeVoyantGraphRuntimeInput,

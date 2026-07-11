@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 
 import { afterEach, describe, expect, it } from "vitest"
-import { writeResolvedProjectArtifacts } from "./project-artifacts.js"
+import { writeProjectArtifacts } from "./project-artifacts.js"
 import type { FrameworkGeneratedProjectFile, ResolvedProjectArtifacts } from "./project-resolver.js"
 
 const temporaryRoots: string[] = []
@@ -14,7 +14,7 @@ afterEach(async () => {
   )
 })
 
-describe("writeResolvedProjectArtifacts", () => {
+describe("writeProjectArtifacts", () => {
   it("writes nested files in deterministic order and preserves unchanged files", async () => {
     const projectRoot = await temporaryProject()
     const artifacts = projectArtifacts([
@@ -22,9 +22,9 @@ describe("writeResolvedProjectArtifacts", () => {
       { path: "admin/a.generated.ts", contents: "export const a = true\n" },
     ])
 
-    const first = await writeResolvedProjectArtifacts({ projectRoot, artifacts })
+    const first = await writeProjectArtifacts({ projectRoot, artifacts })
     const firstStats = await stat(path.join(projectRoot, ".voyant/admin/a.generated.ts"))
-    const second = await writeResolvedProjectArtifacts({ projectRoot, artifacts })
+    const second = await writeProjectArtifacts({ projectRoot, artifacts })
     const secondStats = await stat(path.join(projectRoot, ".voyant/admin/a.generated.ts"))
 
     expect(first).toEqual({
@@ -58,7 +58,7 @@ describe("writeResolvedProjectArtifacts", () => {
       { path: "runtime/current.ts", contents: "current\n" },
     ])
 
-    const result = await writeResolvedProjectArtifacts({ projectRoot, artifacts, mode: "check" })
+    const result = await writeProjectArtifacts({ projectRoot, artifacts, mode: "check" })
 
     expect(result.ok).toBe(false)
     expect(result.files).toEqual([
@@ -81,7 +81,7 @@ describe("writeResolvedProjectArtifacts", () => {
     const projectRoot = await temporaryProject()
     const artifacts = projectArtifacts([{ path: artifactPath, contents: "unsafe\n" }])
 
-    await expect(writeResolvedProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
+    await expect(writeProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
       /must (?:be relative|not escape)/,
     )
     await expect(stat(path.join(projectRoot, ".voyant"))).rejects.toMatchObject({ code: "ENOENT" })
@@ -94,7 +94,7 @@ describe("writeResolvedProjectArtifacts", () => {
       { path: "Runtime\\Entry.ts", contents: "second\n" },
     ])
 
-    await expect(writeResolvedProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
+    await expect(writeProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
       "Duplicate project artifact paths",
     )
     await expect(stat(path.join(projectRoot, ".voyant"))).rejects.toMatchObject({ code: "ENOENT" })
@@ -104,7 +104,7 @@ describe("writeResolvedProjectArtifacts", () => {
     const projectRoot = await temporaryProject()
     const artifacts = { ...projectArtifacts([]), runtimeEntry: "../runtime.ts" }
 
-    await expect(writeResolvedProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
+    await expect(writeProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
       "artifacts.runtimeEntry",
     )
   })
@@ -119,7 +119,7 @@ describe("writeResolvedProjectArtifacts", () => {
       { path: "runtime/escaped.ts", contents: "escaped\n" },
     ])
 
-    await expect(writeResolvedProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
+    await expect(writeProjectArtifacts({ projectRoot, artifacts })).rejects.toThrow(
       "traverses a symbolic link",
     )
     expect(await readdir(outsideRoot)).toEqual([])

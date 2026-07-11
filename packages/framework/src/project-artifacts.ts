@@ -7,7 +7,7 @@ export type ProjectArtifactWriteMode = "write" | "check"
 
 export type ProjectArtifactWriteStatus = "written" | "unchanged" | "missing" | "stale"
 
-export interface WriteResolvedProjectArtifactsInput {
+export interface WriteProjectArtifactsInput {
   projectRoot: string
   artifacts: ResolvedProjectArtifacts
   mode?: ProjectArtifactWriteMode
@@ -40,8 +40,8 @@ let temporaryFileSequence = 0
  * Artifact paths are treated as portable paths and cannot be absolute, escape the output
  * directory, alias another artifact, or traverse symbolic links.
  */
-export async function writeResolvedProjectArtifacts(
-  input: WriteResolvedProjectArtifactsInput,
+export async function writeProjectArtifacts(
+  input: WriteProjectArtifactsInput,
 ): Promise<ProjectArtifactWriteResult> {
   const mode = input.mode ?? "write"
   if (mode !== "write" && mode !== "check") {
