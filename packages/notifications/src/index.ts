@@ -184,6 +184,13 @@ export {
   updateNotificationSettingsSchema,
   updateNotificationTemplateSchema,
 } from "./validation.js"
+export {
+  type DeliverReminderWorkflowInput,
+  type DeliverReminderWorkflowOutput,
+  NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+  type NotificationReminderWorkflowRuntime,
+  type SendDueRemindersWorkflowInput,
+} from "./workflow-runtime.js"
 
 /**
  * Auto-dispatch policy for the `booking.confirmed` subscriber. Set `enabled:

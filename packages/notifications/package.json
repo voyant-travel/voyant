@@ -13,6 +13,7 @@
     "./service": "./src/service.ts",
     "./tasks": "./src/tasks/index.ts",
     "./workflows": "./src/workflow-entry.ts",
+    "./workflow-runtime": "./src/workflow-runtime.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
     "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts",
@@ -103,6 +104,11 @@
         "types": "./dist/workflow-entry.d.ts",
         "import": "./dist/workflow-entry.js",
         "default": "./dist/workflow-entry.js"
+      },
+      "./workflow-runtime": {
+        "types": "./dist/workflow-runtime.d.ts",
+        "import": "./dist/workflow-runtime.js",
+        "default": "./dist/workflow-runtime.js"
       },
       "./providers/local": {
         "types": "./dist/providers/local.d.ts",

@@ -1091,6 +1091,9 @@
       "@voyant-travel/notifications/types": ["../notifications/dist/types.d.ts"],
       "@voyant-travel/notifications/validation": ["../notifications/dist/validation.d.ts"],
       "@voyant-travel/notifications/voyant": ["../notifications/dist/voyant.d.ts"],
+      "@voyant-travel/notifications/workflow-runtime": [
+        "../notifications/dist/workflow-runtime.d.ts"
+      ],
       "@voyant-travel/notifications/workflows": ["../notifications/dist/workflow-entry.d.ts"],
       "@voyant-travel/octo": ["../octo/dist/index.d.ts"],
       "@voyant-travel/octo/routes": ["../octo/dist/routes.d.ts"],

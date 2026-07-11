@@ -1400,6 +1400,9 @@
         "../../packages/notifications/dist/validation.d.ts"
       ],
       "@voyant-travel/notifications/voyant": ["../../packages/notifications/dist/voyant.d.ts"],
+      "@voyant-travel/notifications/workflow-runtime": [
+        "../../packages/notifications/dist/workflow-runtime.d.ts"
+      ],
       "@voyant-travel/notifications/workflows": [
         "../../packages/notifications/dist/workflow-entry.d.ts"
       ],
