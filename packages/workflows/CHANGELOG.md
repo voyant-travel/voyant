@@ -1,5 +1,14 @@
 # @voyant-travel/workflows
 
+## 0.115.0
+
+### Minor Changes
+
+- 8576451: Remove the legacy core application manifest API so applications use
+  `@voyant-travel/framework` `defineConfig` exclusively. Rename standalone
+  workflow runtime configuration to `defineWorkflowConfig` and
+  `VoyantWorkflowConfig`.
+
 ## 0.114.0
 
 ### Minor Changes
