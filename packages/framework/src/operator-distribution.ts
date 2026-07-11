@@ -51,7 +51,6 @@ export const STANDARD_OPERATOR_DEPLOYMENT: VoyantGraphProjectDeployment = {
     scheduledJobs: "none",
     workflows: "none",
   },
-  migrations: [{ id: "deployment", source: "./migrations" }],
 }
 
 export interface OperatorDistributionDeclaration {

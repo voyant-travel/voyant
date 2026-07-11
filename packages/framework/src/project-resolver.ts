@@ -17,6 +17,7 @@ import {
   buildGraphAdminBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
+  createResolvedGraphRuntime,
 } from "./deployment-artifacts.js"
 import {
   deriveDeploymentRequirements,
@@ -125,6 +126,7 @@ export type ResolvedVoyantProjectGraph = Omit<ResolvedVoyantDeploymentGraph, "de
 
 export interface ResolvedVoyantProject {
   graph: ResolvedVoyantProjectGraph
+  runtime: import("./runtime-lowering.js").VoyantGraphRuntime
   artifacts: ResolvedProjectArtifacts
   conventions: ProjectConventionDiscovery
 }
@@ -267,7 +269,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     },
   ]
 
-  return {
+  const resolved = {
     graph: targetNeutralGraph,
     conventions,
     artifacts: {
@@ -277,7 +279,12 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,
     },
-  }
+  } as ResolvedVoyantProject
+  Object.defineProperty(resolved, "runtime", {
+    enumerable: false,
+    value: createResolvedGraphRuntime({ graph: targetNeutralGraph, runtimeEntryOverrides }),
+  })
+  return resolved
 }
 
 function buildProductBomExpansionArtifact(graph: ResolvedVoyantProjectGraph): string {

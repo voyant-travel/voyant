@@ -148,7 +148,7 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
-import type { FrameworkProviders } from "./composition-lazy.js"
+import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 import {
   resolveManagedCustomExtensions,
@@ -168,8 +168,15 @@ import {
   type VoyantProjectProviders,
   validateVoyantProject,
 } from "./profile.js"
-import { composeVoyantGraphRuntimeFacetModules } from "./runtime-composition.js"
-import { registerVoyantGraphTools, type VoyantGraphRuntime } from "./runtime-lowering.js"
+import {
+  composeVoyantGraphRuntime,
+  composeVoyantGraphRuntimeFacetModules,
+} from "./runtime-composition.js"
+import {
+  registerVoyantGraphTools,
+  type VoyantGraphRuntime,
+  type VoyantGraphRuntimeUnitLoader,
+} from "./runtime-lowering.js"
 import {
   type ResolvedVoyantGraphRuntimeValues,
   resolveVoyantGraphRuntimeValues,
@@ -246,7 +253,10 @@ type ManagedProfileAppModules = Record<string, ModuleFactory<FrameworkProviders>
 type ManagedProfileAppExtensions = Record<string, ExtensionFactory<FrameworkProviders>>
 
 export interface ManagedProfileRuntimeOptions {
-  profileSnapshotPath: string
+  /** Existing compatibility input for callers that persist a profile snapshot. */
+  profileSnapshotPath?: string
+  /** Admitted in-memory project manifest for graph-native Node hosts. */
+  project?: VoyantProjectManifest
   /**
    * Resolved deployment mode and providers supplied by a checked graph artifact.
    * Omit this only for legacy snapshot-only callers.
@@ -267,7 +277,7 @@ export interface ManagedProfileRuntimeOptions {
   app?: Partial<
     Omit<
       CreateVoyantAppConfig<ManagedProfileRuntimeEnv, FrameworkProviders>,
-      "providers" | "exclude"
+      "providers" | "exclude" | "standard"
     >
   >
   /**
@@ -348,7 +358,7 @@ export async function loadManagedProfileRuntime(
   options: ManagedProfileRuntimeOptions,
 ): Promise<ManagedProfileRuntime> {
   const project = applyManagedRuntimeDeployment(
-    await loadManagedProfileSnapshot(options.profileSnapshotPath),
+    await resolveManagedRuntimeProject(options),
     options.deployment,
   )
   const env = createManagedProfileNodeEnv(options.env ?? process.env)
@@ -383,8 +393,22 @@ export async function loadManagedProfileRuntime(
     toPluginEnvRecord(env),
     customSourceOptions,
   )
-  const graphFacetModules = options.graphRuntime
-    ? await composeVoyantGraphRuntimeFacetModules(options.graphRuntime, options.runtimePorts)
+  const providers = createManagedProfileProviders(options.providers, options.graphRuntime)
+  const graphOwnedRuntime = options.graphRuntime
+    ? runtimeWithoutLegacyRegistryUnits(options.graphRuntime)
+    : undefined
+  const graphComposition = graphOwnedRuntime
+    ? await composeVoyantGraphRuntime({
+        runtime: graphOwnedRuntime,
+        capabilities: providers,
+        ports: options.runtimePorts,
+      })
+    : undefined
+  const legacyFacetRuntime = options.graphRuntime
+    ? runtimeWithOnlyLegacyRegistryUnits(options.graphRuntime)
+    : undefined
+  const graphFacetModules = legacyFacetRuntime
+    ? await composeVoyantGraphRuntimeFacetModules(legacyFacetRuntime, options.runtimePorts)
     : []
   const actionLedgerCapabilities = options.graphRuntime
     ? lowerVoyantGraphActionsToActionLedgerRegistry(options.graphRuntime)
@@ -397,6 +421,14 @@ export async function loadManagedProfileRuntime(
     toPluginEnvRecord(env),
     customSourceOptions,
   )
+  addSelectedLegacyFactories(customModules, customExtensions, options.graphRuntime)
+  for (const [index, module] of (graphComposition?.modules ?? []).entries()) {
+    customModules[`selected-graph-module:${index}:${module.module.name}`] = () => module
+  }
+  for (const [index, extension] of (graphComposition?.extensions ?? []).entries()) {
+    customExtensions[`selected-graph-extension:${index}:${extension.extension.name}`] = () =>
+      extension
+  }
   assertManagedProfileRuntimeSupport({
     project,
     requirements,
@@ -410,8 +442,24 @@ export async function loadManagedProfileRuntime(
     project,
     env,
     auth,
-    providers: options.providers,
-    app: options.app,
+    providers,
+    app: graphComposition
+      ? {
+          ...options.app,
+          publicPaths: [
+            ...(options.app?.publicPaths ?? []),
+            ...graphComposition.routePosture.publicPaths,
+          ],
+          dbTransactionalPaths: [
+            ...(options.app?.dbTransactionalPaths ?? []),
+            ...graphComposition.routePosture.transactionalPaths,
+          ],
+          accessResources: [
+            ...(options.app?.accessResources ?? []),
+            ...graphComposition.accessResources,
+          ],
+        }
+      : options.app,
     plugins,
     modules: customModules,
     extensions: customExtensions,
@@ -436,6 +484,68 @@ export async function loadManagedProfileRuntime(
         ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
         ...serverOptions,
       }),
+  }
+}
+
+async function resolveManagedRuntimeProject(
+  options: Pick<ManagedProfileRuntimeOptions, "profileSnapshotPath" | "project">,
+): Promise<VoyantProjectManifest> {
+  if (options.project) {
+    const validation = validateVoyantProject(options.project)
+    if (!validation.ok) {
+      throw new Error(
+        `Invalid managed runtime project:\n${validation.issues
+          .map((issue) => `- ${issue.path || "<root>"}: ${issue.message}`)
+          .join("\n")}`,
+      )
+    }
+    return options.project
+  }
+  if (options.profileSnapshotPath) return loadManagedProfileSnapshot(options.profileSnapshotPath)
+  throw new Error("Managed runtime requires an admitted project manifest or profile snapshot path.")
+}
+
+function runtimeWithoutLegacyRegistryUnits(runtime: VoyantGraphRuntime): VoyantGraphRuntime {
+  return filterGraphRuntime(runtime, (unit, kind) => !hasLegacyRuntimeFactory(unit.id, kind))
+}
+
+function runtimeWithOnlyLegacyRegistryUnits(runtime: VoyantGraphRuntime): VoyantGraphRuntime {
+  return filterGraphRuntime(runtime, (unit, kind) => hasLegacyRuntimeFactory(unit.id, kind))
+}
+
+function filterGraphRuntime(
+  runtime: VoyantGraphRuntime,
+  keep: (unit: VoyantGraphRuntimeUnitLoader, kind: "module" | "extension" | "plugin") => boolean,
+): VoyantGraphRuntime {
+  return {
+    ...runtime,
+    modules: runtime.modules.filter((unit) => keep(unit, "module")),
+    extensions: runtime.extensions.filter((unit) => keep(unit, "extension")),
+    plugins: runtime.plugins.filter((unit) => keep(unit, "plugin")),
+  }
+}
+
+function hasLegacyRuntimeFactory(id: string, kind: "module" | "extension" | "plugin"): boolean {
+  const legacyId = id.replace("#", "/")
+  if (kind === "module") return frameworkComposition.modules[legacyId] !== undefined
+  return frameworkComposition.extensions?.[legacyId] !== undefined
+}
+
+function addSelectedLegacyFactories(
+  modules: ManagedProfileAppModules,
+  extensions: ManagedProfileAppExtensions,
+  runtime: VoyantGraphRuntime | undefined,
+): void {
+  if (!runtime) return
+  for (const unit of runtime.modules) {
+    const id = unit.id.replace("#", "/")
+    const factory = frameworkComposition.modules[id]
+    if (factory) modules[`selected-legacy-module:${unit.id}`] = factory
+  }
+  for (const unit of [...runtime.extensions, ...runtime.plugins]) {
+    const id = unit.id.replace("#", "/")
+    const factory = frameworkComposition.extensions?.[id]
+    if (factory) extensions[`selected-legacy-extension:${unit.id}`] = factory
   }
 }
 
@@ -511,7 +621,7 @@ export function createManagedProfileApp(options: {
   app?: Partial<
     Omit<
       CreateVoyantAppConfig<ManagedProfileRuntimeEnv, FrameworkProviders>,
-      "providers" | "exclude"
+      "providers" | "exclude" | "standard"
     >
   >
   /**
@@ -580,6 +690,7 @@ export function createManagedProfileApp(options: {
     >["plugins"],
     modules: mergedModules,
     extensions: mergedExtensions,
+    standard: false,
     basePath: options.app?.basePath ?? "/api",
     auth,
     exclude: bridge.exclude,

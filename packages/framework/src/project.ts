@@ -12,6 +12,22 @@ import {
   STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
 } from "./operator-distribution.js"
 
+/** Resolve the standard BOM to an executable graph for Node-side framework tooling. */
+export async function resolveStandardNodeGraphRuntime(): Promise<
+  import("./runtime-lowering.js").VoyantGraphRuntime
+> {
+  const { dirname } = await import("node:path")
+  const { fileURLToPath } = await import("node:url")
+  const packageJson = fileURLToPath(new URL("../package.json", import.meta.url))
+  const resolver = await import("./project-resolver.js")
+  const resolved = await resolver.resolveProject({
+    project: defineConfig(),
+    projectRoot: dirname(packageJson),
+    configPath: packageJson,
+  })
+  return resolved.runtime
+}
+
 export * from "@voyant-travel/core/project"
 export type {
   NodeMigrationExecutionReport,

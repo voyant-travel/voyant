@@ -18,6 +18,11 @@ import {
   PROJECT_WORKFLOWS_GENERATED_PATH,
 } from "./project-workflow-job-codegen.js"
 
+const WORKFLOW_AUTHORING_IMPORTS = new Set([
+  "@voyant-travel/framework/project-runtime",
+  "@voyant-travel/workflows",
+])
+
 export {
   generateProjectJobsSource,
   generateProjectWorkflowsSource,
@@ -276,7 +281,7 @@ function analyzeWorkflowSource(
       severity: "error",
       sourcePaths: [sourcePath],
       exportName: "default",
-      message: `Workflow file "${sourcePath}" default export must be a direct defineWorkflow(...) call imported from "@voyant-travel/workflows".`,
+      message: `Workflow file "${sourcePath}" default export must be a direct defineWorkflow(...) call imported from "@voyant-travel/framework/project-runtime" or "@voyant-travel/workflows".`,
     })
   } else {
     const config = workflowConfigExpression(exports.defaultExpression!, sourceFile)
@@ -419,7 +424,7 @@ function isDirectDefineWorkflowExport(
     if (
       !ts.isImportDeclaration(statement) ||
       !ts.isStringLiteralLike(statement.moduleSpecifier) ||
-      statement.moduleSpecifier.text !== "@voyant-travel/workflows" ||
+      !WORKFLOW_AUTHORING_IMPORTS.has(statement.moduleSpecifier.text) ||
       !statement.importClause ||
       statement.importClause.isTypeOnly ||
       !statement.importClause.namedBindings ||

@@ -85,6 +85,11 @@ export interface CreateVoyantAppConfig<
   /** Deployment-local extension factories, appended after the standard set. */
   extensions?: Record<string, ExtensionFactory<TProviders>>
   /**
+   * Mount the legacy framework-owned standard registry. Graph-native hosts set
+   * this to false and pass their admitted, selected factories explicitly.
+   */
+  standard?: boolean
+  /**
    * REMOVE (ADR-0007): standard module *and/or extension* specifiers to drop from
    * the framework set entirely — for a deployment that simply doesn't run them
    * (e.g. a non-flights operator excluding `@voyant-travel/flights`). Filters the
@@ -119,26 +124,29 @@ export function createVoyantApp<
   TBindings extends VoyantBindings,
   TProviders extends FrameworkProviders,
 >(config: CreateVoyantAppConfig<TBindings, TProviders>) {
-  const { providers, modules = {}, extensions = {}, exclude, ...rest } = config
+  const { providers, modules = {}, extensions = {}, exclude, standard = true, ...rest } = config
 
   // Auto-exclude optional standard families whose injected loader wasn't provided
   // (e.g. flights on a deployment that doesn't sell them) — merged with the
   // explicit `exclude`, then cascaded to owned extensions by subsetStandardManifest.
   const resolvedExclude = [...(exclude ?? []), ...optionalFamiliesToExclude(providers)]
 
-  const { modules: selectedStandardModules, extensions: selectedStandardExtensions } =
-    subsetStandardManifest({
-      exclude: resolvedExclude,
-    })
-  // This legacy front door can only compose registry-owned units. Package-owned
-  // graph factories are selected by the deployment graph and deliberately no
-  // longer have duplicate entries in `frameworkComposition`.
-  const standardModules = selectedStandardModules.filter(
-    (specifier) => frameworkComposition.modules[specifier] !== undefined,
-  )
-  const standardExtensions = selectedStandardExtensions.filter(
-    (specifier) => frameworkComposition.extensions?.[specifier] !== undefined,
-  )
+  const selected = standard
+    ? subsetStandardManifest({ exclude: resolvedExclude })
+    : { modules: [], extensions: [] }
+  const missingFactories = [
+    ...selected.modules.filter(
+      (specifier) => frameworkComposition.modules[specifier] === undefined,
+    ),
+    ...selected.extensions.filter(
+      (specifier) => frameworkComposition.extensions?.[specifier] === undefined,
+    ),
+  ]
+  if (missingFactories.length > 0) {
+    throw new Error(
+      `createVoyantApp cannot compose graph-owned standard units: ${missingFactories.join(", ")}. Use the selected deployment graph runtime instead of the legacy standard registry.`,
+    )
+  }
 
   const registry: CompositionRegistry<TProviders> = {
     // The framework factories read only the `FrameworkProviders` slice; a
@@ -158,8 +166,8 @@ export function createVoyantApp<
   return createApp<TBindings, TProviders>({
     ...rest,
     manifest: {
-      modules: [...standardModules, ...Object.keys(modules)],
-      extensions: [...standardExtensions, ...Object.keys(extensions)],
+      modules: [...selected.modules, ...Object.keys(modules)],
+      extensions: [...selected.extensions, ...Object.keys(extensions)],
     },
     registry,
     capabilities: providers,

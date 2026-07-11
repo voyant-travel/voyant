@@ -6,7 +6,6 @@ import { createContainer, createEventBus } from "@voyant-travel/core"
 import { listInvoicesTool } from "@voyant-travel/finance/tools"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
-import { frameworkComposition } from "./composition-lazy.js"
 import {
   createManagedCloudAuthApp,
   createManagedProfileApp,
@@ -148,16 +147,6 @@ describe("managed profile runtime entry", () => {
       ],
       plugins: [],
     })
-    const providers = createManagedProfileProviders({
-      withDb: vi.fn(async (_bindings, operation) => operation({} as never)),
-    })
-    const storefront = frameworkComposition.modules["@voyant-travel/storefront"]?.({
-      capabilities: providers,
-      options: {},
-    })
-    if (!storefront || Array.isArray(storefront)) {
-      throw new Error("expected the managed Storefront module")
-    }
     const graphModules = await composeVoyantGraphRuntimeFacetModules(selectedRuntime)
     const graphModule = graphModules.find(
       (module) => module.module.name === "storefront.graph-runtime",
@@ -167,7 +156,6 @@ describe("managed profile runtime entry", () => {
     const subscribe = vi.spyOn(eventBus, "subscribe")
     const context = { bindings: {}, container, eventBus }
 
-    await storefront.module.bootstrap?.(context)
     await graphModule?.module.bootstrap?.(context)
 
     expect(graphModule).toBeDefined()

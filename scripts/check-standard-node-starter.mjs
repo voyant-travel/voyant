@@ -23,7 +23,7 @@ if (!config) {
   if (!deployment) {
     violations.push("authored config must explicitly select the Node deployment target")
   } else {
-    rejectProperties(deployment, ["mode", "migrations"], "deployment differences")
+    rejectProperties(deployment, ["mode"], "deployment differences")
     const target = stringProperty(deployment, "target")
     if (target !== "node") violations.push('deployment.target must be "node"')
     const providers = objectProperty(deployment, "providers")

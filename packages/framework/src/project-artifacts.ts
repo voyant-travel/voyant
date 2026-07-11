@@ -90,7 +90,11 @@ function validateArtifacts(artifacts: ResolvedProjectArtifacts): ValidatedArtifa
   }
 
   validatePortablePath(artifacts.runtimeEntry, "artifacts.runtimeEntry")
-  validatePortablePath(artifacts.workflowRuntimeEntry, "artifacts.workflowRuntimeEntry")
+  // Released CLI versions written before workflowRuntimeEntry became a named
+  // contract preserve the generated file but omit this redundant pointer.
+  if (artifacts.workflowRuntimeEntry !== undefined) {
+    validatePortablePath(artifacts.workflowRuntimeEntry, "artifacts.workflowRuntimeEntry")
+  }
   validatePortablePath(artifacts.migrationRunner, "artifacts.migrationRunner")
 
   const seen = new Map<string, string>()

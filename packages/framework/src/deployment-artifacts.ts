@@ -7,13 +7,12 @@ import {
 } from "./deployment-graph.js"
 import { lowerGraphRuntimeUnits } from "./graph-runtime-generation.js"
 import { PROVIDER_ROLES, type VoyantProjectDeploymentMode } from "./profile.js"
+import { createVoyantGraphRuntime, type VoyantGraphRuntime } from "./runtime-lowering.js"
 
 export {
   type CreateVoyantGraphRuntimeInput,
-  createVoyantGraphRuntime,
   registerVoyantGraphTools,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,
-  type VoyantGraphRuntime,
   type VoyantGraphRuntimeActionDefinition,
   type VoyantGraphRuntimeConfigDefinition,
   type VoyantGraphRuntimeConfigLoader,
@@ -59,6 +58,7 @@ export {
   type VoyantGraphRuntimeValueErrorCode,
   type VoyantGraphRuntimeValueIssue,
 } from "./runtime-values.js"
+export { createVoyantGraphRuntime, type VoyantGraphRuntime }
 
 export const VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION = "voyant.deployment-artifacts.v1" as const
 export const VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node" as const
@@ -116,6 +116,47 @@ export interface BuildGraphRuntimeModuleInput {
   command?: string
   /** Build-time import lowering for admitted project-relative packages. */
   runtimeEntryOverrides?: Readonly<Record<string, string>>
+}
+
+/** Materialize an admitted graph for Node-side tooling without generated source evaluation. */
+export function createResolvedGraphRuntime(
+  input: BuildGraphRuntimeModuleInput,
+): VoyantGraphRuntime {
+  assertGraphRuntimeLowerable(input.graph)
+  const modules = lowerGraphRuntimeUnits(
+    input.graph.modules,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
+  const extensions = lowerGraphRuntimeUnits(
+    input.graph.extensions,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
+  const plugins = lowerGraphRuntimeUnits(
+    input.graph.plugins,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
+  const entrySpecifiers = [
+    ...new Set(
+      [...modules, ...extensions, ...plugins].flatMap((unit) =>
+        unit.references.map((reference) => reference.importEntry),
+      ),
+    ),
+  ]
+  return createVoyantGraphRuntime({
+    graphHash: input.graph.contentHash,
+    accessCatalog: input.graph.accessCatalog,
+    providerSelections: input.graph.deployment.providers,
+    entries: Object.fromEntries(
+      entrySpecifiers.map((specifier) => [specifier, () => import(specifier)]),
+    ),
+    modules,
+    extensions,
+    plugins,
+    webhookPlan: input.graph.webhookPlan,
+  })
 }
 
 export interface BuildProjectRuntimeModuleInput extends BuildGraphRuntimeModuleInput {}

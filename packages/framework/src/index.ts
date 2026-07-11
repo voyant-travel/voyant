@@ -99,6 +99,7 @@ export {
 export {
   type DefineVoyantConfigInput,
   defineConfig,
+  resolveStandardNodeGraphRuntime,
   VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project.js"
 export {
@@ -113,6 +114,7 @@ export {
   type ComposeVoyantGraphRuntimeInput,
   composeVoyantGraphRuntime,
   composeVoyantGraphRuntimeFacetModules,
+  createVoyantGraphRuntimePortStubs,
   resolveVoyantGraphRouteMountPath,
   type VoyantGraphRuntimeBinding,
   type VoyantGraphRuntimeBindingContext,

@@ -37,6 +37,92 @@ export type VoyantGraphRuntimeBindings<TCapabilities> = Readonly<
 
 export type VoyantGraphRuntimePorts = Readonly<Record<string, unknown>>
 
+/** Conforming, fail-on-use port shapes for graph inspection and boot probes. */
+export function createVoyantGraphRuntimePortStubs(
+  runtime: VoyantGraphRuntime,
+): VoyantGraphRuntimePorts {
+  const ids = new Set(
+    [...runtime.modules, ...runtime.extensions, ...runtime.plugins].flatMap(
+      (unit) => unit.requiredRuntimePorts,
+    ),
+  )
+  return Object.fromEntries([...ids].map((id) => [id, runtimePortStub(id)]))
+}
+
+function runtimePortStub(id: string): unknown {
+  if (id === "trips.routes-runtime" || id === "commerce.checkout-api-options") return () => ({})
+  const unavailable = () => {
+    throw new Error(`Runtime port ${id} requires project-specific provider configuration.`)
+  }
+  const unavailableAsync = async () => unavailable()
+  const registrySurface = { resolveRegistry: unavailableAsync }
+  return {
+    options: {},
+    booking: {},
+    publicRoutes: { resolveProductSnapshot: unavailableAsync },
+    admin: registrySurface,
+    public: registrySurface,
+    email: { subject: "Verification code" },
+    bootstrap: async () => {},
+    register: () => {},
+    registerWorkflowService: () => {},
+    withDb: unavailableAsync,
+    createRuntime: () => runtimeServiceStub(id),
+    createService: () => runtimeServiceStub(id),
+    resolveRuntime: unavailableAsync,
+    resolveRegistry: unavailableAsync,
+    getProductContent: unavailableAsync,
+    listAvailabilitySlots: unavailableAsync,
+    getOwnedProductById: unavailableAsync,
+    resolveConnectClient: unavailableAsync,
+    fetchIndexFields: unavailableAsync,
+    resolveDynamicHotelIds: unavailableAsync,
+    resolveAirportLabels: unavailableAsync,
+    resolveAdapter: unavailable,
+    startCardPayment: unavailableAsync,
+    resolveStorage: unavailable,
+    signVideoUploadTicket: unavailableAsync,
+    checkBookingDrift: unavailableAsync,
+    checkFinanceDrift: unavailableAsync,
+    checkProductDrift: unavailableAsync,
+    resolveParticipantPersonById: unavailableAsync,
+    resolveDelegatePersonById: unavailableAsync,
+    resolveDb: unavailable,
+    resolveProviders: () => [],
+    resolveReminderWorkflowRuntime: () => runtimeServiceStub(id),
+    resolveDocumentDownloadUrl: unavailableAsync,
+    resolveDocumentStorage: unavailable,
+    resolveDocumentGenerator: () => undefined,
+    resolveBookingPiiService: async () => null,
+    generateContract: unavailableAsync,
+    previewContract: unavailableAsync,
+    guessMimeType: () => "application/octet-stream",
+    resolvePublicProposalBaseUrl: () => "http://localhost:8080",
+    reserveTripDeps: () => runtimeServiceStub(id),
+    startCheckoutDeps: () => runtimeServiceStub(id),
+    cancelTripComponentsDeps: () => runtimeServiceStub(id),
+    resolveOperatorProfile: unavailableAsync,
+    resolveBookingTaxSettings: unavailableAsync,
+    updateBookingTaxSettings: unavailableAsync,
+    getContract: unavailableAsync,
+    listSignatures: unavailableAsync,
+    sendContract: unavailableAsync,
+    signContract: unavailableAsync,
+    generate: unavailableAsync,
+  }
+}
+
+function runtimeServiceStub(id: string): Record<string, (...args: unknown[]) => Promise<never>> {
+  return new Proxy(
+    {},
+    {
+      get: () => async () => {
+        throw new Error(`Runtime port ${id} requires project-specific provider configuration.`)
+      },
+    },
+  )
+}
+
 export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
   runtime: VoyantGraphRuntime
   capabilities: TCapabilities

@@ -1,85 +1,88 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { dirname, join, resolve } from "node:path"
+import { dirname, join, relative, resolve } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..")
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 
-test("operator starter archive includes bookable catalog seed inventory and standalone flights demo API package", () => {
+test("operator release archive contains only the minimal authored project", () => {
+  const fixture = packageAndExtract()
+  try {
+    const files = listFiles(fixture.extractDir)
+    assert.deepEqual(files, [
+      ".env.example",
+      "package.json",
+      "src/scripts/seed.ts",
+      "voyant.config.ts",
+    ])
+
+    for (const directory of [
+      "src/api/admin",
+      "src/api/public",
+      "src/admin",
+      "src/modules",
+      "src/workflows",
+      "src/jobs",
+      "src/subscribers",
+      "src/links",
+    ]) {
+      assert.equal(existsSync(join(fixture.extractDir, directory)), true, directory)
+    }
+
+    const config = readFileSync(join(fixture.extractDir, "voyant.config.ts"), "utf8")
+    assert.doesNotMatch(config, /\b(?:modules|extensions|plugins|access)\s*:/)
+    assert.match(config, /target:\s*"node"/)
+    assert.match(config, /database:\s*"postgres"/)
+
+    const packageJson = JSON.parse(readFileSync(join(fixture.extractDir, "package.json"), "utf8"))
+    assert.equal(packageJson.scripts.build, "voyant build")
+    assert.equal(packageJson.scripts.start, "voyant-operator start")
+    assert.equal(typeof packageJson.dependencies["@voyant-travel/framework"], "string")
+    assert.equal(typeof packageJson.dependencies["@voyant-travel/operator-runtime"], "string")
+    const dependencySpecs = Object.values({
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    })
+    assert.equal(
+      dependencySpecs.some((specifier) => /^(?:workspace|file|link):/.test(specifier)),
+      false,
+    )
+  } finally {
+    rmSync(fixture.tempDir, { recursive: true, force: true })
+  }
+})
+
+function packageAndExtract(extraArgs = []) {
   const tempDir = mkdtempSync(join(tmpdir(), "voyant-package-starters-test-"))
   const outDir = join(tempDir, "out")
   const extractDir = join(tempDir, "extract")
+  execFileSync(
+    process.execPath,
+    ["scripts/package-starters.mjs", "--version", "0.0.0-test", "--out-dir", outDir, ...extraArgs],
+    { cwd: repoRoot, stdio: "pipe" },
+  )
+  mkdirSync(extractDir, { recursive: true })
+  execFileSync(
+    "tar",
+    ["-xzf", join(outDir, "voyant-starter-operator-0.0.0-test.tar.gz"), "-C", extractDir],
+    { stdio: "pipe" },
+  )
+  return { tempDir, outDir, extractDir }
+}
 
-  try {
-    execFileSync(
-      "node",
-      ["scripts/package-starters.mjs", "--version", "0.0.0-test", "--out-dir", outDir],
-      { cwd: repoRoot, stdio: "pipe" },
-    )
-    mkdirSync(extractDir, { recursive: true })
-    execFileSync("tar", [
-      "-xzf",
-      join(outDir, "voyant-starter-operator-0.0.0-test.tar.gz"),
-      "-C",
-      extractDir,
-    ])
+function listFiles(root) {
+  return walk(root)
+    .filter((path) => !path.endsWith("/.DS_Store"))
+    .map((path) => relative(root, path))
+    .sort()
+}
 
-    assert.equal(existsSync(join(extractDir, "apps", "flights-demo-api", "package.json")), true)
-    assert.equal(existsSync(join(extractDir, "apps", "flights-demo-api", ".env.example")), true)
-    assert.equal(
-      existsSync(join(extractDir, "apps", "flights-demo-api", "docker-compose.yml")),
-      true,
-    )
-    assert.equal(existsSync(join(extractDir, "scripts", "seed-catalog-verticals.ts")), true)
-    assert.equal(existsSync(join(extractDir, "pnpm-workspace.yaml")), false)
-
-    const seedScript = readFileSync(join(extractDir, "scripts", "seed.ts"), "utf8")
-    assert.match(seedScript, /seedCruises/)
-    assert.match(seedScript, /seedAccommodationRooms/)
-
-    const verticalSeedScript = readFileSync(
-      join(extractDir, "scripts", "seed-catalog-verticals.ts"),
-      "utf8",
-    )
-    assert.match(verticalSeedScript, /cruiseSailings/)
-    assert.match(verticalSeedScript, /cruiseCabinCategories/)
-    assert.match(verticalSeedScript, /cruisePrices/)
-    assert.match(verticalSeedScript, /ratePlans/)
-    assert.match(verticalSeedScript, /ratePlanDailyRates/)
-    assert.match(verticalSeedScript, /roomTypeDailyInventory/)
-
-    const demoPackage = JSON.parse(
-      readFileSync(join(extractDir, "apps", "flights-demo-api", "package.json"), "utf8"),
-    )
-    assert.equal(demoPackage.name, "flights-demo-api")
-    assert.equal(demoPackage.scripts.dev, "tsx watch src/index.ts")
-    assert.equal(demoPackage.scripts["db:migrate"], "tsx scripts/migrate.ts")
-    const dependencySpecs = Object.values({
-      ...demoPackage.dependencies,
-      ...demoPackage.devDependencies,
-    })
-    assert.equal(
-      dependencySpecs.some((spec) => spec === "catalog:"),
-      false,
-    )
-    assert.equal(
-      dependencySpecs.some((spec) => spec.startsWith("workspace:")),
-      false,
-    )
-    assert.equal(
-      demoPackage.devDependencies?.["@voyant-travel/voyant-typescript-config"],
-      undefined,
-    )
-
-    const tsconfig = JSON.parse(
-      readFileSync(join(extractDir, "apps", "flights-demo-api", "tsconfig.json"), "utf8"),
-    )
-    assert.equal(tsconfig.extends, undefined)
-    assert.equal(tsconfig.compilerOptions.strict, true)
-  } finally {
-    rmSync(tempDir, { recursive: true, force: true })
-  }
-})
+function walk(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name)
+    return entry.isDirectory() ? walk(path) : [path]
+  })
+}
