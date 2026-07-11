@@ -4,9 +4,9 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { listInvoicesTool } from "@voyant-travel/finance/tools"
+import { createStorefrontVoyantRuntime, storefrontRuntimePort } from "@voyant-travel/storefront"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
-import { frameworkComposition } from "./composition-lazy.js"
 import {
   createManagedCloudAuthApp,
   createManagedProfileApp,
@@ -16,7 +16,7 @@ import {
   type ManagedProfileRuntimeEnv,
 } from "./managed-runtime.js"
 import { defineVoyantProject, type VoyantProjectProviders } from "./profile.js"
-import { composeVoyantGraphRuntimeFacetModules } from "./runtime-composition.js"
+import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 const localProviders = {
@@ -104,7 +104,9 @@ async function mountManagedPaymentLinkApp(
   providers: ReturnType<typeof createManagedProfileProviders>,
   db: unknown,
 ) {
-  const routes = await providers.loadPaymentLinkRoutes()
+  const loadPaymentLinkRoutes = providers.loadPaymentLinkRoutes
+  if (!loadPaymentLinkRoutes) throw new Error("Expected managed payment-link routes")
+  const routes = await loadPaymentLinkRoutes()
   const app = new Hono()
   app.use("*", async (c, next) => {
     c.set("db" as never, db as never)
@@ -120,6 +122,7 @@ describe("managed profile runtime entry", () => {
     const selectedRuntime = createVoyantGraphRuntime({
       graphHash: "sha256:managed-storefront-subscriber",
       entries: {
+        "@voyant-travel/storefront": async () => ({ createStorefrontVoyantRuntime }),
         "@voyant-travel/storefront/booking-bootstrap-subscriber": () =>
           import("@voyant-travel/storefront/booking-bootstrap-subscriber"),
       },
@@ -130,7 +133,20 @@ describe("managed profile runtime entry", () => {
           kind: "module",
           packageName: "@voyant-travel/storefront",
           order: 0,
+          runtimePorts: [storefrontRuntimePort.id],
+          runtimeReferenceId: "storefront-runtime",
           references: [
+            {
+              id: "storefront-runtime",
+              unitId: "@voyant-travel/storefront",
+              facet: "runtime",
+              entityId: "@voyant-travel/storefront",
+              runtime: {
+                entry: "@voyant-travel/storefront",
+                export: "createStorefrontVoyantRuntime",
+              },
+              importEntry: "@voyant-travel/storefront",
+            },
             {
               id: "storefront-booking-bootstrap-subscriber",
               unitId: "@voyant-travel/storefront",
@@ -148,18 +164,18 @@ describe("managed profile runtime entry", () => {
       ],
       plugins: [],
     })
-    const providers = createManagedProfileProviders({
-      withDb: vi.fn(async (_bindings, operation) => operation({} as never)),
+    const graphComposition = await composeVoyantGraphRuntime({
+      runtime: selectedRuntime,
+      capabilities: {},
+      ports: {
+        [storefrontRuntimePort.id]: {
+          bookingIntents: {
+            withDb: vi.fn(async (_bindings, operation) => operation({} as never)),
+          },
+        },
+      },
     })
-    const storefront = frameworkComposition.modules["@voyant-travel/storefront"]?.({
-      capabilities: providers,
-      options: {},
-    })
-    if (!storefront || Array.isArray(storefront)) {
-      throw new Error("expected the managed Storefront module")
-    }
-    const graphModules = await composeVoyantGraphRuntimeFacetModules(selectedRuntime)
-    const graphModule = graphModules.find(
+    const graphModule = graphComposition.modules.find(
       (module) => module.module.name === "storefront.graph-runtime",
     )
     const container = createContainer()
@@ -167,8 +183,7 @@ describe("managed profile runtime entry", () => {
     const subscribe = vi.spyOn(eventBus, "subscribe")
     const context = { bindings: {}, container, eventBus }
 
-    await storefront.module.bootstrap?.(context)
-    await graphModule?.module.bootstrap?.(context)
+    for (const module of graphComposition.modules) await module.module.bootstrap?.(context)
 
     expect(graphModule).toBeDefined()
     expect(
@@ -181,7 +196,9 @@ describe("managed profile runtime entry", () => {
       modules: [],
       plugins: [],
     })
-    expect(await composeVoyantGraphRuntimeFacetModules(deselectedRuntime)).toEqual([])
+    await expect(
+      composeVoyantGraphRuntime({ runtime: deselectedRuntime, capabilities: {} }),
+    ).resolves.toMatchObject({ modules: [] })
   }, 15_000)
 
   it("loads a local source-free profile snapshot without starter-local glue", async () => {
@@ -822,7 +839,9 @@ describe("managed profile runtime entry", () => {
   })
 
   it("wires package-owned payment-link routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadPaymentLinkRoutes()
+    const loadPaymentLinkRoutes = createManagedProfileProviders().loadPaymentLinkRoutes
+    if (!loadPaymentLinkRoutes) throw new Error("Expected managed payment-link routes")
+    const app = await loadPaymentLinkRoutes()
     const response = await app.request(
       "/v1/public/payment-link-config",
       {},
@@ -918,7 +937,9 @@ describe("managed profile runtime entry", () => {
   it("wires package-owned contract document routes in the default managed providers", async () => {
     const env = createManagedProfileNodeEnv({ DATABASE_URL: MANAGED_PROFILE_TEST_DATABASE_URL })
     await env.DOCUMENTS_BUCKET?.put("contracts/test.pdf", new TextEncoder().encode("%PDF-1.4"))
-    const app = await createManagedProfileProviders().loadContractDocumentRoutes()
+    const loadContractDocumentRoutes = createManagedProfileProviders().loadContractDocumentRoutes
+    if (!loadContractDocumentRoutes) throw new Error("Expected managed contract document routes")
+    const app = await loadContractDocumentRoutes()
 
     const response = await app.request("/v1/admin/documents/files/contracts/test.pdf", {}, env)
 
@@ -947,7 +968,11 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned booking maintenance routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadBookingMaintenanceRoutes()
+    const loadBookingMaintenanceRoutes =
+      createManagedProfileProviders().loadBookingMaintenanceRoutes
+    if (!loadBookingMaintenanceRoutes)
+      throw new Error("Expected managed booking maintenance routes")
+    const app = await loadBookingMaintenanceRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
@@ -1060,7 +1085,9 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned catalog offers routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadCatalogOffersRoutes()
+    const loadCatalogOffersRoutes = createManagedProfileProviders().loadCatalogOffersRoutes
+    if (!loadCatalogOffersRoutes) throw new Error("Expected managed catalog offers routes")
+    const app = await loadCatalogOffersRoutes()
     const response = await app.request("/departure-airports", {
       method: "POST",
       body: JSON.stringify({ destination: { countryCode: "RO" } }),
@@ -1074,14 +1101,18 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned catalog booking routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadCatalogBookingRoutes()
+    const loadCatalogBookingRoutes = createManagedProfileProviders().loadCatalogBookingRoutes
+    if (!loadCatalogBookingRoutes) throw new Error("Expected managed catalog booking routes")
+    const app = await loadCatalogBookingRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
   }, 10000)
 
   it("wires package-owned catalog content routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadCruisesContentRoutes()
+    const loadCruisesContentRoutes = createManagedProfileProviders().loadCruisesContentRoutes
+    if (!loadCruisesContentRoutes) throw new Error("Expected managed cruises content routes")
+    const app = await loadCruisesContentRoutes()
     const response = await app.request("/v1/admin/cruises/!!!invalid/content")
 
     expect(app.fetch).toEqual(expect.any(Function))
@@ -1101,7 +1132,10 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned quote-version snapshot routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadQuoteVersionSnapshotRoutes()
+    const loadQuoteVersionSnapshotRoutes =
+      createManagedProfileProviders().loadQuoteVersionSnapshotRoutes
+    if (!loadQuoteVersionSnapshotRoutes) throw new Error("Expected managed quote snapshot routes")
+    const app = await loadQuoteVersionSnapshotRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
@@ -1109,9 +1143,14 @@ describe("managed profile runtime entry", () => {
 
   it("wires package-owned proposal routes in the default managed providers", async () => {
     const providers = createManagedProfileProviders()
+    const loadProposalAdminRoutes = providers.loadProposalAdminRoutes
+    const loadProposalPublicRoutes = providers.loadProposalPublicRoutes
+    if (!loadProposalAdminRoutes || !loadProposalPublicRoutes) {
+      throw new Error("Expected managed proposal routes")
+    }
     const [adminApp, publicApp] = await Promise.all([
-      providers.loadProposalAdminRoutes(),
-      providers.loadProposalPublicRoutes(),
+      loadProposalAdminRoutes(),
+      loadProposalPublicRoutes(),
     ])
 
     expect(adminApp.fetch).toEqual(expect.any(Function))
@@ -1122,9 +1161,14 @@ describe("managed profile runtime entry", () => {
 
   it("wires package-owned booking schedule routes in the default managed providers", async () => {
     const providers = createManagedProfileProviders()
+    const loadBookingScheduleAdminRoutes = providers.loadBookingScheduleAdminRoutes
+    const loadPaymentPolicyPublicRoutes = providers.loadPaymentPolicyPublicRoutes
+    if (!loadBookingScheduleAdminRoutes || !loadPaymentPolicyPublicRoutes) {
+      throw new Error("Expected managed booking schedule routes")
+    }
     const [adminApp, publicApp] = await Promise.all([
-      providers.loadBookingScheduleAdminRoutes(),
-      providers.loadPaymentPolicyPublicRoutes(),
+      loadBookingScheduleAdminRoutes(),
+      loadPaymentPolicyPublicRoutes(),
     ])
 
     expect(adminApp.fetch).toEqual(expect.any(Function))
@@ -1134,7 +1178,10 @@ describe("managed profile runtime entry", () => {
   }, 10000)
 
   it("wires package-owned action-ledger health routes in the default managed providers", async () => {
-    const app = await createManagedProfileProviders().loadActionLedgerHealthRoutes()
+    const loadActionLedgerHealthRoutes =
+      createManagedProfileProviders().loadActionLedgerHealthRoutes
+    if (!loadActionLedgerHealthRoutes) throw new Error("Expected managed action-ledger routes")
+    const app = await loadActionLedgerHealthRoutes()
 
     expect(app.fetch).toEqual(expect.any(Function))
     expect(app.routes.length).toBeGreaterThan(0)
