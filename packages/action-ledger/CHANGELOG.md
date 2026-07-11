@@ -1,5 +1,17 @@
 # @voyant-travel/action-ledger
 
+## 0.106.1
+
+### Patch Changes
+
+- e4e6621: Model package-owned Hono extensions as first-class deployment graph units while keeping externally distributed integrations in the plugin lane.
+- Updated dependencies [e4e6621]
+- Updated dependencies [953e418]
+- Updated dependencies [2153e48]
+  - @voyant-travel/core@0.115.0
+  - @voyant-travel/hono@0.123.0
+  - @voyant-travel/db@0.111.1
+
 ## 0.106.0
 
 ### Minor Changes
