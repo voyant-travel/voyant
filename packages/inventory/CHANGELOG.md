@@ -1,5 +1,14 @@
 # @voyant-travel/inventory
 
+## 0.8.2
+
+### Patch Changes
+
+- Updated dependencies [d41872a]
+  - @voyant-travel/workflows@0.114.0
+  - @voyant-travel/commerce@0.33.2
+  - @voyant-travel/hono@0.123.1
+
 ## 0.8.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @voyant-travel/workflows
 
+## 0.114.0
+
+### Minor Changes
+
+- d41872a: Add an explicit workflow resolver dependency to step handlers and runtime
+  drivers, and use an entry-scoped workflow registry for self-host execution.
+
 ## 0.113.0
 
 ### Minor Changes
