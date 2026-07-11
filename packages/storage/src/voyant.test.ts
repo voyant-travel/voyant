@@ -28,11 +28,15 @@ describe("storage deployment manifest", () => {
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
     expect(storageVoyantModule.api).toEqual(
-      ["uploads", "uploads/video", "media"].map((mount) =>
+      [
+        ["uploads", "storage-uploads"],
+        ["uploads/video", "storage-video-upload-ticket"],
+        ["media", "storage-media"],
+      ].map(([mount, document]) =>
         expect.objectContaining({
           surface: "admin",
           mount,
-          ...(mount === "media" ? { openapi: { document: "storage-media" } } : {}),
+          openapi: { document },
           runtime: {
             entry: "@voyant-travel/storage/routes",
             export: "createStorageVoyantRuntime",

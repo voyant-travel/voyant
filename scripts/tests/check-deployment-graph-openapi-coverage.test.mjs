@@ -358,6 +358,52 @@ describe("check-deployment-graph-openapi-coverage", () => {
     assert.match(result.stdout, /1 covered graph API bundles/)
   })
 
+  it("covers overlapping opted-in routes only by their exact operation API ids", async () => {
+    const uploadsApiId = "@voyant-travel/storage#api.admin.uploads"
+    const videoApiId = "@voyant-travel/storage#api.admin.video-upload-ticket"
+    const root = await createFixture({
+      "graph.json": graph([
+        {
+          id: "@voyant-travel/storage",
+          localId: "storage",
+          packageName: "@voyant-travel/storage",
+          api: [
+            {
+              id: uploadsApiId,
+              surface: "admin",
+              mount: "uploads",
+              openapi: { document: "storage-uploads" },
+            },
+            {
+              id: videoApiId,
+              surface: "admin",
+              mount: "uploads/video",
+              openapi: { document: "storage-video-upload-ticket" },
+            },
+          ],
+        },
+      ]),
+      "openapi/admin/storage.json": openapi({
+        "/v1/admin/uploads": {
+          post: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": uploadsApiId,
+          },
+        },
+        "/v1/admin/uploads/video": {
+          post: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": videoApiId,
+          },
+        },
+      }),
+    })
+
+    const result = await runChecker(root)
+
+    assert.match(result.stdout, /2 covered graph API bundles/)
+  })
+
   it("rejects allowlist exceptions for opted-in bundles", async () => {
     const root = await createFixture({
       "graph.json": graph([

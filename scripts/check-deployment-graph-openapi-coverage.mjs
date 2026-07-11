@@ -38,36 +38,12 @@ const DEFAULT_ALLOWLIST = new Map([
     "the accommodations content extension public routes do not yet expose committed OpenAPI operations",
   ],
   [
-    "@voyant-travel/public-document-delivery#api.public",
-    "public document delivery routes are currently documented through the operator contract-document surface",
-  ],
-  [
     "@voyant-travel/flights#api",
     "flights declares a graph API bundle before committed operator OpenAPI paths are emitted for it",
   ],
   [
-    "@voyant-travel/realtime#api.admin",
-    "realtime admin routes are not yet emitted as a per-module OpenAPI document",
-  ],
-  [
-    "@voyant-travel/realtime#api.public",
-    "realtime public routes are not yet emitted as a storefront OpenAPI document",
-  ],
-  [
     "@voyant-travel/quotes#proposal-extension.api.public",
     "the quote proposal extension public routes do not yet expose committed OpenAPI operations",
-  ],
-  [
-    "@voyant-travel/storage#api.admin.media",
-    "storage media routes do not yet expose a package OpenAPI registry",
-  ],
-  [
-    "@voyant-travel/storage#api.admin.uploads",
-    "storage upload routes do not yet expose a package OpenAPI registry",
-  ],
-  [
-    "@voyant-travel/storage#api.admin.video-upload-ticket",
-    "storage video upload ticket routes do not yet expose a package OpenAPI registry",
   ],
   [
     "@voyant-travel/plugin-smartbill#api.admin",

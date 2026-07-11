@@ -15,6 +15,7 @@ export const storageVoyantModule = defineModule({
       id: "@voyant-travel/storage#api.admin.uploads",
       surface: "admin",
       mount: "uploads",
+      openapi: { document: "storage-uploads" },
       runtime: {
         entry: "@voyant-travel/storage/routes",
         export: "createStorageVoyantRuntime",
@@ -24,6 +25,7 @@ export const storageVoyantModule = defineModule({
       id: "@voyant-travel/storage#api.admin.video-upload-ticket",
       surface: "admin",
       mount: "uploads/video",
+      openapi: { document: "storage-video-upload-ticket" },
       runtime: {
         entry: "@voyant-travel/storage/routes",
         export: "createStorageVoyantRuntime",
