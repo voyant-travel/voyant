@@ -72,6 +72,7 @@ function bundleStepScript(outDir: string): string {
   return `
 ;(async () => {
 const bundle = await import(${JSON.stringify(bundleUrl)})
+const { getWorkflow } = await import("@voyant-travel/workflows")
 const { handleStepRequest } = await import("@voyant-travel/workflows/handler")
 const { PROTOCOL_VERSION } = await import("@voyant-travel/workflows/protocol")
 
@@ -130,6 +131,8 @@ const result = await handleStepRequest({
     tags: [],
     startedAt: Date.now(),
   },
+}, {
+  workflowResolver: { resolve: (workflowId) => getWorkflow(workflowId) },
 })
 
 console.log(JSON.stringify({ result, selectCalls }))

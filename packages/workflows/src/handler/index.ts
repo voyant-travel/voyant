@@ -50,8 +50,9 @@ export interface StepHandlerDeps {
    * always provide this dependency so execution is isolated from the
    * process-global authoring registry.
    *
-   * When omitted, the handler falls back to the legacy process-global
-   * registry for backward compatibility with direct SDK callers.
+   * Omitting this dependency is deprecated. The handler falls back to the
+   * legacy process-global registry only for backward compatibility with
+   * direct external SDK callers.
    */
   workflowResolver?: WorkflowResolver
   /**

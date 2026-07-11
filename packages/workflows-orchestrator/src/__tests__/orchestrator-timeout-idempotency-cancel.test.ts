@@ -2,7 +2,7 @@ import { workflow } from "@voyant-travel/workflows"
 import { handleStepRequest } from "@voyant-travel/workflows/handler"
 import { describe, expect, it } from "vitest"
 import { cancel, createInMemoryRunStore, resume, type StepHandler, trigger } from "../index.js"
-import { handler, tenantMeta } from "./orchestrator-test-support.js"
+import { handler, tenantMeta, workflowResolver } from "./orchestrator-test-support.js"
 
 describe("workflow-level timeout", () => {
   it("fails a run that exceeds its compute-time budget across invocations", async () => {
@@ -23,7 +23,7 @@ describe("workflow-level timeout", () => {
     const advancingHandler: StepHandler = async (req, opts) => {
       // Each invocation costs 400ms of compute time.
       clock += 400
-      return await handleStepRequest(req, {}, opts)
+      return await handleStepRequest(req, { workflowResolver }, opts)
     }
     const deps = {
       store,
@@ -70,7 +70,7 @@ describe("workflow-level timeout", () => {
     let clock = 0
     const cheapHandler: StepHandler = async (req, opts) => {
       clock += 50 // each invocation costs 50ms
-      return await handleStepRequest(req, {}, opts)
+      return await handleStepRequest(req, { workflowResolver }, opts)
     }
     const store = createInMemoryRunStore()
     const deps = { store, handler: cheapHandler, now: () => clock }
@@ -167,7 +167,7 @@ describe("cancel during drive", () => {
     const store = createInMemoryRunStore()
     let cancelFired = false
     const wrappedHandler: StepHandler = async (req) => {
-      const out = await handleStepRequest(req)
+      const out = await handleStepRequest(req, { workflowResolver })
       // After the FIRST invocation completes, fire a cancel from
       // outside the drive loop. The second invocation must not run.
       if (!cancelFired && req.runId === "run_parent_cancel") {
@@ -255,7 +255,7 @@ describe("cancel during drive", () => {
       // in the store (trigger saves up-front).
       const found = await store.get(req.runId)
       expect(found).toBeDefined()
-      return handleStepRequest(req)
+      return handleStepRequest(req, { workflowResolver })
     }
     await trigger(
       {

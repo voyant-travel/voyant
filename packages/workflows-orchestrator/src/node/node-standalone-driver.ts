@@ -25,6 +25,7 @@ import type {
   RunSummary,
   TriggerOptions,
 } from "@voyant-travel/workflows"
+import { getWorkflow } from "@voyant-travel/workflows"
 import type {
   DriverFactory,
   DriverFactoryDeps,
@@ -35,7 +36,11 @@ import type {
   WorkflowDriver,
 } from "@voyant-travel/workflows/driver"
 import { deriveStableEventId } from "@voyant-travel/workflows/events"
-import { handleStepRequest, type WorkflowStepRequest } from "@voyant-travel/workflows/handler"
+import {
+  handleStepRequest,
+  type WorkflowResolver,
+  type WorkflowStepRequest,
+} from "@voyant-travel/workflows/handler"
 import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 import type { drizzle } from "drizzle-orm/node-postgres"
 import {
@@ -74,6 +79,13 @@ export interface StandaloneDriverOptions {
   tenantMeta?: RunRecord["tenantMeta"]
   /** Injectable clock; defaults to `Date.now`. */
   now?: () => number
+  /**
+   * Executable workflow lookup for this driver instance.
+   *
+   * Omitting this dependency is deprecated and falls back to the process-global
+   * authoring registry for backward compatibility with existing consumers.
+   */
+  workflowResolver?: WorkflowResolver
   /**
    * Step handler override. Defaults to in-process `handleStepRequest`
    * with the framework-supplied `services` container plumbed through
@@ -125,6 +137,10 @@ const DEFAULT_TENANT_META: RunRecord["tenantMeta"] = {
 }
 
 const DEFAULT_MANIFEST_KEEP = 3
+
+const legacyWorkflowResolver: WorkflowResolver = {
+  resolve: getWorkflow,
+}
 
 function serializeWorkflowManifest(manifest: WorkflowManifest): Record<string, unknown> {
   return { ...manifest }
@@ -238,6 +254,7 @@ export function createStandaloneDriver(opts: StandaloneDriverOptions): DriverFac
     const defaultEnv = opts.defaultEnvironment ?? "development"
     const keep = opts.manifestVersionsToKeep ?? DEFAULT_MANIFEST_KEEP
     const leaseOwner = opts.wakeupLeaseOwner ?? `selfhost-standalone-${randomToken()}`
+    const workflowResolver = opts.workflowResolver ?? legacyWorkflowResolver
 
     // Wire the framework-supplied service container through to step bodies.
     // The handler closes over `deps.services` so every step invocation
@@ -245,7 +262,7 @@ export function createStandaloneDriver(opts: StandaloneDriverOptions): DriverFac
     const handler: StepHandler =
       opts.handler ??
       (async (req: WorkflowStepRequest, stepOpts) =>
-        handleStepRequest(req, { services: deps.services }, stepOpts))
+        handleStepRequest(req, { workflowResolver, services: deps.services }, stepOpts))
 
     // Persistent wakeup manager — polls `voyant_wakeups` for runs
     // parked on DATETIME waitpoints and resumes them via the orchestrator's
