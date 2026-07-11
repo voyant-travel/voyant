@@ -173,6 +173,11 @@ describe("Notifications subscriber runtime descriptors", () => {
       confirmAndDispatchBooking,
     }).register(harness)
 
+    await harness.eventBus.emit("booking.confirmed", {
+      bookingId: "book_early",
+      bookingNumber: "BK-EARLY",
+      actorId: null,
+    })
     await harness.eventBus.emit("booking.contract.generated", {
       bookingId: "book_suppressed",
       bookingNumber: "BK-0",
