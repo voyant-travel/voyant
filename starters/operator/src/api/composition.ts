@@ -35,6 +35,10 @@ import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
+import {
+  TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
+  type TripsPaymentSubscriberRuntime,
+} from "@voyant-travel/trips/payment-subscribers"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
@@ -596,14 +600,26 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
     })
     return withModuleWorkflowService(configured, registerNotificationsWorkflowService)
   },
-  "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) =>
-    singleRuntimeFactory<typeof import("@voyant-travel/trips").createTripsHonoModule>(
+  "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) => {
+    const configured = singleRuntimeFactory<
+      typeof import("@voyant-travel/trips").createTripsHonoModule
+    >(
       unit.id,
       runtimeExports,
     )({
       routesOptions: capabilities.createTripsRoutesOptions,
       publicRoutes: true,
-    }),
+    })
+    return withModuleRuntimeService(configured, (container, bindings) => {
+      const runtime: TripsPaymentSubscriberRuntime = {
+        withDb: (operation) =>
+          capabilities.withDb
+            ? capabilities.withDb(bindings, operation)
+            : operation(capabilities.resolveDb(bindings as unknown as Record<string, unknown>)),
+      }
+      container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
+    })
+  },
   "@voyant-travel/distribution#channel-push-extension": ({
     capabilities,
     runtimeExports,
@@ -749,6 +765,13 @@ type RuntimeServiceRegistration = (
 ) => Promise<void> | void
 
 function withModuleWorkflowService<T extends HonoModule>(
+  configured: T,
+  register: RuntimeServiceRegistration,
+): T {
+  return withModuleRuntimeService(configured, register)
+}
+
+function withModuleRuntimeService<T extends HonoModule>(
   configured: T,
   register: RuntimeServiceRegistration,
 ): T {

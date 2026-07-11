@@ -3,6 +3,7 @@ import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
+import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -22,9 +23,9 @@ import {
 import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
-async function composeOperatorGraph() {
+async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   return composeVoyantGraphRuntime({
-    runtime: createGeneratedGraphRuntime(),
+    runtime,
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
     ports: buildOperatorRuntimePorts(),
@@ -161,6 +162,52 @@ describe("operator graph runtime composition", () => {
       "invoice.payment.recorded",
       "invoice.proforma.issued",
     ])
+  })
+
+  it("graph-gates the Trips payment subscriber and its runtime service", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const trips = runtime.modules.find((unit) => unit.id === "@voyant-travel/trips")
+    const composed = await composeOperatorGraph(runtime)
+    const tripsModule = composed.modules.find((module) => module.module.name === "trips")
+    const tripsSubscriberModule = composed.modules.find(
+      (module) => module.module.name === "trips.graph-runtime",
+    )
+    const container = createContainer()
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+
+    expect(
+      trips?.references
+        .filter((reference) => reference.facet === "subscribers.runtime")
+        .map((reference) => reference.entityId),
+    ).toEqual(["@voyant-travel/trips#subscriber.payment-completed"])
+    expect(tripsSubscriberModule?.module.bootstrap).toBeTypeOf("function")
+
+    await tripsModule?.module.bootstrap?.({
+      bindings: {} as AppBindings,
+      container,
+      eventBus,
+    })
+    expect(container.has(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY)).toBe(true)
+    await tripsSubscriberModule?.module.bootstrap?.({
+      bindings: {} as AppBindings,
+      container,
+      eventBus,
+    })
+    expect(subscribe.mock.calls.filter(([event]) => event === "payment.completed")).toHaveLength(1)
+
+    const deselected = {
+      ...runtime,
+      modules: runtime.modules.filter((unit) => unit.id !== "@voyant-travel/trips"),
+    }
+    const deselectedComposition = await composeOperatorGraph(deselected)
+
+    expect(deselectedComposition.modules.some((module) => module.module.name === "trips")).toBe(
+      false,
+    )
+    expect(
+      deselectedComposition.modules.some((module) => module.module.name === "trips.graph-runtime"),
+    ).toBe(false)
   })
 
   it("selects package-owned bridge units and discovered project modules directly", () => {

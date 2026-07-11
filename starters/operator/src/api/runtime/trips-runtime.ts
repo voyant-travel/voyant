@@ -1,16 +1,12 @@
 import { submitBookingReservationPlan } from "@voyant-travel/bookings/reservation-plans"
-import type { PaymentCompletedEvent } from "@voyant-travel/finance"
-import type { HonoBundle } from "@voyant-travel/hono/plugin"
-import {
-  type CancelTripComponentsDeps,
-  type PriceTripDeps,
-  type ReserveTripDeps,
-  type StartCheckoutDeps,
-  type TripsRoutesOptions,
-  tripsService,
+import type {
+  CancelTripComponentsDeps,
+  PriceTripDeps,
+  ReserveTripDeps,
+  StartCheckoutDeps,
+  TripsRoutesOptions,
 } from "@voyant-travel/trips"
 import type { Context } from "hono"
-import { withDbFromEnv } from "../lib/db"
 import {
   cancelComponent as cancelCatalogComponent,
   previewComponentCancellation as previewCatalogComponentCancellation,
@@ -34,34 +30,6 @@ export function createOperatorTripsRoutesOptions(): TripsRoutesOptions {
     startCheckoutDeps: (c) => createStartCheckoutDeps(c),
     cancelTripComponentsDeps: (c) => createCancelTripComponentsDeps(c),
   }
-}
-
-export const tripsPaymentBundle: HonoBundle = {
-  name: "trips-payment-completion",
-  bootstrap: ({ bindings, eventBus }) => {
-    const env = bindings as AppBindings
-    eventBus.subscribe<PaymentCompletedEvent>("payment.completed", async ({ data }) => {
-      if (data.targetType !== "other" || !data.targetId?.startsWith("trip_")) return
-
-      try {
-        await withDbFromEnv(env, async (db) => {
-          await tripsService.completeTripCheckout(db, {
-            envelopeId: data.targetId ?? undefined,
-            paymentSessionId: data.paymentSessionId,
-            payload: {
-              amountCents: data.amountCents,
-              currency: data.currency,
-              provider: data.provider,
-              targetType: data.targetType,
-              targetId: data.targetId,
-            },
-          })
-        })
-      } catch (err) {
-        console.error("[trips] payment completion failed", err)
-      }
-    })
-  },
 }
 
 function createPriceTripDeps(c: Context): PriceTripDeps {

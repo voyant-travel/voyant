@@ -766,7 +766,19 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         }),
       )
       return {
-        module: { name: "trips", requiresTransactionalDb: true },
+        module: {
+          name: "trips",
+          requiresTransactionalDb: true,
+          bootstrap: async ({ container, bindings }) => {
+            const { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } = await import(
+              "@voyant-travel/trips/payment-subscribers"
+            )
+            container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, {
+              withDb: <T>(operation: (db: AnyDrizzleDb) => Promise<T>) =>
+                runWithFrameworkDb(capabilities, bindings, operation),
+            })
+          },
+        },
         lazyAdminRoutes: unit.route((m) => m.adminRoutes),
         lazyPublicRoutes: unit.route((m) => m.publicRoutes),
       }

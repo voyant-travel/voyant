@@ -228,4 +228,28 @@ describe("frameworkComposition policy injection", () => {
     await expect(runtime.withDb({}, async (value) => value)).resolves.toBe(db)
     expect(withDb).toHaveBeenCalledOnce()
   })
+
+  it("registers the Trips subscriber database runtime in standard graph hosts", async () => {
+    const db = { source: "managed" }
+    const withDb = vi.fn(async (_bindings, operation) => operation(db as never))
+    const trips = frameworkComposition.modules["@voyant-travel/trips"]?.(
+      compositionContext({
+        createTripsRoutesOptions: async () => ({}),
+        resolveDb: () => db as never,
+        withDb,
+      }),
+    )
+    if (Array.isArray(trips)) throw new Error("expected a single trips module")
+    const container = createContainer()
+    await trips?.module.bootstrap?.({ container, bindings: { host: "managed" } } as never)
+    const { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } = await import(
+      "@voyant-travel/trips/payment-subscribers"
+    )
+    const runtime = container.resolve<{
+      withDb<T>(operation: (value: unknown) => Promise<T>): Promise<T>
+    }>(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY)
+
+    await expect(runtime.withDb(async (value) => value)).resolves.toBe(db)
+    expect(withDb).toHaveBeenCalledOnce()
+  })
 })

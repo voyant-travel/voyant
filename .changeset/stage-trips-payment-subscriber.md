@@ -1,5 +1,6 @@
 ---
 "@voyant-travel/trips": patch
+"@voyant-travel/framework": patch
 ---
 
-Stage the package-owned Trips payment completion subscriber contract and published runtime descriptor without activating graph execution.
+Move Trips payment completion to its package-owned graph subscriber runtime and publish the descriptor subpath.

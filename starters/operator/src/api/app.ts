@@ -25,7 +25,6 @@ import {
   generateContractPdfForBooking,
   resolveOperatorDb,
 } from "./runtime/operator-runtime-adapter"
-import { tripsPaymentBundle } from "./runtime/trips-runtime"
 import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
 import { createCatalogCheckoutBundle } from "./subscribers/catalog-checkout-finalize-runtime"
 
@@ -111,7 +110,6 @@ export const app = mountApp<AppBindings>({
       generateContractPdf: ({ env, db, eventBus, bookingId, force }) =>
         generateContractPdfForBooking(env, db, eventBus, bookingId, { force }),
     }),
-    tripsPaymentBundle,
   ],
   auth: {
     handler: () => ({
