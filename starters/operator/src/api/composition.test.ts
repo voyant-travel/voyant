@@ -67,6 +67,7 @@ describe("operator graph runtime composition", () => {
     expect([...moduleIds].filter((id) => id.startsWith("npm/operator#")).sort()).toEqual([
       "npm/operator#invitations",
       "npm/operator#mcp",
+      "npm/operator#project-subscribers-links",
       "npm/operator#team",
     ])
   })
