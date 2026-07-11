@@ -198,8 +198,13 @@ describe("async bootstrap route mode", () => {
     }
   }
 
-  function buildApp(options?: { withBookingIntents?: boolean }) {
+  function buildApp(options?: { withBookingIntents?: boolean; withActiveSubscriber?: boolean }) {
     const emit = vi.fn(async () => {})
+    const container = createContainer()
+    const eventBus = { emit, subscribe: vi.fn() }
+    if (options?.withActiveSubscriber !== false) {
+      storefrontBookingBootstrapSubscriber.register({ bindings: {}, container, eventBus } as never)
+    }
     const routes = createStorefrontPublicRoutes(
       options?.withBookingIntents === false
         ? undefined
@@ -212,7 +217,8 @@ describe("async bootstrap route mode", () => {
     const app = new Hono()
     app.use("*", async (c, next) => {
       c.set("db" as never, idempotencyDbStub() as never)
-      c.set("eventBus" as never, { emit } as never)
+      c.set("container" as never, container)
+      c.set("eventBus" as never, eventBus as never)
       await next()
     })
     app.route("/", routes)
@@ -313,6 +319,28 @@ describe("async bootstrap route mode", () => {
     // Synchronous 201 with the real session — never an unprocessable 202.
     expect(res.status).toBe(201)
     expect(bootstrapBookingSession).toHaveBeenCalledOnce()
+    expect(writeIntents.enqueueWriteIntent).not.toHaveBeenCalled()
+    expect(emit).not.toHaveBeenCalled()
+  })
+
+  it("falls back to sync when database wiring exists without the graph subscriber", async () => {
+    bootstrapBookingSession.mockResolvedValue({
+      status: "ok",
+      bootstrap: { session: { sessionId: "bs_direct" } },
+    })
+    const { app, emit } = buildApp({ withActiveSubscriber: false })
+
+    const res = await app.request(
+      "/bookings/sessions/bootstrap?async=1",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(VALID_INPUT),
+      },
+      ENV,
+    )
+
+    expect(res.status).toBe(201)
     expect(writeIntents.enqueueWriteIntent).not.toHaveBeenCalled()
     expect(emit).not.toHaveBeenCalled()
   })

@@ -10,6 +10,7 @@ import type { StorefrontServiceOptions } from "./service.js"
 export const STOREFRONT_BOOKING_BOOTSTRAP_SUBSCRIBER_ID =
   "@voyant-travel/storefront#subscriber.booking-bootstrap"
 export const STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY = "storefront.booking-bootstrap.runtime"
+const STOREFRONT_BOOKING_BOOTSTRAP_ACTIVE_KEY = "storefront.booking-bootstrap.subscriber-active"
 
 export interface StorefrontBookingBootstrapRuntime {
   withDb<T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>
@@ -21,6 +22,12 @@ export function registerStorefrontBookingBootstrapRuntime(
   runtime: StorefrontBookingBootstrapRuntime,
 ): void {
   container.register(STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY, runtime)
+}
+
+export function isStorefrontBookingBootstrapSubscriberActive(
+  container: ModuleContainer | undefined,
+): boolean {
+  return container?.has(STOREFRONT_BOOKING_BOOTSTRAP_ACTIVE_KEY) === true
 }
 
 function resolveStorefrontBookingBootstrapRuntime(
@@ -52,5 +59,6 @@ export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor =
         })(envelope)
       })
     })
+    container.register(STOREFRONT_BOOKING_BOOTSTRAP_ACTIVE_KEY, true)
   },
 }

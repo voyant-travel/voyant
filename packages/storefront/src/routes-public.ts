@@ -16,6 +16,7 @@ import {
 } from "@voyant-travel/hono"
 import type { Context } from "hono"
 
+import { isStorefrontBookingBootstrapSubscriberActive } from "./booking-bootstrap-subscriber-runtime.js"
 import {
   BOOKING_BOOTSTRAP_INTENT_EVENT,
   BOOKING_BOOTSTRAP_INTENT_KIND,
@@ -697,11 +698,12 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         // `createBookingBootstrapIntentHandler` (booking-intents.ts),
         // selected and registered from the package deployment manifest.
         // Async mode is honored ONLY when the deployment supplied the
-        // subscriber runtime (`bookingIntents` option) — otherwise a 202'd
-        // intent would never be settled and the caller would watch it
-        // stale-fail. Unwired deployments silently get the sync path.
+        // database runtime and the selected subscriber are both active.
+        // Otherwise a 202'd intent would never settle. Direct package
+        // consumers that do not lower the graph silently use the sync path.
         const wantsAsync =
           Boolean(options?.bookingIntents) &&
+          isStorefrontBookingBootstrapSubscriberActive(c.var.container) &&
           (c.req.query("async") === "1" ||
             (c.req.header("prefer") ?? "").toLowerCase().includes("respond-async"))
         if (wantsAsync) {
