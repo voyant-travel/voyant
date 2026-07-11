@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: framework; project resolution, package admission, generated runtime, and migration fixtures share one project harness.
 import { createHash } from "node:crypto"
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -200,6 +201,41 @@ describe("framework project resolver", () => {
         source: { kind: "deployment", path: "./migrations" },
       },
     ])
+  })
+
+  it("removes deselected package migrations from the Node runtime plan", async () => {
+    const root = projectRoot()
+    for (const packageName of ["@acme/foundation", "@acme/feature"]) {
+      writePackage(root, {
+        name: packageName,
+        manifest: `export default ${JSON.stringify(moduleManifest(packageName))}\n`,
+      })
+    }
+    const deployment = {
+      migrations: [{ id: "deployment-links", source: "./migrations" }],
+    } as const
+
+    const complete = await resolve(
+      root,
+      defineProject({ modules: ["@acme/foundation", "@acme/feature"], deployment }),
+    )
+    const subset = await resolve(root, defineProject({ modules: ["@acme/foundation"], deployment }))
+
+    expect(complete.artifacts.migrationPlan.migrations.map((migration) => migration.id)).toEqual([
+      "@acme/feature#migrations",
+      "@acme/foundation#migrations",
+      "deployment-links",
+    ])
+    expect(subset.artifacts.migrationPlan.migrations.map((migration) => migration.id)).toEqual([
+      "@acme/foundation#migrations",
+      "deployment-links",
+    ])
+    const runner = subset.artifacts.files.find(
+      (file) => file.path === subset.artifacts.migrationRunner,
+    )
+    expect(runner?.contents).toContain(
+      `export const migrationPlan = ${JSON.stringify(subset.artifacts.migrationPlan, null, 2)}`,
+    )
   })
 
   it("topologically orders package migrations from voyant.requiresSchemas", async () => {

@@ -39,7 +39,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       expect.arrayContaining(["@voyant-travel/db", "@voyant-travel/bookings"]),
     )
     expect(summary.migrationSources.map((source) => source.schema)).toContain(
-      "../../packages/db/src/schema/index.ts",
+      "@voyant-travel/db/schema",
     )
     expect(summary.providers).toMatchObject({
       database: "postgres",
