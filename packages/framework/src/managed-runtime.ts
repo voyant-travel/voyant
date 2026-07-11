@@ -614,6 +614,7 @@ export function createManagedProfileProviders(
     createInvoiceExchangeRateResolver: createInvoiceExchangeRateResolver,
     createInvoiceSettlementPollers: () => ({}),
     createTripsRoutesOptions: async () => ({}),
+    withDb: async (bindings, operation) => operation(resolveDb(bindings)),
     storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
     resolvePaymentStarters: () => ({}),
     resolveCardPaymentStarter: () => null,
@@ -629,6 +630,7 @@ export function createManagedProfileProviders(
     loadPaymentLinkRoutes: async () =>
       createManagedPaymentLinkRoutes(providers.resolveCardPaymentStarter),
     loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
+    createBookingScheduleRoutesOptions: createManagedBookingScheduleRoutesOptions,
     loadBookingScheduleAdminRoutes: createManagedBookingScheduleAdminRoutes,
     loadPaymentPolicyPublicRoutes: createManagedPaymentPolicyPublicRoutes,
     loadQuoteVersionSnapshotRoutes: createManagedQuoteVersionSnapshotRoutes,

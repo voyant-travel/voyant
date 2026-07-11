@@ -1,4 +1,4 @@
-import type { SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import type { ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -9,13 +9,17 @@ import { settleCoveredBookingPaymentSchedules } from "../service-shared.js"
 
 export const FINANCE_BOOKING_SCHEDULE_SUBSCRIBER_ID =
   "@voyant-travel/finance#subscriber.booking-schedule-confirmed"
+export const BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY = "finance.bookingScheduleSubscriberRuntime"
 
-export interface BookingScheduleSubscriberRuntimeOptions<TBindings = unknown> {
+export interface BookingScheduleSubscriberRuntime {
   resolveRoutesOptions(
-    bindings: TBindings,
+    bindings: unknown,
   ): BookingScheduleRoutesOptions | Promise<BookingScheduleRoutesOptions>
   /** Resolve the deployment database and retain ownership of its lifecycle. */
-  withDb<T>(bindings: TBindings, operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>
+  withDb<T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>
+}
+
+export interface BookingScheduleSubscriberDependencies {
   generateSchedule?: typeof generatePaymentScheduleForBooking
   settleCoveredSchedules?: typeof settleCoveredBookingPaymentSchedules
   logger?: Pick<Console, "error">
@@ -27,24 +31,24 @@ interface BookingConfirmedPayload {
   actorId: string | null
 }
 
-/** Build the executable descriptor without activating it in the package manifest. */
-export function createBookingScheduleSubscriberRuntime<TBindings = unknown>(
-  options: BookingScheduleSubscriberRuntimeOptions<TBindings>,
+/** Build the package-owned descriptor resolved by selected-graph lowering. */
+export function createBookingScheduleSubscriberRuntime(
+  dependencies: BookingScheduleSubscriberDependencies = {},
 ): SubscriberRuntimeDescriptor {
-  const generateSchedule = options.generateSchedule ?? generatePaymentScheduleForBooking
+  const generateSchedule = dependencies.generateSchedule ?? generatePaymentScheduleForBooking
   const settleCoveredSchedules =
-    options.settleCoveredSchedules ?? settleCoveredBookingPaymentSchedules
-  const logger = options.logger ?? console
+    dependencies.settleCoveredSchedules ?? settleCoveredBookingPaymentSchedules
+  const logger = dependencies.logger ?? console
 
   return {
     id: FINANCE_BOOKING_SCHEDULE_SUBSCRIBER_ID,
     eventType: "booking.confirmed",
-    register: ({ bindings, eventBus }) => {
-      const runtimeBindings = bindings as TBindings
+    register: ({ bindings, container, eventBus }) => {
       eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
         try {
-          const routesOptions = await options.resolveRoutesOptions(runtimeBindings)
-          await options.withDb(runtimeBindings, async (db) => {
+          const runtime = resolveBookingScheduleSubscriberRuntime(container)
+          const routesOptions = await runtime.resolveRoutesOptions(bindings)
+          await runtime.withDb(bindings, async (db) => {
             await generateSchedule(db, data.bookingId, routesOptions)
             await settleCoveredSchedules(db, data.bookingId)
           })
@@ -58,3 +62,18 @@ export function createBookingScheduleSubscriberRuntime<TBindings = unknown>(
     },
   }
 }
+
+function resolveBookingScheduleSubscriberRuntime(
+  container: ModuleContainer,
+): BookingScheduleSubscriberRuntime {
+  if (!container.has(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY)) {
+    throw new Error(
+      `Booking-schedule subscriber runtime is not registered at "${BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY}".`,
+    )
+  }
+  return container.resolve<BookingScheduleSubscriberRuntime>(
+    BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY,
+  )
+}
+
+export const bookingScheduleConfirmedSubscriber = createBookingScheduleSubscriberRuntime()

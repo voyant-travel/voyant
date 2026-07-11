@@ -20,7 +20,6 @@ import {
   operatorGraphRuntimeBindings,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { bookingScheduleBundle } from "./routes/booking-schedule"
 import {
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
@@ -107,10 +106,6 @@ export const app = mountApp<AppBindings>({
         )
       },
     },
-    // bookingScheduleBundle subscribes to booking.confirmed BEFORE
-    // legal's auto-generate-contract subscriber so the rendered
-    // contract reads the freshly-written deposit/balance rows.
-    bookingScheduleBundle,
     catalogBridgeBundle,
     createCatalogCheckoutBundle({
       workflowRunnerRegistry,

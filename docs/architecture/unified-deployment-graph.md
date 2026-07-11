@@ -975,7 +975,6 @@ it no longer lists or implements those three subscriber handlers.
 
 The remaining Operator subscriber authorities are intentionally explicit:
 
-- `bookingScheduleBundle`: `booking.confirmed`
 - `catalogBridgeBundle`: `product.created`, `product.updated`,
   `product.deleted`, `product.content.changed`, `availability.slot.changed`,
   `pricing.rule.changed`, `product.publication.changed`, `promotion.changed`,
@@ -991,14 +990,14 @@ references and direct selected-graph parity. Deployment-local ordering,
 configuration, or orchestration is not sufficient reason to relabel a standard
 package subscriber as migrated.
 
-Finance now owns the inert `booking.confirmed` declaration for booking-schedule
-generation and exports a subscriber descriptor factory from
-`@voyant-travel/finance/booking-schedule-subscriber`. The factory preserves the
-existing generation-then-covered-settlement behavior through deployment-injected
-booking-schedule options and database lifecycle resolution. Its manifest entry
-intentionally omits a runtime reference while the central Operator bundle
-remains active; direct selected-graph activation must remove that central
-registration in the same change to avoid duplicate event handling.
+Finance owns and executes booking-schedule generation from its selected
+`booking.confirmed` subscriber runtime. Operator contributes only the payment
+policy options and database lifecycle service through the selected extension's
+graph runtime binding; it no longer declares or registers a parallel subscriber.
+The package handler preserves generation followed by covered-schedule settlement
+and logs processing failures. This cutover adds no ordering guarantee relative
+to Legal or any other `booking.confirmed` subscriber because the event bus runs
+independent handlers in parallel.
 
 The broader event catalog is beyond the foundational substrate:
 

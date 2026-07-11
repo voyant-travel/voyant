@@ -104,6 +104,19 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         },
       }),
     ])
+    const bookingSchedule = graph.extensions.find(
+      (extension) => extension.id === "@voyant-travel/finance#booking-schedule-extension",
+    )
+    expect(bookingSchedule?.subscribers).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/finance#subscriber.booking-schedule-confirmed",
+        eventType: "booking.confirmed",
+        runtime: {
+          entry: "./booking-schedule-subscriber",
+          export: "bookingScheduleConfirmedSubscriber",
+        },
+      }),
+    ])
 
     for (const artifactPath of [
       "admin/project-admin.generated.ts",
