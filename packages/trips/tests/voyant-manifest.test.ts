@@ -24,6 +24,17 @@ describe("trips deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/trips#schema" }],
       migrations: [{ id: "@voyant-travel/trips#migrations" }],
+      subscribers: [
+        {
+          id: "@voyant-travel/trips#subscriber.payment-completed",
+          eventType: "payment.completed",
+          source: "@voyant-travel/trips",
+        },
+      ],
     })
+  })
+
+  it("keeps payment completion graph-declared but inert", () => {
+    expect(tripsVoyantModule.subscribers?.[0]).not.toHaveProperty("runtime")
   })
 })

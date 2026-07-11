@@ -1905,6 +1905,9 @@
       "@voyant-travel/trips/checkout": ["../../packages/trips/dist/checkout/index.d.ts"],
       "@voyant-travel/trips/cruise-extension": ["../../packages/trips/dist/cruise-extension.d.ts"],
       "@voyant-travel/trips/flight-component": ["../../packages/trips/dist/flight-component.d.ts"],
+      "@voyant-travel/trips/payment-subscribers": [
+        "../../packages/trips/dist/payment-subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/trips/routes": ["../../packages/trips/dist/routes.d.ts"],
       "@voyant-travel/trips/schema": ["../../packages/trips/dist/schema.d.ts"],
       "@voyant-travel/trips/service": ["../../packages/trips/dist/service.d.ts"],

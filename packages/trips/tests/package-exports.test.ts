@@ -1,0 +1,30 @@
+import { readFileSync } from "node:fs"
+import { describe, expect, it } from "vitest"
+
+interface PublishedExport {
+  types: string
+  import: string
+  default: string
+}
+
+interface PackageJson {
+  exports: Record<string, string>
+  publishConfig: {
+    exports: Record<string, PublishedExport>
+  }
+}
+
+const packageJson = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as PackageJson
+
+describe("@voyant-travel/trips package exports", () => {
+  it("publishes the payment subscriber runtime subpath", () => {
+    expect(packageJson.exports["./payment-subscribers"]).toBe("./src/payment-subscriber-runtime.ts")
+    expect(packageJson.publishConfig.exports["./payment-subscribers"]).toEqual({
+      types: "./dist/payment-subscriber-runtime.d.ts",
+      import: "./dist/payment-subscriber-runtime.js",
+      default: "./dist/payment-subscriber-runtime.js",
+    })
+  })
+})

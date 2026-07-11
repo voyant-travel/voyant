@@ -116,6 +116,13 @@ export const tripsVoyantModule = defineModule({
       from: { tools: ["@voyant-travel/trips#tool.price-trip"] },
     },
   ],
+  subscribers: [
+    {
+      id: "@voyant-travel/trips#subscriber.payment-completed",
+      eventType: "payment.completed",
+      source: "@voyant-travel/trips",
+    },
+  ],
   admin: {
     routes: [
       {
