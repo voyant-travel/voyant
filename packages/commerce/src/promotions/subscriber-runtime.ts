@@ -1,7 +1,13 @@
 import type { SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 
+import {
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "./runtime-ports.js"
 import { recordPromotionRedemptionsForBooking } from "./service-booking-confirmed.js"
+import { BULK_REINDEX_SERVICE_KEY } from "./workflow-runtime.js"
 
 export const COMMERCE_PROMOTION_REDEMPTION_SUBSCRIBER_ID =
   "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed"
@@ -13,11 +19,20 @@ export interface PromotionRedemptionSubscriberRuntimeOptions<TBindings = unknown
   logger?: Pick<Console, "warn">
 }
 
+export type {
+  PromotionRedemptionDatabaseRuntime,
+  PromotionsBulkReindexRuntime,
+} from "./runtime-ports.js"
+export {
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "./runtime-ports.js"
+
 interface BookingConfirmedPayload {
   bookingId: string
 }
 
-/** Build the executable descriptor without activating it in the package manifest. */
+/** Build the package-owned descriptor resolved by selected-graph lowering. */
 export function createPromotionRedemptionSubscriberRuntime<TBindings = unknown>(
   options: PromotionRedemptionSubscriberRuntimeOptions<TBindings>,
 ): SubscriberRuntimeDescriptor {
@@ -44,3 +59,25 @@ export function createPromotionRedemptionSubscriberRuntime<TBindings = unknown>(
     },
   }
 }
+
+/** Selected-graph factory for redemption recording and promotion workflow services. */
+export const createPromotionRedemptionSubscriberGraphRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    const [database, bulkReindex] = await Promise.all([
+      getPort(promotionRedemptionDatabaseRuntimePort),
+      getPort(promotionsBulkReindexRuntimePort),
+    ])
+    const descriptor = createPromotionRedemptionSubscriberRuntime(database)
+
+    return {
+      ...descriptor,
+      register: async (context) => {
+        context.container.register(
+          BULK_REINDEX_SERVICE_KEY,
+          await bulkReindex.createService(context.bindings),
+        )
+        await descriptor.register(context)
+      },
+    }
+  },
+)

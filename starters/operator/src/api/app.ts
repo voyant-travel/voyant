@@ -1,4 +1,3 @@
-import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import {
   composeVoyantGraphRuntime,
@@ -88,19 +87,7 @@ export const app = mountApp<AppBindings>({
   outbox: true,
   // Package-owned anonymous posture comes from the selected graph.
   publicPaths: [...graphComposition.routePosture.publicPaths],
-  plugins: [
-    {
-      name: "operator-promotions-runtime",
-      bootstrap: async ({ bindings, container }) => {
-        const { createBulkReindexProductsService } = await import("./lib/bulk-reindex-service")
-        container.register(
-          BULK_REINDEX_SERVICE_KEY,
-          createBulkReindexProductsService(bindings as AppBindings),
-        )
-      },
-    },
-    catalogBridgeBundle,
-  ],
+  plugins: [catalogBridgeBundle],
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>

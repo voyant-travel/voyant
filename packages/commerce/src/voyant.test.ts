@@ -23,6 +23,10 @@ describe("commerce deployment manifest", () => {
         id: "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
         eventType: "booking.confirmed",
         source: "@voyant-travel/commerce/promotion-redemption-subscriber",
+        runtime: {
+          entry: "./promotion-redemption-subscriber",
+          export: "createPromotionRedemptionSubscriberGraphRuntime",
+        },
       },
       {
         id: `@voyant-travel/commerce#subscriber.${promotionAffectedAllFilter.id}`,
