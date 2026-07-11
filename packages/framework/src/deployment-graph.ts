@@ -2353,7 +2353,7 @@ function compileAccessCatalog(
       ),
     )
     .sort((left, right) => left.resource.localeCompare(right.resource))
-  const unitRoles = units.flatMap((unit) =>
+  const unitRoles: VoyantGraphAccessPreset[] = units.flatMap((unit) =>
     (unit.access?.roles ?? []).map((role) => ({
       id: role.id,
       kind: "staff" as const,
