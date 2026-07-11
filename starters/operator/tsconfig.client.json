@@ -409,6 +409,9 @@
       "@voyant-travel/catalog/booking-engine/schema": [
         "../../packages/catalog/dist/booking-engine/schema.d.ts"
       ],
+      "@voyant-travel/catalog/booking-snapshot-subscriber": [
+        "../../packages/catalog/dist/booking-snapshot-subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/catalog/contract": ["../../packages/catalog/dist/contract.d.ts"],
       "@voyant-travel/catalog/drift/events": ["../../packages/catalog/dist/drift/events.d.ts"],
       "@voyant-travel/catalog/embeddings/contract": [

@@ -1,4 +1,5 @@
 import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { catalogBookingSnapshotSubscriberDeclaration } from "./booking-snapshot-subscriber-declaration.js"
 import { catalogIndexSubscriberDeclarations } from "./index-subscriber-declarations.js"
 
 const catalogAdminRuntime = {
@@ -86,7 +87,7 @@ export const catalogVoyantModule = defineModule({
       eventType: "catalog.source.reconnected",
     },
   ],
-  subscribers: catalogIndexSubscriberDeclarations,
+  subscribers: [...catalogIndexSubscriberDeclarations, catalogBookingSnapshotSubscriberDeclaration],
   access: {
     resources: [
       {

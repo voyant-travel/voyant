@@ -36,4 +36,15 @@ describe("@voyant-travel/catalog package exports", () => {
       default: "./dist/index-subscriber-runtime.js",
     })
   })
+
+  it("publishes the inert booking snapshot subscriber descriptor", () => {
+    expect(packageJson.exports["./booking-snapshot-subscriber"]).toBe(
+      "./src/booking-snapshot-subscriber-runtime.ts",
+    )
+    expect(packageJson.publishConfig.exports["./booking-snapshot-subscriber"]).toEqual({
+      types: "./dist/booking-snapshot-subscriber-runtime.d.ts",
+      import: "./dist/booking-snapshot-subscriber-runtime.js",
+      default: "./dist/booking-snapshot-subscriber-runtime.js",
+    })
+  })
 })
