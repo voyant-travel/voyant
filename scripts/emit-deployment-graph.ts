@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
+  buildDeploymentMigrationSources,
   buildGraphRuntimeModule,
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
@@ -21,7 +22,6 @@ import {
   writeProjectArtifacts,
 } from "../packages/framework/src/project-artifacts.ts"
 import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
-import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
 import {
   buildDeploymentGraphDoctorJson,
@@ -94,7 +94,7 @@ async function main(): Promise<void> {
         profileSnapshot: toPosixRelativePath(manifestDirectory, options.profileOutputPath),
       }),
     ],
-    migrationSources: operatorMigrationSources(graph),
+    migrationSources: buildDeploymentMigrationSources(graph),
   })
   const profileText = formatGeneratedText(
     options.profileOutputPath,
@@ -264,32 +264,6 @@ function compatibilityManagedProfile(
     providers: project.deployment.providers,
     admin: { enabled: true, path: "/app" },
   }
-}
-
-function operatorMigrationSources(graph: ResolvedVoyantDeploymentGraph) {
-  const units = [...graph.modules, ...graph.plugins]
-  const packageOwnedMigrationSources = new Set(
-    units
-      .filter((unit) => unit.schema.length > 0 && unit.migrations.length > 0)
-      .map((unit) => unit.packageName),
-  )
-  const manifestPackages = new Set(
-    graph.packageRecords
-      .filter((record) => record.metadata?.manifest)
-      .map((record) => record.packageName),
-  )
-
-  const sources: Array<{ packageName: string; schema: string }> = []
-  for (const schemaPath of operatorSchemaPaths) {
-    const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
-    if (!match?.[1]) continue
-    sources.push({ packageName: `@voyant-travel/${match[1]}`, schema: schemaPath })
-  }
-  return sources.filter(
-    (source) =>
-      !manifestPackages.has(source.packageName) ||
-      packageOwnedMigrationSources.has(source.packageName),
-  )
 }
 
 async function writeGeneratedFile(filePath: string, text: string): Promise<void> {

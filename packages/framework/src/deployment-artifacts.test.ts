@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
+  buildDeploymentMigrationSources,
   buildGraphRuntimeModule,
   buildGraphWorkflowRuntimeModule,
   buildManagedNodeRuntimeEntry,
@@ -153,6 +154,43 @@ describe("deployment graph artifacts", () => {
         },
       ],
     })
+  })
+
+  it("lowers migration schema inputs only from selected migration owners", async () => {
+    const foundation = defineModule({
+      id: "@acme/foundation",
+      schema: [{ id: "@acme/foundation#schema", source: "@acme/foundation/schema" }],
+      migrations: [{ id: "@acme/foundation#migrations", source: "./migrations" }],
+    })
+    const feature = defineModule({
+      id: "@acme/feature",
+      schema: [{ id: "@acme/feature#schema", source: "@acme/feature/schema" }],
+      migrations: [{ id: "@acme/feature#migrations", source: "./migrations" }],
+    })
+    const featureExtension = defineExtension({
+      id: "@acme/feature#extension",
+      packageName: "@acme/feature",
+      schema: [{ id: "@acme/feature#schema.extension", source: "@acme/feature/schema" }],
+    })
+    const schemaOnly = defineModule({
+      id: "@acme/schema-only",
+      schema: [{ id: "@acme/schema-only#schema", source: "@acme/schema-only/schema" }],
+    })
+
+    const complete = await graphWithSelectedUnits(
+      [foundation, feature, schemaOnly],
+      [],
+      [featureExtension],
+    )
+    const subset = await graphWithSelectedUnits([foundation])
+
+    expect(buildDeploymentMigrationSources(complete)).toEqual([
+      { packageName: "@acme/feature", schema: "@acme/feature/schema" },
+      { packageName: "@acme/foundation", schema: "@acme/foundation/schema" },
+    ])
+    expect(buildDeploymentMigrationSources(subset)).toEqual([
+      { packageName: "@acme/foundation", schema: "@acme/foundation/schema" },
+    ])
   })
 
   it("builds a tiny managed Node runtime entry tied to the graph hash", async () => {

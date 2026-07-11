@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
+  buildDeploymentMigrationSources,
   buildManagedNodeRuntimeEntry,
   buildManagedNodeRuntimeEntryArtifact,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
@@ -19,7 +20,6 @@ import {
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import { defineVoyantProject } from "../packages/framework/src/profile.ts"
 import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
-import { schema as operatorSchemaPaths } from "../starters/operator/drizzle.schemas.generated.ts"
 import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
         profileSnapshot: "./managed-profile.json",
       }),
     ],
-    migrationSources: operatorMigrationSources(),
+    migrationSources: buildDeploymentMigrationSources(first),
   })
   if (artifactManifest.schemaVersion !== VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION) {
     failures.push("expected deployment artifact manifest schema version v1")
@@ -161,7 +161,7 @@ async function main(): Promise<void> {
   )
   if (
     JSON.stringify(artifactMigrationSourcePackageNames) !==
-    JSON.stringify(operatorMigrationSourcePackageNames())
+    JSON.stringify(buildDeploymentMigrationSources(first).map((source) => source.packageName))
   ) {
     failures.push("expected deployment artifacts to preserve operator migration source packages")
   }
@@ -414,7 +414,9 @@ async function main(): Promise<void> {
   if (!operatorPluginIds.has("@voyant-travel/plugin-netopia")) {
     failures.push("expected operator graph to include @voyant-travel/plugin-netopia")
   }
-  for (const packageName of operatorMigrationSourcePackageNames()) {
+  for (const packageName of new Set(
+    buildDeploymentMigrationSources(operatorGraph).map((source) => source.packageName),
+  )) {
     if (!operatorPackageRecords.has(packageName)) {
       failures.push(
         `expected operator graph package records to include migration source ${packageName}`,
@@ -435,6 +437,15 @@ async function main(): Promise<void> {
   ) {
     failures.push(
       "expected operator db:migrate to derive and execute the admitted graph migration plan",
+    )
+  }
+  const deploymentGraphEmitterSource = await readFile(
+    new URL("./emit-deployment-graph.ts", import.meta.url),
+    "utf8",
+  )
+  if (deploymentGraphEmitterSource.includes("drizzle.schemas.generated")) {
+    failures.push(
+      "expected deployment artifact emission to derive migration sources from selected manifests",
     )
   }
 
@@ -475,24 +486,6 @@ async function main(): Promise<void> {
   console.log(
     `check-deployment-graph: OK (${first.modules.length} modules, ${first.plugins.length} plugins, ${first.contentHash})`,
   )
-}
-
-function operatorMigrationSourcePackageNames(): string[] {
-  return operatorMigrationSources().map((source) => source.packageName)
-}
-
-function operatorMigrationSources(): Array<{ packageName: string; schema: string }> {
-  const seen = new Set<string>()
-  const sources: Array<{ packageName: string; schema: string }> = []
-  for (const schemaPath of operatorSchemaPaths) {
-    const match = schemaPath.match(/(?:^|\/)packages\/([^/]+)\//)
-    if (!match?.[1]) continue
-    const packageName = `@voyant-travel/${match[1]}`
-    if (seen.has(packageName)) continue
-    seen.add(packageName)
-    sources.push({ packageName, schema: schemaPath })
-  }
-  return sources
 }
 
 main().catch((error) => {

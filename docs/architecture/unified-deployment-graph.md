@@ -1046,18 +1046,17 @@ deployment. Examples include foundational schema packages, additional schema
 packages, and route-deferred verticals whose migrations still apply. The
 resolved graph must still represent those packages as schema-only units with
 stable `schema` and `migrations` entity ids, and its package records must cover
-every package-backed migration source discovered from the generated schema
-manifest. This is the bridge that keeps D.2 package-owned migration discovery
-and deployment-graph lowering from drifting while richer per-migration entity
-generation lands.
+every package-backed migration source selected into the graph.
 
-The source-backed operator deployment artifact manifest also records the
-package-backed migration source list derived from
-`drizzle.schemas.generated.ts`. Runtime migration execution consumes that
-validated artifact list, then still uses the D.2 collector to resolve package
-migration folders and apply the deployment-local migration source last. Graph
-artifact validation rejects sources that are not represented in graph package
-records.
+The deployment artifact manifest records package-backed migration sources
+directly from selected package manifests. Runtime migration execution derives
+the dependency-ordered plan from those same selected graph units, resolves each
+package's migration folder through the D.2 collector, and applies explicit
+deployment-local migrations last. Deselecting a package therefore removes its
+schema migration from both the artifact and executable plan. The committed
+`drizzle.schemas.generated.ts` remains a Drizzle generation and replay-parity
+input; it is not migration selection authority. Graph artifact validation
+rejects sources that are not represented in graph package records.
 
 The operator graph now also lowers the first declarative workflow/event-filter
 pair from first-party metadata: commerce contributes

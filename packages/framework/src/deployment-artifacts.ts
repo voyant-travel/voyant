@@ -318,6 +318,31 @@ export function buildDeploymentArtifactManifest(
   }
 }
 
+/** Lower schema inputs for packages with migrations selected into the resolved graph. */
+export function buildDeploymentMigrationSources(
+  graph: ResolvedVoyantDeploymentGraph,
+): VoyantDeploymentMigrationSourceArtifact[] {
+  const units = [...graph.modules, ...graph.extensions, ...graph.plugins]
+  const migrationPackages = new Set(
+    units
+      .filter((unit) => unit.migrations.some((migration) => Boolean(migration.source)))
+      .map((unit) => unit.packageName),
+  )
+  const sources = new Map<string, VoyantDeploymentMigrationSourceArtifact>()
+  for (const unit of units) {
+    if (!migrationPackages.has(unit.packageName)) continue
+    for (const schema of unit.schema) {
+      if (!schema.source) continue
+      const source = { packageName: unit.packageName, schema: schema.source }
+      sources.set(`${source.packageName}\0${source.schema}`, source)
+    }
+  }
+  return [...sources.values()].sort(
+    (left, right) =>
+      left.packageName.localeCompare(right.packageName) || left.schema.localeCompare(right.schema),
+  )
+}
+
 export function buildManagedNodeRuntimeEntryArtifact(
   input: BuildManagedNodeRuntimeEntryArtifactInput,
 ): VoyantDeploymentRuntimeEntryArtifact {
