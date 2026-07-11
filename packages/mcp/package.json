@@ -30,7 +30,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@hono/mcp": "^0.3.0",
+    "@hono/mcp": "^0.3.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
