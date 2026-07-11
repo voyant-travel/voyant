@@ -30,7 +30,7 @@
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.24.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -68,7 +68,7 @@
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "typescript": "catalog:",
