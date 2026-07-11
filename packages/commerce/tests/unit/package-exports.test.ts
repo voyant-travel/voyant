@@ -1,6 +1,19 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
+import {
+  catalogCheckoutContractPdfRuntimePort,
+  catalogCheckoutDatabaseRuntimePort,
+  catalogCheckoutLegalRuntimePort,
+  createAcceptanceSignatureSubscriberGraphRuntime,
+  createCheckoutFinalizeSubscriberGraphRuntime,
+} from "../../src/checkout/subscriber-runtime.js"
+import {
+  createPromotionRedemptionSubscriberGraphRuntime,
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "../../src/promotions/subscriber-runtime.js"
+
 interface PublishedExport {
   types: string
   import: string
@@ -35,6 +48,14 @@ describe("@voyant-travel/commerce package exports", () => {
     })
   })
 
+  it("publishes selected-graph checkout factories and typed host ports", () => {
+    expect(createAcceptanceSignatureSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(createCheckoutFinalizeSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(catalogCheckoutDatabaseRuntimePort.id).toBe("commerce.checkout-database")
+    expect(catalogCheckoutLegalRuntimePort.id).toBe("legal.acceptance-signature")
+    expect(catalogCheckoutContractPdfRuntimePort.id).toBe("legal.booking-contract-pdf")
+  })
+
   it("publishes the promotion-redemption subscriber runtime subpath", () => {
     expect(packageJson.exports["./promotion-redemption-subscriber"]).toBe(
       "./src/promotions/subscriber-runtime.ts",
@@ -44,5 +65,8 @@ describe("@voyant-travel/commerce package exports", () => {
       import: "./dist/promotions/subscriber-runtime.js",
       default: "./dist/promotions/subscriber-runtime.js",
     })
+    expect(createPromotionRedemptionSubscriberGraphRuntime).toBeTypeOf("function")
+    expect(promotionRedemptionDatabaseRuntimePort.id).toBe("commerce.promotion-redemption-database")
+    expect(promotionsBulkReindexRuntimePort.id).toBe("commerce.promotions-bulk-reindex")
   })
 })

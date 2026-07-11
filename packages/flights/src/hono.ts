@@ -22,7 +22,10 @@
  * payment integration for order payment sessions (`payment`). The routes mount at
  * `/v1/admin/flights` via `createFlightsHonoModule(...)`.
  */
+
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { createOrderPaymentSessions } from "@voyant-travel/finance/order-payment-sessions"
 import type { HonoModule } from "@voyant-travel/hono"
 import { ilike, or } from "drizzle-orm"
 import { type Context, Hono } from "hono"
@@ -41,11 +44,13 @@ import type {
   PaymentIntent,
   SeatMapRequest,
 } from "./contract/types.js"
+import { createFlightOrderPaymentIntegration } from "./payment-integration.js"
 import {
   referenceAircraft,
   referenceAirlines,
   referenceAirports,
 } from "./reference/local-postgres.js"
+import { flightsRuntimePort } from "./runtime-port.js"
 
 /** A resolved payment session for a flight order. */
 export interface FlightOrderPaymentSummary {
@@ -424,3 +429,18 @@ export function createFlightsHonoModule(options: FlightsHonoModuleOptions): Hono
     adminRoutes: createFlightAdminRoutes(options),
   }
 }
+
+/** Package-owned adapter from graph runtime ports to the Flights route factory. */
+export const createFlightsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+  const runtime = await getPort(flightsRuntimePort)
+  return createFlightsHonoModule({
+    resolveAdapter: runtime.resolveAdapter,
+    payment: createFlightOrderPaymentIntegration({
+      orderPaymentSessions: createOrderPaymentSessions({ targetType: "flight_order" }),
+      startCardPayment: runtime.startCardPayment,
+    }),
+  })
+})
+
+export type { FlightsRuntime } from "./runtime-port.js"
+export { flightsRuntimePort } from "./runtime-port.js"

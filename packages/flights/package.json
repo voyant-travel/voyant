@@ -35,7 +35,8 @@
     },
     "schema": "./reference/local-postgres",
     "requiresSchemas": [
-      "@voyant-travel/db"
+      "@voyant-travel/db",
+      "@voyant-travel/finance"
     ]
   },
   "scripts": {
@@ -127,6 +128,7 @@
   "dependencies": {
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/flights-contracts": "workspace:^",

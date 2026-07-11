@@ -574,9 +574,19 @@ provider selection and must be satisfied by graph provider declarations. Before
 exposing a bound implementation, composition runs the port's public conformance
 kit. Factories use `hasPort(...)` before requesting an optional runtime port;
 required and optional declarations remain distinct in lowered graph metadata.
-Legacy
+The framework creates one factory context per selected runtime unit and reuses
+that exact context across the unit's API and subscriber facets. The context also
+exposes the owning loader's normalized, JSON-safe `projectConfig`; config from
+another selected unit is never merged into it. Deselected units remain behind
+their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
 public factories have not adopted this contract.
+
+Progress: the Distribution channel-push extension now declares its route and
+workflow-service runtime dependency as a typed port and adapts that port through
+a package-owned graph runtime factory. The Operator supplies only the Node host
+provider for registry resolution and lazy workflow DB registration; it no
+longer owns a package-id runtime binding or channel-push route wrapper.
 
 This matters for replacement promises. If a future external CRM can replace
 `relationships`, it must pass the people-directory port tests. Otherwise doctor
@@ -800,21 +810,25 @@ The first Phase 4 admin slices are active for `@voyant-travel/action-ledger`,
 - project resolution emits `.voyant/admin/selected-graph-admin.generated.ts`
   from only selected units with `admin.runtime`; package page modules remain
   behind the lazy imports owned by the UI export
-- the Operator consumes that generated factory while retaining its existing
-  localized label and icon inputs, and the compatibility admin generator removes
-  the migrated factory from `admin.extensions.generated.ts`
+- each selected package adapter owns its Operator nav-copy key and icon; Quotes
+  also owns its existing lazy route message provider
+- the Operator invokes the generated selected-factory composer with one generic
+  localized nav-message map, and the compatibility admin generator removes the
+  migrated factory from `admin.extensions.generated.ts`
+- `admin.compositionOrder` preserves stable ordering for selected contributions
+  that share a host navigation anchor without adding a host-side package list
 - deployment-local `src/admin/*/index.ts[x]` pages remain independently
   discovered and composed; package migration must not remove that local surface
 - `verify:admin-composition-drift` rejects a migrated factory that is missing
   from the selected-graph bundle, duplicated in the compatibility registry, or
   present without a selected `admin.runtime` declaration
 
-This cut does not activate admin slots or contributions, namespaced copy,
-message-provider lowering, or deployment copy overrides. Those remain separate
-admin authorities. The Operator factory wrappers and generated registry entries
-for all other first-party packages also remain compatibility authorities until
-each package proves equivalent nav, route, page, host-option, and destination
-behavior through the selected graph.
+This cut does not activate admin slots or contributions, generalized namespaced
+copy lowering, or deployment copy overrides. Those remain separate admin
+authorities. The Operator factory wrappers and generated registry entries for
+all other first-party packages also remain compatibility authorities until each
+package proves equivalent nav, route, page, copy, icon, and destination behavior
+through the selected graph.
 
 ## API, OpenAPI, Scopes, And RBAC
 
@@ -1007,9 +1021,10 @@ selected unit's database/adapter service through its explicit container binding;
 it no longer lists or implements those three subscriber handlers.
 
 `@voyant-travel/trips` now owns its `payment.completed` subscriber through the
-same selected-graph lowering. Operator contributes only the graph-gated
-`TripsPaymentSubscriberRuntime` database-lifecycle adapter; deselecting Trips
-removes both that service registration and the subscriber runtime module.
+same selected-graph lowering. Its package-owned graph runtime factory registers
+the subscriber's database service from the declared `trips.database-runtime`
+port; deselecting Trips removes both that service registration and the
+subscriber runtime module.
 
 Storefront booking-bootstrap intent execution is also selected-graph-owned.
 `@voyant-travel/storefront` exports the executable
@@ -1022,21 +1037,16 @@ business failures still settle without retry, and infrastructure errors still
 escape to the outbox retry path. `check-storefront-subscriber-authority`
 mechanically prevents a central or starter-owned registration from returning.
 
-The remaining Operator subscriber authorities are intentionally explicit:
-
-- `catalogBridgeBundle`: `product.created`, `product.updated`,
-  `product.deleted`, `product.content.changed`, `availability.slot.changed`,
-  `pricing.rule.changed`, `product.publication.changed`, `promotion.changed`,
-  and two distinct `booking.confirmed` handlers
-- `createCatalogCheckoutBundle`: `contract.document.generated` and
-  `payment.completed`
-- `smartbillOperatorBundle`: `invoice.issued`, `invoice.proforma.issued`, and
-  `invoice.payment.recorded`
-
-These entries remain until each owning package manifest has executable runtime
-references and direct selected-graph parity. Deployment-local ordering,
-configuration, or orchestration is not sufficient reason to relabel a standard
-package subscriber as migrated.
+Catalog now owns and executes its eight index subscribers and idempotent booking
+snapshot subscriber through direct manifest runtime references. Its package
+factories validate event payloads, preserve sequential multi-product indexing,
+and register only the selected descriptor. Node hosts provide Typesense/indexer
+composition and snapshot database access through required typed runtime ports.
+The Operator no longer carries `catalogBridgeBundle`; deselecting Catalog removes
+all nine subscriber registrations and does not resolve either host port. Catalog
+snapshot capture remains ordered before the Commerce promotion-redemption
+subscriber in the standard generated module graph, while both handlers retain
+independent idempotency and outbox retry behavior.
 
 Finance owns and executes booking-schedule generation from its selected
 `booking.confirmed` subscriber runtime. Operator contributes only the payment
@@ -1058,26 +1068,54 @@ runtime references must move with their domain-owning shards, and the Operator
 bridge must be removed in the same activation change to prevent duplicate
 invalidation hints.
 
-Notifications now stages package-owned executable descriptors for reminder-rule
-handling on `booking.confirmed`, `payment.completed`, `booking.cancelled`, and
-`booking.expired`, plus booking-confirmation auto-dispatch. All five resolve one
-narrow package runtime service for the database, dispatcher, and attachment
-resolver. The four reminder descriptors have runtime references on an inert,
-unselected Notifications extension; existing module bootstrap remains their
-only activation path in this slice. Auto-dispatch deliberately has no manifest
-runtime reference. Moving either path to selected-graph activation remains
-gated on explicit Legal document-ordering semantics for `booking.confirmed`, as
-ordinary event-bus subscribers run independently and provide no ordering.
+Notifications reminder-rule handling on `booking.confirmed`,
+`payment.completed`, `booking.cancelled`, and `booking.expired`, plus
+booking-confirmation auto-dispatch, now executes exclusively from one selected
+package extension. Its descriptor order keeps confirmation auto-dispatch ahead
+of the booking-confirmed reminder handler, preserving registration priority
+without claiming serial completion: ordinary event-bus handlers still run
+independently.
 
-Legal now stages its booking-contract auto-generation handler as an executable
-package-owned subscriber descriptor on the unselected
-`@voyant-travel/legal#booking-contract-extension`. The existing Legal module
-bootstrap remains the compatibility activation path until a separate graph
-cutover removes it. That activation must coordinate contract generation with
-Notifications through explicit ordering semantics, such as a durable workflow
-dependency or a follow-up document-generated event. Registration order is not
-an ordering contract: the in-process event bus runs `booking.confirmed`
-subscribers independently and in parallel.
+The Notifications module and subscriber extension consume the typed,
+manifest-declared `notifications.runtime` port. Operator supplies generic Node
+host providers for database access, delivery, attachments, checkout URL policy,
+and reminder workflows; it no longer owns a Notifications package-id runtime
+binding. Subscriber service registration is extension-owned, so a selected
+extension contributes each handler exactly once and a deselected extension
+contributes neither the service nor handlers. Module-bootstrap compatibility
+registration and its tests have been removed.
+
+Legal owns and executes booking-contract auto-generation from the selected
+`@voyant-travel/legal#booking-contract-extension`. Both the Legal API factory and
+subscriber extension consume manifest-declared typed ports; the Node host binds
+route services and the subscriber's database lifecycle, document generator,
+storage, PII resolver, options, and action-ledger context by port id. Operator no
+longer binds the Legal package id or registers a compatibility subscriber from
+the Legal API bootstrap. Deselecting the extension removes both its runtime
+service registration and subscriber runtime module. This cutover preserves the
+existing default deferrable delivery posture: `booking.confirmed` subscribers,
+including Notifications, still run independently and in parallel. Any future
+completion ordering must use a durable dependency or the existing
+`contract.document.generated` follow-up event rather than registration order.
+
+Commerce owns and executes catalog checkout's `contract.document.generated`
+acceptance-signature promotion and inline `payment.completed` finalization from
+the selected catalog-checkout extension. The same package runtime registers the
+`checkout-finalize` rerun/resume runner. Node hosts supply database lifecycle,
+Legal contract operations, booking contract PDF generation, and the process
+workflow-runner registry through required typed runtime ports. Selection without
+those services fails during composition; deselecting the extension loads none of
+its subscribers or ports. Operator no longer carries a parallel bundle or
+Commerce package-id binding.
+
+Commerce also owns and executes promotion redemption from its selected module's
+`booking.confirmed` subscriber. The module requires typed database-lifecycle and
+bulk-reindex service ports; its package runtime registers the bulk-reindex host
+service before subscribing, preserving the former Operator bootstrap ordering.
+The redemption handler still reads quotes independently of catalog snapshot
+capture, records idempotently, and warns without rejecting recorder failures.
+Deselecting Commerce removes both the subscriber and service bootstrap, and the
+Operator no longer lists a promotions runtime plugin or redemption handler.
 
 The broader event catalog is beyond the foundational substrate:
 
@@ -1362,6 +1400,11 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | API routes and route posture | Existing Hono modules/extensions, generated entries, starter `publicPaths` and transactional fallbacks | Package `api.admin`, `api.public`, `api.webhooks`, and `api.internal` own lazy factories, stable ids, anonymous posture, transaction need, mounts, and operation metadata | Package manifests, runtime bindings | Standard `publicPaths`, transactional paths, and route-family lists are derived and starter fallbacks are empty | #3080 |
 | OpenAPI | Route-owned schemas plus shipped graph coverage report and allowlists | Package API bundle opts into documents and owns operation metadata; selected graph emits deployment-specific documents | API routes | Coverage has no unexplained allowlist and no operator OpenAPI catalog | #3080 |
 | Access resources and grants | Pass-through route scopes and existing Better Auth `Record<string, string[]>` permissions | Package owns `access.resources`; routes, tools, admin, workflows, and actions reference one `resource:action` catalog; project owns role presets | Identity, API operation ids | All references validate against one selected catalog; no central first-party permission catalog remains | #3080 |
+
+The first authority slice is documented in
+[`access-catalog-authority.md`](./access-catalog-authority.md). Bookings now proves selected resource
+ownership, deterministic lowering, exact-pair validation, compatibility overlay semantics, Hono
+resource overrides, and project-owned preset fragments without changing stored grant shapes.
 | Admin nav, routes, and pages | Shipped generated operator extension factories and code-assembled route module | Package `admin.nav` / `admin.routes` plus exported lazy UI; selected graph generates one admin bundle | Package UI exports, identity, access | Adding/removing a package changes admin output without editing operator admin registries | #3080 |
 | Admin slots and contributions | Deployment-owned extensions and package-specific host knowledge | Page-owning package declares stable slots and prop contracts; selected packages declare ordered contributions | Admin routes, access | Doctor resolves every required slot/prop contract and no operator widget registry remains | #3080 |
 | Admin copy/i18n | Package message providers plus manual operator route-message composition | Package owns namespaced `admin.copy`; admin references message keys; deployment may override known keys | Admin routes/slots | Selected namespaces compose lazily without operator copy lists; locale/key parity passes | #3080 |
@@ -1452,6 +1495,27 @@ The deployment-local invitations unit continues to own its anonymous posture
 locally. `check-operator-route-posture` prevents graph-derived posture from
 being replaced by starter hand-lists.
 
+Progress: Relationships now declares its route runtime dependency as the typed
+`relationships.route-runtime` port and exports the package-owned graph factory
+that consumes it. The Node host supplies only the custom-field resolver through
+the generic port registry; it no longer binds Relationships behavior by package
+id. Package selection remains the sole authority for mounting its transactional
+route module.
+
+Flights now owns its route and order-payment-session runtime assembly through a
+`defineGraphRuntimeFactory(...)` export and the typed `flights.runtime` port.
+The Operator supplies only the selected Node connector and card-payment
+providers by port id. Package selection therefore mounts Flights exactly once,
+while deselection leaves no compatibility module or route loader behind.
+
+Progress: Trips now declares typed `trips.routes-runtime` and
+`trips.database-runtime` dependencies and exports the package-owned graph
+factory that consumes them. The Node host supplies only route adapters and its
+database lifecycle through the generic port registry; it no longer selects or
+constructs Trips behavior by package id. Selected graph membership mounts the
+admin/public route module exactly once, and deselection omits both routes and
+subscriber runtime support.
+
 - migrate API bundles, anonymous/transactional posture, subscribers, workflow
   descriptors, schedules, and event filters to package manifests
 - lower package factories into the existing Hono composition and explicit
@@ -1478,9 +1542,11 @@ package surfaces in `voyant#3080`.
   namespaced copy and deployment overrides
 - generate the admin bundle only from selected package exports and graph data
 
-Progress: the action-ledger, MICE, and Quotes nav/route/page factories are
-lowered into the selected-graph admin bundle. The Operator still owns their
-lightweight localization/icon wrappers. Slots/contributions, copy, and the
+Progress: the action-ledger, MICE, and Quotes nav/route/page factories and their
+lightweight localization/icon adapters are lowered into the selected-graph admin
+bundle. Quotes also owns its lazy route copy provider. The Operator composes
+these selected factories generically, with selection and deselection controlled
+only by the graph. Slots/contributions, generalized copy lowering, and the
 remaining first-party Operator compatibility registry are not part of this
 slice. Identity admin routes are the first package-owned selected-graph OpenAPI
 authority; other API documents remain on the Operator compatibility path.

@@ -26,7 +26,7 @@ describe("quotes deployment manifests", () => {
       admin: {
         runtime: {
           entry: "@voyant-travel/quotes-react/admin",
-          export: "createQuotesAdminExtension",
+          export: "createSelectedQuotesAdminExtension",
         },
         copy: [
           {

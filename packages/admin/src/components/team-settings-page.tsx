@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useVoyantReactContext } from "@voyant-travel/react"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import {
   Button,
   Card,
@@ -59,22 +60,29 @@ export type { TeamSettingsPageApi }
 
 export interface TeamSettingsPageProps {
   api?: TeamSettingsPageApi
+  accessCatalog?: AccessCatalog
 }
 
-export function TeamSettingsPage({ api: apiProp }: TeamSettingsPageProps = {}) {
-  if (apiProp) return <TeamSettingsPageContent api={apiProp} />
-  return <TeamSettingsPageWithDefaultApi />
+export function TeamSettingsPage({ api: apiProp, accessCatalog }: TeamSettingsPageProps = {}) {
+  if (apiProp) return <TeamSettingsPageContent api={apiProp} accessCatalog={accessCatalog} />
+  return <TeamSettingsPageWithDefaultApi accessCatalog={accessCatalog} />
 }
 
-function TeamSettingsPageWithDefaultApi() {
+function TeamSettingsPageWithDefaultApi({ accessCatalog }: { accessCatalog?: AccessCatalog }) {
   const { baseUrl, fetcher } = useVoyantReactContext()
   const api = useMemo(() => createTeamSettingsPageApi(baseUrl, fetcher), [baseUrl, fetcher])
-  return <TeamSettingsPageContent api={api} />
+  return <TeamSettingsPageContent api={api} accessCatalog={accessCatalog} />
 }
 
 type BootstrapStatus = { hasUsers: boolean; authMode?: "local" | "voyant-cloud" }
 
-function TeamSettingsPageContent({ api }: { api: TeamSettingsPageApi }) {
+function TeamSettingsPageContent({
+  api,
+  accessCatalog,
+}: {
+  api: TeamSettingsPageApi
+  accessCatalog?: AccessCatalog
+}) {
   // The auth mode decides which team surface backs the page: local invitations
   // (credential users in this deployment's DB) or the Voyant Cloud member roster
   // proxied through /v1/admin/team/*. Default to local until known.
@@ -87,7 +95,7 @@ function TeamSettingsPageContent({ api }: { api: TeamSettingsPageApi }) {
 
   return (
     <TeamSettingsPageApiContext.Provider value={api}>
-      {isCloud ? <CloudTeamView /> : <LocalTeamView />}
+      {isCloud ? <CloudTeamView accessCatalog={accessCatalog} /> : <LocalTeamView />}
     </TeamSettingsPageApiContext.Provider>
   )
 }

@@ -22,6 +22,7 @@ export {
   type AcceptanceSignatureLegalPort,
   persistAcceptanceSignature,
 } from "./acceptance-signature.js"
+export { createCatalogCheckoutGraphExtension } from "./api-runtime.js"
 export {
   type CatalogCheckoutContractPdfGenerator,
   type DispatchCheckoutFinalizeParams,
@@ -60,6 +61,10 @@ export {
   createCatalogCheckoutHonoExtension,
   createCatalogCheckoutRoutes,
 } from "./routes.js"
+export {
+  type CatalogCheckoutApiRuntime,
+  catalogCheckoutApiRuntimePort,
+} from "./runtime-ports.js"
 export {
   type CatalogCheckoutStartContext,
   CatalogCheckoutStartError,

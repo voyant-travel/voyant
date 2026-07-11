@@ -1,5 +1,5 @@
 import type { BootstrapContext } from "@voyant-travel/core"
-import { definePort } from "@voyant-travel/core/project"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { z } from "zod"
 
@@ -8,6 +8,12 @@ import {
   type CaptureSnapshotInput,
   captureSnapshotGraphIdempotent,
 } from "./services/snapshot-service.js"
+import { catalogBookingSnapshotRuntimePort } from "./subscriber-runtime-ports.js"
+
+export {
+  type CatalogBookingSnapshotRuntimeProvider,
+  catalogBookingSnapshotRuntimePort,
+} from "./subscriber-runtime-ports.js"
 
 export const CATALOG_BOOKING_SNAPSHOT_RUNTIME_CONTAINER_KEY = "runtime.catalog.booking-snapshot"
 
@@ -38,18 +44,6 @@ export interface CatalogBookingSnapshotRuntime {
     operation: (context: CatalogBookingSnapshotExecutionContext) => Promise<TResult>,
   ): Promise<TResult>
 }
-
-export const catalogBookingSnapshotRuntimePort = definePort<CatalogBookingSnapshotRuntime>({
-  id: "catalog.booking-snapshot-runtime",
-  test(provider) {
-    if (provider === null || typeof provider !== "object") {
-      throw new Error("catalog.booking-snapshot-runtime provider must be an object.")
-    }
-    if (typeof provider.withContext !== "function") {
-      throw new Error("catalog.booking-snapshot-runtime provider must implement withContext().")
-    }
-  },
-})
 
 export interface CatalogBookingSnapshotSubscriberRuntimeDescriptor {
   readonly id: string
@@ -121,3 +115,20 @@ export function createCatalogBookingSnapshotSubscriberDescriptor(
 
 export const catalogBookingConfirmedSnapshotSubscriber =
   createCatalogBookingSnapshotSubscriberDescriptor()
+
+/** Selected-graph factory for idempotent booking snapshot capture. */
+export const createCatalogBookingSnapshotSubscriberGraphRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    const provider = await getPort(catalogBookingSnapshotRuntimePort)
+    return {
+      ...catalogBookingConfirmedSnapshotSubscriber,
+      register: async (context: BootstrapContext) => {
+        context.container.register(
+          CATALOG_BOOKING_SNAPSHOT_RUNTIME_CONTAINER_KEY,
+          await provider.createRuntime(context.bindings),
+        )
+        await catalogBookingConfirmedSnapshotSubscriber.register(context)
+      },
+    }
+  },
+)

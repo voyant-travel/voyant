@@ -105,7 +105,10 @@ export function lowerGraphRuntimeUnits(
       const accessScopes = [
         ...new Set(
           (unit.access?.resources ?? []).flatMap((resource) =>
-            resource.actions.map((action) => `${resource.resource}:${action}`),
+            resource.actions.map(
+              (action) =>
+                `${resource.resource}:${typeof action === "string" ? action : action.action}`,
+            ),
           ),
         ),
       ].sort((left, right) => left.localeCompare(right))

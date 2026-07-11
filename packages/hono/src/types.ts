@@ -12,6 +12,7 @@ import type {
 } from "@voyant-travel/core"
 import type { SelectApikey } from "@voyant-travel/db/schema/iam"
 import { dbClientDispose } from "@voyant-travel/db/transaction-capability"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import type { DriverFactory } from "@voyant-travel/workflows/driver"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
@@ -284,6 +285,10 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    */
   basePath?: string
   publicPaths?: string[]
+  /** Selected graph mount-to-resource authorization overrides. */
+  accessResources?: readonly { path: string; resource: string }[]
+  /** Effective selected-plus-legacy catalog used for wildcard policy. */
+  accessCatalog?: AccessCatalog
   logger?: LoggerProvider
   /**
    * Observability sink for unhandled exceptions at framework catch points

@@ -19,7 +19,7 @@ describe("legal deployment manifest", () => {
           transactional: true,
           runtime: {
             entry: "@voyant-travel/legal",
-            export: "createLegalHonoModule",
+            export: "createLegalVoyantRuntime",
           },
         },
         {
@@ -30,12 +30,13 @@ describe("legal deployment manifest", () => {
           transactional: true,
           runtime: {
             entry: "@voyant-travel/legal",
-            export: "createLegalHonoModule",
+            export: "createLegalVoyantRuntime",
           },
         },
       ],
       schema: [{ id: "@voyant-travel/legal#schema" }],
       migrations: [{ id: "@voyant-travel/legal#migrations" }],
+      runtimePorts: [{ id: "legal.runtime" }],
     })
     expect(legalVoyantModule.links?.map((link) => link.id)).toEqual([
       "@voyant-travel/legal#linkable.contract",
@@ -45,6 +46,10 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#linkable.policyAcceptance",
       "@voyant-travel/legal#linkable.term",
     ])
+    expect(legalVoyantModule.events).toContainEqual({
+      id: "@voyant-travel/legal#event.booking.contract.generated",
+      eventType: "booking.contract.generated",
+    })
   })
 
   it("owns the contract-document bridge", () => {
@@ -65,12 +70,17 @@ describe("legal deployment manifest", () => {
     })
   })
 
-  it("stages the inert booking-contract subscriber on its package-owned extension", () => {
+  it("owns the executable booking-contract subscriber on its package-owned extension", () => {
     expect(legalVoyantModule.subscribers).toBeUndefined()
     expect(legalBookingContractVoyantExtension).toMatchObject({
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/legal#booking-contract-extension",
       packageName: "@voyant-travel/legal",
+      runtime: {
+        entry: "./booking-contract-subscriber",
+        export: "createLegalBookingContractVoyantRuntime",
+      },
+      runtimePorts: [{ id: "legal.booking-contract-subscriber-runtime" }],
       subscribers: [
         {
           id: "@voyant-travel/legal#subscriber.booking-contract-confirmed",

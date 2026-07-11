@@ -11,6 +11,7 @@ import type {
   VoyantGraphAdminDeclaration,
   VoyantGraphConfigDeclaration,
   VoyantGraphLifecycleDeclaration,
+  VoyantGraphProjectAccessDeclaration,
   VoyantGraphProviderDeclaration,
   VoyantGraphResourceDeclaration,
   VoyantGraphSecretDeclaration,
@@ -91,7 +92,11 @@ export async function assertPortConforms<TProvider>(
 }
 
 export interface VoyantGraphRuntimeFactoryContext {
-  unitId: string
+  readonly unitId: string
+  /** Validated JSON config authored on this package-scoped project selection. */
+  readonly projectConfig: Readonly<VoyantGraphJsonObject>
+  /** API facets selected for this runtime unit in the resolved graph. */
+  readonly api: readonly Readonly<Pick<VoyantGraphRouteBundle, "id" | "surface">>[]
   hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
   getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
 }
@@ -278,6 +283,7 @@ export interface DefineVoyantGraphProjectInput {
   modules: readonly DefineVoyantGraphProjectUnitInput[]
   extensions?: readonly DefineVoyantGraphProjectUnitInput[]
   plugins?: readonly DefineVoyantGraphProjectUnitInput[]
+  access?: VoyantGraphProjectAccessDeclaration
   deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
@@ -289,6 +295,7 @@ export interface VoyantGraphProject {
   extensions: readonly VoyantGraphUnitManifest[]
   plugins: readonly VoyantGraphUnitManifest[]
   selections?: VoyantGraphProjectSelections
+  access?: VoyantGraphProjectAccessDeclaration
   deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
@@ -337,8 +344,23 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
           },
         }
       : {}),
+    ...(input.access ? { access: normalizeProjectAccess(input.access) } : {}),
     ...(deployment ? { deployment } : {}),
     ...(input.meta ? { meta: input.meta } : {}),
+  }
+}
+
+function normalizeProjectAccess(
+  input: VoyantGraphProjectAccessDeclaration,
+): VoyantGraphProjectAccessDeclaration {
+  return {
+    ...(input.presets?.length
+      ? {
+          presets: [...input.presets]
+            .map((preset) => ({ ...preset, grants: [...new Set(preset.grants)].sort() }))
+            .sort((left, right) => left.id.localeCompare(right.id)),
+        }
+      : {}),
   }
 }
 

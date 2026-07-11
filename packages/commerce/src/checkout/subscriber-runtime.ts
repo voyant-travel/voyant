@@ -1,4 +1,6 @@
-import type { EventBus, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import type { BootstrapContext, EventBus, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -6,15 +8,34 @@ import {
   persistAcceptanceSignature,
 } from "./acceptance-signature.js"
 import { type CatalogCheckoutContractPdfGenerator, dispatchCheckoutFinalize } from "./finalize.js"
+import { registerCheckoutFinalizeWorkflowRunner } from "./runner-runtime.js"
+import {
+  type CatalogCheckoutDatabaseRuntime,
+  catalogCheckoutContractPdfRuntimePort,
+  catalogCheckoutDatabaseRuntimePort,
+  catalogCheckoutLegalRuntimePort,
+} from "./runtime-ports.js"
 
 export type { AcceptanceSignatureLegalPort } from "./acceptance-signature.js"
+export type {
+  CatalogCheckoutApiRuntime,
+  CatalogCheckoutContractPdfRuntime,
+  CatalogCheckoutDatabaseRuntime,
+} from "./runtime-ports.js"
+export {
+  catalogCheckoutApiRuntimePort,
+  catalogCheckoutContractPdfRuntimePort,
+  catalogCheckoutDatabaseRuntimePort,
+  catalogCheckoutLegalRuntimePort,
+} from "./runtime-ports.js"
 
 export const COMMERCE_ACCEPTANCE_SIGNATURE_SUBSCRIBER_ID =
   "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated"
 export const COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID =
   "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed"
 
-export interface CatalogCheckoutRuntimeDatabase<TBindings = unknown> {
+export interface CatalogCheckoutRuntimeDatabase<TBindings = unknown>
+  extends CatalogCheckoutDatabaseRuntime {
   withDb<T>(bindings: TBindings, operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>
 }
 
@@ -116,3 +137,43 @@ export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
     },
   }
 }
+
+/** Selected-graph factory for acceptance-signature promotion. */
+export const createAcceptanceSignatureSubscriberGraphRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) =>
+    createAcceptanceSignatureSubscriberRuntime({
+      ...(await getPort(catalogCheckoutDatabaseRuntimePort)),
+      legal: await getPort(catalogCheckoutLegalRuntimePort),
+    }),
+)
+
+/** Selected-graph factory for inline payment finalization and dashboard runner registration. */
+export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    const [database, contractPdf, registry] = await Promise.all([
+      getPort(catalogCheckoutDatabaseRuntimePort),
+      getPort(catalogCheckoutContractPdfRuntimePort),
+      getPort(workflowRunnerRegistryRuntimePort),
+    ])
+    return {
+      id: COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
+      eventType: "payment.completed",
+      register: async (context: BootstrapContext) => {
+        const generateContractPdf: CatalogCheckoutContractPdfGenerator = (input) =>
+          contractPdf.generate({ ...input, bindings: context.bindings })
+        const descriptor = createCheckoutFinalizeSubscriberRuntime({
+          ...database,
+          generateContractPdf,
+        })
+        await descriptor.register(context)
+        registerCheckoutFinalizeWorkflowRunner({
+          registry,
+          bindings: context.bindings,
+          eventBus: context.eventBus,
+          ...database,
+          generateContractPdf,
+        })
+      },
+    }
+  },
+)

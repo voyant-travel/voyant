@@ -1,5 +1,5 @@
 ---
-"@voyant-travel/commerce": patch
+"@voyant-travel/commerce": minor
 ---
 
-Declare the inert Commerce promotion-redemption subscriber contract and publish its package-owned runtime factory for later graph activation.
+Activate Commerce promotion redemption and its bulk-reindex host service through package-declared selected-graph runtime ports.

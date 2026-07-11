@@ -12,8 +12,10 @@
 import type { Actor } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
+import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
+import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import {
   buildOperatorProviders,
@@ -102,7 +104,7 @@ function buildGraphComposition() {
     runtime: createGeneratedGraphRuntime(),
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
-    ports: buildOperatorRuntimePorts(),
+    ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
   })
 }
 
@@ -110,6 +112,8 @@ function mountRoutePosture(composition: Awaited<ReturnType<typeof buildGraphComp
   return {
     publicPaths: [...composition.routePosture.publicPaths],
     dbTransactionalPaths: [...composition.routePosture.transactionalPaths],
+    accessResources: composition.accessResources,
+    accessCatalog: effectiveAccessCatalog,
   }
 }
 
@@ -132,8 +136,11 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await liveFrontDoorStatus(bookingPath, { method: "DELETE" })).not.toBe(404)
   })
 
-  it("mounts lazyAdminRoutes modules (flights, mcp)", async () => {
+  it("mounts the package-owned Flights admin routes", async () => {
     expect(await status("/v1/admin/flights/reference/airports")).not.toBe(404)
+  })
+
+  it("mounts the lazy MCP admin routes", async () => {
     // MCP is now a real MCP server: JSON-RPC at the mount root + a discovery manifest.
     expect(await status("/v1/admin/mcp", "POST")).not.toBe(404)
     expect(await status("/v1/admin/mcp/manifest")).not.toBe(404)

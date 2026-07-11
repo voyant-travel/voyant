@@ -85,7 +85,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       expect.objectContaining({
         runtime: {
           entry: "@voyant-travel/distribution",
-          export: "createChannelPushExtension",
+          export: "createChannelPushVoyantRuntime",
         },
       }),
     ])
@@ -149,6 +149,32 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       }),
     ])
 
+    const notifications = graph.extensions.find(
+      (extension) => extension.id === "@voyant-travel/notifications#reminder-subscribers-extension",
+    )
+    expect(notifications?.subscribers).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.booking-confirmation-auto-dispatch",
+        eventType: "booking.confirmed",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",
+        eventType: "booking.cancelled",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-booking-confirmed",
+        eventType: "booking.confirmed",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-booking-expired",
+        eventType: "booking.expired",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.reminder-payment-completed",
+        eventType: "payment.completed",
+      }),
+    ])
+
     for (const artifactPath of [
       "admin/project-admin.generated.ts",
       "admin/selected-graph-admin.generated.ts",
@@ -164,7 +190,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       join(process.cwd(), ".voyant", "admin/selected-graph-admin.generated.ts"),
       "utf8",
     )
-    expect(selectedGraphAdmin).toContain('"@voyant-travel/action-ledger": selectedAdminFactory0')
+    expect(selectedGraphAdmin).toMatch(/"@voyant-travel\/action-ledger": selectedAdminFactory\d+/)
     expect(selectedGraphAdmin).not.toContain("createBookingsAdminExtension")
     const projectLinks = readFileSync(
       join(process.cwd(), ".voyant", "runtime/project-links.generated.ts"),

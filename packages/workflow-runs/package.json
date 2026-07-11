@@ -11,6 +11,7 @@
     "./routes": "./src/routes.ts",
     "./hono-module": "./src/hono-module.ts",
     "./recorder": "./src/recorder.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./workflows": "./src/workflows.ts",
     "./voyant": "./src/voyant.ts"
   },
@@ -100,6 +101,11 @@
         "types": "./dist/recorder.d.ts",
         "import": "./dist/recorder.js",
         "default": "./dist/recorder.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./workflows": {
         "types": "./dist/workflows.d.ts",

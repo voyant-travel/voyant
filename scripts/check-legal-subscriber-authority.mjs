@@ -1,0 +1,91 @@
+import { readFile } from "node:fs/promises"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+const defaultRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
+const rootArg = process.argv.indexOf("--root")
+const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaultRoot
+
+const paths = {
+  manifest: "packages/legal/src/voyant.ts",
+  legalModule: "packages/legal/src/index.ts",
+  distribution: "packages/framework/src/operator-distribution.ts",
+  composition: "starters/operator/src/api/composition.ts",
+  config: "starters/operator/voyant.config.ts",
+}
+
+const sources = Object.fromEntries(
+  await Promise.all(
+    Object.entries(paths).map(async ([name, relativePath]) => [
+      name,
+      await readFile(path.join(repoRoot, relativePath), "utf8"),
+    ]),
+  ),
+)
+
+const failures = []
+const requireMatch = (source, pattern, message) => {
+  if (!pattern.test(source)) failures.push(message)
+}
+const rejectMatch = (source, pattern, message) => {
+  if (pattern.test(source)) failures.push(message)
+}
+
+requireMatch(
+  sources.distribution,
+  /resolve:\s*["']@voyant-travel\/legal\/booking-contract-extension["']/,
+  "Standard Operator distribution must select the Legal booking-contract extension",
+)
+rejectMatch(
+  sources.config,
+  /resolve:\s*["']@voyant-travel\/legal\/booking-contract-extension["']/,
+  "Operator config must not repeat the standard Legal booking-contract extension",
+)
+requireMatch(
+  sources.manifest,
+  /runtimePorts:\s*\[requirePort\(legalRuntimePort\)\]/,
+  "Legal module must declare its API runtime port",
+)
+requireMatch(
+  sources.manifest,
+  /export:\s*["']createLegalBookingContractVoyantRuntime["'][\s\S]*runtimePorts:\s*\[requirePort\(legalBookingContractSubscriberRuntimePort\)\]/,
+  "Legal extension must declare its subscriber runtime factory and port",
+)
+requireMatch(
+  sources.manifest,
+  /export:\s*["']legalBookingContractConfirmedSubscriber["']/,
+  "Legal manifest must own the booking-contract subscriber runtime reference",
+)
+rejectMatch(
+  sources.legalModule,
+  /legalBookingContractConfirmedSubscriber\.register|eventBus\.subscribe\s*\(\s*["']booking\.confirmed["']/,
+  "Legal API module must leave subscriber registration to selected-graph lowering",
+)
+requireMatch(
+  sources.composition,
+  /\[legalRuntimePort\.id\]\s*:/,
+  "Node host must provide the Legal API runtime by port id",
+)
+requireMatch(
+  sources.composition,
+  /\[legalBookingContractSubscriberRuntimePort\.id\]\s*:/,
+  "Node host must provide the Legal subscriber runtime by port id",
+)
+rejectMatch(
+  sources.composition,
+  /["']@voyant-travel\/legal["']\s*:/,
+  "Operator composition must not bind Legal by package id",
+)
+rejectMatch(
+  sources.composition,
+  /legalBookingContractConfirmedSubscriber\.register|eventBus\.subscribe[^\n]*booking\.confirmed/,
+  "Operator composition must leave Legal subscriber registration to selected-graph lowering",
+)
+
+if (failures.length > 0) {
+  console.error("Legal subscriber authority check failed:\n")
+  for (const failure of failures) console.error(`- ${failure}`)
+  process.exit(1)
+}
+
+console.log("Legal subscriber authority: OK")

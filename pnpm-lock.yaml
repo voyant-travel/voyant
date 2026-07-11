@@ -538,6 +538,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1863,6 +1866,9 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/flights-contracts':
         specifier: workspace:^
         version: link:../flights-contracts

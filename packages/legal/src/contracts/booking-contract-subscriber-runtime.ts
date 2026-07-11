@@ -1,9 +1,14 @@
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import type { BookingPiiService } from "@voyant-travel/bookings"
-import type { ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import type {
+  BootstrapContext,
+  ModuleContainer,
+  SubscriberRuntimeDescriptor,
+} from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { StorageProvider } from "@voyant-travel/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { legalBookingContractSubscriberRuntimePort } from "./booking-contract-subscriber-port.js"
 import type { ContractLifecycleHook } from "./lifecycle.js"
 import {
   type AutoGenerateContractOptions,
@@ -24,6 +29,11 @@ export const LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY =
 export interface LegalBookingConfirmedEvent extends BookingConfirmedLikeEvent {
   /** Notification suppression does not suppress the independently owned Legal artifact. */
   suppressNotifications?: boolean
+}
+
+export interface LegalBookingContractGeneratedEvent extends LegalBookingConfirmedEvent {
+  contractId: string
+  attachmentId: string
 }
 
 export interface LegalBookingContractSubscriberRuntime<TBindings = unknown> {
@@ -65,6 +75,8 @@ export function createLegalBookingContractSubscriberDescriptor(
     id: LEGAL_BOOKING_CONTRACT_SUBSCRIBER_ID,
     eventType: "booking.confirmed",
     register: ({ bindings, container, eventBus }) => {
+      if (!container.has(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY)) return
+
       eventBus.subscribe<LegalBookingConfirmedEvent>("booking.confirmed", async ({ data }) => {
         const runtime = resolveLegalBookingContractSubscriberRuntime(container)
         if (!runtime.options.enabled) return
@@ -90,6 +102,17 @@ export function createLegalBookingContractSubscriberDescriptor(
             ),
           )
           logNonSuccessResult(logger, data.bookingId, result)
+          if (result.status === "ok") {
+            await eventBus.emit(
+              "booking.contract.generated",
+              {
+                ...data,
+                contractId: result.contractId,
+                attachmentId: result.attachmentId,
+              } satisfies LegalBookingContractGeneratedEvent,
+              { category: "internal", source: "service" },
+            )
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
           logger.error(
@@ -114,6 +137,13 @@ function resolveLegalBookingContractSubscriberRuntime(
   )
 }
 
+export function registerLegalBookingContractSubscriberRuntime(
+  container: ModuleContainer,
+  runtime: LegalBookingContractSubscriberRuntime,
+): void {
+  container.register(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY, runtime)
+}
+
 function logNonSuccessResult(
   logger: Pick<Console, "error">,
   bookingId: string,
@@ -128,3 +158,25 @@ function logNonSuccessResult(
 
 export const legalBookingContractConfirmedSubscriber =
   createLegalBookingContractSubscriberDescriptor()
+
+/** Selected-graph adapter from the declared host port to the runtime container. */
+export const createLegalBookingContractVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    const host = await getPort(legalBookingContractSubscriberRuntimePort)
+    return {
+      extension: {
+        name: "booking-contract",
+        module: "legal",
+        bootstrap: async ({ bindings, container }: BootstrapContext) => {
+          const runtime = await host.createRuntime(bindings)
+          if (runtime) registerLegalBookingContractSubscriberRuntime(container, runtime)
+        },
+      },
+    }
+  },
+)
+
+export {
+  type LegalBookingContractSubscriberHost,
+  legalBookingContractSubscriberRuntimePort,
+} from "./booking-contract-subscriber-port.js"

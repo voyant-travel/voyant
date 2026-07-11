@@ -1,3 +1,4 @@
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -25,6 +26,34 @@ function createAuthMock(): BetterAuthApiTokenManagement {
       deleteApiKey: vi.fn(async () => ({ success: true })),
     },
   }
+}
+
+const selectedCatalog: AccessCatalog = {
+  resources: [
+    {
+      id: "bookings",
+      unitId: "@voyant-travel/bookings",
+      resource: "bookings",
+      label: "Bookings",
+      description: "Bookings",
+      wildcard: "allow",
+      actions: [
+        { action: "read", label: "Read", description: "Read" },
+        { action: "write", label: "Write", description: "Write" },
+      ],
+      legacyActions: ["cancel"],
+    },
+  ],
+  presets: [
+    {
+      id: "agent-staff",
+      kind: "api-token-grant",
+      label: "Agent staff",
+      description: "Agent staff",
+      grants: ["bookings:read", "bookings:write"],
+      audience: "staff",
+    },
+  ],
 }
 
 async function responseJson(response: Response | null): Promise<unknown> {
@@ -287,6 +316,21 @@ describe("handleApiTokenManagementRequest", () => {
     expect(auth.api.createApiKey).not.toHaveBeenCalled()
   })
 
+  it("rejects a known action on an unsupported selected resource pair", async () => {
+    const auth = createAuthMock()
+    const response = await handleApiTokenManagementRequest(
+      new Request("https://example.com/auth/api-tokens", {
+        method: "POST",
+        body: JSON.stringify({ name: "invalid pair", permissions: { bookings: ["send"] } }),
+      }),
+      auth,
+      { accessCatalog: selectedCatalog },
+    )
+
+    expect(response?.status).toBe(400)
+    expect(auth.api.createApiKey).not.toHaveBeenCalled()
+  })
+
   it("rejects an invalid audience at mint time with 400", async () => {
     const auth = createAuthMock()
     const response = await handleApiTokenManagementRequest(
@@ -322,6 +366,25 @@ describe("handleApiTokenManagementRequest", () => {
     expect(call.body.permissions).toMatchObject({ catalog: ["read", "search"], products: ["read"] })
     expect(call.body.metadata.audience).toBe("customer")
     expect(call.body.userId).toBe("user_123")
+  })
+
+  it("layers project-owned grant preset fragments over the legacy preset", async () => {
+    const auth = createAuthMock()
+    const response = await handleApiTokenManagementRequest(
+      new Request("https://example.com/auth/api-tokens", {
+        method: "POST",
+        body: JSON.stringify({ name: "staff agent", grantPreset: "agent-staff" }),
+      }),
+      auth,
+      { accessCatalog: selectedCatalog },
+    )
+
+    expect(response?.status).toBe(201)
+    const call = vi.mocked(auth.api.createApiKey).mock.calls[0]?.[0] as {
+      body: { permissions: Record<string, string[]>; metadata: { audience: string } }
+    }
+    expect(call.body.permissions.bookings).toEqual(["read", "write"])
+    expect(call.body.metadata.audience).toBe("staff")
   })
 
   it("returns 405 for facade paths with unsupported methods", async () => {

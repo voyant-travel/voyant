@@ -111,9 +111,10 @@ export const quotesVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 10,
     runtime: {
       entry: "@voyant-travel/quotes-react/admin",
-      export: "createQuotesAdminExtension",
+      export: "createSelectedQuotesAdminExtension",
     },
     copy: [
       {
@@ -132,7 +133,7 @@ export const quotesVoyantModule = defineModule({
         path: "/quotes",
         runtime: {
           entry: "@voyant-travel/quotes-react/admin",
-          export: "createQuotesAdminExtension",
+          export: "createSelectedQuotesAdminExtension",
         },
       },
       {
@@ -140,7 +141,7 @@ export const quotesVoyantModule = defineModule({
         path: "/quotes/$id",
         runtime: {
           entry: "@voyant-travel/quotes-react/admin",
-          export: "createQuotesAdminExtension",
+          export: "createSelectedQuotesAdminExtension",
         },
       },
     ],

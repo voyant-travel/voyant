@@ -1,4 +1,3 @@
-import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import {
   composeVoyantGraphRuntime,
@@ -6,6 +5,7 @@ import {
 } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
+import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import { projectLinks } from "../../.voyant/runtime/project-links.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
@@ -20,17 +20,11 @@ import {
   operatorGraphRuntimeBindings,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import {
-  createOperatorWorkflowDriver,
-  generateContractPdfForBooking,
-  resolveOperatorDb,
-} from "./runtime/operator-runtime-adapter"
-import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
-import { createCatalogCheckoutBundle } from "./subscribers/catalog-checkout-finalize-runtime"
+import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/operator-runtime-adapter"
 
 /**
- * Process-wide registry of workflow runners. Bundles register their
- * runners on bootstrap (see `createCatalogCheckoutBundle`) so the
+ * Process-wide registry of workflow runners. Selected package runtimes register
+ * their runners on bootstrap so the
  * `/v1/admin/workflow-runs/:id/{rerun,resume}` endpoints can dispatch
  * a workflow by name. The dashboard's "Rerun" / "Resume" buttons are
  * powered by this registry. Self-hosted workflow services should
@@ -48,7 +42,7 @@ const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   capabilities: operatorProviders,
   bindings: operatorGraphRuntimeBindings,
-  ports: buildOperatorRuntimePorts(),
+  ports: buildOperatorRuntimePorts(workflowRunnerRegistry),
   outboundWebhooks: {
     enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
   },
@@ -93,24 +87,8 @@ export const app = mountApp<AppBindings>({
   outbox: true,
   // Package-owned anonymous posture comes from the selected graph.
   publicPaths: [...graphComposition.routePosture.publicPaths],
-  plugins: [
-    {
-      name: "operator-promotions-runtime",
-      bootstrap: async ({ bindings, container }) => {
-        const { createBulkReindexProductsService } = await import("./lib/bulk-reindex-service")
-        container.register(
-          BULK_REINDEX_SERVICE_KEY,
-          createBulkReindexProductsService(bindings as AppBindings),
-        )
-      },
-    },
-    catalogBridgeBundle,
-    createCatalogCheckoutBundle({
-      workflowRunnerRegistry,
-      generateContractPdf: ({ env, db, eventBus, bookingId, force }) =>
-        generateContractPdfForBooking(env, db, eventBus, bookingId, { force }),
-    }),
-  ],
+  accessResources: graphComposition.accessResources,
+  accessCatalog: effectiveAccessCatalog,
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>
@@ -124,12 +102,12 @@ export const app = mountApp<AppBindings>({
     // Every domain + deployment-local route family is now composed through the
     // registry (see composition.ts). The only thing left here is the workflow-
     // runs admin surface, which is coupled to the app-level runner registry that
-    // bundle bootstraps populate at construction time.
+    // selected graph bootstraps populate at construction time.
 
     // Workflow runs admin surface — list/get + rerun/resume actions
     // feeding the `WorkflowRunsPage` UI from
     // `@voyant-travel/workflows-react/ui`. The registry is populated by
-    // bundle bootstraps (e.g. catalog-checkout registers the
+    // package bootstraps (e.g. catalog-checkout registers the
     // `checkout-finalize` runner).
     mountWorkflowRunsAdminRoutes(hono, {
       runners: workflowRunnerRegistry,

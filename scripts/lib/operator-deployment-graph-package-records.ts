@@ -268,6 +268,7 @@ function projectFromResolvedGraph(
       manifestFromResolvedUnit(unit, "voyant.extension.v1"),
     ),
     plugins: graph.plugins.map((unit) => manifestFromResolvedUnit(unit, "voyant.plugin.v1")),
+    ...(authored.access ? { access: authored.access } : {}),
     deployment: authored.deployment,
   }
 }

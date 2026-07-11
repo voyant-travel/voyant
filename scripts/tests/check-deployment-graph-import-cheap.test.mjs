@@ -75,6 +75,18 @@ export const graph = { workflows: [workflowManifest] }
     assert.match(result.stdout, /check-deployment-graph-import-cheap: OK/)
   })
 
+  it("allows dedicated runtime port contract imports from package manifests", async () => {
+    const root = await createFixture({
+      "voyant.ts": `import { runtimePort } from "@voyant-travel/workflow-runs/runtime-port"
+export const manifest = { requires: [runtimePort] }
+`,
+    })
+
+    const result = await runChecker(root, "package:voyant.ts")
+
+    assert.match(result.stdout, /check-deployment-graph-import-cheap: OK/)
+  })
+
   it("rejects transitive route imports from graph declarations", async () => {
     const root = await createFixture({
       "manifest.ts": `import { routes } from "./routes"

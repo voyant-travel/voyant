@@ -8,6 +8,7 @@ const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaul
 
 const paths = {
   manifest: "packages/trips/src/voyant.ts",
+  packageRuntime: "packages/trips/src/index.ts",
   app: "starters/operator/src/api/app.ts",
   tripsRuntime: "starters/operator/src/api/runtime/trips-runtime.ts",
   composition: "starters/operator/src/api/composition.ts",
@@ -47,18 +48,18 @@ rejectMatch(
 )
 requireMatch(
   sources.composition,
-  /withModuleRuntimeService\(configured,[\s\S]*TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY/,
-  "Operator graph composition must register the Trips payment runtime service",
-)
-requireMatch(
-  sources.composition,
-  /withDb:\s*\(bindings, operation\)\s*=>\s*withDbFromEnv\(bindings as AppBindings, operation\)/,
+  /\[tripsDatabaseRuntimePort\.id\]:\s*\{[\s\S]*withDb:\s*\(bindings, operation\)\s*=>\s*withDbFromEnv\(bindings as AppBindings, operation\)/,
   "Trips payment runtime service must preserve Operator DB lifecycle handling",
 )
 requireMatch(
-  sources.composition,
-  /withDb:\s*\(operation\)[\s\S]*capabilities\.withDb/,
-  "Trips payment runtime service must consume the generic host DB lifecycle capability",
+  sources.packageRuntime,
+  /container\.register\(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime\)/,
+  "Trips package graph runtime must register the payment runtime service",
+)
+requireMatch(
+  sources.packageRuntime,
+  /withDb:\s*\(operation\)\s*=>\s*databaseRuntime\.withDb\(context\.bindings, operation\)/,
+  "Trips payment runtime service must consume the package-declared DB lifecycle port",
 )
 rejectMatch(
   sources.composition,

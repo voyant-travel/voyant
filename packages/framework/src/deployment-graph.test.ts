@@ -1545,4 +1545,65 @@ describe("deployment graph v1", () => {
 
     expect(() => deployment.doctor.expectClean()).toThrow(/VOYANT_GRAPH_MISSING_CAPABILITY/)
   })
+
+  it("compiles a deterministic catalog and rejects duplicate access authorities", async () => {
+    const access = (id: string) =>
+      defineModule({
+        id,
+        access: {
+          resources: [
+            {
+              id: `${id}#access.bookings`,
+              resource: "bookings",
+              label: "Bookings",
+              actions: [{ action: "read", label: "Read bookings" }],
+            },
+          ],
+        },
+      })
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [access("@acme/one"), access("@acme/two")] }),
+    })
+
+    expect(graph.accessCatalog.resources.map(({ resource }) => resource)).toEqual([
+      "bookings",
+      "bookings",
+    ])
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_DUPLICATE_ID",
+          message: expect.stringContaining("duplicate authorities"),
+        }),
+      ]),
+    )
+  })
+
+  it("rejects unknown scope references even when no access resources are selected", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/empty-access",
+            api: [
+              {
+                id: "@acme/empty-access#api.admin",
+                surface: "admin",
+                requiredScopes: ["bookings:read"],
+              },
+            ],
+          }),
+        ],
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+          facet: "@acme/empty-access#api.admin.requiredScopes",
+        }),
+      ]),
+    )
+  })
 })

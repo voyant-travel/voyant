@@ -28,7 +28,7 @@ describe("@voyant-travel/catalog package exports", () => {
     })
   })
 
-  it("publishes the inert index subscriber descriptors", () => {
+  it("publishes the index subscriber graph runtimes", () => {
     expect(packageJson.exports["./index-subscribers"]).toBe("./src/index-subscriber-runtime.ts")
     expect(packageJson.publishConfig.exports["./index-subscribers"]).toEqual({
       types: "./dist/index-subscriber-runtime.d.ts",
@@ -37,7 +37,7 @@ describe("@voyant-travel/catalog package exports", () => {
     })
   })
 
-  it("publishes the inert booking snapshot subscriber descriptor", () => {
+  it("publishes the booking snapshot subscriber graph runtime", () => {
     expect(packageJson.exports["./booking-snapshot-subscriber"]).toBe(
       "./src/booking-snapshot-subscriber-runtime.ts",
     )

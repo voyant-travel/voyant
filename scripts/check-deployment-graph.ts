@@ -460,17 +460,15 @@ async function main(): Promise<void> {
     }
   }
   const operatorAppSource = await readFile(join(operatorRoot, "src/api/app.ts"), "utf8")
-  const operatorChannelPushSource = await readFile(
-    join(operatorRoot, "src/api/routes/channel-push.ts"),
-    "utf8",
-  )
-  if (
-    operatorAppSource.includes("channelPushBundle") ||
-    operatorChannelPushSource.includes("channelPushBundle") ||
-    operatorChannelPushSource.includes("eventBus.subscribe")
-  ) {
+  const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")
+  if (existsSync(operatorChannelPushRoutePath)) {
     failures.push(
-      "expected package-owned distribution subscribers to stay absent from Operator hand lists and route wiring",
+      "expected the package-owned Distribution channel-push runtime to replace the Operator compatibility route",
+    )
+  }
+  if (operatorAppSource.includes("channelPushBundle")) {
+    failures.push(
+      "expected package-owned distribution subscribers to stay absent from Operator hand lists",
     )
   }
   const bookingScheduleUnit = operatorGraph.extensions.find(
@@ -499,6 +497,38 @@ async function main(): Promise<void> {
   ) {
     failures.push(
       "expected package-owned Finance booking-schedule subscriber to stay absent from Operator hand lists and route wiring",
+    )
+  }
+  const catalogCheckoutUnit = operatorGraph.extensions.find(
+    (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
+  )
+  const expectedCatalogCheckoutSubscribers = new Map([
+    [
+      "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated",
+      "createAcceptanceSignatureSubscriberGraphRuntime",
+    ],
+    [
+      "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed",
+      "createCheckoutFinalizeSubscriberGraphRuntime",
+    ],
+  ])
+  for (const [id, exportName] of expectedCatalogCheckoutSubscribers) {
+    const subscriber = catalogCheckoutUnit?.subscribers.find((candidate) => candidate.id === id)
+    if (
+      subscriber?.runtime?.entry !== "./catalog-checkout-subscribers" ||
+      subscriber.runtime.export !== exportName
+    ) {
+      failures.push(
+        `expected Commerce checkout subscriber ${id} to retain package runtime ${exportName}`,
+      )
+    }
+  }
+  if (
+    existsSync(join(operatorRoot, "src/api/subscribers/catalog-checkout-finalize-runtime.ts")) ||
+    operatorAppSource.includes("createCatalogCheckoutBundle")
+  ) {
+    failures.push(
+      "expected package-owned Commerce checkout subscribers to stay absent from Operator app and subscriber authority",
     )
   }
   for (const specifier of OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS) {

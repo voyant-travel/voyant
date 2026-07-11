@@ -1,10 +1,25 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 import { catalogBookingSnapshotSubscriberDeclaration } from "./booking-snapshot-subscriber-declaration.js"
 import { catalogIndexSubscriberDeclarations } from "./index-subscriber-declarations.js"
+import {
+  catalogBookingSnapshotRuntimePort,
+  catalogProjectionRuntimePort,
+} from "./subscriber-runtime-ports.js"
 
 const catalogAdminRuntime = {
   entry: "@voyant-travel/catalog-react/admin",
   export: "createCatalogAdminExtension",
+} as const
+
+const catalogIndexSubscriberRuntimeExports = {
+  "product.created": "createCatalogProductCreatedIndexSubscriberGraphRuntime",
+  "product.updated": "createCatalogProductUpdatedIndexSubscriberGraphRuntime",
+  "product.deleted": "createCatalogProductDeletedIndexSubscriberGraphRuntime",
+  "product.content.changed": "createCatalogProductContentChangedIndexSubscriberGraphRuntime",
+  "availability.slot.changed": "createCatalogAvailabilityChangedIndexSubscriberGraphRuntime",
+  "pricing.rule.changed": "createCatalogPricingChangedIndexSubscriberGraphRuntime",
+  "product.publication.changed": "createCatalogPublicationChangedIndexSubscriberGraphRuntime",
+  "promotion.changed": "createCatalogPromotionChangedIndexSubscriberGraphRuntime",
 } as const
 
 /** Import-cheap deployment declaration owned by the catalog package. */
@@ -12,6 +27,10 @@ export const catalogVoyantModule = defineModule({
   id: "@voyant-travel/catalog",
   packageName: "@voyant-travel/catalog",
   localId: "catalog",
+  runtimePorts: [
+    requirePort(catalogProjectionRuntimePort),
+    requirePort(catalogBookingSnapshotRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/catalog#api.admin",
@@ -87,7 +106,22 @@ export const catalogVoyantModule = defineModule({
       eventType: "catalog.source.reconnected",
     },
   ],
-  subscribers: [...catalogIndexSubscriberDeclarations, catalogBookingSnapshotSubscriberDeclaration],
+  subscribers: [
+    ...catalogIndexSubscriberDeclarations.map((subscriber) => ({
+      ...subscriber,
+      runtime: {
+        entry: "./index-subscribers",
+        export: catalogIndexSubscriberRuntimeExports[subscriber.eventType],
+      },
+    })),
+    {
+      ...catalogBookingSnapshotSubscriberDeclaration,
+      runtime: {
+        entry: "./booking-snapshot-subscriber",
+        export: "createCatalogBookingSnapshotSubscriberGraphRuntime",
+      },
+    },
+  ],
   access: {
     resources: [
       {

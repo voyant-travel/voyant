@@ -1,6 +1,29 @@
 import { defineConfig } from "@voyant-travel/framework/project"
 
 export default defineConfig({
+  access: {
+    presets: [
+      {
+        id: "commerce-read",
+        kind: "api-token",
+        label: "Commerce read",
+        grants: ["bookings:read"],
+      },
+      {
+        id: "agent-staff",
+        kind: "api-token-grant",
+        label: "Agent (staff)",
+        grants: ["bookings:read", "bookings:write"],
+        audience: "staff",
+      },
+      {
+        id: "editor",
+        kind: "staff",
+        label: "Editor",
+        grants: ["bookings:read", "bookings:write"],
+      },
+    ],
+  },
   plugins: [
     { resolve: "@voyant-travel/plugin-netopia" },
     { resolve: "@voyant-travel/plugin-smartbill" },

@@ -1,4 +1,6 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { legalBookingContractSubscriberRuntimePort } from "./contracts/booking-contract-subscriber-port.js"
+import { legalRuntimePort } from "./runtime-port.js"
 
 const legalAdminRuntime = {
   entry: "@voyant-travel/legal-react/admin",
@@ -12,6 +14,7 @@ export const legalVoyantModule = defineModule({
   id: "@voyant-travel/legal",
   packageName: "@voyant-travel/legal",
   localId: "legal",
+  runtimePorts: [requirePort(legalRuntimePort)],
   api: [
     {
       id: "@voyant-travel/legal#api.admin",
@@ -20,7 +23,7 @@ export const legalVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/legal",
-        export: "createLegalHonoModule",
+        export: "createLegalVoyantRuntime",
       },
     },
     {
@@ -31,7 +34,7 @@ export const legalVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/legal",
-        export: "createLegalHonoModule",
+        export: "createLegalVoyantRuntime",
       },
     },
   ],
@@ -64,6 +67,10 @@ export const legalVoyantModule = defineModule({
     {
       id: "@voyant-travel/legal#event.contract.document.generated",
       eventType: "contract.document.generated",
+    },
+    {
+      id: "@voyant-travel/legal#event.booking.contract.generated",
+      eventType: "booking.contract.generated",
     },
   ],
   access: {
@@ -120,11 +127,15 @@ export const legalContractDocumentVoyantModule = defineModule({
   },
 })
 
-/** Staged declaration; standard composition does not select this extension yet. */
 export const legalBookingContractVoyantExtension = defineExtension({
   id: "@voyant-travel/legal#booking-contract-extension",
   packageName: "@voyant-travel/legal",
   localId: "legal.booking-contract-extension",
+  runtime: {
+    entry: "./booking-contract-subscriber",
+    export: "createLegalBookingContractVoyantRuntime",
+  },
+  runtimePorts: [requirePort(legalBookingContractSubscriberRuntimePort)],
   subscribers: [
     {
       id: "@voyant-travel/legal#subscriber.booking-contract-confirmed",

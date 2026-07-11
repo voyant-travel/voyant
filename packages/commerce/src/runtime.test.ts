@@ -1,6 +1,8 @@
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 import {
   createBookingMaintenanceHonoExtension,
+  createCatalogCheckoutGraphExtension,
   createCatalogCheckoutHonoExtension,
 } from "./checkout/index.js"
 import {
@@ -20,6 +22,7 @@ describe("commerce runtime", () => {
 
     expect(checkout.extension).toEqual({ name: "catalog-checkout", module: "catalog" })
     expect(checkout.publicRoutes).toBeDefined()
+    expect(isGraphRuntimeFactory(createCatalogCheckoutGraphExtension)).toBe(true)
     expect(maintenance.extension).toEqual({ name: "booking-maintenance", module: "bookings" })
     expect(maintenance.adminRoutes).toBeDefined()
   })

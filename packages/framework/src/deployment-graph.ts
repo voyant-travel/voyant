@@ -8,6 +8,8 @@ import {
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
   type VoyantGraphAccessDeclaration,
+  type VoyantGraphAccessPreset,
+  type VoyantGraphAccessResource,
   type VoyantGraphActionDeclaration,
   type VoyantGraphAdminDeclaration,
   type VoyantGraphCapabilityDeclaration,
@@ -38,6 +40,7 @@ import {
   type VoyantGraphWorkflow,
   type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
+import type { AccessCatalog, AccessCatalogResource } from "@voyant-travel/types/api-keys"
 import {
   getManagedProfileScheduledJobs,
   getStandardProfileEventFiltersForModule,
@@ -381,6 +384,7 @@ export interface ResolvedVoyantDeploymentGraph {
     required: readonly string[]
   }
   packageRecords: readonly VoyantGraphPackageRecord[]
+  accessCatalog: AccessCatalog
   webhookPlan: VoyantGraphWebhookPlan
   provisioning: {
     scheduledJobs: readonly VoyantGraphScheduledJob[]
@@ -667,6 +671,7 @@ export async function resolveDeploymentGraph(
     ...(input.scheduledJobs ?? []),
   ])
   const webhookPlan = compileWebhookPlan(selectedUnits)
+  const accessCatalog = compileAccessCatalog(selectedUnits, input.project.access?.presets ?? [])
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
@@ -674,6 +679,7 @@ export async function resolveDeploymentGraph(
     ...validateCapabilityClosure(selectedUnits),
     ...validatePortClosure(selectedUnits),
     ...validateDuplicateEntityIds(selectedUnits),
+    ...validateAccessCatalog(selectedUnits, input.project.access?.presets ?? []),
     ...validatePackageAdmission(packageRecords, {
       frameworkVersion: input.frameworkVersion,
       target,
@@ -706,6 +712,7 @@ export async function resolveDeploymentGraph(
       required: sortedUnique(selectedUnits.flatMap((unit) => unit.requires.capabilities)),
     },
     packageRecords,
+    accessCatalog,
     webhookPlan,
     provisioning: {
       scheduledJobs,
@@ -1197,7 +1204,17 @@ function resolveUnit(
       ? {
           access: {
             ...(unit.access.resources?.length
-              ? { resources: sortFacetEntities(unit.access.resources) }
+              ? {
+                  resources: sortFacetEntities(unit.access.resources).map((resource) => ({
+                    ...resource,
+                    actions: [...resource.actions].sort((left, right) =>
+                      accessActionName(left).localeCompare(accessActionName(right)),
+                    ),
+                    ...(resource.legacyActions?.length
+                      ? { legacyActions: sortedUnique(resource.legacyActions) }
+                      : {}),
+                  })),
+                }
               : {}),
             ...(unit.access.roles?.length ? { roles: sortFacetEntities(unit.access.roles) } : {}),
           },
@@ -1207,6 +1224,9 @@ function resolveUnit(
       ? {
           admin: {
             ...(unit.admin.runtime ? { runtime: unit.admin.runtime } : {}),
+            ...(unit.admin.compositionOrder !== undefined
+              ? { compositionOrder: unit.admin.compositionOrder }
+              : {}),
             ...(unit.admin.copy?.length ? { copy: sortFacetEntities(unit.admin.copy) } : {}),
             ...(unit.admin.routes?.length ? { routes: sortFacetEntities(unit.admin.routes) } : {}),
             ...(unit.admin.nav?.length ? { nav: sortFacetEntities(unit.admin.nav) } : {}),
@@ -1673,12 +1693,52 @@ function validateAccessFacet(
   diagnostics.push(...validateFacetEntities(value.roles, "access.roles", source))
   validateEntityArray(value.resources, "access.resources", source, diagnostics, (entry, facet) => {
     requireNonEmptyString(entry.resource, `${facet}.resource`, source, diagnostics)
-    if (!isStringArray(entry.actions) || entry.actions.length === 0) {
+    if (!Array.isArray(entry.actions) || entry.actions.length === 0) {
       invalidFacet(
         `${facet}.actions`,
         source,
         diagnostics,
-        "Access actions must be a non-empty string array.",
+        "Access actions must be a non-empty array.",
+      )
+    } else {
+      for (const [index, action] of entry.actions.entries()) {
+        if (typeof action === "string") {
+          requireNonEmptyString(action, `${facet}.actions[${index}]`, source, diagnostics)
+        } else if (isRecord(action)) {
+          requireNonEmptyString(
+            action.action,
+            `${facet}.actions[${index}].action`,
+            source,
+            diagnostics,
+          )
+        } else {
+          invalidFacet(
+            `${facet}.actions[${index}]`,
+            source,
+            diagnostics,
+            "Access actions must be strings or display descriptors.",
+          )
+        }
+      }
+    }
+    if (
+      entry.wildcard !== undefined &&
+      entry.wildcard !== "allow" &&
+      entry.wildcard !== "explicit-resource"
+    ) {
+      invalidFacet(
+        `${facet}.wildcard`,
+        source,
+        diagnostics,
+        'Access wildcard policy must be "allow" or "explicit-resource".',
+      )
+    }
+    if (entry.legacyActions !== undefined && !isStringArray(entry.legacyActions)) {
+      invalidFacet(
+        `${facet}.legacyActions`,
+        source,
+        diagnostics,
+        "Legacy access actions must be a string array.",
       )
     }
   })
@@ -1699,6 +1759,17 @@ function validateAdminFacet(
   }
   if (value.runtime !== undefined) {
     validateRuntimeReference(value.runtime, "admin.runtime", source, diagnostics)
+  }
+  if (
+    value.compositionOrder !== undefined &&
+    (!Number.isInteger(value.compositionOrder) || !Number.isSafeInteger(value.compositionOrder))
+  ) {
+    invalidFacet(
+      "admin.compositionOrder",
+      source,
+      diagnostics,
+      "Admin composition order must be a safe integer.",
+    )
   }
   for (const facet of ["copy", "routes", "nav", "slots", "contributions"] as const) {
     diagnostics.push(...validateFacetEntities(value[facet], `admin.${facet}`, source))
@@ -2087,7 +2158,7 @@ function validateFacetReferences(
   const scopes = new Set(
     units.flatMap((unit) =>
       (unit.access?.resources ?? []).flatMap((resource) =>
-        resource.actions.map((action) => `${resource.resource}:${action}`),
+        resource.actions.map((action) => `${resource.resource}:${accessActionName(action)}`),
       ),
     ),
   )
@@ -2108,7 +2179,6 @@ function validateFacetReferences(
     )
   }
   const requireScope = (unitId: string, facet: string, scope: string) => {
-    if (scopes.size === 0) return
     if (scopes.has(scope)) return
     diagnostics.push(
       diagnostic({
@@ -2134,6 +2204,16 @@ function validateFacetReferences(
 
   for (const unit of units) {
     for (const route of unit.api) {
+      if (route.resource && ![...scopes].some((scope) => scope.startsWith(`${route.resource}:`))) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+            source: unit.id,
+            facet: `${route.id}.resource`,
+            message: `Route resource "${route.resource}" is not declared by a selected access resource.`,
+          }),
+        )
+      }
       for (const scope of route.requiredScopes ?? []) {
         requireScope(unit.id, `${route.id}.requiredScopes`, scope)
       }
@@ -2242,6 +2322,162 @@ function validateFacetReferences(
     }
   }
   return diagnostics
+}
+
+function accessActionName(action: VoyantGraphAccessResource["actions"][number]): string {
+  return typeof action === "string" ? action : action.action
+}
+
+function compileAccessCatalog(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+  projectPresets: readonly VoyantGraphAccessPreset[],
+): AccessCatalog {
+  const resources = units
+    .flatMap((unit) =>
+      (unit.access?.resources ?? []).map(
+        (resource): AccessCatalogResource => ({
+          id: resource.id,
+          unitId: unit.id,
+          resource: resource.resource,
+          label: resource.label ?? titleFromPermissionName(resource.resource),
+          description: resource.description ?? `Access ${resource.resource} resources.`,
+          wildcard: resource.wildcard ?? "allow",
+          actions: resource.actions
+            .map((action) => {
+              const name = accessActionName(action)
+              return {
+                action: name,
+                label:
+                  typeof action === "string"
+                    ? `${titleFromPermissionName(name)} ${resource.label ?? resource.resource}`
+                    : (action.label ??
+                      `${titleFromPermissionName(name)} ${resource.label ?? resource.resource}`),
+                description:
+                  typeof action === "string"
+                    ? `${titleFromPermissionName(name)} access to ${resource.resource}.`
+                    : (action.description ??
+                      `${titleFromPermissionName(name)} access to ${resource.resource}.`),
+              }
+            })
+            .sort((left, right) => left.action.localeCompare(right.action)),
+          ...(resource.legacyActions?.length
+            ? { legacyActions: sortedUnique(resource.legacyActions) }
+            : {}),
+        }),
+      ),
+    )
+    .sort((left, right) => left.resource.localeCompare(right.resource))
+  const unitRoles: VoyantGraphAccessPreset[] = units.flatMap((unit) =>
+    (unit.access?.roles ?? []).map((role) => ({
+      id: role.id,
+      kind: "staff" as const,
+      label: titleFromPermissionName(role.id.split(".").at(-1) ?? role.id),
+      description: "Package compatibility role preset.",
+      grants: sortedUnique(role.grants),
+    })),
+  )
+  const presets = [...projectPresets, ...unitRoles]
+    .map((preset) => ({
+      id: preset.id,
+      kind: preset.kind,
+      label: preset.label ?? titleFromPermissionName(preset.id),
+      description: preset.description ?? `${preset.label ?? preset.id} access preset.`,
+      grants: sortedUnique(preset.grants),
+      ...(preset.audience ? { audience: preset.audience } : {}),
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id))
+  return { resources, presets }
+}
+
+function validateAccessCatalog(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+  projectPresets: readonly VoyantGraphAccessPreset[],
+): VoyantGraphDiagnostic[] {
+  const resources = units.flatMap((unit) =>
+    (unit.access?.resources ?? []).map((resource) => ({ unitId: unit.id, resource })),
+  )
+  const diagnostics: VoyantGraphDiagnostic[] = []
+  const authority = new Map<string, string>()
+  const scopes = new Set<string>()
+  for (const { unitId, resource } of resources) {
+    const previous = authority.get(resource.resource)
+    if (previous) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_DUPLICATE_ID",
+          source: unitId,
+          facet: resource.id,
+          message: `Access resource "${resource.resource}" has duplicate authorities ${previous} and ${unitId}.`,
+        }),
+      )
+    } else {
+      authority.set(resource.resource, unitId)
+    }
+    const actions = new Set<string>()
+    for (const action of resource.actions) {
+      const name = accessActionName(action)
+      if (actions.has(name)) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_DUPLICATE_ID",
+            source: unitId,
+            facet: resource.id,
+            message: `Access resource "${resource.resource}" declares action "${name}" more than once.`,
+          }),
+        )
+      }
+      actions.add(name)
+      scopes.add(`${resource.resource}:${name}`)
+    }
+  }
+  const presets = [
+    ...projectPresets,
+    ...units
+      .flatMap((unit) => unit.access?.roles ?? [])
+      .map((role) => ({
+        ...role,
+        kind: "staff" as const,
+      })),
+  ]
+  const presetIds = new Set<string>()
+  for (const preset of presets) {
+    if (presetIds.has(preset.id)) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_DUPLICATE_ID",
+          source: preset.id,
+          facet: "access.presets",
+          message: `Access preset "${preset.id}" is declared more than once.`,
+        }),
+      )
+    }
+    presetIds.add(preset.id)
+    for (const grant of preset.grants) {
+      if (grant === "*" || grant === "*:*" || /^\*:[a-z][a-z0-9-]*$/.test(grant)) continue
+      if (/^[a-z][a-z0-9-]*:\*$/.test(grant)) {
+        if (authority.has(grant.slice(0, -2))) continue
+      } else if (scopes.has(grant)) {
+        continue
+      }
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+          source: preset.id,
+          facet: "access.presets.grants",
+          message: `Access preset "${preset.id}" references undeclared grant "${grant}".`,
+        }),
+      )
+    }
+  }
+  return diagnostics
+}
+
+function titleFromPermissionName(value: string): string {
+  return value
+    .split(/[-.:]/g)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ")
 }
 
 function compileWebhookPlan(

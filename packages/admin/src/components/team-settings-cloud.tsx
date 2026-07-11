@@ -2,7 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  API_KEY_PERMISSION_GROUPS,
+  type AccessCatalog,
+  accessCatalogPermissionGroups,
+  createEffectiveAccessCatalog,
   hasApiKeyPermission,
   permissionStringsToPermissions,
 } from "@voyant-travel/types/api-keys"
@@ -28,7 +30,7 @@ import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import { ScrollArea } from "@voyant-travel/ui/components/scroll-area"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { formatMessage } from "../lib/i18n.js"
 import { useLocale } from "../providers/locale.js"
@@ -68,7 +70,11 @@ type CloudRole = { slug: string; name: string; description: string | null }
 const CLOUD_MEMBERS_QK = ["admin-team-members"] as const
 const CLOUD_INVITES_QK = ["admin-team-invitations"] as const
 
-export function CloudTeamView() {
+export function memberPermissionGroups(accessCatalog?: AccessCatalog) {
+  return accessCatalogPermissionGroups(createEffectiveAccessCatalog(accessCatalog))
+}
+
+export function CloudTeamView({ accessCatalog }: { accessCatalog?: AccessCatalog }) {
   const api = useTeamSettingsPageApi()
   const messages = useOperatorAdminMessages()
   const { resolvedLocale } = useLocale()
@@ -150,7 +156,7 @@ export function CloudTeamView() {
                       <span className="text-xs text-muted-foreground">
                         {memberAccessSummary(member, messages)}
                       </span>
-                      <MemberPermissionsDialog member={member} />
+                      <MemberPermissionsDialog member={member} accessCatalog={accessCatalog} />
                     </div>
                   )}
                 </li>
@@ -379,21 +385,34 @@ function CloudInviteMemberDialog() {
 type AdminMessages = ReturnType<typeof useOperatorAdminMessages>
 
 /** Expand a (possibly wildcard) scope list to the concrete catalog permissions it grants. */
-function expandToConcrete(scopes: string[]): Set<string> {
+function expandToConcrete(scopes: string[], catalog: AccessCatalog): Set<string> {
   const permissions = permissionStringsToPermissions(scopes)
   return new Set(
-    API_KEY_PERMISSION_GROUPS.flatMap((group) =>
+    accessCatalogPermissionGroups(catalog).flatMap((group) =>
       group.permissions
-        .filter((p) => hasApiKeyPermission(permissions, p.resource, p.action))
+        .filter((p) => hasApiKeyPermission(permissions, p.resource, p.action, catalog))
         .map((p) => `${p.resource}:${p.action}`),
     ),
   )
 }
 
 /** The member's effective scopes today: explicit set, else role default if they have access. */
-function memberCurrentScopes(member: CloudMember): string[] {
+function memberCurrentScopes(member: CloudMember, catalog: AccessCatalog): string[] {
   if (member.permissions && member.permissions.length > 0) return member.permissions
-  if (member.hasDeploymentAccess) return scopesForRole(member.roleSlug) ?? []
+  if (member.hasDeploymentAccess) {
+    const base = scopesForRole(member.roleSlug) ?? []
+    const normalizedRole = (member.roleSlug ?? "").trim().toLowerCase()
+    const presetId =
+      normalizedRole === "member"
+        ? "editor"
+        : normalizedRole === "guest"
+          ? "viewer"
+          : normalizedRole
+    const selected = catalog.presets.find(
+      (preset) => preset.kind === "staff" && preset.id === presetId,
+    )
+    return [...new Set([...base, ...(selected?.grants ?? [])])].sort()
+  }
   return []
 }
 
@@ -406,18 +425,19 @@ function memberAccessSummary(member: CloudMember, messages: AdminMessages): stri
 // Concrete-scope presets. "Admin" is intentionally NOT here: full access must
 // persist the real `*` wildcard (so it covers PII + future resources), not an
 // expansion of the visible catalog — handled as a dedicated control below.
-const SCOPE_PRESETS = [
-  { key: "editor", label: MEMBER_ROLE_PRESETS.editor.label, scopes: scopesForRole("editor") ?? [] },
-  { key: "viewer", label: MEMBER_ROLE_PRESETS.viewer.label, scopes: scopesForRole("viewer") ?? [] },
-] as const
-
 /**
  * Granular permission editor for a deployment member (cloud mode). Operates on
  * concrete `resource:action` strings drawn from the shared API-key catalog;
  * presets seed the selection and any box is then toggleable. Saving an empty
  * selection revokes the member's access to this deployment.
  */
-function MemberPermissionsDialog({ member }: { member: CloudMember }) {
+function MemberPermissionsDialog({
+  member,
+  accessCatalog,
+}: {
+  member: CloudMember
+  accessCatalog?: AccessCatalog
+}) {
   const api = useTeamSettingsPageApi()
   const messages = useOperatorAdminMessages()
   const queryClient = useQueryClient()
@@ -426,11 +446,26 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
   // Full access is a real `*`, not an expansion of the visible catalog — so it
   // keeps PII + any future resources. Tracked separately from the checklist.
   const [wildcard, setWildcard] = useState(false)
+  const catalog = useMemo(() => createEffectiveAccessCatalog(accessCatalog), [accessCatalog])
+  const permissionGroups = useMemo(() => memberPermissionGroups(accessCatalog), [accessCatalog])
+  const scopePresets = useMemo(
+    () =>
+      (["editor", "viewer"] as const).map((key) => ({
+        key,
+        label: MEMBER_ROLE_PRESETS[key].label,
+        scopes: [
+          ...(scopesForRole(key) ?? []),
+          ...(catalog.presets.find((preset) => preset.kind === "staff" && preset.id === key)
+            ?.grants ?? []),
+        ],
+      })),
+    [catalog],
+  )
 
   const openDialog = () => {
-    const scopes = memberCurrentScopes(member)
+    const scopes = memberCurrentScopes(member, catalog)
     setWildcard(scopes.includes("*"))
-    setSelected(expandToConcrete(scopes))
+    setSelected(expandToConcrete(scopes, catalog))
     setOpen(true)
   }
 
@@ -447,12 +482,12 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
 
   const applyPreset = (scopes: readonly string[]) => {
     setWildcard(false)
-    setSelected(expandToConcrete([...scopes]))
+    setSelected(expandToConcrete([...scopes], catalog))
   }
 
   const applyFullAccess = () => {
     setWildcard(true)
-    setSelected(expandToConcrete(["*"]))
+    setSelected(expandToConcrete(["*"], catalog))
   }
 
   const toggle = (key: string, checked: boolean) => {
@@ -490,7 +525,7 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
               >
                 {MEMBER_ROLE_PRESETS.admin.label}
               </Button>
-              {SCOPE_PRESETS.map((preset) => (
+              {scopePresets.map((preset) => (
                 <Button
                   key={preset.key}
                   type="button"
@@ -516,7 +551,7 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
 
             <ScrollArea className="h-80 pr-4">
               <div className="flex flex-col gap-4">
-                {API_KEY_PERMISSION_GROUPS.map((group) => (
+                {permissionGroups.map((group) => (
                   <div key={group.resource} className="space-y-2">
                     <p className="text-sm font-medium">{group.label}</p>
                     <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">

@@ -1,9 +1,12 @@
 import {
+  type AccessCatalog,
   API_KEY_AUDIENCES,
   API_KEY_GRANT_PRESETS,
   type ApiKeyGrantPresetKey,
   type ApiKeyPermissions,
   assertKnownPermissions,
+  createEffectiveAccessCatalog,
+  permissionStringsToPermissions,
   UnknownApiKeyPermissionError,
 } from "@voyant-travel/types/api-keys"
 
@@ -59,7 +62,11 @@ function mergePermissions(
  * against the known resource/action taxonomy, and validate the grant audience.
  * Throws {@link ApiTokenValidationError} (→ 400) on any invalid input.
  */
-export function buildApiTokenCreateBody(body: Record<string, unknown>): Record<string, unknown> {
+export function buildApiTokenCreateBody(
+  body: Record<string, unknown>,
+  accessCatalog?: AccessCatalog,
+): Record<string, unknown> {
+  const effectiveAccessCatalog = createEffectiveAccessCatalog(accessCatalog)
   const fields = pickFields(body, API_TOKEN_CREATE_FIELDS)
   const metadata: Record<string, unknown> = isPlainObject(fields.metadata)
     ? { ...fields.metadata }
@@ -68,21 +75,29 @@ export function buildApiTokenCreateBody(body: Record<string, unknown>): Record<s
   const presetKey = typeof body.grantPreset === "string" ? body.grantPreset : undefined
   if (presetKey !== undefined) {
     const preset = API_KEY_GRANT_PRESETS[presetKey as ApiKeyGrantPresetKey]
-    if (!preset) {
+    const selectedPreset = accessCatalog?.presets.find(
+      (candidate) => candidate.kind === "api-token-grant" && candidate.id === presetKey,
+    )
+    if (!preset && !selectedPreset) {
       throw new ApiTokenValidationError(
         `Unknown grant preset "${presetKey}". Known presets: ${Object.keys(API_KEY_GRANT_PRESETS).join(", ")}.`,
       )
     }
     fields.permissions = mergePermissions(
-      preset.permissions,
+      mergePermissions(
+        preset?.permissions ?? {},
+        selectedPreset ? permissionStringsToPermissions(selectedPreset.grants) : undefined,
+      ),
       isPlainObject(fields.permissions) ? (fields.permissions as ApiKeyPermissions) : undefined,
     )
-    if (metadata.audience === undefined) metadata.audience = preset.audience
+    if (metadata.audience === undefined) {
+      metadata.audience = selectedPreset?.audience ?? preset?.audience
+    }
   }
 
   if (fields.permissions !== undefined) {
     try {
-      assertKnownPermissions(fields.permissions as ApiKeyPermissions)
+      assertKnownPermissions(fields.permissions as ApiKeyPermissions, effectiveAccessCatalog)
     } catch (error) {
       if (error instanceof UnknownApiKeyPermissionError) {
         throw new ApiTokenValidationError(error.message)

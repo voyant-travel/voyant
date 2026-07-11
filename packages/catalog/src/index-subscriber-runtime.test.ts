@@ -103,6 +103,7 @@ describe("Catalog index subscriber runtime descriptors", () => {
     await descriptor.register(harness.context)
     await harness.eventBus.emit(eventType, { productId: "product_123", ignored: true })
     await harness.eventBus.emit(eventType, { ignored: true })
+    await harness.eventBus.emit(eventType, { productId: "" })
     expect(harness.runtime.reindexEntity).toHaveBeenCalledTimes(1)
     expect(harness.runtime.reindexEntity).toHaveBeenCalledWith({
       entityModule: "products",

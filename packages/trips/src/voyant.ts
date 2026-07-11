@@ -1,10 +1,14 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
+
+export { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the trips package. */
 export const tripsVoyantModule = defineModule({
   id: "@voyant-travel/trips",
   packageName: "@voyant-travel/trips",
   localId: "trips",
+  runtimePorts: [requirePort(tripsRoutesRuntimePort), requirePort(tripsDatabaseRuntimePort)],
   api: [
     {
       id: "@voyant-travel/trips#api.admin",
@@ -13,7 +17,7 @@ export const tripsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/trips",
-        export: "createTripsHonoModule",
+        export: "createTripsVoyantRuntime",
       },
     },
     {
@@ -23,7 +27,7 @@ export const tripsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/trips",
-        export: "createTripsHonoModule",
+        export: "createTripsVoyantRuntime",
       },
     },
   ],

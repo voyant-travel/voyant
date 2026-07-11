@@ -1,4 +1,7 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { relationshipsRouteRuntimePort } from "./runtime-port.js"
+
+export { relationshipsRouteRuntimePort } from "./runtime-port.js"
 
 const relationshipsAdminRuntime = {
   entry: "@voyant-travel/relationships-react/admin",
@@ -10,6 +13,7 @@ export const relationshipsVoyantModule = defineModule({
   id: "@voyant-travel/relationships",
   packageName: "@voyant-travel/relationships",
   localId: "relationships",
+  runtimePorts: [requirePort(relationshipsRouteRuntimePort)],
   api: [
     {
       id: "@voyant-travel/relationships#api.admin",
@@ -18,7 +22,7 @@ export const relationshipsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/relationships",
-        export: "createRelationshipsHonoModule",
+        export: "createRelationshipsVoyantRuntime",
       },
     },
   ],

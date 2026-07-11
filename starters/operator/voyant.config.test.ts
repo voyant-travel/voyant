@@ -10,15 +10,20 @@ const operatorRoot = process.cwd()
 describe("Operator project config", () => {
   it("authors only deployment differences and external plugins", () => {
     expect(config.modules).toHaveLength(35)
-    expect(config.extensions).toHaveLength(20)
+    expect(config.extensions).toHaveLength(22)
     expect(config.plugins).toHaveLength(2)
     expect(config).not.toHaveProperty("presetLineage")
+    expect(config.access?.presets?.map((preset) => preset.id)).toEqual([
+      "agent-staff",
+      "commerce-read",
+      "editor",
+    ])
 
     expect(config.selections?.modules).toHaveLength(35)
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)
-    expect(config.selections?.extensions).toHaveLength(20)
+    expect(config.selections?.extensions).toHaveLength(22)
     expect(config.selections?.plugins.map((selection) => selection.resolve)).toEqual([
       "@voyant-travel/plugin-netopia",
       "@voyant-travel/plugin-smartbill",

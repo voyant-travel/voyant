@@ -19,11 +19,13 @@ describe("bookings deployment manifest", () => {
         {
           id: "@voyant-travel/bookings#api.admin",
           surface: "admin",
+          resource: "bookings",
           runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
         {
           id: "@voyant-travel/bookings#api.public",
           surface: "public",
+          resource: "bookings",
           anonymous: true,
           runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
@@ -47,6 +49,44 @@ describe("bookings deployment manifest", () => {
     })
 
     expect(bookingsExpireStaleHoldsWorkflow.id).toBe(bookingsVoyantModule.workflows[0]?.id)
+  })
+
+  it("owns the selected Bookings access catalog", () => {
+    expect(bookingsVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "bookings",
+        actions: [
+          expect.objectContaining({ action: "read" }),
+          expect.objectContaining({ action: "write" }),
+        ],
+        legacyActions: ["cancel"],
+      }),
+      expect.objectContaining({
+        resource: "bookings-pii",
+        wildcard: "explicit-resource",
+        actions: [expect.objectContaining({ action: "read" })],
+      }),
+    ])
+    expect(bookingsVoyantModule.admin?.routes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/bookings#admin.route.index",
+          requiredScopes: ["bookings:read"],
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/bookings#admin.route.new",
+          requiredScopes: ["bookings:write"],
+        }),
+      ]),
+    )
+    expect(bookingsVoyantModule.admin?.contributions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/bookings#admin.contribution.person-bookings",
+          requiredScopes: ["bookings:read"],
+        }),
+      ]),
+    )
   })
 
   it("owns the requirements module and supplier extension", () => {

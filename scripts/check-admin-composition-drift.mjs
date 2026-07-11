@@ -35,6 +35,10 @@ const BUNDLE = optionPath(
   "--bundle",
   join(ROOT, "starters/operator/.voyant/admin/selected-graph-admin.generated.ts"),
 )
+const COMPATIBILITY = optionPath(
+  "--compatibility",
+  join(ROOT, "starters/operator/src/lib/admin-extensions.tsx"),
+)
 const DESTINATIONS = join(ROOT, "starters/operator/src/admin.destinations.generated.ts")
 const ROUTES = join(ROOT, "starters/operator/src/admin.routes.generated.tsx")
 
@@ -108,6 +112,19 @@ function adminImportsIn(file) {
   return set
 }
 
+function selectedFactoryReferencesIn(file) {
+  if (!existsSync(file)) return new Set()
+  const src = readFileSync(file, "utf-8")
+  const set = new Set()
+  const re = /selectedGraphAdminExtensionFactories\s*\[\s*["']([^"']+)["']\s*\]/g
+  let match = re.exec(src)
+  while (match) {
+    set.add(match[1])
+    match = re.exec(src)
+  }
+  return set
+}
+
 const violations = []
 
 if (!existsSync(EXTENSIONS)) {
@@ -122,6 +139,7 @@ const expected = selected.filter(hasAdminSurface)
 const actual = adminImportsIn(EXTENSIONS)
 const bundled = new Set(bundledPackages)
 const actualBundle = adminImportsIn(BUNDLE)
+const compatibilitySelectedFactories = selectedFactoryReferencesIn(COMPATIBILITY)
 
 // Silently-dropped admin: graph-selected + has ./admin, but not wired.
 for (const name of expected) {
@@ -141,6 +159,11 @@ for (const name of bundled) {
   if (actual.has(name)) {
     violations.push(
       `${name} is duplicated in admin.extensions.generated.ts after migration to the selected-graph admin bundle`,
+    )
+  }
+  if (compatibilitySelectedFactories.has(name)) {
+    violations.push(
+      `${name} remains package-keyed in the Operator compatibility registry after migration to generic selected-admin composition`,
     )
   }
 }

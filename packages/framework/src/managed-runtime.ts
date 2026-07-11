@@ -58,7 +58,6 @@ import {
   createPostgresKvStore,
 } from "@voyant-travel/db/runtime"
 import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
-import { createChannelPushExtension as createDistributionChannelPushExtension } from "@voyant-travel/distribution"
 import {
   type BookingScheduleRoutesOptions,
   financeService,
@@ -78,7 +77,6 @@ import {
   type VoyantDb,
 } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
-import type { HonoExtension } from "@voyant-travel/hono/module"
 import { productsService } from "@voyant-travel/inventory"
 import { createProductContentRoutes } from "@voyant-travel/inventory/routes-content"
 import { getProductContent } from "@voyant-travel/inventory/service-content"
@@ -261,6 +259,8 @@ export interface ManagedProfileRuntimeOptions {
   deploymentRequirements?: VoyantGraphDeploymentRequirements
   /** Admitted generated runtime for graph-owned tools and other executable facets. */
   graphRuntime?: VoyantGraphRuntime
+  /** Host implementations for graph-selected package runtime ports. */
+  runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
   env?: Record<string, unknown> | ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
   providers?: Partial<FrameworkProviders>
@@ -384,7 +384,7 @@ export async function loadManagedProfileRuntime(
     customSourceOptions,
   )
   const graphFacetModules = options.graphRuntime
-    ? await composeVoyantGraphRuntimeFacetModules(options.graphRuntime)
+    ? await composeVoyantGraphRuntimeFacetModules(options.graphRuntime, options.runtimePorts)
     : []
   const actionLedgerCapabilities = options.graphRuntime
     ? lowerVoyantGraphActionsToActionLedgerRegistry(options.graphRuntime)
@@ -618,7 +618,6 @@ export function createManagedProfileProviders(
     storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
     resolvePaymentStarters: () => ({}),
     resolveCardPaymentStarter: () => null,
-    createChannelPushExtension: createManagedChannelPushExtension,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
     loadMcpAdminRoutes: () => createManagedMcpAdminRoutes(graphRuntime),
     loadCatalogBookingRoutes: createManagedCatalogBookingRoutes,
@@ -2825,12 +2824,6 @@ function guessMimeType(key: string): string {
     default:
       return "application/octet-stream"
   }
-}
-
-function createManagedChannelPushExtension(): HonoExtension {
-  return createDistributionChannelPushExtension({
-    resolveRegistry: resolveManagedSourceAdapterRegistry,
-  })
 }
 
 function resolveManagedSourceAdapterRegistry(): SourceAdapterRegistry {

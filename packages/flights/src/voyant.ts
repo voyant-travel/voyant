@@ -1,10 +1,13 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { flightsRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the flights package. */
 export const flightsVoyantModule = defineModule({
   id: "@voyant-travel/flights",
   packageName: "@voyant-travel/flights",
   localId: "flights",
+  runtimePorts: [requirePort(flightsRuntimePort)],
+  requires: { capabilities: ["finance.payment-sessions"] },
   api: [
     {
       id: "@voyant-travel/flights#api",
@@ -12,7 +15,7 @@ export const flightsVoyantModule = defineModule({
       mount: "flights",
       runtime: {
         entry: "@voyant-travel/flights/hono",
-        export: "createFlightsHonoModule",
+        export: "createFlightsVoyantRuntime",
       },
     },
   ],

@@ -13,10 +13,11 @@ import {
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import { createOperatorProfileSettingsExtraPage } from "@voyant-travel/operator-settings-react/settings"
 import { Button } from "@voyant-travel/ui/components/button"
-import { CalendarRange, FileText, Route, ScrollText, SlidersHorizontal, Tag } from "lucide-react"
+import { Route, SlidersHorizontal, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
-import { selectedGraphAdminExtensionFactories } from "../../.voyant/admin/selected-graph-admin.generated"
+import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
+import { createSelectedGraphAdminExtensions } from "../../.voyant/admin/selected-graph-admin.generated"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.
@@ -172,11 +173,6 @@ const crmMessagesProvider = loadProvider(
   () => import("@voyant-travel/relationships-react/i18n"),
   (module) => module.CrmUiMessagesProvider,
 )
-const quotesMessagesProvider = loadProvider(
-  () => import("@voyant-travel/quotes-react/i18n"),
-  (module) => module.CrmUiMessagesProvider,
-)
-
 const bookingRouteMessagesProvider = composeProviderLoaders(
   bookingsMessagesProvider,
   financeMessagesProvider,
@@ -222,7 +218,6 @@ const extensionRouteMessagesProviders: Record<string, RouteMessagesProviderLoade
   legal: legalMessagesProvider,
   notifications: notificationsMessagesProvider,
   operations: operationsRouteMessagesProvider,
-  quotes: quotesMessagesProvider,
   relationships: relationshipsRouteMessagesProvider,
 }
 
@@ -298,6 +293,7 @@ function createCoreExtension() {
       },
     },
     settings: {
+      accessCatalog: effectiveAccessCatalog,
       extraPages: [
         // The Operator Profile page is now package-delivered
         // (@voyant-travel/operator-settings-react) so the source-free managed
@@ -593,45 +589,6 @@ function createTripsExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-// Action ledger is package-delivered (packaged-admin RFC Phase 2): nav AND
-// the route implementation come from @voyant-travel/action-ledger-react/admin —
-// the Logs nav item (order 60, past the default admin items) and the
-// cursor-paginated Logs page. The app only supplies the localized label and
-// the icon.
-function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
-  return selectedGraphAdminExtensionFactories["@voyant-travel/action-ledger"]({
-    labels: { actionLedger: messages.actionLedger },
-    icon: ScrollText,
-  })
-}
-
-// Quotes is package-delivered (packaged-admin RFC Phase 3): nav AND the route
-// implementations come from @voyant-travel/quotes-react/admin — the Quotes nav
-// item (spliced after Bookings via `insertAfter`, since both belong to the
-// quote → accept → book lifecycle), the quotes board (pipelines + stages +
-// quote creation), and the quote detail page where that quote's versions are
-// nested. The app only supplies the localized label and the icon.
-function createQuotesExtension(messages: AdminExtensionNavMessages) {
-  return selectedGraphAdminExtensionFactories["@voyant-travel/quotes"]({
-    labels: { quotes: messages.quotes },
-    icon: FileText,
-  })
-}
-
-// MICE is package-delivered (packaged-admin RFC Phase 3): nav AND the route
-// implementations come from @voyant-travel/mice-react/admin — the Programs nav
-// item (spliced after Bookings via `insertAfter`, since a group program is an
-// operationally-managed booking pipeline of rooms, function space, and
-// delegates), the programs list, and the program detail page where that
-// program's per-currency cost sheet lives. The app only supplies the localized
-// label and the icon.
-function createMiceExtension(messages: AdminExtensionNavMessages) {
-  return selectedGraphAdminExtensionFactories["@voyant-travel/mice"]({
-    labels: { programs: messages.mice },
-    icon: CalendarRange,
-  })
-}
-
 const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   actionLedger: "Logs",
   allTrips: "All trips",
@@ -703,9 +660,7 @@ export function createOperatorAdminExtensions(
       createNotificationsExtension(messages),
       createPromotionsExtension(messages),
       createTripsExtension(messages),
-      createQuotesExtension(messages),
-      createMiceExtension(messages),
-      createActionLedgerExtension(messages),
+      ...createSelectedGraphAdminExtensions({ navMessages: messages }),
       ...discoveredAdminExtensions,
     ),
   )
