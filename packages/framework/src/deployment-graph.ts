@@ -1895,26 +1895,30 @@ function validateRouteBundles(value: unknown, source: string | undefined): Voyan
 
     if (
       route.anonymous !== undefined &&
-      typeof route.anonymous !== "boolean" &&
-      !isStringArray(route.anonymous)
+      ((typeof route.anonymous !== "boolean" && !isRouteRelativePathArray(route.anonymous)) ||
+        (route.surface !== "public" && route.surface !== "webhook"))
     ) {
       diagnostics.push(
         diagnostic({
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
           source,
           facet: `${facet}.anonymous`,
-          message: `Route bundle "${route.id ?? index}" anonymous metadata must be a boolean or string array.`,
+          message: `Route bundle "${route.id ?? index}" anonymous metadata must be declared on a public or webhook bundle as true or a non-empty array of unique route-relative paths.`,
         }),
       )
     }
 
-    if (route.transactional !== undefined && typeof route.transactional !== "boolean") {
+    if (
+      route.transactional !== undefined &&
+      typeof route.transactional !== "boolean" &&
+      !isRouteRelativePathArray(route.transactional)
+    ) {
       diagnostics.push(
         diagnostic({
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
           source,
           facet: `${facet}.transactional`,
-          message: `Route bundle "${route.id ?? index}" transactional metadata must be a boolean.`,
+          message: `Route bundle "${route.id ?? index}" transactional metadata must be a boolean or non-empty array of unique route-relative paths.`,
         }),
       )
     }
@@ -1948,6 +1952,23 @@ function isRouteSurface(value: unknown): value is VoyantGraphRouteSurface {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === "string")
+}
+
+function isRouteRelativePathArray(value: unknown): value is string[] {
+  if (!isStringArray(value) || value.length === 0) return false
+  const normalized = value.map(normalizeRouteRelativePath)
+  return (
+    normalized.every((entry) => entry !== undefined) &&
+    new Set(normalized).size === normalized.length
+  )
+}
+
+function normalizeRouteRelativePath(value: string): string | undefined {
+  if (value.trim() !== value || value.includes("?") || value.includes("#")) return undefined
+  const normalized = value.replace(/^\/+|\/+$/g, "")
+  if (!normalized || normalized.includes("//")) return undefined
+  const segments = normalized.split("/")
+  return segments.some((segment) => segment === "." || segment === "..") ? undefined : normalized
 }
 
 function validateWorkflows(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {

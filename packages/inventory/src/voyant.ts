@@ -19,6 +19,7 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#api.public",
       surface: "public",
       mount: "products",
+      anonymous: true,
       runtime: {
         entry: "@voyant-travel/inventory",
         export: "inventoryHonoModule",
@@ -255,6 +256,7 @@ export const inventoryContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/inventory#content-extension.api.public",
       surface: "public",
       mount: "products",
+      anonymous: true,
       runtime: {
         entry: "@voyant-travel/inventory/routes-content",
         export: "createProductContentHonoExtension",

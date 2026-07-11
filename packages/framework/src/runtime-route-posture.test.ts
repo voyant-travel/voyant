@@ -1,0 +1,224 @@
+import { describe, expect, it, vi } from "vitest"
+import { composeVoyantGraphRuntime } from "./runtime-composition.js"
+import { createVoyantGraphRuntime } from "./runtime-lowering.js"
+
+function createRoutePostureRuntime(
+  load = vi.fn(async () => ({
+    createCatalogModule: () => ({ module: { name: "internal-catalog" } }),
+  })),
+) {
+  return {
+    load,
+    runtime: createVoyantGraphRuntime({
+      graphHash: "sha256:route-posture",
+      entries: { "@acme/catalog": load },
+      modules: [
+        {
+          id: "@acme/catalog",
+          localId: "catalog",
+          kind: "module",
+          packageName: "@acme/catalog",
+          order: 0,
+          routes: [
+            {
+              route: {
+                id: "@acme/catalog#api.admin",
+                surface: "admin",
+                mount: "catalog",
+                transactional: ["/book", "/v1/admin/catalog/quote"],
+                runtime: { entry: "@acme/catalog", export: "createCatalogModule" },
+              },
+              importEntry: "@acme/catalog",
+            },
+            {
+              route: {
+                id: "@acme/catalog#api.public",
+                surface: "public",
+                mount: "catalog",
+                anonymous: true,
+                transactional: ["/book"],
+                runtime: { entry: "@acme/catalog", export: "createCatalogModule" },
+              },
+              importEntry: "@acme/catalog",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    }),
+  }
+}
+
+describe("graph runtime route posture", () => {
+  it("keeps selected route posture inspectable without loading the package", () => {
+    const { load, runtime } = createRoutePostureRuntime()
+
+    expect(runtime.modules[0]?.routes[1]?.route).toMatchObject({
+      surface: "public",
+      mount: "catalog",
+      anonymous: true,
+      transactional: ["/book"],
+    })
+    expect(load).not.toHaveBeenCalled()
+  })
+
+  it("derives public and transactional posture from selected units", async () => {
+    const { runtime } = createRoutePostureRuntime()
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.routePosture).toEqual({
+      publicPaths: ["/v1/public/catalog"],
+      transactionalPaths: [
+        "/v1/admin/catalog/book",
+        "/v1/admin/catalog/quote",
+        "/v1/public/catalog/book",
+      ],
+    })
+    expect(composition.modules[0]).toMatchObject({
+      publicPath: "catalog",
+      anonymous: true,
+      transactionalPaths: [
+        "/v1/admin/catalog/book",
+        "/v1/admin/catalog/quote",
+        "/v1/public/catalog/book",
+      ],
+    })
+  })
+
+  it("normalizes existing storefront and finance anonymous forms against their mounts", async () => {
+    const createModule = (name: string) => () => ({ module: { name } })
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:existing-anonymous-forms",
+      entries: {
+        "@voyant-travel/storefront": async () => ({
+          createStorefrontModule: createModule("storefront"),
+        }),
+        "@voyant-travel/finance": async () => ({
+          createFinanceModule: createModule("finance"),
+        }),
+      },
+      modules: [
+        {
+          id: "@voyant-travel/storefront",
+          kind: "module",
+          packageName: "@voyant-travel/storefront",
+          order: 0,
+          routes: [
+            {
+              route: {
+                id: "@voyant-travel/storefront#api.public",
+                surface: "public",
+                mount: "/",
+                anonymous: ["/leads", "/newsletter", "offers"],
+                runtime: {
+                  entry: "@voyant-travel/storefront",
+                  export: "createStorefrontModule",
+                },
+              },
+              importEntry: "@voyant-travel/storefront",
+            },
+          ],
+        },
+        {
+          id: "@voyant-travel/finance",
+          kind: "module",
+          packageName: "@voyant-travel/finance",
+          order: 1,
+          routes: [
+            {
+              route: {
+                id: "@voyant-travel/finance#api.public",
+                surface: "public",
+                mount: "finance",
+                anonymous: ["/bookings", "/collections", "payment-sessions"],
+                transactional: true,
+                runtime: {
+                  entry: "@voyant-travel/finance",
+                  export: "createFinanceModule",
+                },
+              },
+              importEntry: "@voyant-travel/finance",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.routePosture).toEqual({
+      publicPaths: [
+        "/v1/public/finance/bookings",
+        "/v1/public/finance/collections",
+        "/v1/public/finance/payment-sessions",
+        "/v1/public/leads",
+        "/v1/public/newsletter",
+        "/v1/public/offers",
+      ],
+      transactionalPaths: ["/v1/public/finance"],
+    })
+    expect(composition.modules).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          publicPath: "/",
+          anonymous: ["/leads", "/newsletter", "/offers"],
+        }),
+        expect.objectContaining({
+          publicPath: "finance",
+          anonymous: ["/bookings", "/collections", "/payment-sessions"],
+        }),
+      ]),
+    )
+  })
+
+  it("preserves the payment-link root mount instead of falling back to its local id", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:payment-link-root-posture",
+      entries: {
+        "@voyant-travel/storefront/payment-link": async () => ({
+          createPaymentLinkModule: () => ({
+            module: { name: "payment-link" },
+            publicPath: "/",
+          }),
+        }),
+      },
+      modules: [
+        {
+          id: "@voyant-travel/storefront#payment-link",
+          localId: "storefront.payment-link",
+          kind: "module",
+          packageName: "@voyant-travel/storefront",
+          order: 0,
+          routes: [
+            {
+              route: {
+                id: "@voyant-travel/storefront#payment-link.api",
+                surface: "public",
+                mount: "/",
+                anonymous: ["payment-link-config", "payment-link"],
+                runtime: {
+                  entry: "@voyant-travel/storefront/payment-link",
+                  export: "createPaymentLinkModule",
+                },
+              },
+              importEntry: "@voyant-travel/storefront/payment-link",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.routePosture.publicPaths).toEqual([
+      "/v1/public/payment-link",
+      "/v1/public/payment-link-config",
+    ])
+    expect(composition.modules[0]).toMatchObject({
+      publicPath: "/",
+      anonymous: ["/payment-link", "/payment-link-config"],
+    })
+  })
+})

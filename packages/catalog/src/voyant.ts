@@ -203,6 +203,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       id: "@voyant-travel/catalog#booking-engine.api.admin",
       surface: "admin",
       mount: "catalog",
+      transactional: ["/book", "/holds", "/orders", "/quote", "/quotes/batch"],
       runtime: {
         entry: "@voyant-travel/catalog/booking-engine",
         export: "createCatalogBookingEngineHonoModule",
@@ -212,6 +213,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       id: "@voyant-travel/catalog#booking-engine.api.public",
       surface: "public",
       mount: "catalog",
+      transactional: ["/book", "/holds", "/quote", "/quotes/batch"],
       runtime: {
         entry: "@voyant-travel/catalog/booking-engine",
         export: "createCatalogBookingEngineHonoModule",

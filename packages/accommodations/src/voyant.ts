@@ -61,6 +61,7 @@ export const accommodationsContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/accommodations#content-extension.api.public",
       surface: "public",
       mount: "accommodations",
+      anonymous: true,
       runtime: {
         entry: "@voyant-travel/accommodations/routes-content",
         export: "createAccommodationContentHonoExtension",
