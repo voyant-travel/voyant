@@ -73,6 +73,10 @@ export const notificationsVoyantModule = defineModule({
         },
       },
       source: "@voyant-travel/notifications/workflows",
+      runtime: {
+        entry: "@voyant-travel/notifications/workflows",
+        export: "notificationsDeliverReminderWorkflow",
+      },
     },
     {
       id: "notifications.send-due-reminders",
@@ -84,6 +88,10 @@ export const notificationsVoyantModule = defineModule({
         },
       },
       source: "@voyant-travel/notifications/workflows",
+      runtime: {
+        entry: "@voyant-travel/notifications/workflows",
+        export: "notificationsSendDueRemindersWorkflow",
+      },
     },
   ],
   events: [

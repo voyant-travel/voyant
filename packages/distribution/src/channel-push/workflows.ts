@@ -41,6 +41,7 @@ import {
   type ProcessContentPushResult,
   processContentPushIntents,
 } from "./content-push.js"
+import { CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY, type ChannelPushDeps } from "./types.js"
 
 const CHANNEL_PUSH_SCHEDULES_ENABLED_ENV = "VOYANT_DISTRIBUTION_CHANNEL_PUSH_ENABLED" as const
 
@@ -83,7 +84,8 @@ export const channelBookingPushWorkflow = workflow<
   },
   tags: ["channel-push", "booking"],
   async run(input, ctx) {
-    return await ctx.step("process-booking-push", () => processBookingPush(input))
+    const deps = ctx.services.resolve<ChannelPushDeps>(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)
+    return await ctx.step("process-booking-push", () => processBookingPush(input, deps))
   },
 })
 
@@ -111,7 +113,10 @@ export const channelAvailabilityPushWorkflow = workflow<
   },
   tags: ["channel-push", "availability"],
   async run(input, ctx) {
-    return await ctx.step("process-availability-push", () => processAvailabilityPushIntents(input))
+    const deps = ctx.services.resolve<ChannelPushDeps>(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)
+    return await ctx.step("process-availability-push", () =>
+      processAvailabilityPushIntents(input, deps),
+    )
   },
 })
 
@@ -138,6 +143,7 @@ export const channelContentPushWorkflow = workflow<
   },
   tags: ["channel-push", "content"],
   async run(input, ctx) {
-    return await ctx.step("process-content-push", () => processContentPushIntents(input))
+    const deps = ctx.services.resolve<ChannelPushDeps>(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)
+    return await ctx.step("process-content-push", () => processContentPushIntents(input, deps))
   },
 })

@@ -1,23 +1,13 @@
-import { __listRegisteredWorkflows } from "@voyant-travel/workflows"
 import type { DriverFactoryDeps, WorkflowDriver } from "@voyant-travel/workflows/driver"
-import { buildManifest, getEventFilterRegistry } from "@voyant-travel/workflows/events"
+import { buildManifest } from "@voyant-travel/workflows/events"
 import type { CronJob } from "../../scheduled-crons"
+import type { OperatorWorkflowRuntime } from "../../workflow-runtime"
 import { createOperatorWorkflowDriver } from "../runtime/operator-runtime-adapter"
 
 type WorkflowEnvironment = "production" | "preview" | "development"
-type RegisteredWorkflow = ReturnType<typeof __listRegisteredWorkflows>[number]
-
-interface WorkflowBundleModule {
-  bootstrapWorkflowBundle?: (ctx?: { env?: NodeJS.ProcessEnv }) => Promise<void> | void
-}
-
 interface ScheduledWorkflowRuntimeDeps {
-  importWorkflowBundle?: () => Promise<WorkflowBundleModule>
+  loadWorkflowRuntime?: (env: NodeJS.ProcessEnv) => Promise<OperatorWorkflowRuntime>
   createWorkflowDriver?: typeof createOperatorWorkflowDriver
-  listRegisteredWorkflows?: () => readonly RegisteredWorkflow[]
-  listEventFilters?: () => ReturnType<typeof getEventFilterRegistry>["list"] extends () => infer T
-    ? T
-    : never
   buildWorkflowManifest?: typeof buildManifest
   factoryDeps?: DriverFactoryDeps
   now?: () => number
@@ -35,24 +25,20 @@ export async function runScheduledWorkflow(
   env: AppBindings,
   deps: ScheduledWorkflowRuntimeDeps = {},
 ): Promise<void> {
-  const importWorkflowBundle = deps.importWorkflowBundle ?? (() => import("../../workflows"))
-  const workflowBundle = await importWorkflowBundle()
-  await workflowBundle.bootstrapWorkflowBundle?.({ env: workflowBundleEnv(env) })
+  const runtimeEnv = workflowBundleEnv(env)
+  const runtime = await (deps.loadWorkflowRuntime ?? defaultLoadWorkflowRuntime)(runtimeEnv)
 
   const environment = resolveWorkflowEnvironment(env)
-  const driver = createWorkflowDriver(env, deps)
-  const workflows = (deps.listRegisteredWorkflows ?? __listRegisteredWorkflows)().map(
-    (workflow) => ({
-      id: workflow.id,
-      config: workflow.config,
-    }),
-  )
-  const eventFilters = deps.listEventFilters?.() ?? getEventFilterRegistry().list()
+  const driver = createWorkflowDriver(env, deps, runtime.services)
+  const workflows = runtime.workflows.map((workflow) => ({
+    id: workflow.id,
+    config: workflow.config,
+  }))
   const manifest = await (deps.buildWorkflowManifest ?? buildManifest)({
     projectId: env.VOYANT_CLOUD_APP_SLUG ?? "operator",
     environment,
     workflows,
-    eventFilters,
+    eventFilters: runtime.eventFilters,
   })
 
   await driver.registerManifest({ environment, manifest })
@@ -66,9 +52,17 @@ export async function runScheduledWorkflow(
 function createWorkflowDriver(
   env: AppBindings,
   deps: ScheduledWorkflowRuntimeDeps,
+  services: DriverFactoryDeps["services"],
 ): WorkflowDriver {
   const factory = (deps.createWorkflowDriver ?? createOperatorWorkflowDriver)(env)
-  return factory(deps.factoryDeps ?? DEFAULT_DRIVER_FACTORY_DEPS)
+  return factory(deps.factoryDeps ?? { ...DEFAULT_DRIVER_FACTORY_DEPS, services })
+}
+
+async function defaultLoadWorkflowRuntime(
+  env: NodeJS.ProcessEnv,
+): Promise<OperatorWorkflowRuntime> {
+  const runtime = await import("../../workflow-runtime")
+  return runtime.loadOperatorWorkflowRuntime(env)
 }
 
 const EMPTY_SERVICE_RESOLVER: DriverFactoryDeps["services"] = {

@@ -67,6 +67,10 @@ export const bookingsVoyantModule = defineModule({
         },
       },
       source: "@voyant-travel/bookings/workflows",
+      runtime: {
+        entry: "@voyant-travel/bookings/workflows",
+        export: "bookingsExpireStaleHoldsWorkflow",
+      },
     },
   ],
   events: [
