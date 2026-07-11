@@ -959,6 +959,40 @@ to graph subscriber facets with named runtime references and promotes links to
 path-owned graph facets while retaining the generated link collection for
 migration/query consumers.
 
+Ordinary package subscribers with executable runtime references lower separately
+from workflow event filters. Their runtime export carries the stable graph
+subscriber id, event type, and a bootstrap registration hook. The Node Hono
+adapter validates the runtime id against the selected graph entity and registers
+it only when its owning unit is selected. Workflow hosts continue to load only
+subscriber runtimes that carry an `EventFilterDescriptor` manifest.
+
+The first direct package cutover is
+`@voyant-travel/distribution#channel-push-extension`: its `booking.confirmed`,
+`availability.slot.changed`, and `product.content.changed` subscribers are
+declared and executed from `@voyant-travel/distribution`. Operator supplies the
+selected unit's database/adapter service through its explicit container binding;
+it no longer lists or implements those three subscriber handlers.
+
+The remaining Operator subscriber authorities are intentionally explicit:
+
+- `bookingScheduleBundle`: `booking.confirmed`
+- `catalogBridgeBundle`: `product.created`, `product.updated`,
+  `product.deleted`, `product.content.changed`, `availability.slot.changed`,
+  `pricing.rule.changed`, `product.publication.changed`, `promotion.changed`,
+  and two distinct `booking.confirmed` handlers
+- `createCatalogCheckoutBundle`: `contract.document.generated` and
+  `payment.completed`
+- `tripsPaymentBundle`: `payment.completed`
+- `smartbillOperatorBundle`: `invoice.issued`, `invoice.proforma.issued`, and
+  `invoice.payment.recorded`
+- the graph-gated Netopia lazy bundle, whose packaged callback/subscriber runtime
+  is still adapted through the Operator plugin list
+
+These entries remain until each owning package manifest has executable runtime
+references and direct selected-graph parity. Deployment-local ordering,
+configuration, or orchestration is not sufficient reason to relabel a standard
+package subscriber as migrated.
+
 The broader event catalog is beyond the foundational substrate:
 
 - declared `events.emits` catalogs

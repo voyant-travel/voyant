@@ -1,4 +1,9 @@
-import type { EventEnvelope, EventFilterDescriptor, WorkflowDescriptor } from "@voyant-travel/core"
+import type {
+  EventEnvelope,
+  EventFilterDescriptor,
+  SubscriberRuntimeDescriptor,
+  WorkflowDescriptor,
+} from "@voyant-travel/core"
 import { isGraphRuntimeFactory, type VoyantPort } from "@voyant-travel/core/project"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
@@ -289,16 +294,65 @@ async function resolveRuntimeFacetModule(
     unit.workflows.length > 0
       ? await Promise.all(unit.workflows.map((workflow) => workflow.load<WorkflowDescriptor>()))
       : await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
-  const eventFilters = await loadFacetReferences<EventFilterDescriptor>(unit, "subscribers.runtime")
-  if (workflows.length === 0 && eventFilters.length === 0) return undefined
+  const subscriberFacets = await loadSubscriberFacets(unit)
+  if (
+    workflows.length === 0 &&
+    subscriberFacets.eventFilters.length === 0 &&
+    subscriberFacets.subscribers.length === 0
+  ) {
+    return undefined
+  }
 
   return {
     module: {
       name: `${unit.localId ?? unit.id}.graph-runtime`,
       ...(workflows.length > 0 ? { workflows } : {}),
-      ...(eventFilters.length > 0 ? { eventFilters } : {}),
+      ...(subscriberFacets.eventFilters.length > 0
+        ? { eventFilters: subscriberFacets.eventFilters }
+        : {}),
+      ...(subscriberFacets.subscribers.length > 0
+        ? {
+            bootstrap: async (context) => {
+              for (const subscriber of subscriberFacets.subscribers) {
+                await subscriber.register(context)
+              }
+            },
+          }
+        : {}),
     },
   }
+}
+
+async function loadSubscriberFacets(unit: VoyantGraphRuntimeUnitLoader): Promise<{
+  eventFilters: EventFilterDescriptor[]
+  subscribers: SubscriberRuntimeDescriptor[]
+}> {
+  const eventFilters: EventFilterDescriptor[] = []
+  const subscribers: SubscriberRuntimeDescriptor[] = []
+
+  for (const reference of unit.references.filter(
+    (candidate) => candidate.facet === "subscribers.runtime",
+  )) {
+    const value = await reference.load<unknown>()
+    if (isSubscriberRuntimeDescriptor(value)) {
+      if (value.id !== reference.entityId) {
+        throw new Error(
+          `composeVoyantGraphRuntime: subscriber runtime "${value.id}" does not match graph subscriber "${reference.entityId}".`,
+        )
+      }
+      subscribers.push(value)
+      continue
+    }
+    if (isEventFilterDescriptor(value)) {
+      eventFilters.push(value)
+      continue
+    }
+    throw new Error(
+      `composeVoyantGraphRuntime: subscriber runtime "${reference.entityId}" must export a SubscriberRuntimeDescriptor or EventFilterDescriptor.`,
+    )
+  }
+
+  return { eventFilters, subscribers }
 }
 
 async function loadFacetReferences<T>(
@@ -388,6 +442,24 @@ function isHonoExtension(value: unknown): value is HonoExtension {
     isRecord(value.extension) &&
     isNonEmptyString(value.extension.name) &&
     isNonEmptyString(value.extension.module)
+  )
+}
+
+function isSubscriberRuntimeDescriptor(value: unknown): value is SubscriberRuntimeDescriptor {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.eventType) &&
+    typeof value.register === "function"
+  )
+}
+
+function isEventFilterDescriptor(value: unknown): value is EventFilterDescriptor {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.eventType) &&
+    typeof value.register !== "function"
   )
 }
 

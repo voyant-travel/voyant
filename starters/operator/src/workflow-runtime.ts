@@ -38,7 +38,9 @@ export async function loadOperatorWorkflowRuntime(
         .map((reference) => reference.load<EventFilterDescriptor>()),
     ),
   )
-  const eventFilters = loadedEventFilters.map(requireEventFilterManifest)
+  const eventFilters = loadedEventFilters
+    .filter((descriptor) => !isOrdinarySubscriberRuntime(descriptor))
+    .map(requireEventFilterManifest)
   const byId = new Map(workflows.map((workflow) => [workflow.id, workflow]))
   const selectedWorkflowUnitIds = new Set(
     units.filter((unit) => unit.workflows.length > 0).map((unit) => unit.id),
@@ -51,6 +53,15 @@ export async function loadOperatorWorkflowRuntime(
     workflowResolver: { resolve: (workflowId) => byId.get(workflowId) },
     services,
   }
+}
+
+function isOrdinarySubscriberRuntime(descriptor: EventFilterDescriptor): boolean {
+  return (
+    descriptor !== null &&
+    typeof descriptor === "object" &&
+    "register" in descriptor &&
+    typeof descriptor.register === "function"
+  )
 }
 
 function requireEventFilterManifest(

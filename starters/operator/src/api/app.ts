@@ -21,7 +21,6 @@ import {
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
-import { channelPushBundle } from "./routes/channel-push"
 import {
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
@@ -120,7 +119,6 @@ export const app = mountApp<AppBindings>({
     }),
     tripsPaymentBundle,
     smartbillOperatorBundle,
-    channelPushBundle,
   ],
   auth: {
     handler: () => ({

@@ -120,6 +120,8 @@ export interface ChannelPushSubscribersOptions {
    * Tests pass deps directly so they don't have to wire the global.
    */
   deps?: ChannelPushDeps
+  /** Resolve app-owned dependencies lazily after runtime bootstrap completes. */
+  resolveDeps?: () => ChannelPushDeps | undefined
 }
 
 /**
@@ -136,7 +138,7 @@ export function createChannelPushSubscribers(
     const payload = coerceBookingConfirmed(envelope)
     if (!payload) return
 
-    const deps = options.deps ?? getChannelPushDeps()
+    const deps = options.deps ?? options.resolveDeps?.() ?? getChannelPushDeps()
     if (!deps) {
       // Templates haven't wired channel-push — silent no-op so the rest
       // of the booking flow isn't impacted by missing wiring.
@@ -168,7 +170,7 @@ export function createChannelPushSubscribers(
     const payload = coerceSlotChanged(envelope)
     if (!payload) return
 
-    const deps = options.deps ?? getChannelPushDeps()
+    const deps = options.deps ?? options.resolveDeps?.() ?? getChannelPushDeps()
     if (!deps) return
     const logger = deps.logger ?? defaultLogger
 
@@ -215,7 +217,7 @@ export function createChannelPushSubscribers(
     const payload = coerceContentChanged(envelope)
     if (!payload) return
 
-    const deps = options.deps ?? getChannelPushDeps()
+    const deps = options.deps ?? options.resolveDeps?.() ?? getChannelPushDeps()
     if (!deps) return
     const logger = deps.logger ?? defaultLogger
 
