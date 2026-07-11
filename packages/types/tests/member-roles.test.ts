@@ -42,10 +42,10 @@ describe("scopesForRole", () => {
     expect(scopesForRole("viewer")).toEqual(["*:read", "*:search"])
   })
 
-  it("gives the editor read+write on operations but only finance:read", () => {
+  it("leaves Bookings grants to project-owned presets and keeps finance read-only", () => {
     const scopes = scopesForRole("editor") ?? []
-    expect(scopes).toContain("bookings:read")
-    expect(scopes).toContain("bookings:write")
+    expect(scopes).not.toContain("bookings:read")
+    expect(scopes).not.toContain("bookings:write")
     expect(scopes).toContain("finance:read")
     expect(scopes).not.toContain("finance:write")
     // No deletes, no team/settings in the default editor bundle.
@@ -65,9 +65,9 @@ describe("role bundles enforce as expected via hasApiKeyPermission", () => {
     expect(hasApiKeyPermission(p, "team", "manage")).toBe(true)
   })
 
-  it("editor can write bookings but not delete or write finance", () => {
+  it("editor leaves Bookings to project policy and cannot write finance", () => {
     const p = permissionsForRole("editor")
-    expect(hasApiKeyPermission(p, "bookings", "write")).toBe(true)
+    expect(hasApiKeyPermission(p, "bookings", "write")).toBe(false)
     expect(hasApiKeyPermission(p, "bookings", "delete")).toBe(false)
     expect(hasApiKeyPermission(p, "finance", "read")).toBe(true)
     expect(hasApiKeyPermission(p, "finance", "write")).toBe(false)

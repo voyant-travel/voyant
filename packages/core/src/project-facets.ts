@@ -38,9 +38,21 @@ export interface VoyantGraphProviderDeclaration extends VoyantGraphFacetEntity {
   config?: VoyantGraphJsonObject
 }
 
+export interface VoyantGraphAccessAction {
+  action: string
+  label?: string
+  description?: string
+}
+
 export interface VoyantGraphAccessResource extends VoyantGraphFacetEntity {
   resource: string
-  actions: readonly string[]
+  label?: string
+  description?: string
+  /** Explicit resources are never satisfied by a wildcard on another resource. */
+  wildcard?: "allow" | "explicit-resource"
+  actions: readonly (string | VoyantGraphAccessAction)[]
+  /** Accepted for stored-token compatibility but omitted from permission editors. */
+  legacyActions?: readonly string[]
 }
 
 export interface VoyantGraphAccessRole extends VoyantGraphFacetEntity {
@@ -50,6 +62,20 @@ export interface VoyantGraphAccessRole extends VoyantGraphFacetEntity {
 export interface VoyantGraphAccessDeclaration {
   resources?: readonly VoyantGraphAccessResource[]
   roles?: readonly VoyantGraphAccessRole[]
+}
+
+export type VoyantGraphAccessPresetKind = "api-token" | "api-token-grant" | "staff"
+
+export interface VoyantGraphAccessPreset extends VoyantGraphFacetEntity {
+  kind: VoyantGraphAccessPresetKind
+  label?: string
+  description?: string
+  grants: readonly string[]
+  audience?: "staff" | "customer" | "partner" | "supplier"
+}
+
+export interface VoyantGraphProjectAccessDeclaration {
+  presets?: readonly VoyantGraphAccessPreset[]
 }
 
 export interface VoyantGraphMessageReference {

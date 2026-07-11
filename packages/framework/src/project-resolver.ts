@@ -13,6 +13,7 @@ import type {
   VoyantGraphUnitManifest,
 } from "@voyant-travel/core/project"
 import {
+  buildGraphAccessCatalogModule,
   buildGraphAdminBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
@@ -33,6 +34,7 @@ import {
   type ProjectApiConventionCompilation,
 } from "./project-api-conventions.js"
 import {
+  VOYANT_PROJECT_ACCESS_CATALOG_ENTRY,
   VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
   VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project-artifact-paths.js"
@@ -214,6 +216,13 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const files: FrameworkGeneratedProjectFile[] = [
     projectApi.generatedFile,
     projectAdmin.file,
+    {
+      path: VOYANT_PROJECT_ACCESS_CATALOG_ENTRY,
+      contents: buildGraphAccessCatalogModule({
+        graph: targetNeutralGraph,
+        command: "voyant project resolve",
+      }),
+    },
     {
       path: VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
       contents: buildGraphAdminBundleModule({

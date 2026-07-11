@@ -59,6 +59,17 @@ describe("operator graph runtime composition", () => {
     expect(new Set(extensionNames).size).toBe(extensionNames.length)
   })
 
+  it("lowers Bookings route access resources from the selected graph", async () => {
+    const composed = await composeOperatorGraph()
+
+    expect(composed.accessResources).toEqual(
+      expect.arrayContaining([
+        { path: "/v1/admin/bookings", resource: "bookings" },
+        { path: "/v1/public/bookings", resource: "bookings" },
+      ]),
+    )
+  })
+
   it("lowers selected distribution subscribers without an Operator plugin entry", async () => {
     const runtime = createGeneratedGraphRuntime()
     const channelPush = runtime.extensions.find(

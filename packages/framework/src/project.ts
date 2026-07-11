@@ -90,6 +90,7 @@ export type {
 
 /** Application-owned differences from the standard Operator distribution. */
 export interface DefineVoyantConfigInput extends OperatorDistributionDifferences {
+  access?: DefineVoyantGraphProjectInput["access"]
   deployment?: DefineVoyantGraphProjectInput["deployment"]
   meta?: DefineVoyantGraphProjectInput["meta"]
 }
@@ -100,6 +101,7 @@ export function defineConfig(input: DefineVoyantConfigInput = {}): VoyantGraphPr
 
   return defineProject({
     ...distribution,
+    ...(input.access ? { access: input.access } : {}),
     ...(input.deployment ? { deployment: input.deployment } : {}),
     ...(input.meta ? { meta: input.meta } : {}),
   })

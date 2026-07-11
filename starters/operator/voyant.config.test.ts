@@ -13,6 +13,11 @@ describe("Operator project config", () => {
     expect(config.extensions).toHaveLength(20)
     expect(config.plugins).toHaveLength(2)
     expect(config).not.toHaveProperty("presetLineage")
+    expect(config.access?.presets?.map((preset) => preset.id)).toEqual([
+      "agent-staff",
+      "commerce-read",
+      "editor",
+    ])
 
     expect(config.selections?.modules).toHaveLength(35)
     expect(

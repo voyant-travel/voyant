@@ -13,6 +13,7 @@ import type {
   VoyantGraphWorkflow,
 } from "@voyant-travel/core/project"
 import type { ToolRegistry } from "@voyant-travel/tools"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 
 import type {
   VoyantGraphInboundWebhookPlanEntry,
@@ -241,6 +242,7 @@ export interface VoyantGraphRuntime {
   resources: readonly VoyantGraphRuntimeResourceDefinition[]
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   requiredPorts: readonly string[]
+  accessCatalog: AccessCatalog
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
@@ -252,6 +254,7 @@ export interface VoyantGraphRuntime {
 
 export interface CreateVoyantGraphRuntimeInput {
   graphHash: string
+  accessCatalog?: AccessCatalog
   providerSelections?: Readonly<Record<string, string>>
   entries: Readonly<Record<string, () => Promise<unknown>>>
   modules: readonly VoyantGraphRuntimeUnitDefinition[]
@@ -311,6 +314,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     resources,
     providers,
     requiredPorts,
+    accessCatalog: definitions.accessCatalog,
     accessScopes,
     tools,
     workflows,
@@ -367,8 +371,9 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
 interface NormalizedVoyantGraphRuntimeInput
   extends Omit<
     CreateVoyantGraphRuntimeInput,
-    "modules" | "extensions" | "plugins" | "webhookPlan"
+    "accessCatalog" | "modules" | "extensions" | "plugins" | "webhookPlan"
   > {
+  accessCatalog: AccessCatalog
   modules: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   extensions: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   plugins: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
@@ -380,10 +385,64 @@ function normalizeRuntimeDefinition(
 ): NormalizedVoyantGraphRuntimeInput {
   return {
     ...input,
+    accessCatalog: normalizeAccessCatalog(input.accessCatalog, [
+      ...input.modules,
+      ...(input.extensions ?? []),
+      ...input.plugins,
+    ]),
     webhookPlan: normalizeWebhookPlan(input.webhookPlan),
     modules: input.modules.map(normalizeRuntimeUnitDefinition),
     extensions: (input.extensions ?? []).map(normalizeRuntimeUnitDefinition),
     plugins: input.plugins.map(normalizeRuntimeUnitDefinition),
+  }
+}
+
+function normalizeAccessCatalog(
+  catalog: AccessCatalog | undefined,
+  units: readonly VoyantGraphRuntimeUnitDefinition[],
+): AccessCatalog {
+  const fallbackResources = new Map<string, Set<string>>()
+  if (!catalog) {
+    for (const scope of units.flatMap((unit) => unit.accessScopes ?? [])) {
+      const [resource, action] = scope.split(":")
+      if (!resource || !action) continue
+      const actions = fallbackResources.get(resource) ?? new Set<string>()
+      actions.add(action)
+      fallbackResources.set(resource, actions)
+    }
+  }
+  const fallbackCatalog: AccessCatalog = {
+    resources: [...fallbackResources].map(([resource, actions]) => ({
+      id: `runtime:${resource}`,
+      unitId: "runtime-compatibility",
+      resource,
+      label: resource,
+      description: `Access ${resource} resources.`,
+      wildcard: "allow",
+      actions: [...actions].map((action) => ({
+        action,
+        label: action,
+        description: `${action} access to ${resource}.`,
+      })),
+    })),
+    presets: [],
+  }
+  const source = catalog ?? fallbackCatalog
+  return {
+    resources: [...source.resources]
+      .map((resource) => ({
+        ...resource,
+        actions: [...resource.actions].sort((left, right) =>
+          left.action.localeCompare(right.action),
+        ),
+        ...(resource.legacyActions?.length
+          ? { legacyActions: sortedUnique(resource.legacyActions) }
+          : {}),
+      }))
+      .sort((left, right) => left.resource.localeCompare(right.resource)),
+    presets: [...source.presets]
+      .map((preset) => ({ ...preset, grants: sortedUnique(preset.grants) }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
   }
 }
 
@@ -683,6 +742,19 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
   const accessScopes = new Set(
     [...input.modules, ...input.extensions, ...input.plugins].flatMap((unit) => unit.accessScopes),
   )
+  const catalogScopes = new Set(
+    input.accessCatalog.resources.flatMap((resource) =>
+      resource.actions.map((action) => `${resource.resource}:${action.action}`),
+    ),
+  )
+  if (
+    accessScopes.size !== catalogScopes.size ||
+    [...accessScopes].some((scope) => !catalogScopes.has(scope))
+  ) {
+    throw new Error(
+      "createVoyantGraphRuntime: accessCatalog does not match selected unit access scopes.",
+    )
+  }
   for (const [expectedKind, units] of [
     ["module", input.modules],
     ["extension", input.extensions],

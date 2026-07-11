@@ -20,6 +20,7 @@ export const bookingsVoyantModule = defineModule({
       id: "@voyant-travel/bookings#api.admin",
       surface: "admin",
       mount: "bookings",
+      resource: "bookings",
       transactional: true,
       runtime: {
         entry: "@voyant-travel/bookings",
@@ -30,6 +31,7 @@ export const bookingsVoyantModule = defineModule({
       id: "@voyant-travel/bookings#api.public",
       surface: "public",
       mount: "bookings",
+      resource: "bookings",
       anonymous: true,
       transactional: true,
       runtime: {
@@ -94,12 +96,36 @@ export const bookingsVoyantModule = defineModule({
       {
         id: "@voyant-travel/bookings#access.bookings",
         resource: "bookings",
-        actions: ["read", "write", "delete", "cancel"],
+        label: "Bookings",
+        description: "Read and manage booking records and booking workflows.",
+        actions: [
+          {
+            action: "read",
+            label: "Read bookings",
+            description: "Read booking records and non-sensitive booking state.",
+          },
+          {
+            action: "write",
+            label: "Manage bookings",
+            description: "Create, update, confirm, or cancel bookings.",
+          },
+        ],
+        legacyActions: ["cancel"],
       },
       {
         id: "@voyant-travel/bookings#access.bookings-pii",
         resource: "bookings-pii",
-        actions: ["read"],
+        label: "Booking PII",
+        description: "Personally-identifiable traveller data on bookings. Grant explicitly.",
+        wildcard: "explicit-resource",
+        actions: [
+          {
+            action: "read",
+            label: "Read booking PII",
+            description:
+              "Read personally-identifiable traveller fields on bookings. Never granted by a wildcard.",
+          },
+        ],
       },
     ],
   },
@@ -123,26 +149,31 @@ export const bookingsVoyantModule = defineModule({
       {
         id: "@voyant-travel/bookings#admin.route.index",
         path: "/bookings",
+        requiredScopes: ["bookings:read"],
         runtime: bookingsAdminRuntime,
       },
       {
         id: "@voyant-travel/bookings#admin.route.detail",
         path: "/bookings/$id",
+        requiredScopes: ["bookings:read"],
         runtime: bookingsAdminRuntime,
       },
       {
         id: "@voyant-travel/bookings#admin.route.new",
         path: "/bookings/new",
+        requiredScopes: ["bookings:write"],
         runtime: bookingsAdminRuntime,
       },
       {
         id: "@voyant-travel/bookings#admin.route.compose",
         path: "/bookings/compose",
+        requiredScopes: ["bookings:write"],
         runtime: bookingsAdminRuntime,
       },
       {
         id: "@voyant-travel/bookings#admin.route.journey",
         path: "/catalog/journey/$entityModule/$entityId",
+        requiredScopes: ["bookings:read"],
         runtime: bookingsAdminRuntime,
       },
     ],
@@ -164,6 +195,7 @@ export const bookingsVoyantModule = defineModule({
       {
         id: "@voyant-travel/bookings#admin.contribution.person-bookings",
         slotId: "person.details.bookings-tab",
+        requiredScopes: ["bookings:read"],
         runtime: bookingsAdminRuntime,
       },
     ],

@@ -60,6 +60,7 @@ describe("framework project resolver", () => {
     )
     expect(first.artifacts.migrationRunner).toBe("runtime/project-migrations.generated.mjs")
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
+      "access/selected-access-catalog.generated.ts",
       "admin/project-admin.generated.ts",
       "admin/selected-graph-admin.generated.ts",
       "runtime/project-api.generated.ts",

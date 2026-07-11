@@ -211,6 +211,40 @@ describe("requireActor", () => {
     expect(bookings.status).toBe(403)
   })
 
+  it("uses a selected graph resource override before the path segment", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["bookings:read"])
+    })
+    app.use(
+      "*",
+      requireActor(
+        { resources: [{ path: "/v1/admin/person-bookings", resource: "bookings" }] },
+        "staff",
+      ),
+    )
+    app.get("/v1/admin/person-bookings/:personId", (c) => c.json({ ok: true }))
+
+    expect((await app.request("/v1/admin/person-bookings/person_1")).status).toBe(200)
+  })
+
+  it("keeps path-derived authorization when no graph override matches", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["products:read"])
+    })
+    app.use(
+      "*",
+      requireActor(
+        { resources: [{ path: "/v1/admin/person-bookings", resource: "bookings" }] },
+        "staff",
+      ),
+    )
+    app.get("/v1/admin/products", (c) => c.json({ ok: true }))
+
+    expect((await app.request("/v1/admin/products")).status).toBe(200)
+  })
+
   it("allows workflow trigger and webhook relay API key permissions on POST routes", async () => {
     const app = makeApp((c) => {
       c.set("callerType", "api_key")

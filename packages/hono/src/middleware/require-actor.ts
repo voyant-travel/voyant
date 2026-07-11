@@ -1,5 +1,10 @@
 import type { Actor } from "@voyant-travel/core"
-import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
+import {
+  type AccessCatalog,
+  hasApiKeyPermission,
+  LEGACY_ACCESS_CATALOG,
+  permissionStringsToPermissions,
+} from "@voyant-travel/types/api-keys"
 import type { MiddlewareHandler } from "hono"
 
 import { normalizePathname } from "../lib/public-paths.js"
@@ -71,10 +76,11 @@ function hasAnyApiKeyPermission(
   scopes: string[] | null | undefined,
   resource: string,
   actions: string[],
+  catalog: AccessCatalog = LEGACY_ACCESS_CATALOG,
 ) {
   if (!scopes || scopes.length === 0) return false
   const permissions = permissionStringsToPermissions(scopes)
-  return actions.some((action) => hasApiKeyPermission(permissions, resource, action))
+  return actions.some((action) => hasApiKeyPermission(permissions, resource, action, catalog))
 }
 
 /**
@@ -97,10 +103,20 @@ export interface RequireActorOptions {
    * Keep this aligned with the app-level auth/public-path basePath.
    */
   basePath?: string
+  /** Selected graph mount prefixes whose authorization resource differs from the URL segment. */
+  resources?: readonly { path: string; resource: string }[]
+  accessCatalog?: AccessCatalog
 }
 
 function isRequireActorOptions(value: unknown): value is RequireActorOptions {
   return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function apiKeyResourceForRequest(pathname: string, options: RequireActorOptions): string | null {
+  const override = [...(options.resources ?? [])]
+    .sort((left, right) => right.path.length - left.path.length)
+    .find(({ path }) => pathname === path || pathname.startsWith(`${path}/`))
+  return override?.resource ?? apiKeyResourceFromPath(pathname)
 }
 
 /**
@@ -156,7 +172,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       const pathname = normalizePathname(new URL(c.req.url).pathname, {
         basePath: options.basePath,
       })
-      const resource = apiKeyResourceFromPath(pathname)
+      const resource = apiKeyResourceForRequest(pathname, options)
 
       // Coarse-guard-exempt surfaces. `_meta` (capability discovery) and `mcp`
       // (the agent tool server) are dispatch surfaces where authorization is
@@ -168,7 +184,10 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
 
       const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
 
-      if (resource && hasAnyApiKeyPermission(c.get("scopes"), resource, actions)) {
+      if (
+        resource &&
+        hasAnyApiKeyPermission(c.get("scopes"), resource, actions, options.accessCatalog)
+      ) {
         return next()
       }
 
@@ -202,10 +221,10 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       const pathname = normalizePathname(new URL(c.req.url).pathname, {
         basePath: options.basePath,
       })
-      const resource = apiKeyResourceFromPath(pathname)
+      const resource = apiKeyResourceForRequest(pathname, options)
       if (resource && !isCoarseGuardExempt(resource)) {
         const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
-        if (!hasAnyApiKeyPermission(scopes, resource, actions)) {
+        if (!hasAnyApiKeyPermission(scopes, resource, actions, options.accessCatalog)) {
           return c.json({ error: "Forbidden: missing required permission" }, 403)
         }
       }
