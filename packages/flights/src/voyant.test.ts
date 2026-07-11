@@ -57,7 +57,14 @@ describe("flights deployment manifest", () => {
   })
 
   it("owns runtime assembly and validates Node-host providers", async () => {
-    const adapter = { capabilities: { provider: "stub", declared: [] } } as FlightConnectorAdapter
+    const adapter: FlightConnectorAdapter = {
+      capabilities: { provider: "stub", declared: [] },
+      searchFlights: vi.fn(async () => ({ offers: [] })),
+      priceOffer: vi.fn(async () => ({ offer: {} as never, valid: true })),
+      bookFlight: vi.fn(async () => ({ order: {} as never })),
+      getOrder: vi.fn(async () => ({ order: {} as never })),
+      cancelOrder: vi.fn(async () => ({ order: {} as never })),
+    }
     const provider = {
       resolveAdapter: vi.fn(() => adapter),
       startCardPayment: vi.fn(async () => {}),
@@ -71,7 +78,7 @@ describe("flights deployment manifest", () => {
     const runtime = await createFlightsVoyantRuntime({
       unitId: "@voyant-travel/flights",
       hasPort: () => true,
-      getPort: async () => provider,
+      getPort: async <TProvider>() => provider as unknown as TProvider,
     })
     expect(runtime.module).toEqual({ name: "flights" })
     expect(runtime.adminRoutes).toBeDefined()
