@@ -102,10 +102,13 @@ export function stringProperty(
       : ts.isShorthandPropertyAssignment(item) && item.name.text === name,
   )
   if (!property) return undefined
-  const value = resolveExpression(
-    ts.isPropertyAssignment(property) ? property.initializer : property.name,
-    constants,
-  )
+  const expression = ts.isPropertyAssignment(property)
+    ? property.initializer
+    : ts.isShorthandPropertyAssignment(property)
+      ? property.name
+      : undefined
+  if (!expression) return undefined
+  const value = resolveExpression(expression, constants)
   return ts.isStringLiteralLike(value) && value.text.length > 0 ? value.text : undefined
 }
 
