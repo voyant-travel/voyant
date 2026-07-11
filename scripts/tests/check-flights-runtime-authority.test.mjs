@@ -16,9 +16,10 @@ async function createFixture(overrides = {}) {
   const files = {
     "flights/package.json": JSON.stringify({
       dependencies: { "@voyant-travel/finance": "workspace:^" },
+      voyant: { requiresSchemas: ["@voyant-travel/finance"] },
     }),
     "flights/src/voyant.ts":
-      'runtimePorts: [requirePort(flightsRuntimePort)]\nexport: "createFlightsVoyantRuntime"\n',
+      'runtimePorts: [requirePort(flightsRuntimePort)]\nrequires: { capabilities: ["finance.payment-sessions"] }\nexport: "createFlightsVoyantRuntime"\n',
     "flights/src/hono.ts":
       'defineGraphRuntimeFactory(({ getPort }) => getPort(flightsRuntimePort))\ncreateOrderPaymentSessions({ targetType: "flight_order" })\n',
     "flights/src/runtime-port.ts": '["resolveAdapter", "startCardPayment"]\n',

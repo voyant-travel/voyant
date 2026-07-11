@@ -68,7 +68,9 @@ describe("operator graph runtime composition", () => {
   })
 
   it("supplies request-scoped checkout options through the declared runtime port", () => {
-    expect(buildOperatorRuntimePorts()[catalogCheckoutApiRuntimePort.id]).toEqual(
+    expect(
+      buildOperatorRuntimePorts(new WorkflowRunnerRegistry())[catalogCheckoutApiRuntimePort.id],
+    ).toEqual(
       expect.any(Function),
     )
   })
@@ -134,7 +136,9 @@ describe("operator graph runtime composition", () => {
     expect(operatorGraphRuntimeBindings).not.toHaveProperty(
       "@voyant-travel/distribution#channel-push-extension",
     )
-    expect(buildOperatorRuntimePorts()).toHaveProperty(channelPushRuntimePort.id)
+    expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
+      channelPushRuntimePort.id,
+    )
 
     const eventBus = createEventBus()
     const subscribe = vi.spyOn(eventBus, "subscribe")
@@ -166,7 +170,7 @@ describe("operator graph runtime composition", () => {
       },
       capabilities: buildOperatorProviders(),
       bindings: operatorGraphRuntimeBindings,
-      ports: buildOperatorRuntimePorts(),
+      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
     expect(
@@ -297,7 +301,7 @@ describe("operator graph runtime composition", () => {
       capabilities: buildOperatorProviders(),
       bindings: operatorGraphRuntimeBindings,
       ports: {
-        ...buildOperatorRuntimePorts(),
+        ...buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
         [legalBookingContractSubscriberRuntimePort.id]: {
           createRuntime: () => ({
             options: { enabled: true, templateSlug: "customer-sales-agreement" },
@@ -346,7 +350,7 @@ describe("operator graph runtime composition", () => {
       },
       capabilities: buildOperatorProviders(),
       bindings: operatorGraphRuntimeBindings,
-      ports: buildOperatorRuntimePorts(),
+      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
     expect(
@@ -360,7 +364,9 @@ describe("operator graph runtime composition", () => {
   })
 
   it("binds Legal runtime services by declared ports instead of package id", () => {
-    expect(buildOperatorRuntimePorts()).toHaveProperty(legalBookingContractSubscriberRuntimePort.id)
+    expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
+      legalBookingContractSubscriberRuntimePort.id,
+    )
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/legal")
   })
 
@@ -611,7 +617,7 @@ describe("operator graph runtime composition", () => {
       },
       capabilities: buildOperatorProviders(),
       bindings: operatorGraphRuntimeBindings,
-      ports: buildOperatorRuntimePorts(),
+      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
     expect(
