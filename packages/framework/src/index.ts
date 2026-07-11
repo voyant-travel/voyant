@@ -87,6 +87,14 @@ export {
   validateVoyantProject,
 } from "./profile.js"
 export {
+  type ProjectArtifactWriteEntry,
+  type ProjectArtifactWriteMode,
+  type ProjectArtifactWriteResult,
+  type ProjectArtifactWriteStatus,
+  type WriteResolvedProjectArtifactsInput,
+  writeResolvedProjectArtifacts,
+} from "./project-artifacts.js"
+export {
   type ComposeVoyantGraphRuntimeInput,
   composeVoyantGraphRuntime,
   composeVoyantGraphRuntimeFacetModules,

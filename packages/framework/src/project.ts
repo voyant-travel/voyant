@@ -35,6 +35,14 @@ export type {
   ProjectApiConventionsOptions,
   ProjectApiGeneratedFile,
 } from "./project-api-conventions.js"
+export {
+  type ProjectArtifactWriteEntry,
+  type ProjectArtifactWriteMode,
+  type ProjectArtifactWriteResult,
+  type ProjectArtifactWriteStatus,
+  type WriteResolvedProjectArtifactsInput,
+  writeResolvedProjectArtifacts,
+} from "./project-artifacts.js"
 export type {
   DiscoverProjectConventionsInput,
   DiscoverProjectConventionsOptions,
