@@ -122,7 +122,23 @@ describe("commerce deployment manifest", () => {
           },
         },
       ],
+      subscribers: [
+        {
+          id: "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated",
+          eventType: "contract.document.generated",
+          source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+        },
+        {
+          id: "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed",
+          eventType: "payment.completed",
+          source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+        },
+      ],
     })
+    expect(commerceCatalogCheckoutVoyantPlugin.subscribers).toHaveLength(2)
+    for (const subscriber of commerceCatalogCheckoutVoyantPlugin.subscribers ?? []) {
+      expect(subscriber).not.toHaveProperty("runtime")
+    }
 
     expect(commerceBookingMaintenanceVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",

@@ -202,6 +202,18 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
       },
     },
   ],
+  subscribers: [
+    {
+      id: "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated",
+      eventType: "contract.document.generated",
+      source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+    },
+    {
+      id: "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed",
+      eventType: "payment.completed",
+      source: "@voyant-travel/commerce/catalog-checkout-subscribers",
+    },
+  ],
   meta: {
     ownership: "package",
   },

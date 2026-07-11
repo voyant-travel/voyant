@@ -11,12 +11,17 @@
  *     through `@voyant-travel/inventory`, which depends on commerce).
  *   - `resolveBankTransferInstructions` — operator profile / payment rows.
  *
- * The deployment keeps the thin HonoBundle wiring (workflow runner registry +
- * event-bus subscribers) and calls `dispatchCheckoutFinalize` /
- * `persistAcceptanceSignature` from there.
+ * Package-owned subscriber and workflow-runner factories are published on
+ * dedicated subpaths. Deployments inject database lifecycle, Legal, and
+ * contract-PDF ports without recreating checkout workflow knowledge.
  */
 
-export { persistAcceptanceSignature } from "./acceptance-signature.js"
+export {
+  type AcceptanceSignatureContract,
+  type AcceptanceSignatureInput,
+  type AcceptanceSignatureLegalPort,
+  persistAcceptanceSignature,
+} from "./acceptance-signature.js"
 export {
   type CatalogCheckoutContractPdfGenerator,
   type DispatchCheckoutFinalizeParams,
