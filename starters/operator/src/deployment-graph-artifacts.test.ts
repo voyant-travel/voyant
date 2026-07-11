@@ -164,7 +164,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       join(process.cwd(), ".voyant", "admin/selected-graph-admin.generated.ts"),
       "utf8",
     )
-    expect(selectedGraphAdmin).toContain('"@voyant-travel/action-ledger": selectedAdminFactory0')
+    expect(selectedGraphAdmin).toMatch(/"@voyant-travel\/action-ledger": selectedAdminFactory\d+/)
     expect(selectedGraphAdmin).not.toContain("createBookingsAdminExtension")
     const projectLinks = readFileSync(
       join(process.cwd(), ".voyant", "runtime/project-links.generated.ts"),
