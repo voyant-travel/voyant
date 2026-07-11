@@ -121,6 +121,22 @@ export const relationshipsVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 20,
+    runtime: {
+      entry: "@voyant-travel/relationships-react/admin",
+      export: "createSelectedRelationshipsAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/relationships#admin.copy",
+        namespace: "relationships.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/relationships-react/i18n",
+          export: "crmUiMessageDefinitions",
+        },
+      },
+    ],
     routes: [
       {
         id: "@voyant-travel/relationships#admin.route.people-index",

@@ -802,16 +802,17 @@ separate first-party admin catalog.
 
 ### Selected-graph admin bundle cutline
 
-The first Phase 4 admin slices are active for `@voyant-travel/action-ledger`,
-`@voyant-travel/mice`, and `@voyant-travel/quotes`:
+The selected-graph admin bundle is active for Action Ledger, Commerce,
+Distribution, Finance, Flights, Legal, MICE, Notifications, Operations,
+Quotes, Relationships, and Trips:
 
 - the package manifest opts its import-cheap admin extension factory into
   `admin.runtime` and retains its stable route declarations
 - project resolution emits `.voyant/admin/selected-graph-admin.generated.ts`
   from only selected units with `admin.runtime`; package page modules remain
   behind the lazy imports owned by the UI export
-- each selected package adapter owns its Operator nav-copy key and icon; Quotes
-  also owns its existing lazy route message provider
+- each selected package adapter owns its Operator nav-copy keys and icons and
+  attaches its namespaced route-message providers lazily
 - the Operator invokes the generated selected-factory composer with one generic
   localized nav-message map, and the compatibility admin generator removes the
   migrated factory from `admin.extensions.generated.ts`
@@ -823,12 +824,13 @@ The first Phase 4 admin slices are active for `@voyant-travel/action-ledger`,
   from the selected-graph bundle, duplicated in the compatibility registry, or
   present without a selected `admin.runtime` declaration
 
-This cut does not activate admin slots or contributions, generalized namespaced
-copy lowering, or deployment copy overrides. Those remain separate admin
-authorities. The Operator factory wrappers and generated registry entries for
-all other first-party packages also remain compatibility authorities until each
-package proves equivalent nav, route, page, copy, icon, and destination behavior
-through the selected graph.
+Package-owned slots and contributions are active where declared by Finance,
+Distribution, and Relationships. Deployment copy overrides and graph-generated
+copy-provider composition remain separate admin authorities. The compatibility
+registry now contains only Bookings, Catalog, and Inventory because their
+factories still receive deployment-specific page or scope overrides. Those
+overrides must move to generic local contributions before the compatibility
+registry can be deleted.
 
 ## API, OpenAPI, Scopes, And RBAC
 
@@ -1542,14 +1544,15 @@ package surfaces in `voyant#3080`.
   namespaced copy and deployment overrides
 - generate the admin bundle only from selected package exports and graph data
 
-Progress: the action-ledger, MICE, and Quotes nav/route/page factories and their
-lightweight localization/icon adapters are lowered into the selected-graph admin
-bundle. Quotes also owns its lazy route copy provider. The Operator composes
-these selected factories generically, with selection and deselection controlled
-only by the graph. Slots/contributions, generalized copy lowering, and the
-remaining first-party Operator compatibility registry are not part of this
-slice. Identity admin routes are the first package-owned selected-graph OpenAPI
-authority; other API documents remain on the Operator compatibility path.
+Progress: twelve first-party nav/route/page factories, their declared slots and
+contributions, and their lightweight localization/icon adapters are lowered
+into the selected-graph admin bundle. The Operator composes these factories
+generically, with selection and deselection controlled only by the graph.
+Bookings, Catalog, and Inventory remain in the compatibility registry until
+their deployment-specific customization points are represented as local
+contributions. Identity admin routes are the first package-owned selected-graph
+OpenAPI authority; other API documents remain on the Operator compatibility
+path.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.

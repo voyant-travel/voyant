@@ -132,6 +132,11 @@ export const tripsVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 90,
+    runtime: {
+      entry: "@voyant-travel/trips-react/admin",
+      export: "createSelectedTripsAdminExtension",
+    },
     routes: [
       {
         id: "@voyant-travel/trips#admin.route.trips-index",

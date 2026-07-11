@@ -5,6 +5,7 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
+  type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin"
 // Type-only: binds the bookings-react `AdminDestinations` augmentation
 // (`booking.detail`, `person.detail`, ...) into this program — the trip
@@ -12,6 +13,7 @@ import {
 // those shared keys, and `booking.detail`'s shape carries bookings-react's
 // own tab union, so re-declaring it here could not stay shape-identical.
 import type {} from "@voyant-travel/bookings-react/admin"
+import { Route } from "lucide-react"
 
 // Lean static only: the client module (fetcher). Query options resolve via
 // dynamic import inside the loaders so the trips data layer
@@ -181,4 +183,17 @@ export function createTripsAdminExtension(
  */
 function loaderClient(runtime: AdminRouteRuntime) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
+}
+
+export function createSelectedTripsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return createTripsAdminExtension({
+    labels: {
+      trips: navMessages.trips,
+      allTrips: navMessages.allTrips,
+      newTrip: navMessages.newTrip,
+    },
+    icon: Route,
+  })
 }

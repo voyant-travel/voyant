@@ -1,5 +1,7 @@
+import type { ReactNode } from "react"
 import { describe, expect, it } from "vitest"
 
+import { withAdminRouteMessagesProvider } from "../../src/admin-route-messages.js"
 import {
   type AdminExtension,
   defineAdminExtension,
@@ -131,5 +133,36 @@ describe("admin extensions", () => {
 
     expect(findAdminRouteContribution(extension.routes, "core-settings-team")?.path).toBe("/team")
     expect(requireImplementedAdminRoute(extension, "core-settings-index").redirectTo).toBe("/x")
+  })
+
+  it("attaches package copy lazily to rendered nested routes", () => {
+    const provider = async () => ({ default: ({ children }: { children: ReactNode }) => children })
+    const extension = withAdminRouteMessagesProvider(
+      defineAdminExtension({
+        id: "reports",
+        routes: [
+          { id: "index", path: "/reports", title: "Reports", redirectTo: "/reports/all" },
+          {
+            id: "layout",
+            path: "/reports/all",
+            title: "Reports",
+            page: async () => ({ default: () => null }),
+            children: [
+              {
+                id: "detail",
+                path: "/$id",
+                title: "Report",
+                page: async () => ({ default: () => null }),
+              },
+            ],
+          },
+        ],
+      }),
+      provider,
+    )
+
+    expect(extension.routes?.[0]?.routeMessagesProvider).toBeUndefined()
+    expect(extension.routes?.[1]?.routeMessagesProvider).toBe(provider)
+    expect(extension.routes?.[1]?.children?.[0]?.routeMessagesProvider).toBe(provider)
   })
 })

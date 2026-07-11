@@ -142,6 +142,44 @@ export const notificationsVoyantModule = defineModule({
       requiredScopes: ["notifications:send"],
     },
   ],
+  admin: {
+    compositionOrder: 70,
+    runtime: {
+      entry: "@voyant-travel/notifications-react/admin",
+      export: "createSelectedNotificationsAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/notifications#admin.copy",
+        namespace: "notifications.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/notifications-react/i18n",
+          export: "notificationsUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: (
+      [
+        ["index", "/notifications"],
+        ["templates-index", "/notifications/templates"],
+        ["templates-detail", "/notifications/templates/$id"],
+        ["reminder-rules-index", "/notifications/reminder-rules"],
+        ["reminder-rules-detail", "/notifications/reminder-rules/$id"],
+        ["deliveries", "/notifications/deliveries"],
+        ["reminder-runs", "/notifications/reminder-runs"],
+        ["preview", "/notifications/preview"],
+        ["settings", "/notifications/settings"],
+      ] as const
+    ).map(([id, path]) => ({
+      id: `@voyant-travel/notifications#admin.route.${id}`,
+      path,
+      runtime: {
+        entry: "@voyant-travel/notifications-react/admin",
+        export: "createNotificationsAdminExtension",
+      },
+    })),
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

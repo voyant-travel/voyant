@@ -13,7 +13,7 @@ import {
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import { createOperatorProfileSettingsExtraPage } from "@voyant-travel/operator-settings-react/settings"
 import { Button } from "@voyant-travel/ui/components/button"
-import { Route, SlidersHorizontal, Tag } from "lucide-react"
+import { Route, SlidersHorizontal } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
@@ -133,41 +133,13 @@ const distributionMessagesProvider = loadProvider(
   () => import("@voyant-travel/distribution-react/i18n"),
   (module) => module.DistributionUiMessagesProvider,
 )
-const suppliersMessagesProvider = loadProvider(
-  () => import("@voyant-travel/distribution-react/suppliers/i18n"),
-  (module) => module.SuppliersUiMessagesProvider,
-)
 const financeMessagesProvider = loadProvider(
   () => import("@voyant-travel/finance-react/i18n"),
   (module) => module.FinanceUiMessagesProvider,
 )
-const flightsMessagesProvider = loadProvider(
-  () => import("@voyant-travel/flights-react/i18n"),
-  (module) => module.FlightsUiMessagesProvider,
-)
 const productsMessagesProvider = loadProvider(
   () => import("@voyant-travel/inventory-react/i18n"),
   (module) => module.ProductsUiMessagesProvider,
-)
-const legalMessagesProvider = loadProvider(
-  () => import("@voyant-travel/legal-react/i18n"),
-  (module) => module.LegalUiMessagesProvider,
-)
-const notificationsMessagesProvider = loadProvider(
-  () => import("@voyant-travel/notifications-react/i18n"),
-  (module) => module.NotificationsUiMessagesProvider,
-)
-const allocationMessagesProvider = loadProvider(
-  () => import("@voyant-travel/operations-react/availability/allocation/i18n"),
-  (module) => module.AllocationUiMessagesProvider,
-)
-const availabilityMessagesProvider = loadProvider(
-  () => import("@voyant-travel/operations-react/availability/i18n"),
-  (module) => module.AvailabilityUiMessagesProvider,
-)
-const resourcesMessagesProvider = loadProvider(
-  () => import("@voyant-travel/operations-react/resources/i18n"),
-  (module) => module.ResourcesUiMessagesProvider,
 )
 const crmMessagesProvider = loadProvider(
   () => import("@voyant-travel/relationships-react/i18n"),
@@ -180,20 +152,6 @@ const bookingRouteMessagesProvider = composeProviderLoaders(
   productsMessagesProvider,
   catalogMessagesProvider,
 )
-const distributionRouteMessagesProvider = composeProviderLoaders(
-  distributionMessagesProvider,
-  suppliersMessagesProvider,
-)
-const operationsRouteMessagesProvider = composeProviderLoaders(
-  availabilityMessagesProvider,
-  allocationMessagesProvider,
-  resourcesMessagesProvider,
-)
-const relationshipsRouteMessagesProvider = composeProviderLoaders(
-  crmMessagesProvider,
-  bookingsMessagesProvider,
-)
-
 const coreRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | undefined> = {
   "core-account": authMessagesProvider,
   "core-settings-api-tokens": authMessagesProvider,
@@ -210,15 +168,7 @@ const coreRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | u
 const extensionRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | undefined> = {
   bookings: bookingRouteMessagesProvider,
   catalog: catalogMessagesProvider,
-  commerce: commerceMessagesProvider,
-  distribution: distributionRouteMessagesProvider,
-  finance: financeMessagesProvider,
-  flights: flightsMessagesProvider,
   inventory: productsMessagesProvider,
-  legal: legalMessagesProvider,
-  notifications: notificationsMessagesProvider,
-  operations: operationsRouteMessagesProvider,
-  relationships: relationshipsRouteMessagesProvider,
 }
 
 function withRouteMessagesProvider(
@@ -332,20 +282,6 @@ function createCoreExtension() {
   })
 }
 
-// Operations is package-delivered (packaged-admin RFC Phase 3): the owner
-// extension contributes NO navigation — Availability and Resources remain
-// base operator navigation items. The owner admin entry contributes the
-// availability and resource-planning route metadata under
-// /operations/availability and /operations/resources.
-function createOperationsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.operations({
-    labels: {
-      availability: messages.availability,
-      resources: messages.resources,
-    },
-  })
-}
-
 // App-owned header action on the package-delivered bookings list: composing
 // a trip is an operator concept (the trips pages are app-custom),
 // so the button rides in through the extension factory's
@@ -415,139 +351,6 @@ function createCatalogExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-// Finance is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the Finance group is part of the BASE operator
-// navigation (createOperatorAdminNavigation in @voyant-travel/admin), so entries
-// here would duplicate it. It's registered for the routes seam (metadata for
-// the finance pages; the detail pages are the packaged hosts from
-// @voyant-travel/finance-react/admin) AND for the widgets seam: it contributes the
-// finance-owned booking invoices card on booking UI's
-// `booking.details.invoices-tab` slot — the finance-ui ↔ booking UI cycle
-// resolution (finance-ui depends on booking UI, so the bookings host can't
-// import the card; the widget contribution travels the other way).
-function createFinanceExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.finance({
-    labels: {
-      invoices: messages.invoices,
-      invoiceNumberSeries: messages.invoiceNumberSeries,
-      payments: messages.payments,
-      supplierInvoices: messages.supplierInvoices,
-      profitability: messages.profitability,
-    },
-  })
-}
-
-// Flights is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
-// extension contributes NO navigation — the Flights item is part of the BASE
-// operator navigation (createOperatorAdminNavigation in @voyant-travel/admin), so
-// an entry here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route implementations + search
-// contracts (flightsIndexSearchSchema / flightsBookSearchSchema), and the
-// host assembles them into its code-based route tree — no route files. The
-// booking wizard mounts as a flat sibling of the search page (the old
-// file-based tree's `flights_.book` escape), and its hand-written
-// `flightBooking.start` resolver lives in src/lib/admin-destinations.ts.
-function createFlightsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.flights({ labels: { flights: messages.flights } })
-}
-
-// Distribution is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
-// extension contributes NO navigation — the Distribution item is part of the
-// BASE operator navigation (createOperatorAdminNavigation in
-// @voyant-travel/admin), so an entry here would duplicate it. It's registered for
-// the routes seam: the contribution carries the package-owned channel-sync
-// page (no search contract — the page keeps its filters local), and the host
-// assembles it into its code-based route tree — no route file.
-function createDistributionExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.distribution({
-    labels: { channelSync: messages.channelSync, suppliers: messages.suppliers },
-  })
-}
-
-// Relationships is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the People and Organizations items are part of
-// the BASE operator navigation (createOperatorAdminNavigation in
-// @voyant-travel/admin), so entries here would duplicate them. It's registered
-// for the routes seam (metadata for the people/organization pages; the pages
-// are the packaged hosts from @voyant-travel/relationships-react/admin — the route files under
-// src/routes/_workspace/people/* and src/routes/_workspace/organizations/*
-// only bind route params onto them). The person detail page's Bookings tab
-// is the relationships-ui ↔ booking UI cycle resolution: booking UI contributes its
-// PersonBookingsWidget on relationships-ui's `person.details.bookings-tab` slot.
-function createRelationshipsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.relationships({
-    labels: {
-      people: messages.people,
-      organizations: messages.organizations,
-    },
-  })
-}
-
-// Legal is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the Legal group is part of the BASE operator
-// navigation (createOperatorAdminNavigation in @voyant-travel/admin), so entries
-// here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route metadata (the legal pages keep
-// their filter state component-local, so there are no URL search contracts),
-// and the pages are the packaged hosts from @voyant-travel/legal-react/admin — the
-// route files under src/routes/_workspace/legal/* only bind route params
-// onto them.
-function createLegalExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.legal({
-    labels: {
-      contracts: messages.contracts,
-      contractTemplates: messages.contractTemplates,
-      policies: messages.policies,
-      numberSeries: messages.contractNumberSeries,
-    },
-  })
-}
-
-// Notifications is package-delivered (packaged-admin RFC Phase 3): the
-// extension contributes NO navigation — the Notifications group is part of
-// the BASE operator navigation (createOperatorAdminNavigation in
-// @voyant-travel/admin), so entries here would duplicate it. It's registered for
-// the routes seam: the contributions carry the package-owned route metadata
-// (the notifications pages keep their filter state component-local, so
-// there are no URL search contracts), and the pages are the packaged hosts
-// from @voyant-travel/notifications-react/admin — the route files under
-// src/routes/_workspace/notifications/* only bind route params onto them.
-function createNotificationsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.notifications({
-    labels: {
-      templates: messages.notificationTemplates,
-      reminderRules: messages.notificationReminderRules,
-      deliveries: messages.notificationDeliveries,
-      reminderRuns: messages.notificationReminderRuns,
-      preview: messages.notificationPreview,
-      settings: messages.notificationSettings,
-    },
-  })
-}
-
-// Suppliers is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the Suppliers item is part of the BASE operator
-// navigation (createOperatorAdminNavigation in @voyant-travel/admin), so an entry
-// here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route metadata (no search contracts —
-// the list keeps its filters local), and the pages are the packaged hosts
-// from @voyant-travel/distribution-react/suppliers/admin — the route files under
-// src/routes/_workspace/suppliers/* only bind route params onto them. The
-// detail page's customer-payment-policy card arrives via finance-ui's widget
-// contribution on `supplier.details.payment-policy` (the finance-ui ↔
-// suppliers-ui cycle resolution).
-// Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
-// route implementation come from @voyant-travel/commerce-react/promotions/admin. The app only
-// supplies the localized label and icon. Order 50 nudges it past the default
-// admin items so it lands alongside the operator's commercial tools.
-function createPromotionsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.commerce({
-    labels: { promotions: messages.promotions },
-    icon: Tag,
-    order: 50,
-  })
-}
-
 // Products is package-delivered (packaged-admin RFC Phase 3): the extension
 // contributes NO navigation — the Products item (with its Categories
 // sub-item) is part of the BASE operator navigation
@@ -569,23 +372,6 @@ function createProductsExtension(messages: AdminExtensionNavMessages) {
       import("@/components/voyant/products/product-detail-page").then((module) => ({
         default: module.ProductDetailPage,
       })),
-  })
-}
-
-// Trips is package-delivered (packaged-admin RFC Phase 2): nav AND
-// the route implementations come from @voyant-travel/trips-react/admin —
-// the Trips group (spliced after Bookings via `insertAfter`, with All trips /
-// New trip sub-items), the trips list, and the detail page whose Edit mode
-// lazy-mounts the packaged trips. The app only supplies the localized
-// labels and the icon.
-function createTripsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.trips({
-    labels: {
-      trips: messages.trips,
-      allTrips: messages.allTrips,
-      newTrip: messages.newTrip,
-    },
-    icon: Route,
   })
 }
 
@@ -648,18 +434,9 @@ export function createOperatorAdminExtensions(
   return withOperatorRouteMessagesProviders(
     createAdminExtensionRegistry(
       createCoreExtension(),
-      createOperationsExtension(messages),
       createBookingsExtension(messages),
       createCatalogExtension(messages),
       createProductsExtension(messages),
-      createRelationshipsExtension(messages),
-      createDistributionExtension(messages),
-      createFinanceExtension(messages),
-      createFlightsExtension(messages),
-      createLegalExtension(messages),
-      createNotificationsExtension(messages),
-      createPromotionsExtension(messages),
-      createTripsExtension(messages),
       ...createSelectedGraphAdminExtensions({ navMessages: messages }),
       ...discoveredAdminExtensions,
     ),

@@ -4,6 +4,8 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 
 // Lean statics only: the client module (fetcher) and the skeletons. Query
@@ -222,4 +224,21 @@ export function createRelationshipsAdminExtension(
  */
 function loaderClient(runtime: AdminRouteRuntime) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
+}
+
+const relationshipsRouteMessagesProvider = () =>
+  import("../i18n/index.js").then((module) => ({ default: module.CrmUiMessagesProvider }))
+
+export function createSelectedRelationshipsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createRelationshipsAdminExtension({
+      labels: {
+        people: navMessages.people,
+        organizations: navMessages.organizations,
+      },
+    }),
+    relationshipsRouteMessagesProvider,
+  )
 }

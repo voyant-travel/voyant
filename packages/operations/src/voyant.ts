@@ -63,6 +63,11 @@ export const operationsVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 10,
+    runtime: {
+      entry: "@voyant-travel/operations-react/admin",
+      export: "createSelectedOperationsAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/operations#admin.copy.availability",

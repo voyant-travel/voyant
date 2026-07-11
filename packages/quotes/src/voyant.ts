@@ -111,7 +111,7 @@ export const quotesVoyantModule = defineModule({
     },
   ],
   admin: {
-    compositionOrder: 10,
+    compositionOrder: 100,
     runtime: {
       entry: "@voyant-travel/quotes-react/admin",
       export: "createSelectedQuotesAdminExtension",

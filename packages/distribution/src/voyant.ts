@@ -72,6 +72,11 @@ export const distributionVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 30,
+    runtime: {
+      entry: "@voyant-travel/distribution-react/admin",
+      export: "createSelectedDistributionAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/distribution#admin.copy",

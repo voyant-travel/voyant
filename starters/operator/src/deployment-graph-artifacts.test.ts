@@ -99,6 +99,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       }),
       expect.objectContaining({
         eventType: "booking.confirmed",
+        id: "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
         runtime: {
           entry: "./channel-push-subscribers",
           export: "channelPushBookingConfirmedSubscriber",
@@ -155,7 +156,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(notifications?.subscribers).toEqual([
       expect.objectContaining({
         id: "@voyant-travel/notifications#subscriber.booking-confirmation-auto-dispatch",
-        eventType: "booking.confirmed",
+        eventType: "booking.contract.generated",
       }),
       expect.objectContaining({
         id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",

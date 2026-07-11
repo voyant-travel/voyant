@@ -146,6 +146,22 @@ export const financeVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 40,
+    runtime: {
+      entry: "@voyant-travel/finance-react/admin",
+      export: "createSelectedFinanceAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/finance#admin.copy",
+        namespace: "finance.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/finance-react/i18n",
+          export: "financeUiMessageDefinitions",
+        },
+      },
+    ],
     routes: (
       [
         ["index", "/finance"],

@@ -32,6 +32,11 @@ export const flightsVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 50,
+    runtime: {
+      entry: "@voyant-travel/flights-react/admin",
+      export: "createSelectedFlightsAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/flights#admin.copy",

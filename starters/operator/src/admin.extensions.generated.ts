@@ -4,16 +4,7 @@
 
 import { createBookingsAdminExtension } from "@voyant-travel/bookings-react/admin"
 import { createCatalogAdminExtension } from "@voyant-travel/catalog-react/admin"
-import { createCommerceAdminExtension } from "@voyant-travel/commerce-react/admin"
-import { createDistributionAdminExtension } from "@voyant-travel/distribution-react/admin"
-import { createFinanceAdminExtension } from "@voyant-travel/finance-react/admin"
-import { createFlightsAdminExtension } from "@voyant-travel/flights-react/admin"
 import { createInventoryAdminExtension } from "@voyant-travel/inventory-react/admin"
-import { createLegalAdminExtension } from "@voyant-travel/legal-react/admin"
-import { createNotificationsAdminExtension } from "@voyant-travel/notifications-react/admin"
-import { createOperationsAdminExtension } from "@voyant-travel/operations-react/admin"
-import { createRelationshipsAdminExtension } from "@voyant-travel/relationships-react/admin"
-import { createTripsAdminExtension } from "@voyant-travel/trips-react/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not
@@ -23,14 +14,5 @@ import { createTripsAdminExtension } from "@voyant-travel/trips-react/admin"
 export const generatedAdminExtensionFactories = {
   bookings: createBookingsAdminExtension,
   catalog: createCatalogAdminExtension,
-  commerce: createCommerceAdminExtension,
-  distribution: createDistributionAdminExtension,
-  finance: createFinanceAdminExtension,
-  flights: createFlightsAdminExtension,
   inventory: createInventoryAdminExtension,
-  legal: createLegalAdminExtension,
-  notifications: createNotificationsAdminExtension,
-  operations: createOperationsAdminExtension,
-  relationships: createRelationshipsAdminExtension,
-  trips: createTripsAdminExtension,
 } as const

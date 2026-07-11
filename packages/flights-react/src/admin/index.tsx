@@ -1,4 +1,9 @@
-import { type AdminExtension, defineAdminExtension } from "@voyant-travel/admin"
+import {
+  type AdminExtension,
+  defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
+} from "@voyant-travel/admin"
 import type { CabinClass } from "@voyant-travel/flights/contract/types"
 import { z } from "zod"
 
@@ -211,4 +216,14 @@ export function createFlightsAdminExtension(
       },
     ],
   })
+}
+
+export function createSelectedFlightsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createFlightsAdminExtension({ labels: { flights: navMessages.flights } }),
+    () =>
+      import("../i18n/index.js").then((module) => ({ default: module.FlightsUiMessagesProvider })),
+  )
 }
