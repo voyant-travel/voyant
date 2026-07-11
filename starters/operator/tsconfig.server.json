@@ -426,6 +426,9 @@
       "@voyant-travel/catalog/events/taxonomy": [
         "../../packages/catalog/dist/events/taxonomy.d.ts"
       ],
+      "@voyant-travel/catalog/index-subscribers": [
+        "../../packages/catalog/dist/index-subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/catalog/indexer/contract": [
         "../../packages/catalog/dist/indexer/contract.d.ts"
       ],
