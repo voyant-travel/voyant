@@ -39,15 +39,15 @@ describe("selected-graph Action Ledger admin composition", () => {
         ],
       },
     ])
-    expect(extension?.routes?.map(({ id, path, title, ssr }) => ({ id, path, title, ssr }))).toEqual(
-      [
-        {
-          id: "action-ledger-index",
-          path: "/action-ledger",
-          title: "Jurnal actiuni",
-          ssr: "data-only",
-        },
-      ],
-    )
+    expect(
+      extension?.routes?.map(({ id, path, title, ssr }) => ({ id, path, title, ssr })),
+    ).toEqual([
+      {
+        id: "action-ledger-index",
+        path: "/action-ledger",
+        title: "Jurnal actiuni",
+        ssr: "data-only",
+      },
+    ])
   })
 })
