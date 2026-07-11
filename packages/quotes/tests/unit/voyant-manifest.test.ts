@@ -23,6 +23,28 @@ describe("quotes deployment manifests", () => {
       ],
       schema: [{ id: "@voyant-travel/quotes#schema" }],
       migrations: [{ id: "@voyant-travel/quotes#migrations" }],
+      admin: {
+        runtime: {
+          entry: "@voyant-travel/quotes-react/admin",
+          export: "createQuotesAdminExtension",
+        },
+        copy: [
+          {
+            id: "@voyant-travel/quotes#admin.copy",
+            namespace: "quotes.admin",
+          },
+        ],
+        routes: [
+          {
+            id: "@voyant-travel/quotes#admin.route.quotes-index",
+            path: "/quotes",
+          },
+          {
+            id: "@voyant-travel/quotes#admin.route.quotes-detail",
+            path: "/quotes/$id",
+          },
+        ],
+      },
       links: [
         { id: "@voyant-travel/quotes#linkable.quote" },
         { id: "@voyant-travel/quotes#linkable.quoteVersion" },

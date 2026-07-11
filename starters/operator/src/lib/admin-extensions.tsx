@@ -612,7 +612,7 @@ function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
 // quote creation), and the quote detail page where that quote's versions are
 // nested. The app only supplies the localized label and the icon.
 function createQuotesExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.quotes({
+  return selectedGraphAdminExtensionFactories["@voyant-travel/quotes"]({
     labels: { quotes: messages.quotes },
     icon: FileText,
   })
