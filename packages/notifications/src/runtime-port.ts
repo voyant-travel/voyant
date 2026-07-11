@@ -5,6 +5,7 @@ import type { NotificationReminderWorkflowRuntime } from "./workflow-runtime.js"
 
 export interface NotificationsRuntimeProvider extends CreateNotificationsHonoModuleOptions {
   resolveDb: NonNullable<CreateNotificationsHonoModuleOptions["resolveDb"]>
+  resolveProviders: NonNullable<CreateNotificationsHonoModuleOptions["resolveProviders"]>
   resolveReminderWorkflowRuntime: (
     bindings: Record<string, unknown>,
   ) => NotificationReminderWorkflowRuntime
