@@ -889,6 +889,13 @@ remove it.
 V1 should include subscribers and workflow event filters that already map to
 existing descriptors.
 
+Application-local `src/subscribers` and `src/links` contributions are compiled
+with the TypeScript AST. Subscriber files default-export durable
+`EventFilterDescriptor` data, while link files default-export `defineLink`
+definitions. The compiler emits deterministic static TypeScript imports under
+`.voyant/runtime`; it does not import application source, mutate runtime wiring,
+or defer discovery to application startup.
+
 The broader event catalog is beyond the foundational substrate:
 
 - declared `events.emits` catalogs

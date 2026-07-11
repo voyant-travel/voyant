@@ -59,6 +59,16 @@ export type {
   VoyantProjectSetupMigration,
 } from "./project-resolver.js"
 export type {
+  ProjectLinkConvention,
+  ProjectSubscriberConvention,
+  ProjectSubscriberLinkConventionAnalysis,
+  ProjectSubscriberLinkConventionCompilation,
+  ProjectSubscriberLinkConventionDiagnostic,
+  ProjectSubscriberLinkConventionsOptions,
+  ProjectSubscriberLinkDiagnosticCode,
+  ProjectSubscriberLinkGeneratedFile,
+} from "./project-subscriber-link-conventions.js"
+export type {
   ProjectJobConvention,
   ProjectWorkflowConvention,
   ProjectWorkflowJobConventionAnalysis,
@@ -135,6 +145,24 @@ export async function compileProjectWorkflowJobConventions(
 > {
   const conventions = await import("./project-workflow-job-conventions.js")
   return conventions.compileProjectWorkflowJobConventions(options)
+}
+
+export async function analyzeProjectSubscriberLinkConventions(
+  options: import("./project-subscriber-link-conventions.js").ProjectSubscriberLinkConventionsOptions,
+): Promise<
+  import("./project-subscriber-link-conventions.js").ProjectSubscriberLinkConventionAnalysis
+> {
+  const conventions = await import("./project-subscriber-link-conventions.js")
+  return conventions.analyzeProjectSubscriberLinkConventions(options)
+}
+
+export async function compileProjectSubscriberLinkConventions(
+  options: import("./project-subscriber-link-conventions.js").ProjectSubscriberLinkConventionsOptions,
+): Promise<
+  import("./project-subscriber-link-conventions.js").ProjectSubscriberLinkConventionCompilation
+> {
+  const conventions = await import("./project-subscriber-link-conventions.js")
+  return conventions.compileProjectSubscriberLinkConventions(options)
 }
 
 export async function executeNodeMigrationPlan(

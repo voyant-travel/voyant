@@ -12,6 +12,7 @@
     "./project-api-conventions": "./src/project-api-conventions.ts",
     "./project-admin-conventions": "./src/project-admin-conventions.ts",
     "./project-workflow-job-conventions": "./src/project-workflow-job-conventions.ts",
+    "./project-subscriber-link-conventions": "./src/project-subscriber-link-conventions.ts",
     "./project": "./src/project.ts",
     "./profile": "./src/profile.ts",
     "./managed-jobs": "./src/managed-jobs.ts",
@@ -132,6 +133,11 @@
         "types": "./dist/project-workflow-job-conventions.d.ts",
         "import": "./dist/project-workflow-job-conventions.js",
         "default": "./dist/project-workflow-job-conventions.js"
+      },
+      "./project-subscriber-link-conventions": {
+        "types": "./dist/project-subscriber-link-conventions.d.ts",
+        "import": "./dist/project-subscriber-link-conventions.js",
+        "default": "./dist/project-subscriber-link-conventions.js"
       },
       "./project": {
         "types": "./dist/project.d.ts",

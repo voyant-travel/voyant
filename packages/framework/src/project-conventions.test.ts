@@ -176,6 +176,34 @@ describe("discoverProjectConventions", () => {
     ])
   })
 
+  it("ignores declaration and test files in subscriber and link directories", async () => {
+    const root = await projectFixture([
+      "src/subscribers/accepted.ts",
+      "src/subscribers/ignored.d.ts",
+      "src/subscribers/ignored.test.ts",
+      "src/subscribers/ignored.spec.ts",
+      "src/links/accepted.ts",
+      "src/links/ignored.d.ts",
+      "src/links/ignored.test.ts",
+      "src/links/ignored.spec.ts",
+    ])
+
+    const result = await discoverProjectConventions(root)
+
+    expect(result.contributions).toEqual([
+      {
+        id: "project.link.accepted",
+        kind: "link",
+        sourcePath: "src/links/accepted.ts",
+      },
+      {
+        id: "project.subscriber.accepted",
+        kind: "subscriber",
+        sourcePath: "src/subscribers/accepted.ts",
+      },
+    ])
+  })
+
   it("reports same-surface dynamic and route-group collisions", async () => {
     const root = await projectFixture([
       "src/api/admin/orders/[id]/route.ts",
