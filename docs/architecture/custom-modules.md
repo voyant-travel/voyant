@@ -158,6 +158,48 @@ schema glob (`./src/modules/*/schema.ts`) picks up every custom module. The full
 `drizzle.config.ts` globs them too, so `db:push`, `db:studio`, and the
 migration-replay oracle all see custom tables.
 
+## Project subscribers and links
+
+Application-local subscribers live under `src/subscribers/**/*.ts`. Each file
+default-exports durable `EventFilterDescriptor` data with non-empty literal
+`id` and `eventType` fields. Descriptor values must be serializable data; use a
+workflow definition for executable behavior.
+
+```ts
+import type { EventFilterDescriptor } from "@voyant-travel/core"
+
+export default {
+  id: "loyalty.credit-booking-points",
+  eventType: "booking.confirmed",
+  manifest: {
+    id: "loyalty.credit-booking-points",
+    eventType: "booking.confirmed",
+    payloadHash: "7dd9b0cbfd8c5e30",
+    targetWorkflowId: "loyalty.credit-points",
+  },
+} satisfies EventFilterDescriptor
+```
+
+Application-local links live under `src/links/**/*.ts`. Each file imports
+`defineLink` from `@voyant-travel/core` or `@voyant-travel/core/links` and
+default-exports one definition:
+
+```ts
+import { defineLink } from "@voyant-travel/core"
+import { booking } from "@voyant-travel/bookings/linkables"
+import { loyaltyAccount } from "../modules/loyalty/linkables.js"
+
+export default defineLink(booking, loyaltyAccount)
+```
+
+The build-time compiler parses these files without importing them, rejects
+named runtime exports, project-root import escapes, invalid declaration shapes,
+and duplicate subscriber IDs, then emits deterministic static imports in
+`.voyant/runtime/project-subscribers.generated.ts` and
+`.voyant/runtime/project-links.generated.ts`. Declaration and test files in
+these directories are not convention entries. Runtime directory scanning is
+not part of this contract.
+
 ## Custom routes on an *existing* module (extensions)
 
 A `HonoExtension` adds routes to an **existing** module's surface (e.g. a
