@@ -4,6 +4,8 @@ import {
   type AdminWidgetContribution,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 // Importing the slot id also binds the bookings-ui `AdminDestinations`
 // augmentation (`booking.detail`, `person.detail`, `organization.detail`,
@@ -408,4 +410,24 @@ export function createFinanceAdminExtension(
       } satisfies AdminWidgetContribution,
     ],
   })
+}
+
+export function createSelectedFinanceAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createFinanceAdminExtension({
+      labels: {
+        invoices: navMessages.invoices,
+        invoiceNumberSeries: navMessages.invoiceNumberSeries,
+        payments: navMessages.payments,
+        supplierInvoices: navMessages.supplierInvoices,
+        profitability: navMessages.profitability,
+      },
+    }),
+    () =>
+      import("../i18n/index.js").then((module) => ({
+        default: module.FinanceUiMessagesProvider,
+      })),
+  )
 }

@@ -1,5 +1,5 @@
 import { operatorAdminNavMessages } from "@voyant-travel/i18n"
-import { ScrollText } from "lucide-react"
+import { Route, ScrollText, Tag } from "lucide-react"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -18,7 +18,25 @@ describe("selected-graph Action Ledger admin composition", () => {
       createSelectedGraphAdminExtensions({ navMessages: operatorAdminNavMessages.en.nav }).map(
         ({ id }) => id,
       ),
-    ).toEqual(["quotes", "mice", "action-ledger"])
+    ).toEqual([
+      "operations",
+      "relationships",
+      "distribution",
+      "finance",
+      "flights",
+      "legal",
+      "notifications",
+      "commerce",
+      "trips",
+      "quotes",
+      "mice",
+      "action-ledger",
+    ])
+    expect(Object.keys(generatedAdminExtensionFactories)).toEqual([
+      "bookings",
+      "catalog",
+      "inventory",
+    ])
   })
 
   it("preserves localized navigation, route copy, and icon behavior", () => {
@@ -49,5 +67,36 @@ describe("selected-graph Action Ledger admin composition", () => {
         ssr: "data-only",
       },
     ])
+  })
+
+  it("keeps migrated copy providers and icons package-owned", () => {
+    const extensions = createSelectedGraphAdminExtensions({
+      navMessages: operatorAdminNavMessages.ro.nav,
+    })
+
+    for (const id of [
+      "operations",
+      "relationships",
+      "distribution",
+      "finance",
+      "flights",
+      "legal",
+      "notifications",
+      "commerce",
+    ]) {
+      const renderedRoutes = extensions
+        .find((extension) => extension.id === id)
+        ?.routes?.filter((route) => !route.redirectTo)
+      expect(renderedRoutes?.length, id).toBeGreaterThan(0)
+      expect(
+        renderedRoutes?.every((route) => route.routeMessagesProvider),
+        id,
+      ).toBe(true)
+    }
+
+    expect(extensions.find(({ id }) => id === "commerce")?.navigation?.[0]?.items[0]?.icon).toBe(
+      Tag,
+    )
+    expect(extensions.find(({ id }) => id === "trips")?.navigation?.[0]?.items[0]?.icon).toBe(Route)
   })
 })

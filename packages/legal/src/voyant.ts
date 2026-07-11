@@ -84,6 +84,22 @@ export const legalVoyantModule = defineModule({
     ],
   },
   admin: {
+    compositionOrder: 60,
+    runtime: {
+      entry: "@voyant-travel/legal-react/admin",
+      export: "createSelectedLegalAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/legal#admin.copy",
+        namespace: "legal.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/legal-react/i18n",
+          export: "legalUiMessageDefinitions",
+        },
+      },
+    ],
     routes: (
       [
         ["index", "/legal"],

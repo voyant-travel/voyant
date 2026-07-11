@@ -30,7 +30,7 @@ export const actionLedgerVoyantModule = defineModule({
     },
   ],
   admin: {
-    compositionOrder: 30,
+    compositionOrder: 120,
     runtime: {
       entry: "@voyant-travel/action-ledger-react/admin",
       export: "createSelectedActionLedgerAdminExtension",

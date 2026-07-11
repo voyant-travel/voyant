@@ -4,7 +4,10 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
+import { Tag } from "lucide-react"
 
 export {
   type CreatePromotionsAdminExtensionOptions,
@@ -58,4 +61,20 @@ export function createCommerceAdminExtension(
       },
     ],
   })
+}
+
+export function createSelectedCommerceAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createCommerceAdminExtension({
+      labels: { promotions: navMessages.promotions },
+      icon: Tag,
+      order: 50,
+    }),
+    () =>
+      import("./promotions/i18n/index.js").then((module) => ({
+        default: module.PromotionsUiMessagesProvider,
+      })),
+  )
 }

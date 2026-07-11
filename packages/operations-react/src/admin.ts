@@ -3,7 +3,10 @@ import {
   type AdminRouteLoaderContext,
   type AdminRouteRuntime,
   adminRoutePageModule,
+  composeAdminRouteMessagesProviders,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import type {} from "@voyant-travel/bookings-react/admin"
 
@@ -262,4 +265,33 @@ function availabilityLoaderClient(runtime: AdminRouteRuntime) {
 
 function resourcesLoaderClient(runtime: AdminRouteRuntime) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? resourcesDefaultFetcher }
+}
+
+const operationsRouteMessagesProvider = composeAdminRouteMessagesProviders(
+  () =>
+    import("./availability/i18n/index.js").then((module) => ({
+      default: module.AvailabilityUiMessagesProvider,
+    })),
+  () =>
+    import("./availability/allocation/i18n/index.js").then((module) => ({
+      default: module.AllocationUiMessagesProvider,
+    })),
+  () =>
+    import("./resources/i18n/index.js").then((module) => ({
+      default: module.ResourcesUiMessagesProvider,
+    })),
+)
+
+export function createSelectedOperationsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createOperationsAdminExtension({
+      labels: {
+        availability: navMessages.availability,
+        resources: navMessages.resources,
+      },
+    }),
+    operationsRouteMessagesProvider,
+  )
 }

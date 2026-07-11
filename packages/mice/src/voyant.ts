@@ -49,7 +49,7 @@ export const miceVoyantModule = defineModule({
     },
   ],
   admin: {
-    compositionOrder: 20,
+    compositionOrder: 110,
     runtime: {
       entry: "@voyant-travel/mice-react/admin",
       export: "createSelectedMiceAdminExtension",

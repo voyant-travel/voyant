@@ -163,6 +163,11 @@ export const commerceVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 80,
+    runtime: {
+      entry: "@voyant-travel/commerce-react/admin",
+      export: "createSelectedCommerceAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/commerce#admin.copy.promotions",

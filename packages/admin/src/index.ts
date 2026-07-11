@@ -21,6 +21,11 @@
  */
 
 export {
+  type AdminRouteMessagesProviderLoader,
+  composeAdminRouteMessagesProviders,
+  withAdminRouteMessagesProvider,
+} from "./admin-route-messages.js"
+export {
   type AdminBreadcrumbSegment,
   AdminBreadcrumbsProvider,
   type AdminBreadcrumbsProviderProps,
