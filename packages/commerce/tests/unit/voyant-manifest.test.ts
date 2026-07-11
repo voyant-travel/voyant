@@ -86,6 +86,11 @@ describe("commerce deployment manifest", () => {
       ],
       subscribers: [
         {
+          id: "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
+          eventType: "booking.confirmed",
+          source: "@voyant-travel/commerce/promotion-redemption-subscriber",
+        },
+        {
           id: "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
           eventType: "promotion.changed",
           eventFilterId: "ef_6f8e4b4ce409d04c",
@@ -98,6 +103,7 @@ describe("commerce deployment manifest", () => {
         },
       ],
     })
+    expect(commerceVoyantModule.subscribers?.[0]).not.toHaveProperty("runtime")
   })
 
   it("owns the catalog checkout and booking maintenance bridges", () => {

@@ -428,6 +428,9 @@
       ],
       "@voyant-travel/commerce/checkout": ["../commerce/dist/checkout/index.d.ts"],
       "@voyant-travel/commerce/markets/validation": ["../commerce/dist/markets/validation.d.ts"],
+      "@voyant-travel/commerce/promotion-redemption-subscriber": [
+        "../commerce/dist/promotions/subscriber-runtime.d.ts"
+      ],
       "@voyant-travel/commerce/promotions/validation": [
         "../commerce/dist/promotions/validation.d.ts"
       ],

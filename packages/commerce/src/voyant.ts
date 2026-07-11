@@ -112,6 +112,11 @@ export const commerceVoyantModule = defineModule({
   ],
   subscribers: [
     {
+      id: "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
+      eventType: "booking.confirmed",
+      source: "@voyant-travel/commerce/promotion-redemption-subscriber",
+    },
+    {
       id: "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
       eventType: "promotion.changed",
       eventFilterId: promotionAffectedAllFilter.id,

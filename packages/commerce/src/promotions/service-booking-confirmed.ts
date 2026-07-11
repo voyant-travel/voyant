@@ -129,31 +129,3 @@ export async function recordPromotionRedemptionsForBooking(
     rowsUpserted: aggregated.size,
   }
 }
-
-/**
- * Wiring guidance for the operator starter — the canonical subscriber
- * pattern (mirrors how `catalog-bridge.ts` wires `captureSnapshotGraph`):
- *
- *   eventBus.subscribe<BookingConfirmedEvent>("booking.confirmed", async ({ data }) => {
- *     await withDbFromEnv(env, async (db) => {
- *       try {
- *         await recordPromotionRedemptionsForBooking(db, data.bookingId)
- *       } catch (err) {
- *         // Failing here leaves the booking committed without a
- *         // redemption row. Ops can backfill from
- *         // `pricing_applied_offers` on the snapshot. Log so the gap
- *         // is visible.
- *         console.warn("[promotions] redemption subscriber failed", { …err })
- *       }
- *     })
- *   })
- *
- * The factory is intentionally kept in the template (not here) because:
- *   - The subscriber needs the template's `withDbFromEnv` from
- *     `starters/operator/src/api/lib/db.ts` (the Pool lifecycle helper
- *     introduced in #510 / #512). That helper isn't exported from a
- *     package.
- *   - Keeping the package package-side core (`recordPromotionRedemptionsForBooking`)
- *     and the wiring template-side mirrors the existing catalog-bridge
- *     subscriber pattern.
- */
