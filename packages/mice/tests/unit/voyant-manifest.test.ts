@@ -20,6 +20,22 @@ describe("MICE deployment manifests", () => {
       ],
       schema: [{ id: "@voyant-travel/mice#schema" }],
       migrations: [{ id: "@voyant-travel/mice#migrations" }],
+      admin: {
+        runtime: {
+          entry: "@voyant-travel/mice-react/admin",
+          export: "createMiceAdminExtension",
+        },
+        routes: [
+          {
+            id: "@voyant-travel/mice#admin.route.programs-index",
+            path: "/mice",
+          },
+          {
+            id: "@voyant-travel/mice#admin.route.programs-detail",
+            path: "/mice/$id",
+          },
+        ],
+      },
       links: [
         { id: "@voyant-travel/mice#linkable.program" },
         { id: "@voyant-travel/mice#linkable.session" },
