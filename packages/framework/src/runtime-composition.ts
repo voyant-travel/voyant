@@ -385,6 +385,7 @@ async function resolveRuntimeUnit<TCapabilities>(
     const output = isGraphRuntimeFactory(runtimeExport)
       ? await runtimeExport({
           unitId: unit.id,
+          api: unit.routes.map(({ route }) => ({ id: route.id, surface: route.surface })),
           hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
             if (!unit.runtimePorts.includes(port.id)) {
               throw new Error(

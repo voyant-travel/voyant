@@ -64,17 +64,19 @@ export const tripsModule: Module = {
 }
 
 export interface TripsHonoModuleOptions extends TripsRoutesOptions {
+  adminRoutes?: boolean
   publicRoutes?: boolean
   routesOptions?: TripsRoutesOptionsInput
 }
 
 export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
-  const { publicRoutes = false, routesOptions, ...routeOptions } = options
+  const { adminRoutes = true, publicRoutes = false, routesOptions, ...routeOptions } = options
   const resolvedRouteOptions = memoizeTripsRouteOptionsInput(routesOptions ?? routeOptions)
-  const routes = createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin"))
   const honoModule: HonoModule = {
     module: tripsModule,
-    adminRoutes: routes,
+  }
+  if (adminRoutes) {
+    honoModule.adminRoutes = createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin"))
   }
   if (publicRoutes) {
     honoModule.publicRoutes = createTripsRoutes(
@@ -85,12 +87,16 @@ export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
 }
 
 /** Package-owned adapter from graph ports to the complete Trips runtime. */
-export const createTripsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
+export const createTripsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
   const [routesOptions, databaseRuntime] = await Promise.all([
     getPort(tripsRoutesRuntimePort),
     getPort(tripsDatabaseRuntimePort),
   ])
-  const configured = createTripsHonoModule({ routesOptions, publicRoutes: true })
+  const configured = createTripsHonoModule({
+    routesOptions,
+    adminRoutes: api.some(({ surface }) => surface === "admin"),
+    publicRoutes: api.some(({ surface }) => surface === "public"),
+  })
   const bootstrap = configured.module.bootstrap
 
   return {

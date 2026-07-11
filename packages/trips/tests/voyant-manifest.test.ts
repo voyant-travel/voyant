@@ -53,7 +53,11 @@ describe("trips deployment manifest", () => {
     expect(tripsVoyantModule.subscribers?.[0]).toHaveProperty("runtime")
   })
 
-  it("ships typed runtime ports and owns route and database lifecycle composition", async () => {
+  it.each([
+    ["admin", true, false],
+    ["public", false, true],
+    ["both", true, true],
+  ] as const)("mounts only the %s graph-selected API surfaces", async (selection, admin, public_) => {
     const routeOptions = vi.fn(async () => ({}))
     const db = { source: "test" } as unknown as AnyDrizzleDb
     const withDb = vi.fn(
@@ -75,6 +79,9 @@ describe("trips deployment manifest", () => {
 
     const module = await createTripsVoyantRuntime({
       unitId: tripsVoyantModule.id,
+      api: tripsVoyantModule.api!.filter(({ surface }) =>
+        selection === "both" ? true : surface === selection,
+      ),
       hasPort: () => true,
       getPort: vi.fn(async (port) =>
         port.id === tripsRoutesRuntimePort.id ? routeOptions : databaseRuntime,
@@ -83,8 +90,8 @@ describe("trips deployment manifest", () => {
     const bindings = { DATABASE_URL: "postgres://test" }
     const container = createContainer()
 
-    expect(module.adminRoutes).toBeDefined()
-    expect(module.publicRoutes).toBeDefined()
+    expect(module.adminRoutes !== undefined).toBe(admin)
+    expect(module.publicRoutes !== undefined).toBe(public_)
     expect(module.module.requiresTransactionalDb).toBe(true)
 
     await module.module.bootstrap?.({ bindings, container, eventBus: createEventBus() })

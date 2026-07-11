@@ -469,6 +469,27 @@ describe("graph runtime composition", () => {
     expect(factory).toHaveBeenCalledTimes(1)
   })
 
+  it("passes only selected API facets to a package runtime factory", async () => {
+    const factory = defineGraphRuntimeFactory(vi.fn(() => ({ module: { name: "loyalty" } })))
+    const importRuntime = vi.fn(async () => ({ createLoyaltyModule: factory }))
+    const runtime = runtimeWithDuplicateFacets(importRuntime)
+    const adminOnlyRuntime = {
+      ...runtime,
+      modules: runtime.modules.map((unit) => ({
+        ...unit,
+        routes: unit.routes.filter(({ route }) => route.surface === "admin"),
+      })),
+    }
+
+    await composeVoyantGraphRuntime({ runtime: adminOnlyRuntime, capabilities: {} })
+
+    expect(factory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        api: [{ id: "@acme/loyalty#api.admin", surface: "admin" }],
+      }),
+    )
+  })
+
   it("injects only manifest-declared runtime ports into package-owned factories", async () => {
     const loyaltyPort = definePort<{ prefix: string }>({ id: "loyalty.runtime", test: () => {} })
     const factory = defineGraphRuntimeFactory(

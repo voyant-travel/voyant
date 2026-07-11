@@ -60,6 +60,9 @@ if (
 }
 if (
   !packageIndex.includes("createTripsVoyantRuntime = defineGraphRuntimeFactory") ||
+  !packageIndex.includes("async ({ api, getPort })") ||
+  !packageIndex.includes('surface === "admin"') ||
+  !packageIndex.includes('surface === "public"') ||
   !packageIndex.includes("getPort(tripsRoutesRuntimePort)") ||
   !packageIndex.includes("getPort(tripsDatabaseRuntimePort)") ||
   !packageIndex.includes("requiresTransactionalDb: true")

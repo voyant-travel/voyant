@@ -92,6 +92,8 @@ export async function assertPortConforms<TProvider>(
 
 export interface VoyantGraphRuntimeFactoryContext {
   unitId: string
+  /** API facets selected for this runtime unit in the resolved graph. */
+  api: readonly Readonly<Pick<VoyantGraphRouteBundle, "id" | "surface">>[]
   hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
   getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
 }
