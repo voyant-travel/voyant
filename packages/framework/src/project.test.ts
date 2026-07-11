@@ -56,6 +56,8 @@ describe("framework project resolver", () => {
     expect(first.artifacts.runtimeEntry).toBe("runtime/project-runtime.generated.ts")
     expect(first.artifacts.migrationRunner).toBe("runtime/project-migrations.generated.mjs")
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
+      "admin/project-admin.generated.ts",
+      "runtime/project-api.generated.ts",
       "runtime/project-migrations.generated.mjs",
       "runtime/project-runtime.generated.ts",
     ])
@@ -583,6 +585,54 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     })
 
     expect(composed.modules.map((module) => module.module.name)).toEqual(["concierge"])
+  })
+
+  it("compiles project API and admin conventions into the resolved graph artifacts", async () => {
+    const root = projectRoot()
+    writeFile(
+      root,
+      "src/api/admin/health/route.ts",
+      "export const GET = (c: { json(value: unknown): unknown }) => c.json({ ok: true })\n",
+    )
+    writeFile(root, "src/admin/dashboard/index.tsx", 'export default { id: "project.dashboard" }\n')
+
+    const resolution = await resolve(root, defineProject({ modules: [] }))
+    const projectApi = resolution.graph.modules.find(({ localId }) => localId === "project-api")
+
+    expect(projectApi).toMatchObject({
+      id: "npm/fixture#project-api",
+      packageName: "fixture",
+      api: [
+        {
+          id: "project.api.admin.health",
+          methods: ["GET"],
+          mount: "/health",
+          surface: "admin",
+          runtime: {
+            entry: "./.voyant/runtime/project-api.generated.ts",
+            export: "projectApiHonoModule",
+          },
+        },
+      ],
+    })
+    expect(resolution.graph.packageRecords).toContainEqual(
+      expect.objectContaining({
+        packageName: "fixture",
+        source: { kind: "file", reference: "." },
+      }),
+    )
+    expect(
+      resolution.artifacts.files.find(({ path }) => path === "runtime/project-api.generated.ts")
+        ?.contents,
+    ).toContain('import * as route0 from "../../src/api/admin/health/route.js"')
+    expect(
+      resolution.artifacts.files.find(({ path }) => path === "admin/project-admin.generated.ts")
+        ?.contents,
+    ).toContain('import projectAdminExtension0 from "../../src/admin/dashboard/index.js"')
+    expect(
+      resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
+        ?.contents,
+    ).toContain('"./project-api.generated.ts": () => import("./project-api.generated.ts")')
   })
 
   it("rejects convention diagnostics and config paths outside the project root", async () => {

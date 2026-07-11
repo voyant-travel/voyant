@@ -22,6 +22,12 @@ import {
   type VoyantGraphPackageMetadata,
   type VoyantGraphPackageRecord,
 } from "./deployment-graph.js"
+import { compileProjectAdminConventions } from "./project-admin-conventions.js"
+import {
+  compileProjectApiConventions,
+  PROJECT_API_GENERATED_PATH,
+  type ProjectApiConventionCompilation,
+} from "./project-api-conventions.js"
 import {
   discoverProjectConventions,
   type ProjectConventionDiscovery,
@@ -129,9 +135,17 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   assertPathInside(projectRoot, configPath, "configPath")
   const conventions = await discoverProjectConventions({ projectRoot })
   assertProjectConventionDiagnostics(conventions)
+  const [projectApi, projectAdmin] = await Promise.all([
+    compileProjectApiConventions({ projectRoot }),
+    compileProjectAdminConventions({
+      projectRoot,
+      contributions: conventions.contributions,
+    }),
+  ])
 
   const materialized = await materializeProjectSelections(project, projectRoot)
   await materializeProjectModuleConventions(materialized, conventions, projectRoot)
+  await materializeProjectApiConventions(materialized, projectApi, projectRoot)
   const providers = { ...(project.deployment?.providers ?? {}) }
   const mode = project.deployment?.mode
   const frameworkVersion = await readFrameworkVersion()
@@ -166,6 +180,8 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     runtimeEntry,
   )
   const files: FrameworkGeneratedProjectFile[] = [
+    projectApi.generatedFile,
+    projectAdmin.file,
     {
       path: runtimeEntry,
       contents: buildProjectRuntimeModule({
@@ -195,6 +211,36 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   }
 }
 
+async function materializeProjectApiConventions(
+  materialized: MaterializedProject,
+  compilation: ProjectApiConventionCompilation,
+  projectRoot: string,
+): Promise<void> {
+  if (compilation.graphRoutes.length === 0) return
+  const packageName = await admitProjectSourcePackage(materialized, projectRoot)
+  const generatedRuntime = `./.voyant/${PROJECT_API_GENERATED_PATH}`
+  materialized.project = {
+    ...materialized.project,
+    modules: [
+      ...materialized.project.modules,
+      {
+        schemaVersion: "voyant.module.v1",
+        id: graphIdForSelection(packageName, `${packageName}#project-api`),
+        packageName,
+        localId: "project-api",
+        api: compilation.graphRoutes.map((route) => ({
+          ...route,
+          runtime: { entry: generatedRuntime, export: "projectApiHonoModule" },
+        })),
+        meta: {
+          source: "project-convention",
+          generatedPath: PROJECT_API_GENERATED_PATH,
+        },
+      },
+    ],
+  }
+}
+
 function assertProjectConventionDiagnostics(discovery: ProjectConventionDiscovery): void {
   if (discovery.diagnostics.length === 0) return
   throw new Error(
@@ -214,23 +260,7 @@ async function materializeProjectModuleConventions(
       contribution.kind === "module",
   )
   if (modules.length === 0) return
-
-  const packageJson = await readPackageJson(projectRoot)
-  const packageName = requirePackageName(packageJson, projectRoot)
-  const inspected: InspectedPackage = {
-    directory: projectRoot,
-    record: {
-      packageName,
-      ...(typeof packageJson.version === "string" ? { version: packageJson.version } : {}),
-      source: { kind: "file", reference: "." },
-      metadata: { ...inferredNodeRuntimePackageMetadata(), kind: "module" },
-    },
-  }
-  const previous = materialized.packages.get(packageName)
-  if (previous && previous.directory !== projectRoot) {
-    throw new Error(`resolveProject: package ${packageName} resolves from more than one source.`)
-  }
-  materialized.packages.set(packageName, inspected)
+  const packageName = await admitProjectSourcePackage(materialized, projectRoot)
   materialized.project = {
     ...materialized.project,
     modules: [
@@ -238,6 +268,30 @@ async function materializeProjectModuleConventions(
       ...modules.map((module) => syntheticProjectModule(packageName, module)),
     ],
   }
+}
+
+async function admitProjectSourcePackage(
+  materialized: MaterializedProject,
+  projectRoot: string,
+): Promise<string> {
+  const packageJson = await readPackageJson(projectRoot)
+  const packageName = requirePackageName(packageJson, projectRoot)
+  const previous = materialized.packages.get(packageName)
+  if (previous && previous.directory !== projectRoot) {
+    throw new Error(`resolveProject: package ${packageName} resolves from more than one source.`)
+  }
+  if (!previous) {
+    materialized.packages.set(packageName, {
+      directory: projectRoot,
+      record: {
+        packageName,
+        ...(typeof packageJson.version === "string" ? { version: packageJson.version } : {}),
+        source: { kind: "file", reference: "." },
+        metadata: { ...inferredNodeRuntimePackageMetadata(), kind: "module" },
+      },
+    })
+  }
+  return packageName
 }
 
 function syntheticProjectModule(
@@ -614,10 +668,14 @@ function isProjectSourceRuntimeReference(
 function resolveProjectSourceRuntimeTarget(projectRoot: string, entry: string): string {
   const target = path.resolve(projectRoot, entry)
   assertPathInside(projectRoot, target, `project runtime entry ${entry}`)
-  if (!existsSync(target)) {
+  if (!isGeneratedProjectRuntimeEntry(entry) && !existsSync(target)) {
     throw new Error(`resolveProject: project runtime entry ${entry} does not exist.`)
   }
   return target
+}
+
+function isGeneratedProjectRuntimeEntry(entry: string): boolean {
+  return entry === `./.voyant/${PROJECT_API_GENERATED_PATH}`
 }
 
 function lowerOwnerRuntimeEntry(packageName: string, entry: string): string {

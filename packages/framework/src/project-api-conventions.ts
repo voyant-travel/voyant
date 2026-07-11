@@ -9,7 +9,8 @@ import {
   type ProjectConventionRouteSurface,
 } from "./project-conventions.js"
 
-export const PROJECT_API_GENERATED_PATH = ".voyant/runtime/project-api.generated.ts"
+/** Path relative to the project's disposable `.voyant` artifact root. */
+export const PROJECT_API_GENERATED_PATH = "runtime/project-api.generated.ts"
 
 const SUPPORTED_METHODS = new Set<VoyantGraphRouteMethod>([
   "DELETE",

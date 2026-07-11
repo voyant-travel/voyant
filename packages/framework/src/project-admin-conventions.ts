@@ -5,8 +5,7 @@ import ts from "typescript"
 
 import type { ProjectConventionContribution } from "./project-conventions.js"
 
-export const VOYANT_PROJECT_ADMIN_GENERATED_FILE =
-  ".voyant/admin/project-admin.generated.ts" as const
+export const VOYANT_PROJECT_ADMIN_GENERATED_FILE = "admin/project-admin.generated.ts" as const
 
 export const PROJECT_ADMIN_CONVENTION_DIAGNOSTIC_CODES = {
   PROJECT_ADMIN_DUPLICATE_EXTENSION_ID:
