@@ -209,6 +209,22 @@ export const catalogVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 2,
+    runtime: {
+      entry: "@voyant-travel/catalog-react/admin",
+      export: "createSelectedCatalogAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/catalog#admin.copy",
+        namespace: "catalog.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/catalog-react/i18n",
+          export: "catalogUiMessageDefinitions",
+        },
+      },
+    ],
     routes: (
       [
         ["index", "/catalog"],

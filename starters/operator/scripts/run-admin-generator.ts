@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process"
-import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -12,26 +12,26 @@ const check = process.argv.includes("--check")
 // generation fails. The durable graph remains under .voyant/.
 copyFileSync(generatedGraph, compatibilityGraph)
 try {
-  generateCompatibilityExtensions("src/admin.extensions.generated.ts")
+  assertNoCompatibilityExtensions("src/admin.extensions.generated.ts")
   run(["--routes", "--out", "src/admin.routes.generated.tsx"])
   run(["--destinations", "--out", "src/admin.destinations.generated.ts"])
 } finally {
   rmSync(compatibilityGraph, { force: true })
 }
 
-function generateCompatibilityExtensions(output: string): void {
+function assertNoCompatibilityExtensions(output: string): void {
   const directory = mkdtempSync(join(tmpdir(), "voyant-admin-compatibility-"))
   const generated = join(directory, "admin.extensions.generated.ts")
   try {
     run(["--out", generated], false)
     const source = removeSelectedGraphFactories(readFileSync(generated, "utf8"))
-    if (check) {
-      if (readFileSync(output, "utf8") !== source) {
-        throw new Error(`${output} is out of date — run \`pnpm run admin:generate\``)
-      }
-      return
+    if (!/generatedAdminExtensionFactories\s*=\s*\{\s*\}/s.test(source)) {
+      throw new Error("A graph-selected admin package remains outside admin.runtime authority")
     }
-    writeFileSync(output, source)
+    if (check && existsSync(output)) {
+      throw new Error(`${output} must be deleted; selected-graph admin authority is complete`)
+    }
+    if (!check) rmSync(output, { force: true })
   } finally {
     rmSync(directory, { force: true, recursive: true })
   }

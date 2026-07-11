@@ -5,8 +5,10 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
-import type { ComponentType } from "react"
+import type {} from "@voyant-travel/catalog-react/admin"
 
 // Lean statics only: the client module (fetcher) and the skeletons (their
 // own modules, no page imports). Query options + the REST api adapter
@@ -58,6 +60,10 @@ export type { ProductDetailPageComponentProps } from "./pages/product-detail-pag
 // re-export here, plus the lean skeletons.
 export type { ProductDetailApiClient } from "./product-detail-api.js"
 export { ProductsListSkeleton } from "./products-list-skeleton.js"
+export {
+  type ProductDetailOptionExtrasSlotContext,
+  productDetailOptionExtrasSlot,
+} from "./slots.js"
 export { ProductDetailSkeleton }
 
 export interface CreateInventoryAdminExtensionOptions {
@@ -68,18 +74,6 @@ export interface CreateInventoryAdminExtensionOptions {
     products?: string
     categories?: string
   }
-  /**
-   * Substitute implementation for the product detail page, loaded lazily so
-   * it stays in its own chunk. Defaults to the packaged page wrapping the
-   * canonical `ProductDetailPage` with context-derived wiring. The operator
-   * overrides this to compose app-owned seams the package cannot import:
-   * the availability-react option resource templates panel
-   * (`@voyant-travel/operations-react/availability` depends on this package — a cycle), the
-   * app's upload route, and the product-pre-selected new-booking deep link.
-   */
-  detailPageComponent?: () => Promise<{
-    default: ComponentType<{ id: string }>
-  }>
 }
 
 /**
@@ -111,7 +105,7 @@ export interface CreateInventoryAdminExtensionOptions {
 export function createInventoryAdminExtension(
   options: CreateInventoryAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/products", labels = {}, detailPageComponent } = options
+  const { basePath = "/products", labels = {} } = options
   const { products = "Products", categories = "Categories" } = labels
 
   return defineAdminExtension({
@@ -209,9 +203,7 @@ export function createInventoryAdminExtension(
           void queryClient.prefetchQuery(getProductDetailPricingCategoriesQueryOptions(api))
         },
         page: async () => {
-          const module = await (detailPageComponent
-            ? detailPageComponent()
-            : import("./pages/product-detail-page.js"))
+          const module = await import("./pages/product-detail-page.js")
           const Page = module.default
           return {
             default: ({ params }: AdminRoutePageProps) => <Page id={params.id ?? ""} />,
@@ -220,6 +212,17 @@ export function createInventoryAdminExtension(
       },
     ],
   })
+}
+
+export function createSelectedInventoryAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createInventoryAdminExtension({
+      labels: { products: navMessages.products, categories: navMessages.categories },
+    }),
+    () => import("../i18n.js").then((module) => ({ default: module.ProductsUiMessagesProvider })),
+  )
 }
 
 /**

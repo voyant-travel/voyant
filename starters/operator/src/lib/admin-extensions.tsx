@@ -1,6 +1,3 @@
-// agent-quality: file-size exception -- owner: operator; explicit source-controlled admin composition (one factory per domain) intentionally stays in one file.
-import { useNavigate } from "@tanstack/react-router"
-import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -12,9 +9,7 @@ import {
 } from "@voyant-travel/admin/extensions"
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import { createOperatorProfileSettingsExtraPage } from "@voyant-travel/operator-settings-react/settings"
-import { Button } from "@voyant-travel/ui/components/button"
-import { Route, SlidersHorizontal } from "lucide-react"
-import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
+import { SlidersHorizontal } from "lucide-react"
 import type { AdminMessages } from "@/lib/admin-i18n"
 import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createSelectedGraphAdminExtensions } from "../../.voyant/admin/selected-graph-admin.generated"
@@ -91,39 +86,9 @@ function loadProvider<TModule>(
   return () => importer().then((module) => ({ default: pick(module) }))
 }
 
-function composeProviderLoaders(
-  ...loaders: readonly RouteMessagesProviderLoader[]
-): RouteMessagesProviderLoader {
-  return async () => {
-    const modules = await Promise.all(loaders.map((loader) => loader()))
-    const Providers = modules.map((module) => module.default)
-
-    const RouteMessagesProvider: AdminRouteMessagesProvider = ({ children, locale }) =>
-      Providers.reduceRight(
-        (content, Provider, index) => (
-          <Provider key={Provider.displayName ?? Provider.name ?? index} locale={locale}>
-            {content}
-          </Provider>
-        ),
-        children,
-      )
-
-    RouteMessagesProvider.displayName = "OperatorRouteMessagesProvider"
-    return { default: RouteMessagesProvider }
-  }
-}
-
 const authMessagesProvider = loadProvider(
   () => import("@voyant-travel/auth-react/i18n"),
   (module) => module.AuthUiMessagesProvider,
-)
-const bookingsMessagesProvider = loadProvider(
-  () => import("@voyant-travel/bookings-react/i18n"),
-  (module) => module.BookingsUiMessagesProvider,
-)
-const catalogMessagesProvider = loadProvider(
-  () => import("@voyant-travel/catalog-react/i18n"),
-  (module) => module.CatalogUiMessagesProvider,
 )
 const commerceMessagesProvider = loadProvider(
   () => import("@voyant-travel/commerce-react/i18n"),
@@ -145,13 +110,6 @@ const crmMessagesProvider = loadProvider(
   () => import("@voyant-travel/relationships-react/i18n"),
   (module) => module.CrmUiMessagesProvider,
 )
-const bookingRouteMessagesProvider = composeProviderLoaders(
-  bookingsMessagesProvider,
-  financeMessagesProvider,
-  crmMessagesProvider,
-  productsMessagesProvider,
-  catalogMessagesProvider,
-)
 const coreRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | undefined> = {
   "core-account": authMessagesProvider,
   "core-settings-api-tokens": authMessagesProvider,
@@ -165,25 +123,11 @@ const coreRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | u
   "core-settings-product-tags": productsMessagesProvider,
 }
 
-const extensionRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | undefined> = {
-  bookings: bookingRouteMessagesProvider,
-  catalog: catalogMessagesProvider,
-  inventory: productsMessagesProvider,
-}
-
-function withRouteMessagesProvider(
-  extension: AdminExtension,
-  routeMessagesProvider: RouteMessagesProviderLoader | undefined,
-): AdminExtension {
+function withCoreRouteMessagesProviders(extension: AdminExtension): AdminExtension {
   if (!extension.routes?.length) return extension
 
   const applyToRoute = (route: AdminUiRouteContribution): AdminUiRouteContribution => {
-    const provider =
-      extension.id === "core"
-        ? coreRouteMessagesProviders[route.id]
-        : route.redirectTo
-          ? undefined
-          : routeMessagesProvider
+    const provider = route.redirectTo ? undefined : coreRouteMessagesProviders[route.id]
 
     return {
       ...route,
@@ -202,7 +146,7 @@ function withOperatorRouteMessagesProviders(
   extensions: ReadonlyArray<AdminExtension>,
 ): ReadonlyArray<AdminExtension> {
   return extensions.map((extension) =>
-    withRouteMessagesProvider(extension, extensionRouteMessagesProviders[extension.id]),
+    extension.id === "core" ? withCoreRouteMessagesProviders(extension) : extension,
   )
 }
 
@@ -282,99 +226,6 @@ function createCoreExtension() {
   })
 }
 
-// App-owned header action on the package-delivered bookings list: composing
-// a trip is an operator concept (the trips pages are app-custom),
-// so the button rides in through the extension factory's
-// `indexHeaderActions` option instead of a host route file.
-function ComposeTripButton() {
-  const navigate = useNavigate()
-  const composeTrip = useOperatorAdminMessages().trips.list.composeTrip
-
-  return (
-    <Button
-      variant="outline"
-      onClick={() => void navigate({ to: "/trips/$id", params: { id: "new" } })}
-    >
-      <Route className="size-4" aria-hidden="true" />
-      {composeTrip}
-    </Button>
-  )
-}
-
-// Bookings is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
-// extension contributes NO navigation — the Bookings item is part of the BASE
-// operator navigation (createOperatorAdminNavigation in @voyant-travel/admin), so
-// an entry here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route implementations + search
-// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema /
-// bookingNewSearchSchema / bookingJourneySearchSchema) for the whole booking
-// flow — list, detail, the /bookings/new product picker, the
-// /bookings/compose composer alias, and the unified booking journey at
-// /catalog/journey/$entityModule/$entityId — and the host assembles them
-// into its code-based route tree, no route files. The app composes two seams
-// through factory options: the "Compose trip" header action on the list, and
-// the detail-page substitution (the operator wraps the packaged
-// BookingDetailHost with the checkout/finance payment dialogs, which the
-// package cannot import without a dependency cycle).
-function createBookingsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.bookings({
-    labels: { bookings: messages.bookings },
-    indexHeaderActions: <ComposeTripButton />,
-    detailPageComponent: () =>
-      import("@/components/voyant/bookings/booking-detail-page").then((module) => ({
-        default: module.BookingDetailPage,
-      })),
-  })
-}
-
-// Catalog is package-delivered (packaged-admin RFC Phase 2): the extension
-// contributes NO navigation — the Catalog group is part of the BASE operator
-// navigation (createOperatorAdminNavigation in @voyant-travel/admin), so entries
-// here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route metadata + search contracts
-// (catalogSearchSchema / productDetailSearchSchema), and the pages are the
-// packaged hosts from @voyant-travel/catalog-react/admin — the route files under
-// src/routes/_workspace/catalog/* only bind route params/search onto them.
-function createCatalogExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.catalog({
-    defaultLocale: "en-GB",
-    defaultMarket: "default",
-    scopeStrategy: "deployment-default",
-    hideScopeControls: true,
-    labels: {
-      products: messages.catalogProducts,
-      excursions: messages.catalogExcursions,
-      tours: messages.catalogTours,
-      cruises: messages.catalogCruises,
-      accommodations: messages.catalogAccommodations,
-    },
-  })
-}
-
-// Products is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the Products item (with its Categories
-// sub-item) is part of the BASE operator navigation
-// (createOperatorAdminNavigation in @voyant-travel/admin), so entries here would
-// duplicate it. It's registered for the routes seam: the contributions carry
-// the package-owned route implementations (no search contracts — the pages
-// keep their filters local), and the list/categories pages are the packaged
-// hosts from @voyant-travel/inventory-react/admin. The detail page is substituted
-// through the factory's `detailPageComponent` seam: the operator wrapper
-// composes the app-owned pieces the package cannot import — the
-// availability-react option resource templates panel (availability-react
-// depends on products-react, so importing it there would be a cycle), the
-// app's /api/v1/admin/uploads storage route, and the product-pre-selected
-// new-booking deep link.
-function createProductsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.inventory({
-    labels: { products: messages.products, categories: messages.categories },
-    detailPageComponent: () =>
-      import("@/components/voyant/products/product-detail-page").then((module) => ({
-        default: module.ProductDetailPage,
-      })),
-  })
-}
-
 const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   actionLedger: "Logs",
   allTrips: "All trips",
@@ -434,9 +285,6 @@ export function createOperatorAdminExtensions(
   return withOperatorRouteMessagesProviders(
     createAdminExtensionRegistry(
       createCoreExtension(),
-      createBookingsExtension(messages),
-      createCatalogExtension(messages),
-      createProductsExtension(messages),
       ...createSelectedGraphAdminExtensions({ navMessages: messages }),
       ...discoveredAdminExtensions,
     ),

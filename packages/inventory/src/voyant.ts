@@ -137,6 +137,11 @@ export const inventoryVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 3,
+    runtime: {
+      entry: "@voyant-travel/inventory-react/admin",
+      export: "createSelectedInventoryAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/inventory#admin.copy",
@@ -172,6 +177,13 @@ export const inventoryVoyantModule = defineModule({
           entry: "@voyant-travel/inventory-react/admin",
           export: "createInventoryAdminExtension",
         },
+      },
+    ],
+    slots: [
+      {
+        id: "product.details.option-extras",
+        routeId: "@voyant-travel/inventory#admin.route.products-detail",
+        contract: { productId: "string", optionId: "string" },
       },
     ],
   },

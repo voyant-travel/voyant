@@ -17,7 +17,6 @@ test("derives expected admin entries from the resolved graph, not voyant.config"
 
   try {
     writeFileSync(graph, JSON.stringify({ modules: [], plugins: [] }))
-    writeFileSync(extensions, "export const generatedAdminExtensionFactories = {}\n")
     writeFileSync(bundle, "export const selectedGraphAdminExtensionFactories = {}\n")
     writeFileSync(compatibility, "export const extensions = []\n")
 
@@ -38,7 +37,7 @@ test("derives expected admin entries from the resolved graph, not voyant.config"
 
     assert.throws(
       () => runChecker({ graph, extensions, bundle, compatibility }),
-      /selected by the deployment graph.*missing from admin\.extensions\.generated\.ts/s,
+      /selected by the deployment graph.*does not declare admin\.runtime/s,
     )
   } finally {
     rmSync(dir, { force: true, recursive: true })
@@ -65,7 +64,6 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
         plugins: [],
       }),
     )
-    writeFileSync(extensions, "export const generatedAdminExtensionFactories = {}\n")
     writeFileSync(
       bundle,
       'import { createActionLedgerAdminExtension } from "@voyant-travel/action-ledger-react/admin"\n',
@@ -74,16 +72,13 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
 
     assert.doesNotThrow(() => runChecker({ graph, extensions, bundle, compatibility }))
 
-    writeFileSync(
-      extensions,
-      'import { createActionLedgerAdminExtension } from "@voyant-travel/action-ledger-react/admin"\n',
-    )
+    writeFileSync(extensions, "export const generatedAdminExtensionFactories = {}\n")
     assert.throws(
       () => runChecker({ graph, extensions, bundle, compatibility }),
-      /duplicated in admin\.extensions\.generated\.ts/,
+      /admin\.extensions\.generated\.ts must not exist/,
     )
 
-    writeFileSync(extensions, "export const generatedAdminExtensionFactories = {}\n")
+    rmSync(extensions, { force: true })
     writeFileSync(
       compatibility,
       'selectedGraphAdminExtensionFactories["@voyant-travel/action-ledger"]({})\n',
@@ -91,6 +86,15 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
     assert.throws(
       () => runChecker({ graph, extensions, bundle, compatibility }),
       /remains package-keyed in the Operator compatibility registry/,
+    )
+
+    writeFileSync(
+      compatibility,
+      'import "@voyant-travel/action-ledger-react/admin"\nexport const extensions = []\n',
+    )
+    assert.throws(
+      () => runChecker({ graph, extensions, bundle, compatibility }),
+      /remains imported by the Operator admin compatibility composition/,
     )
   } finally {
     rmSync(dir, { force: true, recursive: true })

@@ -177,6 +177,8 @@ describe("bookings deployment manifest", () => {
         },
       ],
       slots: [
+        { id: "bookings.list.header-actions" },
+        { id: "booking.details.payment-controller" },
         { id: "booking.details.invoices-tab" },
         { id: "booking.details.finance-start" },
         { id: "booking.details.finance-end" },

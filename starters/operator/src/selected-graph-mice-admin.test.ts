@@ -6,12 +6,10 @@ import {
   createSelectedGraphAdminExtensions,
   selectedGraphAdminExtensionFactories,
 } from "../.voyant/admin/selected-graph-admin.generated.js"
-import { generatedAdminExtensionFactories } from "./admin.extensions.generated.js"
 
 describe("selected-graph MICE admin composition", () => {
   it("uses the selected package factory without compatibility duplication", () => {
     expect(selectedGraphAdminExtensionFactories["@voyant-travel/mice"]).toBeTypeOf("function")
-    expect("mice" in generatedAdminExtensionFactories).toBe(false)
   })
 
   it("preserves MICE navigation, routes, and destinations", () => {

@@ -14,9 +14,11 @@ import {
 // peer-depends on `@voyant-travel/bookings-react/ui`, so re-declaring them here would
 // just duplicate the contract.
 import {
+  type BookingDetailPaymentControllerSlotContext,
   bookingDetailFinanceEndSlot,
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
+  bookingDetailPaymentControllerSlot,
 } from "@voyant-travel/bookings-react/admin"
 // Importing the slot id also binds the suppliers-ui `AdminDestinations`
 // augmentation (`supplier.list`, `supplier.detail`) — this package already
@@ -94,6 +96,11 @@ const LazySupplierPaymentPolicyWidget = lazyWidget<SupplierPaymentPolicyWidgetPr
       default: module.SupplierPaymentPolicyWidget,
     }),
   ),
+)
+const LazyBookingPaymentController = lazyWidget<BookingDetailPaymentControllerSlotContext>(() =>
+  import("./booking-payment-controller.js").then((module) => ({
+    default: module.BookingPaymentController,
+  })),
 )
 
 /**
@@ -377,6 +384,11 @@ export function createFinanceAdminExtension(
       },
     ],
     widgets: [
+      {
+        id: "finance-booking-payment-controller",
+        slot: bookingDetailPaymentControllerSlot,
+        component: LazyBookingPaymentController,
+      } satisfies AdminWidgetContribution,
       {
         id: "finance-booking-invoices",
         slot: bookingDetailInvoicesTabSlot,

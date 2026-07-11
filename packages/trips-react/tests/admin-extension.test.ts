@@ -28,6 +28,16 @@ describe("createTripsAdminExtension", () => {
     expect(group?.items?.map((item) => item.url)).toEqual(["/trips", "/trips/new"])
   })
 
+  it("contributes the Bookings list Compose trip action", () => {
+    const extension = createTripsAdminExtension()
+    expect(extension.widgets?.map((widget) => widget.slot)).toEqual([
+      "bookings.list.header-actions",
+    ])
+    expect(tripsVoyantModule.admin?.contributions?.map((item) => item.slotId)).toEqual([
+      "bookings.list.header-actions",
+    ])
+  })
+
   it("describes the list and detail routes with unique ids and paths", () => {
     const extension = createTripsAdminExtension()
     const routes = extension.routes ?? []

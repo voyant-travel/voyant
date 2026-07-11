@@ -156,6 +156,10 @@ describe("finance deployment manifest", () => {
     expect(financeVoyantModule.admin?.contributions?.map(({ id, slotId }) => [id, slotId])).toEqual(
       [
         [
+          "@voyant-travel/finance#admin.contribution.booking-payment-controller",
+          "booking.details.payment-controller",
+        ],
+        [
           "@voyant-travel/finance#admin.contribution.booking-invoices",
           "booking.details.invoices-tab",
         ],
