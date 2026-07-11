@@ -8,6 +8,7 @@ import {
   type EventFilterDescriptor,
   type WorkflowDescriptor,
 } from "@voyant-travel/core"
+import { createLinkServiceFactory } from "@voyant-travel/db/links"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
 import type { Context, Hono } from "hono"
 
@@ -222,6 +223,14 @@ export function mountApp<TBindings extends VoyantBindings>(
   const expanded = eagerPlugins.length > 0 ? expandHonoBundles(eagerPlugins) : null
   const allModules = [...(config.modules ?? []), ...(expanded?.modules ?? [])]
   const allExtensions = [...(config.extensions ?? []), ...(expanded?.extensions ?? [])]
+  const linkDefinitions = [...(config.linkDefinitions ?? []), ...(expanded?.links ?? [])]
+  if (config.link && linkDefinitions.length > 0) {
+    throw new Error(
+      "createApp: cannot configure both an explicit link service and link definitions",
+    )
+  }
+  const createRequestLinkService =
+    linkDefinitions.length > 0 ? createLinkServiceFactory(linkDefinitions) : undefined
   // Anonymous-access allow-list (ADR-0008): assembled from module/extension
   // `anonymous` declarations + bundle-declared absolute anonymous paths (e.g. a
   // payment-processor webhook) + any explicit `publicPaths` escape-hatch entries.
@@ -675,6 +684,16 @@ export function mountApp<TBindings extends VoyantBindings>(
     "*",
     db(dbSource, { requiresTransactionalDb: txRequiringModules, basePath: config.basePath }),
   )
+
+  if (createRequestLinkService) {
+    app.use("*", async (c, next) => {
+      c.set(
+        "link",
+        createRequestLinkService(() => c.get("db")),
+      )
+      return next()
+    })
+  }
 
   // Actor guards for the two API surfaces
   const actorOptions = { basePath: config.basePath }

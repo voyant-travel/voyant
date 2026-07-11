@@ -2,6 +2,7 @@ import type {
   Actor,
   VoyantVariables as CoreVoyantVariables,
   EventBus,
+  LinkDefinition,
   LinkService,
   ModuleContainer,
   QueryGraphContext,
@@ -266,6 +267,12 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   extensions?: HonoExtension[]
   plugins?: HonoBundleInput[]
   eventBus?: EventBus
+  /**
+   * Link definitions activated against each request's resolved database.
+   * Combined with definitions contributed by eager bundles. Cannot be used
+   * together with an explicitly constructed `link` service.
+   */
+  linkDefinitions?: readonly LinkDefinition[]
   link?: LinkService
   query?: QueryGraphContext | VoyantQueryRuntime
   auth?: VoyantAuthIntegration<TBindings>

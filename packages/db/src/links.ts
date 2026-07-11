@@ -117,25 +117,26 @@ async function listReadOnly(
   return rows
 }
 
-/**
- * Create a runtime {@link LinkService} for the given set of link definitions.
- *
- * The service supports both a positional API (`create(linkKey, leftId, rightId)`)
- * and a Medusa-style spec API (`create({ moduleA: { a_id }, moduleB: { b_id } })`)
- * resolved against the provided definitions.
- */
-export function createLinkService(
-  getDb: () => DrizzleClient,
-  definitions: LinkDefinition[],
-): LinkService {
+function prepareLinkDefinitions(definitions: readonly LinkDefinition[]): {
+  definitions: LinkDefinition[]
+  byKey: Map<string, LinkDefinition>
+} {
+  const prepared = [...definitions]
   const byKey = new Map<string, LinkDefinition>()
-  for (const def of definitions) {
+  for (const def of prepared) {
     if (byKey.has(def.tableName)) {
       throw new Error(`createLinkService: duplicate link definition for table "${def.tableName}"`)
     }
     byKey.set(def.tableName, def)
   }
+  return { definitions: prepared, byKey }
+}
 
+function createPreparedLinkService(
+  getDb: () => DrizzleClient,
+  definitions: LinkDefinition[],
+  byKey: Map<string, LinkDefinition>,
+): LinkService {
   function lookupByKey(linkKey: string): LinkDefinition {
     const def = byKey.get(linkKey)
     if (!def) {
@@ -318,12 +319,42 @@ export function createLinkService(
 }
 
 /**
+ * Prevalidate link definitions once, then build services against request-local
+ * database clients without repeating startup validation on every request.
+ */
+export function createLinkServiceFactory(
+  definitions: readonly LinkDefinition[],
+): (getDb: () => DrizzleClient) => LinkService {
+  const prepared = prepareLinkDefinitions(definitions)
+  return (getDb) => createPreparedLinkService(getDb, prepared.definitions, prepared.byKey)
+}
+
+/**
+ * Create a runtime {@link LinkService} for the given set of link definitions.
+ *
+ * The service supports both a positional API (`create(linkKey, leftId, rightId)`)
+ * and a Medusa-style spec API (`create({ moduleA: { a_id }, moduleB: { b_id } })`).
+ *
+ * Prefer {@link createLinkServiceFactory} when multiple services share the
+ * same definitions, such as one service per HTTP request.
+ */
+export function createLinkService(
+  getDb: () => DrizzleClient,
+  definitions: readonly LinkDefinition[],
+): LinkService {
+  return createLinkServiceFactory(definitions)(getDb)
+}
+
+/**
  * Materialise every link definition's pivot table (CREATE TABLE + indexes).
  * Intended for use by a `db:sync-links` CLI command in templates.
  *
  * Runs each DDL statement individually against the provided Drizzle client.
  */
-export async function syncLinks(db: DrizzleClient, definitions: LinkDefinition[]): Promise<void> {
+export async function syncLinks(
+  db: DrizzleClient,
+  definitions: readonly LinkDefinition[],
+): Promise<void> {
   for (const def of definitions) {
     if (def.readOnly) continue
     const { createTable, indexes } = generateLinkTableSql(def)
