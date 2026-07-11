@@ -19,11 +19,13 @@ import {
   bookingDocumentBundleLifecycleService,
   type RunBookingDocumentBundleLifecycleInput,
 } from "./service-booking-document-lifecycle.js"
-import { bookingDocumentNotificationsService } from "./service-booking-documents.js"
+import { bookingIsPaidInFullForNotification } from "./service-reminders.js"
 import {
-  bookingIsPaidInFullForNotification,
-  dispatchReminderEventRules,
-} from "./service-reminders.js"
+  createBookingConfirmationAutoDispatchSubscriberRuntime,
+  NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
+  type NotificationsAutoConfirmAndDispatchOptions,
+  notificationsReminderSubscriberRuntimeDescriptors,
+} from "./subscriber-runtime.js"
 
 export {
   notificationLiquidEngine,
@@ -113,6 +115,34 @@ export {
   bookingIsPaidInFullForNotification,
   dispatchReminderEventRules,
 } from "./service-reminders.js"
+/**
+ * Auto-dispatch policy for the `booking.confirmed` subscriber. Set `enabled:
+ * false` (or leave the option off entirely) to opt out.
+ */
+export type {
+  NotificationsAutoConfirmAndDispatchOptions,
+  NotificationsSubscriberDependencies,
+  NotificationsSubscriberRuntime,
+} from "./subscriber-runtime.js"
+export {
+  createBookingCancelledReminderSubscriberRuntime,
+  createBookingConfirmationAutoDispatchSubscriberRuntime,
+  createBookingConfirmedReminderSubscriberRuntime,
+  createBookingExpiredReminderSubscriberRuntime,
+  createPaymentCompletedReminderSubscriberRuntime,
+  NOTIFICATIONS_BOOKING_CANCELLED_REMINDER_SUBSCRIBER_ID,
+  NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID,
+  NOTIFICATIONS_BOOKING_CONFIRMED_REMINDER_SUBSCRIBER_ID,
+  NOTIFICATIONS_BOOKING_EXPIRED_REMINDER_SUBSCRIBER_ID,
+  NOTIFICATIONS_PAYMENT_COMPLETED_REMINDER_SUBSCRIBER_ID,
+  NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
+  notificationsBookingCancelledReminderSubscriber,
+  notificationsBookingConfirmationAutoDispatchSubscriber,
+  notificationsBookingConfirmedReminderSubscriber,
+  notificationsBookingExpiredReminderSubscriber,
+  notificationsPaymentCompletedReminderSubscriber,
+  notificationsReminderSubscriberRuntimeDescriptors,
+} from "./subscriber-runtime.js"
 export type {
   NotificationTaskEnv,
   NotificationTaskRuntime,
@@ -192,18 +222,6 @@ export {
   type SendDueRemindersWorkflowInput,
 } from "./workflow-runtime.js"
 
-/**
- * Auto-dispatch policy for the `booking.confirmed` subscriber. Set `enabled:
- * false` (or leave the option off entirely) to opt out.
- */
-export interface NotificationsAutoConfirmAndDispatchOptions {
-  enabled?: boolean
-  /** Notification template slug used when the handler fires. */
-  templateSlug?: string
-  /** Optional allowlist of document types to attach; defaults to all. */
-  documentTypes?: Array<"contract" | "invoice" | "proforma">
-}
-
 export interface CreateNotificationsHonoModuleOptions extends NotificationsRoutesOptions {
   /**
    * Resolves a database from runtime bindings. Required for
@@ -246,60 +264,24 @@ export function createNotificationsHonoModule(
         buildNotificationsRouteRuntime(bindings as Record<string, unknown>, options),
       )
 
-      // Auto-dispatch wiring — opt-in. When enabled, every `booking.confirmed`
-      // event triggers a `confirmAndDispatchBooking` call so the operator
-      // doesn't have to click a second button. The handler runs in the same
-      // process as the emitter (the in-process event bus) but outside the
-      // request scope, so we resolve our own db handle from bindings.
-      if (options?.autoConfirmAndDispatch?.enabled && options.resolveDb) {
+      if (options?.resolveDb) {
         const resolveDb = options.resolveDb
-        const autoOptions = options.autoConfirmAndDispatch
         const runtime = buildNotificationsRouteRuntime(bindings as Record<string, unknown>, options)
-        const dispatcher = createNotificationService(runtime.providers)
+        container.register(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY, {
+          resolveDb: (runtimeBindings: unknown) =>
+            resolveDb(runtimeBindings as Record<string, unknown>) as PostgresJsDatabase,
+          dispatcher: createNotificationService(runtime.providers),
+          documentAttachmentResolver: runtime.documentAttachmentResolver,
+          autoConfirmAndDispatch: options.autoConfirmAndDispatch,
+        })
+      }
 
-        eventBus.subscribe(
-          "booking.confirmed",
-          async (event: {
-            data: {
-              bookingId: string
-              bookingNumber: string
-              actorId: string | null
-              suppressNotifications?: boolean
-            }
-          }) => {
-            // Honor caller opt-out — the operator may want to confirm
-            // a booking without firing the customer-facing email/doc
-            // bundle (e.g. data correction, manual hand-off).
-            if (event.data.suppressNotifications === true) return
-            try {
-              // The resolver may return either drizzle flavor; the queries
-              // bookingDocumentNotificationsService runs are compatible with
-              // both at runtime, so we narrow at this internal boundary.
-              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
-              await bookingDocumentNotificationsService.confirmAndDispatchBooking(
-                db,
-                dispatcher,
-                event.data.bookingId,
-                {
-                  templateSlug: autoOptions.templateSlug ?? null,
-                  documentTypes: autoOptions.documentTypes ?? null,
-                },
-                {
-                  attachmentResolver: runtime.documentAttachmentResolver,
-                  eventBus,
-                },
-              )
-            } catch (error) {
-              // Per the EventBus contract, handler failures are logged, not
-              // rethrown. We surface the context so ops can diagnose without
-              // digging through stack traces.
-              const message = error instanceof Error ? error.message : String(error)
-              console.error(
-                `[notifications] auto-dispatch failed for booking ${event.data.bookingId}: ${message}`,
-              )
-            }
-          },
-        )
+      if (options?.autoConfirmAndDispatch?.enabled && options.resolveDb) {
+        createBookingConfirmationAutoDispatchSubscriberRuntime().register({
+          bindings,
+          container,
+          eventBus,
+        })
       }
 
       if (options?.documentBundleLifecycle?.enabled && options.resolveDb) {
@@ -393,148 +375,9 @@ export function createNotificationsHonoModule(
       }
 
       if (options?.resolveDb) {
-        const resolveDb = options.resolveDb
-        const runtime = buildNotificationsRouteRuntime(bindings as Record<string, unknown>, options)
-        const dispatcher = createNotificationService(runtime.providers)
-
-        eventBus.subscribe(
-          "booking.confirmed",
-          async (event: {
-            data: { bookingId: string; bookingNumber: string; actorId: string | null }
-          }) => {
-            try {
-              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
-              await dispatchReminderEventRules(
-                db,
-                dispatcher,
-                {
-                  targetType: "booking_confirmed",
-                  bookingId: event.data.bookingId,
-                  eventData: event.data,
-                },
-                { documentAttachmentResolver: runtime.documentAttachmentResolver },
-              )
-            } catch (error) {
-              const message = error instanceof Error ? error.message : String(error)
-              console.error(
-                `[notifications] booking_confirmed reminder rules failed for booking ${event.data.bookingId}: ${message}`,
-              )
-            }
-          },
-        )
-
-        eventBus.subscribe(
-          "payment.completed",
-          async (event: {
-            data: {
-              paymentSessionId: string
-              bookingId?: string | null
-              orderId?: string | null
-              invoiceId?: string | null
-              amountCents: number
-              currency: string
-              provider: string
-            }
-          }) => {
-            if (!event.data.bookingId) {
-              return
-            }
-
-            try {
-              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
-              const isPaidInFull = await bookingIsPaidInFullForNotification(
-                db,
-                event.data.bookingId,
-              )
-              if (!isPaidInFull) {
-                return
-              }
-
-              await dispatchReminderEventRules(
-                db,
-                dispatcher,
-                {
-                  targetType: "payment_complete",
-                  bookingId: event.data.bookingId,
-                  paymentSessionId: event.data.paymentSessionId,
-                  eventData: event.data,
-                },
-                { documentAttachmentResolver: runtime.documentAttachmentResolver },
-              )
-            } catch (error) {
-              const message = error instanceof Error ? error.message : String(error)
-              console.error(
-                `[notifications] payment_complete reminder rules failed for booking ${event.data.bookingId}: ${message}`,
-              )
-            }
-          },
-        )
-
-        eventBus.subscribe(
-          "booking.cancelled",
-          async (event: {
-            data: {
-              bookingId: string
-              bookingNumber: string
-              previousStatus: "draft" | "on_hold" | "confirmed" | "in_progress"
-              actorId: string | null
-            }
-          }) => {
-            if (event.data.previousStatus !== "on_hold") {
-              return
-            }
-
-            try {
-              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
-              await dispatchReminderEventRules(
-                db,
-                dispatcher,
-                {
-                  targetType: "booking_cancelled_non_payment",
-                  bookingId: event.data.bookingId,
-                  eventData: event.data,
-                },
-                { documentAttachmentResolver: runtime.documentAttachmentResolver },
-              )
-            } catch (error) {
-              const message = error instanceof Error ? error.message : String(error)
-              console.error(
-                `[notifications] booking_cancelled_non_payment reminder rules failed for booking ${event.data.bookingId}: ${message}`,
-              )
-            }
-          },
-        )
-
-        eventBus.subscribe(
-          "booking.expired",
-          async (event: {
-            data: {
-              bookingId: string
-              bookingNumber: string
-              cause: "route" | "sweep"
-              actorId: string | null
-            }
-          }) => {
-            try {
-              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
-              await dispatchReminderEventRules(
-                db,
-                dispatcher,
-                {
-                  targetType: "booking_cancelled_non_payment",
-                  bookingId: event.data.bookingId,
-                  eventData: event.data,
-                },
-                { documentAttachmentResolver: runtime.documentAttachmentResolver },
-              )
-            } catch (error) {
-              const message = error instanceof Error ? error.message : String(error)
-              console.error(
-                `[notifications] booking_cancelled_non_payment reminder rules failed for expired booking ${event.data.bookingId}: ${message}`,
-              )
-            }
-          },
-        )
+        for (const descriptor of notificationsReminderSubscriberRuntimeDescriptors) {
+          descriptor.register({ bindings, container, eventBus })
+        }
       }
     },
   }

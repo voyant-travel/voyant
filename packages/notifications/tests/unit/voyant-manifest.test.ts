@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { notificationsVoyantModule } from "../../src/voyant.js"
+import {
+  NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID,
+  notificationsReminderSubscriberRuntimeDescriptors,
+} from "../../src/subscriber-runtime.js"
+import {
+  notificationsReminderSubscribersVoyantPlugin,
+  notificationsVoyantModule,
+} from "../../src/voyant.js"
 import {
   createNotificationReminderWorkflows,
   notificationsDeliverReminderWorkflow,
@@ -65,6 +72,26 @@ describe("notifications deployment manifest", () => {
     )
     expect(notificationsSendDueRemindersWorkflow.id).toBe(
       notificationsVoyantModule.workflows?.[1]?.id,
+    )
+  })
+
+  it("keeps reminder subscriber runtime references inert and export-compatible", () => {
+    const declarations = notificationsReminderSubscribersVoyantPlugin.subscribers ?? []
+
+    expect(declarations.map(({ id, eventType }) => ({ id, eventType }))).toEqual(
+      notificationsReminderSubscriberRuntimeDescriptors.map(({ id, eventType }) => ({
+        id,
+        eventType,
+      })),
+    )
+    expect(declarations.map((subscriber) => subscriber.runtime?.export)).toEqual([
+      "notificationsBookingConfirmedReminderSubscriber",
+      "notificationsPaymentCompletedReminderSubscriber",
+      "notificationsBookingCancelledReminderSubscriber",
+      "notificationsBookingExpiredReminderSubscriber",
+    ])
+    expect(declarations.map((subscriber) => subscriber.id)).not.toContain(
+      NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID,
     )
   })
 

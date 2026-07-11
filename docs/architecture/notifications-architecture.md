@@ -144,6 +144,15 @@ Rule:
 Different trigger points are fine. Delivery should still converge on one shared
 notification model.
 
+Notifications owns executable subscriber descriptors for its reminder rules
+and booking-confirmation auto-dispatch. Deployments supply their database,
+dispatcher, and attachment resolver through the single
+`NotificationsSubscriberRuntime` contract. The package manifest keeps the
+reminder runtime references on an inert extension, and does not reference the
+auto-dispatch descriptor. Selected-graph activation must wait until Legal's
+document generation and Notifications delivery have explicit ordering
+semantics; event-bus registration order is not an ordering contract.
+
 ## Attachments And Documents
 
 ### 8. Sensitive attachments should resolve access at send time
