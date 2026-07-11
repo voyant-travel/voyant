@@ -125,6 +125,7 @@ export interface VoyantGraphRouteBundle {
   surface: VoyantGraphRouteSurface
   methods?: readonly VoyantGraphRouteMethod[]
   mount?: string
+  openapi?: VoyantGraphRouteOpenApi
   resource?: string
   requiredScopes?: readonly string[]
   /** Anonymous public access for the whole public mount or route-relative path subsets. */
@@ -132,6 +133,11 @@ export interface VoyantGraphRouteBundle {
   /** Transactional DB routing for the whole mount or route-relative path subsets. */
   transactional?: boolean | readonly string[]
   runtime?: VoyantGraphRuntimeReference
+}
+
+/** Build-time API document ownership declared by the route bundle. */
+export interface VoyantGraphRouteOpenApi {
+  document: string
 }
 
 export interface VoyantGraphFacetEntity {

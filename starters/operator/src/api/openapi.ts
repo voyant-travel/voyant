@@ -1,3 +1,4 @@
+import { buildSelectedGraphOpenApiDocuments } from "@voyant-travel/framework/selected-graph-openapi"
 import {
   buildModulePathOwnership,
   type GenerateOpenApiOptions,
@@ -8,7 +9,24 @@ import {
   selectSurface,
   stampModuleMetadata,
 } from "@voyant-travel/hono/openapi"
+import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import { app } from "./app.js"
+
+const GRAPH_OWNERSHIP_FIELDS = [
+  "x-voyant-api-id",
+  "x-voyant-unit-id",
+  "x-voyant-package-name",
+] as const
+const OPENAPI_HTTP_METHODS = new Set([
+  "delete",
+  "get",
+  "head",
+  "options",
+  "patch",
+  "post",
+  "put",
+  "trace",
+])
 
 const OPENAPI_OPTIONS: GenerateOpenApiOptions = {
   info: {
@@ -60,10 +78,69 @@ export async function buildOperatorOpenApiDocuments(): Promise<OperatorOpenApiDo
   // directly-mounted routes aren't dropped.
   const owner = await buildModulePathOwnership(app.moduleMounts ?? [], options)
   const full = stampModuleMetadata(merged, owner)
+  const compatibilityModules = partitionByModule(full, owner)
+  const graphModules = await buildSelectedGraphOpenApiDocuments({
+    runtime: createGeneratedGraphRuntime(),
+    app,
+    options,
+  })
   return {
     full,
     admin: selectSurface(full, "admin"),
     storefront: selectSurface(full, "storefront"),
-    modules: partitionByModule(full, owner),
+    modules: mergeOperatorOpenApiModuleDocuments(compatibilityModules, graphModules),
   }
+}
+
+/** Replace migrated compatibility documents only after proving contract parity. */
+export function mergeOperatorOpenApiModuleDocuments(
+  compatibility: ReadonlyMap<string, OpenApiDocument>,
+  graph: ReadonlyMap<string, OpenApiDocument>,
+): Map<string, OpenApiDocument> {
+  const merged = new Map(compatibility)
+  for (const [document, graphDocument] of graph) {
+    const compatibilityDocument = compatibility.get(document)
+    if (compatibilityDocument) {
+      const expected = JSON.stringify(compatibilityDocument)
+      const actual = JSON.stringify(withoutGraphOwnership(graphDocument))
+      if (actual !== expected) {
+        throw new Error(
+          `Selected graph OpenAPI document "${document}" does not preserve its Operator compatibility document.`,
+        )
+      }
+    }
+
+    const graphPaths = new Set(Object.keys(graphDocument.paths ?? {}))
+    for (const [compatibilityName, compatibilityDoc] of compatibility) {
+      if (compatibilityName === document) continue
+      const duplicate = Object.keys(compatibilityDoc.paths ?? {}).find((path) =>
+        graphPaths.has(path),
+      )
+      if (duplicate) {
+        throw new Error(
+          `Selected graph OpenAPI document "${document}" duplicates path "${duplicate}" from compatibility document "${compatibilityName}".`,
+        )
+      }
+    }
+    merged.set(document, graphDocument)
+  }
+  return merged
+}
+
+function withoutGraphOwnership(document: OpenApiDocument): OpenApiDocument {
+  const paths = Object.fromEntries(
+    Object.entries(document.paths ?? {}).map(([path, pathItem]) => {
+      if (!pathItem || typeof pathItem !== "object") return [path, pathItem]
+      const nextItem = { ...pathItem } as Record<string, unknown>
+      for (const [method, value] of Object.entries(nextItem)) {
+        if (!OPENAPI_HTTP_METHODS.has(method.toLowerCase())) continue
+        if (!value || typeof value !== "object") continue
+        const operation = { ...value } as Record<string, unknown>
+        for (const field of GRAPH_OWNERSHIP_FIELDS) Reflect.deleteProperty(operation, field)
+        nextItem[method] = operation
+      }
+      return [path, nextItem]
+    }),
+  )
+  return { ...document, paths } as OpenApiDocument
 }

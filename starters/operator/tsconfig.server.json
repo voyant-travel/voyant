@@ -1108,6 +1108,9 @@
       "@voyant-travel/framework/project-workflow-job-conventions": [
         "../../packages/framework/dist/project-workflow-job-conventions.d.ts"
       ],
+      "@voyant-travel/framework/selected-graph-openapi": [
+        "../../packages/framework/dist/selected-graph-openapi.d.ts"
+      ],
       "@voyant-travel/hono": ["../../packages/hono/dist/index.d.ts"],
       "@voyant-travel/hono/app": ["../../packages/hono/dist/app.d.ts"],
       "@voyant-travel/hono/auth": ["../../packages/hono/dist/auth/index.d.ts"],

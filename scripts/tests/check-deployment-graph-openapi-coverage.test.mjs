@@ -21,8 +21,8 @@ async function createFixture(files) {
   return root
 }
 
-function graph(units) {
-  return `${JSON.stringify({ schemaVersion: "voyant.resolved-graph.v1", modules: units }, null, 2)}\n`
+function graph(units, extensions = [], plugins = []) {
+  return `${JSON.stringify({ schemaVersion: "voyant.resolved-graph.v1", modules: units, extensions, plugins }, null, 2)}\n`
 }
 
 function openapi(paths) {
@@ -283,6 +283,108 @@ describe("check-deployment-graph-openapi-coverage", () => {
         null,
         2,
       ),
+    })
+
+    await assert.rejects(runChecker(root, ["--allowlist", "allowlist.json"]), (error) => {
+      assert.match(error.stderr, /deployment-graph-openapi-coverage:stale-allowlist/)
+      return true
+    })
+  })
+
+  it("requires an exact API id for opted-in bundles instead of filename heuristics", async () => {
+    const root = await createFixture({
+      "graph.json": graph([
+        {
+          id: "@voyant-travel/identity",
+          localId: "identity",
+          packageName: "@voyant-travel/identity",
+          api: [
+            {
+              id: "@voyant-travel/identity#api.admin",
+              surface: "admin",
+              mount: "identity",
+              openapi: { document: "identity" },
+            },
+          ],
+        },
+      ]),
+      "openapi/admin/identity.json": openapi({
+        "/v1/admin/identity": {
+          get: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-module": "identity",
+            "x-voyant-surface": "admin",
+            "x-voyant-api-id": "@voyant-travel/identity#api.wrong",
+          },
+        },
+      }),
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /deployment-graph-openapi-coverage:missing-docs/)
+      assert.match(error.stderr, /@voyant-travel\/identity#api.admin/)
+      return true
+    })
+  })
+
+  it("covers opted-in extension bundles by exact API id", async () => {
+    const extension = {
+      id: "@acme/identity-extension",
+      localId: "identity-extension",
+      packageName: "@acme/identity-extension",
+      api: [
+        {
+          id: "@acme/identity-extension#api.admin",
+          surface: "admin",
+          mount: "identity-extension",
+          openapi: { document: "identity-extension" },
+        },
+      ],
+    }
+    const root = await createFixture({
+      "graph.json": graph([], [extension]),
+      "openapi/admin/custom-name.json": openapi({
+        "/v1/admin/identity-extension": {
+          get: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": "@acme/identity-extension#api.admin",
+          },
+        },
+      }),
+    })
+
+    const result = await runChecker(root)
+
+    assert.match(result.stdout, /1 covered graph API bundles/)
+  })
+
+  it("rejects allowlist exceptions for opted-in bundles", async () => {
+    const root = await createFixture({
+      "graph.json": graph([
+        {
+          id: "@voyant-travel/identity",
+          localId: "identity",
+          packageName: "@voyant-travel/identity",
+          api: [
+            {
+              id: "@voyant-travel/identity#api.admin",
+              surface: "admin",
+              openapi: { document: "identity" },
+            },
+          ],
+        },
+      ]),
+      "openapi/admin/identity.json": openapi({
+        "/v1/admin/identity": {
+          get: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": "@voyant-travel/identity#api.admin",
+          },
+        },
+      }),
+      "allowlist.json": JSON.stringify({
+        "@voyant-travel/identity#api.admin": "must not mask migrated authority",
+      }),
     })
 
     await assert.rejects(runChecker(root, ["--allowlist", "allowlist.json"]), (error) => {

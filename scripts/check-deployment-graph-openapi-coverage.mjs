@@ -34,6 +34,10 @@ const HTTP_METHODS = new Set([
 
 const DEFAULT_ALLOWLIST = new Map([
   [
+    "@voyant-travel/accommodations#content-extension.api.public",
+    "the accommodations content extension public routes do not yet expose committed OpenAPI operations",
+  ],
+  [
     "@voyant-travel/public-document-delivery#api.public",
     "public document delivery routes are currently documented through the operator contract-document surface",
   ],
@@ -48,6 +52,10 @@ const DEFAULT_ALLOWLIST = new Map([
   [
     "@voyant-travel/realtime#api.public",
     "realtime public routes are not yet emitted as a storefront OpenAPI document",
+  ],
+  [
+    "@voyant-travel/quotes#proposal-extension.api.public",
+    "the quote proposal extension public routes do not yet expose committed OpenAPI operations",
   ],
   [
     "@voyant-travel/storage#api.admin.media",
@@ -87,9 +95,14 @@ const allowlistedGaps = []
 for (const bundle of bundles) {
   if (!CHECKED_SURFACES.has(bundle.surface)) continue
 
-  const matched = bundle.candidateModules.some((module) =>
-    docs.keys.has(coverageKey(bundle.surface, module)),
-  )
+  if (bundle.openapiDocument && allowlist.has(bundle.apiId)) {
+    failures.push({ kind: "stale-allowlist", bundle })
+    continue
+  }
+
+  const matched = bundle.openapiDocument
+    ? docs.apiIds.has(bundle.apiId)
+    : bundle.candidateModules.some((module) => docs.keys.has(coverageKey(bundle.surface, module)))
   if (matched) {
     coveredBundles.push(bundle)
     if (allowlist.has(bundle.apiId)) {
@@ -143,7 +156,11 @@ console.log(
 )
 
 function readApiBundles(resolvedGraph) {
-  const units = [...arrayOf(resolvedGraph.modules), ...arrayOf(resolvedGraph.plugins)]
+  const units = [
+    ...arrayOf(resolvedGraph.modules),
+    ...arrayOf(resolvedGraph.extensions),
+    ...arrayOf(resolvedGraph.plugins),
+  ]
   const bundles = []
 
   for (const unit of units) {
@@ -158,6 +175,8 @@ function readApiBundles(resolvedGraph) {
         localId: stringOrEmpty(unit.localId),
         packageName: stringOrEmpty(unit.packageName),
         mount: stringOrEmpty(api.mount),
+        openapiDocument:
+          api.openapi && typeof api.openapi === "object" ? stringOrEmpty(api.openapi.document) : "",
         candidateModules: candidateModules(unit, api),
       })
     }
@@ -172,6 +191,7 @@ function readOpenApiCoverage(openapiDirPath) {
   }
 
   const keys = new Set()
+  const apiIds = new Set()
   const files = []
   for (const surfaceEntry of readdirSync(openapiDirPath, { withFileTypes: true })) {
     if (!surfaceEntry.isDirectory()) continue
@@ -188,6 +208,9 @@ function readOpenApiCoverage(openapiDirPath) {
 
       let operationKeys = 0
       for (const operation of operations) {
+        if (typeof operation["x-voyant-api-id"] === "string") {
+          apiIds.add(operation["x-voyant-api-id"])
+        }
         const operationSurface = normalizeSurface(operation["x-voyant-surface"] ?? fileSurface)
         const operationModule = operation["x-voyant-module"] ?? fileModule
         if (typeof operationModule !== "string" || operationModule.length === 0) continue
@@ -200,7 +223,7 @@ function readOpenApiCoverage(openapiDirPath) {
     }
   }
 
-  return { files, keys }
+  return { files, keys, apiIds }
 }
 
 function documentedOperations(doc) {

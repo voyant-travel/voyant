@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./deployment-artifacts": "./src/deployment-artifacts.ts",
     "./deployment-graph": "./src/deployment-graph.ts",
+    "./selected-graph-openapi": "./src/selected-graph-openapi.ts",
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
     "./project-admin-conventions": "./src/project-admin-conventions.ts",

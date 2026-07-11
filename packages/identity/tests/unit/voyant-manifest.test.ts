@@ -11,6 +11,7 @@ describe("identity deployment manifest", () => {
         {
           id: "@voyant-travel/identity#api.admin",
           surface: "admin",
+          openapi: { document: "identity" },
           runtime: { entry: "@voyant-travel/identity", export: "identityHonoModule" },
         },
       ],

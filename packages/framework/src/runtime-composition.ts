@@ -130,10 +130,12 @@ interface UnitRoutePosture extends VoyantGraphRuntimeRoutePosture {
 
 function deriveUnitRoutePosture(unit: VoyantGraphRuntimeUnitLoader): UnitRoutePosture {
   const publicRoutes = unit.routes.filter(({ route }) => route.surface === "public")
-  const publicMounts = sortedUnique(publicRoutes.map(({ route }) => routeMountPath(unit, route)))
+  const publicMounts = sortedUnique(
+    publicRoutes.map(({ route }) => resolveVoyantGraphRouteMountPath(unit, route)),
+  )
   const publicPaths = sortedUnique(
     unit.routes.flatMap(({ route }) => {
-      const mount = routeMountPath(unit, route)
+      const mount = resolveVoyantGraphRouteMountPath(unit, route)
       if (route.anonymous === true) return [mount]
       if (!route.anonymous) return []
       return route.anonymous.map((path) => resolveRoutePosturePath(mount, path))
@@ -141,7 +143,7 @@ function deriveUnitRoutePosture(unit: VoyantGraphRuntimeUnitLoader): UnitRoutePo
   )
   const transactionalPaths = sortedUnique(
     unit.routes.flatMap(({ route }) => {
-      const mount = routeMountPath(unit, route)
+      const mount = resolveVoyantGraphRouteMountPath(unit, route)
       if (route.transactional === true) return [mount]
       if (!route.transactional) return []
       return route.transactional.map((path) => resolveRoutePosturePath(mount, path))
@@ -153,8 +155,8 @@ function deriveUnitRoutePosture(unit: VoyantGraphRuntimeUnitLoader): UnitRoutePo
   return { publicPaths, transactionalPaths, publicMount, anonymous }
 }
 
-function routeMountPath(
-  unit: VoyantGraphRuntimeUnitLoader,
+export function resolveVoyantGraphRouteMountPath(
+  unit: Pick<VoyantGraphRuntimeUnitLoader, "id" | "localId">,
   route: VoyantGraphRuntimeUnitLoader["routes"][number]["route"],
 ): string {
   if (route.mount?.startsWith("/v1/")) return normalizeAbsolutePath(route.mount)

@@ -23,6 +23,7 @@ function runtimeInput(load: () => Promise<unknown>) {
             route: {
               id: "@acme/voyant-loyalty#api.admin",
               surface: "admin" as const,
+              openapi: { document: "loyalty" },
               runtime: {
                 entry: "./runtime",
                 export: "createLoyaltyModule",
@@ -111,6 +112,7 @@ describe("graph runtime lowering", () => {
     const runtime = createVoyantGraphRuntime(runtimeInput(importRuntime))
 
     expect(importRuntime).not.toHaveBeenCalled()
+    expect(runtime.modules[0]?.routes[0]?.route.openapi).toEqual({ document: "loyalty" })
     await expect(runtime.modules[0]?.routes[0]?.load()).resolves.toBe(factory)
     await expect(runtime.modules[0]?.load()).resolves.toEqual([factory])
     await expect(runtime.modules[0]?.routes[1]?.load()).resolves.toBe(factory)
