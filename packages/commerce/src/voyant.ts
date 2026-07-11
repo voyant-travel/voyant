@@ -1,6 +1,7 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import {
+  catalogCheckoutApiRuntimePort,
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
@@ -198,6 +199,7 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
   packageName: "@voyant-travel/commerce",
   localId: "commerce.catalog-checkout-extension",
   runtimePorts: [
+    requirePort(catalogCheckoutApiRuntimePort),
     requirePort(catalogCheckoutDatabaseRuntimePort),
     requirePort(catalogCheckoutLegalRuntimePort),
     requirePort(catalogCheckoutContractPdfRuntimePort),
@@ -210,7 +212,7 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
       mount: "catalog",
       runtime: {
         entry: "@voyant-travel/commerce/checkout",
-        export: "createCatalogCheckoutHonoExtension",
+        export: "createCatalogCheckoutGraphExtension",
       },
     },
   ],

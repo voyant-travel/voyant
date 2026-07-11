@@ -1,8 +1,12 @@
 import type { EventBus } from "@voyant-travel/core"
 import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 
 import type { AcceptanceSignatureLegalPort } from "./acceptance-signature.js"
+import type { CheckoutStartOptions } from "./options.js"
+
+export type CatalogCheckoutApiRuntime = (context: Context) => CheckoutStartOptions
 
 export interface CatalogCheckoutDatabaseRuntime {
   withDb<T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>
@@ -59,6 +63,15 @@ export const catalogCheckoutContractPdfRuntimePort = definePort<CatalogCheckoutC
       typeof provider.generate !== "function"
     ) {
       throw new Error("legal.booking-contract-pdf provider must implement generate().")
+    }
+  },
+})
+
+export const catalogCheckoutApiRuntimePort = definePort<CatalogCheckoutApiRuntime>({
+  id: "commerce.checkout-api-options",
+  test(provider) {
+    if (typeof provider !== "function") {
+      throw new Error("commerce.checkout-api-options provider must be a function.")
     }
   },
 })

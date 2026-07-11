@@ -18,10 +18,12 @@ import {
 
 export type { AcceptanceSignatureLegalPort } from "./acceptance-signature.js"
 export type {
+  CatalogCheckoutApiRuntime,
   CatalogCheckoutContractPdfRuntime,
   CatalogCheckoutDatabaseRuntime,
 } from "./runtime-ports.js"
 export {
+  catalogCheckoutApiRuntimePort,
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,

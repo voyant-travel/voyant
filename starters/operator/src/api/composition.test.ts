@@ -1,3 +1,4 @@
+import { catalogCheckoutApiRuntimePort } from "@voyant-travel/commerce/catalog-checkout-subscribers"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
@@ -42,6 +43,12 @@ describe("operator graph runtime composition", () => {
     expect(providers.closePaymentSchedulesForBooking).toBe(closeTerminalBookingPaymentSchedules)
     expect(providers.recordCancellationFinancialSettlement).toBe(
       recordPaidBookingCancellationSettlement,
+    )
+  })
+
+  it("supplies request-scoped checkout options through the declared runtime port", () => {
+    expect(buildOperatorRuntimePorts()[catalogCheckoutApiRuntimePort.id]).toEqual(
+      expect.any(Function),
     )
   })
 

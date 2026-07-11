@@ -20,8 +20,10 @@ import type {
 } from "@voyant-travel/catalog"
 import {
   type AcceptanceSignatureLegalPort,
+  type CatalogCheckoutApiRuntime,
   type CatalogCheckoutContractPdfRuntime,
   type CatalogCheckoutDatabaseRuntime,
+  catalogCheckoutApiRuntimePort,
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
@@ -58,6 +60,7 @@ import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/r
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { withDbFromEnv } from "./lib/db"
 import { createChannelPushExtension } from "./routes/channel-push"
+import { createOperatorCheckoutStartOptions } from "./runtime/catalog-checkout-options"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
 import {
   createOperatorBookingPiiService,
@@ -265,6 +268,8 @@ export function buildOperatorRuntimePorts(
   workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
 ): VoyantGraphRuntimePorts {
   return {
+    [catalogCheckoutApiRuntimePort.id]: ((context) =>
+      createOperatorCheckoutStartOptions(context)) satisfies CatalogCheckoutApiRuntime,
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),

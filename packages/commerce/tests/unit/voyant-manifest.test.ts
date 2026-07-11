@@ -1,6 +1,7 @@
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
+  catalogCheckoutApiRuntimePort,
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
@@ -118,6 +119,7 @@ describe("commerce deployment manifest", () => {
       id: "@voyant-travel/commerce#catalog-checkout-extension",
       packageName: "@voyant-travel/commerce",
       runtimePorts: [
+        { id: catalogCheckoutApiRuntimePort.id },
         { id: catalogCheckoutDatabaseRuntimePort.id },
         { id: catalogCheckoutLegalRuntimePort.id },
         { id: catalogCheckoutContractPdfRuntimePort.id },
@@ -130,7 +132,7 @@ describe("commerce deployment manifest", () => {
           mount: "catalog",
           runtime: {
             entry: "@voyant-travel/commerce/checkout",
-            export: "createCatalogCheckoutHonoExtension",
+            export: "createCatalogCheckoutGraphExtension",
           },
         },
       ],
