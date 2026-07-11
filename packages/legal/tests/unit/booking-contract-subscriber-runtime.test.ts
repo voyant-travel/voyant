@@ -58,6 +58,7 @@ function harness(options: { enabled?: boolean } = {}) {
   }
   const container = createContainer()
   const eventBus = createEventBus()
+  vi.spyOn(eventBus, "emit")
   container.register(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY, runtime)
   let handler: ((event: EventEnvelope) => Promise<void> | void) | undefined
   vi.spyOn(eventBus, "subscribe").mockImplementation((_eventType, registeredHandler) => {
@@ -107,6 +108,28 @@ describe("Legal booking-contract subscriber runtime", () => {
         bindings: test.bindings,
       }),
     )
+    expect(test.eventBus.emit).toHaveBeenCalledWith(
+      "booking.contract.generated",
+      {
+        ...bookingEvent.data,
+        contractId: "contract_1",
+        attachmentId: "attachment_1",
+      },
+      { category: "internal", source: "service" },
+    )
+  })
+
+  it("does not subscribe when the deployment host has no Legal runtime", async () => {
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+
+    await createLegalBookingContractSubscriberDescriptor().register({
+      bindings: {},
+      container: createContainer(),
+      eventBus,
+    })
+
+    expect(subscribe).not.toHaveBeenCalled()
   })
 
   it("registers the host runtime only through the selected graph extension", async () => {

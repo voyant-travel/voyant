@@ -52,6 +52,11 @@ interface BookingConfirmedPayload extends Record<string, unknown> {
   suppressNotifications?: boolean
 }
 
+interface BookingContractGeneratedPayload extends BookingConfirmedPayload {
+  contractId: string
+  attachmentId: string
+}
+
 interface PaymentCompletedPayload extends Record<string, unknown> {
   paymentSessionId: string
   bookingId?: string | null
@@ -236,32 +241,35 @@ export function createBookingConfirmationAutoDispatchSubscriberRuntime(
 
   return {
     id: NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID,
-    eventType: "booking.confirmed",
+    eventType: "booking.contract.generated",
     register: ({ bindings, container, eventBus }) => {
-      eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
-        if (data.suppressNotifications === true) return
+      eventBus.subscribe<BookingContractGeneratedPayload>(
+        "booking.contract.generated",
+        async ({ data }) => {
+          if (data.suppressNotifications === true) return
 
-        try {
-          const runtime = resolveRuntime(container)
-          const options = runtime.autoConfirmAndDispatch
-          if (!options?.enabled) return
+          try {
+            const runtime = resolveRuntime(container)
+            const options = runtime.autoConfirmAndDispatch
+            if (!options?.enabled) return
 
-          await confirmAndDispatchBooking(
-            runtime.resolveDb(bindings),
-            runtime.dispatcher,
-            data.bookingId,
-            {
-              templateSlug: options.templateSlug ?? null,
-              documentTypes: options.documentTypes ?? null,
-            },
-            { attachmentResolver: runtime.documentAttachmentResolver, eventBus },
-          )
-        } catch (error) {
-          logger.error(
-            `[notifications] auto-dispatch failed for booking ${data.bookingId}: ${errorMessage(error)}`,
-          )
-        }
-      })
+            await confirmAndDispatchBooking(
+              runtime.resolveDb(bindings),
+              runtime.dispatcher,
+              data.bookingId,
+              {
+                templateSlug: options.templateSlug ?? null,
+                documentTypes: options.documentTypes ?? null,
+              },
+              { attachmentResolver: runtime.documentAttachmentResolver, eventBus },
+            )
+          } catch (error) {
+            logger.error(
+              `[notifications] auto-dispatch failed for booking ${data.bookingId}: ${errorMessage(error)}`,
+            )
+          }
+        },
+      )
     },
   }
 }

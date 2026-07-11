@@ -152,7 +152,7 @@ export const notificationsVoyantModule = defineModule({
 
 /**
  * Selected by Node deployments that activate reminder and confirmation delivery.
- * Declaration order preserves confirmation dispatch ahead of reminder rules.
+ * Contract-backed confirmation dispatch waits for Legal's generated-contract event.
  */
 export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
   id: "@voyant-travel/notifications#reminder-subscribers-extension",
@@ -166,7 +166,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
   subscribers: [
     {
       id: "@voyant-travel/notifications#subscriber.booking-confirmation-auto-dispatch",
-      eventType: "booking.confirmed",
+      eventType: "booking.contract.generated",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
         entry: "./subscriber-runtime",

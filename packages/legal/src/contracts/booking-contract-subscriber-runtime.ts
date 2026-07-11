@@ -31,6 +31,11 @@ export interface LegalBookingConfirmedEvent extends BookingConfirmedLikeEvent {
   suppressNotifications?: boolean
 }
 
+export interface LegalBookingContractGeneratedEvent extends LegalBookingConfirmedEvent {
+  contractId: string
+  attachmentId: string
+}
+
 export interface LegalBookingContractSubscriberRuntime<TBindings = unknown> {
   options: AutoGenerateContractOptions
   /** Own the deployment database lifecycle for the complete generation operation. */
@@ -70,6 +75,8 @@ export function createLegalBookingContractSubscriberDescriptor(
     id: LEGAL_BOOKING_CONTRACT_SUBSCRIBER_ID,
     eventType: "booking.confirmed",
     register: ({ bindings, container, eventBus }) => {
+      if (!container.has(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY)) return
+
       eventBus.subscribe<LegalBookingConfirmedEvent>("booking.confirmed", async ({ data }) => {
         const runtime = resolveLegalBookingContractSubscriberRuntime(container)
         if (!runtime.options.enabled) return
@@ -95,6 +102,17 @@ export function createLegalBookingContractSubscriberDescriptor(
             ),
           )
           logNonSuccessResult(logger, data.bookingId, result)
+          if (result.status === "ok") {
+            await eventBus.emit(
+              "booking.contract.generated",
+              {
+                ...data,
+                contractId: result.contractId,
+                attachmentId: result.attachmentId,
+              } satisfies LegalBookingContractGeneratedEvent,
+              { category: "internal", source: "service" },
+            )
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
           logger.error(

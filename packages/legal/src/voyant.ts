@@ -68,6 +68,10 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.document.generated",
       eventType: "contract.document.generated",
     },
+    {
+      id: "@voyant-travel/legal#event.booking.contract.generated",
+      eventType: "booking.contract.generated",
+    },
   ],
   access: {
     resources: [

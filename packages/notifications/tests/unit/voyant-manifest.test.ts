@@ -99,6 +99,7 @@ describe("notifications deployment manifest", () => {
       "notificationsBookingExpiredReminderSubscriber",
     ])
     expect(declarations[0]?.id).toBe(NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID)
+    expect(declarations[0]?.eventType).toBe("booking.contract.generated")
   })
 
   it("preserves configurable reminder workflow factories", () => {

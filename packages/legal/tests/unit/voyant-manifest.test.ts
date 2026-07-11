@@ -46,6 +46,10 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#linkable.policyAcceptance",
       "@voyant-travel/legal#linkable.term",
     ])
+    expect(legalVoyantModule.events).toContainEqual({
+      id: "@voyant-travel/legal#event.booking.contract.generated",
+      eventType: "booking.contract.generated",
+    })
   })
 
   it("owns the contract-document bridge", () => {
