@@ -1,6 +1,8 @@
 // agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while the resolver, diagnostics, hashing, and managed-profile bridge share one contract harness.
 
 import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
+import { financeVoyantModule } from "@voyant-travel/finance/voyant"
+import { storefrontVoyantModule } from "@voyant-travel/storefront/voyant"
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
@@ -653,13 +655,20 @@ describe("deployment graph v1", () => {
         id: "@acme/voyant-loyalty",
         api: [
           {
-            id: "@acme/voyant-loyalty#api.admin",
-            surface: "admin",
+            id: "@acme/voyant-loyalty#api.public",
+            surface: "public",
             methods: ["POST", "GET"],
-            mount: "/v1/admin/loyalty",
+            mount: "loyalty",
             resource: "loyalty.points",
             requiredScopes: ["loyalty:read", "loyalty-points:write"],
-            anonymous: ["/v1/public/loyalty/status"],
+            anonymous: ["/status", "health"],
+          },
+          {
+            id: "@acme/voyant-loyalty#api.webhook",
+            surface: "webhook",
+            mount: "loyalty",
+            anonymous: true,
+            transactional: true,
           },
         ],
       }),
@@ -677,7 +686,8 @@ describe("deployment graph v1", () => {
             mount: "",
             resource: "Loyalty Points",
             requiredScopes: ["loyalty.points.read", "loyalty:Read"],
-            anonymous: "yes",
+            anonymous: true,
+            transactional: ["/commit", "commit"],
           },
         ],
       }),
@@ -711,8 +721,37 @@ describe("deployment graph v1", () => {
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
           facet: "api[0].anonymous",
         }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].transactional",
+        }),
       ]),
     )
+
+    expect(
+      validateGraphUnitManifest({
+        schemaVersion: "voyant.module.v1",
+        id: "@acme/voyant-loyalty",
+        api: [
+          {
+            id: "@acme/voyant-loyalty#api.invalid-paths",
+            surface: "public",
+            anonymous: ["/"],
+            transactional: ["../commit"],
+          },
+        ],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ facet: "api[0].anonymous" }),
+        expect.objectContaining({ facet: "api[0].transactional" }),
+      ]),
+    )
+  })
+
+  it("accepts established route-relative anonymous manifest paths", () => {
+    expect(validateGraphUnitManifest(storefrontVoyantModule)).toEqual([])
+    expect(validateGraphUnitManifest(financeVoyantModule)).toEqual([])
   })
 
   it("detects duplicate graph ids and missing required capabilities", async () => {

@@ -1275,6 +1275,18 @@ are no longer authoritative.
 
 ### Phase 3: package-owned runtime composition and first non-Cloud target
 
+API bundle posture is inspectable before package runtime imports. `anonymous:
+true` opens the resolved public mount, while an `anonymous` path array records
+route-relative anonymous exceptions. `transactional: true` selects the resolved
+bundle mount and a `transactional` path array selects route-relative path
+prefixes. Resolution validates and normalizes either leading-slash or plain
+relative authoring, and graph runtime composition resolves each path against its
+selected bundle mount exactly once. It exposes the absolute selected union as
+`routePosture.publicPaths` and `routePosture.transactionalPaths`. Composition
+also applies representable public-mount and transactional metadata to the Hono
+module or extension output. Deployment-local escape hatches remain separate and
+must not be folded back into package manifests.
+
 - migrate API bundles, anonymous/transactional posture, subscribers, workflow
   descriptors, schedules, and event filters to package manifests
 - lower package factories into the existing Hono composition and explicit

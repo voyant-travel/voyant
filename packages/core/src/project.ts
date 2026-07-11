@@ -127,8 +127,10 @@ export interface VoyantGraphRouteBundle {
   mount?: string
   resource?: string
   requiredScopes?: readonly string[]
+  /** Anonymous public access for the whole public mount or route-relative path subsets. */
   anonymous?: boolean | readonly string[]
-  transactional?: boolean
+  /** Transactional DB routing for the whole mount or route-relative path subsets. */
+  transactional?: boolean | readonly string[]
   runtime?: VoyantGraphRuntimeReference
 }
 

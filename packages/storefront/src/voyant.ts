@@ -127,6 +127,7 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
     {
       id: "@voyant-travel/storefront#payment-link.api",
       surface: "public",
+      mount: "/",
       anonymous: ["payment-link-config", "payment-link"],
       runtime: {
         entry: "@voyant-travel/storefront/payment-link",

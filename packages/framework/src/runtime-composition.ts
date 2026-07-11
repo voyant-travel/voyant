@@ -47,6 +47,13 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
 export interface VoyantGraphRuntimeComposition {
   modules: HonoModule[]
   extensions: HonoExtension[]
+  routePosture: VoyantGraphRuntimeRoutePosture
+}
+
+/** Absolute path posture derived only from selected graph API bundles. */
+export interface VoyantGraphRuntimeRoutePosture {
+  publicPaths: string[]
+  transactionalPaths: string[]
 }
 
 /** Load graph-owned workflow/subscriber metadata without composing API routes. */
@@ -75,22 +82,24 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   for (const unit of input.runtime.modules) {
     const outputs = await resolveRuntimeUnit(input, unit)
     assertWebhookRoutePosture(input.runtime, unit, outputs)
+    const routePosture = deriveUnitRoutePosture(unit)
     for (const output of outputs) {
       if (!isHonoModule(output)) {
         throw invalidRuntimeOutput(unit, "HonoModule", output)
       }
-      modules.push(output)
+      modules.push(applyModuleRoutePosture(output, routePosture))
     }
   }
 
   for (const unit of [...input.runtime.extensions, ...input.runtime.plugins]) {
     const outputs = await resolveRuntimeUnit(input, unit)
     assertWebhookRoutePosture(input.runtime, unit, outputs)
+    const routePosture = deriveUnitRoutePosture(unit)
     for (const output of outputs) {
       if (!isHonoExtension(output)) {
         throw invalidRuntimeOutput(unit, "HonoExtension", output)
       }
-      extensions.push(output)
+      extensions.push(applyExtensionRoutePosture(output, routePosture))
     }
   }
 
@@ -98,7 +107,140 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   const outboundWebhookModule = createGraphOutboundWebhookModule(input)
   if (outboundWebhookModule) modules.push(outboundWebhookModule)
 
-  return { modules, extensions }
+  return {
+    modules,
+    extensions,
+    routePosture: mergeRoutePostures(
+      [...input.runtime.modules, ...input.runtime.extensions, ...input.runtime.plugins].map(
+        deriveUnitRoutePosture,
+      ),
+    ),
+  }
+}
+
+interface UnitRoutePosture extends VoyantGraphRuntimeRoutePosture {
+  publicMount?: string
+  anonymous: boolean | readonly string[] | undefined
+}
+
+function deriveUnitRoutePosture(unit: VoyantGraphRuntimeUnitLoader): UnitRoutePosture {
+  const publicRoutes = unit.routes.filter(({ route }) => route.surface === "public")
+  const publicMounts = sortedUnique(publicRoutes.map(({ route }) => routeMountPath(unit, route)))
+  const publicPaths = sortedUnique(
+    unit.routes.flatMap(({ route }) => {
+      const mount = routeMountPath(unit, route)
+      if (route.anonymous === true) return [mount]
+      if (!route.anonymous) return []
+      return route.anonymous.map((path) => resolveRoutePosturePath(mount, path))
+    }),
+  )
+  const transactionalPaths = sortedUnique(
+    unit.routes.flatMap(({ route }) => {
+      const mount = routeMountPath(unit, route)
+      if (route.transactional === true) return [mount]
+      if (!route.transactional) return []
+      return route.transactional.map((path) => resolveRoutePosturePath(mount, path))
+    }),
+  )
+  const publicMount = publicMounts.length === 1 ? publicMounts[0] : undefined
+  const anonymous = publicMount ? anonymousForPublicMount(publicMount, publicPaths) : undefined
+
+  return { publicPaths, transactionalPaths, publicMount, anonymous }
+}
+
+function routeMountPath(
+  unit: VoyantGraphRuntimeUnitLoader,
+  route: VoyantGraphRuntimeUnitLoader["routes"][number]["route"],
+): string {
+  if (route.mount?.startsWith("/v1/")) return normalizeAbsolutePath(route.mount)
+  const segment = route.mount ?? unit.localId ?? unit.id.split("#").at(-1) ?? unit.id
+  const mount = segment.replace(/^\/+|\/+$/g, "")
+  if (route.surface === "admin") return appendPath("/v1/admin", mount)
+  if (route.surface === "public") return appendPath("/v1/public", mount)
+  if (route.surface === "webhook") return appendPath("/v1", mount)
+  return `/${mount}`
+}
+
+function resolveRoutePosturePath(mount: string, path: string): string {
+  const normalizedPath = normalizeAbsolutePath(path)
+  if (normalizedPath === mount || normalizedPath.startsWith(`${mount}/`)) return normalizedPath
+  return appendPath(mount, path.replace(/^\/+|\/+$/g, ""))
+}
+
+function appendPath(mount: string, relative: string): string {
+  return relative ? `${normalizeAbsolutePath(mount)}/${relative}` : normalizeAbsolutePath(mount)
+}
+
+function anonymousForPublicMount(
+  publicMount: string,
+  publicPaths: readonly string[],
+): boolean | readonly string[] | undefined {
+  if (publicPaths.includes(publicMount)) return true
+  const prefix = `${publicMount}/`
+  const relative = publicPaths
+    .filter((path) => path.startsWith(prefix))
+    .map((path) => path.slice(publicMount.length))
+  return relative.length > 0 ? relative : undefined
+}
+
+function applyModuleRoutePosture(output: HonoModule, posture: UnitRoutePosture): HonoModule {
+  return {
+    ...output,
+    ...(posture.publicMount ? { publicPath: publicPathFromMount(posture.publicMount) } : {}),
+    ...(posture.anonymous !== undefined ? { anonymous: posture.anonymous } : {}),
+    ...(posture.transactionalPaths.length > 0
+      ? {
+          transactionalPaths: sortedUnique([
+            ...(output.transactionalPaths ?? []),
+            ...posture.transactionalPaths,
+          ]),
+        }
+      : {}),
+  }
+}
+
+function applyExtensionRoutePosture(
+  output: HonoExtension,
+  posture: UnitRoutePosture,
+): HonoExtension {
+  return {
+    ...output,
+    ...(posture.publicMount ? { publicPath: publicPathFromMount(posture.publicMount) } : {}),
+    ...(posture.anonymous !== undefined ? { anonymous: posture.anonymous } : {}),
+    ...(posture.transactionalPaths.length > 0
+      ? {
+          transactionalPaths: sortedUnique([
+            ...(output.transactionalPaths ?? []),
+            ...posture.transactionalPaths,
+          ]),
+        }
+      : {}),
+  }
+}
+
+function publicPathFromMount(mount: string): string {
+  if (mount === "/v1/public") return "/"
+  const prefix = "/v1/public/"
+  return mount.startsWith(prefix) ? mount.slice(prefix.length) : mount
+}
+
+function mergeRoutePostures(
+  postures: readonly VoyantGraphRuntimeRoutePosture[],
+): VoyantGraphRuntimeRoutePosture {
+  return {
+    publicPaths: sortedUnique(postures.flatMap(({ publicPaths }) => publicPaths)),
+    transactionalPaths: sortedUnique(
+      postures.flatMap(({ transactionalPaths }) => transactionalPaths),
+    ),
+  }
+}
+
+function normalizeAbsolutePath(path: string): string {
+  return path === "/" ? path : path.replace(/\/+$/g, "")
+}
+
+function sortedUnique(values: readonly string[]): string[] {
+  return [...new Set(values)].sort((left, right) => left.localeCompare(right))
 }
 
 function createGraphOutboundWebhookModule<TCapabilities>(

@@ -29,6 +29,7 @@ describe("inventory deployment manifests", () => {
         {
           id: "@voyant-travel/inventory#api.public",
           surface: "public",
+          anonymous: true,
           runtime: { entry: "@voyant-travel/inventory", export: "inventoryHonoModule" },
         },
       ],
@@ -106,6 +107,7 @@ describe("inventory deployment manifests", () => {
         {
           surface: "public",
           mount: "products",
+          anonymous: true,
           runtime: { export: "createProductContentHonoExtension" },
         },
       ],

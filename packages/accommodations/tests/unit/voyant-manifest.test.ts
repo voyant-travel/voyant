@@ -49,6 +49,7 @@ describe("accommodations deployment manifest", () => {
         {
           surface: "public",
           mount: "accommodations",
+          anonymous: true,
           runtime: { export: "createAccommodationContentHonoExtension" },
         },
       ],
