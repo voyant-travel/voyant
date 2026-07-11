@@ -844,6 +844,17 @@ generation. Their schedules are provisioned from the owning package ids while
 the generated runtime imports the owning package exports. The operator keeps
 only graph-id-keyed bindings for deployment capabilities and local units.
 
+Workflow runtime references lower into a facet-specific loader collection.
+They never participate in a graph unit's primary `runtime` loader or legacy API
+runtime fallback, so adding `workflows[].runtime` cannot change the exports
+passed to module or extension bindings. A package manifest that activates an
+executable workflow must declare `workflows[].runtime.entry` and
+`workflows[].runtime.export`; that pair must resolve through a published package
+export to the `WorkflowDescriptor` whose id matches `workflows[].id`. The
+top-level unit `runtime` remains reserved for the package's Hono module or
+extension factory. Generated importers may deduplicate a shared entry, but each
+facet selects and memoizes its own named export.
+
 Implementation note: application convention compilation validates
 `src/workflows` and `src/jobs` without evaluating source. Workflow files
 directly default-export the pure `defineWorkflow(...)` result; job files export

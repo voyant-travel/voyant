@@ -128,6 +128,8 @@ export {
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
   type VoyantGraphRuntimeWebhookPlan,
+  type VoyantGraphRuntimeWorkflowDefinition,
+  type VoyantGraphRuntimeWorkflowLoader,
 } from "./runtime-lowering.js"
 export {
   FRAMEWORK_RUNTIME_PACKAGES,

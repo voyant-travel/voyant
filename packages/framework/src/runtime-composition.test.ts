@@ -194,6 +194,19 @@ describe("graph runtime composition", () => {
               importEntry: "@voyant-travel/commerce/promotions/subscriber",
             },
           ],
+          workflows: [
+            {
+              unitId: "@voyant-travel/commerce",
+              declaration: {
+                id: workflow.id,
+                runtime: {
+                  entry: "./promotions/workflow",
+                  export: "workflow",
+                },
+              },
+              referenceId: "commerce-workflow",
+            },
+          ],
           routes: [],
         },
       ],
@@ -214,6 +227,81 @@ describe("graph runtime composition", () => {
     })
     expect(importWorkflow).toHaveBeenCalledTimes(1)
     expect(importSubscriber).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps workflow exports out of primary module bindings", async () => {
+    const createCommerceModule = vi.fn(() => ({ module: { name: "commerce" } }))
+    const reconcileWorkflow = {
+      id: "commerce.reconcile",
+      config: { id: "commerce.reconcile", run: vi.fn() },
+    }
+    const importRuntime = vi.fn(async () => ({ createCommerceModule, reconcileWorkflow }))
+    const binding = vi.fn(({ runtimeExports }: { runtimeExports: readonly unknown[] }) => {
+      expect(runtimeExports).toEqual([createCommerceModule])
+      return createCommerceModule()
+    })
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:facet-specific-workflows",
+      entries: { "@voyant-travel/commerce/runtime": importRuntime },
+      modules: [
+        {
+          id: "@voyant-travel/commerce",
+          kind: "module",
+          packageName: "@voyant-travel/commerce",
+          order: 0,
+          runtimeReferenceId: "commerce-runtime",
+          references: [
+            {
+              id: "commerce-runtime",
+              unitId: "@voyant-travel/commerce",
+              facet: "runtime",
+              entityId: "@voyant-travel/commerce",
+              runtime: { entry: "./runtime", export: "createCommerceModule" },
+              importEntry: "@voyant-travel/commerce/runtime",
+            },
+            {
+              id: "commerce-workflow",
+              unitId: "@voyant-travel/commerce",
+              facet: "workflows.runtime",
+              entityId: reconcileWorkflow.id,
+              runtime: { entry: "./runtime", export: "reconcileWorkflow" },
+              importEntry: "@voyant-travel/commerce/runtime",
+            },
+          ],
+          workflows: [
+            {
+              unitId: "@voyant-travel/commerce",
+              declaration: {
+                id: reconcileWorkflow.id,
+                runtime: { entry: "./runtime", export: "reconcileWorkflow" },
+              },
+              referenceId: "commerce-workflow",
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importRuntime).not.toHaveBeenCalled()
+    const composition = await composeVoyantGraphRuntime({
+      runtime,
+      capabilities: {},
+      bindings: { "@voyant-travel/commerce": binding },
+    })
+
+    expect(binding).toHaveBeenCalledOnce()
+    expect(composition.modules).toEqual([
+      { module: { name: "commerce" } },
+      {
+        module: {
+          name: "@voyant-travel/commerce.graph-runtime",
+          workflows: [reconcileWorkflow],
+        },
+      },
+    ])
+    expect(importRuntime).toHaveBeenCalledTimes(1)
   })
 
   it("does not import or register workflow facets for an unselected package", async () => {

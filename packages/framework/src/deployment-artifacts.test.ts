@@ -379,6 +379,10 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"loyalty:write"')
     expect(source).toContain('"tools": [')
     expect(source).toContain('"name": "adjust_loyalty"')
+    expect(source).toContain('"workflows": [')
+    expect(source).toContain(
+      '"referenceId": "%40acme%2Fvoyant-loyalty/workflows.runtime/loyalty.reconcile"',
+    )
     expect(source).toContain('"config": [')
     expect(source).toContain('"declaration": {')
     expect(source).toContain('"key": "loyalty"')
