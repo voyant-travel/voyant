@@ -4,6 +4,16 @@ import type * as React from "react"
 import type { AdminDestinationKey, AdminDestinations } from "./navigation/destinations.js"
 import type { NavItem } from "./types.js"
 
+/** Host-localized inputs available to graph-selected package admin factories. */
+export interface SelectedAdminExtensionFactoryContext {
+  navMessages: Readonly<Record<string, string>>
+}
+
+/** Uniform factory shape lowered into the selected-graph admin bundle. */
+export type SelectedAdminExtensionFactory = (
+  context: SelectedAdminExtensionFactoryContext,
+) => AdminExtension
+
 /**
  * App-supplied runtime handed to route loaders: where the API lives and how
  * to reach it (the host's cookie-forwarding fetcher in SSR setups).

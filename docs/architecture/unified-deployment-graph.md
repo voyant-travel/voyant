@@ -800,21 +800,25 @@ The first Phase 4 admin slices are active for `@voyant-travel/action-ledger`,
 - project resolution emits `.voyant/admin/selected-graph-admin.generated.ts`
   from only selected units with `admin.runtime`; package page modules remain
   behind the lazy imports owned by the UI export
-- the Operator consumes that generated factory while retaining its existing
-  localized label and icon inputs, and the compatibility admin generator removes
-  the migrated factory from `admin.extensions.generated.ts`
+- each selected package adapter owns its Operator nav-copy key and icon; Quotes
+  also owns its existing lazy route message provider
+- the Operator invokes the generated selected-factory composer with one generic
+  localized nav-message map, and the compatibility admin generator removes the
+  migrated factory from `admin.extensions.generated.ts`
+- `admin.compositionOrder` preserves stable ordering for selected contributions
+  that share a host navigation anchor without adding a host-side package list
 - deployment-local `src/admin/*/index.ts[x]` pages remain independently
   discovered and composed; package migration must not remove that local surface
 - `verify:admin-composition-drift` rejects a migrated factory that is missing
   from the selected-graph bundle, duplicated in the compatibility registry, or
   present without a selected `admin.runtime` declaration
 
-This cut does not activate admin slots or contributions, namespaced copy,
-message-provider lowering, or deployment copy overrides. Those remain separate
-admin authorities. The Operator factory wrappers and generated registry entries
-for all other first-party packages also remain compatibility authorities until
-each package proves equivalent nav, route, page, host-option, and destination
-behavior through the selected graph.
+This cut does not activate admin slots or contributions, generalized namespaced
+copy lowering, or deployment copy overrides. Those remain separate admin
+authorities. The Operator factory wrappers and generated registry entries for
+all other first-party packages also remain compatibility authorities until each
+package proves equivalent nav, route, page, copy, icon, and destination behavior
+through the selected graph.
 
 ## API, OpenAPI, Scopes, And RBAC
 
@@ -1468,9 +1472,11 @@ package surfaces in `voyant#3080`.
   namespaced copy and deployment overrides
 - generate the admin bundle only from selected package exports and graph data
 
-Progress: the action-ledger, MICE, and Quotes nav/route/page factories are
-lowered into the selected-graph admin bundle. The Operator still owns their
-lightweight localization/icon wrappers. Slots/contributions, copy, and the
+Progress: the action-ledger, MICE, and Quotes nav/route/page factories and their
+lightweight localization/icon adapters are lowered into the selected-graph admin
+bundle. Quotes also owns its lazy route copy provider. The Operator composes
+these selected factories generically, with selection and deselection controlled
+only by the graph. Slots/contributions, generalized copy lowering, and the
 remaining first-party Operator compatibility registry are not part of this
 slice. Identity admin routes are the first package-owned selected-graph OpenAPI
 authority; other API documents remain on the Operator compatibility path.

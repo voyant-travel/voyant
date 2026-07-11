@@ -23,7 +23,7 @@ describe("MICE deployment manifests", () => {
       admin: {
         runtime: {
           entry: "@voyant-travel/mice-react/admin",
-          export: "createMiceAdminExtension",
+          export: "createSelectedMiceAdminExtension",
         },
         routes: [
           {

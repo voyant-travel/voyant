@@ -1,7 +1,11 @@
+import { ScrollText } from "lucide-react"
 import { describe, expect, it } from "vitest"
 
 import { actionLedgerVoyantModule } from "../../action-ledger/src/voyant.js"
-import { createActionLedgerAdminExtension } from "../src/admin/index.js"
+import {
+  createActionLedgerAdminExtension,
+  createSelectedActionLedgerAdminExtension,
+} from "../src/admin/index.js"
 
 describe("createActionLedgerAdminExtension", () => {
   it("keeps the package-owned route facet aligned with the admin extension", () => {
@@ -12,9 +16,21 @@ describe("createActionLedgerAdminExtension", () => {
     expect(actionLedgerVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual([
       {
         entry: "@voyant-travel/action-ledger-react/admin",
-        export: "createActionLedgerAdminExtension",
+        export: "createSelectedActionLedgerAdminExtension",
       },
     ])
+  })
+
+  it("owns the selected Operator label and icon adapter", () => {
+    const extension = createSelectedActionLedgerAdminExtension({
+      navMessages: { actionLedger: "Jurnal actiuni" },
+    })
+
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Jurnal actiuni",
+      icon: ScrollText,
+    })
+    expect(extension.routes?.[0]?.title).toBe("Jurnal actiuni")
   })
 
   it("contributes the Logs nav item with the default order", () => {

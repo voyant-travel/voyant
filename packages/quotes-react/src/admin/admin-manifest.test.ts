@@ -1,14 +1,15 @@
+import { FileText } from "lucide-react"
 import { describe, expect, it } from "vitest"
 
 import { quotesVoyantModule } from "../../../quotes/src/voyant.js"
-import { createQuotesAdminExtension } from "./index.js"
+import { createQuotesAdminExtension, createSelectedQuotesAdminExtension } from "./index.js"
 
 describe("quotes admin deployment facets", () => {
   it("tracks the package-owned extension routes and copy provider", () => {
     const extension = createQuotesAdminExtension()
     expect(quotesVoyantModule.admin?.runtime).toEqual({
       entry: "@voyant-travel/quotes-react/admin",
-      export: "createQuotesAdminExtension",
+      export: "createSelectedQuotesAdminExtension",
     })
     expect(quotesVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
       extension.routes?.map((route) => route.path),
@@ -20,7 +21,7 @@ describe("quotes admin deployment facets", () => {
     expect(quotesVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual(
       extension.routes?.map(() => ({
         entry: "@voyant-travel/quotes-react/admin",
-        export: "createQuotesAdminExtension",
+        export: "createSelectedQuotesAdminExtension",
       })),
     )
     expect(quotesVoyantModule.admin?.copy).toEqual([
@@ -34,5 +35,15 @@ describe("quotes admin deployment facets", () => {
         },
       },
     ])
+    expect(
+      extension.routes?.every((route) => typeof route.routeMessagesProvider === "function"),
+    ).toBe(true)
+  })
+
+  it("owns the selected Operator label and icon adapter", () => {
+    const extension = createSelectedQuotesAdminExtension({ navMessages: { quotes: "Oferte" } })
+
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({ title: "Oferte", icon: FileText })
+    expect(extension.routes?.map((route) => route.title)).toEqual(["Oferte", "Oferte"])
   })
 })

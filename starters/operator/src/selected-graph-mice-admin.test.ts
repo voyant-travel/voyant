@@ -2,9 +2,11 @@ import { operatorAdminNavMessages } from "@voyant-travel/i18n"
 import { CalendarRange } from "lucide-react"
 import { describe, expect, it } from "vitest"
 
-import { selectedGraphAdminExtensionFactories } from "../.voyant/admin/selected-graph-admin.generated.js"
+import {
+  createSelectedGraphAdminExtensions,
+  selectedGraphAdminExtensionFactories,
+} from "../.voyant/admin/selected-graph-admin.generated.js"
 import { generatedAdminExtensionFactories } from "./admin.extensions.generated.js"
-import { createOperatorAdminExtensions } from "./lib/admin-extensions.js"
 
 describe("selected-graph MICE admin composition", () => {
   it("uses the selected package factory without compatibility duplication", () => {
@@ -12,10 +14,10 @@ describe("selected-graph MICE admin composition", () => {
     expect("mice" in generatedAdminExtensionFactories).toBe(false)
   })
 
-  it("preserves MICE navigation, routes, and destinations through host options", () => {
-    const extension = createOperatorAdminExtensions(operatorAdminNavMessages.ro.nav).find(
-      ({ id }) => id === "mice",
-    )
+  it("preserves MICE navigation, routes, and destinations", () => {
+    const extension = createSelectedGraphAdminExtensions({
+      navMessages: operatorAdminNavMessages.ro.nav,
+    }).find(({ id }) => id === "mice")
 
     expect(extension?.navigation).toEqual([
       {

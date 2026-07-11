@@ -5,11 +5,13 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
+  type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin"
 // Lean static only: the shared fetcher fallback. The page-data helpers
 // resolve via dynamic import inside the loader so the admin REST module
 // stays out of the workspace-chrome chunk that evaluates this factory.
 import { defaultFetcher } from "@voyant-travel/react"
+import { ScrollText } from "lucide-react"
 
 /**
  * No destinations declared: nothing navigates TO the Logs page by semantic
@@ -101,6 +103,16 @@ export function createActionLedgerAdminExtension(
         },
       },
     ],
+  })
+}
+
+/** Selected-graph adapter owning the standard Operator copy key and icon. */
+export function createSelectedActionLedgerAdminExtension(
+  { navMessages }: SelectedAdminExtensionFactoryContext = { navMessages: {} },
+): AdminExtension {
+  return createActionLedgerAdminExtension({
+    labels: { actionLedger: navMessages.actionLedger ?? "Logs" },
+    icon: ScrollText,
   })
 }
 

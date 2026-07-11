@@ -5,11 +5,13 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
+  type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin"
 // Lean static only: the shared fetcher fallback. The page-data helpers
 // resolve via dynamic import inside the loaders so the REST query options stay
 // out of the workspace-chrome chunk that evaluates this factory.
 import { defaultFetcher } from "@voyant-travel/react"
+import { FileText } from "lucide-react"
 
 /**
  * Semantic destinations the quotes admin surfaces navigate to (packaged-admin
@@ -86,6 +88,7 @@ export function createQuotesAdminExtension(
         title: quotes,
         destination: "quote.list",
         ssr: "data-only",
+        routeMessagesProvider: quotesRouteMessagesProvider,
         page: () =>
           import("./quotes-board-host.js").then((module) =>
             adminRoutePageModule(module.QuotesBoardHost),
@@ -107,6 +110,7 @@ export function createQuotesAdminExtension(
         destination: "quote.detail",
         destinationParams: { id: "quoteId" },
         ssr: "data-only",
+        routeMessagesProvider: quotesRouteMessagesProvider,
         page: () => import("./pages/quote-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
@@ -117,6 +121,20 @@ export function createQuotesAdminExtension(
       },
     ],
   })
+}
+
+/** Selected-graph adapter owning the standard Operator copy key and icon. */
+export function createSelectedQuotesAdminExtension(
+  { navMessages }: SelectedAdminExtensionFactoryContext = { navMessages: {} },
+): AdminExtension {
+  return createQuotesAdminExtension({
+    labels: { quotes: navMessages.quotes ?? "Quotes" },
+    icon: FileText,
+  })
+}
+
+function quotesRouteMessagesProvider() {
+  return import("../i18n/index.js").then((module) => ({ default: module.CrmUiMessagesProvider }))
 }
 
 /**
