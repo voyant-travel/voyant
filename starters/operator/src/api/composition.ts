@@ -19,6 +19,9 @@ import type {
   IndexerAdapter,
 } from "@voyant-travel/catalog"
 import {
+  type AcceptanceSignatureLegalPort,
+  type CatalogCheckoutContractPdfRuntime,
+  type CatalogCheckoutDatabaseRuntime,
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
@@ -48,6 +51,7 @@ import {
   type WorkflowRunnerRegistryRuntime,
   workflowRunnerRegistryRuntimePort,
 } from "@voyant-travel/workflow-runs/runtime-port"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
@@ -269,25 +273,29 @@ export function buildOperatorRuntimePorts(
       bridgeRoutes: operatorRealtimeBridgeRoutes,
     },
     [catalogCheckoutDatabaseRuntimePort.id]: {
-      withDb: (bindings: unknown, operation: Parameters<typeof withDbFromEnv>[1]) =>
+      withDb: <T>(
+        bindings: unknown,
+        operation: (db: PostgresJsDatabase) => Promise<T>,
+      ): Promise<T> =>
         withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    },
+    } satisfies CatalogCheckoutDatabaseRuntime,
     [catalogCheckoutLegalRuntimePort.id]: import("@voyant-travel/legal/contracts").then(
-      ({ contractsService }) => ({
-        getContract: contractsService.getContractById,
-        listSignatures: contractsService.listSignatures,
-        sendContract: (db, contractId, eventBus) =>
-          contractsService.sendContract(db, contractId, { eventBus }),
-        signContract: (db, contractId, input, eventBus) =>
-          contractsService.signContract(db, contractId, input as never, { eventBus }),
-      }),
+      ({ contractsService }) =>
+        ({
+          getContract: contractsService.getContractById,
+          listSignatures: contractsService.listSignatures,
+          sendContract: (db, contractId, eventBus) =>
+            contractsService.sendContract(db, contractId, { eventBus }),
+          signContract: (db, contractId, input, eventBus) =>
+            contractsService.signContract(db, contractId, input as never, { eventBus }),
+        }) satisfies AcceptanceSignatureLegalPort,
     ),
     [catalogCheckoutContractPdfRuntimePort.id]: {
       generate: ({ bindings, db, eventBus, bookingId, force }) =>
         generateContractPdfForBooking(operatorBindings(bindings), db, eventBus, bookingId, {
           force,
         }),
-    },
+    } satisfies CatalogCheckoutContractPdfRuntime,
     ...(workflowRunnerRegistry
       ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
       : {}),
