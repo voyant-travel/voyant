@@ -506,7 +506,6 @@
       ],
       "@voyant-travel/commerce/voyant": ["../commerce/dist/voyant.d.ts"],
       "@voyant-travel/core": ["../core/dist/index.d.ts"],
-      "@voyant-travel/core/config": ["../core/dist/config.d.ts"],
       "@voyant-travel/core/container": ["../core/dist/container.d.ts"],
       "@voyant-travel/core/custom-fields": ["../core/dist/custom-fields.d.ts"],
       "@voyant-travel/core/env": ["../core/dist/env.d.ts"],
