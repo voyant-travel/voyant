@@ -11,6 +11,7 @@
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
     "./project-admin-conventions": "./src/project-admin-conventions.ts",
+    "./project-workflow-job-conventions": "./src/project-workflow-job-conventions.ts",
     "./project": "./src/project.ts",
     "./profile": "./src/profile.ts",
     "./managed-jobs": "./src/managed-jobs.ts",
@@ -126,6 +127,11 @@
       "./project-admin-conventions": {
         "types": "./dist/project-admin-conventions.d.ts",
         "import": "./dist/project-admin-conventions.js"
+      },
+      "./project-workflow-job-conventions": {
+        "types": "./dist/project-workflow-job-conventions.d.ts",
+        "import": "./dist/project-workflow-job-conventions.js",
+        "default": "./dist/project-workflow-job-conventions.js"
       },
       "./project": {
         "types": "./dist/project.d.ts",

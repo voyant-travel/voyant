@@ -345,7 +345,7 @@ function withoutFinalExtension(filePath: string): string {
 }
 
 function isTypeScriptFile(fileName: string): boolean {
-  return fileName.endsWith(".ts")
+  return fileName.endsWith(".ts") && !fileName.endsWith(".d.ts")
 }
 
 function isRouteGroup(segment: string): boolean {

@@ -844,6 +844,16 @@ generation. Their schedules are provisioned from the owning package ids while
 the generated runtime imports the owning package exports. The operator keeps
 only graph-id-keyed bindings for deployment capabilities and local units.
 
+Implementation note: application convention compilation validates
+`src/workflows` and `src/jobs` without evaluating source. Workflow files
+directly default-export the pure `defineWorkflow(...)` result; job files export
+`schedule` plus a default handler. The compiler emits deterministic static
+registries under `.voyant/runtime` and rejects import escapes, stable-ID
+collisions, missing contract exports, registering/indirect workflow defaults,
+and unsupported runtime exports. Resolver integration and Operator runtime
+wiring are separate slices; no runtime directory scan or side-effect registry
+is introduced here.
+
 ## Action-Ledger Runtime Lowering
 
 Generated `VoyantGraphRuntime` units carry deterministic action declarations and

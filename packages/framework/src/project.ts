@@ -58,6 +58,16 @@ export type {
   VoyantProjectSchemaMigration,
   VoyantProjectSetupMigration,
 } from "./project-resolver.js"
+export type {
+  ProjectJobConvention,
+  ProjectWorkflowConvention,
+  ProjectWorkflowJobConventionAnalysis,
+  ProjectWorkflowJobConventionCompilation,
+  ProjectWorkflowJobConventionDiagnostic,
+  ProjectWorkflowJobConventionDiagnosticCode,
+  ProjectWorkflowJobConventionsOptions,
+  ProjectWorkflowJobGeneratedFile,
+} from "./project-workflow-job-conventions.js"
 
 /** Application-owned differences from the standard Operator distribution. */
 export interface DefineVoyantConfigInput extends OperatorDistributionDifferences {
@@ -109,6 +119,22 @@ export async function compileProjectAdminConventions(
 ): Promise<import("./project-admin-conventions.js").CompiledProjectAdminConventions> {
   const conventions = await import("./project-admin-conventions.js")
   return conventions.compileProjectAdminConventions(input)
+}
+
+export async function analyzeProjectWorkflowJobConventions(
+  options: import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionsOptions,
+): Promise<import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionAnalysis> {
+  const conventions = await import("./project-workflow-job-conventions.js")
+  return conventions.analyzeProjectWorkflowJobConventions(options)
+}
+
+export async function compileProjectWorkflowJobConventions(
+  options: import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionsOptions,
+): Promise<
+  import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionCompilation
+> {
+  const conventions = await import("./project-workflow-job-conventions.js")
+  return conventions.compileProjectWorkflowJobConventions(options)
 }
 
 export async function executeNodeMigrationPlan(
