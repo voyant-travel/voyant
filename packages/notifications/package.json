@@ -41,7 +41,7 @@
     "@voyant-travel/legal": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "liquidjs": "^10.27.1",
+    "liquidjs": "^10.27.2",
     "zod": "catalog:",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/workflows": "workspace:^"
