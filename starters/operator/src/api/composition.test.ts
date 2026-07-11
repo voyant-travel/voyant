@@ -1,5 +1,6 @@
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
+import { flightsRuntimePort } from "@voyant-travel/flights"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
@@ -339,7 +340,12 @@ describe("operator graph runtime composition", () => {
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/storage")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/realtime")
     expect(Object.keys(ports).sort()).toEqual(
-      [relationshipsRouteRuntimePort.id, realtimeRuntimePort.id, storageMediaRuntimePort.id].sort(),
+      [
+        flightsRuntimePort.id,
+        relationshipsRouteRuntimePort.id,
+        realtimeRuntimePort.id,
+        storageMediaRuntimePort.id,
+      ].sort(),
     )
     await expect(composeOperatorGraph()).resolves.toBeDefined()
   })
@@ -361,6 +367,20 @@ describe("operator graph runtime composition", () => {
     })
     expect(deselected.modules.some((module) => module.module.name === "relationships")).toBe(false)
     expect(deselected.routePosture.transactionalPaths).not.toContain("/v1/admin/relationships")
+  })
+
+  it("composes selected Flights exactly once and omits it when deselected", async () => {
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/flights")
+
+    const runtime = createGeneratedGraphRuntime()
+    const selected = await composeOperatorGraph(runtime)
+    expect(selected.modules.filter((module) => module.module.name === "flights")).toHaveLength(1)
+
+    const deselected = await composeOperatorGraph({
+      ...runtime,
+      modules: runtime.modules.filter((unit) => unit.id !== "@voyant-travel/flights"),
+    })
+    expect(deselected.modules.some((module) => module.module.name === "flights")).toBe(false)
   })
 
   it("initializes the real operator app from the generated graph runtime", async () => {

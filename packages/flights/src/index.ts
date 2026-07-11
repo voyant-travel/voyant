@@ -25,10 +25,13 @@ export * from "./contract/types.js"
 export {
   createFlightAdminRoutes,
   createFlightsHonoModule,
+  createFlightsVoyantRuntime,
   type FlightOrderPaymentSummary,
   type FlightPaymentIntegration,
   type FlightsHonoModuleOptions,
   type FlightsRouteOptions,
+  type FlightsRuntime,
+  flightsRuntimePort,
 } from "./hono.js"
 export {
   FLIGHTS_ENTITY_MODULE,
