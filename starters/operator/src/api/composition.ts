@@ -69,7 +69,11 @@ import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
-import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
+import {
+  type TripsDatabaseRuntime,
+  tripsDatabaseRuntimePort,
+  tripsRoutesRuntimePort,
+} from "@voyant-travel/trips/voyant"
 import {
   type WorkflowRunnerRegistryRuntime,
   workflowRunnerRegistryRuntimePort,
@@ -303,7 +307,9 @@ export function buildOperatorRuntimePorts(
         return {
           options: AUTO_GENERATE_CONTRACT_OPTIONS,
           withDb: (runtimeBindings, operation) =>
-            withDbFromEnv(runtimeBindings as AppBindings, operation),
+            withDbFromEnv(operatorBindings(runtimeBindings), (db) =>
+              operation(operatorPostgresDb(db)),
+            ),
           documentGenerator,
           documentStorage: createOperatorDocumentStorage(bindings),
           resolveBookingPiiService: () => createOperatorBookingPiiService(bindings),
@@ -332,8 +338,9 @@ export function buildOperatorRuntimePorts(
     ),
     [tripsRoutesRuntimePort.id]: createOperatorTripsRoutesOptions,
     [tripsDatabaseRuntimePort.id]: {
-      withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
-    },
+      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
+        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+    } satisfies TripsDatabaseRuntime,
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),

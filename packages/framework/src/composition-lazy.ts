@@ -15,7 +15,7 @@ import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checko
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import type { LazyRoutesLoader } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
-import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import type { CreateLegalHonoModuleOptions } from "@voyant-travel/legal"
 import type { CreateNotificationsHonoModuleOptions } from "@voyant-travel/notifications"
 import type { relationshipsService } from "@voyant-travel/relationships"
@@ -79,7 +79,6 @@ export interface FrameworkProviders {
     bindings: unknown,
   ) => import("@voyant-travel/finance/card-payment").CardPaymentStarter | null
   notificationsAutoConfirmAndDispatch?: CreateNotificationsHonoModuleOptions["autoConfirmAndDispatch"]
-  createChannelPushExtension: () => HonoExtension
   /**
    * OPTIONAL: the `@voyant-travel/flights` family has no first-party real
    * connector yet (only the demo adapter), so a deployment that doesn't run
@@ -921,8 +920,6 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         lazyAdminRoutes: unit.route((m) => m.adminRoutes),
       }
     },
-    "@voyant-travel/distribution/channel-push-extension": ({ capabilities }) =>
-      capabilities.createChannelPushExtension(),
     "@voyant-travel/finance/booking-tax-extension": () => {
       const unit = createLazyUnit(async () => {
         const [finance, settings] = await Promise.all([
