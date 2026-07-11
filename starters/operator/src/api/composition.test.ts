@@ -1,3 +1,5 @@
+// agent-quality: file-size exception -- owner: operator; this temporary cross-package
+// authority suite is deleted with operatorGraphRuntimeBindings in the central cutover.
 import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { catalogCheckoutApiRuntimePort } from "@voyant-travel/commerce/catalog-checkout-subscribers"
 import {
@@ -70,9 +72,7 @@ describe("operator graph runtime composition", () => {
   it("supplies request-scoped checkout options through the declared runtime port", () => {
     expect(
       buildOperatorRuntimePorts(new WorkflowRunnerRegistry())[catalogCheckoutApiRuntimePort.id],
-    ).toEqual(
-      expect.any(Function),
-    )
+    ).toEqual(expect.any(Function))
   })
 
   it("mounts selected package exports once in graph order", async () => {
