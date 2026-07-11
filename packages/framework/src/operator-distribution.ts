@@ -212,6 +212,10 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
       resolve: "@voyant-travel/notifications/reminder-subscribers-extension",
       owners: ["@voyant-travel/notifications"],
     },
+    {
+      resolve: "@voyant-travel/legal/booking-contract-extension",
+      owners: ["@voyant-travel/legal"],
+    },
   ],
 }
 

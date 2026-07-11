@@ -39,4 +39,22 @@ describe("createLegalHonoModule", () => {
 
     expect(runtime?.eventBus).toBe(eventBus)
   })
+
+  it("leaves booking subscriber registration to selected-graph composition", async () => {
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const container = createContainer()
+    const module = createLegalHonoModule({
+      resolveDb: () => ({}) as never,
+      resolveDocumentGenerator: () => vi.fn(),
+      autoGenerateContractOnConfirmed: {
+        enabled: true,
+        templateSlug: "customer-sales-agreement",
+      },
+    }).module
+
+    await module.bootstrap?.({ bindings: {}, container, eventBus })
+
+    expect(subscribe).not.toHaveBeenCalled()
+  })
 })

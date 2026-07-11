@@ -1,14 +1,17 @@
 import type { EventEnvelope } from "@voyant-travel/core"
 import { createContainer, createEventBus } from "@voyant-travel/core"
+import { assertPortConforms } from "@voyant-travel/core/project"
 import type { StorageProvider } from "@voyant-travel/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it, vi } from "vitest"
 
 import {
   createLegalBookingContractSubscriberDescriptor,
+  createLegalBookingContractVoyantRuntime,
   LEGAL_BOOKING_CONTRACT_SUBSCRIBER_ID,
   LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY,
   type LegalBookingContractSubscriberRuntime,
+  legalBookingContractSubscriberRuntimePort,
 } from "../../src/contracts/booking-contract-subscriber-runtime.js"
 import type { ResolveContractVariablesFn } from "../../src/contracts/service-auto-generate.js"
 import type { ContractDocumentGenerator } from "../../src/contracts/service-documents.js"
@@ -28,7 +31,7 @@ const bookingEvent = {
 function harness(options: { enabled?: boolean } = {}) {
   const db = {} as PostgresJsDatabase
   const bindings = { DATABASE_URL: "postgres://legal" }
-  const documentGenerator = vi.fn() as unknown as ContractDocumentGenerator
+  const documentGenerator = vi.fn<ContractDocumentGenerator>()
   const documentStorage = { name: "documents" } as StorageProvider
   const bookingPiiService = {} as never
   const lifecycleHooks = [vi.fn()]
@@ -79,6 +82,7 @@ describe("Legal booking-contract subscriber runtime", () => {
       container: test.container,
       eventBus: test.eventBus,
     })
+    expect(test.eventBus.subscribe).toHaveBeenCalledWith("booking.confirmed", expect.any(Function))
     await test.handler()?.(bookingEvent)
 
     expect({ id: descriptor.id, eventType: descriptor.eventType }).toEqual({
@@ -103,6 +107,37 @@ describe("Legal booking-contract subscriber runtime", () => {
         bindings: test.bindings,
       }),
     )
+  })
+
+  it("registers the host runtime only through the selected graph extension", async () => {
+    const test = harness()
+    const createRuntime = vi.fn(() => test.runtime)
+    const output = await createLegalBookingContractVoyantRuntime({
+      unitId: "@voyant-travel/legal#booking-contract-extension",
+      hasPort: () => true,
+      getPort: async () => ({ createRuntime }),
+    })
+    const container = createContainer()
+
+    await output.extension.bootstrap?.({
+      bindings: test.bindings,
+      container,
+      eventBus: createEventBus(),
+    })
+
+    expect(createRuntime).toHaveBeenCalledWith(test.bindings)
+    expect(container.resolve(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY)).toBe(test.runtime)
+  })
+
+  it("publishes a conformance-tested subscriber host port", async () => {
+    await expect(
+      assertPortConforms(legalBookingContractSubscriberRuntimePort, {
+        createRuntime: () => null,
+      }),
+    ).resolves.toBeUndefined()
+    await expect(
+      assertPortConforms(legalBookingContractSubscriberRuntimePort, {} as never),
+    ).rejects.toThrow(/must implement createRuntime/)
   })
 
   it("filters disabled generation without opening a database context", async () => {

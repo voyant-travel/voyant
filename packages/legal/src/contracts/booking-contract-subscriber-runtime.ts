@@ -1,9 +1,10 @@
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import type { BookingPiiService } from "@voyant-travel/bookings"
 import type { ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { StorageProvider } from "@voyant-travel/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { legalBookingContractSubscriberRuntimePort } from "./booking-contract-subscriber-port.js"
 import type { ContractLifecycleHook } from "./lifecycle.js"
 import {
   type AutoGenerateContractOptions,
@@ -114,6 +115,13 @@ function resolveLegalBookingContractSubscriberRuntime(
   )
 }
 
+export function registerLegalBookingContractSubscriberRuntime(
+  container: ModuleContainer,
+  runtime: LegalBookingContractSubscriberRuntime,
+): void {
+  container.register(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY, runtime)
+}
+
 function logNonSuccessResult(
   logger: Pick<Console, "error">,
   bookingId: string,
@@ -128,3 +136,25 @@ function logNonSuccessResult(
 
 export const legalBookingContractConfirmedSubscriber =
   createLegalBookingContractSubscriberDescriptor()
+
+/** Selected-graph adapter from the declared host port to the runtime container. */
+export const createLegalBookingContractVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    const host = await getPort(legalBookingContractSubscriberRuntimePort)
+    return {
+      extension: {
+        name: "booking-contract",
+        module: "legal",
+        bootstrap: async ({ bindings, container }) => {
+          const runtime = await host.createRuntime(bindings)
+          if (runtime) registerLegalBookingContractSubscriberRuntime(container, runtime)
+        },
+      },
+    }
+  },
+)
+
+export {
+  type LegalBookingContractSubscriberHost,
+  legalBookingContractSubscriberRuntimePort,
+} from "./booking-contract-subscriber-port.js"

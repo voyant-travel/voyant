@@ -1075,15 +1075,18 @@ extension contributes each handler exactly once and a deselected extension
 contributes neither the service nor handlers. Module-bootstrap compatibility
 registration and its tests have been removed.
 
-Legal now stages its booking-contract auto-generation handler as an executable
-package-owned subscriber descriptor on the unselected
-`@voyant-travel/legal#booking-contract-extension`. The existing Legal module
-bootstrap remains the compatibility activation path until a separate graph
-cutover removes it. That activation must coordinate contract generation with
-Notifications through explicit ordering semantics, such as a durable workflow
-dependency or a follow-up document-generated event. Registration order is not
-an ordering contract: the in-process event bus runs `booking.confirmed`
-subscribers independently and in parallel.
+Legal owns and executes booking-contract auto-generation from the selected
+`@voyant-travel/legal#booking-contract-extension`. Both the Legal API factory and
+subscriber extension consume manifest-declared typed ports; the Node host binds
+route services and the subscriber's database lifecycle, document generator,
+storage, PII resolver, options, and action-ledger context by port id. Operator no
+longer binds the Legal package id or registers a compatibility subscriber from
+the Legal API bootstrap. Deselecting the extension removes both its runtime
+service registration and subscriber runtime module. This cutover preserves the
+existing default deferrable delivery posture: `booking.confirmed` subscribers,
+including Notifications, still run independently and in parallel. Any future
+completion ordering must use a durable dependency or the existing
+`contract.document.generated` follow-up event rather than registration order.
 
 The broader event catalog is beyond the foundational substrate:
 

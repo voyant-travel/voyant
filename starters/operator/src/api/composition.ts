@@ -31,6 +31,11 @@ import {
 import { lazyProvider } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import { legalRuntimePort } from "@voyant-travel/legal"
+import {
+  type LegalBookingContractSubscriberRuntime,
+  legalBookingContractSubscriberRuntimePort,
+} from "@voyant-travel/legal/booking-contract-subscriber"
 import { notificationsRuntimePort } from "@voyant-travel/notifications"
 import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
@@ -94,9 +99,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   readDocumentContentBase64: typeof readOperatorDocumentContentBase64
   resolveDb: typeof resolveOperatorDb
   createOperatorDocumentStorage: typeof createOperatorDocumentStorage
-  resolveContractDocumentGenerator: typeof resolveOperatorContractDocumentGenerator
-  createBookingPiiService: typeof createOperatorBookingPiiService
-  autoGenerateContractOnConfirmed: typeof AUTO_GENERATE_CONTRACT_OPTIONS
   resolveBankTransferDetails: typeof resolveBankTransferDetails
   relationshipsService: FrameworkProviders["relationshipsService"]
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
@@ -250,6 +252,38 @@ export function buildOperatorProviders(): OperatorCapabilities {
 export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
   return {
     [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider(),
+    [legalRuntimePort.id]: {
+      resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
+      resolveDocumentStorage: createOperatorDocumentStorage,
+      resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
+      resolveBookingPiiService: createOperatorBookingPiiService,
+    },
+    [legalBookingContractSubscriberRuntimePort.id]: {
+      createRuntime(bindings: unknown): LegalBookingContractSubscriberRuntime | null {
+        const documentGenerator = resolveOperatorContractDocumentGenerator(bindings)
+        if (!documentGenerator) {
+          console.error(
+            "[legal] autoGenerateContractOnConfirmed.enabled=true but no documentGenerator resolved; skipping subscriber.",
+          )
+          return null
+        }
+        return {
+          options: AUTO_GENERATE_CONTRACT_OPTIONS,
+          withDb: (runtimeBindings, operation) =>
+            withDbFromEnv(runtimeBindings as AppBindings, operation),
+          documentGenerator,
+          documentStorage: createOperatorDocumentStorage(bindings),
+          resolveBookingPiiService: () => createOperatorBookingPiiService(bindings),
+          resolveVariables: AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
+          resolveActionLedgerContext: (event) => ({
+            userId: event.actorId,
+            actor: event.actorId ? "staff" : "system",
+            callerType: "internal",
+            isInternalRequest: true,
+          }),
+        }
+      },
+    },
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -536,19 +570,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       runtime.createOperatorFlightsHonoModule(createFlights),
     )
   },
-  "@voyant-travel/legal": ({ capabilities, runtimeExports, unit }) =>
-    singleRuntimeFactory<typeof import("@voyant-travel/legal").createLegalHonoModule>(
-      unit.id,
-      runtimeExports,
-    )({
-      resolveDb: capabilities.resolveDb,
-      resolveDocumentDownloadUrl: (bindings, storageKey) =>
-        capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-      resolveDocumentStorage: capabilities.createOperatorDocumentStorage,
-      resolveDocumentGenerator: capabilities.resolveContractDocumentGenerator,
-      resolveBookingPiiService: capabilities.createBookingPiiService,
-      autoGenerateContractOnConfirmed: capabilities.autoGenerateContractOnConfirmed,
-    }),
   "@voyant-travel/mice": ({ capabilities, runtimeExports, unit }) =>
     singleRuntimeFactory<typeof import("@voyant-travel/mice").createMiceHonoModule>(
       unit.id,
