@@ -1,4 +1,9 @@
+import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { catalogCheckoutApiRuntimePort } from "@voyant-travel/commerce/catalog-checkout-subscribers"
+import {
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { flightsRuntimePort } from "@voyant-travel/flights"
@@ -469,6 +474,66 @@ describe("operator graph runtime composition", () => {
     })
   })
 
+  it("activates the selected Commerce promotion-redemption subscriber exactly once", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const commerce = runtime.modules.find((unit) => unit.id === "@voyant-travel/commerce")
+    const composed = await composeOperatorGraph(runtime)
+    const runtimeModule = composed.modules.find(
+      (module) => module.module.name === "commerce.graph-runtime",
+    )
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const container = createContainer()
+
+    await runtimeModule?.module.bootstrap?.({
+      bindings: { DATABASE_URL: "postgres://test" },
+      container,
+      eventBus,
+    })
+
+    expect(
+      commerce?.references.filter(
+        (reference) =>
+          reference.facet === "subscribers.runtime" &&
+          reference.entityId ===
+            "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
+      ),
+    ).toHaveLength(1)
+    expect(
+      subscribe.mock.calls.filter(([eventType]) => eventType === "booking.confirmed"),
+    ).toHaveLength(1)
+    expect(container.has(BULK_REINDEX_SERVICE_KEY)).toBe(true)
+  })
+
+  it("does not lower Commerce promotion services or subscribers when deselected", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const composed = await composeOperatorGraph({
+      ...runtime,
+      modules: runtime.modules.filter((unit) => unit.id !== "@voyant-travel/commerce"),
+    })
+
+    expect(composed.modules.some((module) => module.module.name === "commerce.graph-runtime")).toBe(
+      false,
+    )
+    expect(composed.modules.some((module) => module.module.name === "commerce")).toBe(false)
+  })
+
+  it("fails composition when selected Commerce promotions omit a required host port", async () => {
+    const ports = buildOperatorRuntimePorts(new WorkflowRunnerRegistry())
+    const missingDatabase = Object.fromEntries(
+      Object.entries(ports).filter(([id]) => id !== promotionRedemptionDatabaseRuntimePort.id),
+    )
+
+    await expect(
+      composeVoyantGraphRuntime({
+        runtime: createGeneratedGraphRuntime(),
+        capabilities: buildOperatorProviders(),
+        bindings: operatorGraphRuntimeBindings,
+        ports: missingDatabase,
+      }),
+    ).rejects.toThrow(/requires runtime port "commerce\.promotion-redemption-database"/)
+  })
+
   it("does not lower Commerce checkout subscribers or require their ports when deselected", async () => {
     const runtime = createGeneratedGraphRuntime()
     const composed = await composeVoyantGraphRuntime({
@@ -592,6 +657,8 @@ describe("operator graph runtime composition", () => {
         notificationsRuntimePort.id,
         realtimeRuntimePort.id,
         storageMediaRuntimePort.id,
+        promotionRedemptionDatabaseRuntimePort.id,
+        promotionsBulkReindexRuntimePort.id,
       ]),
     )
     await expect(composeOperatorGraph()).resolves.toBeDefined()

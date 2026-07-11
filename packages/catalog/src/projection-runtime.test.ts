@@ -28,12 +28,14 @@ describe("Catalog projection subscriber runtime contract", () => {
   it("ships a conformance kit for injected projection runtimes", async () => {
     await expect(
       assertPortConforms(catalogProjectionRuntimePort, {
-        reindexEntity: async () => undefined,
-        deleteEntity: async () => undefined,
+        createRuntime: () => ({
+          reindexEntity: async () => undefined,
+          deleteEntity: async () => undefined,
+        }),
       }),
     ).resolves.toBeUndefined()
     await expect(assertPortConforms(catalogProjectionRuntimePort, {} as never)).rejects.toThrow(
-      /reindexEntity/,
+      /createRuntime/,
     )
   })
 

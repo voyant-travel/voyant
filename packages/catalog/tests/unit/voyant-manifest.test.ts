@@ -35,7 +35,7 @@ describe("catalog deployment manifest", () => {
     })
   })
 
-  it("owns inert declarations for the central Catalog indexing subscribers", () => {
+  it("owns executable declarations for Catalog indexing and booking snapshots", () => {
     expect(catalogVoyantModule.subscribers).toEqual(
       [
         ["index-product-created", "product.created"],
@@ -54,9 +54,22 @@ describe("catalog deployment manifest", () => {
           eventType === "booking.confirmed"
             ? "@voyant-travel/catalog/booking-snapshot-subscriber"
             : "@voyant-travel/catalog/index-subscribers",
+        runtime:
+          eventType === "booking.confirmed"
+            ? {
+                entry: "./booking-snapshot-subscriber",
+                export: "createCatalogBookingSnapshotSubscriberGraphRuntime",
+              }
+            : {
+                entry: "./index-subscribers",
+                export: expect.stringMatching(/^createCatalog.+IndexSubscriberGraphRuntime$/),
+              },
       })),
     )
-    expect(catalogVoyantModule.subscribers?.every((subscriber) => !subscriber.runtime)).toBe(true)
+    expect(catalogVoyantModule.runtimePorts).toEqual([
+      { id: "catalog.projection-runtime" },
+      { id: "catalog.booking-snapshot-runtime" },
+    ])
   })
 
   it("owns the booking engine and offers bridge declarations", () => {

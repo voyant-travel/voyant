@@ -203,8 +203,16 @@ export interface VoyantGraphRuntimeProviderLoader extends VoyantGraphRuntimeProv
 export interface VoyantGraphRuntimeUnitLoader
   extends Omit<
     VoyantGraphRuntimeUnitDefinition,
-    "config" | "providers" | "references" | "routes" | "secrets" | "tools" | "workflows"
+    | "config"
+    | "projectConfig"
+    | "providers"
+    | "references"
+    | "routes"
+    | "secrets"
+    | "tools"
+    | "workflows"
   > {
+  readonly projectConfig: Readonly<VoyantGraphJsonObject>
   references: readonly VoyantGraphRuntimeReferenceLoader[]
   config: readonly VoyantGraphRuntimeConfigLoader[]
   secrets: readonly VoyantGraphRuntimeSecretLoader[]
@@ -340,6 +348,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
     VoyantGraphRuntimeUnitDefinition,
     | "actions"
     | "config"
+    | "projectConfig"
     | "providers"
     | "references"
     | "requiredPorts"
@@ -352,6 +361,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
     | "tools"
     | "workflows"
   > {
+  projectConfig: VoyantGraphJsonObject
   references: readonly VoyantGraphRuntimeReferenceDefinition[]
   config: readonly VoyantGraphRuntimeConfigDefinition[]
   secrets: readonly VoyantGraphRuntimeSecretDefinition[]
@@ -479,6 +489,7 @@ function normalizeRuntimeUnitDefinition(
 
   return {
     ...unit,
+    projectConfig: unit.projectConfig ?? {},
     references,
     config: [...(unit.config ?? [])],
     secrets: [...(unit.secrets ?? [])],
@@ -579,7 +590,7 @@ function createRuntimeUnitLoader(
     kind: unit.kind,
     packageName: unit.packageName,
     order: unit.order,
-    ...(unit.projectConfig ? { projectConfig: unit.projectConfig } : {}),
+    projectConfig: unit.projectConfig,
     ...(unit.runtimeReferenceId ? { runtimeReferenceId: unit.runtimeReferenceId } : {}),
     references,
     config,

@@ -6,6 +6,10 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "./checkout/runtime-ports.js"
+import {
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "./promotions/runtime-ports.js"
 
 const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-index"
 const commerceAdminRuntime = {
@@ -34,6 +38,10 @@ export const commerceVoyantModule = defineModule({
   id: "@voyant-travel/commerce",
   packageName: "@voyant-travel/commerce",
   localId: "commerce",
+  runtimePorts: [
+    requirePort(promotionRedemptionDatabaseRuntimePort),
+    requirePort(promotionsBulkReindexRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/commerce#api.pricing.admin",
@@ -122,6 +130,10 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
       eventType: "booking.confirmed",
       source: "@voyant-travel/commerce/promotion-redemption-subscriber",
+      runtime: {
+        entry: "./promotion-redemption-subscriber",
+        export: "createPromotionRedemptionSubscriberGraphRuntime",
+      },
     },
     {
       id: "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",

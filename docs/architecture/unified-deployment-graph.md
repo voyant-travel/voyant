@@ -574,7 +574,11 @@ provider selection and must be satisfied by graph provider declarations. Before
 exposing a bound implementation, composition runs the port's public conformance
 kit. Factories use `hasPort(...)` before requesting an optional runtime port;
 required and optional declarations remain distinct in lowered graph metadata.
-Legacy
+The framework creates one factory context per selected runtime unit and reuses
+that exact context across the unit's API and subscriber facets. The context also
+exposes the owning loader's normalized, JSON-safe `projectConfig`; config from
+another selected unit is never merged into it. Deselected units remain behind
+their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
 public factories have not adopted this contract.
 
@@ -1026,17 +1030,16 @@ business failures still settle without retry, and infrastructure errors still
 escape to the outbox retry path. `check-storefront-subscriber-authority`
 mechanically prevents a central or starter-owned registration from returning.
 
-The remaining Operator subscriber authorities are intentionally explicit:
-
-- `catalogBridgeBundle`: `product.created`, `product.updated`,
-  `product.deleted`, `product.content.changed`, `availability.slot.changed`,
-  `pricing.rule.changed`, `product.publication.changed`, `promotion.changed`,
-  and two distinct `booking.confirmed` handlers
-
-These entries remain until each owning package manifest has executable runtime
-references and direct selected-graph parity. Deployment-local ordering,
-configuration, or orchestration is not sufficient reason to relabel a standard
-package subscriber as migrated.
+Catalog now owns and executes its eight index subscribers and idempotent booking
+snapshot subscriber through direct manifest runtime references. Its package
+factories validate event payloads, preserve sequential multi-product indexing,
+and register only the selected descriptor. Node hosts provide Typesense/indexer
+composition and snapshot database access through required typed runtime ports.
+The Operator no longer carries `catalogBridgeBundle`; deselecting Catalog removes
+all nine subscriber registrations and does not resolve either host port. Catalog
+snapshot capture remains ordered before the Commerce promotion-redemption
+subscriber in the standard generated module graph, while both handlers retain
+independent idempotency and outbox retry behavior.
 
 Finance owns and executes booking-schedule generation from its selected
 `booking.confirmed` subscriber runtime. Operator contributes only the payment
@@ -1097,6 +1100,15 @@ workflow-runner registry through required typed runtime ports. Selection without
 those services fails during composition; deselecting the extension loads none of
 its subscribers or ports. Operator no longer carries a parallel bundle or
 Commerce package-id binding.
+
+Commerce also owns and executes promotion redemption from its selected module's
+`booking.confirmed` subscriber. The module requires typed database-lifecycle and
+bulk-reindex service ports; its package runtime registers the bulk-reindex host
+service before subscribing, preserving the former Operator bootstrap ordering.
+The redemption handler still reads quotes independently of catalog snapshot
+capture, records idempotently, and warns without rejecting recorder failures.
+Deselecting Commerce removes both the subscriber and service bootstrap, and the
+Operator no longer lists a promotions runtime plugin or redemption handler.
 
 The broader event catalog is beyond the foundational substrate:
 

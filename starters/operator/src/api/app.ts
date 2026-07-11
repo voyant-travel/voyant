@@ -1,4 +1,3 @@
-import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import {
   composeVoyantGraphRuntime,
@@ -22,7 +21,6 @@ import {
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/operator-runtime-adapter"
-import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
 
 /**
  * Process-wide registry of workflow runners. Selected package runtimes register
@@ -91,19 +89,6 @@ export const app = mountApp<AppBindings>({
   publicPaths: [...graphComposition.routePosture.publicPaths],
   accessResources: graphComposition.accessResources,
   accessCatalog: effectiveAccessCatalog,
-  plugins: [
-    {
-      name: "operator-promotions-runtime",
-      bootstrap: async ({ bindings, container }) => {
-        const { createBulkReindexProductsService } = await import("./lib/bulk-reindex-service")
-        container.register(
-          BULK_REINDEX_SERVICE_KEY,
-          createBulkReindexProductsService(bindings as AppBindings),
-        )
-      },
-    },
-    catalogBridgeBundle,
-  ],
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>

@@ -19,6 +19,14 @@ import type {
   IndexerAdapter,
 } from "@voyant-travel/catalog"
 import {
+  type CatalogBookingSnapshotRuntimeProvider,
+  catalogBookingSnapshotRuntimePort,
+} from "@voyant-travel/catalog/booking-snapshot-subscriber"
+import {
+  type CatalogProjectionRuntimeProvider,
+  catalogProjectionRuntimePort,
+} from "@voyant-travel/catalog/projection-runtime"
+import {
   type AcceptanceSignatureLegalPort,
   type CatalogCheckoutApiRuntime,
   type CatalogCheckoutContractPdfRuntime,
@@ -28,6 +36,13 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "@voyant-travel/commerce/catalog-checkout-subscribers"
+import {
+  type PromotionRedemptionDatabaseRuntime,
+  type PromotionsBulkReindexRuntime,
+  promotionRedemptionDatabaseRuntimePort,
+  promotionsBulkReindexRuntimePort,
+} from "@voyant-travel/commerce/promotion-redemption-subscriber"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import { flightsRuntimePort } from "@voyant-travel/flights"
@@ -312,6 +327,14 @@ export function buildOperatorRuntimePorts(
     },
     [catalogCheckoutApiRuntimePort.id]: ((context) =>
       createOperatorCheckoutStartOptions(context)) satisfies CatalogCheckoutApiRuntime,
+    [catalogProjectionRuntimePort.id]:
+      createOperatorCatalogProjectionRuntimeProvider() satisfies CatalogProjectionRuntimeProvider,
+    [catalogBookingSnapshotRuntimePort.id]: {
+      createRuntime: (bindings) =>
+        import("./runtime/catalog-subscriber-runtime").then((runtime) =>
+          runtime.createOperatorCatalogBookingSnapshotRuntime(bindings),
+        ),
+    } satisfies CatalogBookingSnapshotRuntimeProvider,
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -343,9 +366,31 @@ export function buildOperatorRuntimePorts(
           force,
         }),
     } satisfies CatalogCheckoutContractPdfRuntime,
+    [promotionRedemptionDatabaseRuntimePort.id]: {
+      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
+        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+    } satisfies PromotionRedemptionDatabaseRuntime,
+    [promotionsBulkReindexRuntimePort.id]: {
+      createService: (bindings: unknown) =>
+        import("./lib/bulk-reindex-service").then((runtime) =>
+          runtime.createBulkReindexProductsService(operatorBindings(bindings)),
+        ),
+    } satisfies PromotionsBulkReindexRuntime,
     ...(workflowRunnerRegistry
       ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
       : {}),
+  }
+}
+
+function createOperatorCatalogProjectionRuntimeProvider(): CatalogProjectionRuntimeProvider {
+  let runtime: ReturnType<CatalogProjectionRuntimeProvider["createRuntime"]> | undefined
+  return {
+    createRuntime(bindings) {
+      runtime ??= import("./runtime/catalog-subscriber-runtime").then((module) =>
+        module.createOperatorCatalogProjectionRuntime(bindings),
+      )
+      return runtime
+    },
   }
 }
 
