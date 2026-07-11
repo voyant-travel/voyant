@@ -68,6 +68,10 @@ export const inventoryVoyantModule = defineModule({
         defaultRuntime: "node",
       },
       source: "@voyant-travel/inventory/workflows",
+      runtime: {
+        entry: "@voyant-travel/inventory/workflows",
+        export: "productsGeneratePdfWorkflow",
+      },
     },
   ],
   access: {

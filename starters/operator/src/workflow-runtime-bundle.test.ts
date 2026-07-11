@@ -5,14 +5,12 @@ import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { promisify } from "node:util"
 
-import { clearChannelPushDeps } from "@voyant-travel/distribution/channel-push-workflows"
 import { __resetRegistry } from "@voyant-travel/workflows"
 import { afterEach, describe, expect, it } from "vitest"
 
 const execFileAsync = promisify(execFile)
 
 afterEach(() => {
-  clearChannelPushDeps()
   __resetRegistry()
 })
 
@@ -31,7 +29,7 @@ describe("compiled operator workflow bundle", () => {
           "workflows",
           "build",
           "--file",
-          "src/workflows.ts",
+          "src/workflow-runtime.ts",
           "--out",
           outDir,
           "--platform",
@@ -72,7 +70,6 @@ function bundleStepScript(outDir: string): string {
   return `
 ;(async () => {
 const bundle = await import(${JSON.stringify(bundleUrl)})
-const { getWorkflow } = await import("@voyant-travel/workflows")
 const { handleStepRequest } = await import("@voyant-travel/workflows/handler")
 const { PROTOCOL_VERSION } = await import("@voyant-travel/workflows/protocol")
 
@@ -94,13 +91,25 @@ const db = {
   },
 }
 
-await bundle.bootstrapWorkflowBundle({
-  env: { ...process.env, DATABASE_URL: "postgres://example.invalid/voyant" },
-  channelPushDeps: {
-    db,
-    registry: { resolveByConnection: () => undefined },
-    logger: { error: () => undefined },
+const services = {
+  resolve(name) {
+    if (name === "distribution.workflows.channel-push.runtime") {
+      return {
+        db,
+        registry: { resolveByConnection: () => undefined },
+        logger: { error: () => undefined },
+      }
+    }
+    throw new Error("Unexpected service: " + name)
   },
+  has(name) {
+    return name === "distribution.workflows.channel-push.runtime"
+  },
+}
+
+const runtime = await bundle.bootstrapWorkflowBundle({
+  env: { ...process.env, DATABASE_URL: "postgres://example.invalid/voyant" },
+  services,
 })
 
 const result = await handleStepRequest({
@@ -132,7 +141,8 @@ const result = await handleStepRequest({
     startedAt: Date.now(),
   },
 }, {
-  workflowResolver: { resolve: (workflowId) => getWorkflow(workflowId) },
+  workflowResolver: runtime.workflowResolver,
+  services: runtime.services,
 })
 
 console.log(JSON.stringify({ result, selectCalls }))

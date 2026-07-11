@@ -1,4 +1,3 @@
-import { clearChannelPushDeps } from "@voyant-travel/distribution/channel-push-workflows"
 import { __resetRegistry } from "@voyant-travel/workflows"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -7,13 +6,12 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 const workflowImportTimeoutMs = 30_000
 
 afterEach(() => {
-  clearChannelPushDeps()
   __resetRegistry()
   vi.resetModules()
   vi.unstubAllEnvs()
 })
 
-describe("operator workflow entry", () => {
+describe("operator graph workflow entry", () => {
   it(
     "imports without blocking module evaluation",
     async () => {
@@ -21,7 +19,7 @@ describe("operator workflow entry", () => {
 
       await expect(
         Promise.race([
-          import("./workflows.js"),
+          import("./workflow-runtime.js"),
           new Promise((_, reject) =>
             setTimeout(
               () => reject(new Error("workflow entry import timed out")),
@@ -37,7 +35,7 @@ describe("operator workflow entry", () => {
   it("bootstraps channel-push deps without opening the db client", async () => {
     vi.stubEnv("DATABASE_URL", "postgres://example.invalid/voyant")
 
-    const { createLazyWorkflowDb } = await import("./workflows.js")
+    const { createLazyWorkflowDb } = await import("./api/runtime/operator-workflow-services.js")
     let dbCreated = 0
     const db = createLazyWorkflowDb(() => {
       dbCreated += 1
@@ -56,19 +54,28 @@ describe("operator workflow entry", () => {
     async () => {
       vi.stubEnv("DATABASE_URL", "postgres://example.invalid/voyant")
 
-      const { bootstrapWorkflowBundle } = await import("./workflows.js")
+      const { bootstrapWorkflowBundle } = await import("./workflow-runtime.js")
 
-      await expect(
-        Promise.race([
-          bootstrapWorkflowBundle(),
-          new Promise((_, reject) =>
-            setTimeout(
-              () => reject(new Error("workflow bootstrap timed out")),
-              workflowImportTimeoutMs,
-            ),
+      const runtime = await Promise.race([
+        bootstrapWorkflowBundle(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("workflow bootstrap timed out")),
+            workflowImportTimeoutMs,
           ),
+        ),
+      ])
+
+      expect(runtime).toMatchObject({
+        workflows: expect.arrayContaining([
+          expect.objectContaining({ id: "bookings.expire-stale-holds" }),
+          expect.objectContaining({ id: "notifications.send-due-reminders" }),
         ]),
-      ).resolves.toBeUndefined()
+      })
+      expect(runtime.services.has("bookings.workflows.expire-stale-holds.runtime")).toBe(true)
+      expect(runtime.services.has("inventory.workflows.generate-product-pdf.runtime")).toBe(true)
+      expect(runtime.services.has("notifications.workflows.reminders.runtime")).toBe(true)
+      expect(runtime.services.has("distribution.workflows.channel-push.runtime")).toBe(true)
     },
     workflowImportTimeoutMs,
   )

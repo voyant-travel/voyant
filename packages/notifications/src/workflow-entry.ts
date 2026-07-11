@@ -2,11 +2,12 @@ import type { WorkflowDescriptor } from "@voyant-travel/core"
 import { workflow } from "@voyant-travel/workflows"
 import { deliverQueuedNotificationReminder } from "./tasks/deliver-reminder.js"
 import { sendDueNotificationReminders } from "./tasks/send-due-reminders.js"
-import type {
-  DeliverReminderWorkflowInput,
-  DeliverReminderWorkflowOutput,
-  NotificationReminderWorkflowRuntime,
-  SendDueRemindersWorkflowInput,
+import {
+  type DeliverReminderWorkflowInput,
+  type DeliverReminderWorkflowOutput,
+  NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+  type NotificationReminderWorkflowRuntime,
+  type SendDueRemindersWorkflowInput,
 } from "./workflow-runtime.js"
 
 export type CreateNotificationReminderWorkflowsOptions = NotificationReminderWorkflowRuntime
@@ -30,6 +31,41 @@ export const notificationsSendDueRemindersWorkflowManifest = {
     schedule: { cron: "0 * * * *", name: "hourly" },
   },
 } satisfies WorkflowDescriptor
+
+export const notificationsDeliverReminderWorkflow = workflow<
+  DeliverReminderWorkflowInput,
+  DeliverReminderWorkflowOutput
+>({
+  ...notificationsDeliverReminderWorkflowManifest.config,
+  id: notificationsDeliverReminderWorkflowManifest.id,
+  async run(input, ctx) {
+    return runDeliverReminder(
+      ctx.services.resolve<NotificationReminderWorkflowRuntime>(
+        NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+      ),
+      input,
+    )
+  },
+})
+
+export const notificationsSendDueRemindersWorkflow = workflow<
+  SendDueRemindersWorkflowInput,
+  Awaited<ReturnType<typeof sendDueNotificationReminders>>
+>({
+  ...notificationsSendDueRemindersWorkflowManifest.config,
+  id: notificationsSendDueRemindersWorkflowManifest.id,
+  async run(input, ctx) {
+    return runSendDueReminders(
+      ctx.services.resolve<NotificationReminderWorkflowRuntime>(
+        NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+      ),
+      input,
+      async (job) => {
+        await ctx.invoke(notificationsDeliverReminderWorkflow, job, { detach: true })
+      },
+    )
+  },
+})
 
 /** Register the reminder delivery worker and its hourly enqueueing sweep. */
 export function createNotificationReminderWorkflows(
@@ -83,9 +119,10 @@ async function runSendDueReminders(
   })
 }
 
-export type {
-  DeliverReminderWorkflowInput,
-  DeliverReminderWorkflowOutput,
-  NotificationReminderWorkflowRuntime,
-  SendDueRemindersWorkflowInput,
+export {
+  type DeliverReminderWorkflowInput,
+  type DeliverReminderWorkflowOutput,
+  NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+  type NotificationReminderWorkflowRuntime,
+  type SendDueRemindersWorkflowInput,
 } from "./workflow-runtime.js"

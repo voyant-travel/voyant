@@ -9,7 +9,10 @@ import {
   inventoryExtrasVoyantModule,
   inventoryVoyantModule,
 } from "../../src/voyant.js"
-import { createProductsGeneratePdfWorkflow } from "../../src/workflow-entry.js"
+import {
+  createProductsGeneratePdfWorkflow,
+  productsGeneratePdfWorkflow,
+} from "../../src/workflow-entry.js"
 
 describe("inventory deployment manifests", () => {
   it("owns the inventory and extras module surfaces", () => {
@@ -36,6 +39,10 @@ describe("inventory deployment manifests", () => {
         {
           id: "products.generate-pdf",
           source: "@voyant-travel/inventory/workflows",
+          runtime: {
+            entry: "@voyant-travel/inventory/workflows",
+            export: "productsGeneratePdfWorkflow",
+          },
         },
       ],
     })
@@ -133,7 +140,11 @@ describe("inventory deployment manifests", () => {
     expect(definition.config.defaultRuntime).toBe("node")
   })
 
-  it("defers executable PDF workflow runtime activation", () => {
-    expect(inventoryVoyantModule.workflows?.[0]).not.toHaveProperty("runtime")
+  it("exports the declared executable PDF workflow", () => {
+    expect(productsGeneratePdfWorkflow.id).toBe(inventoryVoyantModule.workflows?.[0]?.id)
+    expect(inventoryVoyantModule.workflows?.[0]?.runtime).toEqual({
+      entry: "@voyant-travel/inventory/workflows",
+      export: "productsGeneratePdfWorkflow",
+    })
   })
 })

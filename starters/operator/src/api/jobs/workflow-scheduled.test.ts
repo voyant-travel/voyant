@@ -8,7 +8,7 @@ import {
 
 describe("runScheduledWorkflow", () => {
   it("triggers graph workflow schedules through the operator workflow driver", async () => {
-    const bootstrapWorkflowBundle = vi.fn()
+    const loadWorkflowRuntime = vi.fn()
     const registerManifestCalls: Parameters<WorkflowDriver["registerManifest"]>[] = []
     const triggerCalls: unknown[][] = []
     const driver = {
@@ -50,28 +50,40 @@ describe("runScheduledWorkflow", () => {
         VOYANT_CLOUD_ENVIRONMENT: "production",
       } as AppBindings,
       {
-        importWorkflowBundle: async () => ({ bootstrapWorkflowBundle }),
-        createWorkflowDriver: () => () => driver,
-        listRegisteredWorkflows: () => [
-          {
+        loadWorkflowRuntime: async (runtimeEnv) => {
+          loadWorkflowRuntime(runtimeEnv)
+          const workflow = {
             id: "notifications.send-due-reminders",
             config: {
               id: "notifications.send-due-reminders",
-              defaultRuntime: "node",
+              defaultRuntime: "node" as const,
               schedule: { cron: "0 * * * *" },
               async run() {
                 return {}
               },
             },
-          },
-        ],
-        listEventFilters: () => [],
+          }
+          return {
+            workflows: [workflow],
+            eventFilters: [],
+            workflowResolver: {
+              resolve: (workflowId) => (workflowId === workflow.id ? workflow : undefined),
+            },
+            services: {
+              resolve(name) {
+                throw new Error(`Unexpected service: ${name}`)
+              },
+              has: () => false,
+            },
+          }
+        },
+        createWorkflowDriver: () => () => driver,
       },
     )
 
-    expect(bootstrapWorkflowBundle).toHaveBeenCalledWith({
-      env: expect.objectContaining({ VOYANT_CLOUD_APP_SLUG: "operator" }),
-    })
+    expect(loadWorkflowRuntime).toHaveBeenCalledWith(
+      expect.objectContaining({ VOYANT_CLOUD_APP_SLUG: "operator" }),
+    )
     expect(registerManifestCalls).toEqual([
       [
         {

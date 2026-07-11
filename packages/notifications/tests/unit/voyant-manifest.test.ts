@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 import { notificationsVoyantModule } from "../../src/voyant.js"
-import { createNotificationReminderWorkflows } from "../../src/workflow-entry.js"
+import {
+  createNotificationReminderWorkflows,
+  notificationsDeliverReminderWorkflow,
+  notificationsSendDueRemindersWorkflow,
+} from "../../src/workflow-entry.js"
 
 describe("notifications deployment manifest", () => {
   it("owns the package deployment surfaces", () => {
@@ -25,6 +29,10 @@ describe("notifications deployment manifest", () => {
         {
           id: "notifications.deliver-reminder",
           source: "@voyant-travel/notifications/workflows",
+          runtime: {
+            entry: "@voyant-travel/notifications/workflows",
+            export: "notificationsDeliverReminderWorkflow",
+          },
           config: {
             retry: { max: 3, backoff: "exponential", maxDelay: "300s" },
           },
@@ -32,6 +40,10 @@ describe("notifications deployment manifest", () => {
         {
           id: "notifications.send-due-reminders",
           source: "@voyant-travel/notifications/workflows",
+          runtime: {
+            entry: "@voyant-travel/notifications/workflows",
+            export: "notificationsSendDueRemindersWorkflow",
+          },
           config: { schedule: { cron: "0 * * * *", name: "hourly" } },
         },
       ],
@@ -47,11 +59,13 @@ describe("notifications deployment manifest", () => {
     ])
   })
 
-  it("defers executable workflow runtime activation", () => {
-    expect(notificationsVoyantModule.workflows).toEqual([
-      expect.not.objectContaining({ runtime: expect.anything() }),
-      expect.not.objectContaining({ runtime: expect.anything() }),
-    ])
+  it("exports workflow runtime descriptors matching the manifest ids", () => {
+    expect(notificationsDeliverReminderWorkflow.id).toBe(
+      notificationsVoyantModule.workflows?.[0]?.id,
+    )
+    expect(notificationsSendDueRemindersWorkflow.id).toBe(
+      notificationsVoyantModule.workflows?.[1]?.id,
+    )
   })
 
   it("preserves configurable reminder workflow factories", () => {

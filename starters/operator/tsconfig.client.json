@@ -2026,8 +2026,8 @@
     "src/hono-api-dispatch.ts",
     "src/hono-api-dispatch.test.ts",
     "src/scheduled-crons.ts",
-    "src/workflows.ts",
-    "src/workflows-bundle.test.ts",
-    "src/workflows-import.test.ts"
+    "src/workflow-runtime.ts",
+    "src/workflow-runtime-bundle.test.ts",
+    "src/workflow-runtime.test.ts"
   ]
 }

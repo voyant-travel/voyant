@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
 import {
+  channelAvailabilityPushWorkflow,
+  channelBookingPushWorkflow,
+  channelContentPushWorkflow,
+} from "../../src/channel-push/workflow-entry.js"
+import {
   createChannelPushExtension,
   distributionBookingExtension,
   distributionHonoModule,
@@ -95,5 +100,31 @@ describe("distribution deployment manifests", () => {
     expect(suppliersHonoModule.module.name).toBe("suppliers")
     expect(distributionBookingExtension.extension.module).toBe("bookings")
     expect(createChannelPushExtension).toBeTypeOf("function")
+  })
+
+  it("references each package-owned workflow definition", () => {
+    expect(distributionChannelPushVoyantPlugin.workflows).toEqual([
+      expect.objectContaining({
+        id: channelBookingPushWorkflow.id,
+        runtime: {
+          entry: "@voyant-travel/distribution/channel-push-workflows",
+          export: "channelBookingPushWorkflow",
+        },
+      }),
+      expect.objectContaining({
+        id: channelAvailabilityPushWorkflow.id,
+        runtime: {
+          entry: "@voyant-travel/distribution/channel-push-workflows",
+          export: "channelAvailabilityPushWorkflow",
+        },
+      }),
+      expect.objectContaining({
+        id: channelContentPushWorkflow.id,
+        runtime: {
+          entry: "@voyant-travel/distribution/channel-push-workflows",
+          export: "channelContentPushWorkflow",
+        },
+      }),
+    ])
   })
 })

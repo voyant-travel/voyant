@@ -29,6 +29,7 @@ import {
 } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
+import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import { createRealtimeHonoModule } from "@voyant-travel/realtime"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
@@ -47,6 +48,12 @@ import {
   resolveOperatorDb,
   resolveOperatorDocumentDownloadUrl,
 } from "./runtime/operator-runtime-adapter"
+import {
+  registerBookingsWorkflowService,
+  registerDistributionWorkflowService,
+  registerInventoryWorkflowService,
+  registerNotificationsWorkflowService,
+} from "./runtime/operator-workflow-services"
 import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
@@ -501,7 +508,10 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         accommodation: accommodationsOverview.enrichStayBookingOverviewItems,
       },
     })
-    return { ...configured, anonymous: true }
+    return withModuleWorkflowService(
+      { ...configured, anonymous: true },
+      registerBookingsWorkflowService,
+    )
   },
   "@voyant-travel/finance": createOperatorFinanceGraphModule,
   "@voyant-travel/flights": async ({ runtimeExports, unit }) => {
@@ -535,11 +545,16 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       resolveDelegatePersonById: async (db, personId) =>
         (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
     }),
+  "@voyant-travel/inventory": ({ runtimeExports, unit }) =>
+    withModuleWorkflowService(
+      singleRuntimeValue<HonoModule>(unit.id, runtimeExports),
+      registerInventoryWorkflowService,
+    ),
   "@voyant-travel/notifications": ({ capabilities, runtimeExports, unit }) => {
     const createNotifications = singleRuntimeFactory<
       typeof import("@voyant-travel/notifications").createNotificationsHonoModule
     >(unit.id, runtimeExports)
-    return createNotifications({
+    const configured = createNotifications({
       resolveProviders: capabilities.resolveNotificationProviders,
       resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
       resolveDocumentAttachmentResolver: (bindings) => async (document) => {
@@ -574,6 +589,7 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         ...capabilities.notificationsAutoConfirmAndDispatch,
       },
     })
+    return withModuleWorkflowService(configured, registerNotificationsWorkflowService)
   },
   "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) => {
     const trips = singleRuntimeFactory<typeof import("@voyant-travel/trips").createTripsHonoModule>(
@@ -585,13 +601,19 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
     })
     return { ...trips, module: { ...trips.module, requiresTransactionalDb: true } }
   },
-  "@voyant-travel/distribution#channel-push-extension": ({ capabilities, runtimeExports, unit }) =>
-    capabilities.createChannelPushExtension(
+  "@voyant-travel/distribution#channel-push-extension": ({
+    capabilities,
+    runtimeExports,
+    unit,
+  }) => {
+    const configured = capabilities.createChannelPushExtension(
       singleRuntimeFactory<typeof import("@voyant-travel/distribution").createChannelPushExtension>(
         unit.id,
         runtimeExports,
       ),
-    ),
+    )
+    return withExtensionWorkflowService(configured, registerDistributionWorkflowService)
+  },
   "@voyant-travel/finance#booking-tax-extension": async ({ runtimeExports, unit }) => {
     const createBookingTax = singleRuntimeFactory<
       typeof import("@voyant-travel/finance").createBookingTaxHonoExtension
@@ -643,6 +665,45 @@ function singleRuntimeValue<T>(unitId: string, runtimeExports: readonly unknown[
     )
   }
   return runtimeExports[0] as T
+}
+
+type WorkflowServiceRegistration = (
+  container: import("@voyant-travel/core").ModuleContainer,
+  bindings: AppBindings,
+) => Promise<void> | void
+
+function withModuleWorkflowService<T extends HonoModule>(
+  configured: T,
+  register: WorkflowServiceRegistration,
+): T {
+  const bootstrap = configured.module.bootstrap
+  return {
+    ...configured,
+    module: {
+      ...configured.module,
+      bootstrap: async (ctx) => {
+        await register(ctx.container, ctx.bindings as AppBindings)
+        await bootstrap?.(ctx)
+      },
+    },
+  }
+}
+
+function withExtensionWorkflowService<T extends HonoExtension>(
+  configured: T,
+  register: WorkflowServiceRegistration,
+): T {
+  const bootstrap = configured.extension.bootstrap
+  return {
+    ...configured,
+    extension: {
+      ...configured.extension,
+      bootstrap: async (ctx) => {
+        await register(ctx.container, ctx.bindings as AppBindings)
+        await bootstrap?.(ctx)
+      },
+    },
+  }
 }
 
 async function createOperatorFinanceGraphModule({

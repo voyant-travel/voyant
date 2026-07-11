@@ -377,6 +377,7 @@ async function main(): Promise<void> {
     "deployment-graph.generated.json",
     "src/runtime-entry.generated.ts",
     "src/graph-runtime.generated.ts",
+    "src/workflows.ts",
   ]) {
     if (existsSync(join(operatorRoot, forbidden))) {
       failures.push(`expected obsolete operator authority/artifact ${forbidden} to stay deleted`)

@@ -4,7 +4,10 @@ import {
   bookingsSupplierVoyantPlugin,
   bookingsVoyantModule,
 } from "../../src/voyant.js"
-import { createBookingsExpireStaleHoldsWorkflow } from "../../src/workflow-entry.js"
+import {
+  bookingsExpireStaleHoldsWorkflow,
+  createBookingsExpireStaleHoldsWorkflow,
+} from "../../src/workflow-entry.js"
 
 describe("bookings deployment manifest", () => {
   it("owns the package deployment surfaces", () => {
@@ -35,11 +38,15 @@ describe("bookings deployment manifest", () => {
           config: {
             schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
           },
+          runtime: {
+            entry: "@voyant-travel/bookings/workflows",
+            export: "bookingsExpireStaleHoldsWorkflow",
+          },
         },
       ],
     })
 
-    expect(bookingsVoyantModule.workflows[0]).not.toHaveProperty("runtime")
+    expect(bookingsExpireStaleHoldsWorkflow.id).toBe(bookingsVoyantModule.workflows[0]?.id)
   })
 
   it("owns the requirements module and supplier extension", () => {

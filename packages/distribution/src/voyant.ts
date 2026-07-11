@@ -181,16 +181,28 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       id: "channel.booking.push",
       config: { defaultRuntime: "node" },
       source: "@voyant-travel/distribution/channel-push-workflows",
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelBookingPushWorkflow",
+      },
     },
     {
       id: "channel.availability.push",
       config: { defaultRuntime: "node" },
       source: "@voyant-travel/distribution/channel-push-workflows",
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelAvailabilityPushWorkflow",
+      },
     },
     {
       id: "channel.content.push",
       config: { defaultRuntime: "node" },
       source: "@voyant-travel/distribution/channel-push-workflows",
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelContentPushWorkflow",
+      },
     },
   ],
   meta: {

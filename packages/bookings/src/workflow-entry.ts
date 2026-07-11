@@ -5,7 +5,10 @@ import {
   type ExpireStaleBookingHoldsResult,
   expireStaleBookingHolds,
 } from "./tasks/expire-stale-holds.js"
-import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime.js"
+import {
+  BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
+  type BookingsExpireStaleHoldsWorkflowRuntime,
+} from "./workflow-runtime.js"
 
 export type CreateBookingsExpireStaleHoldsWorkflowOptions = BookingsExpireStaleHoldsWorkflowRuntime
 
@@ -16,6 +19,22 @@ export const bookingsExpireStaleHoldsWorkflowManifest = {
     schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
   },
 } satisfies WorkflowDescriptor
+
+export const bookingsExpireStaleHoldsWorkflow = workflow<
+  ExpireStaleBookingHoldsInput,
+  ExpireStaleBookingHoldsResult
+>({
+  ...bookingsExpireStaleHoldsWorkflowManifest.config,
+  id: bookingsExpireStaleHoldsWorkflowManifest.id,
+  async run(input, ctx) {
+    return runExpireStaleBookingHolds(
+      ctx.services.resolve<BookingsExpireStaleHoldsWorkflowRuntime>(
+        BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
+      ),
+      input,
+    )
+  },
+})
 
 /** Register stale-hold expiry while leaving finance cleanup hooks injectable. */
 export function createBookingsExpireStaleHoldsWorkflow(
@@ -39,4 +58,8 @@ async function runExpireStaleBookingHolds(
   return expireStaleBookingHolds(db, input, options.userId ?? "system", runtime)
 }
 
+export {
+  BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
+  type BookingsExpireStaleHoldsWorkflowRuntime,
+} from "./workflow-runtime.js"
 export type { ExpireStaleBookingHoldsInput, ExpireStaleBookingHoldsResult }
