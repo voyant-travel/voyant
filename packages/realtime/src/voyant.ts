@@ -15,6 +15,7 @@ export const realtimeVoyantModule = defineModule({
       id: "@voyant-travel/realtime#api.admin",
       surface: "admin",
       mount: "realtime",
+      openapi: { document: "realtime-admin" },
       runtime: {
         entry: "@voyant-travel/realtime",
         export: "createRealtimeVoyantRuntime",
@@ -24,6 +25,7 @@ export const realtimeVoyantModule = defineModule({
       id: "@voyant-travel/realtime#api.public",
       surface: "public",
       mount: "realtime",
+      openapi: { document: "realtime-public" },
       runtime: {
         entry: "@voyant-travel/realtime",
         export: "createRealtimeVoyantRuntime",

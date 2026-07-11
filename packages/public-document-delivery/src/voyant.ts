@@ -14,6 +14,7 @@ export const publicDocumentDeliveryVoyantModule = defineModule({
       surface: "public",
       mount: "documents",
       anonymous: true,
+      openapi: { document: "public-document-delivery" },
       runtime: {
         entry: "@voyant-travel/public-document-delivery",
         export: "createPublicDocumentDeliveryHonoModule",

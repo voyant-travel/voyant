@@ -78,6 +78,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@hono/zod-openapi": "catalog:",
     "@voyant-travel/core": "workspace:^"
   },
   "peerDependencies": {
