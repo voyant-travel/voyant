@@ -12,7 +12,7 @@ export function generateProjectWorkflowsSource(
 ): string {
   const ordered = [...workflows].sort(compareContributions)
   return [
-    'import type { WorkflowDefinition } from "@voyant-travel/workflows"',
+    'import type { WorkflowDefinition } from "@voyant-travel/framework/project-runtime"',
     ...ordered.map(
       (workflow, index) =>
         `import workflow${index} from ${JSON.stringify(generatedImportSpecifier(workflow.sourcePath))}`,
@@ -33,7 +33,7 @@ export function generateProjectWorkflowsSource(
 export function generateProjectJobsSource(jobs: readonly ProjectWorkflowJobSource[]): string {
   const ordered = [...jobs].sort(compareContributions)
   return [
-    'import { defineWorkflow, type ScheduleDeclaration, type WorkflowContext } from "@voyant-travel/workflows"',
+    'import { defineWorkflow, type ScheduleDeclaration, type WorkflowContext } from "@voyant-travel/framework/project-runtime"',
     ...ordered.map(
       (job, index) =>
         `import job${index}, { schedule as schedule${index} } from ${JSON.stringify(generatedImportSpecifier(job.sourcePath))}`,

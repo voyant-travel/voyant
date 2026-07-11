@@ -1437,6 +1437,26 @@
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
+    },
+    "/v1/admin/accommodations/{id}/content": {
+      "get": {
+        "summary": "Get accommodation content",
+        "x-voyant-api-id": "@voyant-travel/accommodations#content-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "Localized accommodation content and provenance."
+          },
+          "404": {
+            "description": "Accommodation content was not found."
+          }
+        },
+        "operationId": "getAdminAccommodationsByIdContent",
+        "tags": [
+          "accommodations"
+        ],
+        "x-voyant-module": "accommodations",
+        "x-voyant-surface": "admin"
+      }
     }
   },
   "webhooks": {}

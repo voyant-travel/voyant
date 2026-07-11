@@ -14,7 +14,7 @@
  * fails on drift (so CI catches a runtime module added/removed without
  * regenerating the BOM).
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -23,9 +23,25 @@ const ROOT = join(__dirname, "..")
 const MANIFEST = join(ROOT, "release.runtime-packages.generated.json")
 const PKG = join(ROOT, "packages/framework/package.json")
 const SRC = join(ROOT, "packages/framework/src/runtime-packages.generated.ts")
+const DISTRIBUTION = join(ROOT, "packages/framework/src/operator-distribution.ts")
 const EMIT = process.argv.includes("--emit")
 
 const runtimePackages = JSON.parse(readFileSync(MANIFEST, "utf-8")).runtimePackages
+const standardPackages = [
+  ...readFileSync(DISTRIBUTION, "utf8").matchAll(/resolve:\s*"(@voyant-travel\/[^"/]+)/g),
+].map((match) => match[1])
+const workspacePackageNames = readWorkspacePackageNames()
+const manifestReferencePackages = findManifestFiles(join(ROOT, "packages"))
+  .flatMap((path) => [
+    ...readFileSync(join(ROOT, "packages", path), "utf8").matchAll(
+      /["'](@voyant-travel\/[^"'/]+)(?:\/[^"']*)?["']/g,
+    ),
+  ])
+  .map((match) => match[1])
+  .filter((name) => workspacePackageNames.has(name))
+const bomPackages = [
+  ...new Set([...runtimePackages, ...standardPackages, ...manifestReferencePackages]),
+].sort()
 const frameworkRuntimeEntryDeps = {
   "@voyant-travel/auth": "workspace:*",
   "@voyant-travel/cloud-sdk": "^0.11.0",
@@ -48,10 +64,11 @@ const frameworkRuntimeEntryDeps = {
   typescript: "catalog:",
 }
 
-// BOM dependencies: one entry per runtime module, pinned via workspace:* (pnpm
-// publishes these as the exact current version → a deterministic set).
+// BOM dependencies include every standard product selection owner, not only
+// packages with server runtime membership. Otherwise a minimal project cannot
+// resolve manifest-only/admin-only selections without repeating dependencies.
 const deps = {}
-for (const name of [...runtimePackages].sort()) deps[name] = "workspace:*"
+for (const name of bomPackages) deps[name] = "workspace:*"
 for (const name of Object.keys(frameworkRuntimeEntryDeps).sort()) {
   deps[name] = frameworkRuntimeEntryDeps[name]
 }
@@ -70,6 +87,10 @@ ${[...runtimePackages]
   .join("\n")}
 ] as const
 
+export const FRAMEWORK_STANDARD_PACKAGES = [
+${bomPackages.map((name) => `  "${name}",`).join("\n")}
+] as const
+
 export type FrameworkRuntimePackage = (typeof FRAMEWORK_RUNTIME_PACKAGES)[number]
 `
 
@@ -77,7 +98,7 @@ const violations = []
 if (EMIT) {
   writeFileSync(PKG, nextPkg)
   writeFileSync(SRC, srcBody)
-  console.log(`generate-framework-bom: emitted ${runtimePackages.length} pinned runtime deps`)
+  console.log(`generate-framework-bom: emitted ${bomPackages.length} standard product deps`)
 } else {
   if (!existsSync(SRC) || readFileSync(SRC, "utf-8") !== srcBody) {
     violations.push("packages/framework/src/runtime-packages.generated.ts is stale")
@@ -90,5 +111,32 @@ if (EMIT) {
     for (const v of violations) console.error(`  - ${v}`)
     process.exit(1)
   }
-  console.log(`check-framework-bom: OK (${runtimePackages.length} pinned runtime deps)`)
+  console.log(`check-framework-bom: OK (${bomPackages.length} standard product deps)`)
+}
+
+function readWorkspacePackageNames() {
+  const names = new Set()
+  for (const root of [join(ROOT, "packages"), join(ROOT, "packages", "plugins")]) {
+    for (const entry of readdirSync(root)) {
+      const directory = join(root, entry)
+      if (!statSync(directory).isDirectory()) continue
+      const packageJson = join(directory, "package.json")
+      if (!existsSync(packageJson)) continue
+      const name = JSON.parse(readFileSync(packageJson, "utf8")).name
+      if (name) names.add(name)
+    }
+  }
+  return names
+}
+
+function findManifestFiles(directory, relative = "") {
+  const files = []
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (["node_modules", "dist", "coverage", ".turbo"].includes(entry.name)) continue
+    const nextRelative = join(relative, entry.name)
+    const path = join(directory, entry.name)
+    if (entry.isDirectory()) files.push(...findManifestFiles(path, nextRelative))
+    else if (/^(?:voyant|graph-manifest)\.ts$/.test(entry.name)) files.push(nextRelative)
+  }
+  return files
 }

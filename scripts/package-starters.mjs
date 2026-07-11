@@ -1,6 +1,5 @@
 import { execFileSync } from "node:child_process"
 import {
-  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -20,52 +19,17 @@ const args = parseArgs(process.argv.slice(2))
 const version = resolveVersion(args.version)
 const outDir = resolve(repoRoot, args.outDir ?? ".release/starters")
 const starters = ["operator"]
-const includedAppsByStarter = new Map([["operator", ["flights-demo-api"]]])
 const catalogVersions = readCatalogVersions()
 const workspaceVersions = readWorkspaceVersions()
-const skipNames = new Set([
-  "node_modules",
-  ".git",
-  ".github",
-  ".turbo",
-  ".tanstack",
-  "dist",
-  ".wrangler",
-  ".next",
-  ".vite",
-  "coverage",
-  ".cache",
-  ".env",
-  ".env.local",
-  ".dev.vars",
-  ".dev.vars.local",
-  ".DS_Store",
-])
 
 mkdirSync(outDir, { recursive: true })
 
 for (const starter of starters) {
-  const source = join(repoRoot, "starters", starter)
-  if (!existsSync(source)) {
-    throw new Error(`Missing starter: ${source}`)
-  }
-
   const stagingRoot = mkdtempSync(join(tmpdir(), `voyant-starter-${starter}-`))
   const stagingTemplate = join(stagingRoot, "template")
 
   try {
-    cpSync(source, stagingTemplate, {
-      recursive: true,
-      force: true,
-      filter: (src) => {
-        const rel = src.slice(source.length).replace(/^[\\/]+/, "")
-        if (!rel) return true
-        const first = rel.split(/[\\/]/)[0]
-        return !skipNames.has(first)
-      },
-    })
-
-    stageIncludedApps(starter, stagingTemplate)
+    stageMinimalOperatorStarter(stagingTemplate, args.localLinks === true)
 
     const archivePath = join(outDir, assetFileName(starter, version))
     execFileSync("tar", ["-czf", archivePath, "-C", stagingTemplate, "."], {
@@ -77,89 +41,101 @@ for (const starter of starters) {
   }
 }
 
-function stageIncludedApps(starter, stagingTemplate) {
-  const includedApps = includedAppsByStarter.get(starter) ?? []
-  if (includedApps.length === 0) return
-
-  const appsDir = join(stagingTemplate, "apps")
-  mkdirSync(appsDir, { recursive: true })
-
-  for (const app of includedApps) {
-    const source = join(repoRoot, "apps", app)
-    if (!existsSync(source)) {
-      throw new Error(`Missing included app for ${starter}: ${source}`)
-    }
-    const appDest = join(appsDir, app)
-    cpSync(source, appDest, {
-      recursive: true,
-      force: true,
-      filter: (src) => {
-        const rel = src.slice(source.length).replace(/^[\\/]+/, "")
-        if (!rel) return true
-        const first = rel.split(/[\\/]/)[0]
-        return !skipNames.has(first)
-      },
-    })
-    stageStandaloneApp(appDest)
+function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
+  mkdirSync(stagingTemplate, { recursive: true })
+  for (const directory of [
+    "src/api/admin",
+    "src/api/public",
+    "src/admin",
+    "src/modules",
+    "src/workflows",
+    "src/jobs",
+    "src/subscribers",
+    "src/links",
+    "src/scripts",
+  ]) {
+    mkdirSync(join(stagingTemplate, directory), { recursive: true })
   }
+
+  const dependency = (name) =>
+    localLinks ? `link:${workspacePackageDirectory(name)}` : `^${requiredWorkspaceVersion(name)}`
+  const cliDependency = localLinks
+    ? `link:${resolve(repoRoot, "..", "cli", "packages", "cli")}`
+    : `^${version}`
+  const startCommand = localLinks
+    ? `tsx ${join(workspacePackageDirectory("@voyant-travel/operator-runtime"), "src/cli.ts")}`
+    : "voyant-operator start"
+  const buildCommand = localLinks ? "NODE_OPTIONS=--import=tsx voyant build" : "voyant build"
+  const localBomDependencies = localLinks
+    ? Object.fromEntries(
+        Object.keys(readJson(join(repoRoot, "packages/framework/package.json")).dependencies)
+          .filter((name) => workspaceVersions.has(name))
+          .map((name) => [name, `link:${workspacePackageDirectory(name)}`]),
+      )
+    : {}
+  writeJson(join(stagingTemplate, "package.json"), {
+    name: "voyant-app",
+    private: true,
+    license: "Apache-2.0",
+    type: "module",
+    scripts: {
+      dev: `${buildCommand} && ${startCommand}`,
+      build: buildCommand,
+      start: startCommand,
+      "graph:emit": buildCommand,
+      seed: "tsx src/scripts/seed.ts",
+    },
+    dependencies: {
+      ...localBomDependencies,
+      "@voyant-travel/framework": dependency("@voyant-travel/framework"),
+      "@voyant-travel/operator-runtime": dependency("@voyant-travel/operator-runtime"),
+    },
+    devDependencies: {
+      "@voyant-travel/cli": cliDependency,
+      tsx: catalogVersions.get("tsx"),
+      typescript: catalogVersions.get("typescript"),
+    },
+  })
+  writeFileSync(
+    join(stagingTemplate, "voyant.config.ts"),
+    `import { defineConfig } from "@voyant-travel/framework/project"
+
+export default defineConfig({
+  deployment: {
+    target: "node",
+    providers: { database: "postgres" },
+  },
+})
+`,
+  )
+  writeFileSync(
+    join(stagingTemplate, ".env.example"),
+    `${["postgresql", "://postgres:postgres@localhost:5432/voyant"].join("")}\nPORT=8080\n`,
+  )
+  writeFileSync(
+    join(stagingTemplate, "src/scripts/seed.ts"),
+    'console.info("Add project seed data here.")\n',
+  )
 }
 
-function stageStandaloneApp(appDir) {
-  const packageJsonPath = join(appDir, "package.json")
-  const packageJson = readJson(packageJsonPath)
-  rewriteDependencyGroup(packageJson.dependencies)
-  rewriteDependencyGroup(packageJson.devDependencies)
-  rewriteDependencyGroup(packageJson.peerDependencies)
-  rewriteDependencyGroup(packageJson.optionalDependencies)
-
-  if (packageJson.devDependencies) {
-    delete packageJson.devDependencies["@voyant-travel/voyant-typescript-config"]
-    if (Object.keys(packageJson.devDependencies).length === 0) {
-      delete packageJson.devDependencies
-    }
-  }
-  writeJson(packageJsonPath, packageJson)
-
-  const tsconfigPath = join(appDir, "tsconfig.json")
-  if (existsSync(tsconfigPath)) {
-    const baseTsconfig = readJson(join(repoRoot, "packages", "typescript-config", "base.json"))
-    const appTsconfig = readJson(tsconfigPath)
-    delete appTsconfig.extends
-    appTsconfig.compilerOptions = {
-      ...(baseTsconfig.compilerOptions ?? {}),
-      ...(appTsconfig.compilerOptions ?? {}),
-    }
-    writeJson(tsconfigPath, appTsconfig)
-  }
+function requiredWorkspaceVersion(name) {
+  const value = workspaceVersions.get(name)
+  if (!value) throw new Error(`Missing workspace package for starter dependency: ${name}`)
+  return value
 }
 
-function rewriteDependencyGroup(group) {
-  if (!group) return
-  for (const [name, spec] of Object.entries(group)) {
-    if (typeof spec !== "string") continue
-    if (spec === "catalog:") {
-      const catalogSpec = catalogVersions.get(name)
-      if (!catalogSpec) {
-        throw new Error(`Missing catalog entry for packaged starter dependency: ${name}`)
-      }
-      group[name] = catalogSpec
-      continue
-    }
-    if (spec.startsWith("workspace:")) {
-      const packageVersion = workspaceVersions.get(name)
-      if (!packageVersion) {
-        throw new Error(`Missing workspace package for packaged starter dependency: ${name}`)
-      }
-      group[name] = workspaceRange(spec, packageVersion)
+function workspacePackageDirectory(name) {
+  for (const root of ["packages", join("packages", "plugins"), "apps"]) {
+    const rootPath = join(repoRoot, root)
+    if (!existsSync(rootPath)) continue
+    for (const entry of readdirSync(rootPath)) {
+      const directory = join(rootPath, entry)
+      const packageJsonPath = join(directory, "package.json")
+      if (!existsSync(packageJsonPath)) continue
+      if (readJson(packageJsonPath).name === name) return directory
     }
   }
-}
-
-function workspaceRange(spec, packageVersion) {
-  const suffix = spec.slice("workspace:".length)
-  if (suffix === "*" || suffix === "") return packageVersion
-  if (suffix === "^" || suffix === "~") return `${suffix}${packageVersion}`
-  return suffix
+  throw new Error(`Missing workspace package directory for ${name}`)
 }
 
 function readCatalogVersions() {
@@ -222,6 +198,10 @@ function parseArgs(argv) {
     if (arg === "--version") {
       result.version = argv[i + 1]
       i += 1
+      continue
+    }
+    if (arg === "--local-links") {
+      result.localLinks = true
     }
   }
   return result

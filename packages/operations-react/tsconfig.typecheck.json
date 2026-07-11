@@ -877,6 +877,7 @@
         "../framework/dist/project-api-conventions.d.ts"
       ],
       "@voyant-travel/framework/project-artifacts": ["../framework/dist/project-artifacts.d.ts"],
+      "@voyant-travel/framework/project-runtime": ["../framework/dist/project-runtime.d.ts"],
       "@voyant-travel/framework/project-subscriber-link-conventions": [
         "../framework/dist/project-subscriber-link-conventions.d.ts"
       ],
@@ -1156,6 +1157,7 @@
       "@voyant-travel/operations/schema": ["../operations/dist/schema.d.ts"],
       "@voyant-travel/operations/validation": ["../operations/dist/validation.d.ts"],
       "@voyant-travel/operations/voyant": ["../operations/dist/voyant.d.ts"],
+      "@voyant-travel/operator-runtime": ["../operator-runtime/dist/index.d.ts"],
       "@voyant-travel/operator-settings": ["../operator-settings/dist/index.d.ts"],
       "@voyant-travel/operator-settings-react": ["../operator-settings-react/dist/index.d.ts"],
       "@voyant-travel/operator-settings-react/settings": [

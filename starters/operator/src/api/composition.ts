@@ -54,6 +54,7 @@ import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
+import type { VoyantPort } from "@voyant-travel/core/project"
 import { cruisesContentRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { channelPushRuntimePort } from "@voyant-travel/distribution"
@@ -231,14 +232,14 @@ export function buildOperatorRuntimePorts(
   capabilities: OperatorCapabilities = buildOperatorProviders(),
 ): VoyantGraphRuntimePorts {
   return {
-    [quotesRuntimePort.id]: {
+    [quotesRuntimePort.id]: runtimePortValue(quotesRuntimePort, {
       resolveParticipantPersonById: async (db, personId) =>
         (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-    },
-    [miceRuntimePort.id]: {
+    }),
+    [miceRuntimePort.id]: runtimePortValue(miceRuntimePort, {
       resolveDelegatePersonById: async (db, personId) =>
         (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-    },
+    }),
     [quotesProposalRuntimePort.id]: import("./runtime/quote-proposal-runtime").then((runtime) =>
       runtime.createQuoteProposalRoutesOptions(),
     ),
@@ -270,10 +271,13 @@ export function buildOperatorRuntimePorts(
     [storefrontPaymentLinkRuntimePort.id]: import("./runtime/payment-link-runtime").then(
       (runtime) => runtime.createOperatorPaymentLinkRouteOptions(),
     ),
-    [storefrontCustomerPortalRuntimePort.id]: {
-      resolveDocumentDownloadUrl: (bindings, storageKey) =>
-        capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-    },
+    [storefrontCustomerPortalRuntimePort.id]: runtimePortValue(
+      storefrontCustomerPortalRuntimePort,
+      {
+        resolveDocumentDownloadUrl: (bindings, storageKey) =>
+          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+      },
+    ),
     [storefrontVerificationRuntimePort.id]: {
       resolveProviders: capabilities.resolveNotificationProviders,
       email: { subject: "Your verification code" },
@@ -282,10 +286,11 @@ export function buildOperatorRuntimePorts(
       (runtime) => runtime.createOperatorContractDocumentRoutesOptions(),
     ),
     [bookingMaintenanceRuntimePort.id]: import("@voyant-travel/operator-settings").then(
-      (settings) => ({
-        resolveDb: (context) => operatorPostgresDb(context.get("db")),
-        resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
-      }),
+      (settings) =>
+        runtimePortValue(bookingMaintenanceRuntimePort, {
+          resolveDb: (context) => operatorPostgresDb(context.get("db")),
+          resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
+        }),
     ),
     [catalogSearchRuntimePort.id]: {
       resolveRuntime: capabilities.resolveCatalogRuntime,
@@ -296,10 +301,10 @@ export function buildOperatorRuntimePorts(
     [catalogOffersRuntimePort.id]: import("./runtime/catalog-offers-runtime").then((runtime) =>
       runtime.createOperatorCatalogOffersRouteModuleOptions(),
     ),
-    [inventoryRuntimePort.id]: {
+    [inventoryRuntimePort.id]: runtimePortValue(inventoryRuntimePort, {
       bootstrap: ({ container, bindings }) =>
         registerInventoryWorkflowService(container, bindings as AppBindings),
-    },
+    }),
     [inventoryContentRuntimePort.id]: import("./routes/catalog-content").then((runtime) =>
       runtime.createOperatorInventoryContentRuntime(),
     ),
@@ -468,7 +473,9 @@ async function createOperatorStorefrontRuntimeProvider(capabilities: OperatorCap
     offers: commerce.createCommerceStorefrontOfferResolvers(),
     bookingIntents: {
       withDb: (bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<unknown>) =>
-        withDbFromEnv(bindings as AppBindings, (db) => operation(db as PostgresJsDatabase)),
+        withDbFromEnv(bindings as AppBindings, (db) =>
+          operation(db as unknown as PostgresJsDatabase),
+        ),
     },
     intake: { persistence: capabilities.storefrontIntakePersistence },
   }
@@ -646,7 +653,7 @@ async function createOperatorFinanceRuntimeProvider(capabilities: OperatorCapabi
     import("@voyant-travel/notifications"),
     import("@voyant-travel/operator-settings"),
   ])
-  return {
+  return runtimePortValue(financeRuntimePort, {
     resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
       capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
     resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
@@ -699,7 +706,12 @@ async function createOperatorFinanceRuntimeProvider(capabilities: OperatorCapabi
         offset: result.offset,
       }
     },
-  }
+  })
+}
+
+function runtimePortValue<T>(port: VoyantPort<T>, provider: T): T {
+  port.test(provider)
+  return provider
 }
 
 type NotificationDeliveryLike = {
