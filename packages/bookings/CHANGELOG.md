@@ -1,5 +1,18 @@
 # @voyant-travel/bookings
 
+## 0.151.5
+
+### Patch Changes
+
+- e5aa097: Activate package-owned workflow declarations through the generated deployment graph and deployment-supplied Node runtime services.
+- 01d5034: Publish the stale-hold workflow deployment runtime service contract for graph activation.
+- Updated dependencies [c66f9a5]
+  - @voyant-travel/core@0.117.0
+  - @voyant-travel/action-ledger@0.106.4
+  - @voyant-travel/db@0.112.1
+  - @voyant-travel/hono@0.124.1
+  - @voyant-travel/workflows@0.115.2
+
 ## 0.151.4
 
 ### Patch Changes

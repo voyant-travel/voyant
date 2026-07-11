@@ -1,5 +1,20 @@
 # @voyant-travel/finance
 
+## 0.151.4
+
+### Patch Changes
+
+- 1081483: Declare the payment-session and notification-delivery capabilities required by Netopia's package-owned Voyant manifest.
+- Updated dependencies [e5aa097]
+- Updated dependencies [01d5034]
+- Updated dependencies [c66f9a5]
+  - @voyant-travel/bookings@0.151.5
+  - @voyant-travel/core@0.117.0
+  - @voyant-travel/storage@0.108.0
+  - @voyant-travel/action-ledger@0.106.4
+  - @voyant-travel/db@0.112.1
+  - @voyant-travel/hono@0.124.1
+
 ## 0.151.3
 
 ### Patch Changes

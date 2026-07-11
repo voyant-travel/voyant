@@ -1,5 +1,22 @@
 # @voyant-travel/inventory
 
+## 0.8.5
+
+### Patch Changes
+
+- e5aa097: Activate package-owned workflow declarations through the generated deployment graph and deployment-supplied Node runtime services.
+- 2ec05ae: Publish the product PDF workflow deployment runtime service contract for graph activation.
+- Updated dependencies [c66f9a5]
+  - @voyant-travel/core@0.117.0
+  - @voyant-travel/storage@0.108.0
+  - @voyant-travel/action-ledger@0.106.4
+  - @voyant-travel/catalog@0.149.4
+  - @voyant-travel/commerce@0.33.5
+  - @voyant-travel/db@0.112.1
+  - @voyant-travel/hono@0.124.1
+  - @voyant-travel/operations@0.6.4
+  - @voyant-travel/workflows@0.115.2
+
 ## 0.8.4
 
 ### Patch Changes

@@ -1,5 +1,24 @@
 # @voyant-travel/notifications
 
+## 0.123.5
+
+### Patch Changes
+
+- e5aa097: Activate package-owned workflow declarations through the generated deployment graph and deployment-supplied Node runtime services.
+- 1081483: Declare the payment-session and notification-delivery capabilities required by Netopia's package-owned Voyant manifest.
+- 6e3ec4e: Publish the reminder workflow deployment runtime service contract for graph activation.
+- Updated dependencies [e5aa097]
+- Updated dependencies [01d5034]
+- Updated dependencies [1081483]
+- Updated dependencies [c66f9a5]
+  - @voyant-travel/bookings@0.151.5
+  - @voyant-travel/finance@0.151.4
+  - @voyant-travel/core@0.117.0
+  - @voyant-travel/db@0.112.1
+  - @voyant-travel/hono@0.124.1
+  - @voyant-travel/legal@0.151.4
+  - @voyant-travel/workflows@0.115.2
+
 ## 0.123.4
 
 ### Patch Changes
