@@ -2,8 +2,8 @@
 
 Module system and framework primitives for Voyant. Transport-agnostic —
 provides the contracts, registry, container, event bus, links, query,
-workflows, optional plugin bundles, and config shape that every Voyant module
-and transport adapter builds on.
+workflows, and optional plugin bundles that every Voyant module and transport
+adapter builds on.
 
 ## Install
 
@@ -18,7 +18,6 @@ import type { Module } from "@voyant-travel/core/module"
 import { defineLink } from "@voyant-travel/core/links"
 import { definePlugin } from "@voyant-travel/core/plugin"
 import { defineModule } from "@voyant-travel/core/project"
-import { defineVoyantConfig } from "@voyant-travel/core/config"
 import { createWorkflow, step } from "@voyant-travel/core/workflows"
 ```
 
@@ -42,7 +41,6 @@ together for reuse across projects when a broader bundle is helpful.
 | `./workflows` | In-process saga primitive with compensation |
 | `./plugin` | Plugin bundles — `definePlugin`, `registerPlugins` |
 | `./project` | Import-cheap package-owned deployment manifests |
-| `./config` | `VoyantConfig` manifest shape + `defineVoyantConfig` |
 | `./env` | Environment helpers |
 
 ## License

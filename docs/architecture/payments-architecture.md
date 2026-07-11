@@ -344,7 +344,9 @@ Plugin selection happens at template-config time:
 
 ```ts
 // starters/operator/voyant.config.ts
-export default defineVoyantConfig({
+import { defineConfig } from "@voyant-travel/framework"
+
+export default defineConfig({
   ...
   plugins: [
     "@voyant-travel/payment-stripe",

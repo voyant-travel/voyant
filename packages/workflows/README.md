@@ -58,8 +58,9 @@ export default defineWorkflow({
   secret.
 - `@voyant-travel/workflows/bindings` — runtime binding types and `env`
   shim for workflow code that reads platform bindings.
-- `@voyant-travel/workflows/config` — `defineConfig` and `voyant.config.ts`
-  types.
+- `@voyant-travel/workflows/config` — `defineWorkflowConfig` and
+  `VoyantWorkflowConfig` for standalone workflow runtime settings. Application
+  projects use `defineConfig` from `@voyant-travel/framework` instead.
 - `@voyant-travel/workflows/errors` — typed user/runtime errors
   (`FatalError`, `RetryableError`, `TimeoutError`, and related classes).
 - `@voyant-travel/workflows/protocol` — wire-protocol types shared with the
