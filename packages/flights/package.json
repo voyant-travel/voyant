@@ -35,7 +35,8 @@
     },
     "schema": "./reference/local-postgres",
     "requiresSchemas": [
-      "@voyant-travel/db"
+      "@voyant-travel/db",
+      "@voyant-travel/finance"
     ]
   },
   "scripts": {

@@ -7,6 +7,7 @@ export const flightsVoyantModule = defineModule({
   packageName: "@voyant-travel/flights",
   localId: "flights",
   runtimePorts: [requirePort(flightsRuntimePort)],
+  requires: { capabilities: ["finance.payment-sessions"] },
   api: [
     {
       id: "@voyant-travel/flights#api",

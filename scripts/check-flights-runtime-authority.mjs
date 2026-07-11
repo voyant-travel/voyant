@@ -48,11 +48,17 @@ const runtimeBindings = section(
 if (packageJson.dependencies?.["@voyant-travel/finance"] !== "workspace:^") {
   violations.push("Flights must own its @voyant-travel/finance runtime dependency")
 }
+if (!packageJson.voyant?.requiresSchemas?.includes("@voyant-travel/finance")) {
+  violations.push("Flights must declare its Finance payment-session schema dependency")
+}
 if (
   !manifest.includes("runtimePorts: [requirePort(flightsRuntimePort)]") ||
+  !manifest.includes('requires: { capabilities: ["finance.payment-sessions"] }') ||
   !manifest.includes('export: "createFlightsVoyantRuntime"')
 ) {
-  violations.push("Flights manifest must declare its typed port and package-owned runtime factory")
+  violations.push(
+    "Flights manifest must declare its typed port, Finance capability, and package-owned runtime factory",
+  )
 }
 if (
   !hono.includes("defineGraphRuntimeFactory") ||

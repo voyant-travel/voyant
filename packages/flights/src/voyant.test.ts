@@ -11,6 +11,7 @@ describe("flights deployment manifest", () => {
       id: "@voyant-travel/flights",
       packageName: "@voyant-travel/flights",
       runtimePorts: [{ id: "flights.runtime" }],
+      requires: { capabilities: ["finance.payment-sessions"] },
       api: [
         {
           id: "@voyant-travel/flights#api",
@@ -29,6 +30,18 @@ describe("flights deployment manifest", () => {
         },
       ],
       migrations: [{ id: "@voyant-travel/flights#migrations", source: "./migrations" }],
+    })
+  })
+
+  it("requires Finance payment-session schema and graph capability", async () => {
+    const packageJson = await import("../package.json", { with: { type: "json" } })
+
+    expect(packageJson.default.voyant.requiresSchemas).toEqual([
+      "@voyant-travel/db",
+      "@voyant-travel/finance",
+    ])
+    expect(flightsVoyantModule.requires).toEqual({
+      capabilities: ["finance.payment-sessions"],
     })
   })
 
