@@ -1,4 +1,5 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { storageMediaRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap declaration for storage-owned upload, serve, and video-ticket routes. */
 export const storageVoyantModule = defineModule({
@@ -8,6 +9,7 @@ export const storageVoyantModule = defineModule({
   provides: {
     ports: [{ id: "storage.object" }],
   },
+  runtimePorts: [requirePort(storageMediaRuntimePort)],
   api: [
     {
       id: "@voyant-travel/storage#api.admin.uploads",
@@ -15,7 +17,7 @@ export const storageVoyantModule = defineModule({
       mount: "uploads",
       runtime: {
         entry: "@voyant-travel/storage/routes",
-        export: "createMediaHonoModule",
+        export: "createStorageVoyantRuntime",
       },
     },
     {
@@ -24,7 +26,7 @@ export const storageVoyantModule = defineModule({
       mount: "uploads/video",
       runtime: {
         entry: "@voyant-travel/storage/routes",
-        export: "createMediaHonoModule",
+        export: "createStorageVoyantRuntime",
       },
     },
     {
@@ -33,7 +35,7 @@ export const storageVoyantModule = defineModule({
       mount: "media",
       runtime: {
         entry: "@voyant-travel/storage/routes",
-        export: "createMediaHonoModule",
+        export: "createStorageVoyantRuntime",
       },
     },
   ],

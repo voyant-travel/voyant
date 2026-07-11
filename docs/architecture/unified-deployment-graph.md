@@ -564,6 +564,20 @@ replacement-compatible until a provider can run the public kit.
 A provider saying it implements a port is only a declaration until the provider
 passes that kit.
 
+Package API factories that need deployment behavior use
+`defineGraphRuntimeFactory(...)` and request typed ports through `getPort(...)`.
+The host binds implementations by port id, never by package id. The framework
+rejects requests for ports absent from the owning unit's `runtimePorts` and
+reports a missing deployment binding with the owning graph id. Runtime-factory
+ports are deliberately separate from `requires.ports`: the latter describes
+provider selection and must be satisfied by graph provider declarations. Before
+exposing a bound implementation, composition runs the port's public conformance
+kit. Factories use `hasPort(...)` before requesting an optional runtime port;
+required and optional declarations remain distinct in lowered graph metadata.
+Legacy
+package-keyed runtime bindings remain a migration bridge only for units whose
+public factories have not adopted this contract.
+
 This matters for replacement promises. If a future external CRM can replace
 `relationships`, it must pass the people-directory port tests. Otherwise doctor
 would give false confidence.

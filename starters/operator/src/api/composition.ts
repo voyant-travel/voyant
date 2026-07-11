@@ -26,11 +26,13 @@ import {
   frameworkComposition,
   type VoyantGraphRuntimeBindingContext,
   type VoyantGraphRuntimeBindings,
+  type VoyantGraphRuntimePorts,
 } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
-import { createRealtimeHonoModule } from "@voyant-travel/realtime"
+import { realtimeRuntimePort } from "@voyant-travel/realtime"
+import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -182,8 +184,6 @@ export function buildOperatorProviders(): OperatorCapabilities {
         m.mountAccommodationsContentRoutes(app)
         return app
       }),
-    loadStorageRoutes: () =>
-      import("./runtime/media-runtime").then((m) => m.buildOperatorStorageRoutes()),
     loadInventoryBrochureRoutes: () =>
       import("./runtime/media-runtime").then((m) => m.buildOperatorInventoryBrochureRoutes()),
     loadPaymentLinkRoutes: () =>
@@ -232,6 +232,19 @@ export function buildOperatorProviders(): OperatorCapabilities {
       ),
     loadCatalogCheckoutRoutes: () =>
       import("./routes/catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
+  }
+}
+
+/** Deployment implementations for package-declared runtime ports. */
+export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
+  return {
+    [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
+      (runtime) => runtime.operatorStorageMediaRuntime,
+    ),
+    [realtimeRuntimePort.id]: {
+      resolveProviders: resolveRealtimeProviders,
+      bridgeRoutes: operatorRealtimeBridgeRoutes,
+    },
   }
 }
 
@@ -375,7 +388,6 @@ export const operatorGraphCompatibilityModules: Record<
 > = {
   "@voyant-travel/catalog#booking-engine":
     frameworkComposition.modules["@voyant-travel/catalog/booking-engine"]!,
-  "@voyant-travel/storage": frameworkComposition.modules["@voyant-travel/storage"]!,
   "@voyant-travel/storefront#payment-link":
     frameworkComposition.modules["@voyant-travel/storefront/payment-link"]!,
   "@voyant-travel/storefront#customer-portal":
@@ -384,11 +396,6 @@ export const operatorGraphCompatibilityModules: Record<
     frameworkComposition.modules["@voyant-travel/storefront/verification"]!,
   "@voyant-travel/legal#contract-document":
     frameworkComposition.modules["@voyant-travel/legal/contract-document"]!,
-  "@voyant-travel/realtime": () =>
-    createRealtimeHonoModule({
-      resolveProviders: resolveRealtimeProviders,
-      bridgeRoutes: operatorRealtimeBridgeRoutes,
-    }),
 }
 
 export const operatorGraphCompatibilityExtensions: Record<

@@ -331,6 +331,7 @@ export interface ResolvedVoyantGraphUnit {
   /** JSON-safe values authored on this unit's project selection. */
   projectConfig?: VoyantGraphJsonObject
   runtime?: VoyantGraphRuntimeReference
+  runtimePorts?: readonly VoyantGraphPortDeclaration[]
   provides: {
     capabilities: readonly string[]
     ports: readonly VoyantGraphPortDeclaration[]
@@ -415,6 +416,7 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "localId",
   "packageName",
   "runtime",
+  "runtimePorts",
   "provides",
   "requires",
   "api",
@@ -604,6 +606,7 @@ export function validateGraphUnitManifest(
   if (input.runtime !== undefined) {
     validateRuntimeReference(input.runtime, "runtime", source, diagnostics)
   }
+  diagnostics.push(...validateRuntimePortDeclarations(input.runtimePorts, source))
   diagnostics.push(...validateRouteBundles(input.api, source))
   diagnostics.push(...validateFacetEntities(input.schema, "schema", source))
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
@@ -1161,6 +1164,7 @@ function resolveUnit(
     order: 0,
     ...(projectConfig ? { projectConfig } : {}),
     ...(unit.runtime ? { runtime: unit.runtime } : {}),
+    runtimePorts: sortPorts(unit.runtimePorts ?? []),
     provides: {
       capabilities: sortedUnique(unit.provides?.capabilities ?? []),
       ports: sortPorts(unit.provides?.ports ?? []),
@@ -1216,6 +1220,50 @@ function resolveUnit(
     ...(unit.actions?.length ? { actions: sortFacetEntities(unit.actions) } : {}),
     ...(unit.lifecycle ? { lifecycle: unit.lifecycle } : {}),
   }
+}
+
+function validateRuntimePortDeclarations(
+  value: unknown,
+  source: string | undefined,
+): VoyantGraphDiagnostic[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) {
+    return [
+      diagnostic({
+        code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+        source,
+        facet: "runtimePorts",
+        message: "Runtime port declarations must be an array with stable dot-case ids.",
+      }),
+    ]
+  }
+
+  const diagnostics: VoyantGraphDiagnostic[] = []
+  for (let index = 0; index < value.length; index += 1) {
+    const port = value[index]
+    if (!isRecord(port) || typeof port.id !== "string" || !PORT_ID_PATTERN.test(port.id)) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+          source,
+          facet: `runtimePorts[${index}]`,
+          message: "Runtime port declarations must include a stable dot-case id.",
+        }),
+      )
+      continue
+    }
+    if (port.optional !== undefined && typeof port.optional !== "boolean") {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+          source,
+          facet: `runtimePorts[${index}].optional`,
+          message: "Runtime port declaration optional must be a boolean when provided.",
+        }),
+      )
+    }
+  }
+  return diagnostics
 }
 
 function sortResolvedUnits<

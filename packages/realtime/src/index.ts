@@ -1,4 +1,5 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { createRealtimeBridge } from "./bridge.js"
@@ -8,6 +9,7 @@ import {
   REALTIME_ROUTE_RUNTIME_CONTAINER_KEY,
   type RealtimeRoutesOptions,
 } from "./routes.js"
+import { realtimeRuntimePort } from "./runtime-port.js"
 import type { RealtimeRoutes } from "./types.js"
 
 export type { CreateRealtimeBridgeOptions } from "./bridge.js"
@@ -112,3 +114,10 @@ export function createRealtimeHonoModule(
     publicRoutes: routes,
   }
 }
+
+/** Package-owned adapter from the graph port registry to the public module factory. */
+export const createRealtimeVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
+  createRealtimeHonoModule(await getPort(realtimeRuntimePort)),
+)
+
+export { realtimeRuntimePort } from "./runtime-port.js"

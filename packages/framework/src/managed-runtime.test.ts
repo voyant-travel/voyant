@@ -864,7 +864,9 @@ describe("managed profile runtime entry", () => {
     await env.MEDIA_BUCKET?.put("uploads/test.txt", "hello", {
       httpMetadata: { contentType: "text/plain" },
     })
-    const app = await createManagedProfileProviders().loadStorageRoutes()
+    const loadStorageRoutes = createManagedProfileProviders().loadStorageRoutes
+    if (!loadStorageRoutes) throw new Error("Expected managed storage routes to be configured")
+    const app = await loadStorageRoutes()
 
     const response = await app.request("/v1/admin/media/uploads/test.txt", {}, env)
 

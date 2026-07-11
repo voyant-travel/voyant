@@ -1,4 +1,5 @@
 import type { EventEnvelope, EventFilterDescriptor, WorkflowDescriptor } from "@voyant-travel/core"
+import { isGraphRuntimeFactory, type VoyantPort } from "@voyant-travel/core/project"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
@@ -25,6 +26,8 @@ export type VoyantGraphRuntimeBindings<TCapabilities> = Readonly<
   Record<string, VoyantGraphRuntimeBinding<TCapabilities>>
 >
 
+export type VoyantGraphRuntimePorts = Readonly<Record<string, unknown>>
+
 export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
   runtime: VoyantGraphRuntime
   capabilities: TCapabilities
@@ -33,6 +36,8 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
    * id. A binding only runs when its unit is selected by the generated graph.
    */
   bindings?: VoyantGraphRuntimeBindings<TCapabilities>
+  /** Deployment implementations keyed by package-declared port id. */
+  ports?: VoyantGraphRuntimePorts
   /** Node-owned durable boundary for graph-selected outbound webhook events. */
   outboundWebhooks?: {
     enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
@@ -179,7 +184,39 @@ async function resolveRuntimeUnit<TCapabilities>(
 
   const outputs: unknown[] = []
   for (const runtimeExport of runtimeExports) {
-    const output = typeof runtimeExport === "function" ? await runtimeExport() : runtimeExport
+    const output = isGraphRuntimeFactory(runtimeExport)
+      ? await runtimeExport({
+          unitId: unit.id,
+          hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
+            if (!unit.runtimePorts.includes(port.id)) {
+              throw new Error(
+                `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" requested undeclared port "${port.id}".`,
+              )
+            }
+            return Object.hasOwn(input.ports ?? {}, port.id)
+          },
+          getPort: async <TProvider>(port: VoyantPort<TProvider>): Promise<TProvider> => {
+            if (!unit.runtimePorts.includes(port.id)) {
+              throw new Error(
+                `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" requested undeclared port "${port.id}".`,
+              )
+            }
+            if (!Object.hasOwn(input.ports ?? {}, port.id)) {
+              const requirement = unit.requiredRuntimePorts.includes(port.id)
+                ? "requires runtime port"
+                : "optional runtime port"
+              throw new Error(
+                `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" ${requirement} "${port.id}", but the deployment did not bind it.`,
+              )
+            }
+            const provider = await (input.ports![port.id] as TProvider | Promise<TProvider>)
+            await port.test(provider)
+            return provider
+          },
+        })
+      : typeof runtimeExport === "function"
+        ? await runtimeExport()
+        : runtimeExport
     outputs.push(...normalizeRuntimeOutputs(output))
   }
   return outputs

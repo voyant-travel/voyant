@@ -1,4 +1,6 @@
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
+import { realtimeRuntimePort } from "@voyant-travel/realtime"
+import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -9,6 +11,7 @@ import {
 } from "../../.voyant/runtime/graph-runtime.generated"
 import {
   buildOperatorProviders,
+  buildOperatorRuntimePorts,
   deploymentLocalExtensions,
   operatorGraphCompatibilityExtensions,
   operatorGraphCompatibilityModules,
@@ -22,6 +25,7 @@ async function composeOperatorGraph() {
     runtime: createGeneratedGraphRuntime(),
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
+    ports: buildOperatorRuntimePorts(),
   })
 }
 
@@ -114,6 +118,17 @@ describe("operator graph runtime composition", () => {
     expect(operatorGraphRuntimeBindings).not.toHaveProperty(
       "@voyant-travel/public-document-delivery",
     )
+  })
+
+  it("binds storage and realtime by package-declared ports instead of package ids", async () => {
+    const ports = buildOperatorRuntimePorts()
+
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/storage")
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/realtime")
+    expect(Object.keys(ports).sort()).toEqual(
+      [realtimeRuntimePort.id, storageMediaRuntimePort.id].sort(),
+    )
+    await expect(composeOperatorGraph()).resolves.toBeDefined()
   })
 
   it("initializes the real operator app from the generated graph runtime", async () => {

@@ -161,6 +161,8 @@ export interface VoyantGraphRuntimeUnitDefinition {
   resources?: readonly VoyantGraphRuntimeResourceDefinition[]
   providers?: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts?: readonly string[]
+  runtimePorts?: readonly string[]
+  requiredRuntimePorts?: readonly string[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
   workflows?: readonly VoyantGraphRuntimeWorkflowDefinition[]
@@ -208,6 +210,8 @@ export interface VoyantGraphRuntimeUnitLoader
   resources: readonly VoyantGraphRuntimeResourceDefinition[]
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   requiredPorts: readonly string[]
+  runtimePorts: readonly string[]
+  requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
@@ -335,6 +339,8 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
     | "providers"
     | "references"
     | "requiredPorts"
+    | "requiredRuntimePorts"
+    | "runtimePorts"
     | "resources"
     | "routes"
     | "secrets"
@@ -348,6 +354,8 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   resources: readonly VoyantGraphRuntimeResourceDefinition[]
   providers: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts: readonly string[]
+  runtimePorts: readonly string[]
+  requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
   workflows: readonly VoyantGraphRuntimeWorkflowDefinition[]
@@ -384,6 +392,7 @@ function normalizeRuntimeUnitDefinition(
 ): NormalizedVoyantGraphRuntimeUnitDefinition {
   const references = [...(unit.references ?? [])]
   const referenceIds = new Set(references.map((reference) => reference.id))
+  const runtimePorts = sortedUnique(unit.runtimePorts ?? [])
 
   const routes = unit.routes.map((definition) => {
     const runtime = definition.route.runtime
@@ -417,6 +426,11 @@ function normalizeRuntimeUnitDefinition(
     resources: [...(unit.resources ?? [])],
     providers: [...(unit.providers ?? [])],
     requiredPorts: sortedUnique(unit.requiredPorts ?? []),
+    runtimePorts,
+    requiredRuntimePorts:
+      unit.requiredRuntimePorts === undefined
+        ? runtimePorts
+        : sortedUnique(unit.requiredRuntimePorts),
     accessScopes: sortedUnique(unit.accessScopes ?? []),
     tools: [...(unit.tools ?? [])],
     workflows: [...(unit.workflows ?? [])],
@@ -514,6 +528,8 @@ function createRuntimeUnitLoader(
     resources: unit.resources,
     providers,
     requiredPorts: unit.requiredPorts,
+    runtimePorts: unit.runtimePorts,
+    requiredRuntimePorts: unit.requiredRuntimePorts,
     accessScopes: unit.accessScopes,
     tools,
     workflows,

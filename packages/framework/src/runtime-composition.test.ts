@@ -1,4 +1,5 @@
 import { createEventBus } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory, definePort } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
@@ -376,6 +377,195 @@ describe("graph runtime composition", () => {
     expect(composition.modules.map((module) => module.module.name)).toEqual(["loyalty"])
     expect(importRuntime).toHaveBeenCalledTimes(1)
     expect(factory).toHaveBeenCalledTimes(1)
+  })
+
+  it("injects only manifest-declared runtime ports into package-owned factories", async () => {
+    const loyaltyPort = definePort<{ prefix: string }>({ id: "loyalty.runtime", test: () => {} })
+    const factory = defineGraphRuntimeFactory(
+      vi.fn(async ({ getPort }) => {
+        const provider = await getPort(loyaltyPort)
+        return { module: { name: provider.prefix } }
+      }),
+    )
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:runtime-port",
+      entries: { "@acme/loyalty": async () => ({ createLoyaltyModule: factory }) },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          runtimePorts: [loyaltyPort.id],
+          routes: [
+            {
+              route: {
+                id: "@acme/loyalty#api",
+                surface: "admin",
+                runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
+              },
+              importEntry: "@acme/loyalty",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    const composition = await composeVoyantGraphRuntime({
+      runtime,
+      capabilities: {},
+      ports: { [loyaltyPort.id]: Promise.resolve({ prefix: "loyalty" }) },
+    })
+
+    expect(composition.modules).toEqual([{ module: { name: "loyalty" } }])
+    expect(factory).toHaveBeenCalledOnce()
+  })
+
+  it("rejects missing and undeclared package runtime ports", async () => {
+    const declaredPort = definePort<unknown>({ id: "loyalty.runtime", test: () => {} })
+    const undeclaredPort = definePort<unknown>({ id: "billing.runtime", test: () => {} })
+    const createRuntime = (port: typeof declaredPort) =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:invalid-runtime-port",
+        entries: {
+          "@acme/loyalty": async () => ({
+            createLoyaltyModule: defineGraphRuntimeFactory(async ({ getPort }) => {
+              await getPort(port)
+              return { module: { name: "loyalty" } }
+            }),
+          }),
+        },
+        modules: [
+          {
+            id: "@acme/loyalty",
+            kind: "module",
+            packageName: "@acme/loyalty",
+            order: 0,
+            runtimePorts: [declaredPort.id],
+            routes: [
+              {
+                route: {
+                  id: "@acme/loyalty#api",
+                  surface: "admin",
+                  runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
+                },
+                importEntry: "@acme/loyalty",
+              },
+            ],
+          },
+        ],
+        plugins: [],
+      })
+
+    await expect(
+      composeVoyantGraphRuntime({ runtime: createRuntime(declaredPort), capabilities: {} }),
+    ).rejects.toThrow(/requires runtime port "loyalty.runtime"/)
+    await expect(
+      composeVoyantGraphRuntime({
+        runtime: createRuntime(undeclaredPort),
+        capabilities: {},
+        ports: { [undeclaredPort.id]: {} },
+      }),
+    ).rejects.toThrow(/requested undeclared port "billing.runtime"/)
+  })
+
+  it("allows factories to branch on optional runtime-port bindings", async () => {
+    const optionalPort = definePort<{ name: string }>({
+      id: "loyalty.optional-runtime",
+      test: () => {},
+    })
+    const factory = defineGraphRuntimeFactory(async ({ getPort, hasPort }) => ({
+      module: {
+        name: hasPort(optionalPort) ? (await getPort(optionalPort)).name : "loyalty-fallback",
+      },
+    }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:optional-runtime-port",
+      entries: { "@acme/loyalty": async () => ({ createLoyaltyModule: factory }) },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          runtimePorts: [optionalPort.id],
+          requiredRuntimePorts: [],
+          routes: [
+            {
+              route: {
+                id: "@acme/loyalty#api",
+                surface: "admin",
+                runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
+              },
+              importEntry: "@acme/loyalty",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(composeVoyantGraphRuntime({ runtime, capabilities: {} })).resolves.toMatchObject({
+      modules: [{ module: { name: "loyalty-fallback" } }],
+    })
+    await expect(
+      composeVoyantGraphRuntime({
+        runtime,
+        capabilities: {},
+        ports: { [optionalPort.id]: { name: "loyalty-bound" } },
+      }),
+    ).resolves.toMatchObject({
+      modules: [{ module: { name: "loyalty-bound" } }],
+    })
+  })
+
+  it("runs a port's conformance kit before exposing a deployment binding", async () => {
+    const runtimePort = definePort<{ ready: boolean }>({
+      id: "loyalty.runtime",
+      test(provider) {
+        if (!provider.ready) throw new Error("loyalty.runtime provider is not ready")
+      },
+    })
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:non-conforming-runtime-port",
+      entries: {
+        "@acme/loyalty": async () => ({
+          createLoyaltyModule: defineGraphRuntimeFactory(async ({ getPort }) => {
+            await getPort(runtimePort)
+            return { module: { name: "loyalty" } }
+          }),
+        }),
+      },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          runtimePorts: [runtimePort.id],
+          routes: [
+            {
+              route: {
+                id: "@acme/loyalty#api",
+                surface: "admin",
+                runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
+              },
+              importEntry: "@acme/loyalty",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(
+      composeVoyantGraphRuntime({
+        runtime,
+        capabilities: {},
+        ports: { [runtimePort.id]: { ready: false } },
+      }),
+    ).rejects.toThrow("loyalty.runtime provider is not ready")
   })
 
   it("uses selected ID bindings for option-bearing factories and local units", async () => {

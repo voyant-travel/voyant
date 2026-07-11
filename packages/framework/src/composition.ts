@@ -395,7 +395,7 @@ export interface FrameworkProviders {
   /** Loads accommodation sourced-content routes. */
   loadAccommodationsContentRoutes: LazyRoutesLoader
   /** Loads storage upload, serve, and video-ticket routes. */
-  loadStorageRoutes: LazyRoutesLoader
+  loadStorageRoutes?: LazyRoutesLoader
   /** Loads inventory brochure generation routes. */
   loadInventoryBrochureRoutes: LazyRoutesLoader
   /** Loads the storefront payment-link routes (card seam, bank transfer). */
@@ -726,10 +726,17 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       // here so the deployment's `dbTransactionalPaths` can be empty (ADR-0008).
       transactionalPaths: CATALOG_BOOKING_TRANSACTIONAL_PATHS,
     }),
-    "@voyant-travel/storage": ({ capabilities }) => ({
-      module: { name: "media" },
-      lazyRoutes: { paths: STORAGE_ROUTE_PATHS, load: capabilities.loadStorageRoutes },
-    }),
+    "@voyant-travel/storage": ({ capabilities }) => {
+      if (!capabilities.loadStorageRoutes) {
+        throw new Error(
+          "frameworkComposition: @voyant-travel/storage requires loadStorageRoutes on the legacy composition path.",
+        )
+      }
+      return {
+        module: { name: "media" },
+        lazyRoutes: { paths: STORAGE_ROUTE_PATHS, load: capabilities.loadStorageRoutes },
+      }
+    },
     "@voyant-travel/storefront/payment-link": ({ capabilities }) => ({
       module: { name: "payment-link" },
       publicPath: "/",

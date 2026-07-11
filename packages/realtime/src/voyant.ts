@@ -1,4 +1,5 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { realtimeRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the realtime package. */
 export const realtimeVoyantModule = defineModule({
@@ -8,6 +9,7 @@ export const realtimeVoyantModule = defineModule({
   provides: {
     ports: [{ id: "realtime.transport" }],
   },
+  runtimePorts: [requirePort(realtimeRuntimePort)],
   api: [
     {
       id: "@voyant-travel/realtime#api.admin",
@@ -15,7 +17,7 @@ export const realtimeVoyantModule = defineModule({
       mount: "realtime",
       runtime: {
         entry: "@voyant-travel/realtime",
-        export: "createRealtimeHonoModule",
+        export: "createRealtimeVoyantRuntime",
       },
     },
     {
@@ -24,7 +26,7 @@ export const realtimeVoyantModule = defineModule({
       mount: "realtime",
       runtime: {
         entry: "@voyant-travel/realtime",
-        export: "createRealtimeHonoModule",
+        export: "createRealtimeVoyantRuntime",
       },
     },
   ],
