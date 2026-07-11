@@ -7,11 +7,12 @@ for managed product profiles. It is the source-free boundary: code in this entry
 must not import starter-local files, clone a tenant repository, or copy starter
 glue.
 
-The entry loads JSON produced by `defineVoyantProject(...)`, validates it with
-the managed profile contract, bridges it through
-`toCreateVoyantAppProfileConfig(...)`, builds the standard `createVoyantApp(...)`
-profile graph, and exposes a Node server bootstrap through
-`createNodeServer(...)`.
+The entry accepts an admitted project manifest or a compatibility JSON snapshot,
+then composes package runtime factories from the selected deployment graph. It
+uses `createVoyantApp({ standard: false })` only as the final Hono assembly layer
+and exposes the result through `createNodeServer(...)`. The legacy
+`createVoyantApp` standard-registry mode must fail when a selected standard unit
+has no registry factory; it must never silently omit graph-owned routes.
 
 Cloud-managed resources are declared by `getVoyantProjectRequirements(...)` and
 validated before boot. The entry must fail fast when required managed substrate
@@ -19,11 +20,11 @@ is missing instead of silently falling back to process-local storage. Local and
 self-hosted profiles may still use explicit memory providers for offline/dev
 execution.
 
-When a checked deployment graph is available, the generated runtime entry
-supplies its deployment mode and complete provider map alongside the resolved
-resource requirements. The JSON snapshot remains a compatibility input for
-profile/module metadata, but cannot override graph-selected self-hosted
-providers.
+The generated runtime entry supplies its deployment mode and complete provider
+map alongside the resolved resource requirements. A generic Node host passes an
+in-memory manifest and does not emit a synthetic managed-profile file. The JSON
+snapshot remains a compatibility input for older callers and cannot override
+graph-selected self-hosted providers.
 
 The source-free managed runtime is not yet a complete managed Cloud image by
 itself. Redis-backed `CACHE`/`RATE_LIMIT` bindings, Voyant Cloud admin auth

@@ -1,4 +1,57 @@
-import type { DefineVoyantGraphProjectUnitInput } from "@voyant-travel/core/project"
+import type {
+  DefineVoyantGraphProjectUnitInput,
+  VoyantGraphProjectAccessDeclaration,
+  VoyantGraphProjectDeployment,
+  VoyantProductBomReference,
+} from "@voyant-travel/core/project"
+
+export const STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE = {
+  schemaVersion: "voyant.product-bom-reference.v1",
+  id: "@voyant-travel/operator-standard",
+  version: "1",
+} as const satisfies VoyantProductBomReference
+
+export const STANDARD_OPERATOR_ACCESS: VoyantGraphProjectAccessDeclaration = {
+  presets: [
+    {
+      id: "commerce-read",
+      kind: "api-token",
+      label: "Commerce read",
+      grants: ["bookings:read"],
+    },
+    {
+      id: "agent-staff",
+      kind: "api-token-grant",
+      label: "Agent (staff)",
+      grants: ["bookings:read", "bookings:write"],
+      audience: "staff",
+    },
+    {
+      id: "editor",
+      kind: "staff",
+      label: "Editor",
+      grants: ["bookings:read", "bookings:write"],
+    },
+  ],
+}
+
+export const STANDARD_OPERATOR_DEPLOYMENT: VoyantGraphProjectDeployment = {
+  target: "node",
+  mode: "self-hosted",
+  providers: {
+    database: "postgres",
+    storage: "memory",
+    cache: "postgres",
+    sharedState: "memory",
+    rateLimit: "memory",
+    search: "none",
+    email: "none",
+    sms: "none",
+    auth: "better-auth",
+    scheduledJobs: "none",
+    workflows: "none",
+  },
+}
 
 export interface OperatorDistributionDeclaration {
   id: string
@@ -219,12 +272,22 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
   ],
 }
 
-/** The package selectors used to load the standard Node Operator graph. */
-export const STANDARD_OPERATOR_DISTRIBUTION = {
-  id: STANDARD_OPERATOR_DISTRIBUTION_POLICY.id,
+/** Versioned standard product declaration expanded by defineConfig at build time. */
+export const STANDARD_OPERATOR_PRODUCT_BOM = {
+  ...STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
   target: STANDARD_OPERATOR_DISTRIBUTION_POLICY.target,
   modules: STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.map(({ resolve }) => resolve),
   extensions: STANDARD_OPERATOR_DISTRIBUTION_POLICY.extensions.map(({ resolve }) => resolve),
+  access: STANDARD_OPERATOR_ACCESS,
+  deployment: STANDARD_OPERATOR_DEPLOYMENT,
+}
+
+/** The package selectors used to load the standard Node Operator graph. */
+export const STANDARD_OPERATOR_DISTRIBUTION = {
+  id: STANDARD_OPERATOR_DISTRIBUTION_POLICY.id,
+  target: STANDARD_OPERATOR_PRODUCT_BOM.target,
+  modules: STANDARD_OPERATOR_PRODUCT_BOM.modules,
+  extensions: STANDARD_OPERATOR_PRODUCT_BOM.extensions,
 } satisfies OperatorDistributionDeclaration
 
 /** Compatibility projection for the old createVoyantApp composition registry. */

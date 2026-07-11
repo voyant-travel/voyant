@@ -154,9 +154,7 @@ export function generateProjectApiAdapterSource(
   const public_ = routeRegistrations(orderedRoutes, "public")
 
   return [
-    'import type { HonoModule } from "@voyant-travel/hono/module"',
-    'import type { VoyantBindings, VoyantVariables } from "@voyant-travel/hono/types"',
-    'import { Hono } from "hono"',
+    'import { Hono, type HonoModule, type VoyantBindings, type VoyantVariables } from "@voyant-travel/framework/project-runtime"',
     ...imports,
     "",
     "type ProjectApiEnv = { Bindings: VoyantBindings; Variables: VoyantVariables }",

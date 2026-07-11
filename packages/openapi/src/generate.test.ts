@@ -76,9 +76,7 @@ describe("framework openapi spec", () => {
 
   it("excludes deployment-local routes (framework surface only)", () => {
     const allPaths = Object.keys(docs.full.paths ?? {})
-    // Operator-local modules (MICE, cruises) and provider plugins (Netopia) must
-    // never appear in the framework contract.
-    expect(allPaths.some((p) => p.includes("/mice") || p.includes("/cruises"))).toBe(false)
+    expect(allPaths.some((path) => path.includes("/netopia"))).toBe(false)
     for (const p of Object.keys(docs.admin.paths ?? {}))
       expect(p.startsWith("/v1/admin")).toBe(true)
     for (const p of Object.keys(docs.storefront.paths ?? {}))

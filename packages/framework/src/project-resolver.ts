@@ -17,6 +17,7 @@ import {
   buildGraphAdminBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
+  createResolvedGraphRuntime,
 } from "./deployment-artifacts.js"
 import {
   deriveDeploymentRequirements,
@@ -36,6 +37,7 @@ import {
 import {
   VOYANT_PROJECT_ACCESS_CATALOG_ENTRY,
   VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
+  VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
   VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project-artifact-paths.js"
 import {
@@ -124,6 +126,7 @@ export type ResolvedVoyantProjectGraph = Omit<ResolvedVoyantDeploymentGraph, "de
 
 export interface ResolvedVoyantProject {
   graph: ResolvedVoyantProjectGraph
+  runtime: import("./runtime-lowering.js").VoyantGraphRuntime
   artifacts: ResolvedProjectArtifacts
   conventions: ProjectConventionDiscovery
 }
@@ -214,6 +217,14 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     runtimeEntry,
   )
   const files: FrameworkGeneratedProjectFile[] = [
+    ...(targetNeutralGraph.project.productBom
+      ? [
+          {
+            path: VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
+            contents: buildProductBomExpansionArtifact(targetNeutralGraph),
+          },
+        ]
+      : []),
     projectApi.generatedFile,
     projectAdmin.file,
     {
@@ -258,7 +269,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     },
   ]
 
-  return {
+  const resolved = {
     graph: targetNeutralGraph,
     conventions,
     artifacts: {
@@ -268,7 +279,30 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,
     },
-  }
+  } as ResolvedVoyantProject
+  Object.defineProperty(resolved, "runtime", {
+    enumerable: false,
+    value: createResolvedGraphRuntime({ graph: targetNeutralGraph, runtimeEntryOverrides }),
+  })
+  return resolved
+}
+
+function buildProductBomExpansionArtifact(graph: ResolvedVoyantProjectGraph): string {
+  return `${JSON.stringify(
+    {
+      schemaVersion: "voyant.product-bom-expansion.v1",
+      productBom: graph.project.productBom,
+      graph: {
+        contentHash: graph.contentHash,
+        deploymentTarget: "node",
+        modules: graph.modules.map(({ id }) => id),
+        extensions: graph.extensions.map(({ id }) => id),
+        plugins: graph.plugins.map(({ id }) => id),
+      },
+    },
+    null,
+    2,
+  )}\n`
 }
 
 async function materializeProjectSubscriberLinkConventions(

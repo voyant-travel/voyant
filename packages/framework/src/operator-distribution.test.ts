@@ -5,11 +5,25 @@ import {
   STANDARD_OPERATOR_DISTRIBUTION,
   STANDARD_OPERATOR_DISTRIBUTION_POLICY,
   STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
+  STANDARD_OPERATOR_PRODUCT_BOM,
+  STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
   selectStandardOperatorDistribution,
 } from "./operator-distribution.js"
 
 describe("standard Operator distribution", () => {
   it("declares the complete package-owned Node closure in stable order", () => {
+    expect(STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE).toEqual({
+      schemaVersion: "voyant.product-bom-reference.v1",
+      id: "@voyant-travel/operator-standard",
+      version: "1",
+    })
+    expect(STANDARD_OPERATOR_PRODUCT_BOM).toMatchObject({
+      ...STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
+      target: "node",
+      modules: expect.any(Array),
+      extensions: expect.any(Array),
+      deployment: { target: "node" },
+    })
     expect(STANDARD_OPERATOR_DISTRIBUTION).toMatchObject({
       id: "operator-standard",
       target: "node",

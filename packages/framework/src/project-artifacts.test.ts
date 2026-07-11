@@ -109,6 +109,21 @@ describe("writeProjectArtifacts", () => {
     )
   })
 
+  it("accepts released CLI payloads that predate the workflow runtime pointer", async () => {
+    const projectRoot = await temporaryProject()
+    const artifacts = projectArtifacts([
+      { path: "runtime/project-package-workflows.generated.ts", contents: "export {}\n" },
+    ])
+    const legacyArtifacts = {
+      ...artifacts,
+      workflowRuntimeEntry: undefined,
+    } as unknown as ResolvedProjectArtifacts
+
+    const result = await writeProjectArtifacts({ projectRoot, artifacts: legacyArtifacts })
+
+    expect(result.ok).toBe(true)
+  })
+
   it("rejects symbolic-link traversal before writing any artifact", async () => {
     const projectRoot = await temporaryProject()
     const outsideRoot = await temporaryProject()
