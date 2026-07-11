@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest"
 
 import {
   createMediaHonoModule,
+  createMediaRoutes,
   STORAGE_MEDIA_ROUTE_PATHS,
+  STORAGE_OPENAPI_API_IDS,
   storageMediaRuntimePort,
 } from "./routes.js"
 import { storageVoyantModule } from "./voyant.js"
@@ -30,6 +32,7 @@ describe("storage deployment manifest", () => {
         expect.objectContaining({
           surface: "admin",
           mount,
+          ...(mount === "media" ? { openapi: { document: "storage-media" } } : {}),
           runtime: {
             entry: "@voyant-travel/storage/routes",
             export: "createStorageVoyantRuntime",
@@ -45,6 +48,23 @@ describe("storage deployment manifest", () => {
     expect(module.module.name).toBe("media")
     expect(module.lazyRoutes.paths).toEqual(STORAGE_MEDIA_ROUTE_PATHS)
     expect(module.lazyRoutes.paths).not.toContain("/v1/admin/products/:id/brochure/generate")
+  })
+
+  it("publishes package-owned OpenAPI operations keyed by graph API id", () => {
+    const routes = createMediaRoutes({
+      resolveStorage: () => null,
+      signVideoUploadTicket: async () => null,
+    })
+    const document = routes.getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "Storage", version: "1" },
+    })
+
+    expect(readApiId(document, "/v1/admin/uploads", "post")).toBe(STORAGE_OPENAPI_API_IDS.uploads)
+    expect(readApiId(document, "/v1/admin/uploads/video", "post")).toBe(
+      STORAGE_OPENAPI_API_IDS.videoUploadTicket,
+    )
+    expect(readApiId(document, "/v1/admin/media/{key}", "get")).toBe(STORAGE_OPENAPI_API_IDS.media)
   })
 
   it("ships a conformance kit for deployment media providers", async () => {
@@ -80,3 +100,8 @@ describe("storage deployment manifest", () => {
     ])
   })
 })
+
+function readApiId(document: unknown, path: string, method: string) {
+  const paths = (document as { paths?: Record<string, Record<string, unknown>> }).paths
+  return (paths?.[path]?.[method] as Record<string, unknown> | undefined)?.["x-voyant-api-id"]
+}

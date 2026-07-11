@@ -33,6 +33,7 @@ export const storageVoyantModule = defineModule({
       id: "@voyant-travel/storage#api.admin.media",
       surface: "admin",
       mount: "media",
+      openapi: { document: "storage-media" },
       runtime: {
         entry: "@voyant-travel/storage/routes",
         export: "createStorageVoyantRuntime",
