@@ -13,6 +13,7 @@ export const flightsVoyantModule = defineModule({
       id: "@voyant-travel/flights#api",
       surface: "admin",
       mount: "flights",
+      openapi: { document: "flights" },
       runtime: {
         entry: "@voyant-travel/flights/hono",
         export: "createFlightsVoyantRuntime",

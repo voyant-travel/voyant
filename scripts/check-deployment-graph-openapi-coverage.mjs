@@ -34,18 +34,6 @@ const HTTP_METHODS = new Set([
 
 const DEFAULT_ALLOWLIST = new Map([
   [
-    "@voyant-travel/accommodations#content-extension.api.public",
-    "the accommodations content extension public routes do not yet expose committed OpenAPI operations",
-  ],
-  [
-    "@voyant-travel/flights#api",
-    "flights declares a graph API bundle before committed operator OpenAPI paths are emitted for it",
-  ],
-  [
-    "@voyant-travel/quotes#proposal-extension.api.public",
-    "the quote proposal extension public routes do not yet expose committed OpenAPI operations",
-  ],
-  [
     "@voyant-travel/plugin-smartbill#api.admin",
     "SmartBill 0.138.0 publishes a plain Hono admin route and does not yet expose a package OpenAPI registry",
   ],

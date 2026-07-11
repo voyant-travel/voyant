@@ -26,6 +26,7 @@
  * profile via `QuoteProposalRoutesOptions` — all generic / structural so this
  * package stays free of operator types and CloudflareBindings.
  */
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { parseJsonBody, parseOptionalJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import {
@@ -89,6 +90,18 @@ export interface QuoteProposalRoutesOptions {
     c: Context,
   ): Promise<PublicProposalFeedbackRecord | null>
 }
+
+export const QUOTE_PROPOSAL_OPENAPI_API_IDS = {
+  admin: "@voyant-travel/quotes#proposal-extension.api.admin",
+  public: "@voyant-travel/quotes#proposal-extension.api.public",
+} as const
+
+const PUBLIC_PROPOSAL_OPENAPI_OPERATIONS = [
+  ["get", "/{quoteVersionId}", "Get a public quote proposal"],
+  ["post", "/{quoteVersionId}/accept", "Accept a public quote proposal"],
+  ["post", "/{quoteVersionId}/decline", "Decline a public quote proposal"],
+  ["post", "/{quoteVersionId}/request-edits", "Request quote proposal edits"],
+] as const
 
 export interface QuoteVersionSnapshotRoutesOptions {
   /** Resolve the concrete transactional db for a request. */
@@ -297,12 +310,21 @@ export function createQuoteProposalAdminRoutes(
 /** Build the public proposal routes (relative paths; mount at `/v1/public/proposals`). */
 export function createQuoteProposalPublicRoutes(
   options: QuoteProposalRoutesOptions,
-): Hono<OperatorProposalRouteEnv> {
-  const app = new Hono<OperatorProposalRouteEnv>()
+): OpenAPIHono<OperatorProposalRouteEnv> {
+  const app = new OpenAPIHono<OperatorProposalRouteEnv>()
   app.get("/:quoteVersionId", (c) => handleGetPublicProposal(c, options))
   app.post("/:quoteVersionId/accept", (c) => handleAcceptPublicProposal(c, options))
   app.post("/:quoteVersionId/decline", (c) => handleDeclinePublicProposal(c, options))
   app.post("/:quoteVersionId/request-edits", (c) => handleRequestPublicProposalEdits(c, options))
+  for (const [method, path, summary] of PUBLIC_PROPOSAL_OPENAPI_OPERATIONS) {
+    app.openAPIRegistry.registerPath({
+      method,
+      path,
+      summary,
+      responses: { 200: { description: "Successful response." } },
+      "x-voyant-api-id": QUOTE_PROPOSAL_OPENAPI_API_IDS.public,
+    })
+  }
   return app
 }
 

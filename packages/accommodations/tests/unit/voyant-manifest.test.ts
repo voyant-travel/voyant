@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { createAccommodationContentHonoExtension } from "../../src/routes-content.js"
+import {
+  ACCOMMODATION_CONTENT_OPENAPI_API_IDS,
+  createAccommodationContentHonoExtension,
+} from "../../src/routes-content.js"
 import { accommodationsContentVoyantPlugin, accommodationsVoyantModule } from "../../src/voyant.js"
 
 describe("accommodations deployment manifest", () => {
@@ -50,6 +53,7 @@ describe("accommodations deployment manifest", () => {
           surface: "public",
           mount: "accommodations",
           anonymous: true,
+          openapi: { document: "accommodations-content-public" },
           runtime: { export: "createAccommodationContentHonoExtension" },
         },
       ],
@@ -63,5 +67,33 @@ describe("accommodations deployment manifest", () => {
     expect(extension.extension).toMatchObject({ name: "content", module: "accommodations" })
     expect(extension.adminRoutes).toBeDefined()
     expect(extension.publicRoutes).toBeDefined()
+
+    const document = openApiDocument(extension.publicRoutes)
+    expect(readApiId(document, "/{id}/content", "get")).toBe(
+      ACCOMMODATION_CONTENT_OPENAPI_API_IDS.public,
+    )
   })
 })
+
+function openApiDocument(routes: unknown) {
+  return (routes as OpenApiDocumentSource).getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Accommodation content", version: "1" },
+  })
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, unknown>>
+  }
+}
+
+function readApiId(
+  document: { paths?: Record<string, Record<string, unknown>> },
+  path: string,
+  method: string,
+) {
+  return (document.paths?.[path]?.[method] as Record<string, unknown> | undefined)?.[
+    "x-voyant-api-id"
+  ]
+}

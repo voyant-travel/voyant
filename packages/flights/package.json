@@ -126,6 +126,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@hono/zod-openapi": "catalog:",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
