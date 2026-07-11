@@ -1,31 +1,15 @@
 import type { WorkflowDescriptor } from "@voyant-travel/core"
 import { workflow } from "@voyant-travel/workflows"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import type { NotificationTaskEnv, NotificationTaskRuntimeOptions } from "./task-runtime.js"
 import { deliverQueuedNotificationReminder } from "./tasks/deliver-reminder.js"
 import { sendDueNotificationReminders } from "./tasks/send-due-reminders.js"
+import type {
+  DeliverReminderWorkflowInput,
+  DeliverReminderWorkflowOutput,
+  NotificationReminderWorkflowRuntime,
+  SendDueRemindersWorkflowInput,
+} from "./workflow-runtime.js"
 
-export interface DeliverReminderWorkflowInput {
-  reminderRunId: string
-}
-
-export interface DeliverReminderWorkflowOutput {
-  reminderRunId: string
-  status: string | null
-}
-
-export interface SendDueRemindersWorkflowInput {
-  now?: string | null
-}
-
-export interface CreateNotificationReminderWorkflowsOptions {
-  resolveDb: () => PostgresJsDatabase | Promise<PostgresJsDatabase>
-  resolveEnv: () => NotificationTaskEnv | Promise<NotificationTaskEnv>
-  resolveRuntimeOptions: (
-    env: NotificationTaskEnv,
-  ) => NotificationTaskRuntimeOptions | Promise<NotificationTaskRuntimeOptions>
-}
+export type CreateNotificationReminderWorkflowsOptions = NotificationReminderWorkflowRuntime
 
 export const notificationsDeliverReminderWorkflowManifest = {
   id: "notifications.deliver-reminder",
@@ -58,13 +42,7 @@ export function createNotificationReminderWorkflows(
     ...notificationsDeliverReminderWorkflowManifest.config,
     id: notificationsDeliverReminderWorkflowManifest.id,
     async run(input) {
-      const [db, env] = await Promise.all([options.resolveDb(), options.resolveEnv()])
-      return deliverQueuedNotificationReminder(
-        db,
-        env,
-        input,
-        await options.resolveRuntimeOptions(env),
-      )
+      return runDeliverReminder(options, input)
     },
   })
 
@@ -75,16 +53,39 @@ export function createNotificationReminderWorkflows(
     ...notificationsSendDueRemindersWorkflowManifest.config,
     id: notificationsSendDueRemindersWorkflowManifest.id,
     async run(input, ctx) {
-      const [db, env] = await Promise.all([options.resolveDb(), options.resolveEnv()])
-      const runtimeOptions = await options.resolveRuntimeOptions(env)
-      return sendDueNotificationReminders(db, env, input, {
-        ...runtimeOptions,
-        enqueueReminderDelivery: async (job) => {
-          await ctx.invoke(deliverReminderWorkflow, job, { detach: true })
-        },
+      return runSendDueReminders(options, input, async (job) => {
+        await ctx.invoke(deliverReminderWorkflow, job, { detach: true })
       })
     },
   })
 
   return { deliverReminderWorkflow, sendDueRemindersWorkflow }
 }
+
+async function runDeliverReminder(
+  options: NotificationReminderWorkflowRuntime,
+  input: DeliverReminderWorkflowInput,
+): Promise<DeliverReminderWorkflowOutput> {
+  const [db, env] = await Promise.all([options.resolveDb(), options.resolveEnv()])
+  return deliverQueuedNotificationReminder(db, env, input, await options.resolveRuntimeOptions(env))
+}
+
+async function runSendDueReminders(
+  options: NotificationReminderWorkflowRuntime,
+  input: SendDueRemindersWorkflowInput,
+  enqueueReminderDelivery: (job: DeliverReminderWorkflowInput) => Promise<void>,
+): Promise<Awaited<ReturnType<typeof sendDueNotificationReminders>>> {
+  const [db, env] = await Promise.all([options.resolveDb(), options.resolveEnv()])
+  const runtimeOptions = await options.resolveRuntimeOptions(env)
+  return sendDueNotificationReminders(db, env, input, {
+    ...runtimeOptions,
+    enqueueReminderDelivery,
+  })
+}
+
+export type {
+  DeliverReminderWorkflowInput,
+  DeliverReminderWorkflowOutput,
+  NotificationReminderWorkflowRuntime,
+  SendDueRemindersWorkflowInput,
+} from "./workflow-runtime.js"

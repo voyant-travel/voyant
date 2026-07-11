@@ -47,7 +47,14 @@ describe("notifications deployment manifest", () => {
     ])
   })
 
-  it("exposes configurable reminder workflow factories", () => {
+  it("defers executable workflow runtime activation", () => {
+    expect(notificationsVoyantModule.workflows).toEqual([
+      expect.not.objectContaining({ runtime: expect.anything() }),
+      expect.not.objectContaining({ runtime: expect.anything() }),
+    ])
+  })
+
+  it("preserves configurable reminder workflow factories", () => {
     const definitions = createNotificationReminderWorkflows({
       resolveDb: () => ({}) as never,
       resolveEnv: () => ({}),
