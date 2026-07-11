@@ -334,6 +334,7 @@
       "@voyant-travel/catalog/offers": ["../catalog/dist/offers/operator-routes.d.ts"],
       "@voyant-travel/catalog/overlay/resolver": ["../catalog/dist/overlay/resolver.d.ts"],
       "@voyant-travel/catalog/overlay/schema": ["../catalog/dist/overlay/schema.d.ts"],
+      "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],
       "@voyant-travel/catalog/provenance": ["../catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [
