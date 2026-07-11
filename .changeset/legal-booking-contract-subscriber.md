@@ -2,4 +2,4 @@
 "@voyant-travel/legal": patch
 ---
 
-Stage the package-owned Legal booking-confirmed contract generation subscriber descriptor and narrow runtime service contract for a later selected-graph activation.
+Activate Legal booking-contract generation through selected graph composition and Legal-owned typed runtime ports.

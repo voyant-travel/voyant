@@ -1427,6 +1427,9 @@
         "../../packages/notifications/dist/providers/voyant-cloud-sms.d.ts"
       ],
       "@voyant-travel/notifications/routes": ["../../packages/notifications/dist/routes.d.ts"],
+      "@voyant-travel/notifications/runtime-port": [
+        "../../packages/notifications/dist/runtime-port.d.ts"
+      ],
       "@voyant-travel/notifications/schema": ["../../packages/notifications/dist/schema.d.ts"],
       "@voyant-travel/notifications/service": ["../../packages/notifications/dist/service.d.ts"],
       "@voyant-travel/notifications/subscriber-runtime": [

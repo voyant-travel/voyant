@@ -2,6 +2,15 @@ import { createContainer, createEventBus } from "@voyant-travel/core"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
+import { legalRuntimePort } from "@voyant-travel/legal"
+import {
+  LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY,
+  legalBookingContractSubscriberRuntimePort,
+} from "@voyant-travel/legal/booking-contract-subscriber"
+import {
+  NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
+  notificationsRuntimePort,
+} from "@voyant-travel/notifications"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
@@ -141,6 +150,143 @@ describe("operator graph runtime composition", () => {
     expect(
       composed.extensions.some((extension) => extension.extension.name === "booking-schedule"),
     ).toBe(false)
+  })
+
+  it("registers selected Notifications subscribers once with confirmation priority", async () => {
+    const composed = await composeOperatorGraph()
+    const notificationsModule = composed.modules.find(
+      (module) => module.module.name === "notifications",
+    )
+    const subscriberRuntimeModule = composed.modules.find(
+      (module) =>
+        module.module.name === "notifications.reminder-subscribers-extension.graph-runtime",
+    )
+    const subscriberExtension = composed.extensions.find(
+      (extension) => extension.extension.name === "notifications-reminder-subscribers",
+    )
+    const container = createContainer()
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const context = { bindings: {} as AppBindings, container, eventBus }
+
+    await notificationsModule?.module.bootstrap?.(context)
+    await subscriberExtension?.extension.bootstrap?.(context)
+    await subscriberRuntimeModule?.module.bootstrap?.(context)
+
+    expect(subscriberExtension?.extension.bootstrap).toBeTypeOf("function")
+    expect(container.has(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY)).toBe(true)
+    expect(subscribe.mock.calls.map(([eventType]) => eventType)).toEqual([
+      "booking.confirmed",
+      "booking.cancelled",
+      "booking.confirmed",
+      "booking.expired",
+      "payment.completed",
+    ])
+    expect(
+      subscribe.mock.calls
+        .map(([eventType], index) => ({ eventType, index }))
+        .filter(({ eventType }) => eventType === "booking.confirmed")
+        .map(({ index }) => index),
+    ).toEqual([0, 2])
+  })
+
+  it("removes Notifications subscriber services and handlers when deselected", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const composed = await composeOperatorGraph({
+      ...runtime,
+      extensions: runtime.extensions.filter(
+        (unit) => unit.id !== "@voyant-travel/notifications#reminder-subscribers-extension",
+      ),
+    })
+
+    expect(
+      composed.modules.some(
+        (module) =>
+          module.module.name === "notifications.reminder-subscribers-extension.graph-runtime",
+      ),
+    ).toBe(false)
+    expect(
+      composed.extensions.some(
+        (extension) => extension.extension.name === "notifications-reminder-subscribers",
+      ),
+    ).toBe(false)
+  })
+
+  it("registers the selected Legal booking-contract subscriber exactly once", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const legal = runtime.extensions.find(
+      (unit) => unit.id === "@voyant-travel/legal#booking-contract-extension",
+    )
+    const composed = await composeVoyantGraphRuntime({
+      runtime,
+      capabilities: buildOperatorProviders(),
+      bindings: operatorGraphRuntimeBindings,
+      ports: {
+        ...buildOperatorRuntimePorts(),
+        [legalBookingContractSubscriberRuntimePort.id]: {
+          createRuntime: () => ({
+            options: { enabled: true, templateSlug: "customer-sales-agreement" },
+            withDb: vi.fn(),
+            documentGenerator: vi.fn(),
+            resolveActionLedgerContext: vi.fn(() => null),
+          }),
+        },
+      },
+    })
+    const runtimeModule = composed.modules.find(
+      (module) => module.module.name === "legal.booking-contract-extension.graph-runtime",
+    )
+    const extension = composed.extensions.find(
+      (candidate) => candidate.extension.name === "booking-contract",
+    )
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+    const container = createContainer()
+    const context = { bindings: { DATABASE_URL: "postgres://test" }, container, eventBus }
+
+    expect(
+      legal?.references
+        .filter((reference) => reference.facet === "subscribers.runtime")
+        .map((reference) => reference.entityId),
+    ).toEqual(["@voyant-travel/legal#subscriber.booking-contract-confirmed"])
+    await runtimeModule?.module.bootstrap?.(context)
+    await extension?.extension.bootstrap?.(context)
+
+    expect(runtimeModule?.module.bootstrap).toBeTypeOf("function")
+    expect(extension?.extension.bootstrap).toBeTypeOf("function")
+    expect(container.has(LEGAL_BOOKING_CONTRACT_SUBSCRIBER_RUNTIME_KEY)).toBe(true)
+    expect(
+      subscribe.mock.calls.filter(([eventType]) => eventType === "booking.confirmed"),
+    ).toHaveLength(1)
+  })
+
+  it("does not lower or bind the Legal subscriber when its extension is deselected", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const composed = await composeVoyantGraphRuntime({
+      runtime: {
+        ...runtime,
+        extensions: runtime.extensions.filter(
+          (unit) => unit.id !== "@voyant-travel/legal#booking-contract-extension",
+        ),
+      },
+      capabilities: buildOperatorProviders(),
+      bindings: operatorGraphRuntimeBindings,
+      ports: buildOperatorRuntimePorts(),
+    })
+
+    expect(
+      composed.modules.some(
+        (module) => module.module.name === "legal.booking-contract-extension.graph-runtime",
+      ),
+    ).toBe(false)
+    expect(
+      composed.extensions.some((extension) => extension.extension.name === "booking-contract"),
+    ).toBe(false)
+  })
+
+  it("binds Legal runtime services by declared ports instead of package id", () => {
+    expect(buildOperatorRuntimePorts()).toHaveProperty(legalBookingContractSubscriberRuntimePort.id)
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/legal")
   })
 
   it("selects SmartBill package subscribers and binds only its operator adapter", async () => {
@@ -333,16 +479,21 @@ describe("operator graph runtime composition", () => {
     )
   })
 
-  it("binds package route dependencies by declared ports instead of package ids", async () => {
+  it("binds host runtimes by package-declared ports instead of package ids", async () => {
     const ports = buildOperatorRuntimePorts()
 
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/relationships")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/storage")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/realtime")
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/notifications")
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/legal")
     expect(Object.keys(ports).sort()).toEqual(
       [
         flightsRuntimePort.id,
         relationshipsRouteRuntimePort.id,
+        legalBookingContractSubscriberRuntimePort.id,
+        legalRuntimePort.id,
+        notificationsRuntimePort.id,
         realtimeRuntimePort.id,
         storageMediaRuntimePort.id,
       ].sort(),

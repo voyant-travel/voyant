@@ -14,6 +14,7 @@
     "./tasks": "./src/tasks/index.ts",
     "./workflows": "./src/workflow-entry.ts",
     "./workflow-runtime": "./src/workflow-runtime.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./subscriber-runtime": "./src/subscriber-runtime.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
@@ -110,6 +111,11 @@
         "types": "./dist/workflow-runtime.d.ts",
         "import": "./dist/workflow-runtime.js",
         "default": "./dist/workflow-runtime.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./subscriber-runtime": {
         "types": "./dist/subscriber-runtime.d.ts",

@@ -26,7 +26,7 @@ describe("notifications deployment manifest", () => {
           transactional: true,
           runtime: {
             entry: "@voyant-travel/notifications",
-            export: "createNotificationsHonoModule",
+            export: "createNotificationsVoyantRuntime",
           },
         },
       ],
@@ -75,24 +75,30 @@ describe("notifications deployment manifest", () => {
     )
   })
 
-  it("keeps reminder subscriber runtime references inert and export-compatible", () => {
+  it("publishes ordered confirmation and reminder subscriber runtime references", () => {
     const declarations = notificationsReminderSubscribersVoyantPlugin.subscribers ?? []
 
-    expect(declarations.map(({ id, eventType }) => ({ id, eventType }))).toEqual(
+    expect(notificationsReminderSubscribersVoyantPlugin).toMatchObject({
+      runtime: {
+        entry: "@voyant-travel/notifications",
+        export: "createNotificationsSubscribersVoyantRuntime",
+      },
+      runtimePorts: [{ id: "notifications.runtime" }],
+    })
+    expect(declarations.slice(1).map(({ id, eventType }) => ({ id, eventType }))).toEqual(
       notificationsReminderSubscriberRuntimeDescriptors.map(({ id, eventType }) => ({
         id,
         eventType,
       })),
     )
     expect(declarations.map((subscriber) => subscriber.runtime?.export)).toEqual([
+      "notificationsBookingConfirmationAutoDispatchSubscriber",
       "notificationsBookingConfirmedReminderSubscriber",
       "notificationsPaymentCompletedReminderSubscriber",
       "notificationsBookingCancelledReminderSubscriber",
       "notificationsBookingExpiredReminderSubscriber",
     ])
-    expect(declarations.map((subscriber) => subscriber.id)).not.toContain(
-      NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID,
-    )
+    expect(declarations[0]?.id).toBe(NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID)
   })
 
   it("preserves configurable reminder workflow factories", () => {

@@ -32,6 +32,12 @@ import {
 import { lazyProvider } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import { legalRuntimePort } from "@voyant-travel/legal"
+import {
+  type LegalBookingContractSubscriberRuntime,
+  legalBookingContractSubscriberRuntimePort,
+} from "@voyant-travel/legal/booking-contract-subscriber"
+import { notificationsRuntimePort } from "@voyant-travel/notifications"
 import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
@@ -48,6 +54,7 @@ import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-require
 import { withDbFromEnv } from "./lib/db"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
+import { createOperatorNotificationsRuntimeProvider } from "./runtime/notifications-runtime"
 import {
   createOperatorBookingPiiService,
   createOperatorDocumentStorage,
@@ -63,7 +70,6 @@ import {
   registerBookingsWorkflowService,
   registerDistributionWorkflowService,
   registerInventoryWorkflowService,
-  registerNotificationsWorkflowService,
 } from "./runtime/operator-workflow-services"
 import {
   resolveBankTransferDetails,
@@ -95,9 +101,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   readDocumentContentBase64: typeof readOperatorDocumentContentBase64
   resolveDb: typeof resolveOperatorDb
   createOperatorDocumentStorage: typeof createOperatorDocumentStorage
-  resolveContractDocumentGenerator: typeof resolveOperatorContractDocumentGenerator
-  createBookingPiiService: typeof createOperatorBookingPiiService
-  autoGenerateContractOnConfirmed: typeof AUTO_GENERATE_CONTRACT_OPTIONS
   resolveBankTransferDetails: typeof resolveBankTransferDetails
   relationshipsService: FrameworkProviders["relationshipsService"]
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
@@ -254,6 +257,39 @@ export function buildOperatorRuntimePorts(): VoyantGraphRuntimePorts {
     [flightsRuntimePort.id]: import("./runtime/flights-runtime").then(
       (runtime) => runtime.operatorFlightsRuntime,
     ),
+    [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider(),
+    [legalRuntimePort.id]: {
+      resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
+      resolveDocumentStorage: createOperatorDocumentStorage,
+      resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
+      resolveBookingPiiService: createOperatorBookingPiiService,
+    },
+    [legalBookingContractSubscriberRuntimePort.id]: {
+      createRuntime(bindings: unknown): LegalBookingContractSubscriberRuntime | null {
+        const documentGenerator = resolveOperatorContractDocumentGenerator(bindings)
+        if (!documentGenerator) {
+          console.error(
+            "[legal] autoGenerateContractOnConfirmed.enabled=true but no documentGenerator resolved; skipping subscriber.",
+          )
+          return null
+        }
+        return {
+          options: AUTO_GENERATE_CONTRACT_OPTIONS,
+          withDb: (runtimeBindings, operation) =>
+            withDbFromEnv(runtimeBindings as AppBindings, operation),
+          documentGenerator,
+          documentStorage: createOperatorDocumentStorage(bindings),
+          resolveBookingPiiService: () => createOperatorBookingPiiService(bindings),
+          resolveVariables: AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
+          resolveActionLedgerContext: (event) => ({
+            userId: event.actorId,
+            actor: event.actorId ? "staff" : "system",
+            callerType: "internal",
+            isInternalRequest: true,
+          }),
+        }
+      },
+    },
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -525,19 +561,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
     return withModuleWorkflowService(configured, registerBookingsWorkflowService)
   },
   "@voyant-travel/finance": createOperatorFinanceGraphModule,
-  "@voyant-travel/legal": ({ capabilities, runtimeExports, unit }) =>
-    singleRuntimeFactory<typeof import("@voyant-travel/legal").createLegalHonoModule>(
-      unit.id,
-      runtimeExports,
-    )({
-      resolveDb: capabilities.resolveDb,
-      resolveDocumentDownloadUrl: (bindings, storageKey) =>
-        capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-      resolveDocumentStorage: capabilities.createOperatorDocumentStorage,
-      resolveDocumentGenerator: capabilities.resolveContractDocumentGenerator,
-      resolveBookingPiiService: capabilities.createBookingPiiService,
-      autoGenerateContractOnConfirmed: capabilities.autoGenerateContractOnConfirmed,
-    }),
   "@voyant-travel/mice": ({ capabilities, runtimeExports, unit }) =>
     singleRuntimeFactory<typeof import("@voyant-travel/mice").createMiceHonoModule>(
       unit.id,
@@ -551,47 +574,6 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       singleRuntimeValue<HonoModule>(unit.id, runtimeExports),
       registerInventoryWorkflowService,
     ),
-  "@voyant-travel/notifications": ({ capabilities, runtimeExports, unit }) => {
-    const createNotifications = singleRuntimeFactory<
-      typeof import("@voyant-travel/notifications").createNotificationsHonoModule
-    >(unit.id, runtimeExports)
-    const configured = createNotifications({
-      resolveProviders: capabilities.resolveNotificationProviders,
-      resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-      resolveDocumentAttachmentResolver: (bindings) => async (document) => {
-        const notifications = await import("@voyant-travel/notifications")
-        if (document.storageKey) {
-          const contentBase64 = await capabilities.readDocumentContentBase64(
-            bindings,
-            document.storageKey,
-          )
-          if (contentBase64) {
-            return {
-              filename: document.name,
-              contentBase64,
-              contentType: document.mimeType ?? undefined,
-            }
-          }
-          const path = await capabilities.resolveDocumentDownloadUrl(bindings, document.storageKey)
-          if (path) {
-            return {
-              filename: document.name,
-              path,
-              contentType: document.mimeType ?? undefined,
-            }
-          }
-        }
-        return notifications.createDefaultBookingDocumentAttachment(document)
-      },
-      resolveDb: capabilities.resolveDb,
-      autoConfirmAndDispatch: {
-        enabled: true,
-        templateSlug: "booking-confirmation",
-        ...capabilities.notificationsAutoConfirmAndDispatch,
-      },
-    })
-    return withModuleWorkflowService(configured, registerNotificationsWorkflowService)
-  },
   "@voyant-travel/trips": ({ capabilities, runtimeExports, unit }) => {
     const configured = singleRuntimeFactory<
       typeof import("@voyant-travel/trips").createTripsHonoModule
@@ -607,7 +589,7 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
         withDb: (operation) =>
           capabilities.withDb
             ? capabilities.withDb(bindings, operation)
-            : operation(capabilities.resolveDb(bindings as unknown as Record<string, unknown>)),
+            : operation(capabilities.resolveDb(bindings)),
       }
       container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
     })
