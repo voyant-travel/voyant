@@ -18,6 +18,8 @@ export function generateProjectWorkflowsSource(
         `import workflow${index} from ${JSON.stringify(generatedImportSpecifier(workflow.sourcePath))}`,
     ),
     ...(ordered.length > 0 ? [""] : []),
+    ...ordered.map((_, index) => `export { workflow${index} as projectWorkflow${index} }`),
+    ...(ordered.length > 0 ? [""] : []),
     "export const projectWorkflows = [",
     ...ordered.map(
       (workflow, index) =>
@@ -31,18 +33,29 @@ export function generateProjectWorkflowsSource(
 export function generateProjectJobsSource(jobs: readonly ProjectWorkflowJobSource[]): string {
   const ordered = [...jobs].sort(compareContributions)
   return [
-    'import type { ScheduleDeclaration } from "@voyant-travel/workflows"',
+    'import { defineWorkflow, type ScheduleDeclaration, type WorkflowContext } from "@voyant-travel/workflows"',
     ...ordered.map(
       (job, index) =>
         `import job${index}, { schedule as schedule${index} } from ${JSON.stringify(generatedImportSpecifier(job.sourcePath))}`,
     ),
     ...(ordered.length > 0 ? [""] : []),
+    "type ProjectJobHandler = (input: unknown, context: WorkflowContext<unknown>) => unknown | Promise<unknown>",
+    ...(ordered.length > 0 ? [""] : []),
+    ...ordered.flatMap((job, index) => [
+      `const projectJobHandler${index} = job${index} as ProjectJobHandler`,
+      `export const projectJobWorkflow${index} = defineWorkflow({`,
+      `  id: ${JSON.stringify(job.id)},`,
+      `  schedule: schedule${index},`,
+      `  run: projectJobHandler${index},`,
+      "})",
+      "",
+    ]),
     "export const projectJobs = [",
     ...ordered.map(
       (job, index) =>
-        `  { id: ${JSON.stringify(job.id)}, schedule: schedule${index}, handler: job${index} },`,
+        `  { id: ${JSON.stringify(job.id)}, schedule: schedule${index}, handler: projectJobHandler${index}, workflow: projectJobWorkflow${index} },`,
     ),
-    "] as const satisfies readonly { id: string; schedule: ScheduleDeclaration; handler: unknown }[]",
+    "] as const satisfies readonly { id: string; schedule: ScheduleDeclaration; handler: ProjectJobHandler; workflow: ReturnType<typeof defineWorkflow> }[]",
     "",
   ].join("\n")
 }

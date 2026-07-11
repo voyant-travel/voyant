@@ -33,6 +33,12 @@ import {
   type ProjectConventionDiscovery,
   type ProjectConventionFileContribution,
 } from "./project-conventions.js"
+import {
+  compileProjectWorkflowJobConventions,
+  PROJECT_JOBS_GENERATED_PATH,
+  PROJECT_WORKFLOWS_GENERATED_PATH,
+  type ProjectWorkflowJobConventionCompilation,
+} from "./project-workflow-job-conventions.js"
 
 export const VOYANT_MIGRATION_PLAN_SCHEMA_VERSION = "voyant.migration-plan.v1" as const
 export const VOYANT_PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts" as const
@@ -135,17 +141,19 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   assertPathInside(projectRoot, configPath, "configPath")
   const conventions = await discoverProjectConventions({ projectRoot })
   assertProjectConventionDiagnostics(conventions)
-  const [projectApi, projectAdmin] = await Promise.all([
+  const [projectApi, projectAdmin, projectWorkflowJobs] = await Promise.all([
     compileProjectApiConventions({ projectRoot }),
     compileProjectAdminConventions({
       projectRoot,
       contributions: conventions.contributions,
     }),
+    compileProjectWorkflowJobConventions({ projectRoot }),
   ])
 
   const materialized = await materializeProjectSelections(project, projectRoot)
   await materializeProjectModuleConventions(materialized, conventions, projectRoot)
   await materializeProjectApiConventions(materialized, projectApi, projectRoot)
+  await materializeProjectWorkflowJobConventions(materialized, projectWorkflowJobs, projectRoot)
   const providers = { ...(project.deployment?.providers ?? {}) }
   const mode = project.deployment?.mode
   const frameworkVersion = await readFrameworkVersion()
@@ -182,6 +190,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const files: FrameworkGeneratedProjectFile[] = [
     projectApi.generatedFile,
     projectAdmin.file,
+    ...projectWorkflowJobs.generatedFiles,
     {
       path: runtimeEntry,
       contents: buildProjectRuntimeModule({
@@ -208,6 +217,32 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,
     },
+  }
+}
+
+async function materializeProjectWorkflowJobConventions(
+  materialized: MaterializedProject,
+  compilation: ProjectWorkflowJobConventionCompilation,
+  projectRoot: string,
+): Promise<void> {
+  if (compilation.graphWorkflows.length === 0) return
+  const packageName = await admitProjectSourcePackage(materialized, projectRoot)
+  materialized.project = {
+    ...materialized.project,
+    modules: [
+      ...materialized.project.modules,
+      {
+        schemaVersion: "voyant.module.v1",
+        id: graphIdForSelection(packageName, `${packageName}#project-workflows`),
+        packageName,
+        localId: "project-workflows",
+        workflows: compilation.graphWorkflows,
+        meta: {
+          source: "project-convention",
+          generatedPaths: [PROJECT_WORKFLOWS_GENERATED_PATH, PROJECT_JOBS_GENERATED_PATH],
+        },
+      },
+    ],
   }
 }
 
@@ -675,7 +710,11 @@ function resolveProjectSourceRuntimeTarget(projectRoot: string, entry: string): 
 }
 
 function isGeneratedProjectRuntimeEntry(entry: string): boolean {
-  return entry === `./.voyant/${PROJECT_API_GENERATED_PATH}`
+  return [
+    PROJECT_API_GENERATED_PATH,
+    PROJECT_WORKFLOWS_GENERATED_PATH,
+    PROJECT_JOBS_GENERATED_PATH,
+  ].some((generatedPath) => entry === `./.voyant/${generatedPath}`)
 }
 
 function lowerOwnerRuntimeEntry(packageName: string, entry: string): string {

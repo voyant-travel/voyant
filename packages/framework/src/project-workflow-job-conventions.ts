@@ -1,5 +1,10 @@
 import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
+import type {
+  VoyantGraphJsonObject,
+  VoyantGraphJsonValue,
+  VoyantGraphWorkflow,
+} from "@voyant-travel/core/project"
 import ts from "typescript"
 
 import {
@@ -23,12 +28,15 @@ export {
 export const PROJECT_WORKFLOW_JOB_CONVENTION_DIAGNOSTIC_CODES = {
   PROJECT_JOB_ID_COLLISION: "Two job files resolve to the same stable identifier.",
   PROJECT_JOB_IMPORT_ESCAPE: "Job file imports cannot escape the project root.",
+  PROJECT_JOB_INVALID_SCHEDULE: "Job schedules must be durable static data.",
   PROJECT_JOB_MISSING_DEFAULT_EXPORT: "Job files must default-export a handler.",
   PROJECT_JOB_MISSING_SCHEDULE_EXPORT: 'Job files must export a named "schedule" value.',
   PROJECT_JOB_UNSUPPORTED_EXPORT:
     'Job files cannot have runtime exports other than "schedule" and default.',
   PROJECT_WORKFLOW_ID_COLLISION: "Two workflow files resolve to the same stable identifier.",
   PROJECT_WORKFLOW_IMPORT_ESCAPE: "Workflow file imports cannot escape the project root.",
+  PROJECT_WORKFLOW_INVALID_ID: "Workflow IDs must be non-empty static strings.",
+  PROJECT_WORKFLOW_INVALID_SCHEDULE: "Workflow schedules must be durable static data.",
   PROJECT_WORKFLOW_INVALID_DEFAULT_EXPORT:
     "Workflow files must directly default-export a pure defineWorkflow definition.",
   PROJECT_WORKFLOW_MISSING_DEFAULT_EXPORT:
@@ -51,10 +59,13 @@ export interface ProjectWorkflowJobConventionDiagnostic {
 
 export interface ProjectWorkflowConvention extends ProjectConventionFileContribution {
   kind: "workflow"
+  workflowId: string
+  config: VoyantGraphJsonObject
 }
 
 export interface ProjectJobConvention extends ProjectConventionFileContribution {
   kind: "job"
+  schedule: VoyantGraphJsonValue
 }
 
 export interface ProjectWorkflowJobConventionAnalysis {
@@ -71,6 +82,7 @@ export interface ProjectWorkflowJobGeneratedFile {
 export interface ProjectWorkflowJobConventionCompilation {
   workflows: readonly ProjectWorkflowConvention[]
   jobs: readonly ProjectJobConvention[]
+  graphWorkflows: readonly VoyantGraphWorkflow[]
   generatedFiles: readonly [ProjectWorkflowJobGeneratedFile, ProjectWorkflowJobGeneratedFile]
 }
 
@@ -94,18 +106,22 @@ export async function analyzeProjectWorkflowJobConventions(
   const projectRoot = path.resolve(options.projectRoot)
   const realProjectRoot = await realpath(projectRoot)
   const discovery = await discoverProjectConventions(projectRoot)
-  const workflows = discovery.contributions.filter(
-    (contribution): contribution is ProjectWorkflowConvention => contribution.kind === "workflow",
+  const discoveredWorkflows = discovery.contributions.filter(
+    (contribution): contribution is ProjectConventionFileContribution =>
+      contribution.kind === "workflow",
   )
-  const jobs = discovery.contributions.filter(
-    (contribution): contribution is ProjectJobConvention => contribution.kind === "job",
+  const discoveredJobs = discovery.contributions.filter(
+    (contribution): contribution is ProjectConventionFileContribution =>
+      contribution.kind === "job",
   )
+  const workflows: ProjectWorkflowConvention[] = []
+  const jobs: ProjectJobConvention[] = []
   const diagnostics: ProjectWorkflowJobConventionDiagnostic[] = [
-    ...findIdCollisions(workflows, "workflow"),
-    ...findIdCollisions(jobs, "job"),
+    ...findIdCollisions(discoveredWorkflows, "workflow"),
+    ...findIdCollisions(discoveredJobs, "job"),
   ]
 
-  for (const workflow of workflows) {
+  for (const workflow of discoveredWorkflows) {
     const sourceFile = await readConventionSource(
       projectRoot,
       realProjectRoot,
@@ -113,10 +129,19 @@ export async function analyzeProjectWorkflowJobConventions(
       "workflow",
       diagnostics,
     )
-    if (sourceFile) diagnostics.push(...analyzeWorkflowSource(sourceFile, workflow.sourcePath))
+    if (!sourceFile) continue
+    const sourceAnalysis = analyzeWorkflowSource(sourceFile, workflow.sourcePath)
+    diagnostics.push(...sourceAnalysis.diagnostics)
+    if (sourceAnalysis.workflowId && sourceAnalysis.config) {
+      workflows.push({
+        ...workflow,
+        workflowId: sourceAnalysis.workflowId,
+        config: sourceAnalysis.config,
+      })
+    }
   }
 
-  for (const job of jobs) {
+  for (const job of discoveredJobs) {
     const sourceFile = await readConventionSource(
       projectRoot,
       realProjectRoot,
@@ -124,9 +149,15 @@ export async function analyzeProjectWorkflowJobConventions(
       "job",
       diagnostics,
     )
-    if (sourceFile) diagnostics.push(...analyzeJobSource(sourceFile, job.sourcePath))
+    if (!sourceFile) continue
+    const sourceAnalysis = analyzeJobSource(sourceFile, job.sourcePath)
+    diagnostics.push(...sourceAnalysis.diagnostics)
+    if (sourceAnalysis.schedule !== undefined)
+      jobs.push({ ...job, schedule: sourceAnalysis.schedule })
   }
 
+  diagnostics.push(...findWorkflowIdCollisions(workflows))
+  diagnostics.push(...findWorkflowAndJobIdCollisions(workflows, jobs))
   workflows.sort(compareContributions)
   jobs.sort(compareContributions)
   diagnostics.sort(compareDiagnostics)
@@ -144,10 +175,33 @@ export async function compileProjectWorkflowJobConventions(
   return {
     workflows: analysis.workflows,
     jobs: analysis.jobs,
+    graphWorkflows: [
+      ...analysis.workflows.map((workflow, index) => ({
+        id: workflow.workflowId,
+        config: workflow.config,
+        runtime: {
+          entry: `./.voyant/${PROJECT_WORKFLOWS_GENERATED_PATH}`,
+          export: `projectWorkflow${index}`,
+        },
+      })),
+      ...analysis.jobs.map((job, index) => ({
+        id: job.id,
+        config: { schedule: job.schedule },
+        runtime: {
+          entry: `./.voyant/${PROJECT_JOBS_GENERATED_PATH}`,
+          export: `projectJobWorkflow${index}`,
+        },
+      })),
+    ],
     generatedFiles: [
       {
         path: PROJECT_WORKFLOWS_GENERATED_PATH,
-        contents: generateProjectWorkflowsSource(analysis.workflows),
+        contents: generateProjectWorkflowsSource(
+          analysis.workflows.map((workflow) => ({
+            id: workflow.workflowId,
+            sourcePath: workflow.sourcePath,
+          })),
+        ),
       },
       {
         path: PROJECT_JOBS_GENERATED_PATH,
@@ -196,7 +250,11 @@ async function readConventionSource(
 function analyzeWorkflowSource(
   sourceFile: ts.SourceFile,
   sourcePath: string,
-): ProjectWorkflowJobConventionDiagnostic[] {
+): {
+  workflowId?: string
+  config?: VoyantGraphJsonObject
+  diagnostics: ProjectWorkflowJobConventionDiagnostic[]
+} {
   const exports = collectRuntimeExports(sourceFile)
   const diagnostics = exports.named.map((exportName) =>
     unsupportedExportDiagnostic("workflow", sourcePath, exportName),
@@ -218,15 +276,44 @@ function analyzeWorkflowSource(
       exportName: "default",
       message: `Workflow file "${sourcePath}" default export must be a direct defineWorkflow(...) call imported from "@voyant-travel/workflows".`,
     })
+  } else {
+    const config = workflowConfigExpression(exports.defaultExpression!, sourceFile)
+    const constants = collectStaticConstants(sourceFile)
+    const workflowId = config ? staticStringProperty(config, "id", constants) : undefined
+    if (!workflowId) {
+      diagnostics.push({
+        code: "PROJECT_WORKFLOW_INVALID_ID",
+        severity: "error",
+        sourcePaths: [sourcePath],
+        message: `Workflow file "${sourcePath}" must declare a non-empty static string id.`,
+      })
+    }
+    const graphConfig = config ? durableWorkflowConfig(config, constants) : undefined
+    if (graphConfig === null) {
+      diagnostics.push({
+        code: "PROJECT_WORKFLOW_INVALID_SCHEDULE",
+        severity: "error",
+        sourcePaths: [sourcePath],
+        message: `Workflow file "${sourcePath}" schedule must be durable static data.`,
+      })
+    }
+    return {
+      ...(workflowId ? { workflowId } : {}),
+      ...(graphConfig && workflowId ? { config: graphConfig } : {}),
+      diagnostics,
+    }
   }
 
-  return diagnostics
+  return { diagnostics }
 }
 
 function analyzeJobSource(
   sourceFile: ts.SourceFile,
   sourcePath: string,
-): ProjectWorkflowJobConventionDiagnostic[] {
+): {
+  schedule?: VoyantGraphJsonValue
+  diagnostics: ProjectWorkflowJobConventionDiagnostic[]
+} {
   const exports = collectRuntimeExports(sourceFile)
   const diagnostics = exports.named
     .filter((exportName) => exportName !== "schedule")
@@ -250,7 +337,24 @@ function analyzeJobSource(
       message: `Job file "${sourcePath}" must export a named "schedule" value.`,
     })
   }
-  return diagnostics
+  const scheduleExpression = findNamedExportExpression(sourceFile, "schedule")
+  const durableSchedule = scheduleExpression
+    ? toDurableJsonValue(scheduleExpression, collectStaticConstants(sourceFile))
+    : undefined
+  const schedule =
+    durableSchedule !== undefined && isScheduleJsonValue(durableSchedule, false)
+      ? durableSchedule
+      : undefined
+  if (exports.named.includes("schedule") && schedule === undefined) {
+    diagnostics.push({
+      code: "PROJECT_JOB_INVALID_SCHEDULE",
+      severity: "error",
+      sourcePaths: [sourcePath],
+      exportName: "schedule",
+      message: `Job file "${sourcePath}" schedule must be durable static data.`,
+    })
+  }
+  return { ...(schedule !== undefined ? { schedule } : {}), diagnostics }
 }
 
 interface RuntimeExports {
@@ -330,6 +434,198 @@ function isDirectDefineWorkflowExport(
   })
 }
 
+function workflowConfigExpression(
+  expression: ts.Expression,
+  sourceFile: ts.SourceFile,
+): ts.ObjectLiteralExpression | undefined {
+  const call = unwrapExpression(expression)
+  if (!ts.isCallExpression(call) || call.arguments.length !== 1) return undefined
+  const config = resolveStaticExpression(call.arguments[0]!, collectStaticConstants(sourceFile))
+  return ts.isObjectLiteralExpression(config) ? config : undefined
+}
+
+function durableWorkflowConfig(
+  config: ts.ObjectLiteralExpression,
+  constants: ReadonlyMap<string, ts.Expression>,
+): VoyantGraphJsonObject | null {
+  const output: Record<string, VoyantGraphJsonValue> = {}
+  for (const property of config.properties) {
+    if (!ts.isPropertyAssignment(property)) continue
+    const name = staticPropertyName(property.name)
+    if (!name || name === "id" || name === "run") continue
+    const value = toDurableJsonValue(property.initializer, constants)
+    if (name === "schedule") {
+      if (value === undefined || !isScheduleJsonValue(value, true)) return null
+      output.schedule = value
+      continue
+    }
+    if (value !== undefined) output[name] = value
+  }
+  return output
+}
+
+function staticStringProperty(
+  object: ts.ObjectLiteralExpression,
+  name: string,
+  constants: ReadonlyMap<string, ts.Expression>,
+): string | undefined {
+  for (const property of object.properties) {
+    if (!ts.isPropertyAssignment(property) || staticPropertyName(property.name) !== name) continue
+    const value = resolveStaticExpression(property.initializer, constants)
+    return ts.isStringLiteralLike(value) && value.text.trim() ? value.text.trim() : undefined
+  }
+  return undefined
+}
+
+function collectStaticConstants(sourceFile: ts.SourceFile): Map<string, ts.Expression> {
+  const constants = new Map<string, ts.Expression>()
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) continue
+    for (const declaration of statement.declarationList.declarations) {
+      if (ts.isIdentifier(declaration.name) && declaration.initializer) {
+        constants.set(declaration.name.text, declaration.initializer)
+      }
+    }
+  }
+  return constants
+}
+
+function findNamedExportExpression(
+  sourceFile: ts.SourceFile,
+  exportName: string,
+): ts.Expression | undefined {
+  const constants = collectStaticConstants(sourceFile)
+  for (const statement of sourceFile.statements) {
+    if (ts.isVariableStatement(statement) && hasModifier(statement, ts.SyntaxKind.ExportKeyword)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name) && declaration.name.text === exportName) {
+          return declaration.initializer
+        }
+      }
+    }
+    if (!ts.isExportDeclaration(statement) || !statement.exportClause || statement.moduleSpecifier)
+      continue
+    if (!ts.isNamedExports(statement.exportClause)) continue
+    for (const element of statement.exportClause.elements) {
+      if (element.name.text !== exportName) continue
+      return constants.get(element.propertyName?.text ?? element.name.text)
+    }
+  }
+  return undefined
+}
+
+function toDurableJsonValue(
+  expression: ts.Expression,
+  constants: ReadonlyMap<string, ts.Expression>,
+  seen: ReadonlySet<string> = new Set(),
+): VoyantGraphJsonValue | undefined {
+  const value = unwrapExpression(expression)
+  if (ts.isIdentifier(value)) {
+    if (value.text === "undefined" || seen.has(value.text)) return undefined
+    const initializer = constants.get(value.text)
+    if (!initializer) return undefined
+    return toDurableJsonValue(initializer, constants, new Set([...seen, value.text]))
+  }
+  if (ts.isStringLiteralLike(value)) return value.text
+  if (ts.isNumericLiteral(value)) return Number(value.text)
+  if (value.kind === ts.SyntaxKind.TrueKeyword) return true
+  if (value.kind === ts.SyntaxKind.FalseKeyword) return false
+  if (value.kind === ts.SyntaxKind.NullKeyword) return null
+  if (
+    ts.isPrefixUnaryExpression(value) &&
+    value.operator === ts.SyntaxKind.MinusToken &&
+    ts.isNumericLiteral(value.operand)
+  ) {
+    return -Number(value.operand.text)
+  }
+  if (ts.isArrayLiteralExpression(value)) {
+    const items: VoyantGraphJsonValue[] = []
+    for (const element of value.elements) {
+      if (ts.isSpreadElement(element)) return undefined
+      const item = toDurableJsonValue(element, constants, seen)
+      if (item === undefined) return undefined
+      items.push(item)
+    }
+    return items
+  }
+  if (ts.isObjectLiteralExpression(value)) {
+    const object: Record<string, VoyantGraphJsonValue> = {}
+    for (const property of value.properties) {
+      if (ts.isPropertyAssignment(property)) {
+        const name = staticPropertyName(property.name)
+        const item = toDurableJsonValue(property.initializer, constants, seen)
+        if (!name || item === undefined) return undefined
+        object[name] = item
+      } else if (ts.isShorthandPropertyAssignment(property)) {
+        const item = toDurableJsonValue(property.name, constants, seen)
+        if (item === undefined) return undefined
+        object[property.name.text] = item
+      } else {
+        return undefined
+      }
+    }
+    return object
+  }
+  return undefined
+}
+
+function resolveStaticExpression(
+  expression: ts.Expression,
+  constants: ReadonlyMap<string, ts.Expression>,
+): ts.Expression {
+  let value = unwrapExpression(expression)
+  const seen = new Set<string>()
+  while (ts.isIdentifier(value) && !seen.has(value.text)) {
+    const initializer = constants.get(value.text)
+    if (!initializer) break
+    seen.add(value.text)
+    value = unwrapExpression(initializer)
+  }
+  return value
+}
+
+function staticPropertyName(name: ts.PropertyName): string | undefined {
+  return ts.isIdentifier(name) || ts.isStringLiteralLike(name) ? name.text : undefined
+}
+
+function isScheduleJsonValue(value: VoyantGraphJsonValue, allowArray: boolean): boolean {
+  if (Array.isArray(value))
+    return allowArray && value.every((item) => isScheduleJsonValue(item, false))
+  if (!isJsonObject(value)) return false
+  const triggers = ["cron", "every", "at"].filter((key) => value[key] !== undefined)
+  if (triggers.length !== 1) return false
+  if (value.cron !== undefined && typeof value.cron !== "string") return false
+  if (
+    value.every !== undefined &&
+    typeof value.every !== "string" &&
+    typeof value.every !== "number"
+  )
+    return false
+  if (value.at !== undefined && typeof value.at !== "string") return false
+  if (value.timezone !== undefined && typeof value.timezone !== "string") return false
+  if (value.enabled !== undefined && typeof value.enabled !== "boolean") return false
+  if (
+    value.overlap !== undefined &&
+    value.overlap !== "skip" &&
+    value.overlap !== "queue" &&
+    value.overlap !== "allow"
+  )
+    return false
+  if (
+    value.environments !== undefined &&
+    (!Array.isArray(value.environments) ||
+      !value.environments.every(
+        (entry) => entry === "production" || entry === "preview" || entry === "development",
+      ))
+  )
+    return false
+  return true
+}
+
+function isJsonObject(value: VoyantGraphJsonValue): value is VoyantGraphJsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
 function unwrapExpression(expression: ts.Expression): ts.Expression {
   let current = expression
   while (
@@ -344,7 +640,7 @@ function unwrapExpression(expression: ts.Expression): ts.Expression {
 }
 
 function findIdCollisions(
-  contributions: readonly (ProjectWorkflowConvention | ProjectJobConvention)[],
+  contributions: readonly ProjectConventionFileContribution[],
   kind: "workflow" | "job",
 ): ProjectWorkflowJobConventionDiagnostic[] {
   const byId = new Map<string, string[]>()
@@ -366,6 +662,53 @@ function findIdCollisions(
         message: `${label} convention ID "${id}" is produced by ${sorted
           .map((sourcePath) => `"${sourcePath}"`)
           .join(", ")}.`,
+      },
+    ]
+  })
+}
+
+function findWorkflowIdCollisions(
+  workflows: readonly ProjectWorkflowConvention[],
+): ProjectWorkflowJobConventionDiagnostic[] {
+  const byId = new Map<string, string[]>()
+  for (const workflow of workflows) {
+    const sourcePaths = byId.get(workflow.workflowId) ?? []
+    sourcePaths.push(workflow.sourcePath)
+    byId.set(workflow.workflowId, sourcePaths)
+  }
+  return [...byId.entries()].flatMap(([id, sourcePaths]) =>
+    sourcePaths.length < 2
+      ? []
+      : [
+          {
+            code: "PROJECT_WORKFLOW_ID_COLLISION" as const,
+            severity: "error" as const,
+            id,
+            sourcePaths: [...sourcePaths].sort(compareStrings),
+            message: `Workflow id "${id}" is declared by ${sourcePaths
+              .sort(compareStrings)
+              .map((sourcePath) => `"${sourcePath}"`)
+              .join(", ")}.`,
+          },
+        ],
+  )
+}
+
+function findWorkflowAndJobIdCollisions(
+  workflows: readonly ProjectWorkflowConvention[],
+  jobs: readonly ProjectJobConvention[],
+): ProjectWorkflowJobConventionDiagnostic[] {
+  const workflowsById = new Map(workflows.map((workflow) => [workflow.workflowId, workflow]))
+  return jobs.flatMap((job) => {
+    const workflow = workflowsById.get(job.id)
+    if (!workflow) return []
+    return [
+      {
+        code: "PROJECT_WORKFLOW_ID_COLLISION" as const,
+        severity: "error" as const,
+        id: job.id,
+        sourcePaths: [workflow.sourcePath, job.sourcePath].sort(compareStrings),
+        message: `Workflow and job conventions both declare runtime workflow id "${job.id}".`,
       },
     ]
   })

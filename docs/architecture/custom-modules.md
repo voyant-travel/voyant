@@ -70,10 +70,18 @@ export default async function reconcileSearch(): Promise<void> {
 
 The compiler writes `.voyant/runtime/project-workflows.generated.ts` and
 `.voyant/runtime/project-jobs.generated.ts`. These disposable TypeScript files
-contain only deterministic static imports plus path-derived convention IDs.
+contain only deterministic static imports plus stable runtime IDs.
+Workflow runtime IDs come from the literal `defineWorkflow({ id })` declaration;
+job IDs are path-derived. Schedules must be durable static data because the
+resolver copies them into graph provisioning before any project module runs.
 Source imports that escape the project root, normalized ID collisions, missing
 exports, indirect or registering workflow definitions, and extra runtime
 exports fail compilation with stable diagnostics.
+
+`resolveProject()` adds both generated registries to its artifact set and
+synthesizes one project-owned workflow graph unit. Each generated job is wrapped
+as a pure workflow definition, so scheduled jobs and authored workflows share
+the same graph schedule and runtime execution contract.
 
 ## Folder shape
 

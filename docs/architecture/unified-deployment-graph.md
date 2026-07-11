@@ -850,9 +850,13 @@ directly default-export the pure `defineWorkflow(...)` result; job files export
 `schedule` plus a default handler. The compiler emits deterministic static
 registries under `.voyant/runtime` and rejects import escapes, stable-ID
 collisions, missing contract exports, registering/indirect workflow defaults,
-and unsupported runtime exports. Resolver integration and Operator runtime
-wiring are separate slices; no runtime directory scan or side-effect registry
-is introduced here.
+unsupported runtime exports, and schedules that cannot be represented as
+durable graph data. `resolveProject()` emits those registries, contributes
+individual workflow runtime references, and derives provisioning jobs from the
+same static schedules. Jobs are wrapped as pure workflow definitions so they do
+not require a second starter-owned dispatch registry. Node runner consumption
+of these explicit definitions replaces the remaining side-effect workflow
+registry in the following host-integration slice.
 
 ## Action-Ledger Runtime Lowering
 
