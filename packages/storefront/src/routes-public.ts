@@ -695,9 +695,9 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         // transactions drain at the outbox's pace instead of
         // thundering-herding the slot locks. The handler is
         // `createBookingBootstrapIntentHandler` (booking-intents.ts),
-        // registered on the app bus by the deployment.
-        // Async mode is honored ONLY when the deployment wired the
-        // intent handler (`bookingIntents` option) — otherwise a 202'd
+        // selected and registered from the package deployment manifest.
+        // Async mode is honored ONLY when the deployment supplied the
+        // subscriber runtime (`bookingIntents` option) — otherwise a 202'd
         // intent would never be settled and the caller would watch it
         // stale-fail. Unwired deployments silently get the sync path.
         const wantsAsync =

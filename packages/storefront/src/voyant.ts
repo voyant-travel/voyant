@@ -59,6 +59,10 @@ export const storefrontVoyantModule = defineModule({
       id: "@voyant-travel/storefront#subscriber.booking-bootstrap",
       eventType: "storefront.booking.bootstrap.requested",
       source: "@voyant-travel/storefront",
+      runtime: {
+        entry: "./booking-bootstrap-subscriber",
+        export: "storefrontBookingBootstrapSubscriber",
+      },
     },
   ],
   resources: [

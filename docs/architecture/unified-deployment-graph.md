@@ -979,6 +979,17 @@ same selected-graph lowering. Operator contributes only the graph-gated
 `TripsPaymentSubscriberRuntime` database-lifecycle adapter; deselecting Trips
 removes both that service registration and the subscriber runtime module.
 
+Storefront booking-bootstrap intent execution is also selected-graph-owned.
+`@voyant-travel/storefront` exports the executable
+`storefrontBookingBootstrapSubscriber` descriptor and references it directly
+from the package manifest. The Storefront Hono module registers only its
+package runtime adapter, backed by the Node host's generic lifecycle-aware
+`withDb` capability; it no longer subscribes manually. Selection activates the
+descriptor once, deselection removes both the Storefront module and subscriber,
+business failures still settle without retry, and infrastructure errors still
+escape to the outbox retry path. `check-storefront-subscriber-authority`
+mechanically prevents a central or starter-owned registration from returning.
+
 The remaining Operator subscriber authorities are intentionally explicit:
 
 - `catalogBridgeBundle`: `product.created`, `product.updated`,

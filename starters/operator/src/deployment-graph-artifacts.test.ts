@@ -125,6 +125,17 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         },
       }),
     ])
+    const storefront = graph.modules.find((module) => module.id === "@voyant-travel/storefront")
+    expect(storefront?.subscribers).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/storefront#subscriber.booking-bootstrap",
+        eventType: "storefront.booking.bootstrap.requested",
+        runtime: {
+          entry: "./booking-bootstrap-subscriber",
+          export: "storefrontBookingBootstrapSubscriber",
+        },
+      }),
+    ])
 
     const trips = graph.modules.find((module) => module.id === "@voyant-travel/trips")
     expect(trips?.subscribers).toEqual([

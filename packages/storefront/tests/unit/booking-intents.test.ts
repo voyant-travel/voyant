@@ -1,3 +1,4 @@
+import { createContainer } from "@voyant-travel/core"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -21,6 +22,10 @@ vi.mock("../../src/service.js", async (importOriginal) => {
   }
 })
 
+import {
+  registerStorefrontBookingBootstrapRuntime,
+  storefrontBookingBootstrapSubscriber,
+} from "../../src/booking-bootstrap-subscriber-runtime.js"
 // Import after mocks.
 import {
   BOOKING_BOOTSTRAP_INTENT_EVENT,
@@ -119,6 +124,67 @@ describe("createBookingBootstrapIntentHandler", () => {
   })
 })
 
+describe("storefrontBookingBootstrapSubscriber", () => {
+  it("registers once and executes through the deployment-owned database lifecycle", async () => {
+    writeIntents.getWriteIntent.mockResolvedValue(pendingIntent())
+    bootstrapBookingSession.mockResolvedValue({
+      status: "ok",
+      bootstrap: { session: { sessionId: "bs_1" } },
+    })
+    const container = createContainer()
+    const withDb = vi.fn(async (_bindings, operation) => operation({} as never))
+    registerStorefrontBookingBootstrapRuntime(container, { withDb })
+    const subscribe = vi.fn()
+    const eventBus = { subscribe } as never
+
+    storefrontBookingBootstrapSubscriber.register({
+      bindings: { deployment: "node" },
+      container,
+      eventBus,
+    })
+
+    expect(subscribe).toHaveBeenCalledOnce()
+    expect(subscribe).toHaveBeenCalledWith(BOOKING_BOOTSTRAP_INTENT_EVENT, expect.any(Function))
+    const handler = subscribe.mock.calls[0]?.[1]
+    await handler?.({
+      name: BOOKING_BOOTSTRAP_INTENT_EVENT,
+      data: { intentId: "wint_1" },
+      emittedAt: new Date().toISOString(),
+    })
+
+    expect(withDb).toHaveBeenCalledOnce()
+    expect(withDb).toHaveBeenCalledWith({ deployment: "node" }, expect.any(Function))
+    expect(writeIntents.settleWriteIntent).toHaveBeenCalledWith({}, "wint_1", {
+      status: "succeeded",
+      result: { bootstrap: { session: { sessionId: "bs_1" } } },
+    })
+  })
+
+  it("rethrows infrastructure failures from the executable descriptor", async () => {
+    writeIntents.getWriteIntent.mockRejectedValue(new Error("database unavailable"))
+    const container = createContainer()
+    registerStorefrontBookingBootstrapRuntime(container, {
+      withDb: async (_bindings, operation) => operation({} as never),
+    })
+    const subscribe = vi.fn()
+    storefrontBookingBootstrapSubscriber.register({
+      bindings: {},
+      container,
+      eventBus: { subscribe } as never,
+    })
+    const handler = subscribe.mock.calls[0]?.[1]
+
+    await expect(
+      handler?.({
+        name: BOOKING_BOOTSTRAP_INTENT_EVENT,
+        data: { intentId: "wint_1" },
+        emittedAt: new Date().toISOString(),
+      }),
+    ).rejects.toThrow("database unavailable")
+    expect(writeIntents.settleWriteIntent).not.toHaveBeenCalled()
+  })
+})
+
 describe("async bootstrap route mode", () => {
   function idempotencyDbStub() {
     return {
@@ -137,7 +203,11 @@ describe("async bootstrap route mode", () => {
     const routes = createStorefrontPublicRoutes(
       options?.withBookingIntents === false
         ? undefined
-        : { bookingIntents: { resolveDb: () => ({}) } },
+        : {
+            bookingIntents: {
+              withDb: async (_bindings, operation) => operation({} as never),
+            },
+          },
     )
     const app = new Hono()
     app.use("*", async (c, next) => {

@@ -398,6 +398,7 @@ export const operatorGraphCompatibilityModules: Record<
 > = {
   "@voyant-travel/catalog#booking-engine":
     frameworkComposition.modules["@voyant-travel/catalog/booking-engine"]!,
+  "@voyant-travel/storefront": frameworkComposition.modules["@voyant-travel/storefront"]!,
   "@voyant-travel/storefront#payment-link":
     frameworkComposition.modules["@voyant-travel/storefront/payment-link"]!,
   "@voyant-travel/storefront#customer-portal":
