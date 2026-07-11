@@ -4781,8 +4781,8 @@ importers:
         specifier: ^0.105.20
         version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/plugin-smartbill':
-        specifier: ^0.137.3
-        version: 0.137.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@tanstack/react-query@5.101.2(react@19.2.7))(@types/pg@8.20.0)(@upstash/redis@1.35.6)(@voyant-travel/finance-react@packages+finance-react)(@voyant-travel/ui@packages+ui)(kysely@0.29.2)(lucide-react@1.23.0(react@19.2.7))(pg@8.22.0)(postgres@3.4.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.138.0
+        version: 0.138.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@tanstack/react-query@5.101.2(react@19.2.7))(@types/pg@8.20.0)(@upstash/redis@1.35.6)(@voyant-travel/finance-react@packages+finance-react)(@voyant-travel/ui@packages+ui)(kysely@0.29.2)(lucide-react@1.23.0(react@19.2.7))(pg@8.22.0)(postgres@3.4.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@voyant-travel/plugin-voyant-connect':
         specifier: ^0.3.2
         version: 0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.7.1)
@@ -7764,8 +7764,9 @@ packages:
     resolution: {integrity: sha512-BUOfdOkYFWZROLa6rZxlKF2X2fycFFYv5w3A2mLO/joZrWNV0RzIuTI3NxblHuQ7paRNWpJIqBiti6VhBH7uig==}
     engines: {node: '>=20'}
 
-  '@voyant-travel/plugin-smartbill@0.137.3':
-    resolution: {integrity: sha512-myhj0h17+lzAOD37Tv8cN0AqiHUTgS+8wPAdjWjHMcPvFmPk3S7MdRzps3JtUsp1OmL51ytqwdVmVHZIGxrG7Q==}
+  '@voyant-travel/plugin-smartbill@0.138.0':
+    resolution: {integrity: sha512-6jDYyL8Rid39IYKW1JPLdRQkSmVG0uXBBFKLvjd7NJRwTR7JFyQ4gHlrOs4rSOcnX786alH+Mr8s2JKSbq8mEQ==}
+    engines: {node: '>=20'}
     peerDependencies:
       '@tanstack/react-query': ^5.0.0
       '@voyant-travel/finance-react': ^0.137.2
@@ -15427,7 +15428,7 @@ snapshots:
       - sqlite3
       - typesense
 
-  '@voyant-travel/plugin-smartbill@0.137.3(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@tanstack/react-query@5.101.2(react@19.2.7))(@types/pg@8.20.0)(@upstash/redis@1.35.6)(@voyant-travel/finance-react@packages+finance-react)(@voyant-travel/ui@packages+ui)(kysely@0.29.2)(lucide-react@1.23.0(react@19.2.7))(pg@8.22.0)(postgres@3.4.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@voyant-travel/plugin-smartbill@0.138.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@tanstack/react-query@5.101.2(react@19.2.7))(@types/pg@8.20.0)(@upstash/redis@1.35.6)(@voyant-travel/finance-react@packages+finance-react)(@voyant-travel/ui@packages+ui)(kysely@0.29.2)(lucide-react@1.23.0(react@19.2.7))(pg@8.22.0)(postgres@3.4.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@voyant-travel/core': 0.111.0
       '@voyant-travel/finance': 0.137.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)

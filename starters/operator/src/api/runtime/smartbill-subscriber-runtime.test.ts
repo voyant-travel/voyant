@@ -1,15 +1,18 @@
+import { createContainer, createEventBus } from "@voyant-travel/core"
 import { financeService } from "@voyant-travel/finance"
 import type { SmartbillInvoiceBody } from "@voyant-travel/plugin-smartbill"
+import { SMARTBILL_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/plugin-smartbill/subscriber-runtime"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   buildSmartbillPaymentBody,
   issueSmartbillDocument,
   mapSmartbillPaymentType,
+  registerOperatorSmartbillSubscriberRuntimeService,
   resolveConvertedSmartbillEstimateRef,
   resolveSmartbillEstimateReference,
   resolveSmartbillPaymentInvoiceRef,
   syncRecordedInvoicePaymentWithDb,
-} from "./smartbill"
+} from "./smartbill-subscriber-runtime"
 
 type InvoicePaymentRecordedEvent = Parameters<typeof syncRecordedInvoicePaymentWithDb>[2]
 
@@ -69,6 +72,19 @@ function smartbillClient() {
     convertEstimateToInvoice: vi.fn().mockResolvedValue({ series: "SB-TEST", number: "1" }),
   }
 }
+
+describe("SmartBill package subscriber adapter", () => {
+  it("registers the Operator service consumed by package-owned descriptors", async () => {
+    const container = createContainer()
+    const eventBus = createEventBus()
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+
+    await registerOperatorSmartbillSubscriberRuntimeService({ bindings: {}, container, eventBus })
+
+    expect(container.has(SMARTBILL_SUBSCRIBER_RUNTIME_KEY)).toBe(true)
+    expect(warn).toHaveBeenCalledOnce()
+  })
+})
 
 describe("SmartBill payment sync", () => {
   afterEach(() => {

@@ -39,7 +39,7 @@ Standard packages that today receive deployment-injected settings readers:
 | `quotes` (proposal) | `resolveOperatorProfile` | profile |
 | `finance` / `notifications` (checkout) | `resolveBankTransferDetails`, `resolvePublicCheckoutBaseUrl` | **env, not tables** (see correction) |
 
-Deployment-internal consumers (stay in the deployment regardless): `contract-document-variables.ts`, `payment-link-runtime.ts`, `catalog-checkout-options.ts`, `booking-schedule.ts`, `subscribers/smartbill.ts`.
+Deployment-internal consumers (stay in the deployment regardless): `contract-document-variables.ts`, `payment-link-runtime.ts`, `catalog-checkout-options.ts`, `booking-schedule.ts`, and the environment/database/storage adapter in `runtime/smartbill-subscriber-runtime.ts`. SmartBill event declarations and registration are package-owned.
 
 ## Correction to the classification doc
 

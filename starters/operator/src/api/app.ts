@@ -28,7 +28,6 @@ import {
 import { tripsPaymentBundle } from "./runtime/trips-runtime"
 import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
 import { createCatalogCheckoutBundle } from "./subscribers/catalog-checkout-finalize-runtime"
-import { smartbillOperatorBundle } from "./subscribers/smartbill-bundle"
 
 /**
  * Process-wide registry of workflow runners. Bundles register their
@@ -113,7 +112,6 @@ export const app = mountApp<AppBindings>({
         generateContractPdfForBooking(env, db, eventBus, bookingId, { force }),
     }),
     tripsPaymentBundle,
-    smartbillOperatorBundle,
   ],
   auth: {
     handler: () => ({

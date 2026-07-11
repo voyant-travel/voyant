@@ -1,5 +1,6 @@
-// agent-quality: file-size exception -- SmartBill integration keeps event subscribers, settlement polling, and document sync mapping together until provider routes are split.
+// agent-quality: file-size exception -- the operator SmartBill adapter keeps deployment-specific database, storage, and environment mapping together until those capabilities become package ports.
 import { bookings } from "@voyant-travel/bookings/schema"
+import type { BootstrapContext } from "@voyant-travel/core"
 import {
   financeService,
   type InvoiceSettlementPoller,
@@ -7,7 +8,6 @@ import {
   invoices,
   taxRegimes,
 } from "@voyant-travel/finance"
-import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import { identityAddresses, identityContactPoints } from "@voyant-travel/identity/schema"
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
 import {
@@ -17,6 +17,10 @@ import {
   type SmartbillInvoiceBody,
   type SmartbillProduct,
 } from "@voyant-travel/plugin-smartbill"
+import {
+  SMARTBILL_SUBSCRIBER_RUNTIME_KEY,
+  type SmartbillSubscriberRuntime,
+} from "@voyant-travel/plugin-smartbill/subscriber-runtime"
 import { organizations, people } from "@voyant-travel/relationships/schema"
 import { and, asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -130,35 +134,34 @@ type SmartbillPaymentBody = {
   }>
 }
 
-export const smartbillOperatorBundle: HonoBundle = {
-  name: "operator-smartbill",
-  bootstrap: async ({ bindings, eventBus }) => {
-    const env = bindings as SmartbillEnv
-    const runtime = resolveSmartbillRuntime(env)
-    if (!runtime) {
-      console.warn(
-        "[smartbill] Runtime bootstrap skipped: set SMARTBILL_USERNAME, SMARTBILL_TOKEN or SMARTBILL_API_TOKEN, SMARTBILL_COMPANY_VAT_CODE, and SMARTBILL_SERIES_NAME to enable SmartBill sync.",
-      )
-      return
-    }
+/** Register the deployment service consumed by package-owned subscriber descriptors. */
+export async function registerOperatorSmartbillSubscriberRuntimeService(context: BootstrapContext) {
+  const env = context.bindings as SmartbillEnv
+  const configured = resolveSmartbillRuntime(env)
+  const runtime: SmartbillSubscriberRuntime = configured
+    ? {
+        invoiceIssued: ({ data }) =>
+          syncIssuedInvoice(env, configured, data as InvoiceIssuedPayload, "invoice"),
+        proformaIssued: ({ data }) =>
+          syncIssuedInvoice(env, configured, data as InvoiceIssuedPayload, "proforma"),
+        paymentRecorded: ({ data }) =>
+          syncRecordedInvoicePayment(env, configured, data as InvoicePaymentRecordedEvent),
+      }
+    : {
+        invoiceIssued: () => {},
+        proformaIssued: () => {},
+        paymentRecorded: () => {},
+      }
 
-    await ensureSmartbillInvoiceNumberSeries(env, runtime)
-
-    eventBus.subscribe<InvoiceIssuedPayload>("invoice.issued", async ({ data }) => {
-      await syncIssuedInvoice(env, runtime, data, "invoice")
-    })
-
-    eventBus.subscribe<InvoiceIssuedPayload>("invoice.proforma.issued", async ({ data }) => {
-      await syncIssuedInvoice(env, runtime, data, "proforma")
-    })
-
-    eventBus.subscribe<InvoicePaymentRecordedEvent>(
-      "invoice.payment.recorded",
-      async ({ data }) => {
-        await syncRecordedInvoicePayment(env, runtime, data)
-      },
+  if (configured) {
+    await ensureSmartbillInvoiceNumberSeries(env, configured)
+  } else {
+    console.warn(
+      "[smartbill] Runtime bootstrap skipped: set SMARTBILL_USERNAME, SMARTBILL_TOKEN or SMARTBILL_API_TOKEN, SMARTBILL_COMPANY_VAT_CODE, and SMARTBILL_SERIES_NAME to enable SmartBill sync.",
     )
-  },
+  }
+
+  context.container.register(SMARTBILL_SUBSCRIBER_RUNTIME_KEY, runtime)
 }
 
 export function createSmartbillSettlementPollers(

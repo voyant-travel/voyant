@@ -31,6 +31,7 @@ import {
 import { lazyProvider } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { SmartbillPluginOptions } from "@voyant-travel/plugin-smartbill"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
@@ -46,6 +47,7 @@ import {
   createOperatorDocumentStorage,
   createOperatorInvoiceExchangeRateResolver,
   createOperatorInvoiceSettlementPollers,
+  operatorPostgresDb,
   readOperatorDocumentContentBase64,
   resolveOperatorContractDocumentGenerator,
   resolveOperatorDb,
@@ -625,6 +627,79 @@ export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCa
       updateBookingTaxSettings: settings.updateBookingTaxSettings,
     })
   },
+  // Remaining API compatibility: the package exports a HonoModule factory
+  // while selected plugins currently compose as HonoExtensions. Subscriber
+  // descriptors are generic graph facets and are not registered by this binding.
+  "@voyant-travel/plugin-smartbill": ({ capabilities, runtimeExports, unit }) => {
+    const createSmartbillAdmin = singleRuntimeFactory<
+      typeof import("@voyant-travel/plugin-smartbill").createSmartbillAdminModule
+    >(unit.id, runtimeExports)
+    const configured = createSmartbillAdmin({
+      pluginOptions: (bindings) => resolveOperatorSmartbillOptions(bindings, capabilities),
+    })
+
+    return {
+      extension: {
+        name: configured.module.name,
+        module: configured.module.name,
+        bootstrap: async (context) => {
+          const { registerOperatorSmartbillSubscriberRuntimeService } = await import(
+            "./runtime/smartbill-subscriber-runtime"
+          )
+          await registerOperatorSmartbillSubscriberRuntimeService(context)
+          if (isOperatorSmartbillConfigured(context.bindings)) {
+            await configured.module.bootstrap?.(context)
+          }
+        },
+      },
+      adminRoutes: configured.adminRoutes,
+    }
+  },
+}
+
+function resolveOperatorSmartbillOptions(
+  bindings: unknown,
+  capabilities: OperatorCapabilities,
+): SmartbillPluginOptions {
+  const env = bindings as AppBindings
+  const username = nonEmpty(env.SMARTBILL_USERNAME)
+  const apiToken = nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)
+  const companyVatCode = nonEmpty(env.SMARTBILL_COMPANY_VAT_CODE)
+  const seriesName =
+    nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME) ?? nonEmpty(env.SMARTBILL_SERIES_NAME)
+  if (!username || !apiToken || !companyVatCode || !seriesName) {
+    throw new Error("SmartBill is not configured for this operator deployment.")
+  }
+
+  return {
+    username,
+    apiToken,
+    apiUrl: nonEmpty(env.SMARTBILL_API_URL),
+    companyVatCode,
+    seriesName,
+    language: nonEmpty(env.SMARTBILL_LANGUAGE),
+    art311SpecialRegime: env.SMARTBILL_ART_311_SPECIAL_REGIME === "true",
+    artifacts: {
+      db: operatorPostgresDb(capabilities.resolveDb(bindings)),
+      documentStorage: capabilities.createOperatorDocumentStorage(bindings),
+    },
+  }
+}
+
+function isOperatorSmartbillConfigured(bindings: unknown): boolean {
+  const env = bindings as AppBindings
+  return Boolean(
+    nonEmpty(env.SMARTBILL_USERNAME) &&
+      (nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)) &&
+      nonEmpty(env.SMARTBILL_COMPANY_VAT_CODE) &&
+      (nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME) ?? nonEmpty(env.SMARTBILL_SERIES_NAME)),
+  )
+}
+
+function nonEmpty(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined
+  const trimmed = value.trim()
+  return trimmed || undefined
 }
 
 function bindingsFromModuleFactories(

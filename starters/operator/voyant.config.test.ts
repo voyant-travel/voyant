@@ -11,7 +11,7 @@ describe("Operator project config", () => {
   it("authors only deployment differences and external plugins", () => {
     expect(config.modules).toHaveLength(35)
     expect(config.extensions).toHaveLength(20)
-    expect(config.plugins).toHaveLength(1)
+    expect(config.plugins).toHaveLength(2)
     expect(config).not.toHaveProperty("presetLineage")
 
     expect(config.selections?.modules).toHaveLength(35)
@@ -21,6 +21,7 @@ describe("Operator project config", () => {
     expect(config.selections?.extensions).toHaveLength(20)
     expect(config.selections?.plugins.map((selection) => selection.resolve)).toEqual([
       "@voyant-travel/plugin-netopia",
+      "@voyant-travel/plugin-smartbill",
     ])
     expect(config.extensions.every((unit) => unit.schemaVersion === "voyant.extension.v1")).toBe(
       true,

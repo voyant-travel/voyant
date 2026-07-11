@@ -51,6 +51,8 @@ describe("operator graph runtime composition", () => {
     expect(moduleNames).toContain("catalog")
     expect(extensionNames).toContain("bookings-suppliers")
     expect(extensionNames).toContain("booking-tax")
+    expect(extensionNames).toContain("smartbill")
+    expect(moduleNames).toContain("plugin-smartbill.graph-runtime")
     expect(new Set(moduleNames).size).toBe(moduleNames.length)
     expect(new Set(extensionNames).size).toBe(extensionNames.length)
   })
@@ -124,6 +126,41 @@ describe("operator graph runtime composition", () => {
     expect(
       composed.extensions.some((extension) => extension.extension.name === "booking-schedule"),
     ).toBe(false)
+  })
+
+  it("selects SmartBill package subscribers and binds only its operator adapter", async () => {
+    expect(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS).toContain("@voyant-travel/plugin-smartbill")
+    expect(operatorGraphRuntimeBindings).toHaveProperty("@voyant-travel/plugin-smartbill")
+
+    const runtime = createGeneratedGraphRuntime()
+    const smartbill = runtime.plugins.find((unit) => unit.id === "@voyant-travel/plugin-smartbill")
+    const composed = await composeOperatorGraph()
+    const runtimeModule = composed.modules.find(
+      (module) => module.module.name === "plugin-smartbill.graph-runtime",
+    )
+
+    expect(
+      smartbill?.references
+        .filter((reference) => reference.facet === "subscribers.runtime")
+        .map((reference) => reference.entityId),
+    ).toEqual([
+      "@voyant-travel/plugin-smartbill#subscriber.invoice-issued",
+      "@voyant-travel/plugin-smartbill#subscriber.payment-recorded",
+      "@voyant-travel/plugin-smartbill#subscriber.proforma-issued",
+    ])
+    expect(runtimeModule?.module.bootstrap).toBeTypeOf("function")
+
+    const subscribe = vi.fn((_eventType: string) => ({ unsubscribe: vi.fn() }))
+    await runtimeModule?.module.bootstrap?.({
+      bindings: {},
+      container: createContainer(),
+      eventBus: { subscribe } as never,
+    })
+    expect(subscribe.mock.calls.map(([eventType]) => eventType)).toEqual([
+      "invoice.issued",
+      "invoice.payment.recorded",
+      "invoice.proforma.issued",
+    ])
   })
 
   it("selects package-owned bridge units and discovered project modules directly", () => {
