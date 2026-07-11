@@ -148,7 +148,11 @@ export function createResolvedGraphRuntime(
   return createVoyantGraphRuntime({
     graphHash: input.graph.contentHash,
     accessCatalog: input.graph.accessCatalog,
-    providerSelections: input.graph.deployment.providers,
+    providerSelections: Object.fromEntries(
+      Object.entries(input.graph.deployment.providers).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    ),
     entries: Object.fromEntries(
       entrySpecifiers.map((specifier) => [specifier, () => import(specifier)]),
     ),
