@@ -42,22 +42,6 @@ const DEFAULT_ALLOWLIST = new Map([
     "flights declares a graph API bundle before committed operator OpenAPI paths are emitted for it",
   ],
   [
-    "@voyant-travel/operator#mcp.api.admin",
-    "operator MCP routes are intentionally not part of the committed operator OpenAPI reference yet",
-  ],
-  [
-    "@voyant-travel/operator#invitations.api.admin",
-    "operator invitation admin routes are not yet emitted as a per-module OpenAPI document",
-  ],
-  [
-    "@voyant-travel/operator#invitations.api.public",
-    "operator invitation public routes are not yet emitted as a storefront OpenAPI document",
-  ],
-  [
-    "@voyant-travel/operator#team.api.admin",
-    "operator team routes are not yet emitted as a per-module OpenAPI document",
-  ],
-  [
     "@voyant-travel/realtime#api.admin",
     "realtime admin routes are not yet emitted as a per-module OpenAPI document",
   ],
@@ -76,14 +60,6 @@ const DEFAULT_ALLOWLIST = new Map([
   [
     "@voyant-travel/storage#api.admin.video-upload-ticket",
     "storage video upload ticket routes do not yet expose a package OpenAPI registry",
-  ],
-  [
-    "@voyant-travel/accommodations#content-extension.api.public",
-    "accommodation public content routes do not yet expose a package OpenAPI registry",
-  ],
-  [
-    "@voyant-travel/quotes#proposal-extension.api.public",
-    "public proposal routes do not yet expose a package OpenAPI registry",
   ],
 ])
 
