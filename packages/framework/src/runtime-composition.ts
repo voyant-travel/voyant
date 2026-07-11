@@ -64,10 +64,14 @@ export interface VoyantGraphRuntimeRoutePosture {
 /** Load graph-owned workflow/subscriber metadata without composing API routes. */
 export async function composeVoyantGraphRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
+  ports?: VoyantGraphRuntimePorts,
 ): Promise<HonoModule[]> {
   const modules: HonoModule[] = []
   for (const unit of [...runtime.modules, ...runtime.extensions, ...runtime.plugins]) {
-    const module = await resolveRuntimeFacetModule(unit)
+    const module = await resolveRuntimeFacetModule(
+      { runtime, capabilities: undefined, ports },
+      unit,
+    )
     if (module) modules.push(module)
   }
   return modules
@@ -108,7 +112,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
-  modules.push(...(await composeVoyantGraphRuntimeFacetModules(input.runtime)))
+  modules.push(...(await composeVoyantGraphRuntimeFacetModules(input.runtime, input.ports)))
   const outboundWebhookModule = createGraphOutboundWebhookModule(input)
   if (outboundWebhookModule) modules.push(outboundWebhookModule)
 
@@ -288,13 +292,14 @@ function assertWebhookRoutePosture(
 }
 
 async function resolveRuntimeFacetModule(
+  input: Pick<ComposeVoyantGraphRuntimeInput<unknown>, "runtime" | "capabilities" | "ports">,
   unit: VoyantGraphRuntimeUnitLoader,
 ): Promise<HonoModule | undefined> {
   const workflows =
     unit.workflows.length > 0
       ? await Promise.all(unit.workflows.map((workflow) => workflow.load<WorkflowDescriptor>()))
       : await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
-  const subscriberFacets = await loadSubscriberFacets(unit)
+  const subscriberFacets = await loadSubscriberFacets(input, unit)
   if (
     workflows.length === 0 &&
     subscriberFacets.eventFilters.length === 0 &&
@@ -323,7 +328,10 @@ async function resolveRuntimeFacetModule(
   }
 }
 
-async function loadSubscriberFacets(unit: VoyantGraphRuntimeUnitLoader): Promise<{
+async function loadSubscriberFacets(
+  input: Pick<ComposeVoyantGraphRuntimeInput<unknown>, "runtime" | "capabilities" | "ports">,
+  unit: VoyantGraphRuntimeUnitLoader,
+): Promise<{
   eventFilters: EventFilterDescriptor[]
   subscribers: SubscriberRuntimeDescriptor[]
 }> {
@@ -333,7 +341,10 @@ async function loadSubscriberFacets(unit: VoyantGraphRuntimeUnitLoader): Promise
   for (const reference of unit.references.filter(
     (candidate) => candidate.facet === "subscribers.runtime",
   )) {
-    const value = await reference.load<unknown>()
+    const runtimeExport = await reference.load<unknown>()
+    const value = isGraphRuntimeFactory(runtimeExport)
+      ? await runtimeExport(createRuntimeFactoryContext(input, unit))
+      : runtimeExport
     if (isSubscriberRuntimeDescriptor(value)) {
       if (value.id !== reference.entityId) {
         throw new Error(
@@ -381,41 +392,51 @@ async function resolveRuntimeUnit<TCapabilities>(
   const outputs: unknown[] = []
   for (const runtimeExport of runtimeExports) {
     const output = isGraphRuntimeFactory(runtimeExport)
-      ? await runtimeExport({
-          unitId: unit.id,
-          hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
-            if (!unit.runtimePorts.includes(port.id)) {
-              throw new Error(
-                `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" requested undeclared port "${port.id}".`,
-              )
-            }
-            return Object.hasOwn(input.ports ?? {}, port.id)
-          },
-          getPort: async <TProvider>(port: VoyantPort<TProvider>): Promise<TProvider> => {
-            if (!unit.runtimePorts.includes(port.id)) {
-              throw new Error(
-                `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" requested undeclared port "${port.id}".`,
-              )
-            }
-            if (!Object.hasOwn(input.ports ?? {}, port.id)) {
-              const requirement = unit.requiredRuntimePorts.includes(port.id)
-                ? "requires runtime port"
-                : "optional runtime port"
-              throw new Error(
-                `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" ${requirement} "${port.id}", but the deployment did not bind it.`,
-              )
-            }
-            const provider = await (input.ports![port.id] as TProvider | Promise<TProvider>)
-            await port.test(provider)
-            return provider
-          },
-        })
+      ? await runtimeExport(createRuntimeFactoryContext(input, unit))
       : typeof runtimeExport === "function"
         ? await runtimeExport()
         : runtimeExport
     outputs.push(...normalizeRuntimeOutputs(output))
   }
   return outputs
+}
+
+function createRuntimeFactoryContext<TCapabilities>(
+  input: Pick<ComposeVoyantGraphRuntimeInput<TCapabilities>, "ports">,
+  unit: VoyantGraphRuntimeUnitLoader,
+) {
+  return {
+    unitId: unit.id,
+    hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
+      assertDeclaredRuntimePort(unit, port)
+      return Object.hasOwn(input.ports ?? {}, port.id)
+    },
+    getPort: async <TProvider>(port: VoyantPort<TProvider>): Promise<TProvider> => {
+      assertDeclaredRuntimePort(unit, port)
+      if (!Object.hasOwn(input.ports ?? {}, port.id)) {
+        const requirement = unit.requiredRuntimePorts.includes(port.id)
+          ? "requires runtime port"
+          : "optional runtime port"
+        throw new Error(
+          `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" ${requirement} "${port.id}", but the deployment did not bind it.`,
+        )
+      }
+      const provider = await (input.ports![port.id] as TProvider | Promise<TProvider>)
+      await port.test(provider)
+      return provider
+    },
+  }
+}
+
+function assertDeclaredRuntimePort<TProvider>(
+  unit: VoyantGraphRuntimeUnitLoader,
+  port: VoyantPort<TProvider>,
+): void {
+  if (!unit.runtimePorts.includes(port.id)) {
+    throw new Error(
+      `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" requested undeclared port "${port.id}".`,
+    )
+  }
 }
 
 function uniqueRuntimeExports(runtimeExports: readonly unknown[]): unknown[] {

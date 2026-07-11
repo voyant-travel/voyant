@@ -1435,6 +1435,7 @@
       "@voyant-travel/workflow-runs/hono-module": ["../workflow-runs/dist/hono-module.d.ts"],
       "@voyant-travel/workflow-runs/recorder": ["../workflow-runs/dist/recorder.d.ts"],
       "@voyant-travel/workflow-runs/routes": ["../workflow-runs/dist/routes.d.ts"],
+      "@voyant-travel/workflow-runs/runtime-port": ["../workflow-runs/dist/runtime-port.d.ts"],
       "@voyant-travel/workflow-runs/schema": ["../workflow-runs/dist/schema.d.ts"],
       "@voyant-travel/workflow-runs/service": ["../workflow-runs/dist/service.d.ts"],
       "@voyant-travel/workflow-runs/voyant": ["../workflow-runs/dist/voyant.d.ts"],

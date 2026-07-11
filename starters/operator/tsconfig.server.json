@@ -1984,6 +1984,9 @@
       ],
       "@voyant-travel/workflow-runs/recorder": ["../../packages/workflow-runs/dist/recorder.d.ts"],
       "@voyant-travel/workflow-runs/routes": ["../../packages/workflow-runs/dist/routes.d.ts"],
+      "@voyant-travel/workflow-runs/runtime-port": [
+        "../../packages/workflow-runs/dist/runtime-port.d.ts"
+      ],
       "@voyant-travel/workflow-runs/schema": ["../../packages/workflow-runs/dist/schema.d.ts"],
       "@voyant-travel/workflow-runs/service": ["../../packages/workflow-runs/dist/service.d.ts"],
       "@voyant-travel/workflow-runs/voyant": ["../../packages/workflow-runs/dist/voyant.d.ts"],

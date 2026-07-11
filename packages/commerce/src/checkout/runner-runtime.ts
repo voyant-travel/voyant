@@ -1,19 +1,23 @@
 import type { EventBus } from "@voyant-travel/core"
 import type { WorkflowRunner } from "@voyant-travel/workflow-runs"
-
-import type { DispatchCheckoutFinalizeParams } from "./finalize.js"
+import type {
+  CatalogCheckoutContractPdfGenerator,
+  DispatchCheckoutFinalizeParams,
+} from "./finalize.js"
 import { dispatchCheckoutFinalize } from "./finalize.js"
-import type { CheckoutFinalizeSubscriberRuntimeOptions } from "./subscriber-runtime.js"
+import type { CatalogCheckoutDatabaseRuntime } from "./runtime-ports.js"
 
 export interface CheckoutFinalizeRunnerRegistry {
   register(runner: WorkflowRunner): void
 }
 
 export interface CheckoutFinalizeRunnerRegistrationOptions<TBindings = unknown>
-  extends CheckoutFinalizeSubscriberRuntimeOptions<TBindings> {
+  extends CatalogCheckoutDatabaseRuntime {
   bindings: TBindings
   eventBus: EventBus
   registry: CheckoutFinalizeRunnerRegistry
+  generateContractPdf?: CatalogCheckoutContractPdfGenerator
+  dispatchFinalize?: typeof dispatchCheckoutFinalize
 }
 
 function requireCheckoutFinalizeInput(rawInput: unknown, action: "rerun" | "resume") {

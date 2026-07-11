@@ -4,6 +4,7 @@ import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
+import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -24,11 +25,12 @@ import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-c
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
+  const workflowRunnerRegistry = new WorkflowRunnerRegistry()
   return composeVoyantGraphRuntime({
     runtime,
     capabilities: buildOperatorProviders(),
     bindings: operatorGraphRuntimeBindings,
-    ports: buildOperatorRuntimePorts(),
+    ports: buildOperatorRuntimePorts(workflowRunnerRegistry),
   })
 }
 
@@ -116,7 +118,7 @@ describe("operator graph runtime composition", () => {
       },
       capabilities: buildOperatorProviders(),
       bindings: operatorGraphRuntimeBindings,
-      ports: buildOperatorRuntimePorts(),
+      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
     expect(
@@ -210,6 +212,89 @@ describe("operator graph runtime composition", () => {
     ).toBe(false)
   })
 
+  it("activates both selected Commerce checkout subscribers exactly once and registers its runner", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const checkout = runtime.extensions.find(
+      (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
+    )
+    const registry = new WorkflowRunnerRegistry()
+    const composed = await composeVoyantGraphRuntime({
+      runtime,
+      capabilities: buildOperatorProviders(),
+      bindings: operatorGraphRuntimeBindings,
+      ports: buildOperatorRuntimePorts(registry),
+    })
+    const runtimeModule = composed.modules.find(
+      (module) => module.module.name === "commerce.catalog-checkout-extension.graph-runtime",
+    )
+    const eventBus = createEventBus()
+    const subscribe = vi.spyOn(eventBus, "subscribe")
+
+    await runtimeModule?.module.bootstrap?.({
+      bindings: { DATABASE_URL: "postgres://test" },
+      container: createContainer(),
+      eventBus,
+    })
+
+    expect(
+      checkout?.references
+        .filter((reference) => reference.facet === "subscribers.runtime")
+        .map((reference) => reference.entityId),
+    ).toEqual([
+      "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated",
+      "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed",
+    ])
+    expect(
+      subscribe.mock.calls.filter(
+        ([eventType]) =>
+          eventType === "contract.document.generated" || eventType === "payment.completed",
+      ),
+    ).toHaveLength(2)
+    expect(
+      subscribe.mock.calls.find(([eventType]) => eventType === "payment.completed")?.[2],
+    ).toEqual({ inline: true })
+    expect(registry.get("checkout-finalize")).toMatchObject({
+      name: "checkout-finalize",
+      rerun: expect.any(Function),
+      resume: expect.any(Function),
+    })
+  })
+
+  it("does not lower Commerce checkout subscribers or require their ports when deselected", async () => {
+    const runtime = createGeneratedGraphRuntime()
+    const composed = await composeVoyantGraphRuntime({
+      runtime: {
+        ...runtime,
+        extensions: runtime.extensions.filter(
+          (unit) => unit.id !== "@voyant-travel/commerce#catalog-checkout-extension",
+        ),
+      },
+      capabilities: buildOperatorProviders(),
+      bindings: operatorGraphRuntimeBindings,
+      ports: buildOperatorRuntimePorts(),
+    })
+
+    expect(
+      composed.modules.some(
+        (module) => module.module.name === "commerce.catalog-checkout-extension.graph-runtime",
+      ),
+    ).toBe(false)
+    expect(
+      composed.extensions.some((extension) => extension.extension.name === "catalog-checkout"),
+    ).toBe(false)
+  })
+
+  it("fails composition explicitly when a selected checkout host omits a required service", async () => {
+    await expect(
+      composeVoyantGraphRuntime({
+        runtime: createGeneratedGraphRuntime(),
+        capabilities: buildOperatorProviders(),
+        bindings: operatorGraphRuntimeBindings,
+        ports: buildOperatorRuntimePorts(),
+      }),
+    ).rejects.toThrow(/requires runtime port "workflows\.runner-registry"/)
+  })
+
   it("selects package-owned bridge units and discovered project modules directly", () => {
     const moduleIds = new Set(GENERATED_GRAPH_RUNTIME_MODULE_IDS)
     const pluginIds = new Set(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS)
@@ -277,13 +362,16 @@ describe("operator graph runtime composition", () => {
     )
   })
 
-  it("binds storage and realtime by package-declared ports instead of package ids", async () => {
-    const ports = buildOperatorRuntimePorts()
+  it("binds selected package runtimes by declared ports instead of Commerce package ids", async () => {
+    const ports = buildOperatorRuntimePorts(new WorkflowRunnerRegistry())
 
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/storage")
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/realtime")
-    expect(Object.keys(ports).sort()).toEqual(
-      [realtimeRuntimePort.id, storageMediaRuntimePort.id].sort(),
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
+      "@voyant-travel/commerce#catalog-checkout-extension",
+    )
+    expect(Object.keys(ports)).toEqual(
+      expect.arrayContaining([realtimeRuntimePort.id, storageMediaRuntimePort.id]),
     )
     await expect(composeOperatorGraph()).resolves.toBeDefined()
   })

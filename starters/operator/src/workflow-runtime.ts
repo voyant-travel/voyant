@@ -1,4 +1,5 @@
 import type { EventFilterDescriptor, EventFilterManifestDescriptor } from "@voyant-travel/core"
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { WorkflowDefinition } from "@voyant-travel/workflows"
 import type { ServiceResolver } from "@voyant-travel/workflows/driver"
 import type { WorkflowResolver } from "@voyant-travel/workflows/handler"
@@ -39,6 +40,7 @@ export async function loadOperatorWorkflowRuntime(
     ),
   )
   const eventFilters = loadedEventFilters
+    .filter((descriptor) => !isGraphRuntimeFactory(descriptor))
     .filter((descriptor) => !isOrdinarySubscriberRuntime(descriptor))
     .map(requireEventFilterManifest)
   const byId = new Map(workflows.map((workflow) => [workflow.id, workflow]))
