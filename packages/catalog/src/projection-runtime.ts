@@ -1,5 +1,9 @@
-import { definePort } from "@voyant-travel/core/project"
 import { z } from "zod"
+
+export {
+  type CatalogProjectionRuntimeProvider,
+  catalogProjectionRuntimePort,
+} from "./subscriber-runtime-ports.js"
 
 /** Service-container key used by package-owned Catalog projection subscribers. */
 export const CATALOG_PROJECTION_RUNTIME_CONTAINER_KEY = "runtime.catalog.projection"
@@ -29,21 +33,6 @@ export interface CatalogProjectionRuntime {
   reindexEntity(target: CatalogProjectionTarget): Promise<void>
   deleteEntity(target: CatalogProjectionTarget): Promise<void>
 }
-
-/** Typed deployment port for the package-owned Catalog projection runtime. */
-export const catalogProjectionRuntimePort = definePort<CatalogProjectionRuntime>({
-  id: "catalog.projection-runtime",
-  test(provider) {
-    if (provider === null || typeof provider !== "object") {
-      throw new Error("catalog.projection-runtime provider must be an object.")
-    }
-    for (const method of ["reindexEntity", "deleteEntity"] as const) {
-      if (typeof provider[method] !== "function") {
-        throw new Error(`catalog.projection-runtime provider must implement ${method}().`)
-      }
-    }
-  },
-})
 
 export type EnsureCatalogCollections = (ensureCollections: () => Promise<void>) => Promise<void>
 

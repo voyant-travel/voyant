@@ -20,7 +20,6 @@ import {
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/operator-runtime-adapter"
-import { catalogBridgeBundle } from "./subscribers/catalog-bridge-bundle"
 
 /**
  * Process-wide registry of workflow runners. Selected package runtimes register
@@ -87,7 +86,6 @@ export const app = mountApp<AppBindings>({
   outbox: true,
   // Package-owned anonymous posture comes from the selected graph.
   publicPaths: [...graphComposition.routePosture.publicPaths],
-  plugins: [catalogBridgeBundle],
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>

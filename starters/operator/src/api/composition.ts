@@ -19,6 +19,14 @@ import type {
   IndexerAdapter,
 } from "@voyant-travel/catalog"
 import {
+  type CatalogBookingSnapshotRuntimeProvider,
+  catalogBookingSnapshotRuntimePort,
+} from "@voyant-travel/catalog/booking-snapshot-subscriber"
+import {
+  type CatalogProjectionRuntimeProvider,
+  catalogProjectionRuntimePort,
+} from "@voyant-travel/catalog/projection-runtime"
+import {
   type AcceptanceSignatureLegalPort,
   type CatalogCheckoutContractPdfRuntime,
   type CatalogCheckoutDatabaseRuntime,
@@ -272,6 +280,14 @@ export function buildOperatorRuntimePorts(
   workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
 ): VoyantGraphRuntimePorts {
   return {
+    [catalogProjectionRuntimePort.id]:
+      createOperatorCatalogProjectionRuntimeProvider() satisfies CatalogProjectionRuntimeProvider,
+    [catalogBookingSnapshotRuntimePort.id]: {
+      createRuntime: (bindings) =>
+        import("./runtime/catalog-subscriber-runtime").then((runtime) =>
+          runtime.createOperatorCatalogBookingSnapshotRuntime(bindings),
+        ),
+    } satisfies CatalogBookingSnapshotRuntimeProvider,
     [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
@@ -316,6 +332,18 @@ export function buildOperatorRuntimePorts(
     ...(workflowRunnerRegistry
       ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
       : {}),
+  }
+}
+
+function createOperatorCatalogProjectionRuntimeProvider(): CatalogProjectionRuntimeProvider {
+  let runtime: ReturnType<CatalogProjectionRuntimeProvider["createRuntime"]> | undefined
+  return {
+    createRuntime(bindings) {
+      runtime ??= import("./runtime/catalog-subscriber-runtime").then((module) =>
+        module.createOperatorCatalogProjectionRuntime(bindings),
+      )
+      return runtime
+    },
   }
 }
 
