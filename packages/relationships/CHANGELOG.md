@@ -1,5 +1,27 @@
 # @voyant-travel/crm
 
+## 0.124.0
+
+### Minor Changes
+
+- d771be3: Move Relationships graph runtime composition behind a package-owned typed port and runtime factory.
+
+### Patch Changes
+
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/action-ledger@0.107.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/identity@0.152.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/utils@0.106.1
+
 ## 0.123.4
 
 ### Patch Changes

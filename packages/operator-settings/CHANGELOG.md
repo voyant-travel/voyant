@@ -1,5 +1,22 @@
 # @voyant-travel/operator-settings
 
+## 0.3.5
+
+### Patch Changes
+
+- Updated dependencies [60b1970]
+- Updated dependencies [977c1bd]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/finance@0.152.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/db@0.112.2
+
 ## 0.3.4
 
 ### Patch Changes

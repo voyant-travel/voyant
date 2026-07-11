@@ -1,5 +1,24 @@
 # @voyant-travel/admin-app
 
+## 0.44.0
+
+### Minor Changes
+
+- d771be3: Compile selected graph access catalogs, make Bookings the first package-owned access authority, and
+  wire exact-pair catalog validation through runtime authorization and permission editors.
+
+### Patch Changes
+
+- Updated dependencies [d771be3]
+- Updated dependencies [d771be3]
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/auth-react@0.125.0
+  - @voyant-travel/admin@0.121.0
+  - @voyant-travel/commerce-react@0.34.0
+  - @voyant-travel/distribution-react@0.142.0
+  - @voyant-travel/finance-react@0.152.0
+  - @voyant-travel/inventory-react@0.34.0
+
 ## 0.43.0
 
 ### Patch Changes

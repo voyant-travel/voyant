@@ -1,5 +1,19 @@
 # @voyant-travel/admin
 
+## 0.121.0
+
+### Minor Changes
+
+- d771be3: Compile selected graph access catalogs, make Bookings the first package-owned access authority, and
+  wire exact-pair catalog validation through runtime authorization and permission editors.
+- d771be3: Add the uniform selected-admin factory context used by package-owned admin
+  cutovers.
+
+### Patch Changes
+
+- Updated dependencies [d771be3]
+  - @voyant-travel/types@0.108.0
+
 ## 0.120.0
 
 ### Minor Changes

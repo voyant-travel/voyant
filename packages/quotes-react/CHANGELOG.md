@@ -1,5 +1,25 @@
 # @voyant-travel/crm-react
 
+## 0.150.0
+
+### Minor Changes
+
+- 0c19298: Declare the package-owned Quotes admin factory as a selected-graph runtime while
+  preserving its existing routes, destinations, localized navigation, icon, copy
+  provider, and selection behavior.
+
+### Patch Changes
+
+- Updated dependencies [0c19298]
+- Updated dependencies [d771be3]
+- Updated dependencies [d771be3]
+  - @voyant-travel/quotes@0.127.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/auth-react@0.125.0
+  - @voyant-travel/admin@0.121.0
+  - @voyant-travel/relationships-react@0.152.0
+  - @voyant-travel/utils@0.106.1
+
 ## 0.149.0
 
 ### Patch Changes

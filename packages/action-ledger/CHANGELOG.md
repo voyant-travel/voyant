@@ -1,5 +1,26 @@
 # @voyant-travel/action-ledger
 
+## 0.107.0
+
+### Minor Changes
+
+- d26a820: Lower package-owned admin factories from the selected deployment graph into a
+  dedicated generated admin bundle, beginning with the action-ledger nav, route,
+  lazy page surface, localized Operator label, and standard icon. Selected admin
+  factories compose in stable graph-declared order.
+
+### Patch Changes
+
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/db@0.112.2
+
 ## 0.106.4
 
 ### Patch Changes

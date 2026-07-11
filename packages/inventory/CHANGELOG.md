@@ -1,5 +1,35 @@
 # @voyant-travel/inventory
 
+## 0.8.6
+
+### Patch Changes
+
+- 8f4c242: Derive anonymous public and transactional path posture from selected deployment graph API bundles, including partial transactional path declarations.
+- Updated dependencies [e68bdc1]
+- Updated dependencies [d771be3]
+- Updated dependencies [8e67fe8]
+- Updated dependencies [26fe0e5]
+- Updated dependencies [d771be3]
+- Updated dependencies [18d8aa0]
+- Updated dependencies [9b15ebe]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/catalog@0.150.0
+  - @voyant-travel/commerce@0.34.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/action-ledger@0.107.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/operations@0.6.5
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/storage@0.108.1
+  - @voyant-travel/utils@0.106.1
+  - @voyant-travel/workflows@0.116.0
+
 ## 0.8.5
 
 ### Patch Changes

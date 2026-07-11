@@ -1,5 +1,27 @@
 # @voyant-travel/catalog
 
+## 0.150.0
+
+### Minor Changes
+
+- e68bdc1: Declare the Catalog booking snapshot subscriber and its injected runtime contract.
+- d771be3: Activate Catalog indexing and booking snapshot subscribers through package-owned selected-graph runtimes and typed deployment ports.
+- 8e67fe8: Declare the central Catalog indexing subscribers and publish their inert runtime descriptors.
+- 26fe0e5: Add the injected Catalog projection subscriber runtime contract, target validation, and shared collection-setup serialization.
+
+### Patch Changes
+
+- 8f4c242: Derive anonymous public and transactional path posture from selected deployment graph API bundles, including partial transactional path declarations.
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/db@0.112.2
+
 ## 0.149.4
 
 ### Patch Changes

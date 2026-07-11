@@ -1,5 +1,32 @@
 # @voyant-travel/legal
 
+## 0.152.0
+
+### Patch Changes
+
+- a799a34: Activate Legal booking-contract generation through selected graph composition and Legal-owned typed runtime ports.
+- Updated dependencies [d771be3]
+- Updated dependencies [60b1970]
+- Updated dependencies [977c1bd]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/distribution@0.142.0
+  - @voyant-travel/finance@0.152.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/action-ledger@0.107.0
+  - @voyant-travel/relationships@0.124.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/bookings@0.152.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/storage@0.108.1
+  - @voyant-travel/utils@0.106.1
+
 ## 0.151.4
 
 ### Patch Changes

@@ -1,5 +1,25 @@
 # @voyant-travel/workflow-runs
 
+## 0.116.0
+
+### Minor Changes
+
+- d771be3: Activate the package-owned catalog checkout subscribers and workflow runner through selected-graph runtime ports, with explicit composition failure when required Node host services are missing.
+
+### Patch Changes
+
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/workflows@0.116.0
+
 ## 0.115.2
 
 ### Patch Changes

@@ -1,5 +1,38 @@
 # @voyant-travel/storefront
 
+## 0.154.0
+
+### Minor Changes
+
+- 263fb4d: Activate Storefront booking-bootstrap write intents through the package-owned selected-graph subscriber runtime and generic Node database lifecycle capability.
+
+### Patch Changes
+
+- 8f4c242: Derive anonymous public and transactional path posture from selected deployment graph API bundles, including partial transactional path declarations.
+- Updated dependencies [d771be3]
+- Updated dependencies [18d8aa0]
+- Updated dependencies [9b15ebe]
+- Updated dependencies [60b1970]
+- Updated dependencies [977c1bd]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [a799a34]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/commerce@0.34.0
+  - @voyant-travel/finance@0.152.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/legal@0.152.0
+  - @voyant-travel/relationships@0.124.0
+  - @voyant-travel/bookings@0.152.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/identity@0.152.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/utils@0.106.1
+
 ## 0.153.4
 
 ### Patch Changes
