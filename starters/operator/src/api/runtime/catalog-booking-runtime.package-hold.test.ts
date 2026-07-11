@@ -43,7 +43,10 @@ describe("operator Connect package hold preparation", () => {
       expiresAt: "2026-07-03T12:00:00.000Z",
     }
 
-    const next = await options.booking.prepareBookParameters({
+    const prepareBookParameters = options.booking.prepareBookParameters
+    if (!prepareBookParameters) throw new Error("Expected package hold preparation")
+    type PrepareInput = Parameters<typeof prepareBookParameters>[0]
+    const next = await prepareBookParameters({
       c: { env: {} },
       parameters: { connectRoute: "packages" },
       provenance: {
@@ -53,7 +56,7 @@ describe("operator Connect package hold preparation", () => {
       quote: {
         upstream_payload: { offer },
       },
-    })
+    } as unknown as PrepareInput)
 
     expect(mocks.lockPackage).toHaveBeenCalledWith("conn_1", offer)
     expect(next.holdId).toBe("hold_pkg_1")
