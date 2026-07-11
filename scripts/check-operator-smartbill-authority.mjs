@@ -27,46 +27,53 @@ const installedPackage = JSON.parse(readRequired(join(installedPackageRoot, "pac
 const config = readRequired(join(operatorRoot, "voyant.config.ts"))
 const app = readRequired(join(operatorRoot, "src/api/app.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
-const adapter = readRequired(join(operatorRoot, "src/api/runtime/smartbill-subscriber-runtime.ts"))
+const nodeHost = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 
-if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.138.0") {
-  violations.push("operator must depend on @voyant-travel/plugin-smartbill ^0.138.0")
+if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.0") {
+  violations.push("operator must depend on @voyant-travel/plugin-smartbill ^0.140.0")
 }
-if (installedPackage.version !== "0.138.0") {
-  violations.push("installed SmartBill package must resolve to 0.138.0")
+if (installedPackage.version !== "0.140.0") {
+  violations.push("installed SmartBill package must resolve to 0.140.0")
 }
 if (
   installedPackage.voyant?.kind !== "plugin" ||
   installedPackage.voyant?.manifest !== "./voyant" ||
   !installedPackage.exports?.["./voyant"] ||
+  !installedPackage.exports?.["./graph-runtime"] ||
   !installedPackage.exports?.["./subscriber-runtime"]
 ) {
   violations.push(
-    "SmartBill must advertise plugin metadata plus ./voyant and ./subscriber-runtime exports",
+    "SmartBill must advertise plugin metadata plus ./voyant, ./graph-runtime, and ./subscriber-runtime exports",
   )
 }
 if (!/resolve:\s*["']@voyant-travel\/plugin-smartbill["']/.test(config)) {
   violations.push("voyant.config.ts must directly select @voyant-travel/plugin-smartbill")
 }
 if (
-  !composition.includes('"@voyant-travel/plugin-smartbill"') ||
-  !composition.includes("registerOperatorSmartbillSubscriberRuntimeService")
+  !composition.includes('from "@voyant-travel/plugin-smartbill/graph-runtime"') ||
+  !composition.includes("[smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost")
 ) {
-  violations.push("selected graph composition must bind the operator SmartBill runtime adapter")
+  violations.push("generic Node composition must bind the typed smartbill.runtime-host port")
 }
 if (
-  !adapter.includes('from "@voyant-travel/plugin-smartbill/subscriber-runtime"') ||
-  !adapter.includes("container.register(SMARTBILL_SUBSCRIBER_RUNTIME_KEY")
+  !nodeHost.includes('from "@voyant-travel/plugin-smartbill/graph-runtime"') ||
+  !nodeHost.includes("operatorSmartbillRuntimeHost: SmartbillRuntimeHost") ||
+  !nodeHost.includes("createSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings))")
 ) {
-  violations.push("operator adapter must register the SmartBill subscriber runtime service")
+  violations.push("Node host must provide typed SmartBill dependencies and package-owned pollers")
 }
-if (/eventBus\.subscribe|descriptor\.register/.test(`${app}\n${composition}\n${adapter}`)) {
+if (/"@voyant-travel\/plugin-smartbill"\s*:/.test(composition)) {
+  violations.push("Operator must not bind SmartBill behavior by package id")
+}
+if (/eventBus\.subscribe|descriptor\.register/.test(`${app}\n${composition}\n${nodeHost}`)) {
   violations.push("Operator code must not own or register SmartBill subscriber descriptors")
 }
 if (/smartbillOperatorBundle|subscribers\/smartbill/.test(app)) {
   violations.push("operator app must not mount or import a SmartBill compatibility bundle")
 }
 for (const relativePath of [
+  "src/api/runtime/smartbill-subscriber-runtime.ts",
+  "src/api/runtime/smartbill-subscriber-runtime.test.ts",
   "src/api/subscribers/smartbill-bundle.ts",
   "src/api/subscribers/smartbill.ts",
 ]) {
@@ -81,5 +88,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-operator-smartbill-authority: OK (package subscriber authority; operator service adapter only)",
+  "check-operator-smartbill-authority: OK (typed Node host port; package runtime, subscribers, and pollers)",
 )

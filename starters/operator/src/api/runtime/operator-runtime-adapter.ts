@@ -1,6 +1,11 @@
 import type { InvoiceSettlementPoller, ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
 import {
+  createSmartbillSettlementPollers,
+  type SmartbillRuntimeConfig,
+  type SmartbillRuntimeHost,
+} from "@voyant-travel/plugin-smartbill/graph-runtime"
+import {
   type CloudWorkflowsClientEnv,
   createCloudWorkflowDriver,
 } from "@voyant-travel/workflows/client"
@@ -43,6 +48,12 @@ export function resolveOperatorDocumentDownloadUrl(
 
 export function createOperatorDocumentStorage(bindings: unknown) {
   return createDocumentStorage(operatorBindings(bindings))
+}
+
+export const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {
+  resolveDatabase: (bindings) => operatorPostgresDb(resolveOperatorDb(bindings)),
+  resolveConfig: resolveOperatorSmartbillConfig,
+  resolveDocumentStorage: createOperatorDocumentStorage,
 }
 
 export function resolveOperatorContractDocumentGenerator(bindings: unknown) {
@@ -93,22 +104,10 @@ export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
 }
 
 export function createOperatorInvoiceSettlementPollers(bindings: unknown) {
-  const env = operatorBindings(bindings)
-  if (!isSmartbillConfigured(env)) return {} as Record<string, InvoiceSettlementPoller>
-
-  let poller: InvoiceSettlementPoller | undefined
-  return {
-    smartbill: async (context: Parameters<InvoiceSettlementPoller>[0]) => {
-      if (!poller) {
-        const { createSmartbillSettlementPollers } = await import("./smartbill-subscriber-runtime")
-        poller = createSmartbillSettlementPollers(env).smartbill
-      }
-      if (!poller) {
-        throw new Error("SmartBill settlement poller is not configured")
-      }
-      return poller(context)
-    },
-  }
+  return createSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings)) as Record<
+    string,
+    InvoiceSettlementPoller
+  >
 }
 
 export function operatorWorkflowCloudEnv(env: AppBindings): CloudWorkflowsClientEnv {
@@ -141,13 +140,26 @@ export async function generateContractPdfForBooking(
   return generateContractPdfForBooking(...args)
 }
 
-function isSmartbillConfigured(env: AppBindings) {
-  return Boolean(
-    nonEmpty(env.SMARTBILL_USERNAME) &&
-      (nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)) &&
-      nonEmpty(env.SMARTBILL_COMPANY_VAT_CODE) &&
-      (nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME) ?? nonEmpty(env.SMARTBILL_SERIES_NAME)),
-  )
+export function resolveOperatorSmartbillConfig(bindings: unknown): SmartbillRuntimeConfig | null {
+  const env = operatorBindings(bindings)
+  const username = nonEmpty(env.SMARTBILL_USERNAME)
+  const apiToken = nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)
+  const companyVatCode = nonEmpty(env.SMARTBILL_COMPANY_VAT_CODE)
+  const seriesName =
+    nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME) ?? nonEmpty(env.SMARTBILL_SERIES_NAME)
+  if (!username || !apiToken || !companyVatCode || !seriesName) return null
+
+  return {
+    username,
+    apiToken,
+    companyVatCode,
+    seriesName,
+    invoiceSeriesName: nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME),
+    proformaSeriesName: nonEmpty(env.SMARTBILL_PROFORMA_SERIES_NAME),
+    apiUrl: nonEmpty(env.SMARTBILL_API_URL),
+    language: nonEmpty(env.SMARTBILL_LANGUAGE),
+    art311SpecialRegime: env.SMARTBILL_ART_311_SPECIAL_REGIME === "true",
+  }
 }
 
 function nonEmpty(value: string | undefined): string | undefined {

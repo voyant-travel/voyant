@@ -117,7 +117,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
-  for (const unit of [...input.runtime.extensions, ...input.runtime.plugins]) {
+  for (const unit of input.runtime.extensions) {
     const outputs = await resolveRuntimeUnit(
       input,
       unit,
@@ -130,6 +130,25 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
         throw invalidRuntimeOutput(unit, "HonoExtension", output)
       }
       extensions.push(applyExtensionRoutePosture(output, routePosture))
+    }
+  }
+
+  for (const unit of input.runtime.plugins) {
+    const outputs = await resolveRuntimeUnit(
+      input,
+      unit,
+      requireRuntimeFactoryContext(factoryContexts, unit),
+    )
+    assertWebhookRoutePosture(input.runtime, unit, outputs)
+    const routePosture = deriveUnitRoutePosture(unit)
+    for (const output of outputs) {
+      if (isHonoModule(output)) {
+        modules.push(applyModuleRoutePosture(output, routePosture))
+      } else if (isHonoExtension(output)) {
+        extensions.push(applyExtensionRoutePosture(output, routePosture))
+      } else {
+        throw invalidRuntimeOutput(unit, "HonoModule or HonoExtension", output)
+      }
     }
   }
 
@@ -553,7 +572,7 @@ function isEventFilterDescriptor(value: unknown): value is EventFilterDescriptor
 
 function invalidRuntimeOutput(
   unit: VoyantGraphRuntimeUnitLoader,
-  expected: "HonoModule" | "HonoExtension",
+  expected: "HonoModule" | "HonoExtension" | "HonoModule or HonoExtension",
   output: unknown,
 ): Error {
   return new Error(

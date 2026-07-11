@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: architecture; deployment graph admission, provenance, package metadata, and generated artifact assertions share one end-to-end checker.
 import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { dirname, join, resolve } from "node:path"
@@ -309,13 +310,13 @@ async function main(): Promise<void> {
   }
   const smartbillRecord = operatorPackageRecords.get("@voyant-travel/plugin-smartbill")
   if (
-    smartbillRecord?.version !== "0.138.0" ||
+    smartbillRecord?.version !== "0.140.0" ||
     smartbillRecord.source?.kind !== "registry" ||
     smartbillRecord.metadata?.kind !== "plugin" ||
     smartbillRecord.metadata.manifest !== "./voyant"
   ) {
     failures.push(
-      "expected SmartBill 0.138.0 registry package to be admitted through its ./voyant manifest",
+      "expected SmartBill 0.140.0 registry package to be admitted through its ./voyant manifest",
     )
   }
   const smartbillUnit = operatorGraph.plugins.find(

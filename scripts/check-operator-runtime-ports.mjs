@@ -31,7 +31,7 @@ const runtimePorts = section(
 const runtimeBindings = section(
   composition,
   "export const operatorGraphRuntimeBindings",
-  "function resolveOperatorSmartbillOptions",
+  "function bindingsFromExtensionFactories",
 )
 
 const requiredPorts = [
@@ -55,6 +55,7 @@ const requiredPorts = [
   "quotesProposalRuntimePort",
   "quotesRuntimePort",
   "quotesSnapshotRuntimePort",
+  "smartbillRuntimeHostPort",
   "storefrontCustomerPortalRuntimePort",
   "storefrontPaymentLinkRuntimePort",
   "storefrontRuntimePort",

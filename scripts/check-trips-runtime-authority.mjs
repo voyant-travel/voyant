@@ -40,7 +40,7 @@ const runtimePorts = section(
 const runtimeBindings = section(
   composition,
   "export const operatorGraphRuntimeBindings",
-  "function resolveOperatorSmartbillOptions",
+  "function bindingsFromExtensionFactories",
 )
 
 if (

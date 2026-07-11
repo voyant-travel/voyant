@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: framework; graph unit, facet, port, route posture, and plugin output contracts share one composition harness.
 import { createEventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory, definePort } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
@@ -721,10 +722,39 @@ describe("graph runtime composition", () => {
     expect(removedBinding).not.toHaveBeenCalled()
   })
 
-  it("rejects plugin runtime exports that are not Hono extensions", async () => {
+  it("accepts plugin-owned modules and rejects invalid plugin runtime exports", async () => {
+    const moduleRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:plugin-module",
+      entries: { "@acme/billing": async () => ({ billing: { module: { name: "billing" } } }) },
+      modules: [],
+      plugins: [
+        {
+          id: "@acme/billing",
+          kind: "plugin",
+          packageName: "@acme/billing",
+          order: 0,
+          runtimeReferenceId: "@acme/billing#runtime",
+          references: [
+            {
+              id: "@acme/billing#runtime",
+              unitId: "@acme/billing",
+              facet: "runtime",
+              entityId: "@acme/billing",
+              runtime: { entry: "@acme/billing", export: "billing" },
+              importEntry: "@acme/billing",
+            },
+          ],
+          routes: [],
+        },
+      ],
+    })
+    await expect(
+      composeVoyantGraphRuntime({ runtime: moduleRuntime, capabilities: {} }),
+    ).resolves.toMatchObject({ modules: [{ module: { name: "billing" } }] })
+
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:test",
-      entries: { "@acme/audit": async () => ({ audit: { module: { name: "wrong" } } }) },
+      entries: { "@acme/audit": async () => ({ audit: { wrong: true } }) },
       modules: [],
       plugins: [
         {
@@ -747,7 +777,7 @@ describe("graph runtime composition", () => {
     })
 
     await expect(composeVoyantGraphRuntime({ runtime, capabilities: {} })).rejects.toThrow(
-      /plugin "@acme\/audit" must resolve to HonoExtension/,
+      /plugin "@acme\/audit" must resolve to HonoModule or HonoExtension/,
     )
   })
 })

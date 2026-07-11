@@ -31,6 +31,7 @@ const portNames = [
   "quotesProposalRuntimePort",
   "quotesRuntimePort",
   "quotesSnapshotRuntimePort",
+  "smartbillRuntimeHostPort",
   "storefrontCustomerPortalRuntimePort",
   "storefrontPaymentLinkRuntimePort",
   "storefrontRuntimePort",
@@ -45,7 +46,7 @@ async function createFixture({ binding = "", framework = "" } = {}) {
   await mkdir(path.dirname(frameworkFile), { recursive: true })
   await writeFile(
     operator,
-    `export function buildOperatorRuntimePorts() { return { ${portNames.map((name) => `[${name}.id]: {}`).join(",")} } }\nasync function createOperatorBookingsRuntimeProvider() {}\nexport const operatorGraphRuntimeBindings = { ${binding} }\nfunction resolveOperatorSmartbillOptions() {}\n`,
+    `export function buildOperatorRuntimePorts() { return { ${portNames.map((name) => `[${name}.id]: {}`).join(",")} } }\nasync function createOperatorBookingsRuntimeProvider() {}\nexport const operatorGraphRuntimeBindings = { ${binding} }\nfunction bindingsFromExtensionFactories() {}\n`,
   )
   await writeFile(frameworkFile, framework)
   return root
@@ -68,7 +69,7 @@ function runChecker(root) {
 describe("check-operator-runtime-ports", () => {
   it("accepts typed host ports without central factories", async () => {
     const result = await runChecker(await createFixture())
-    assert.match(result.stdout, /24 package runtimes are port-bound/)
+    assert.match(result.stdout, /25 package runtimes are port-bound/)
   })
 
   it("rejects restored Operator bindings and framework factories", async () => {

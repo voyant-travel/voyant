@@ -15,19 +15,23 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-smartbill-authority-"))
   const files = {
     "package.json": JSON.stringify({
-      dependencies: { "@voyant-travel/plugin-smartbill": "^0.138.0" },
+      dependencies: { "@voyant-travel/plugin-smartbill": "^0.140.0" },
     }),
     "voyant.config.ts":
       'export default { plugins: [{ resolve: "@voyant-travel/plugin-smartbill" }] }\n',
     "src/api/app.ts": "export const app = mountApp({})\n",
     "src/api/composition.ts":
-      'export const bindings = { "@voyant-travel/plugin-smartbill": registerOperatorSmartbillSubscriberRuntimeService }\n',
-    "src/api/runtime/smartbill-subscriber-runtime.ts":
-      'import { SMARTBILL_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/plugin-smartbill/subscriber-runtime"\ncontext.container.register(SMARTBILL_SUBSCRIBER_RUNTIME_KEY, runtime)\n',
+      'import { smartbillRuntimeHostPort } from "@voyant-travel/plugin-smartbill/graph-runtime"\nexport const ports = { [smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost }\n',
+    "src/api/runtime/operator-runtime-adapter.ts":
+      'import { createSmartbillSettlementPollers, type SmartbillRuntimeHost } from "@voyant-travel/plugin-smartbill/graph-runtime"\nexport const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {}\ncreateSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings))\n',
     "installed/package.json": JSON.stringify({
-      version: "0.138.0",
+      version: "0.140.0",
       voyant: { kind: "plugin", manifest: "./voyant" },
-      exports: { "./voyant": "./voyant.js", "./subscriber-runtime": "./runtime.js" },
+      exports: {
+        "./voyant": "./voyant.js",
+        "./graph-runtime": "./graph-runtime.js",
+        "./subscriber-runtime": "./subscriber-runtime.js",
+      },
     }),
     ...overrides,
   }
@@ -54,7 +58,7 @@ async function runChecker(root) {
 }
 
 describe("check-operator-smartbill-authority", () => {
-  it("accepts direct package admission with an operator runtime adapter", async () => {
+  it("accepts direct package admission with a typed Node host port", async () => {
     const root = await createFixture()
 
     const result = await runChecker(root)
@@ -66,6 +70,8 @@ describe("check-operator-smartbill-authority", () => {
     const root = await createFixture({
       "src/api/app.ts":
         'import { smartbillOperatorBundle } from "./subscribers/smartbill-bundle"\n',
+      "src/api/runtime/operator-runtime-adapter.ts":
+        'eventBus.subscribe("invoice.issued", handler)\ndescriptor.register(context)\n',
       "src/api/runtime/smartbill-subscriber-runtime.ts":
         'eventBus.subscribe("invoice.issued", handler)\ndescriptor.register(context)\n',
       "src/api/subscribers/smartbill.ts": "export const legacy = true\n",
@@ -74,6 +80,7 @@ describe("check-operator-smartbill-authority", () => {
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must not own or register SmartBill subscriber descriptors/)
       assert.match(error.stderr, /must not mount or import a SmartBill compatibility bundle/)
+      assert.match(error.stderr, /smartbill-subscriber-runtime\.ts must stay deleted/)
       assert.match(error.stderr, /smartbill\.ts must stay deleted/)
       return true
     })

@@ -44,6 +44,7 @@ import {
   NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
   notificationsRuntimePort,
 } from "@voyant-travel/notifications"
+import { smartbillRuntimeHostPort } from "@voyant-travel/plugin-smartbill/graph-runtime"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
@@ -115,7 +116,7 @@ describe("operator graph runtime composition", () => {
     expect(moduleNames).toContain("catalog")
     expect(extensionNames).toContain("bookings-suppliers")
     expect(extensionNames).toContain("booking-tax")
-    expect(extensionNames).toContain("smartbill")
+    expect(moduleNames).toContain("smartbill")
     expect(moduleNames).toContain("plugin-smartbill.graph-runtime")
     expect(new Set(moduleNames).size).toBe(moduleNames.length)
     expect(new Set(extensionNames).size).toBe(extensionNames.length)
@@ -400,13 +401,17 @@ describe("operator graph runtime composition", () => {
     expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/legal")
   })
 
-  it("selects SmartBill package subscribers and binds only its operator adapter", async () => {
+  it("selects SmartBill package runtime through its typed Node host port", async () => {
     expect(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS).toContain("@voyant-travel/plugin-smartbill")
-    expect(operatorGraphRuntimeBindings).toHaveProperty("@voyant-travel/plugin-smartbill")
+    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/plugin-smartbill")
+    expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
+      smartbillRuntimeHostPort.id,
+    )
 
     const runtime = createGeneratedGraphRuntime()
     const smartbill = runtime.plugins.find((unit) => unit.id === "@voyant-travel/plugin-smartbill")
     const composed = await composeOperatorGraph()
+    const smartbillModule = composed.modules.find((module) => module.module.name === "smartbill")
     const runtimeModule = composed.modules.find(
       (module) => module.module.name === "plugin-smartbill.graph-runtime",
     )
@@ -420,19 +425,8 @@ describe("operator graph runtime composition", () => {
       "@voyant-travel/plugin-smartbill#subscriber.payment-recorded",
       "@voyant-travel/plugin-smartbill#subscriber.proforma-issued",
     ])
+    expect(smartbillModule?.module.bootstrap).toBeTypeOf("function")
     expect(runtimeModule?.module.bootstrap).toBeTypeOf("function")
-
-    const subscribe = vi.fn((_eventType: string) => ({ unsubscribe: vi.fn() }))
-    await runtimeModule?.module.bootstrap?.({
-      bindings: {},
-      container: createContainer(),
-      eventBus: { subscribe } as never,
-    })
-    expect(subscribe.mock.calls.map(([eventType]) => eventType)).toEqual([
-      "invoice.issued",
-      "invoice.payment.recorded",
-      "invoice.proforma.issued",
-    ])
   })
 
   it("graph-gates the Trips payment subscriber and its runtime service", async () => {

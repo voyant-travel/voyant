@@ -35,7 +35,7 @@ const HTTP_METHODS = new Set([
 const DEFAULT_ALLOWLIST = new Map([
   [
     "@voyant-travel/plugin-smartbill#api.admin",
-    "SmartBill 0.138.0 publishes a plain Hono admin route and does not yet expose a package OpenAPI registry",
+    "SmartBill 0.140.0 owns its graph runtime but does not yet declare an OpenAPI document in package metadata",
   ],
 ])
 

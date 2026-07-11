@@ -17,7 +17,7 @@ afterEach(() => {
 test("accepts a minimal Node config with only external plugins and database selection", () => {
   const root = fixture()
   const output = run(root)
-  assert.match(output, /1 standard selections hidden, 1 temporary package bridge/)
+  assert.match(output, /1 standard selections hidden, no package bridges/)
 })
 
 test("rejects standard selections repeated by authored config", () => {
@@ -30,7 +30,7 @@ test("rejects standard selections repeated by authored config", () => {
   )
 })
 
-test("rejects package-specific Operator bindings beyond the temporary SmartBill bridge", () => {
+test("rejects every package-specific Operator binding", () => {
   const root = fixture({
     composition: `export const operatorGraphRuntimeBindings = {
   "@voyant-travel/plugin-smartbill": () => undefined,
@@ -61,9 +61,7 @@ function fixture(overrides = {}) {
 })\n`,
     "packages/framework/src/operator-distribution.ts": `const modules = [{ resolve: "@voyant-travel/identity" }]\n`,
     "packages/framework/src/composition-lazy.ts": "export const frameworkComposition = {}\n",
-    "starters/operator/src/api/composition.ts": `export const operatorGraphRuntimeBindings = {
-  "@voyant-travel/plugin-smartbill": () => undefined,
-}\n`,
+    "starters/operator/src/api/composition.ts": "export const operatorGraphRuntimeBindings = {}\n",
     "packages/framework/src/project-artifact-paths.ts": `export const path = "product-bom.generated.json"\n`,
   }
   if (overrides.config) files["starters/operator/voyant.config.ts"] = overrides.config

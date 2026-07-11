@@ -65,11 +65,8 @@ const bindingsBody = operatorComposition.match(
 const bindingIds = bindingsBody
   ? [...bindingsBody.matchAll(/^\s*"([^"]+)"\s*:/gm)].map((m) => m[1])
   : []
-const unexpectedBindings = bindingIds.filter((id) => id !== "@voyant-travel/plugin-smartbill")
-if (unexpectedBindings.length > 0) {
-  violations.push(
-    `Operator package-specific runtime bindings remain: ${unexpectedBindings.join(", ")}`,
-  )
+if (bindingIds.length > 0) {
+  violations.push(`Operator package-specific runtime bindings remain: ${bindingIds.join(", ")}`)
 }
 
 if (
@@ -87,7 +84,7 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-standard-node-starter: OK (${standardSelections.length} standard selections hidden, ${bindingIds.length} temporary package bridge)`,
+  `check-standard-node-starter: OK (${standardSelections.length} standard selections hidden, no package bridges)`,
 )
 
 function findDefineConfigObject(sourceFile) {
