@@ -43,6 +43,12 @@ export {
   subsetStandardManifest,
 } from "./manifest.js"
 export {
+  type SelectStandardOperatorDistributionOptions,
+  STANDARD_OPERATOR_DISTRIBUTION,
+  STANDARD_OPERATOR_DISTRIBUTION_POLICY,
+  selectStandardOperatorDistribution,
+} from "./operator-distribution.js"
+export {
   assertPortConforms,
   type DefineVoyantPortInput,
   definePort,

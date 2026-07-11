@@ -1038,6 +1038,16 @@ runtime shapes:
 - `FRAMEWORK_EXTENSION_OWNERSHIP`
 - `FRAMEWORK_CAPABILITY_GRAPH`
 
+The standard Operator distribution is now the sole first-party selection-policy
+catalog. It records stable order, required modules, and extension removal
+cascades; it does not redeclare package facets. Resolution admits each selected
+package and loads the selected graph unit from that package's public `./voyant`
+manifest. `FRAMEWORK_RUNTIME_MANIFEST`, `FRAMEWORK_EXTENSION_OWNERSHIP`,
+`FRAMEWORK_CAPABILITY_GRAPH`, and `VOYANT_PROFILE_MODULES` remain compatibility
+projections only. A repository checker rejects first-party product literals in
+those compatibility views and rejects a standard selection without a matching
+package-owned manifest unit.
+
 This validates the manifest against reality before third-party authors depend
 on it, and avoids hand-retrofitting every package up front.
 

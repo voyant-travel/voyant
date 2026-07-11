@@ -1,11 +1,9 @@
 /**
- * The standard Voyant runtime composition manifest — the ordered set of
- * package-delivered modules + extensions every operator deployment mounts.
+ * Compatibility views for the old createVoyantApp composition registry.
  *
- * A deployment composes its full manifest by spreading this and appending its
- * own deployment-local entries. Owning the standard ordering here means a new
- * standard module added to the framework auto-joins the default set — the
- * deployment doesn't re-list it.
+ * Standard product selection policy lives in `operator-distribution.ts` and
+ * package behavior lives in each selected package's `./voyant` manifest. The
+ * exports in this file remain public while legacy runtime composition migrates.
  *
  * The standard set is the DEFAULT, not a fixed profile (ADR-0007). A deployment
  * may pare it down via `createVoyantApp({ exclude })` (remove), validated against
@@ -17,68 +15,24 @@
  * *replacement* (override a module with a substitute) is the v2 design — see
  * ADR-0007 "Deferred to v2".
  *
- * Workstream B of the consolidated-deployments RFC: the standard registry's
- * factories live in this package alongside the manifest (the "which + order").
+ * Do not add first-party package ids here. The architecture checker enforces
+ * that these exports remain projections rather than a second product catalog.
  */
 import { type CapabilityGraph, findCapabilityGaps } from "@voyant-travel/hono/composition"
+import {
+  STANDARD_OPERATOR_LEGACY_EXTENSION_OWNERSHIP,
+  STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
+  STANDARD_OPERATOR_REQUIRED_MODULES,
+  selectStandardOperatorDistribution,
+} from "./operator-distribution.js"
 
 export interface FrameworkManifest {
   modules: readonly string[]
   extensions: readonly string[]
 }
 
-export const FRAMEWORK_RUNTIME_MANIFEST = {
-  modules: [
-    "@voyant-travel/action-ledger",
-    "@voyant-travel/relationships",
-    "@voyant-travel/quotes",
-    "@voyant-travel/operations",
-    "@voyant-travel/identity",
-    "@voyant-travel/distribution",
-    "@voyant-travel/inventory/extras",
-    "@voyant-travel/bookings/requirements",
-    "@voyant-travel/commerce",
-    "@voyant-travel/inventory",
-    "@voyant-travel/catalog",
-    "@voyant-travel/catalog/booking-engine",
-    "@voyant-travel/accommodations",
-    "@voyant-travel/bookings",
-    "@voyant-travel/finance",
-    "@voyant-travel/legal",
-    "@voyant-travel/legal/contract-document",
-    "@voyant-travel/public-document-delivery",
-    "@voyant-travel/notifications",
-    "@voyant-travel/storage",
-    "@voyant-travel/storefront",
-    "@voyant-travel/storefront/customer-portal",
-    "@voyant-travel/storefront/verification",
-    "@voyant-travel/storefront/payment-link",
-    "@voyant-travel/trips",
-    "@voyant-travel/flights",
-    "@voyant-travel/operator-settings",
-  ],
-  extensions: [
-    "@voyant-travel/bookings/booking-supplier-extension",
-    "@voyant-travel/finance/bookings-create-extension",
-    "@voyant-travel/inventory/booking-extension",
-    "@voyant-travel/inventory/authoring/extension",
-    "@voyant-travel/quotes/booking-extension",
-    "@voyant-travel/distribution",
-    "@voyant-travel/distribution/channel-push-extension",
-    "@voyant-travel/finance/booking-tax-extension",
-    "@voyant-travel/inventory/content-extension",
-    "@voyant-travel/cruises/content-extension",
-    "@voyant-travel/accommodations/content-extension",
-    "@voyant-travel/inventory/brochure-extension",
-    "@voyant-travel/finance/booking-schedule-extension",
-    "@voyant-travel/quotes/quote-version-snapshot-extension",
-    "@voyant-travel/commerce/booking-maintenance-extension",
-    "@voyant-travel/action-ledger/health-extension",
-    "@voyant-travel/quotes/proposal-extension",
-    "@voyant-travel/catalog/offers-extension",
-    "@voyant-travel/commerce/catalog-checkout-extension",
-  ],
-} as const satisfies FrameworkManifest
+export const FRAMEWORK_RUNTIME_MANIFEST =
+  STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST satisfies FrameworkManifest
 
 export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIERS = [] as const
 
@@ -102,12 +56,9 @@ export const FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET = new Set<string>(
  * CRM port was considered and rejected as over-engineering for v1 (ADR-0007
  * "Alternatives"). Everything else (flights, trips, cruises, …) stays excludable.
  */
-export const FRAMEWORK_CAPABILITY_GRAPH = {
-  "@voyant-travel/action-ledger": { isRequired: true },
-  "@voyant-travel/identity": { isRequired: true },
-  "@voyant-travel/commerce": { isRequired: true },
-  "@voyant-travel/relationships": { isRequired: true },
-} as const satisfies CapabilityGraph
+export const FRAMEWORK_CAPABILITY_GRAPH = Object.fromEntries(
+  STANDARD_OPERATOR_REQUIRED_MODULES.map((specifier) => [specifier, { isRequired: true }]),
+) satisfies CapabilityGraph
 
 /**
  * Which standard module(s) each standard extension augments (voyant#2104,
@@ -115,64 +66,14 @@ export const FRAMEWORK_CAPABILITY_GRAPH = {
  * key to a module `name` — the standard set legitimately ships path-mounted
  * extensions with no same-named module (e.g. `@voyant-travel/quotes/proposal-extension`
  * mounts under `quote-versions`), so a name-match orphan check is unsound.
- * Ownership is therefore *declared* here, co-located with the manifest it is
- * typed against, so excluding a module can cascade to its extensions safely
+ * Ownership is therefore declared by standard distribution selection policy,
+ * so excluding a module can cascade to its extensions safely
  * (see `ownedExtensionsForExcludedModules` / `subsetStandardManifest`).
  *
  * An extension is owned by every listed module: excluding *any* owner drops it,
  * because the extension augments a surface that owner contributes.
  */
-export const FRAMEWORK_EXTENSION_OWNERSHIP = {
-  "@voyant-travel/bookings/booking-supplier-extension": ["@voyant-travel/bookings"],
-  "@voyant-travel/finance/bookings-create-extension": [
-    "@voyant-travel/finance",
-    "@voyant-travel/bookings",
-  ],
-  "@voyant-travel/inventory/booking-extension": [
-    "@voyant-travel/inventory",
-    "@voyant-travel/bookings",
-  ],
-  "@voyant-travel/inventory/authoring/extension": ["@voyant-travel/inventory"],
-  "@voyant-travel/quotes/booking-extension": ["@voyant-travel/quotes", "@voyant-travel/bookings"],
-  "@voyant-travel/distribution": ["@voyant-travel/distribution", "@voyant-travel/bookings"],
-  "@voyant-travel/distribution/channel-push-extension": ["@voyant-travel/distribution"],
-  "@voyant-travel/finance/booking-tax-extension": [
-    "@voyant-travel/finance",
-    "@voyant-travel/bookings",
-    "@voyant-travel/operator-settings",
-  ],
-  "@voyant-travel/inventory/content-extension": ["@voyant-travel/inventory"],
-  "@voyant-travel/cruises/content-extension": ["@voyant-travel/catalog"],
-  "@voyant-travel/accommodations/content-extension": ["@voyant-travel/accommodations"],
-  "@voyant-travel/inventory/brochure-extension": [
-    "@voyant-travel/inventory",
-    "@voyant-travel/storage",
-  ],
-  "@voyant-travel/finance/booking-schedule-extension": [
-    "@voyant-travel/finance",
-    "@voyant-travel/bookings",
-    "@voyant-travel/operator-settings",
-  ],
-  "@voyant-travel/quotes/quote-version-snapshot-extension": [
-    "@voyant-travel/quotes",
-    "@voyant-travel/trips",
-  ],
-  "@voyant-travel/commerce/booking-maintenance-extension": [
-    "@voyant-travel/bookings",
-    "@voyant-travel/commerce",
-    "@voyant-travel/operator-settings",
-  ],
-  "@voyant-travel/action-ledger/health-extension": ["@voyant-travel/action-ledger"],
-  "@voyant-travel/quotes/proposal-extension": ["@voyant-travel/quotes"],
-  "@voyant-travel/catalog/offers-extension": ["@voyant-travel/catalog"],
-  "@voyant-travel/commerce/catalog-checkout-extension": [
-    "@voyant-travel/catalog",
-    "@voyant-travel/commerce",
-  ],
-} as const satisfies Record<
-  (typeof FRAMEWORK_RUNTIME_MANIFEST.extensions)[number],
-  readonly (typeof FRAMEWORK_RUNTIME_MANIFEST.modules)[number][]
->
+export const FRAMEWORK_EXTENSION_OWNERSHIP = STANDARD_OPERATOR_LEGACY_EXTENSION_OWNERSHIP
 
 /** Options for {@link subsetStandardManifest}. */
 export interface SubsetOptions {
@@ -192,7 +93,7 @@ export function ownedExtensionsForExcludedModules(excluded: Iterable<string>): s
   const excludedSet = excluded instanceof Set ? excluded : new Set(excluded)
   const owned: string[] = []
   for (const extension of FRAMEWORK_RUNTIME_MANIFEST.extensions) {
-    const owners = FRAMEWORK_EXTENSION_OWNERSHIP[extension]
+    const owners = FRAMEWORK_EXTENSION_OWNERSHIP[extension] ?? []
     if (owners.some((owner) => excludedSet.has(owner))) owned.push(extension)
   }
   return owned
@@ -211,42 +112,15 @@ export function subsetStandardManifest({ exclude = [] }: SubsetOptions = {}): {
   modules: string[]
   extensions: string[]
 } {
-  const excludeSet = new Set(exclude)
-
-  if (excludeSet.size > 0) {
-    const known = new Set<string>([
-      ...FRAMEWORK_RUNTIME_MANIFEST.modules,
-      ...FRAMEWORK_RUNTIME_MANIFEST.extensions,
-    ])
-    const unknown = [...excludeSet].filter((spec) => !known.has(spec)).sort()
-    if (unknown.length > 0) {
-      throw new Error(
-        `createVoyantApp: exclude names ${unknown.length} specifier(s) not in the standard set: ` +
-          `${unknown.join(", ")}. Only standard framework modules/extensions can be excluded.`,
-      )
-    }
-
-    const graph: CapabilityGraph = FRAMEWORK_CAPABILITY_GRAPH
-    const required = [...excludeSet].filter((spec) => graph[spec]?.isRequired).sort()
-    if (required.length > 0) {
-      throw new Error(
-        `createVoyantApp: cannot exclude required module(s): ${required.join(", ")}. ` +
-          "They are foundational and cannot be removed.",
-      )
-    }
+  let selected: { modules: string[]; extensions: string[] }
+  try {
+    selected = selectStandardOperatorDistribution({ exclude, legacyRuntimeOnly: true })
+  } catch (error) {
+    throw new Error(
+      `createVoyantApp: ${error instanceof Error ? error.message : "invalid standard selection"}`,
+    )
   }
-
-  // Cascade: dropping a module also drops the standard extensions it owns. They
-  // mount under the module's surface, so leaving them would partially leak the
-  // removed surface. Ownership is declared (`FRAMEWORK_EXTENSION_OWNERSHIP`), so
-  // path-mounted extensions cascade by declaration rather than an unsound
-  // name-match (voyant#2104). Idempotent — already-excluded extensions no-op.
-  for (const extension of ownedExtensionsForExcludedModules(excludeSet)) {
-    excludeSet.add(extension)
-  }
-
-  const modules = FRAMEWORK_RUNTIME_MANIFEST.modules.filter((m) => !excludeSet.has(m))
-  const extensions = FRAMEWORK_RUNTIME_MANIFEST.extensions.filter((e) => !excludeSet.has(e))
+  const { modules, extensions } = selected
 
   // The capability graph is validated over what actually mounts: dropping a
   // module a still-mounted module depends on — without also dropping the consumer

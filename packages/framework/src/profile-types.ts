@@ -274,10 +274,7 @@ function moduleDefinition(
 }
 
 function isRequiredFrameworkModule(specifier: string): boolean {
-  return (
-    specifier in FRAMEWORK_CAPABILITY_GRAPH &&
-    Boolean(
-      FRAMEWORK_CAPABILITY_GRAPH[specifier as keyof typeof FRAMEWORK_CAPABILITY_GRAPH].isRequired,
-    )
+  return Boolean(
+    FRAMEWORK_CAPABILITY_GRAPH[specifier as keyof typeof FRAMEWORK_CAPABILITY_GRAPH]?.isRequired,
   )
 }
