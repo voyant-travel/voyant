@@ -1528,6 +1528,8 @@
       "@voyant-travel/utils/tiered-kv": ["../utils/dist/tiered-kv.d.ts"],
       "@voyant-travel/utils/timezones": ["../utils/dist/timezones.d.ts"],
       "@voyant-travel/vite-config": ["../vite-config/dist/index.d.ts"],
+      "@voyant-travel/webhook-delivery": ["../webhook-delivery/dist/index.d.ts"],
+      "@voyant-travel/webhook-delivery/postgres": ["../webhook-delivery/dist/postgres-store.d.ts"],
       "@voyant-travel/workflow-runs": ["../workflow-runs/dist/index.d.ts"],
       "@voyant-travel/workflow-runs/hono-module": ["../workflow-runs/dist/hono-module.d.ts"],
       "@voyant-travel/workflow-runs/recorder": ["../workflow-runs/dist/recorder.d.ts"],

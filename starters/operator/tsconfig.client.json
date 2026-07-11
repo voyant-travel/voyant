@@ -2004,6 +2004,10 @@
       "@voyant-travel/utils/tiered-kv": ["../../packages/utils/dist/tiered-kv.d.ts"],
       "@voyant-travel/utils/timezones": ["../../packages/utils/dist/timezones.d.ts"],
       "@voyant-travel/vite-config": ["../../packages/vite-config/dist/index.d.ts"],
+      "@voyant-travel/webhook-delivery": ["../../packages/webhook-delivery/dist/index.d.ts"],
+      "@voyant-travel/webhook-delivery/postgres": [
+        "../../packages/webhook-delivery/dist/postgres-store.d.ts"
+      ],
       "@voyant-travel/workflow-runs": ["../../packages/workflow-runs/dist/index.d.ts"],
       "@voyant-travel/workflow-runs/hono-module": [
         "../../packages/workflow-runs/dist/hono-module.d.ts"
