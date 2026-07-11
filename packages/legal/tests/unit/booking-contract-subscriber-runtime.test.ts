@@ -114,6 +114,8 @@ describe("Legal booking-contract subscriber runtime", () => {
     const createRuntime = vi.fn(() => test.runtime)
     const output = await createLegalBookingContractVoyantRuntime({
       unitId: "@voyant-travel/legal#booking-contract-extension",
+      projectConfig: {},
+      api: [],
       hasPort: () => true,
       getPort: async () => ({ createRuntime }),
     })

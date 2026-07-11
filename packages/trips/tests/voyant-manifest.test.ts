@@ -59,7 +59,7 @@ describe("trips deployment manifest", () => {
     ["both", true, true],
   ] as const)("mounts only the %s graph-selected API surfaces", async (selection, admin, public_) => {
     const routeOptions = vi.fn(async () => ({}))
-    const db = { source: "test" } as unknown as AnyDrizzleDb
+    const db = {} as AnyDrizzleDb
     const withDb = vi.fn(
       async <T>(_bindings: unknown, operation: (value: AnyDrizzleDb) => Promise<T>): Promise<T> =>
         operation(db),
@@ -79,6 +79,7 @@ describe("trips deployment manifest", () => {
 
     const module = await createTripsVoyantRuntime({
       unitId: tripsVoyantModule.id,
+      projectConfig: {},
       api: tripsVoyantModule.api!.filter(({ surface }) =>
         selection === "both" ? true : surface === selection,
       ),

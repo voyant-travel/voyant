@@ -122,6 +122,8 @@ describe("distribution deployment manifests", () => {
 
     const extension = await createChannelPushVoyantRuntime({
       unitId: distributionChannelPushVoyantPlugin.id,
+      projectConfig: {},
+      api: distributionChannelPushVoyantPlugin.api ?? [],
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,
     })

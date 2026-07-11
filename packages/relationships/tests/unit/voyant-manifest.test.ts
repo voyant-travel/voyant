@@ -45,6 +45,8 @@ describe("relationships deployment manifest", () => {
 
     const module = await createRelationshipsVoyantRuntime({
       unitId: relationshipsVoyantModule.id,
+      projectConfig: {},
+      api: relationshipsVoyantModule.api ?? [],
       hasPort: () => true,
       getPort: vi.fn(async () => ({ customFields })) as never,
     })

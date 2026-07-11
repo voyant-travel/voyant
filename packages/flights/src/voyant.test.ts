@@ -90,8 +90,10 @@ describe("flights deployment manifest", () => {
 
     const runtime = await createFlightsVoyantRuntime({
       unitId: "@voyant-travel/flights",
+      projectConfig: {},
+      api: flightsVoyantModule.api ?? [],
       hasPort: () => true,
-      getPort: async <TProvider>() => provider as unknown as TProvider,
+      getPort: vi.fn(async () => provider) as never,
     })
     expect(runtime.module).toEqual({ name: "flights" })
     expect(runtime.adminRoutes).toBeDefined()
