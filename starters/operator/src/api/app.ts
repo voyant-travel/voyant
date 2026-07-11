@@ -4,12 +4,9 @@ import {
   composeVoyantGraphRuntime,
   lowerVoyantGraphActionsToActionLedgerRegistry,
 } from "@voyant-travel/framework"
-import { defineLazyHonoBundle, mountApp } from "@voyant-travel/hono"
+import { mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
-import {
-  createGeneratedGraphRuntime,
-  GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
-} from "../../.voyant/runtime/graph-runtime.generated"
+import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import { projectLinks } from "../../.voyant/runtime/project-links.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
@@ -23,7 +20,6 @@ import {
   operatorGraphRuntimeBindings,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { OPERATOR_PUBLIC_PATHS } from "./public-paths"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
 import { channelPushBundle } from "./routes/channel-push"
 import {
@@ -78,15 +74,15 @@ export const app = mountApp<AppBindings>({
   //   handshake. Serves all reads and single-statement writes.
   // - `dbTransactional`: per-request Neon WebSocket Pool — the only
   //   Workers-compatible client that supports db.transaction(). createApp
-  //   routes it to the surfaces of modules/extensions declaring
-  //   `requiresTransactionalDb` or `transactionalPaths` — the trips module and
-  //   the catalog booking engine respectively (ADR-0008), so this deployment no
-  //   longer hand-maintains a `dbTransactionalPaths` list.
+  //   routes it to the absolute transactional surface derived from the selected
+  //   deployment graph (ADR-0008), so this deployment does not hand-maintain
+  //   first-party transactional route families.
   // `DB_FORCE_TRANSACTIONAL=1` reverts to the WS client for ALL requests
   // (operational escape hatch if a transactional surface was missed).
   db: (env) =>
     env.DB_FORCE_TRANSACTIONAL === "1" ? dbFromEnvForApp(env) : httpDbFromEnvForApp(env),
   dbTransactional: (env) => dbFromEnvForApp(env),
+  dbTransactionalPaths: [...graphComposition.routePosture.transactionalPaths],
   linkDefinitions: projectLinks,
   // Workflow runtime — managed Cloud forwarding. App code forwards
   // trigger/event calls to Voyant Cloud; workflow bundles execute in the
@@ -99,21 +95,8 @@ export const app = mountApp<AppBindings>({
   // retried by the */2min drain cron in entry.ts. Requires migration
   // 0062 (event_outbox).
   outbox: true,
-  // ADR-0008: the anonymous-access surface is DECLARED on the routes that own it
-  // (`anonymous` on the module/extension, or on a plugin bundle for webhook
-  // routes — the Netopia callback now declares its own via `netopiaHonoBundle`),
-  // and the framework assembles the allow-list (see the `anonymous-surface` test
-  // in @voyant-travel/framework). What remains here is the escape hatch: routes
-  // not yet owned by an annotatable module, tracked for migration onto their
-  // owning package module.
-  //   - payment-link / payment-link-config: the storefront payment-link family
-  //     mounts at split prefixes via lazy absolute routes; pending a per-bundle
-  //     declaration.
-  //   - products / accommodations: storefront detail surfaces whose owning
-  //     module isn't yet annotated.
-  //   - operator-profile / settings/operator / payment-policy: sanitized storefront-preview reads;
-  //     owning module not yet annotated.
-  publicPaths: [...OPERATOR_PUBLIC_PATHS],
+  // Package-owned anonymous posture comes from the selected graph.
+  publicPaths: [...graphComposition.routePosture.publicPaths],
   plugins: [
     {
       name: "operator-promotions-runtime",
@@ -138,21 +121,6 @@ export const app = mountApp<AppBindings>({
     tripsPaymentBundle,
     smartbillOperatorBundle,
     channelPushBundle,
-    ...(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS.includes("@voyant-travel/plugin-netopia")
-      ? [
-          defineLazyHonoBundle({
-            name: "netopia",
-            routes: [
-              "/v1/admin/finance/providers/netopia/*",
-              "/v1/finance/providers/netopia/callback",
-            ],
-            anonymous: ["/v1/finance/providers/netopia/callback"],
-            transactionalModules: ["finance"],
-            load: async () =>
-              import("@voyant-travel/plugin-netopia").then((m) => m.netopiaHonoBundle()),
-          }),
-        ]
-      : []),
   ],
   auth: {
     handler: () => ({
