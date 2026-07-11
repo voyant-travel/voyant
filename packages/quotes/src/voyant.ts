@@ -111,6 +111,10 @@ export const quotesVoyantModule = defineModule({
     },
   ],
   admin: {
+    runtime: {
+      entry: "@voyant-travel/quotes-react/admin",
+      export: "createQuotesAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/quotes#admin.copy",

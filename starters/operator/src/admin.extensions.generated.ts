@@ -12,7 +12,6 @@ import { createInventoryAdminExtension } from "@voyant-travel/inventory-react/ad
 import { createLegalAdminExtension } from "@voyant-travel/legal-react/admin"
 import { createNotificationsAdminExtension } from "@voyant-travel/notifications-react/admin"
 import { createOperationsAdminExtension } from "@voyant-travel/operations-react/admin"
-import { createQuotesAdminExtension } from "@voyant-travel/quotes-react/admin"
 import { createRelationshipsAdminExtension } from "@voyant-travel/relationships-react/admin"
 import { createTripsAdminExtension } from "@voyant-travel/trips-react/admin"
 
@@ -32,7 +31,6 @@ export const generatedAdminExtensionFactories = {
   legal: createLegalAdminExtension,
   notifications: createNotificationsAdminExtension,
   operations: createOperationsAdminExtension,
-  quotes: createQuotesAdminExtension,
   relationships: createRelationshipsAdminExtension,
   trips: createTripsAdminExtension,
 } as const

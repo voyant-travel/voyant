@@ -6,9 +6,17 @@ import { createQuotesAdminExtension } from "./index.js"
 describe("quotes admin deployment facets", () => {
   it("tracks the package-owned extension routes and copy provider", () => {
     const extension = createQuotesAdminExtension()
+    expect(quotesVoyantModule.admin?.runtime).toEqual({
+      entry: "@voyant-travel/quotes-react/admin",
+      export: "createQuotesAdminExtension",
+    })
     expect(quotesVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(
       extension.routes?.map((route) => route.path),
     )
+    expect(extension.routes?.map((route) => route.destination)).toEqual([
+      "quote.list",
+      "quote.detail",
+    ])
     expect(quotesVoyantModule.admin?.routes?.map((route) => route.runtime)).toEqual(
       extension.routes?.map(() => ({
         entry: "@voyant-travel/quotes-react/admin",

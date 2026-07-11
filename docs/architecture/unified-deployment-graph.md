@@ -792,8 +792,8 @@ separate first-party admin catalog.
 
 ### Selected-graph admin bundle cutline
 
-The first Phase 4 admin slices are active for `@voyant-travel/action-ledger` and
-`@voyant-travel/mice`:
+The first Phase 4 admin slices are active for `@voyant-travel/action-ledger`,
+`@voyant-travel/mice`, and `@voyant-travel/quotes`:
 
 - the package manifest opts its import-cheap admin extension factory into
   `admin.runtime` and retains its stable route declarations
@@ -1399,10 +1399,11 @@ package surfaces in `voyant#3080`.
   namespaced copy and deployment overrides
 - generate the admin bundle only from selected package exports and graph data
 
-Progress: the action-ledger and MICE nav/route/page factories are lowered into
-the selected-graph admin bundle. The Operator still owns their lightweight
-localization/icon wrappers. Slots/contributions, copy, and the remaining
-first-party Operator compatibility registry are not part of this slice.
+Progress: the action-ledger, MICE, and Quotes nav/route/page factories are
+lowered into the selected-graph admin bundle. The Operator still owns their
+lightweight localization/icon wrappers. Slots/contributions, copy, and the
+remaining first-party Operator compatibility registry are not part of this
+slice.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.
