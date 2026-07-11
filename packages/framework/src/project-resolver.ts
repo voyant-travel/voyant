@@ -37,6 +37,7 @@ import {
 import {
   VOYANT_PROJECT_ACCESS_CATALOG_ENTRY,
   VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
+  VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
   VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project-artifact-paths.js"
 import {
@@ -219,6 +220,14 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     runtimeEntry,
   )
   const files: FrameworkGeneratedProjectFile[] = [
+    ...(targetNeutralGraph.project.productBom
+      ? [
+          {
+            path: VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
+            contents: buildProductBomExpansionArtifact(targetNeutralGraph),
+          },
+        ]
+      : []),
     projectApi.generatedFile,
     projectAdmin.file,
     {
@@ -277,6 +286,24 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       migrationPlan,
     },
   }
+}
+
+function buildProductBomExpansionArtifact(graph: ResolvedVoyantProjectGraph): string {
+  return `${JSON.stringify(
+    {
+      schemaVersion: "voyant.product-bom-expansion.v1",
+      productBom: graph.project.productBom,
+      graph: {
+        contentHash: graph.contentHash,
+        deploymentTarget: "node",
+        modules: graph.modules.map(({ id }) => id),
+        extensions: graph.extensions.map(({ id }) => id),
+        plugins: graph.plugins.map(({ id }) => id),
+      },
+    },
+    null,
+    2,
+  )}\n`
 }
 
 async function materializeProjectSubscriberLinkConventions(

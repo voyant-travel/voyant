@@ -58,8 +58,12 @@ export {
 } from "./manifest.js"
 export {
   type SelectStandardOperatorDistributionOptions,
+  STANDARD_OPERATOR_ACCESS,
+  STANDARD_OPERATOR_DEPLOYMENT,
   STANDARD_OPERATOR_DISTRIBUTION,
   STANDARD_OPERATOR_DISTRIBUTION_POLICY,
+  STANDARD_OPERATOR_PRODUCT_BOM,
+  STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
   selectStandardOperatorDistribution,
 } from "./operator-distribution.js"
 export {
@@ -184,3 +188,8 @@ export {
   type VoyantGraphRuntimeValueErrorCode,
   type VoyantGraphRuntimeValueIssue,
 } from "./runtime-values.js"
+export {
+  buildStandardNodeStarterSnapshot,
+  STANDARD_NODE_STARTER,
+  VOYANT_STANDARD_NODE_STARTER_SCHEMA_VERSION,
+} from "./standard-node-starter.js"
