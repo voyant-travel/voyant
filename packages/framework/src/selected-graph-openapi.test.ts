@@ -64,6 +64,7 @@ function unit(
     kind,
     packageName: id.split("#")[0]!,
     order: 0,
+    projectConfig: {},
     references: [],
     config: [],
     secrets: [],
