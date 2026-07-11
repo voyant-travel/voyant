@@ -836,6 +836,7 @@
       "@voyant-travel/framework/project-api-conventions": [
         "../framework/dist/project-api-conventions.d.ts"
       ],
+      "@voyant-travel/framework/project-artifacts": ["../framework/dist/project-artifacts.d.ts"],
       "@voyant-travel/framework/project-subscriber-link-conventions": [
         "../framework/dist/project-subscriber-link-conventions.d.ts"
       ],
