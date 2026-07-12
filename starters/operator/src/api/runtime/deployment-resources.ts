@@ -23,37 +23,9 @@ import type {
   EmbeddingProvider,
   IndexerAdapter,
 } from "@voyant-travel/catalog"
-import {
-  type CatalogBookingSnapshotRuntimeProvider,
-  catalogBookingSnapshotRuntimePort,
-} from "@voyant-travel/catalog/booking-snapshot-subscriber"
-import {
-  catalogBookingRuntimePort,
-  catalogContentRuntimePort,
-  catalogOffersRuntimePort,
-  catalogSearchRuntimePort,
-} from "@voyant-travel/catalog/graph-runtime"
-import {
-  type CatalogProjectionRuntimeProvider,
-  catalogProjectionRuntimePort,
-} from "@voyant-travel/catalog/projection-runtime"
-import {
-  type AcceptanceSignatureLegalPort,
-  type CatalogCheckoutApiRuntime,
-  type CatalogCheckoutContractPdfRuntime,
-  type CatalogCheckoutDatabaseRuntime,
-  catalogCheckoutApiRuntimePort,
-  catalogCheckoutContractPdfRuntimePort,
-  catalogCheckoutDatabaseRuntimePort,
-  catalogCheckoutLegalRuntimePort,
-} from "@voyant-travel/commerce/catalog-checkout-subscribers"
-import { bookingMaintenanceRuntimePort } from "@voyant-travel/commerce/checkout"
-import {
-  type PromotionRedemptionDatabaseRuntime,
-  type PromotionsBulkReindexRuntime,
-  promotionRedemptionDatabaseRuntimePort,
-  promotionsBulkReindexRuntimePort,
-} from "@voyant-travel/commerce/promotion-redemption-subscriber"
+import type { CatalogProjectionRuntimeProvider } from "@voyant-travel/catalog/projection-runtime"
+import { createCatalogRuntimePortContribution } from "@voyant-travel/catalog/runtime-contributor"
+import { createCommerceRuntimePortContribution } from "@voyant-travel/commerce/runtime-contributor"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import { cruisesRoutesRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -293,29 +265,69 @@ function createDeploymentPortResources(
     [legalContractDocumentRuntimePort.id]: import("./contract-document-runtime").then((runtime) =>
       runtime.createOperatorContractDocumentRoutesOptions(),
     ),
-    [bookingMaintenanceRuntimePort.id]: import("@voyant-travel/operator-settings").then(
-      (settings) =>
-        runtimePortValue(bookingMaintenanceRuntimePort, {
-          resolveDb: (context) => operatorPostgresDb(context.get("db")),
-          resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
-        }),
-    ),
-    [catalogSearchRuntimePort.id]: {
-      resolveRuntime: capabilities.resolveCatalogRuntime,
-    },
-    [catalogBookingRuntimePort.id]: import("./catalog-booking-runtime").then((runtime) =>
-      runtime.createOperatorCatalogBookingRouteModuleOptions(),
-    ),
-    [catalogOffersRuntimePort.id]: import("./catalog-offers-runtime").then((runtime) =>
-      runtime.createOperatorCatalogOffersRouteModuleOptions(),
-    ),
+    ...createCatalogRuntimePortContribution({
+      search: {
+        resolveRuntime: capabilities.resolveCatalogRuntime,
+      },
+      booking: import("./catalog-booking-runtime").then((runtime) =>
+        runtime.createOperatorCatalogBookingRouteModuleOptions(),
+      ),
+      offers: import("./catalog-offers-runtime").then((runtime) =>
+        runtime.createOperatorCatalogOffersRouteModuleOptions(),
+      ),
+      content: {
+        resolveRegistry: getBookingEngineRegistryFromContext,
+      },
+      projection: createOperatorCatalogProjectionRuntimeProvider(),
+      bookingSnapshot: {
+        createRuntime: (bindings) =>
+          import("./catalog-subscriber-runtime").then((runtime) =>
+            runtime.createOperatorCatalogBookingSnapshotRuntime(bindings),
+          ),
+      },
+    }),
+    ...createCommerceRuntimePortContribution({
+      bookingMaintenance: import("@voyant-travel/operator-settings").then((settings) => ({
+        resolveDb: (context) => operatorPostgresDb(context.get("db")),
+        resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
+      })),
+      checkoutApi: (context) => createOperatorCheckoutStartOptions(context),
+      checkoutDatabase: {
+        withDb: <T>(
+          bindings: unknown,
+          operation: (db: PostgresJsDatabase) => Promise<T>,
+        ): Promise<T> =>
+          withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+      },
+      checkoutLegal: import("@voyant-travel/legal/contracts").then(({ contractsService }) => ({
+        getContract: contractsService.getContractById,
+        listSignatures: contractsService.listSignatures,
+        sendContract: (db, contractId, eventBus) =>
+          contractsService.sendContract(db, contractId, { eventBus }),
+        signContract: (db, contractId, input, eventBus) =>
+          contractsService.signContract(db, contractId, input as never, { eventBus }),
+      })),
+      checkoutContractPdf: {
+        generate: ({ bindings, db, eventBus, bookingId, force }) =>
+          generateContractPdfForBooking(operatorBindings(bindings), db, eventBus, bookingId, {
+            force,
+          }),
+      },
+      promotionRedemptionDatabase: {
+        withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
+          withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+      },
+      promotionsBulkReindex: {
+        createService: (bindings: unknown) =>
+          import("../lib/bulk-reindex-service").then((runtime) =>
+            runtime.createBulkReindexProductsService(operatorBindings(bindings)),
+          ),
+      },
+    }),
     [inventoryRuntimePort.id]: runtimePortValue(inventoryRuntimePort, {
       bootstrap: ({ container, bindings }) =>
         registerInventoryWorkflowService(container, bindings as AppBindings),
     }),
-    [catalogContentRuntimePort.id]: {
-      resolveRegistry: getBookingEngineRegistryFromContext,
-    },
     [inventoryBrochureRuntimePort.id]: import("./media-runtime").then(
       (runtime) => runtime.operatorInventoryBrochureRuntime,
     ),
@@ -369,16 +381,6 @@ function createDeploymentPortResources(
         }
       },
     },
-    [catalogCheckoutApiRuntimePort.id]: ((context) =>
-      createOperatorCheckoutStartOptions(context)) satisfies CatalogCheckoutApiRuntime,
-    [catalogProjectionRuntimePort.id]:
-      createOperatorCatalogProjectionRuntimeProvider() satisfies CatalogProjectionRuntimeProvider,
-    [catalogBookingSnapshotRuntimePort.id]: {
-      createRuntime: (bindings) =>
-        import("./catalog-subscriber-runtime").then((runtime) =>
-          runtime.createOperatorCatalogBookingSnapshotRuntime(bindings),
-        ),
-    } satisfies CatalogBookingSnapshotRuntimeProvider,
     [channelPushRuntimePort.id]: import("./channel-push-runtime").then(
       (runtime) => runtime.operatorChannelPushRuntime,
     ),
@@ -394,40 +396,6 @@ function createDeploymentPortResources(
       resolveProviders: resolveRealtimeProviders,
       bridgeRoutes: operatorRealtimeBridgeRoutes,
     },
-    [catalogCheckoutDatabaseRuntimePort.id]: {
-      withDb: <T>(
-        bindings: unknown,
-        operation: (db: PostgresJsDatabase) => Promise<T>,
-      ): Promise<T> =>
-        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    } satisfies CatalogCheckoutDatabaseRuntime,
-    [catalogCheckoutLegalRuntimePort.id]: import("@voyant-travel/legal/contracts").then(
-      ({ contractsService }) =>
-        ({
-          getContract: contractsService.getContractById,
-          listSignatures: contractsService.listSignatures,
-          sendContract: (db, contractId, eventBus) =>
-            contractsService.sendContract(db, contractId, { eventBus }),
-          signContract: (db, contractId, input, eventBus) =>
-            contractsService.signContract(db, contractId, input as never, { eventBus }),
-        }) satisfies AcceptanceSignatureLegalPort,
-    ),
-    [catalogCheckoutContractPdfRuntimePort.id]: {
-      generate: ({ bindings, db, eventBus, bookingId, force }) =>
-        generateContractPdfForBooking(operatorBindings(bindings), db, eventBus, bookingId, {
-          force,
-        }),
-    } satisfies CatalogCheckoutContractPdfRuntime,
-    [promotionRedemptionDatabaseRuntimePort.id]: {
-      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
-        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    } satisfies PromotionRedemptionDatabaseRuntime,
-    [promotionsBulkReindexRuntimePort.id]: {
-      createService: (bindings: unknown) =>
-        import("../lib/bulk-reindex-service").then((runtime) =>
-          runtime.createBulkReindexProductsService(operatorBindings(bindings)),
-        ),
-    } satisfies PromotionsBulkReindexRuntime,
     ...(workflowRunnerRegistry
       ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
       : {}),

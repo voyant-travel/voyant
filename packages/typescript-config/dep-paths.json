@@ -355,6 +355,7 @@
       "@voyant-travel/catalog/overlay/resolver": ["../catalog/dist/overlay/resolver.d.ts"],
       "@voyant-travel/catalog/overlay/schema": ["../catalog/dist/overlay/schema.d.ts"],
       "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],
+      "@voyant-travel/catalog/runtime-contributor": ["../catalog/dist/runtime-contributor.d.ts"],
       "@voyant-travel/catalog/provenance": ["../catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [
@@ -520,6 +521,7 @@
       "@voyant-travel/commerce/promotion-redemption-subscriber": [
         "../commerce/dist/promotions/subscriber-runtime.d.ts"
       ],
+      "@voyant-travel/commerce/runtime-contributor": ["../commerce/dist/runtime-contributor.d.ts"],
       "@voyant-travel/commerce/promotions/validation": [
         "../commerce/dist/promotions/validation.d.ts"
       ],

@@ -41,6 +41,7 @@
     "./offers": "./src/offers/operator-routes.ts",
     "./index-subscribers": "./src/index-subscriber-runtime.ts",
     "./projection-runtime": "./src/projection-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/content-runtime-port.ts",
     "./draft-reaper-workflow": "./src/draft-reaper-workflow.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
@@ -267,6 +268,11 @@
         "types": "./dist/projection-runtime.d.ts",
         "import": "./dist/projection-runtime.js",
         "default": "./dist/projection-runtime.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./runtime-port": {
         "types": "./dist/content-runtime-port.d.ts",
