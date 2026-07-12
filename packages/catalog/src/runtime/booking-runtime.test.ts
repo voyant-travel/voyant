@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
+
+vi.mock("@voyant-travel/plugin-voyant-connect", () => ({
+  resolveVoyantConnectEnv: vi.fn(() => null),
+}))
+
 import { buildSourcedBookingRows } from "./booking-runtime.js"
 
 describe("buildSourcedBookingRows", () => {

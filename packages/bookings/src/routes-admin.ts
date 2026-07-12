@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: bookings; existing route module stays co-located until a dedicated split preserves behavior and tests.
 
-import { createRoute, OpenAPIHono } from "@hono/zod-openapi"
+import { OpenAPIHono } from "@hono/zod-openapi"
 import {
   ACTION_LEDGER_APPROVAL_ID_HEADER,
   ActionApprovalDecisionConflictError,
@@ -63,6 +63,7 @@ import {
   buildBookingRouteRuntime,
 } from "./route-runtime.js"
 import { bookingGroupRoutes } from "./routes-groups.js"
+import { createBookingsAdminRoute as createRoute } from "./routes-openapi.js"
 import type { publicBookingRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
 import { bookingPiiAccessLog } from "./schema.js"
