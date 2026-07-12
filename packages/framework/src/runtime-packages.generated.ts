@@ -87,6 +87,7 @@ export const FRAMEWORK_STANDARD_PACKAGES = [
   "@voyant-travel/relationships-react",
   "@voyant-travel/storage",
   "@voyant-travel/storefront",
+  "@voyant-travel/storefront-react",
   "@voyant-travel/trips",
   "@voyant-travel/trips-react",
   "@voyant-travel/workflow-runs",

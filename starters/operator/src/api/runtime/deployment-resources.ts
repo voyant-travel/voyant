@@ -18,7 +18,6 @@ import { resolveOperatorCustomFields } from "../../lib/custom-fields"
 import { resolveNotificationProviders } from "../../lib/notifications"
 import { withDbFromEnv } from "../lib/db"
 import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
-import { createOperatorNotificationsRuntimeProvider } from "./notifications-runtime"
 import {
   createOperatorDocumentStorage,
   createOperatorInvoiceSettlementPollers,
@@ -71,13 +70,6 @@ function createBaseDeploymentCapabilities() {
       ),
     ),
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
-    loadFlightsRuntime: () =>
-      import("./flights-runtime").then((runtime) => runtime.operatorFlightsRuntime),
-    loadQuoteProposalRuntime: () =>
-      import("./quote-proposal-runtime").then((runtime) =>
-        runtime.createQuoteProposalRoutesOptions(),
-      ),
-    loadNotificationsRuntime: createOperatorNotificationsRuntimeProvider,
     loadStorefrontRuntime: async () => {
       const [commerce, paymentLink, intake] = await Promise.all([
         import("@voyant-travel/commerce"),
