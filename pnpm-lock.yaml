@@ -2205,9 +2205,6 @@ importers:
       '@voyant-travel/quotes':
         specifier: workspace:*
         version: link:../quotes
-      '@voyant-travel/quotes-contracts':
-        specifier: workspace:*
-        version: link:../quotes-contracts
       '@voyant-travel/quotes-react':
         specifier: workspace:*
         version: link:../quotes-react
