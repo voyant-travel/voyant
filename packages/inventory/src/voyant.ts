@@ -1,9 +1,6 @@
+import { catalogContentRuntimePort } from "@voyant-travel/catalog/graph-runtime"
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
-import {
-  inventoryBrochureRuntimePort,
-  inventoryContentRuntimePort,
-  inventoryRuntimePort,
-} from "./runtime-ports.js"
+import { inventoryBrochureRuntimePort, inventoryRuntimePort } from "./runtime-ports.js"
 
 /** Import-cheap deployment declarations owned by the inventory package. */
 export const inventoryVoyantModule = defineModule({
@@ -260,7 +257,7 @@ export const inventoryContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#content-extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.content-extension",
-  runtimePorts: [requirePort(inventoryContentRuntimePort)],
+  runtimePorts: [requirePort(catalogContentRuntimePort)],
   api: [
     {
       id: "@voyant-travel/inventory#content-extension.api.admin",

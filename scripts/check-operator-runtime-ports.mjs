@@ -27,20 +27,18 @@ const runtimePorts = section(
 )
 
 const requiredPorts = [
-  "accommodationsContentRuntimePort",
   "actionLedgerHealthRuntimePort",
   "bookingMaintenanceRuntimePort",
   "bookingRequirementsRuntimePort",
   "bookingsRuntimePort",
   "catalogBookingRuntimePort",
+  "catalogContentRuntimePort",
   "catalogOffersRuntimePort",
   "catalogSearchRuntimePort",
-  "cruisesContentRuntimePort",
   "financeBookingScheduleRuntimePort",
   "financeBookingTaxRuntimePort",
   "financeRuntimePort",
   "inventoryBrochureRuntimePort",
-  "inventoryContentRuntimePort",
   "inventoryRuntimePort",
   "legalContractDocumentRuntimePort",
   "miceRuntimePort",

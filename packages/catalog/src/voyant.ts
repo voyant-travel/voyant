@@ -128,6 +128,20 @@ export const catalogVoyantModule = defineModule({
       },
     },
   ],
+  workflows: [
+    {
+      id: "catalog.reap-expired-booking-drafts",
+      config: {
+        defaultRuntime: "node",
+        schedule: { cron: "5 * * * *", name: "hourly-at-05" },
+      },
+      source: "@voyant-travel/catalog/draft-reaper-workflow",
+      runtime: {
+        entry: "./draft-reaper-workflow",
+        export: "catalogDraftReaperWorkflow",
+      },
+    },
+  ],
   access: {
     resources: [
       {

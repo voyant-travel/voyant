@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildPaidBookingCancellationSettlementNote,
   recordPaidBookingCancellationSettlement,
-} from "./booking-cancellation-settlement"
+} from "../../src/booking-lifecycle.js"
 
 describe("recordPaidBookingCancellationSettlement", () => {
   it("creates finance notes for paid invoices and returns settlement metadata", async () => {
@@ -40,10 +40,7 @@ describe("recordPaidBookingCancellationSettlement", () => {
       paidByCurrency: { GBP: 15000 },
     })
     expect(db.insertedNotes).toHaveLength(2)
-    expect(db.insertedNotes[0]).toMatchObject({
-      invoiceId: "inv_1",
-      authorId: "user_1",
-    })
+    expect(db.insertedNotes[0]).toMatchObject({ invoiceId: "inv_1", authorId: "user_1" })
     expect(db.insertedNotes[0]?.content).toContain("Booking BK-1 was cancelled from confirmed.")
     expect(db.insertedNotes[0]?.content).toContain("Cancellation reason: Client requested")
     expect(db.insertedNotes[0]?.content).toContain("Invoice paid amount: 12000 GBP cents.")
@@ -51,7 +48,6 @@ describe("recordPaidBookingCancellationSettlement", () => {
 
   it("does not create notes when the booking has no paid invoices", async () => {
     const db = createFakeDb([])
-
     const settlement = await recordPaidBookingCancellationSettlement(db as never, {
       bookingId: "book_1",
       bookingNumber: "BK-1",
@@ -59,24 +55,11 @@ describe("recordPaidBookingCancellationSettlement", () => {
       reason: null,
       actorId: "user_1",
     })
-
     expect(settlement).toBeNull()
     expect(db.insertedNotes).toEqual([])
   })
 
-  it("builds a no-reason settlement note", () => {
-    expect(
-      buildPaidBookingCancellationSettlementNote({
-        bookingId: "book_1",
-        bookingNumber: "BK-1",
-        previousStatus: "confirmed",
-        reason: null,
-        actorId: "user_1",
-      }),
-    ).not.toContain("Cancellation reason")
-  })
-
-  it("builds settlement notes for awaiting-payment cancellations", () => {
+  it("builds notes with and without cancellation reasons", () => {
     expect(
       buildPaidBookingCancellationSettlementNote({
         bookingId: "book_1",
@@ -86,6 +69,15 @@ describe("recordPaidBookingCancellationSettlement", () => {
         actorId: "user_1",
       }),
     ).toContain("Booking BK-1 was cancelled from awaiting_payment.")
+    expect(
+      buildPaidBookingCancellationSettlementNote({
+        bookingId: "book_1",
+        bookingNumber: "BK-1",
+        previousStatus: "confirmed",
+        reason: null,
+        actorId: "user_1",
+      }),
+    ).not.toContain("Cancellation reason")
   })
 })
 
@@ -99,27 +91,14 @@ interface FakePaidInvoice {
 
 function createFakeDb(paidInvoices: FakePaidInvoice[]) {
   const insertedNotes: Array<Record<string, unknown>> = []
-
   return {
     insertedNotes,
-    select() {
-      return {
-        from() {
-          return {
-            where: async () => paidInvoices,
-          }
-        },
-      }
-    },
-    insert() {
-      return {
-        values(row: Record<string, unknown>) {
-          insertedNotes.push(row)
-          return {
-            returning: async () => [{ id: `fnote_${insertedNotes.length}` }],
-          }
-        },
-      }
-    },
+    select: () => ({ from: () => ({ where: async () => paidInvoices }) }),
+    insert: () => ({
+      values(row: Record<string, unknown>) {
+        insertedNotes.push(row)
+        return { returning: async () => [{ id: `fnote_${insertedNotes.length}` }] }
+      },
+    }),
   }
 }

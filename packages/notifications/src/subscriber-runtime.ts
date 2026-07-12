@@ -1,6 +1,7 @@
 import type { ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { notificationReminderRuns } from "./schema.js"
 import type { NotificationService } from "./service.js"
 import {
   type BookingDocumentAttachmentResolver,
@@ -174,12 +175,13 @@ export function createBookingCancelledReminderSubscriberRuntime(
     eventType: "booking.cancelled",
     register: ({ bindings, container, eventBus }) => {
       eventBus.subscribe<BookingCancelledPayload>("booking.cancelled", async ({ data }) => {
-        if (data.previousStatus !== "on_hold") return
-
         try {
           const runtime = resolveRuntime(container)
+          const db = runtime.resolveDb(bindings)
+          await skipQueuedBookingPaymentReminders(db, data.bookingId, "cancelled")
+          if (data.previousStatus !== "on_hold") return
           await dispatchReminderRules(
-            runtime.resolveDb(bindings),
+            db,
             runtime.dispatcher,
             {
               targetType: "booking_cancelled_non_payment",
@@ -211,8 +213,10 @@ export function createBookingExpiredReminderSubscriberRuntime(
       eventBus.subscribe<BookingExpiredPayload>("booking.expired", async ({ data }) => {
         try {
           const runtime = resolveRuntime(container)
+          const db = runtime.resolveDb(bindings)
+          await skipQueuedBookingPaymentReminders(db, data.bookingId, "expired")
           await dispatchReminderRules(
-            runtime.resolveDb(bindings),
+            db,
             runtime.dispatcher,
             {
               targetType: "booking_cancelled_non_payment",
@@ -229,6 +233,29 @@ export function createBookingExpiredReminderSubscriberRuntime(
       })
     },
   }
+}
+
+export async function skipQueuedBookingPaymentReminders(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  status: "cancelled" | "expired",
+): Promise<void> {
+  const now = new Date()
+  await db
+    .update(notificationReminderRuns)
+    .set({
+      status: "skipped",
+      errorMessage: `booking_status_${status}`,
+      processedAt: now,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(notificationReminderRuns.bookingId, bookingId),
+        eq(notificationReminderRuns.targetType, "booking_payment_schedule"),
+        eq(notificationReminderRuns.status, "queued"),
+      ),
+    )
 }
 
 export function createBookingConfirmationAutoDispatchSubscriberRuntime(

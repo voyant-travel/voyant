@@ -1,5 +1,5 @@
+import { catalogContentRuntimePort } from "@voyant-travel/catalog/graph-runtime"
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
-import { cruisesContentRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the cruises package. */
 export const cruisesVoyantModule = defineModule({
@@ -79,7 +79,7 @@ export const cruisesContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/cruises#content-extension",
   packageName: "@voyant-travel/cruises",
   localId: "cruises.content-extension",
-  runtimePorts: [requirePort(cruisesContentRuntimePort)],
+  runtimePorts: [requirePort(catalogContentRuntimePort)],
   api: [
     {
       id: "@voyant-travel/cruises#content-extension.api.admin",

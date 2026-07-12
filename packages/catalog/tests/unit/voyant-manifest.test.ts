@@ -77,6 +77,20 @@ describe("catalog deployment manifest", () => {
       { id: "catalog.projection-runtime" },
       { id: "catalog.booking-snapshot-runtime" },
     ])
+    expect(catalogVoyantModule.workflows).toEqual([
+      {
+        id: "catalog.reap-expired-booking-drafts",
+        config: {
+          defaultRuntime: "node",
+          schedule: { cron: "5 * * * *", name: "hourly-at-05" },
+        },
+        source: "@voyant-travel/catalog/draft-reaper-workflow",
+        runtime: {
+          entry: "./draft-reaper-workflow",
+          export: "catalogDraftReaperWorkflow",
+        },
+      },
+    ])
   })
 
   it("owns the booking engine and offers bridge declarations", () => {

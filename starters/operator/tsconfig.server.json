@@ -419,6 +419,9 @@
         "../../packages/catalog/dist/booking-snapshot-subscriber-runtime.d.ts"
       ],
       "@voyant-travel/catalog/contract": ["../../packages/catalog/dist/contract.d.ts"],
+      "@voyant-travel/catalog/draft-reaper-workflow": [
+        "../../packages/catalog/dist/draft-reaper-workflow.d.ts"
+      ],
       "@voyant-travel/catalog/drift/events": ["../../packages/catalog/dist/drift/events.d.ts"],
       "@voyant-travel/catalog/embeddings/contract": [
         "../../packages/catalog/dist/embeddings/contract.d.ts"
@@ -658,6 +661,9 @@
       ],
       "@voyant-travel/commerce/promotions/validation": [
         "../../packages/commerce/dist/promotions/validation.d.ts"
+      ],
+      "@voyant-travel/commerce/promotions/workflow-boundary-scheduler": [
+        "../../packages/commerce/dist/promotions/workflow-boundary-scheduler.d.ts"
       ],
       "@voyant-travel/commerce/promotions/workflow-bulk-reindex": [
         "../../packages/commerce/dist/promotions/workflow-bulk-reindex.d.ts"

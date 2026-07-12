@@ -1,9 +1,9 @@
 // agent-quality: file-size exception -- owner: operator; graph composition coverage.
-import { accommodationsContentRuntimePort } from "@voyant-travel/accommodations/graph-runtime"
 import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
 import { bookingRequirementsRuntimePort, bookingsRuntimePort } from "@voyant-travel/bookings"
 import {
   catalogBookingRuntimePort,
+  catalogContentRuntimePort,
   catalogOffersRuntimePort,
   catalogSearchRuntimePort,
 } from "@voyant-travel/catalog/graph-runtime"
@@ -15,7 +15,6 @@ import {
   promotionsBulkReindexRuntimePort,
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import { createContainer, createEventBus } from "@voyant-travel/core"
-import { cruisesContentRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import {
   CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
   channelPushRuntimePort,
@@ -30,7 +29,6 @@ import { flightsRuntimePort } from "@voyant-travel/flights"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import {
   inventoryBrochureRuntimePort,
-  inventoryContentRuntimePort,
   inventoryRuntimePort,
 } from "@voyant-travel/inventory/graph-runtime"
 import { legalContractDocumentRuntimePort, legalRuntimePort } from "@voyant-travel/legal"
@@ -71,8 +69,6 @@ import {
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } from "../../.voyant/runtime/graph-runtime.generated"
 import { buildOperatorProviders, buildOperatorRuntimePorts } from "./composition"
-import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
-import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   const workflowRunnerRegistry = new WorkflowRunnerRegistry()
@@ -84,15 +80,6 @@ async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
 }
 
 describe("operator graph runtime composition", () => {
-  it("wires booking payment cleanup and paid-cancellation settlement providers", () => {
-    const providers = buildOperatorProviders()
-
-    expect(providers.closePaymentSchedulesForBooking).toBe(closeTerminalBookingPaymentSchedules)
-    expect(providers.recordCancellationFinancialSettlement).toBe(
-      recordPaidBookingCancellationSettlement,
-    )
-  })
-
   it("supplies request-scoped checkout options through the declared runtime port", () => {
     expect(
       buildOperatorRuntimePorts(new WorkflowRunnerRegistry())[catalogCheckoutApiRuntimePort.id],
@@ -697,22 +684,20 @@ describe("operator graph runtime composition", () => {
 
     expect(Object.keys(ports)).toEqual(
       expect.arrayContaining([
-        accommodationsContentRuntimePort.id,
         actionLedgerHealthRuntimePort.id,
         bookingMaintenanceRuntimePort.id,
         bookingRequirementsRuntimePort.id,
         bookingsRuntimePort.id,
         catalogBookingRuntimePort.id,
+        catalogContentRuntimePort.id,
         catalogOffersRuntimePort.id,
         catalogSearchRuntimePort.id,
         catalogCheckoutApiRuntimePort.id,
-        cruisesContentRuntimePort.id,
         financeBookingScheduleRuntimePort.id,
         financeBookingTaxRuntimePort.id,
         financeRuntimePort.id,
         flightsRuntimePort.id,
         inventoryBrochureRuntimePort.id,
-        inventoryContentRuntimePort.id,
         inventoryRuntimePort.id,
         relationshipsRouteRuntimePort.id,
         legalBookingContractSubscriberRuntimePort.id,

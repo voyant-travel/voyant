@@ -57,7 +57,7 @@ describe("cruises deployment manifest", () => {
           runtime: { export: "createCruisesContentVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "cruises.content-runtime" }],
+      runtimePorts: [{ id: "catalog.content-runtime" }],
     })
     expect(cruisesBookingVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",

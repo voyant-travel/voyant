@@ -14,6 +14,7 @@
     "./promotions/validation": "./src/promotions/validation.ts",
     "./promotions/workflow-bulk-reindex-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
     "./promotions/workflow-bulk-reindex": "./src/promotions/workflow-bulk-reindex.ts",
+    "./promotions/workflow-boundary-scheduler": "./src/promotions/workflow-boundary-scheduler.ts",
     "./sellability/validation": "./src/sellability/validation.ts",
     "./voyant": "./src/voyant.ts"
   },
@@ -121,6 +122,11 @@
         "types": "./dist/promotions/workflow-bulk-reindex.d.ts",
         "import": "./dist/promotions/workflow-bulk-reindex.js",
         "default": "./dist/promotions/workflow-bulk-reindex.js"
+      },
+      "./promotions/workflow-boundary-scheduler": {
+        "types": "./dist/promotions/workflow-boundary-scheduler.d.ts",
+        "import": "./dist/promotions/workflow-boundary-scheduler.js",
+        "default": "./dist/promotions/workflow-boundary-scheduler.js"
       },
       "./sellability/validation": {
         "types": "./dist/sellability/validation.d.ts",

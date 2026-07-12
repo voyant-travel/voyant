@@ -71,28 +71,6 @@ export async function scheduled(
     )
     return
   }
-  if (job.id === "draft-reaper") {
-    ctx.waitUntil(
-      import("./api/jobs/draft-reaper-scheduled")
-        .then((mod) => mod.runScheduledDraftReaper(scheduledEvent, env))
-        .then((result) => {
-          console.info("[draft-reaper] result", result)
-        })
-        .catch((err) => reportBackgroundFailure("draft-reaper", err)),
-    )
-    return
-  }
-  if (job.id === "promotion-boundary-scheduler") {
-    ctx.waitUntil(
-      import("./api/jobs/promotion-scheduled")
-        .then((mod) => mod.runScheduledPromotionBoundary(scheduledEvent, env))
-        .then((result) => {
-          console.info("[promotion-scheduler] result", result)
-        })
-        .catch((err) => reportBackgroundFailure("promotion-scheduler", err)),
-    )
-    return
-  }
   if (
     job.cron === CHANNEL_PUSH_BOOKING_LINK_CRON ||
     job.cron === CHANNEL_PUSH_AVAILABILITY_CRON ||

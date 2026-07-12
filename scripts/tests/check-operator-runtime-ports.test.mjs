@@ -11,20 +11,18 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checkerPath = path.join(repoRoot, "scripts/check-operator-runtime-ports.mjs")
 const portNames = [
-  "accommodationsContentRuntimePort",
   "actionLedgerHealthRuntimePort",
   "bookingMaintenanceRuntimePort",
   "bookingRequirementsRuntimePort",
   "bookingsRuntimePort",
   "catalogBookingRuntimePort",
+  "catalogContentRuntimePort",
   "catalogOffersRuntimePort",
   "catalogSearchRuntimePort",
-  "cruisesContentRuntimePort",
   "financeBookingScheduleRuntimePort",
   "financeBookingTaxRuntimePort",
   "financeRuntimePort",
   "inventoryBrochureRuntimePort",
-  "inventoryContentRuntimePort",
   "inventoryRuntimePort",
   "legalContractDocumentRuntimePort",
   "miceRuntimePort",
@@ -69,7 +67,7 @@ function runChecker(root) {
 describe("check-operator-runtime-ports", () => {
   it("accepts typed host ports without central factories", async () => {
     const result = await runChecker(await createFixture())
-    assert.match(result.stdout, /25 package runtimes are port-bound/)
+    assert.match(result.stdout, /23 package runtimes are port-bound/)
   })
 
   it("rejects restored Operator bindings and framework factories", async () => {

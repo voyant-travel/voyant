@@ -10,6 +10,18 @@ describe("commerce deployment manifest", () => {
   it("owns the promotion workflow and event-filter runtime references", () => {
     expect(commerceVoyantModule.workflows).toEqual([
       {
+        id: "commerce.process-promotion-boundaries",
+        config: {
+          defaultRuntime: "node",
+          schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
+        },
+        source: "@voyant-travel/commerce/promotions/workflow-boundary-scheduler",
+        runtime: {
+          entry: "./promotions/workflow-boundary-scheduler",
+          export: "promotionBoundarySchedulerWorkflow",
+        },
+      },
+      {
         ...bulkReindexProductsWorkflowManifest,
         source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
         runtime: {

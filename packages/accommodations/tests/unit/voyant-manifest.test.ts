@@ -59,7 +59,7 @@ describe("accommodations deployment manifest", () => {
           runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "accommodations.content-runtime" }],
+      runtimePorts: [{ id: "catalog.content-runtime" }],
     })
 
     const resolveRegistry = () => ({}) as never

@@ -21,7 +21,10 @@ import {
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import { defineVoyantProject } from "../packages/framework/src/profile.ts"
 import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
-import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
+import {
+  OPERATOR_LOCAL_SCHEDULED_JOBS,
+  withoutPackageGraphScheduledJobs,
+} from "../starters/operator/src/local-scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
@@ -209,7 +212,7 @@ async function main(): Promise<void> {
     repoRoot,
     frameworkVersion: frameworkPackage.version,
     scheduledJobs: [
-      ...getManagedProfileScheduledJobs(operatorProfile),
+      ...withoutPackageGraphScheduledJobs(getManagedProfileScheduledJobs(operatorProfile)),
       ...OPERATOR_LOCAL_SCHEDULED_JOBS,
     ],
   })
@@ -487,15 +490,7 @@ async function main(): Promise<void> {
       "expected Finance booking-schedule subscriber to retain its package-owned runtime reference",
     )
   }
-  const operatorBookingScheduleSource = await readFile(
-    join(operatorRoot, "src/api/routes/booking-schedule.ts"),
-    "utf8",
-  )
-  if (
-    operatorAppSource.includes("bookingScheduleBundle") ||
-    operatorBookingScheduleSource.includes("bookingScheduleBundle") ||
-    operatorBookingScheduleSource.includes("eventBus.subscribe")
-  ) {
+  if (operatorAppSource.includes("bookingScheduleBundle")) {
     failures.push(
       "expected package-owned Finance booking-schedule subscriber to stay absent from Operator hand lists and route wiring",
     )

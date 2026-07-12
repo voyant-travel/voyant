@@ -38,8 +38,6 @@ function standardCron(id: string): string {
 export const CHANNEL_PUSH_BOOKING_LINK_CRON = standardCron("channel-push-booking-link")
 export const CHANNEL_PUSH_AVAILABILITY_CRON = standardCron("channel-push-availability")
 export const CHANNEL_PUSH_CONTENT_CRON = standardCron("channel-push-content")
-export const DRAFT_REAPER_CRON = standardCron("draft-reaper")
-export const PROMOTION_BOUNDARY_SCHEDULER_CRON = standardCron("promotion-boundary-scheduler")
 export const OUTBOX_DRAIN_CRON = standardCron("outbox-drain")
 
 /**

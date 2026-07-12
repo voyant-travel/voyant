@@ -41,6 +41,7 @@
     "./offers": "./src/offers/operator-routes.ts",
     "./index-subscribers": "./src/index-subscriber-runtime.ts",
     "./projection-runtime": "./src/projection-runtime.ts",
+    "./draft-reaper-workflow": "./src/draft-reaper-workflow.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
@@ -266,6 +267,11 @@
         "import": "./dist/projection-runtime.js",
         "default": "./dist/projection-runtime.js"
       },
+      "./draft-reaper-workflow": {
+        "types": "./dist/draft-reaper-workflow.d.ts",
+        "import": "./dist/draft-reaper-workflow.js",
+        "default": "./dist/draft-reaper-workflow.js"
+      },
       "./graph-runtime": {
         "types": "./dist/graph-runtime.d.ts",
         "import": "./dist/graph-runtime.js",
@@ -287,6 +293,7 @@
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

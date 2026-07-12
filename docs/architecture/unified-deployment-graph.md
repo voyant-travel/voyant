@@ -49,6 +49,17 @@ The issue is complete only when selected packages own their manifests and all
 supported product surfaces are resolved from those package manifests without an
 operator-starter catalog or hand-maintained composition layer.
 
+### Commerce starter executable cutover
+
+Catalog content routes consume one host-provided source-registry capability;
+their surface defaults remain in Inventory, Cruises, and Accommodations graph
+factories. Finance registers Bookings' synchronous financial lifecycle from its
+package runtime, while Notifications owns queued reminder cleanup in its
+graph-selected cancellation and expiry subscribers. Draft reaping and promotion
+boundary processing are package workflows with package-declared schedules. The
+Node host supplies database, registry, reporting, and indexing capabilities but
+does not select these implementations by package id.
+
 ## Non-Goals
 
 The foundational v1 graph does not need every facet discussed in the RFC

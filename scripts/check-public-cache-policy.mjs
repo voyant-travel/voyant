@@ -233,16 +233,6 @@ function checkSourceMarkers() {
     )
   }
 
-  requireNotContains(
-    "starters/operator/src/api/routes/catalog-content.ts",
-    "PUBLIC_CATALOG_CONTENT_CACHE_CONTROL",
-    "catalog content can vary by Accept-Language when locale is absent from the URL",
-  )
-  requireNotContains(
-    "starters/operator/src/api/routes/catalog-content.ts",
-    "cacheControl:",
-    "catalog content mounts must not opt into URL-only shared response cache",
-  )
 }
 
 checkPolicyDoc()

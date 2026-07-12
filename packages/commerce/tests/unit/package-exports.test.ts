@@ -39,6 +39,11 @@ describe("@voyant-travel/commerce package exports", () => {
       "./src/checkout/subscriber-runtime.ts",
       "checkout/subscriber-runtime",
     ],
+    [
+      "./promotions/workflow-boundary-scheduler",
+      "./src/promotions/workflow-boundary-scheduler.ts",
+      "promotions/workflow-boundary-scheduler",
+    ],
   ])("publishes %s with matching source and distribution targets", (subpath, source, dist) => {
     expect(packageJson.exports[subpath]).toBe(source)
     expect(packageJson.publishConfig.exports[subpath]).toEqual({

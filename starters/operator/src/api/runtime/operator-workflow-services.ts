@@ -2,13 +2,21 @@ import {
   BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
   type BookingsExpireStaleHoldsWorkflowRuntime,
 } from "@voyant-travel/bookings/workflow-runtime"
+import {
+  CATALOG_DRAFT_REAPER_RUNTIME_KEY,
+  type CatalogDraftReaperRuntime,
+} from "@voyant-travel/catalog/draft-reaper-workflow"
+import {
+  PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
+  type PromotionBoundarySchedulerRuntime,
+} from "@voyant-travel/commerce/promotions/workflow-boundary-scheduler"
 import { createContainer, type ModuleContainer } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db"
 import {
   CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
   type ChannelPushDeps,
 } from "@voyant-travel/distribution/channel-push-runtime"
-import { financeService } from "@voyant-travel/finance"
+import { closeTerminalBookingPaymentSchedules, financeService } from "@voyant-travel/finance"
 import { paymentSessions } from "@voyant-travel/finance/schema"
 import {
   createDefaultProductBrochureTemplate,
@@ -28,7 +36,8 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { createProductBrochurePrinter } from "../../lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
-import { closeTerminalBookingPaymentSchedules } from "../subscribers/booking-payment-cleanup.js"
+import { reportBackgroundFailure } from "../../lib/observability.js"
+import { createBulkReindexProductsService } from "../lib/bulk-reindex-service.js"
 
 export const OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS = {
   bookings: "@voyant-travel/bookings",
@@ -134,6 +143,8 @@ export async function createOperatorWorkflowServiceResolver(
   selectedUnitIds: ReadonlySet<string>,
 ): Promise<ModuleContainer> {
   const container = createContainer()
+  registerCatalogDraftReaperWorkflowService(container, bindings)
+  registerPromotionBoundaryWorkflowService(container, bindings)
   if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.bookings)) {
     registerBookingsWorkflowService(container, bindings)
   }
@@ -147,6 +158,38 @@ export async function createOperatorWorkflowServiceResolver(
     await registerDistributionWorkflowService(container, bindings)
   }
   return container
+}
+
+function registerCatalogDraftReaperWorkflowService(
+  container: ModuleContainer,
+  bindings: OperatorWorkflowBindings,
+): void {
+  const env = workflowEnvironment(bindings)
+  const runtime: CatalogDraftReaperRuntime = {
+    withDb: (operation) => operation(createWorkflowDb(env)),
+    resolveSourceRegistry: () =>
+      import("../lib/booking-engine-runtime.js").then((module) =>
+        module.ensureBookingEngineRegistry(env as AppBindings),
+      ),
+    resolveOwnedHandlers: () =>
+      import("../lib/booking-engine-runtime.js").then((module) =>
+        module.getOwnedBookingHandlerRegistry(env as AppBindings),
+      ),
+    reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
+  }
+  container.register(CATALOG_DRAFT_REAPER_RUNTIME_KEY, runtime)
+}
+
+function registerPromotionBoundaryWorkflowService(
+  container: ModuleContainer,
+  bindings: OperatorWorkflowBindings,
+): void {
+  const env = workflowEnvironment(bindings)
+  const runtime: PromotionBoundarySchedulerRuntime = {
+    withDb: (operation) => operation(createWorkflowDb(env)),
+    createReindexService: () => createBulkReindexProductsService(env as AppBindings),
+  }
+  container.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, runtime)
 }
 
 export function createLazyWorkflowDb<TDb extends object = PostgresJsDatabase>(

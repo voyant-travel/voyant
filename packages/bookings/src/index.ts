@@ -1,6 +1,7 @@
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import { resolveBookingFinancialLifecycle } from "./financial-lifecycle.js"
 import { bookingsLinkable } from "./linkables.js"
 import {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -122,7 +123,21 @@ export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}
     bootstrap: ({ bindings, container }) => {
       container.register(
         BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
-        buildBookingRouteRuntime(bindings as Record<string, unknown>, options),
+        buildBookingRouteRuntime(bindings as Record<string, unknown>, {
+          ...options,
+          closePaymentSchedulesForBooking:
+            options.closePaymentSchedulesForBooking ??
+            ((...args) =>
+              resolveBookingFinancialLifecycle(container)?.closePaymentSchedulesForBooking(
+                ...args,
+              )),
+          recordCancellationFinancialSettlement:
+            options.recordCancellationFinancialSettlement ??
+            ((...args) =>
+              resolveBookingFinancialLifecycle(container)?.recordCancellationFinancialSettlement(
+                ...args,
+              )),
+        }),
       )
     },
   }
@@ -159,6 +174,12 @@ export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ ap
   return selected
 })
 
+export {
+  BOOKING_FINANCIAL_LIFECYCLE_KEY,
+  type BookingFinancialLifecycle,
+  registerBookingFinancialLifecycle,
+  resolveBookingFinancialLifecycle,
+} from "./financial-lifecycle.js"
 export type {
   BookingOverviewEnricherItem,
   BookingOverviewItemEnricher,

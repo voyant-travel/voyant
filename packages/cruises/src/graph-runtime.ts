@@ -1,11 +1,23 @@
+import { catalogContentRuntimePort } from "@voyant-travel/catalog/graph-runtime"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 
 import { createCruiseContentHonoExtension } from "./routes-content.js"
-import { cruisesContentRuntimePort } from "./runtime-port.js"
 
 export const createCruisesContentVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) => {
-    const configured = createCruiseContentHonoExtension(await getPort(cruisesContentRuntimePort))
+    const runtime = await getPort(catalogContentRuntimePort)
+    const configured = createCruiseContentHonoExtension({
+      admin: {
+        resolveRegistry: runtime.resolveRegistry,
+        defaultAcceptMachineTranslated: false,
+        allowOwnedKeys: true,
+      },
+      public: {
+        resolveRegistry: runtime.resolveRegistry,
+        defaultAcceptMachineTranslated: true,
+        allowOwnedKeys: true,
+      },
+    })
     return {
       ...configured,
       extension: { ...configured.extension, name: "cruises-content" },
@@ -14,5 +26,3 @@ export const createCruisesContentVoyantRuntime = defineGraphRuntimeFactory(
     }
   },
 )
-
-export { cruisesContentRuntimePort } from "./runtime-port.js"

@@ -14,3 +14,12 @@ export const OPERATOR_LOCAL_SCHEDULED_JOBS: readonly ManagedScheduledJob[] = [
     module: "@voyant-travel/operator#cruises",
   },
 ]
+
+const PACKAGE_GRAPH_SCHEDULED_JOB_IDS = new Set(["draft-reaper", "promotion-boundary-scheduler"])
+
+/** Ignore compatibility-catalog jobs replaced by package workflow schedules. */
+export function withoutPackageGraphScheduledJobs(
+  jobs: readonly ManagedScheduledJob[],
+): ManagedScheduledJob[] {
+  return jobs.filter((job) => !PACKAGE_GRAPH_SCHEDULED_JOB_IDS.has(job.id))
+}

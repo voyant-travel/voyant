@@ -1,5 +1,5 @@
+import { catalogContentRuntimePort } from "@voyant-travel/catalog/graph-runtime"
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
-import { accommodationsContentRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the accommodations package. */
 export const accommodationsVoyantModule = defineModule({
@@ -48,7 +48,7 @@ export const accommodationsContentVoyantPlugin = defineExtension({
   id: "@voyant-travel/accommodations#content-extension",
   packageName: "@voyant-travel/accommodations",
   localId: "accommodations.content-extension",
-  runtimePorts: [requirePort(accommodationsContentRuntimePort)],
+  runtimePorts: [requirePort(catalogContentRuntimePort)],
   api: [
     {
       id: "@voyant-travel/accommodations#content-extension.api.admin",

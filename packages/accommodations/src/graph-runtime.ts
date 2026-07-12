@@ -1,13 +1,21 @@
+import { catalogContentRuntimePort } from "@voyant-travel/catalog/graph-runtime"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 
 import { createAccommodationContentHonoExtension } from "./routes-content.js"
-import { accommodationsContentRuntimePort } from "./runtime-port.js"
 
 export const createAccommodationsContentVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) => {
-    const configured = createAccommodationContentHonoExtension(
-      await getPort(accommodationsContentRuntimePort),
-    )
+    const runtime = await getPort(catalogContentRuntimePort)
+    const configured = createAccommodationContentHonoExtension({
+      admin: {
+        resolveRegistry: runtime.resolveRegistry,
+        defaultAcceptMachineTranslated: false,
+      },
+      public: {
+        resolveRegistry: runtime.resolveRegistry,
+        defaultAcceptMachineTranslated: true,
+      },
+    })
     return {
       ...configured,
       extension: { ...configured.extension, name: "accommodations-content" },
@@ -16,5 +24,3 @@ export const createAccommodationsContentVoyantRuntime = defineGraphRuntimeFactor
     }
   },
 )
-
-export { accommodationsContentRuntimePort } from "./runtime-port.js"

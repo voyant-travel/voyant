@@ -12,7 +12,6 @@
  * option-bearing factories or supply deployment-local units.
  */
 
-import { accommodationsContentRuntimePort } from "@voyant-travel/accommodations/graph-runtime"
 import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
 import {
   type BookingsRuntimeProvider,
@@ -30,6 +29,7 @@ import {
 } from "@voyant-travel/catalog/booking-snapshot-subscriber"
 import {
   catalogBookingRuntimePort,
+  catalogContentRuntimePort,
   catalogOffersRuntimePort,
   catalogSearchRuntimePort,
 } from "@voyant-travel/catalog/graph-runtime"
@@ -55,7 +55,6 @@ import {
   promotionsBulkReindexRuntimePort,
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import type { VoyantPort } from "@voyant-travel/core/project"
-import { cruisesContentRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { channelPushRuntimePort } from "@voyant-travel/distribution"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
@@ -70,7 +69,6 @@ import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
 import {
   inventoryBrochureRuntimePort,
-  inventoryContentRuntimePort,
   inventoryRuntimePort,
 } from "@voyant-travel/inventory/graph-runtime"
 import { legalContractDocumentRuntimePort, legalRuntimePort } from "@voyant-travel/legal"
@@ -109,6 +107,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
+import { getBookingEngineRegistryFromContext } from "./lib/booking-engine-runtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { withDbFromEnv } from "./lib/db"
 import { createOperatorCheckoutStartOptions } from "./runtime/catalog-checkout-options"
@@ -136,8 +135,6 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./runtime/payment-config"
-import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
-import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
 type AsyncMethodProvider<T extends object> = {
   [K in keyof T]: T[K] extends (...args: infer Args) => infer Result
@@ -166,8 +163,6 @@ export interface OperatorCapabilities {
   createOperatorDocumentStorage: typeof createOperatorDocumentStorage
   resolveBankTransferDetails: typeof resolveBankTransferDetails
   relationshipsService: OperatorRelationshipsService
-  closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
-  recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
 }
 
@@ -196,8 +191,6 @@ export function buildOperatorProviders(): OperatorCapabilities {
         (m) => m.relationshipsService as AsyncMethodProvider<OperatorRelationshipsService>,
       ),
     ),
-    closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
-    recordCancellationFinancialSettlement: recordPaidBookingCancellationSettlement,
     // Adapt the deployment's catalog context into the package's search runtime
     // shape (the framework catalog factory consumes this directly).
     resolveCatalogRuntime: createLazyCatalogSearchRuntime,
@@ -216,7 +209,11 @@ export function buildOperatorProviders(): OperatorCapabilities {
     }),
     loadMcpAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
     loadCatalogCheckoutRoutes: () =>
-      import("./routes/catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
+      import("@voyant-travel/commerce/checkout").then((commerce) =>
+        commerce.createCatalogCheckoutRoutes((context) =>
+          createOperatorCheckoutStartOptions(context),
+        ),
+      ),
   }
 }
 
@@ -247,13 +244,25 @@ export function buildOperatorRuntimePorts(
       },
     },
     [financeRuntimePort.id]: createOperatorFinanceRuntimeProvider(capabilities),
-    [financeBookingScheduleRuntimePort.id]: import("./routes/booking-schedule").then(
-      async (runtime) => ({
-        options: await runtime.createBookingScheduleRoutesOptions(),
-        withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
-          withDbFromEnv(bindings as AppBindings, operation),
-      }),
-    ),
+    [financeBookingScheduleRuntimePort.id]: Promise.all([
+      import("@voyant-travel/operator-settings"),
+      import("./runtime/booking-payment-policy-runtime"),
+    ]).then(([settings, runtime]) => ({
+      options: {
+        resolveDb: (context) => operatorPostgresDb(context.get("db")),
+        resolveOperatorDefaultPaymentPolicy: settings.resolveOperatorDefaultPaymentPolicy,
+        resolveSupplierPolicy: runtime.resolveSupplierPolicy,
+        resolveCategoryPolicy: runtime.resolveCategoryPolicy,
+        resolveListingPolicy: runtime.resolveListingPolicy,
+        resolveListingPolicyForEntity: runtime.resolveListingPolicyForEntity,
+        resolveCategoryPolicyForEntity: runtime.resolveCategoryPolicyForEntity,
+        resolveSupplierPolicyForEntity: runtime.resolveSupplierPolicyForEntity,
+        stampPolicySourceOnBooking: runtime.stampPolicySourceOnBooking,
+        readPolicySourceFromInternalNotes: runtime.readPolicySourceFromInternalNotes,
+      },
+      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+        withDbFromEnv(bindings as AppBindings, operation),
+    })),
     [financeBookingTaxRuntimePort.id]: import("@voyant-travel/operator-settings").then(
       (settings) => ({
         resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
@@ -299,17 +308,11 @@ export function buildOperatorRuntimePorts(
       bootstrap: ({ container, bindings }) =>
         registerInventoryWorkflowService(container, bindings as AppBindings),
     }),
-    [inventoryContentRuntimePort.id]: import("./routes/catalog-content").then((runtime) =>
-      runtime.createOperatorInventoryContentRuntime(),
-    ),
+    [catalogContentRuntimePort.id]: {
+      resolveRegistry: getBookingEngineRegistryFromContext,
+    },
     [inventoryBrochureRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorInventoryBrochureRuntime,
-    ),
-    [cruisesContentRuntimePort.id]: import("./routes/catalog-content").then((runtime) =>
-      runtime.createOperatorCruisesContentRuntime(),
-    ),
-    [accommodationsContentRuntimePort.id]: import("./routes/catalog-content").then((runtime) =>
-      runtime.createOperatorAccommodationsContentRuntime(),
     ),
     [actionLedgerHealthRuntimePort.id]: import("./runtime/action-ledger-health-runtime").then(
       (runtime) => runtime.createOperatorActionLedgerHealthRuntime(),
@@ -449,8 +452,6 @@ async function createOperatorBookingsRuntimeProvider(
         (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
       resolveBillingOrganizationById: async (db, organizationId) =>
         (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
-      closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
-      recordCancellationFinancialSettlement: capabilities.recordCancellationFinancialSettlement,
       customFields: capabilities.customFields,
       overviewItemEnrichers: {
         accommodation: accommodationsOverview.enrichStayBookingOverviewItems,

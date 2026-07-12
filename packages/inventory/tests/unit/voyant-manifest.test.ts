@@ -124,7 +124,7 @@ describe("inventory deployment manifests", () => {
           runtime: { export: "createInventoryContentVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "inventory.content-runtime" }],
+      runtimePorts: [{ id: "catalog.content-runtime" }],
     })
     expect(inventoryBrochureVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",

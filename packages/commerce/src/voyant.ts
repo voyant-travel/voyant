@@ -151,6 +151,18 @@ export const commerceVoyantModule = defineModule({
   ],
   workflows: [
     {
+      id: "commerce.process-promotion-boundaries",
+      config: {
+        defaultRuntime: "node",
+        schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
+      },
+      source: "@voyant-travel/commerce/promotions/workflow-boundary-scheduler",
+      runtime: {
+        entry: "./promotions/workflow-boundary-scheduler",
+        export: "promotionBoundarySchedulerWorkflow",
+      },
+    },
+    {
       id: "promotions.reindex-all-products",
       config: {
         defaultRuntime: "node",

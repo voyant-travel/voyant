@@ -1,6 +1,7 @@
-import { financeNotes, invoices } from "@voyant-travel/finance/schema"
-import { and, eq, gt, ne } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { BookingFinancialLifecycle } from "@voyant-travel/bookings"
+import { and, eq, gt, inArray, ne } from "drizzle-orm"
+
+import { bookingPaymentSchedules, financeNotes, invoices } from "./schema.js"
 
 export interface BookingCancellationSettlementInput {
   bookingId: string
@@ -18,8 +19,29 @@ interface PaidInvoice {
   status: string
 }
 
+export const financeBookingLifecycle: BookingFinancialLifecycle = {
+  closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
+  recordCancellationFinancialSettlement: recordPaidBookingCancellationSettlement,
+}
+
+export async function closeTerminalBookingPaymentSchedules(
+  db: Parameters<BookingFinancialLifecycle["closePaymentSchedulesForBooking"]>[0],
+  bookingId: string,
+  status: "cancelled" | "expired",
+): Promise<void> {
+  await db
+    .update(bookingPaymentSchedules)
+    .set({ status, updatedAt: new Date() })
+    .where(
+      and(
+        eq(bookingPaymentSchedules.bookingId, bookingId),
+        inArray(bookingPaymentSchedules.status, ["pending", "due"]),
+      ),
+    )
+}
+
 export async function recordPaidBookingCancellationSettlement(
-  db: PostgresJsDatabase,
+  db: Parameters<BookingFinancialLifecycle["recordCancellationFinancialSettlement"]>[0],
   input: BookingCancellationSettlementInput,
 ): Promise<Record<string, unknown> | null> {
   const paidInvoices = (await db
@@ -73,18 +95,12 @@ export function buildPaidBookingCancellationSettlementNote(
     `Booking ${input.bookingNumber} was cancelled from ${input.previousStatus}.`,
     "The customer-facing invoice remains paid until an operator records a refund, credit note, or no-refund decision.",
   ]
-
-  if (input.reason) {
-    parts.push(`Cancellation reason: ${input.reason}`)
-  }
-
+  if (input.reason) parts.push(`Cancellation reason: ${input.reason}`)
   return parts.join("\n")
 }
 
-function summarizePaidByCurrency(invoicesToSummarize: PaidInvoice[]): Record<string, number> {
+function summarizePaidByCurrency(rows: PaidInvoice[]): Record<string, number> {
   const totals: Record<string, number> = {}
-  for (const invoice of invoicesToSummarize) {
-    totals[invoice.currency] = (totals[invoice.currency] ?? 0) + invoice.paidCents
-  }
+  for (const row of rows) totals[row.currency] = (totals[row.currency] ?? 0) + row.paidCents
   return totals
 }

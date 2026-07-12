@@ -16,6 +16,12 @@
 
 import type { QuoteResponseV1 } from "@voyant-travel/catalog/booking-engine"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
+import {
+  CatalogCheckoutStartError,
+  type CatalogCheckoutStartResult,
+  type CheckoutStartInput,
+  startCatalogCheckout,
+} from "@voyant-travel/commerce/checkout"
 import type { EventBus } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type {
@@ -41,13 +47,8 @@ import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
 } from "../lib/booking-engine-runtime"
-import {
-  CatalogCheckoutStartError,
-  type CatalogCheckoutStartResult,
-  type CheckoutStartInput,
-  startCatalogCheckout,
-} from "../routes/catalog-checkout"
 import { applyOperatorTaxToQuoteResult } from "./catalog-booking-runtime"
+import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
 
 /**
  * Build the trips catalog-component adapter for a request, injecting the
@@ -123,7 +124,7 @@ export async function startComponentCheckout(
           eventBus: getEventBus(c),
           resolveRuntime: (key) => getContainer(c)?.resolve(key),
           requestMeta: checkoutRequestMeta(c),
-          c,
+          options: createOperatorCheckoutStartOptions(c),
         },
         checkoutInput,
       ),

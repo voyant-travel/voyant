@@ -1,9 +1,10 @@
 // agent-quality: file-size exception -- owner: finance; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { OpenAPIHono } from "@hono/zod-openapi"
+import { registerBookingFinancialLifecycle } from "@voyant-travel/bookings"
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
-
+import { financeBookingLifecycle } from "./booking-lifecycle.js"
 import { type BookingTaxRouteOptions, createBookingTaxRoutes } from "./booking-tax.js"
 import {
   buildFinanceCheckoutRouteRuntime,
@@ -184,7 +185,16 @@ export const financeHonoModule: HonoModule = createFinanceHonoModule()
 
 export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
   const configured = createFinanceHonoModule(await getPort(financeRuntimePort))
-  const selected: HonoModule = { module: configured.module }
+  const bootstrap = configured.module.bootstrap
+  const selected: HonoModule = {
+    module: {
+      ...configured.module,
+      bootstrap: async (context) => {
+        registerBookingFinancialLifecycle(context.container, financeBookingLifecycle)
+        await bootstrap?.(context)
+      },
+    },
+  }
   if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
     selected.adminRoutes = configured.adminRoutes
   }
@@ -194,6 +204,13 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(async ({ api
   return selected
 })
 
+export {
+  type BookingCancellationSettlementInput,
+  buildPaidBookingCancellationSettlementNote,
+  closeTerminalBookingPaymentSchedules,
+  financeBookingLifecycle,
+  recordPaidBookingCancellationSettlement,
+} from "./booking-lifecycle.js"
 export {
   type BookingTaxRouteOptions,
   type BookingTaxSettings,

@@ -82,3 +82,4 @@ export {
   catalogOffersRuntimePort,
   catalogSearchRuntimePort,
 } from "./api-runtime-ports.js"
+export { catalogContentRuntimePort } from "./content-runtime-port.js"
