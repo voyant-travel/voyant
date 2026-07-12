@@ -210,6 +210,17 @@ function inspectRepositoryAuthority(repoRoot) {
     }
   }
 
+  for (const relativePath of [
+    "starters/operator/src/api/lib/catalog-context.ts",
+    "starters/operator/src/api/runtime/payment-config.ts",
+    "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",
+    "starters/operator/src/api/runtime/media-runtime.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`checked-in starter authority must stay deleted: ${relativePath}`)
+    }
+  }
+
   const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")
   const deploymentArtifactsPath = join(repoRoot, "packages/framework/src/deployment-artifacts.ts")
   if (existsSync(operatorRuntimePath) && existsSync(deploymentArtifactsPath)) {

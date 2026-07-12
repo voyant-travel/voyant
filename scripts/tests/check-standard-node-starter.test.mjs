@@ -132,6 +132,29 @@ test("rejects database authority in the checked-in starter", () => {
   )
 })
 
+test("rejects restored checked-in starter compatibility authority", () => {
+  for (const relativePath of [
+    "starters/operator/src/api/lib/catalog-context.ts",
+    "starters/operator/src/api/runtime/payment-config.ts",
+    "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",
+    "starters/operator/src/api/runtime/media-runtime.ts",
+  ]) {
+    const starter = fixture()
+    const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+    roots.push(root)
+    const facade = join(root, relativePath)
+    mkdirSync(dirname(facade), { recursive: true })
+    writeFileSync(facade, "export const compatibilityAuthority = true\n")
+    assert.throws(
+      () => run(starter, root),
+      (error) =>
+        String(error.stderr).includes(
+          `checked-in starter authority must stay deleted: ${relativePath}`,
+        ),
+    )
+  }
+})
+
 function run(starterDir, root = repoRoot) {
   return execFileSync(process.execPath, [checker, "--root", root, "--starter-dir", starterDir], {
     cwd: repoRoot,

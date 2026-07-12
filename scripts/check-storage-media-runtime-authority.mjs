@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 
 const rootIndex = process.argv.indexOf("--root")
@@ -12,12 +12,17 @@ const inventoryContributor = read("packages/inventory/src/runtime-contributor.ts
 const brochureRuntime = read("packages/inventory/src/brochure-runtime.ts")
 const inventoryGraphRuntime = read("packages/inventory/src/graph-runtime.ts")
 const inventoryManifest = read("packages/inventory/src/voyant.ts")
-const mediaFacade = read("starters/operator/src/api/runtime/media-runtime.ts")
 const storageFacade = read("starters/operator/src/api/lib/storage.ts")
 const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
 const storagePackage = JSON.parse(read("packages/storage/package.json"))
 const inventoryPackage = JSON.parse(read("packages/inventory/package.json"))
 const policy = JSON.parse(read("scripts/fixtures/storage-media-runtime-policy.json"))
+
+for (const relativePath of policy.forbiddenStarterPaths) {
+  if (existsSync(path.join(root, relativePath))) {
+    failures.push(`${relativePath} must stay deleted`)
+  }
+}
 
 if (!storageContributor.includes("primitives: VoyantRuntimeHostPrimitives")) {
   failures.push("Storage contributor must consume generic runtime host primitives")
@@ -50,13 +55,6 @@ if (
 ) {
   failures.push("Operator storage library must remain a package re-export facade")
 }
-if (
-  !mediaFacade.includes("createStorageRuntime(directEnvPrimitives)") ||
-  /@voyant-travel\/inventory|InventoryBrochure|buildBrochureRoutes/.test(mediaFacade)
-) {
-  failures.push("Operator media compatibility runtime must not assemble Inventory behavior")
-}
-
 if (
   storagePackage.exports["./runtime"] !== "./src/runtime.ts" ||
   storagePackage.publishConfig?.exports?.["./runtime"]?.import !== "./dist/runtime.js"
