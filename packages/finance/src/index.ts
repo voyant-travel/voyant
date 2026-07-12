@@ -26,7 +26,12 @@ import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
 import { supplierInvoiceRoutes } from "./routes-supplier-invoices.js"
-import { financeRuntimePort } from "./runtime-port.js"
+import { createFinanceRuntime } from "./runtime.js"
+import {
+  financeCheckoutPaymentStartersRuntimePort,
+  financeHostRuntimePort,
+  financeNotificationsRuntimePort,
+} from "./runtime-port.js"
 
 export type {
   CheckoutRouteRuntime,
@@ -183,26 +188,36 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
 
 export const financeHonoModule: HonoModule = createFinanceHonoModule()
 
-export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
-  const configured = createFinanceHonoModule(await getPort(financeRuntimePort))
-  const bootstrap = configured.module.bootstrap
-  const selected: HonoModule = {
-    module: {
-      ...configured.module,
-      bootstrap: async (context) => {
-        registerBookingFinancialLifecycle(context.container, financeBookingLifecycle)
-        await bootstrap?.(context)
+export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ api, getPort, hasPort }) => {
+    const configured = createFinanceHonoModule(
+      createFinanceRuntime(
+        await getPort(financeHostRuntimePort),
+        await getPort(financeNotificationsRuntimePort),
+        hasPort(financeCheckoutPaymentStartersRuntimePort)
+          ? await getPort(financeCheckoutPaymentStartersRuntimePort)
+          : undefined,
+      ),
+    )
+    const bootstrap = configured.module.bootstrap
+    const selected: HonoModule = {
+      module: {
+        ...configured.module,
+        bootstrap: async (context) => {
+          registerBookingFinancialLifecycle(context.container, financeBookingLifecycle)
+          await bootstrap?.(context)
+        },
       },
-    },
-  }
-  if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
-    selected.adminRoutes = configured.adminRoutes
-  }
-  if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
-    selected.publicRoutes = configured.publicRoutes
-  }
-  return selected
-})
+    }
+    if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
+      selected.adminRoutes = configured.adminRoutes
+    }
+    if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
+      selected.publicRoutes = configured.publicRoutes
+    }
+    return selected
+  },
+)
 
 export {
   type BookingCancellationSettlementInput,
@@ -323,9 +338,14 @@ export {
   type InvoiceSettlementPoller,
 } from "./routes-settlement.js"
 export {
-  financeBookingScheduleRuntimePort,
-  financeBookingTaxRuntimePort,
-  financeRuntimePort,
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCheckoutPaymentStartersRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeHostRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+  financeNotificationsRuntimePort,
+  financeOperatorSettingsRuntimePort,
 } from "./runtime-port.js"
 export type {
   BookingGuarantee,

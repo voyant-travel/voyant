@@ -3,7 +3,16 @@ import {
   bookingsInventoryRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import {
+  type FinanceInventoryPaymentPolicyRuntime,
+  financeInventoryPaymentPolicyRuntimePort,
+} from "@voyant-travel/finance/runtime-port"
 import { and, eq } from "drizzle-orm"
+import {
+  createInventoryPaymentPolicyRuntime,
+  readPolicySourceFromInternalNotes,
+  stampPolicySourceOnBooking,
+} from "./booking-payment-policy-runtime.js"
 import type { ProductBrochureRoutesOptions } from "./routes-brochure.js"
 import {
   type InventoryRuntime,
@@ -11,6 +20,7 @@ import {
   inventoryRuntimePort,
 } from "./runtime-ports.js"
 import { productCapabilities, products } from "./schema.js"
+import { createInventoryBrochureStandardNodeRuntime } from "./standard-node-brochure-runtime.js"
 
 type RuntimePortValue<T> = T | Promise<T>
 
@@ -31,9 +41,7 @@ export function createInventoryRuntimePortContribution(
   host: InventoryRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const contribution = Promise.resolve(host.capabilities.loadInventoryRuntime())
-  const brochure = import("./standard-node-brochure-runtime.js").then((module) =>
-    module.createInventoryBrochureStandardNodeRuntime(host.primitives),
-  )
+  const brochure = createInventoryBrochureStandardNodeRuntime(host.primitives)
   return {
     [inventoryRuntimePort.id]: contribution.then((runtime) => runtime.inventory),
     [inventoryBrochureRuntimePort.id]: brochure,
@@ -64,5 +72,10 @@ export function createInventoryRuntimePortContribution(
         }
       },
     } satisfies BookingsInventoryRuntime,
+    [financeInventoryPaymentPolicyRuntimePort.id]: {
+      createPaymentPolicyRuntime: createInventoryPaymentPolicyRuntime,
+      stampPolicySourceOnBooking,
+      readPolicySourceFromInternalNotes,
+    } satisfies FinanceInventoryPaymentPolicyRuntime,
   }
 }

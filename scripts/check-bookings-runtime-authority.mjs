@@ -12,7 +12,7 @@ const filePaths = [
   "packages/bookings/src/runtime-port.ts",
   "packages/bookings/src/voyant.ts",
   "packages/accommodations/src/runtime-contributor.ts",
-  "packages/finance-node/src/runtime-contributor.ts",
+  "packages/finance/src/runtime-contributor.ts",
   "packages/inventory/src/runtime-contributor.ts",
   "packages/relationships/src/runtime-contributor.ts",
   "starters/operator/src/api/runtime/deployment-resources.ts",

@@ -16,7 +16,7 @@ const contributors = {
   catalog: "createCatalogRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
   "distribution-node": "configureDistributionStandardNodeRuntime",
-  "finance-node": "createFinanceStandardNodeRuntime",
+  finance: "financeHostRuntimePort",
   flights: "createFlightsRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
   legal: "createLegalRuntime",

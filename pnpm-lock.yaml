@@ -1891,52 +1891,6 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
-  packages/finance-node:
-    dependencies:
-      '@voyant-travel/accommodations':
-        specifier: workspace:^
-        version: link:../accommodations
-      '@voyant-travel/bookings':
-        specifier: workspace:^
-        version: link:../bookings
-      '@voyant-travel/core':
-        specifier: workspace:^
-        version: link:../core
-      '@voyant-travel/cruises':
-        specifier: workspace:^
-        version: link:../cruises
-      '@voyant-travel/distribution':
-        specifier: workspace:^
-        version: link:../distribution
-      '@voyant-travel/finance':
-        specifier: workspace:^
-        version: link:../finance
-      '@voyant-travel/hono':
-        specifier: workspace:^
-        version: link:../hono
-      '@voyant-travel/inventory':
-        specifier: workspace:^
-        version: link:../inventory
-      '@voyant-travel/notifications':
-        specifier: workspace:^
-        version: link:../notifications
-      '@voyant-travel/operator-settings':
-        specifier: workspace:^
-        version: link:../operator-settings
-      '@voyant-travel/plugin-netopia':
-        specifier: ^0.105.20
-        version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
-      drizzle-orm:
-        specifier: 'catalog:'
-        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
   packages/finance-contracts:
     dependencies:
       '@voyant-travel/schema-kit':
@@ -2238,9 +2192,6 @@ importers:
       '@voyant-travel/finance':
         specifier: workspace:*
         version: link:../finance
-      '@voyant-travel/finance-node':
-        specifier: workspace:*
-        version: link:../finance-node
       '@voyant-travel/finance-react':
         specifier: workspace:*
         version: link:../finance-react

@@ -9,6 +9,7 @@
     "./service": "./src/service.ts",
     "./hono-module": "./src/hono-module.ts",
     "./routes": "./src/routes.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/operator-settings.json",
     "./openapi/storefront": "./openapi/storefront/operator-settings.json"
@@ -72,6 +73,11 @@
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
@@ -92,6 +98,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createOperatorSettingsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

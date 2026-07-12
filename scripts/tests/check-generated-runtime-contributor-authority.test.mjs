@@ -17,13 +17,16 @@ const packageFactories = {
   bookings: "createBookingsRuntimePortContribution",
   catalog: "createCatalogRuntimePortContribution",
   commerce: "createCommerceRuntimePortContribution",
+  cruises: "createCruisesRuntimePortContribution",
+  distribution: "createDistributionRuntimePortContribution",
   "distribution-node": "createDistributionNodeRuntimePortContribution",
-  "finance-node": "createFinanceNodeRuntimePortContribution",
+  finance: "createFinanceRuntimePortContribution",
   flights: "createFlightsRuntimePortContribution",
   inventory: "createInventoryRuntimePortContribution",
   legal: "createLegalRuntimePortContribution",
   mice: "createMiceRuntimePortContribution",
   notifications: "createNotificationsRuntimePortContribution",
+  "operator-settings": "createOperatorSettingsRuntimePortContribution",
   quotes: "createQuotesRuntimePortContribution",
   realtime: "createRealtimeRuntimePortContribution",
   relationships: "createRelationshipsRuntimePortContribution",
@@ -84,7 +87,10 @@ async function fixture(deploymentResources) {
 it("accepts generated static contributor composition", async () => {
   const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /20 package contributors statically selected/)
+  assert.match(
+    result.stdout,
+    new RegExp(`${Object.keys(packageFactories).length} package contributors statically selected`),
+  )
 })
 
 it("rejects starter contributor enumeration", async () => {

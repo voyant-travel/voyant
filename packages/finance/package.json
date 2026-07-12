@@ -19,6 +19,7 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./booking-tax": "./src/booking-tax.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./stale-booking-holds-runtime": "./src/stale-booking-holds-runtime.ts",
     "./booking-schedule-subscriber": "./src/booking-schedule/subscriber-runtime.ts",
@@ -148,6 +149,11 @@
         "import": "./dist/booking-tax.js",
         "default": "./dist/booking-tax.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./runtime-port": {
         "types": "./dist/runtime-port.d.ts",
         "import": "./dist/runtime-port.js",
@@ -203,6 +209,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createFinanceRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

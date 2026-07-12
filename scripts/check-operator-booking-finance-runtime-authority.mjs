@@ -12,17 +12,13 @@ const [deploymentResources, bookingsContributor, financeContributor, quotesContr
   await Promise.all([
     read("starters/operator/src/api/runtime/deployment-resources.ts"),
     read("packages/bookings/src/runtime-contributor.ts"),
-    read("packages/finance-node/src/runtime-contributor.ts"),
+    read("packages/finance/src/runtime-contributor.ts"),
     read("packages/quotes/src/runtime-contributor.ts"),
   ])
 
 const packagePorts = {
   bookings: ["bookingsConfigurationRuntimePort"],
-  finance: [
-    "financeRuntimePort",
-    "financeBookingScheduleRuntimePort",
-    "financeBookingTaxRuntimePort",
-  ],
+  finance: ["financeHostRuntimePort", "bookingsFinanceRuntimePort"],
   quotes: ["quotesRuntimePort", "quotesProposalRuntimePort", "quotesSnapshotRuntimePort"],
 }
 const contributors = {
@@ -45,7 +41,7 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
 
 for (const factory of [
   "createBookingsRuntimePortContribution",
-  "createFinanceNodeRuntimePortContribution",
+  "createFinanceRuntimePortContribution",
   "createQuotesRuntimePortContribution",
 ]) {
   if (deploymentResources.includes(factory)) {

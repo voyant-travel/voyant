@@ -20,9 +20,13 @@ import {
   channelPushRuntimePort,
 } from "@voyant-travel/distribution"
 import {
-  financeBookingScheduleRuntimePort,
-  financeBookingTaxRuntimePort,
-  financeRuntimePort,
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeHostRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+  financeNotificationsRuntimePort,
+  financeOperatorSettingsRuntimePort,
 } from "@voyant-travel/finance"
 import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/booking-schedule-subscriber"
 import { flightsRuntimePort } from "@voyant-travel/flights"
@@ -691,9 +695,13 @@ describe("operator graph runtime composition", () => {
         catalogOffersRuntimePort.id,
         catalogSearchRuntimePort.id,
         catalogCheckoutApiRuntimePort.id,
-        financeBookingScheduleRuntimePort.id,
-        financeBookingTaxRuntimePort.id,
-        financeRuntimePort.id,
+        financeAccommodationsPaymentPolicyRuntimePort.id,
+        financeCruisesPaymentPolicyRuntimePort.id,
+        financeDistributionPaymentPolicyRuntimePort.id,
+        financeHostRuntimePort.id,
+        financeInventoryPaymentPolicyRuntimePort.id,
+        financeNotificationsRuntimePort.id,
+        financeOperatorSettingsRuntimePort.id,
         flightsRuntimePort.id,
         inventoryBrochureRuntimePort.id,
         inventoryRuntimePort.id,

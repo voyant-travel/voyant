@@ -17,7 +17,7 @@
     },
     {
       "port": "bookingsFinanceRuntimePort",
-      "file": "packages/finance-node/src/runtime-contributor.ts"
+      "file": "packages/finance/src/runtime-contributor.ts"
     },
     {
       "port": "bookingsInventoryRuntimePort",

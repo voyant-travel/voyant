@@ -1,8 +1,13 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 import {
-  financeBookingScheduleRuntimePort,
-  financeBookingTaxRuntimePort,
-  financeRuntimePort,
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCheckoutPaymentStartersRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeHostRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+  financeNotificationsRuntimePort,
+  financeOperatorSettingsRuntimePort,
 } from "./runtime-port.js"
 
 const financeAdminRuntime = {
@@ -16,7 +21,11 @@ export const financeVoyantModule = defineModule({
   packageName: "@voyant-travel/finance",
   localId: "finance",
   runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
-  runtimePorts: [requirePort(financeRuntimePort)],
+  runtimePorts: [
+    requirePort(financeHostRuntimePort),
+    requirePort(financeNotificationsRuntimePort),
+    requirePort(financeCheckoutPaymentStartersRuntimePort, { optional: true }),
+  ],
   provides: { capabilities: ["finance.payment-sessions"] },
   api: [
     {
@@ -299,7 +308,7 @@ export const financeBookingTaxVoyantPlugin = defineExtension({
   packageName: "@voyant-travel/finance",
   localId: "finance.booking-tax-extension",
   runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxVoyantRuntime" },
-  runtimePorts: [requirePort(financeBookingTaxRuntimePort)],
+  runtimePorts: [requirePort(financeOperatorSettingsRuntimePort)],
   api: [
     {
       id: "@voyant-travel/finance#booking-tax-extension.api",
@@ -347,7 +356,14 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
     entry: "@voyant-travel/finance",
     export: "createBookingScheduleVoyantRuntime",
   },
-  runtimePorts: [requirePort(financeBookingScheduleRuntimePort)],
+  runtimePorts: [
+    requirePort(financeHostRuntimePort),
+    requirePort(financeOperatorSettingsRuntimePort),
+    requirePort(financeDistributionPaymentPolicyRuntimePort),
+    requirePort(financeAccommodationsPaymentPolicyRuntimePort),
+    requirePort(financeCruisesPaymentPolicyRuntimePort),
+    requirePort(financeInventoryPaymentPolicyRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/finance#booking-schedule-extension.api.admin",

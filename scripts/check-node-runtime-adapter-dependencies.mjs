@@ -26,14 +26,18 @@ const adapters = [
     factory: "createDistributionNodeRuntimePortContribution",
     domainPackageNames: ["@voyant-travel/distribution"],
   },
-  {
-    packageName: "@voyant-travel/finance-node",
-    directory: "finance-node",
-    factory: "createFinanceNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/finance"],
-  },
 ]
 const consolidatedPackages = [
+  {
+    packageName: "@voyant-travel/finance",
+    retiredPackageName: "@voyant-travel/finance-node",
+    factory: "createFinanceRuntimePortContribution",
+  },
+  {
+    packageName: "@voyant-travel/cruises",
+    retiredPackageName: "@voyant-travel/cruises-node",
+    factory: "createCruisesRuntimePortContribution",
+  },
   {
     packageName: "@voyant-travel/flights",
     retiredPackageName: "@voyant-travel/flights-node",
@@ -141,12 +145,7 @@ for (const consolidated of consolidatedPackages) {
     violations.push(`framework BOM must not retain ${consolidated.retiredPackageName}`)
   }
 }
-for (const domainPackageName of [
-  "@voyant-travel/action-ledger",
-  "@voyant-travel/finance",
-  "@voyant-travel/cruises",
-  "@voyant-travel/distribution",
-]) {
+for (const domainPackageName of ["@voyant-travel/action-ledger"]) {
   const domain = byName.get(domainPackageName)
   if (domain?.voyant?.runtime) {
     violations.push(`${domainPackageName} must not retain standard Node contributor metadata`)

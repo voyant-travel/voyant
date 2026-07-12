@@ -17,13 +17,13 @@ const migratedRuntimeLoaders = [
   "loadCatalogRuntime",
 ]
 const migratedContributors = await Promise.all(
-  ["bookings", "finance-node", "catalog"].map((name) =>
+  ["bookings", "finance", "catalog"].map((name) =>
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),
 )
 const movedRuntimeFactories = await Promise.all([
   read("packages/bookings/src/runtime.ts"),
-  read("packages/finance-node/src/standard-node-runtime.ts"),
+  read("packages/finance/src/runtime.ts"),
   read("packages/catalog/src/runtime.ts"),
   read("packages/catalog/src/runtime/booking-engine-runtime.ts"),
   read("packages/catalog/src/runtime/booking-runtime.ts"),
@@ -42,7 +42,6 @@ for (const packageId of [
   "@voyant-travel/bookings",
   "@voyant-travel/finance",
   "@voyant-travel/catalog",
-  "@voyant-travel/finance-node",
   "@voyant-travel/catalog-node",
 ]) {
   if (operatorResources.includes(packageId)) {
@@ -90,11 +89,11 @@ for (const [source, required] of [
   [
     movedRuntimeFactories[1],
     [
-      "invoiceSettlementPollers",
-      "createNetopiaCheckoutStarter",
-      "notificationsService",
-      "resolveBookingTaxSettings",
-      "createInventoryPaymentPolicyRuntime",
+      "createFinanceRuntime",
+      "createFinanceBookingScheduleRuntime",
+      "checkoutPaymentStarters?.resolvePaymentStarters",
+      "settings.resolveBookingTaxSettings",
+      "inventory.createPaymentPolicyRuntime",
       "createVoyantDataFxExchangeRateResolver",
     ],
   ],

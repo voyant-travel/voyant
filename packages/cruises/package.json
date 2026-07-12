@@ -27,6 +27,7 @@
     "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
     "./service-pricing": "./src/service-pricing.ts",
     "./runtime-port": "./src/runtime-port.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/cruises.json",
@@ -188,6 +189,11 @@
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./payment-policy-runtime": {
         "types": "./dist/payment-policy-runtime.d.ts",
         "import": "./dist/payment-policy-runtime.js",
@@ -218,6 +224,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createCruisesRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
