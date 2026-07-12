@@ -100,8 +100,8 @@ describe("operator graph runtime composition", () => {
     expect(moduleNames).toContain("catalog")
     expect(extensionNames).toContain("bookings-suppliers")
     expect(extensionNames).toContain("booking-tax")
-    expect(moduleNames).toContain("smartbill")
-    expect(moduleNames).toContain("plugin-smartbill.graph-runtime")
+    expect(moduleNames).not.toContain("smartbill")
+    expect(moduleNames).not.toContain("plugin-smartbill.graph-runtime")
     expect(new Set(moduleNames).size).toBe(moduleNames.length)
     expect(new Set(extensionNames).size).toBe(extensionNames.length)
   })
@@ -377,8 +377,8 @@ describe("operator graph runtime composition", () => {
     )
   })
 
-  it("selects SmartBill package runtime through its typed Node host port", async () => {
-    expect(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS).toContain("@voyant-travel/plugin-smartbill")
+  it("keeps SmartBill host support dormant when the optional plugin is not selected", async () => {
+    expect(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS).not.toContain("@voyant-travel/plugin-smartbill")
     expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
       smartbillRuntimeHostPort.id,
     )
@@ -391,17 +391,9 @@ describe("operator graph runtime composition", () => {
       (module) => module.module.name === "plugin-smartbill.graph-runtime",
     )
 
-    expect(
-      smartbill?.references
-        .filter((reference) => reference.facet === "subscribers.runtime")
-        .map((reference) => reference.entityId),
-    ).toEqual([
-      "@voyant-travel/plugin-smartbill#subscriber.invoice-issued",
-      "@voyant-travel/plugin-smartbill#subscriber.payment-recorded",
-      "@voyant-travel/plugin-smartbill#subscriber.proforma-issued",
-    ])
-    expect(smartbillModule?.module.bootstrap).toBeTypeOf("function")
-    expect(runtimeModule?.module.bootstrap).toBeTypeOf("function")
+    expect(smartbill).toBeUndefined()
+    expect(smartbillModule).toBeUndefined()
+    expect(runtimeModule).toBeUndefined()
   })
 
   it("graph-gates the Trips payment subscriber and its runtime service", async () => {

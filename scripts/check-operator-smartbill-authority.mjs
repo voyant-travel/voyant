@@ -48,8 +48,8 @@ if (
     "SmartBill must advertise plugin metadata plus graph, contributor, and subscriber runtime exports",
   )
 }
-if (!/resolve:\s*["']@voyant-travel\/plugin-smartbill["']/.test(config)) {
-  violations.push("voyant.config.ts must directly select @voyant-travel/plugin-smartbill")
+if (/resolve:\s*["']@voyant-travel\/plugin-smartbill["']/.test(config)) {
+  violations.push("the default voyant.config.ts must not select @voyant-travel/plugin-smartbill")
 }
 if (
   composition.includes("createSmartbillRuntimePortContribution") ||
@@ -94,5 +94,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-operator-smartbill-authority: OK (typed Node host port; package runtime, subscribers, and pollers)",
+  "check-operator-smartbill-authority: OK (optional package admission; typed Node host support retained)",
 )

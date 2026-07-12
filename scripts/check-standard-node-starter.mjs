@@ -151,6 +151,9 @@ export default defineConfig({
       "generated voyant.config.ts must match the minimal standard Node config snapshot",
     )
   }
+  if (/smartbill/i.test(configSource)) {
+    violations.push("generated config must not select or configure SmartBill by default")
+  }
 }
 
 function inspectPackageJson(packageJsonPath) {
@@ -173,6 +176,9 @@ function inspectPackageJson(packageJsonPath) {
     violations.push(
       `generated starter dependencies must expose only CLI, framework, and generic Node runtime; found ${firstPartyDependencies.join(", ")}`,
     )
+  }
+  if (packageJson.dependencies?.["@voyant-travel/plugin-smartbill"]) {
+    violations.push("generated starter must not install SmartBill by default")
   }
 }
 

@@ -17,6 +17,7 @@ import {
   graphIdFromSpecifier,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
 } from "../packages/framework/src/deployment-graph.ts"
+import { defineConfig } from "../packages/framework/src/project.ts"
 import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
 import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
@@ -66,6 +67,19 @@ async function main(): Promise<void> {
   })
   const repeatedOperator = await resolveOperatorDeploymentGraph({
     project: authoredOperatorProject,
+    projectRoot: operatorRoot,
+    repoRoot,
+    frameworkVersion: frameworkPackage.version,
+    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
+  })
+  const smartbillOptIn = await resolveOperatorDeploymentGraph({
+    project: defineConfig({
+      plugins: [
+        { resolve: "@voyant-travel/plugin-netopia" },
+        { resolve: "@voyant-travel/plugin-smartbill" },
+      ],
+      deployment: authoredOperatorProject.deployment,
+    }) as OperatorAuthoredProject,
     projectRoot: operatorRoot,
     repoRoot,
     frameworkVersion: frameworkPackage.version,
@@ -272,18 +286,27 @@ async function main(): Promise<void> {
       "expected operator graph package records to include @voyant-travel/plugin-netopia",
     )
   }
-  const smartbillRecord = operatorPackageRecords.get("@voyant-travel/plugin-smartbill")
   if (
-    smartbillRecord?.version !== "0.140.1" ||
+    operatorPackageNames.has("@voyant-travel/plugin-smartbill") ||
+    operatorPluginIds.has("@voyant-travel/plugin-smartbill")
+  ) {
+    failures.push("expected the standard Operator graph not to admit optional SmartBill")
+  }
+
+  const smartbillRecord = smartbillOptIn.graph.packageRecords.find(
+    (record) => record.packageName === "@voyant-travel/plugin-smartbill",
+  )
+  if (
+    smartbillRecord?.version !== "0.140.2" ||
     smartbillRecord.source?.kind !== "registry" ||
     smartbillRecord.metadata?.kind !== "plugin" ||
     smartbillRecord.metadata.manifest !== "./voyant"
   ) {
     failures.push(
-      "expected SmartBill 0.140.1 registry package to be admitted through its ./voyant manifest",
+      "expected explicitly selected SmartBill 0.140.2 to be admitted through its ./voyant manifest",
     )
   }
-  const smartbillUnit = operatorGraph.plugins.find(
+  const smartbillUnit = smartbillOptIn.graph.plugins.find(
     (unit) => unit.id === "@voyant-travel/plugin-smartbill",
   )
   const smartbillSubscriberIds = smartbillUnit?.subscribers
@@ -297,7 +320,9 @@ async function main(): Promise<void> {
       "@voyant-travel/plugin-smartbill#subscriber.proforma-issued",
     ])
   ) {
-    failures.push("expected SmartBill subscribers to come from the admitted package manifest")
+    failures.push(
+      "expected explicitly selected SmartBill subscribers to come from the admitted package manifest",
+    )
   }
   const bookingsRecord = operatorPackageRecords.get("@voyant-travel/bookings")
   if (bookingsRecord?.metadata?.manifest !== "./voyant") {

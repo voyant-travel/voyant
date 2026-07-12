@@ -31,6 +31,17 @@ test("rejects standard modules, extensions, and plugins in generated config", ()
   }
 })
 
+test("rejects SmartBill selection and configuration in the standard starter", () => {
+  const root = fixture({
+    config:
+      'export default defineConfig({ plugins: [{ resolve: "@voyant-travel/plugin-smartbill" }] })\n',
+  })
+  assert.throws(
+    () => run(root),
+    (error) => String(error.stderr).includes("must not select or configure SmartBill by default"),
+  )
+})
+
 test("rejects package-owned artifacts and non-empty project convention folders", () => {
   for (const path of [
     "openapi/admin/bookings.json",

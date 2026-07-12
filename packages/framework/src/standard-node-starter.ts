@@ -17,6 +17,7 @@ export const STANDARD_NODE_STARTER = {
   ],
   seedEntry: "src/scripts/seed.ts",
   deploymentTarget: "node",
+  defaultPlugins: [],
 } as const
 
 export function buildStandardNodeStarterSnapshot(): string {

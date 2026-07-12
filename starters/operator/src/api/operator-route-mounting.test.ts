@@ -175,8 +175,8 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/admin/distribution/reconcile/bookings", "POST")).not.toBe(404)
   })
 
-  it("mounts the graph-selected SmartBill package admin route", async () => {
-    expect(await status("/v1/admin/smartbill/invoices/inv_123/sync", "POST")).not.toBe(404)
+  it("does not mount SmartBill routes unless the project selects the plugin", async () => {
+    expect(await status("/v1/admin/smartbill/invoices/inv_123/sync", "POST")).toBe(404)
   })
 
   it("lets storefront voucher validation pass the public actor gate even with an admin session", async () => {

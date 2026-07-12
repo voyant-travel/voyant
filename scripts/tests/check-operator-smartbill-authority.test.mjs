@@ -18,7 +18,7 @@ async function createFixture(overrides = {}) {
       dependencies: { "@voyant-travel/plugin-smartbill": "^0.140.2" },
     }),
     "voyant.config.ts":
-      'export default { plugins: [{ resolve: "@voyant-travel/plugin-smartbill" }] }\n',
+      'export default { plugins: [{ resolve: "@voyant-travel/plugin-netopia" }] }\n',
     "src/api/app.ts": "export const app = mountApp({})\n",
     "src/api/runtime/deployment-resources.ts":
       "export const ports = createGeneratedGraphRuntimePorts({ host: operatorSmartbillRuntimeHost })\n",
@@ -66,12 +66,24 @@ async function runChecker(root) {
 }
 
 describe("check-operator-smartbill-authority", () => {
-  it("accepts direct package admission with a typed Node host port", async () => {
+  it("accepts optional package admission with a typed Node host port", async () => {
     const root = await createFixture()
 
     const result = await runChecker(root)
 
     assert.match(result.stdout, /check-operator-smartbill-authority: OK/)
+  })
+
+  it("rejects selecting SmartBill in the default project", async () => {
+    const root = await createFixture({
+      "voyant.config.ts":
+        'export default { plugins: [{ resolve: "@voyant-travel/plugin-smartbill" }] }\n',
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /default voyant\.config\.ts must not select/)
+      return true
+    })
   })
 
   it("rejects compatibility mounts and operator-owned descriptor registration", async () => {
