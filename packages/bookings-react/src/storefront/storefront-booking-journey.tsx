@@ -33,11 +33,11 @@ import {
   type ContractSourceContext,
   type OperatorInfoVariables,
   resolveContractVariables,
-} from "./resolve-contract-variables"
+} from "./resolve-contract-variables.js"
 import {
   buildStorefrontBookFailureMessage,
   type StorefrontBookErrorBody,
-} from "./storefront-booking-errors"
+} from "./storefront-booking-errors.js"
 
 /**
  * Marker for checkout failures we've already turned into a localized,
