@@ -18,13 +18,26 @@ fetch behavior. It does not import the Operator router, aliases, environment
 helpers, or starter message context. This keeps the same package surface usable
 from the standard Node Operator and a dedicated storefront.
 
+## Public proposal and payment pages
+
+`@voyant-travel/quotes-react/storefront` owns the public proposal query,
+lifecycle mutations, and presentation. The Operator proposal route supplies the
+quote-version path parameter, API base URL, and deployment-local customer
+messages.
+
+`@voyant-travel/finance-react/storefront` owns payment-reference resolution,
+the universal payment-session page, and the booking/trip payment summaries.
+The Operator payment routes adapt search/path parameters, localized messages,
+and TanStack Router redirects. The accountant-token route remains a minimal
+adapter over the package-owned `AccountantPortal` finance UI.
+
 ## Starter ratchet
 
 `node scripts/check-operator-product-ui-authority.mjs` enforces:
 
-- at most 162 files under `starters/operator/src`;
-- deleted booking-journey copies cannot return;
-- deleted storefront browse and product-detail copies cannot return;
+- at most 160 files under `starters/operator/src`;
+- deleted booking-journey, storefront browse/detail, and payment-summary copies
+  cannot return;
 - package storefront subpaths and thin route adapters remain connected;
 - generated selected-graph admin loading remains authoritative; and
 - `src/admin`, `src/custom-fields`, `src/extensions`, and `src/modules` remain
@@ -52,8 +65,6 @@ aliases, environment helpers, message contexts, or TanStack Router.
 
 - Storefront customer shell: market scope, customer messages, market selector,
   account pages, confirmation, and trip composer.
-- Public document/payment pages: proposal, payment-link, and accountant-token
-  routes with their checkout summary components.
 - Operator application composition: providers, realtime presentation, admin
   destinations, and project admin-extension discovery. Generated selected-graph
   package loading must remain the default authority while these are reduced.

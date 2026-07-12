@@ -3,10 +3,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { ArrowRight, CalendarClock, ImageOff } from "lucide-react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import { useVoyantFinanceContext } from "../provider.js"
 
-type PaymentLinkTripMessages = ReturnType<typeof useAdminMessages>["trips"]["paymentLinkSummary"]
+export interface PaymentLinkTripSummaryMessages {
+  ariaLabel: string
+  heading: string
+  totalPayable: string
+  fxRatesLabel: string
+}
 
 interface TripSummaryComponent {
   id: string
@@ -51,13 +55,16 @@ export interface PaymentLinkTripSummaryState {
  *   - `empty`    → session isn't a trip; render nothing and let the
  *     universal page show its default `notes` paragraph.
  */
-export function usePaymentLinkTripSummary(sessionId: string): PaymentLinkTripSummaryState {
-  const t = useAdminMessages().trips.paymentLinkSummary
+export function usePaymentLinkTripSummary(
+  sessionId: string,
+  messages: PaymentLinkTripSummaryMessages,
+): PaymentLinkTripSummaryState {
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
   const query = useQuery({
     queryKey: ["payment-link-trip-summary", sessionId],
     queryFn: async (): Promise<TripSummary | null> => {
-      const res = await fetch(
-        `${getApiUrl()}/v1/public/payment-link/${encodeURIComponent(sessionId)}/trip-summary`,
+      const res = await fetcher(
+        `${baseUrl}/v1/public/payment-link/${encodeURIComponent(sessionId)}/trip-summary`,
         { headers: { Accept: "application/json" } },
       )
       if (!res.ok) throw new Error(`trip-summary fetch failed: ${res.status}`)
@@ -70,7 +77,7 @@ export function usePaymentLinkTripSummary(sessionId: string): PaymentLinkTripSum
   if (query.isLoading) return { status: "loading", node: <TripSummarySkeleton /> }
   const trip = query.data
   if (!trip || trip.components.length === 0) return { status: "empty", node: null }
-  return { status: "ready", node: <TripSummaryCard trip={trip} messages={t} /> }
+  return { status: "ready", node: <TripSummaryCard trip={trip} messages={messages} /> }
 }
 
 function TripSummaryCard({
@@ -78,7 +85,7 @@ function TripSummaryCard({
   messages,
 }: {
   trip: TripSummary
-  messages: PaymentLinkTripMessages
+  messages: PaymentLinkTripSummaryMessages
 }) {
   const hasFx = trip.components.some((component) => component.fx)
   return (
@@ -184,7 +191,7 @@ function FxRatesBlock({
   messages,
 }: {
   trip: TripSummary
-  messages: PaymentLinkTripMessages
+  messages: PaymentLinkTripSummaryMessages
 }) {
   const lines = trip.components
     .filter(

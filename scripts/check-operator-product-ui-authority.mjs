@@ -7,12 +7,15 @@ const rootArg = process.argv.indexOf("--root")
 const root = rootArg >= 0 ? resolve(process.argv[rootArg + 1]) : defaultRoot
 const starterSource = join(root, "starters/operator/src")
 const failures = []
+const starterFileRatchet = 160
 
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
 )
-if (starterFiles.length > 162) {
-  failures.push(`operator starter source grew to ${starterFiles.length} files; ratchet is 162`)
+if (starterFiles.length > starterFileRatchet) {
+  failures.push(
+    `operator starter source grew to ${starterFiles.length} files; ratchet is ${starterFileRatchet}`,
+  )
 }
 
 for (const relativePath of [
@@ -33,9 +36,46 @@ for (const relativePath of [
   "starters/operator/src/routes/(storefront)/shop-product-detail-slots.test.ts",
   "starters/operator/src/routes/(storefront)/shop-product-detail-slots.ts",
   "starters/operator/src/routes/(storefront)/shop.test.ts",
+  "starters/operator/src/components/voyant/checkout/payment-link-booking-summary.tsx",
+  "starters/operator/src/components/voyant/checkout/payment-link-trip-summary.tsx",
 ]) {
   if (existsSync(join(root, relativePath))) {
-    failures.push(`package-owned storefront product UI must stay deleted: ${relativePath}`)
+    failures.push(`package-owned product UI must stay deleted from the starter: ${relativePath}`)
+  }
+}
+
+for (const [relativePath, maxLines] of new Map([
+  ["starters/operator/src/routes/proposal.$quoteVersionId.tsx", 40],
+  ["starters/operator/src/routes/pay.tsx", 40],
+  ["starters/operator/src/routes/pay_.$sessionId.tsx", 40],
+  ["starters/operator/src/routes/accountant.$token.tsx", 30],
+])) {
+  const path = join(root, relativePath)
+  if (!existsSync(path)) continue
+  const lineCount = readFileSync(path, "utf8").split("\n").length
+  if (lineCount > maxLines) {
+    failures.push(`${relativePath} grew to ${lineCount} lines; route adapter limit is ${maxLines}`)
+  }
+}
+
+for (const relativePath of [
+  "packages/quotes-react/src/storefront/public-proposal-page.tsx",
+  "packages/finance-react/src/storefront/payment-link-resolver-page.tsx",
+  "packages/finance-react/src/storefront/public-payment-link-page.tsx",
+  "packages/finance-react/src/storefront/payment-link-booking-summary.tsx",
+  "packages/finance-react/src/storefront/payment-link-trip-summary.tsx",
+]) {
+  const path = join(root, relativePath)
+  if (!existsSync(path)) {
+    failures.push(`${relativePath} is required`)
+    continue
+  }
+  const source = readFileSync(path, "utf8")
+  if (source.includes('from "@/')) {
+    failures.push(`${relativePath} must not import Operator starter aliases`)
+  }
+  if (source.includes("@tanstack/react-router")) {
+    failures.push(`${relativePath} must remain router-independent`)
   }
 }
 
@@ -56,6 +96,13 @@ const requiredTokens = new Map([
     ["StorefrontBookingJourney", "resolveContractVariables"],
   ],
   ["packages/bookings-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  ["packages/quotes-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  ["packages/finance-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  ["packages/quotes-react/src/storefront/index.ts", ["PublicProposalPage"]],
+  [
+    "packages/finance-react/src/storefront/index.ts",
+    ["PaymentLinkResolverPage", "PublicPaymentLinkPage"],
+  ],
   [
     "packages/catalog-react/src/storefront/index.ts",
     ["fetchContent", "buildPublicCatalogSlotsUrl"],
@@ -87,6 +134,22 @@ const requiredTokens = new Map([
     ],
   ],
   [
+    "starters/operator/src/routes/proposal.$quoteVersionId.tsx",
+    ['from "@voyant-travel/quotes-react/storefront"'],
+  ],
+  [
+    "starters/operator/src/routes/pay.tsx",
+    ['from "@voyant-travel/finance-react/storefront"'],
+  ],
+  [
+    "starters/operator/src/routes/pay_.$sessionId.tsx",
+    ['from "@voyant-travel/finance-react/storefront"'],
+  ],
+  [
+    "starters/operator/src/routes/accountant.$token.tsx",
+    ['from "@voyant-travel/finance-react/ui"'],
+  ],
+  [
     "starters/operator/src/lib/admin-extensions.tsx",
     [
       "../../.voyant/admin/selected-graph-admin.generated",
@@ -114,4 +177,6 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
-console.log(`Operator product UI authority: OK (${starterFiles.length}/162 starter source files)`)
+console.log(
+  `Operator product UI authority: OK (${starterFiles.length}/${starterFileRatchet} starter source files)`,
+)

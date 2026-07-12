@@ -4,12 +4,17 @@ import { useQuery } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
 import { CalendarClock, Package, Users } from "lucide-react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import { useVoyantFinanceContext } from "../provider.js"
 
-type PaymentLinkSummaryMessages = ReturnType<
-  typeof useAdminMessages
->["bookings"]["detail"]["paymentLinkSummary"]
+export interface PaymentLinkBookingSummaryMessages {
+  ariaLabel: string
+  heading: string
+  travelerSingular: string
+  travelerPlural: string
+  bookingTotal: string
+  dueNow: string
+  totalPayable: string
+}
 
 interface BookingSummaryItem {
   id: string
@@ -60,13 +65,16 @@ export interface PaymentLinkBookingSummaryState {
  *   - `ready`   → render the card; the caller should hide notes.
  *   - `empty`   → session isn't a single-booking checkout; render nothing.
  */
-export function usePaymentLinkBookingSummary(sessionId: string): PaymentLinkBookingSummaryState {
-  const t = useAdminMessages().bookings.detail.paymentLinkSummary
+export function usePaymentLinkBookingSummary(
+  sessionId: string,
+  messages: PaymentLinkBookingSummaryMessages,
+): PaymentLinkBookingSummaryState {
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
   const query = useQuery({
     queryKey: ["payment-link-booking-summary", sessionId],
     queryFn: async (): Promise<BookingSummary | null> => {
-      const res = await fetch(
-        `${getApiUrl()}/v1/public/payment-link/${encodeURIComponent(sessionId)}/booking-summary`,
+      const res = await fetcher(
+        `${baseUrl}/v1/public/payment-link/${encodeURIComponent(sessionId)}/booking-summary`,
         { headers: { Accept: "application/json" } },
       )
       if (!res.ok) throw new Error(`booking-summary fetch failed: ${res.status}`)
@@ -79,7 +87,7 @@ export function usePaymentLinkBookingSummary(sessionId: string): PaymentLinkBook
   if (query.isLoading) return { status: "loading", node: <BookingSummarySkeleton /> }
   const booking = query.data
   if (!booking || booking.items.length === 0) return { status: "empty", node: null }
-  return { status: "ready", node: <BookingSummaryCard booking={booking} messages={t} /> }
+  return { status: "ready", node: <BookingSummaryCard booking={booking} messages={messages} /> }
 }
 
 function BookingSummaryCard({
@@ -87,7 +95,7 @@ function BookingSummaryCard({
   messages,
 }: {
   booking: BookingSummary
-  messages: PaymentLinkSummaryMessages
+  messages: PaymentLinkBookingSummaryMessages
 }) {
   const partial =
     booking.chargeAmountCents != null &&
