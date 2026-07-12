@@ -94,6 +94,10 @@ describe("finance deployment manifest", () => {
         runtimePorts: [{ id: "finance.operator-settings.runtime" }],
         api: [
           {
+            id: "@voyant-travel/finance#booking-tax-extension.api",
+            surface: "admin",
+            mount: "bookings",
+            openapi: { document: "booking-tax" },
             runtime: {
               entry: "@voyant-travel/finance",
               export: "createBookingTaxHonoExtension",

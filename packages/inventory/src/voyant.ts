@@ -261,6 +261,7 @@ export const inventoryAuthoringVoyantPlugin = defineExtension({
       id: "@voyant-travel/inventory#authoring.extension.api",
       surface: "admin",
       mount: "products",
+      openapi: { document: "inventory-authoring" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/inventory/authoring/extension",
@@ -282,6 +283,7 @@ export const inventoryBookingVoyantPlugin = defineExtension({
       id: "@voyant-travel/inventory#booking-extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "inventory-booking" },
       runtime: {
         entry: "@voyant-travel/inventory/booking-extension",
         export: "productsBookingExtension",

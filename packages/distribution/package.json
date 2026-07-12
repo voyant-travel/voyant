@@ -16,6 +16,8 @@
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/distribution.json",
+    "./openapi/admin/booking": "./openapi/admin/distribution-booking.json",
+    "./openapi/admin/channel-push": "./openapi/admin/distribution-channel-push.json",
     "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
     "./openapi/admin/suppliers": "./openapi/admin/suppliers.json",
     "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
@@ -116,6 +118,8 @@
         "default": "./dist/voyant.js"
       },
       "./openapi/admin": "./openapi/admin/distribution.json",
+      "./openapi/admin/booking": "./openapi/admin/distribution-booking.json",
+      "./openapi/admin/channel-push": "./openapi/admin/distribution-channel-push.json",
       "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
       "./openapi/admin/suppliers": "./openapi/admin/suppliers.json",
       "./catalog-runtime-extension": {

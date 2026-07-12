@@ -1,0 +1,96 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Booking Distribution Details API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/admin/bookings/{bookingId}/distribution-details": {
+      "parameters": [
+        {
+          "name": "bookingId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "summary": "Get distribution details for a booking",
+        "x-voyant-api-id": "@voyant-travel/distribution#extension.api",
+        "responses": {
+          "200": {
+            "description": "Distribution details, or null when none are recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/BookingDistributionDetails" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Create or replace distribution details for a booking",
+        "x-voyant-api-id": "@voyant-travel/distribution#extension.api",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BookingDistributionDetailsInput" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Distribution details were stored" } }
+      },
+      "delete": {
+        "summary": "Remove distribution details from a booking",
+        "x-voyant-api-id": "@voyant-travel/distribution#extension.api",
+        "responses": {
+          "200": { "description": "Distribution details were removed" },
+          "404": { "description": "No distribution details exist for the booking" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BookingDistributionDetailsInput": {
+        "type": "object",
+        "properties": {
+          "marketId": { "type": ["string", "null"] },
+          "sourceChannelId": { "type": ["string", "null"] },
+          "fxRateSetId": { "type": ["string", "null"] },
+          "paymentOwner": {
+            "type": "string",
+            "enum": ["operator", "channel", "split"],
+            "default": "operator"
+          }
+        }
+      },
+      "BookingDistributionDetails": {
+        "anyOf": [
+          { "type": "null" },
+          {
+            "allOf": [
+              { "$ref": "#/components/schemas/BookingDistributionDetailsInput" },
+              {
+                "type": "object",
+                "required": ["bookingId", "paymentOwner", "createdAt", "updatedAt"],
+                "properties": {
+                  "bookingId": { "type": "string" },
+                  "createdAt": { "type": "string", "format": "date-time" },
+                  "updatedAt": { "type": "string", "format": "date-time" }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

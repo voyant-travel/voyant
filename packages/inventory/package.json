@@ -47,6 +47,8 @@
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/products.json",
+    "./openapi/admin/authoring": "./openapi/admin/inventory-authoring.json",
+    "./openapi/admin/booking": "./openapi/admin/inventory-booking.json",
     "./openapi/admin/extras": "./openapi/admin/extras.json",
     "./openapi/storefront": "./openapi/storefront/products.json",
     "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
@@ -317,6 +319,8 @@
         "default": "./dist/voyant.js"
       },
       "./openapi/admin": "./openapi/admin/products.json",
+      "./openapi/admin/authoring": "./openapi/admin/inventory-authoring.json",
+      "./openapi/admin/booking": "./openapi/admin/inventory-booking.json",
       "./openapi/admin/extras": "./openapi/admin/extras.json",
       "./openapi/storefront": "./openapi/storefront/products.json",
       "./catalog-runtime-extension": {

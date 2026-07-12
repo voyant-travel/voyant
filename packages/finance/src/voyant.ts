@@ -324,6 +324,7 @@ export const financeBookingTaxVoyantPlugin = defineExtension({
       id: "@voyant-travel/finance#booking-tax-extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "booking-tax" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",

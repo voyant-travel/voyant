@@ -1,0 +1,82 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Inventory Authoring API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/admin/products/compose": {
+      "post": {
+        "summary": "Compose a product graph",
+        "x-voyant-api-id": "@voyant-travel/inventory#authoring.extension.api",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": { "type": "string", "maxLength": 255 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["spec"],
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "description": "Product graph authoring specification"
+                  },
+                  "idempotencyKey": { "type": "string", "minLength": 1, "maxLength": 255 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "An idempotent request reused an existing product graph" },
+          "201": { "description": "The product graph was created" },
+          "422": { "description": "The product graph specification is invalid" }
+        }
+      }
+    },
+    "/v1/admin/products/{id}/duplicate": {
+      "post": {
+        "summary": "Duplicate a product graph",
+        "x-voyant-api-id": "@voyant-travel/inventory#authoring.extension.api",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": { "type": "string", "maxLength": 255 }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+                  "status": { "type": "string" },
+                  "visibility": { "type": "string" },
+                  "copyDepartures": { "type": "boolean" },
+                  "idempotencyKey": { "type": "string", "minLength": 1, "maxLength": 255 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "An idempotent request reused an existing duplicate" },
+          "201": { "description": "The product graph was duplicated" },
+          "400": { "description": "The request body is invalid" },
+          "404": { "description": "The source product does not exist" }
+        }
+      }
+    }
+  }
+}

@@ -73,6 +73,7 @@ export const actionLedgerHealthVoyantPlugin = defineExtension({
       id: "@voyant-travel/action-ledger#health-extension.api",
       surface: "admin",
       mount: "action-ledger",
+      openapi: { document: "action-ledger-health" },
       runtime: {
         entry: "@voyant-travel/action-ledger/graph-runtime",
         export: "createActionLedgerHealthVoyantRuntime",

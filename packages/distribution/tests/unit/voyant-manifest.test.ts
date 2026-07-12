@@ -78,6 +78,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#extension.api",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "distribution-booking" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "distributionBookingExtension",
@@ -96,6 +97,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#channel-push-extension.api",
           surface: "admin",
           mount: "distribution",
+          openapi: { document: "distribution-channel-push" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "createChannelPushVoyantRuntime",

@@ -90,6 +90,7 @@ describe("inventory deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/inventory#authoring.extension.api",
+          openapi: { document: "inventory-authoring" },
           transactional: true,
           runtime: {
             entry: "@voyant-travel/inventory/authoring/extension",
@@ -105,6 +106,7 @@ describe("inventory deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/inventory#booking-extension.api",
+          openapi: { document: "inventory-booking" },
           runtime: {
             entry: "@voyant-travel/inventory/booking-extension",
             export: "productsBookingExtension",
