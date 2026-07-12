@@ -23,10 +23,6 @@ import {
 } from "../packages/framework/src/project-artifacts.ts"
 import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
 import {
-  OPERATOR_LOCAL_SCHEDULED_JOBS,
-  withoutPackageGraphScheduledJobs,
-} from "../starters/operator/src/local-scheduled-jobs.ts"
-import {
   buildDeploymentGraphDoctorJson,
   buildDeploymentGraphDoctorReport,
   checkDeploymentGraphGeneratedArtifacts,
@@ -202,10 +198,7 @@ async function resolveGraph(configPath: string) {
     projectRoot: defaultOperatorRoot,
     repoRoot,
     frameworkVersion,
-    scheduledJobs: [
-      ...withoutPackageGraphScheduledJobs(getManagedProfileScheduledJobs(profile)),
-      ...OPERATOR_LOCAL_SCHEDULED_JOBS,
-    ],
+    scheduledJobs: getManagedProfileScheduledJobs(profile),
   })
   return { graph: resolved.graph, profile, projectArtifacts: resolved.artifacts }
 }

@@ -51,3 +51,13 @@ pnpm db:migrate               # collector applies bundle → deployment (incl. t
 ```
 
 See `docs/architecture/custom-modules.md` for the full guide.
+
+## Operator-owned units
+
+`invitations` and `team` are intentional project-local graph units, not package
+bridges. Invitations creates credentials in this deployment's Better Auth and
+IAM tables. Team proxies membership for this specific Voyant Cloud deployment
+and depends on deployment credentials plus the local cloud-auth identity link.
+Those authority boundaries are application policy, so promoting either unit to
+a reusable package would be incorrect until a portable identity/membership
+contract replaces the deployment semantics.

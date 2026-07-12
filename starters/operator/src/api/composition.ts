@@ -55,6 +55,7 @@ import {
   promotionsBulkReindexRuntimePort,
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import type { VoyantPort } from "@voyant-travel/core/project"
+import { cruisesRoutesRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { channelPushRuntimePort } from "@voyant-travel/distribution"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
@@ -314,6 +315,12 @@ export function buildOperatorRuntimePorts(
     [inventoryBrochureRuntimePort.id]: import("./runtime/media-runtime").then(
       (runtime) => runtime.operatorInventoryBrochureRuntime,
     ),
+    [cruisesRoutesRuntimePort.id]: {
+      resolveSourceAdapterRegistry: (bindings: unknown) =>
+        import("./lib/booking-engine-runtime").then((runtime) =>
+          runtime.ensureBookingEngineRegistry(operatorBindings(bindings)),
+        ),
+    },
     [actionLedgerHealthRuntimePort.id]: import("./runtime/action-ledger-health-runtime").then(
       (runtime) => runtime.createOperatorActionLedgerHealthRuntime(),
     ),

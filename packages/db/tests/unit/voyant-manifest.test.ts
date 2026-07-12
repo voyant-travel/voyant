@@ -30,6 +30,16 @@ describe("database deployment manifest", () => {
           config: { adapter: "node" },
         },
       ],
+      workflows: [
+        expect.objectContaining({
+          id: "infrastructure.event-outbox-drain",
+          schedules: [expect.objectContaining({ id: "outbox-drain" })],
+          runtime: {
+            entry: "@voyant-travel/db/outbox-workflow",
+            export: "eventOutboxDrainWorkflow",
+          },
+        }),
+      ],
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
   })

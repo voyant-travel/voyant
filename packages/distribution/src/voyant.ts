@@ -223,6 +223,54 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
         export: "channelContentPushWorkflow",
       },
     },
+    {
+      id: "distribution.channel-push-reconcile-booking-links",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "channel-push-booking-link",
+          workflowId: "distribution.channel-push-reconcile-booking-links",
+          cron: "*/15 * * * *",
+          name: "booking-links",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelPushBookingLinkReconcileWorkflow",
+      },
+    },
+    {
+      id: "distribution.channel-push-reconcile-availability",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "channel-push-availability",
+          workflowId: "distribution.channel-push-reconcile-availability",
+          cron: "0 * * * *",
+          name: "hourly",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelPushAvailabilityReconcileWorkflow",
+      },
+    },
+    {
+      id: "distribution.channel-push-reconcile-content",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "channel-push-content",
+          workflowId: "distribution.channel-push-reconcile-content",
+          cron: "0 3 * * *",
+          name: "nightly",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelPushContentReconcileWorkflow",
+      },
+    },
   ],
   meta: {
     ownership: "package",

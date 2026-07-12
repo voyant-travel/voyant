@@ -1528,6 +1528,28 @@ The deployment-local invitations unit continues to own its anonymous posture
 locally. `check-operator-route-posture` prevents graph-derived posture from
 being replaced by starter hand-lists.
 
+The Operator's `invitations` and `team` families are explicitly project-local
+units discovered from `src/modules/*/index.ts`. Invitations owns deployment
+Better Auth credential issuance; Team owns the deployment-scoped Voyant Cloud
+membership proxy. Their executable route bodies therefore remain under the
+project unit until a reusable identity authority contract exists. They are not
+missing package migrations, and the generated graph ids
+`npm/operator#invitations` and `npm/operator#team` are their activation source.
+
+Scheduled travel and infrastructure work follows the same ownership rule as
+routes. Distribution owns its three channel-push reconciliation workflows,
+Cruises owns external catalog refresh, and DB owns event-outbox retry/retention.
+Their package manifests declare the stable schedule ids; the Node entry only
+dispatches graph-selected workflow schedules through Workflow Runs. The
+framework managed-job list must not duplicate those package schedules.
+
+Progress: Charters and Cruises now export package-owned graph route factories.
+Cruises declares the typed `cruises.routes-runtime` port for the host's source
+adapter registry, so its package factory owns registry middleware and OpenAPI
+route assembly while the Node host supplies only connector resolution by port
+id. The starter route wrappers are deleted, and package selection remains the
+sole authority for mounting either vertical.
+
 Progress: Relationships now declares its route runtime dependency as the typed
 `relationships.route-runtime` port and exports the package-owned graph factory
 that consumes it. The Node host supplies only the custom-field resolver through

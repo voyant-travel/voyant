@@ -6,6 +6,9 @@ import {
   channelAvailabilityPushWorkflow,
   channelBookingPushWorkflow,
   channelContentPushWorkflow,
+  channelPushAvailabilityReconcileWorkflow,
+  channelPushBookingLinkReconcileWorkflow,
+  channelPushContentReconcileWorkflow,
 } from "../../src/channel-push/workflow-entry.js"
 import {
   createChannelPushExtension,
@@ -162,6 +165,18 @@ describe("distribution deployment manifests", () => {
           entry: "@voyant-travel/distribution/channel-push-workflows",
           export: "channelContentPushWorkflow",
         },
+      }),
+      expect.objectContaining({
+        id: channelPushBookingLinkReconcileWorkflow.id,
+        schedules: [expect.objectContaining({ id: "channel-push-booking-link" })],
+      }),
+      expect.objectContaining({
+        id: channelPushAvailabilityReconcileWorkflow.id,
+        schedules: [expect.objectContaining({ id: "channel-push-availability" })],
+      }),
+      expect.objectContaining({
+        id: channelPushContentReconcileWorkflow.id,
+        schedules: [expect.objectContaining({ id: "channel-push-content" })],
       }),
     ])
   })

@@ -58,6 +58,24 @@ export const dbVoyantModule = defineModule({
       config: { adapter: "node" },
     },
   ],
+  workflows: [
+    {
+      id: "infrastructure.event-outbox-drain",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "outbox-drain",
+          workflowId: "infrastructure.event-outbox-drain",
+          cron: "*/2 * * * *",
+          name: "retry-sweep",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/db/outbox-workflow",
+        export: "eventOutboxDrainWorkflow",
+      },
+    },
+  ],
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

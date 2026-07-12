@@ -21,10 +21,6 @@ import {
 import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
 import { defineVoyantProject } from "../packages/framework/src/profile.ts"
 import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
-import {
-  OPERATOR_LOCAL_SCHEDULED_JOBS,
-  withoutPackageGraphScheduledJobs,
-} from "../starters/operator/src/local-scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
 import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
@@ -211,10 +207,7 @@ async function main(): Promise<void> {
     projectRoot: operatorRoot,
     repoRoot,
     frameworkVersion: frameworkPackage.version,
-    scheduledJobs: [
-      ...withoutPackageGraphScheduledJobs(getManagedProfileScheduledJobs(operatorProfile)),
-      ...OPERATOR_LOCAL_SCHEDULED_JOBS,
-    ],
+    scheduledJobs: getManagedProfileScheduledJobs(operatorProfile),
   })
   const operatorGraph = resolvedOperator.graph
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))

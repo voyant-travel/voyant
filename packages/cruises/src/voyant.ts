@@ -1,11 +1,13 @@
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { cruisesRoutesRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the cruises package. */
 export const cruisesVoyantModule = defineModule({
   id: "@voyant-travel/cruises",
   packageName: "@voyant-travel/cruises",
   localId: "cruises",
+  runtimePorts: [requirePort(cruisesRoutesRuntimePort)],
   api: [
     {
       id: "@voyant-travel/cruises#api.admin",
@@ -14,7 +16,7 @@ export const cruisesVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/cruises",
-        export: "createCruisesHonoModule",
+        export: "createCruisesVoyantRuntime",
       },
     },
     {
@@ -25,7 +27,7 @@ export const cruisesVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/cruises",
-        export: "createCruisesHonoModule",
+        export: "createCruisesVoyantRuntime",
       },
     },
   ],
@@ -65,6 +67,24 @@ export const cruisesVoyantModule = defineModule({
     {
       id: "@voyant-travel/cruises#event.cruise-deleted",
       eventType: "cruise.deleted",
+    },
+  ],
+  workflows: [
+    {
+      id: "cruises.external-catalog-refresh",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "external-cruise-catalog-refresh",
+          workflowId: "cruises.external-catalog-refresh",
+          cron: "30 3 * * *",
+          name: "nightly",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/cruises/external-refresh-workflow",
+        export: "cruisesExternalCatalogRefreshWorkflow",
+      },
     },
   ],
   lifecycle: {

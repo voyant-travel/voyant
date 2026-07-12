@@ -88,27 +88,15 @@ interface StandardScheduledJobDefinition {
 /**
  * The standard operator profile's scheduled jobs, each tagged with the module
  * that owns the work it drives. A job is provisioned only when its owning
- * module is in the resolved subset; `FRAMEWORK_INFRA` jobs are always present.
+ * module is in the resolved subset. Package workflow schedules are derived
+ * directly from selected manifests and are intentionally absent here.
  *
  * Ownership is derived from what each job's handler drives (see
  * `starters/operator/src/api/jobs/*`):
- * - `outbox-drain` → the event-outbox subsystem (framework infra, always on).
  * - `draft-reaper` → catalog booking-engine drafts.
  * - `promotion-boundary-scheduler` → commerce promotions.
- * - `channel-push-*` → distribution channel push.
- *
- * `external-cruise-catalog-refresh` is intentionally NOT here: `@voyant-travel/cruises`
- * is not part of the standard runtime manifest, so that cron is deployment-local
- * (the operator starter appends it). A subset that later adds cruises would
- * declare it the same way.
  */
 export const STANDARD_PROFILE_SCHEDULED_JOBS: readonly StandardScheduledJobDefinition[] = [
-  {
-    id: "outbox-drain",
-    cron: "*/2 * * * *",
-    description: "Redelivers failed/interrupted event-outbox deliveries (every 2 min).",
-    moduleSpecifier: FRAMEWORK_INFRA,
-  },
   {
     id: "draft-reaper",
     cron: "5 * * * *",
@@ -120,24 +108,6 @@ export const STANDARD_PROFILE_SCHEDULED_JOBS: readonly StandardScheduledJobDefin
     cron: "*/5 * * * *",
     description: "Emits promotion.changed at valid_from / valid_until boundaries (every 5 min).",
     moduleSpecifier: "@voyant-travel/commerce",
-  },
-  {
-    id: "channel-push-booking-link",
-    cron: "*/15 * * * *",
-    description: "Channel-push booking-link reconciler (every 15 min).",
-    moduleSpecifier: "@voyant-travel/distribution",
-  },
-  {
-    id: "channel-push-availability",
-    cron: "0 * * * *",
-    description: "Channel-push availability reconciler (hourly).",
-    moduleSpecifier: "@voyant-travel/distribution",
-  },
-  {
-    id: "channel-push-content",
-    cron: "0 3 * * *",
-    description: "Channel-push content reconciler (nightly at 03:00).",
-    moduleSpecifier: "@voyant-travel/distribution",
   },
 ]
 

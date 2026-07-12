@@ -1,4 +1,5 @@
 import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { chartersAdminRoutes } from "./routes.js"
@@ -144,6 +145,15 @@ export function createChartersHonoModule(
 }
 
 export const chartersHonoModule: HonoModule = createChartersHonoModule()
+
+/** Package-owned adapter from selected graph surfaces to the Charters routes. */
+export const createChartersVoyantRuntime = defineGraphRuntimeFactory(({ api }) => ({
+  module: chartersModule,
+  ...(api.some(({ surface }) => surface === "admin") ? { adminRoutes: chartersAdminRoutes } : {}),
+  ...(api.some(({ surface }) => surface === "public")
+    ? { publicRoutes: chartersPublicRoutes }
+    : {}),
+}))
 
 // Unified key parser (admin routes accept TypeIDs or `<provider>:<ref>`).
 export { type ParsedKey, parseUnifiedKey } from "./lib/key.js"

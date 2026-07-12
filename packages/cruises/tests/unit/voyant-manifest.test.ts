@@ -1,8 +1,9 @@
-import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { assertPortConforms, isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 import { createCruisesContentVoyantRuntime } from "../../src/graph-runtime.js"
-import { createCruisesHonoModule } from "../../src/index.js"
+import { createCruisesHonoModule, createCruisesVoyantRuntime } from "../../src/index.js"
 import { createCruiseContentHonoExtension } from "../../src/routes-content.js"
+import { cruisesRoutesRuntimePort } from "../../src/runtime-port.js"
 import {
   cruisesBookingVoyantPlugin,
   cruisesContentVoyantPlugin,
@@ -20,16 +21,17 @@ describe("cruises deployment manifest", () => {
           surface: "admin",
           mount: "cruises",
           transactional: true,
-          runtime: { export: "createCruisesHonoModule" },
+          runtime: { export: "createCruisesVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "cruises",
           anonymous: true,
           transactional: true,
-          runtime: { export: "createCruisesHonoModule" },
+          runtime: { export: "createCruisesVoyantRuntime" },
         },
       ],
+      runtimePorts: [{ id: "cruises.routes-runtime" }],
       schema: [{ id: "@voyant-travel/cruises#schema", source: "@voyant-travel/cruises/schema" }],
       migrations: [{ id: "@voyant-travel/cruises#migrations", source: "./migrations" }],
       links: [
@@ -38,7 +40,29 @@ describe("cruises deployment manifest", () => {
         { id: "@voyant-travel/cruises#linkable.cruise_sailing" },
         { id: "@voyant-travel/cruises#linkable.cruise_ship" },
       ],
+      workflows: [
+        expect.objectContaining({
+          id: "cruises.external-catalog-refresh",
+          schedules: [expect.objectContaining({ id: "external-cruise-catalog-refresh" })],
+          runtime: {
+            entry: "@voyant-travel/cruises/external-refresh-workflow",
+            export: "cruisesExternalCatalogRefreshWorkflow",
+          },
+        }),
+      ],
     })
+    expect(isGraphRuntimeFactory(createCruisesVoyantRuntime)).toBe(true)
+  })
+
+  it("validates the deployment registry contract", async () => {
+    await expect(
+      assertPortConforms(cruisesRoutesRuntimePort, {
+        resolveSourceAdapterRegistry: async () => ({}) as never,
+      }),
+    ).resolves.toBeUndefined()
+    await expect(assertPortConforms(cruisesRoutesRuntimePort, {} as never)).rejects.toThrow(
+      /resolveSourceAdapterRegistry/,
+    )
   })
 
   it("owns content and booking extensions", () => {

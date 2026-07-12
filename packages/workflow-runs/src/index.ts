@@ -46,6 +46,13 @@ export {
   workflowRunnerRegistryRuntimePort,
 } from "./runtime-port.js"
 export {
+  type GraphWorkflowScheduledJob,
+  isGraphWorkflowScheduledJob,
+  runScheduledWorkflow,
+  type ScheduledWorkflowEvent,
+  type ScheduledWorkflowRuntime,
+} from "./scheduled-workflow.js"
+export {
   type NewWorkflowRun,
   type NewWorkflowRunStep,
   type WorkflowRun,

@@ -19,13 +19,13 @@ type ManifestEventFilterDescriptor = EventFilterDescriptor & {
 }
 
 export interface OperatorWorkflowRuntimeBootstrapContext {
-  env?: NodeJS.ProcessEnv
+  env?: AppBindings | NodeJS.ProcessEnv
   services?: ServiceResolver
 }
 
 /** Load only graph-selected workflow/event-filter facets for the Node workflow runtime. */
 export async function loadOperatorWorkflowRuntime(
-  env: NodeJS.ProcessEnv = process.env,
+  env: AppBindings | NodeJS.ProcessEnv = process.env,
 ): Promise<OperatorWorkflowRuntime> {
   const graphRuntime = createGeneratedWorkflowRuntime()
   const units = [...graphRuntime.modules, ...graphRuntime.extensions, ...graphRuntime.plugins]

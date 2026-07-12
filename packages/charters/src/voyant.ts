@@ -13,7 +13,7 @@ export const chartersVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/charters",
-        export: "createChartersHonoModule",
+        export: "createChartersVoyantRuntime",
       },
     },
     {
@@ -24,7 +24,7 @@ export const chartersVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/charters",
-        export: "createChartersHonoModule",
+        export: "createChartersVoyantRuntime",
       },
     },
   ],

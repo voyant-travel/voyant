@@ -1,5 +1,6 @@
+import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
-import { createChartersHonoModule } from "../../src/index.js"
+import { createChartersHonoModule, createChartersVoyantRuntime } from "../../src/index.js"
 import { chartersBookingVoyantPlugin, chartersVoyantModule } from "../../src/voyant.js"
 
 describe("charters deployment manifest", () => {
@@ -13,14 +14,14 @@ describe("charters deployment manifest", () => {
           surface: "admin",
           mount: "charters",
           transactional: true,
-          runtime: { export: "createChartersHonoModule" },
+          runtime: { export: "createChartersVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "charters",
           anonymous: true,
           transactional: true,
-          runtime: { export: "createChartersHonoModule" },
+          runtime: { export: "createChartersVoyantRuntime" },
         },
       ],
       schema: [{ id: "@voyant-travel/charters#schema", source: "@voyant-travel/charters/schema" }],
@@ -31,6 +32,7 @@ describe("charters deployment manifest", () => {
         { id: "@voyant-travel/charters#linkable.charter_yacht" },
       ],
     })
+    expect(isGraphRuntimeFactory(createChartersVoyantRuntime)).toBe(true)
   })
 
   it("owns the bookings extension and preserves injected lazy bridges", () => {
