@@ -3,7 +3,7 @@ import { definePort } from "@voyant-travel/core/project"
 import type { SourceAdapterRegistry } from "./booking-engine/index.js"
 
 export interface CatalogContentRuntime {
-  resolveRegistry(context: unknown): SourceAdapterRegistry | Promise<SourceAdapterRegistry>
+  resolveRegistry(context: unknown): SourceAdapterRegistry
 }
 
 /** Host capability shared by package-owned sourced-content route factories. */
