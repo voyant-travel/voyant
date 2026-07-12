@@ -13,6 +13,7 @@ const brochureRuntime = read("packages/inventory/src/standard-node-brochure-runt
 const mediaFacade = read("starters/operator/src/api/runtime/media-runtime.ts")
 const storageFacade = read("starters/operator/src/api/lib/storage.ts")
 const brochureFacade = read("starters/operator/src/lib/brochure-printer.ts")
+const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
 const storagePackage = JSON.parse(read("packages/storage/package.json"))
 const inventoryPackage = JSON.parse(read("packages/inventory/package.json"))
 const policy = JSON.parse(read("scripts/fixtures/storage-media-runtime-policy.json"))
@@ -83,6 +84,13 @@ if (storagePackage.dependencies?.["@voyant-travel/hono"]) {
 }
 if (inventoryPackage.dependencies?.["@voyant-travel/storage"] !== "workspace:^") {
   failures.push("Inventory must retain the existing acyclic dependency on Storage")
+}
+if (
+  /loadStorageMediaRuntime|operatorStorageMediaRuntime|operatorInventoryBrochureRuntime/.test(
+    deploymentResources,
+  )
+) {
+  failures.push("Operator deployment resources must not retain Storage or brochure capabilities")
 }
 
 if (failures.length > 0) {

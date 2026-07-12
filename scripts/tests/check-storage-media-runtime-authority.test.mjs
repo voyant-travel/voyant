@@ -15,6 +15,7 @@ const fixturePaths = [
   "packages/inventory/src/standard-node-brochure-runtime.ts",
   "packages/inventory/package.json",
   "starters/operator/src/api/runtime/media-runtime.ts",
+  "starters/operator/src/api/runtime/deployment-resources.ts",
   "starters/operator/src/api/lib/storage.ts",
   "starters/operator/src/lib/brochure-printer.ts",
   "scripts/fixtures/storage-media-runtime-policy.json",

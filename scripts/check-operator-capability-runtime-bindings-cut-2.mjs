@@ -14,7 +14,7 @@ const packageRequirements = {
   notifications: ["host.capabilities.loadNotificationsRuntime()"],
   quotes: ["host.capabilities.loadQuoteProposalRuntime()"],
   realtime: ["host.primitives", "createRealtimeStandardNodeRuntime"],
-  storage: ["host.capabilities.loadStorageMediaRuntime()"],
+  storage: ["host.primitives", "createStorageStandardNodeRuntime"],
   storefront: ["host.capabilities.loadStorefrontRuntime()"],
   trips: ["host.capabilities.createTripsRoutesOptions", "host.capabilities.withDb"],
 }

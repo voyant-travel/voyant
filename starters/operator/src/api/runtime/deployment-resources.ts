@@ -93,8 +93,6 @@ function createBaseDeploymentCapabilities() {
         runtime.createQuoteProposalRoutesOptions(),
       ),
     loadNotificationsRuntime: createOperatorNotificationsRuntimeProvider,
-    loadStorageMediaRuntime: () =>
-      import("./media-runtime").then((runtime) => runtime.operatorStorageMediaRuntime),
     loadStorefrontRuntime: async () => {
       const [commerce, paymentLink] = await Promise.all([
         import("@voyant-travel/commerce"),
@@ -255,7 +253,6 @@ function createOperatorInventoryRuntime() {
       bootstrap: ({ container, bindings }) =>
         registerInventoryWorkflowService(container, bindings as AppBindings),
     },
-    brochure: import("./media-runtime").then((runtime) => runtime.operatorInventoryBrochureRuntime),
   }
 }
 

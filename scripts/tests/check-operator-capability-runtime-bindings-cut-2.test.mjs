@@ -16,7 +16,7 @@ const requirements = {
   notifications: "host.capabilities.loadNotificationsRuntime()",
   quotes: "host.capabilities.loadQuoteProposalRuntime()",
   realtime: "host.primitives\ncreateRealtimeStandardNodeRuntime",
-  storage: "host.capabilities.loadStorageMediaRuntime()",
+  storage: "host.primitives\ncreateStorageStandardNodeRuntime",
   storefront: "host.capabilities.loadStorefrontRuntime()",
   trips: "host.capabilities.createTripsRoutesOptions\nhost.capabilities.withDb",
 }
