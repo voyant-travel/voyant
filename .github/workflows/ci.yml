@@ -307,3 +307,11 @@ jobs:
           api=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 http://localhost:8080/api/openapi.json)
           echo "api dispatch -> $api"
           test "$api" -lt 500
+
+      - name: Packaged starter acceptance evidence
+        # Reuse the build above for bounded server/admin/boot metrics, then run one
+        # serialized packaged-starter install, graph emission, convention scan,
+        # and generic Node probe. This does not launch a second repository build.
+        run: |
+          node scripts/measure-standard-node-starter.mjs --require-build --check
+          node --test scripts/tests/minimal-starter-acceptance.test.mjs

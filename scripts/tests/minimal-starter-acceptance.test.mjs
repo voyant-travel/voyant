@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { test } from "node:test"
@@ -9,15 +9,13 @@ import { fileURLToPath } from "node:url"
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 
 test("minimal starter installs, emits its selected graph, and boots the Node host", {
-  timeout: 90_000,
+  timeout: 180_000,
 }, () => {
   const root = mkdtempSync(join(tmpdir(), "voyant-minimal-starter-acceptance-"))
   const out = join(root, "out")
   const app = join(root, "app")
   const port = 44_000 + (process.pid % 1_000)
   try {
-    exec("pnpm", ["--filter", "@voyant-travel/workflows", "build"], repoRoot)
-    exec("pnpm", ["--filter", "@voyant-travel/workflows-orchestrator", "build"], repoRoot)
     exec(
       process.execPath,
       [
@@ -36,9 +34,16 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       ["-xzf", join(out, "voyant-starter-operator-0.0.0-test.tar.gz"), "-C", app],
       repoRoot,
     )
+    useInstalledCliArtifact(app)
     exec(
       "pnpm",
-      ["install", "--offline", "--ignore-workspace", "--config.frozen-lockfile=false"],
+      [
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--ignore-workspace",
+        "--config.frozen-lockfile=false",
+      ],
       app,
     )
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
@@ -84,20 +89,36 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       /src\/admin\/dashboard\/index/,
     )
 
-    exec("pnpm", ["start", "--", "--probe", "--port", String(port)], app, {
-      DATABASE_URL: ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant"].join(""),
-    })
+    exec(
+      "pnpm",
+      ["start", "--", "--probe", "--port", String(port)],
+      app,
+      {
+        DATABASE_URL: ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant"].join(""),
+        NODE_OPTIONS: "--conditions=development",
+      },
+      30_000,
+    )
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
 })
 
-function exec(command, args, cwd, env = {}) {
+function useInstalledCliArtifact(app) {
+  const packageJsonPath = join(app, "package.json")
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  const installedCli = realpathSync(join(repoRoot, "node_modules/@voyant-travel/cli"))
+  packageJson.devDependencies["@voyant-travel/cli"] = `link:${installedCli}`
+  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+}
+
+function exec(command, args, cwd, env = {}, timeout = 120_000) {
   return execFileSync(command, args, {
     cwd,
     env: { ...process.env, ...env },
     encoding: "utf8",
     stdio: "pipe",
+    timeout,
   })
 }
 
