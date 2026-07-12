@@ -3037,6 +3037,9 @@ importers:
       '@voyant-travel/legal':
         specifier: workspace:^
         version: link:../legal
+      '@voyant-travel/storefront':
+        specifier: workspace:^
+        version: link:../storefront
       '@voyant-travel/tools':
         specifier: workspace:^
         version: link:../tools
