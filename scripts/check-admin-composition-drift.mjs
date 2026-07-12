@@ -42,9 +42,9 @@ const COMPATIBILITY = optionPath(
   join(ROOT, "starters/operator/src/lib/admin-extensions.tsx"),
 )
 const ROUTER = optionPath("--router", join(ROOT, "starters/operator/src/router.tsx"))
-const DESTINATIONS = optionPath(
-  "--destinations-source",
-  join(ROOT, "starters/operator/src/lib/admin-destinations.ts"),
+const WORKSPACE = optionPath(
+  "--workspace-source",
+  join(ROOT, "packages/admin-host/src/workspace.tsx"),
 )
 const OPERATOR_PACKAGE = optionPath(
   "--operator-package",
@@ -189,13 +189,13 @@ if (
   )
 }
 
-const destinationsSource = existsSync(DESTINATIONS) ? readFileSync(DESTINATIONS, "utf8") : ""
+const workspaceSource = existsSync(WORKSPACE) ? readFileSync(WORKSPACE, "utf8") : ""
 if (
-  !destinationsSource.includes("operatorAdminPresentation.extensions") ||
-  destinationsSource.includes("admin.destinations.generated")
+  !workspaceSource.includes("createAdminHostDestinations(presentation.extensions)") ||
+  workspaceSource.includes("admin.destinations.generated")
 ) {
   violations.push(
-    "Operator destinations must derive from the selected-graph admin extension registry",
+    "Admin host workspace destinations must derive from the selected-graph presentation",
   )
 }
 
