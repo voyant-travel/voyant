@@ -1,20 +1,39 @@
-import { catalogDistributionRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
+import {
+  type CatalogRuntimeServices,
+  catalogDistributionRuntimeExtensionPort,
+  catalogRuntimeServicesPort,
+} from "@voyant-travel/catalog/runtime-contracts"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { VoyantPort } from "@voyant-travel/core/project"
 import {
   type FinanceDistributionPaymentPolicyRuntime,
   financeDistributionPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 
 import { catalogDistributionRuntimeExtension } from "./catalog-runtime-extension.js"
+import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
 import {
   resolveBookingSupplierPaymentPolicy,
   resolveSupplierPaymentPolicyById,
 } from "./payment-policy-runtime.js"
+import { createDistributionRuntime } from "./runtime.js"
 
-/** Provide Distribution's narrow Catalog and Finance runtime contracts. */
+export interface DistributionRuntimeContributorHost {
+  primitives: VoyantRuntimeHostPrimitives
+  getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
+}
+
+/** Provide Distribution's channel-push runtime and cross-domain contracts. */
 export function createDistributionRuntimePortContribution(
-  _host: object,
+  host: DistributionRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const channelPushRuntime = Promise.resolve()
+    .then(() => host.getRuntimePort(catalogRuntimeServicesPort))
+    .then((services: CatalogRuntimeServices) =>
+      createDistributionRuntime(host.primitives, services),
+    )
   return {
+    [channelPushRuntimePort.id]: channelPushRuntime,
     [catalogDistributionRuntimeExtensionPort.id]: catalogDistributionRuntimeExtension,
     [financeDistributionPaymentPolicyRuntimePort.id]: {
       resolveSupplierPolicy: resolveBookingSupplierPaymentPolicy,

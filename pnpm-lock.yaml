@@ -1703,28 +1703,6 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
-  packages/distribution-node:
-    dependencies:
-      '@voyant-travel/catalog':
-        specifier: workspace:^
-        version: link:../catalog
-      '@voyant-travel/core':
-        specifier: workspace:^
-        version: link:../core
-      '@voyant-travel/db':
-        specifier: workspace:^
-        version: link:../db
-      '@voyant-travel/distribution':
-        specifier: workspace:^
-        version: link:../distribution
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
   packages/distribution-react:
     dependencies:
       '@voyant-travel/i18n':
@@ -2158,9 +2136,6 @@ importers:
       '@voyant-travel/distribution':
         specifier: workspace:*
         version: link:../distribution
-      '@voyant-travel/distribution-node':
-        specifier: workspace:*
-        version: link:../distribution-node
       '@voyant-travel/distribution-react':
         specifier: workspace:*
         version: link:../distribution-react
@@ -5086,9 +5061,6 @@ importers:
       '@voyant-travel/distribution':
         specifier: workspace:^
         version: link:../../packages/distribution
-      '@voyant-travel/distribution-node':
-        specifier: workspace:^
-        version: link:../../packages/distribution-node
       '@voyant-travel/distribution-react':
         specifier: workspace:^
         version: link:../../packages/distribution-react

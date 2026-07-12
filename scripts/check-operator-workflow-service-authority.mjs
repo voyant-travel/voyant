@@ -7,10 +7,7 @@ const app = await readFile(appPath, "utf8")
 const packageBootstrapAssertions = [
   ["packages/bookings/src/index.ts", "provider.registerWorkflowService?.(context)"],
   ["packages/inventory/src/graph-runtime.ts", "bootstrap: runtime.bootstrap"],
-  [
-    "packages/distribution-node/src/standard-node-runtime.ts",
-    "createChannelPushWorkflowRuntimeEntries",
-  ],
+  ["packages/distribution/src/runtime.ts", "createChannelPushWorkflowRuntimeEntries"],
   [
     "packages/notifications/src/index.ts",
     "provider.resolveReminderWorkflowRuntime(context.bindings",

@@ -684,13 +684,6 @@
       "@voyant-travel/db/voyant": ["../db/dist/voyant.d.ts"],
       "@voyant-travel/db/write-intents": ["../db/dist/write-intents.d.ts"],
       "@voyant-travel/distribution": ["../distribution/dist/index.d.ts"],
-      "@voyant-travel/distribution-node": ["../distribution-node/dist/runtime-contributor.d.ts"],
-      "@voyant-travel/distribution-node/runtime-contributor": [
-        "../distribution-node/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/distribution-node/standard-node-runtime": [
-        "../distribution-node/dist/standard-node-runtime.d.ts"
-      ],
       "@voyant-travel/distribution-react": ["../distribution-react/dist/index.d.ts"],
       "@voyant-travel/distribution-react/admin": ["../distribution-react/dist/admin/index.d.ts"],
       "@voyant-travel/distribution-react/client": ["../distribution-react/dist/client.d.ts"],

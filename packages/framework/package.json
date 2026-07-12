@@ -66,7 +66,6 @@
     "@voyant-travel/cruises": "workspace:*",
     "@voyant-travel/db": "workspace:*",
     "@voyant-travel/distribution": "workspace:*",
-    "@voyant-travel/distribution-node": "workspace:*",
     "@voyant-travel/distribution-react": "workspace:*",
     "@voyant-travel/finance": "workspace:*",
     "@voyant-travel/finance-react": "workspace:*",

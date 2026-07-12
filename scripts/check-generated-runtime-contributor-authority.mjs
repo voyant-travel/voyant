@@ -17,7 +17,6 @@ const packageFactories = {
   commerce: "createCommerceRuntimePortContribution",
   cruises: "createCruisesRuntimePortContribution",
   distribution: "createDistributionRuntimePortContribution",
-  "distribution-node": "createDistributionNodeRuntimePortContribution",
   finance: "createFinanceRuntimePortContribution",
   flights: "createFlightsRuntimePortContribution",
   inventory: "createInventoryRuntimePortContribution",

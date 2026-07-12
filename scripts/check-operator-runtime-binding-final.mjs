@@ -12,7 +12,7 @@ const contributorRequirements = {
   bookings: "bookingsConfigurationRuntimePort",
   catalog: "createCatalogRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
-  "distribution-node": "configureDistributionStandardNodeRuntime",
+  distribution: "createDistributionRuntime",
   finance: "financeHostRuntimePort",
   flights: "createFlightsRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",

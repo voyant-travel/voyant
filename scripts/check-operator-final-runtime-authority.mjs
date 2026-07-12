@@ -11,7 +11,7 @@ const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packagePorts = {
   auth: ["identityAccessRuntimePort"],
   cruises: ["cruisesRoutesRuntimePort"],
-  "distribution-node": ["channelPushRuntimePort"],
+  distribution: ["channelPushRuntimePort"],
   flights: ["flightsRuntimePort"],
   mice: ["miceRuntimePort"],
   notifications: ["notificationsRuntimePort"],
@@ -24,7 +24,7 @@ const packagePorts = {
 const contributorFactories = [
   "createAuthRuntimePortContribution",
   "createCatalogRuntimePortContribution",
-  "createDistributionNodeRuntimePortContribution",
+  "createDistributionRuntimePortContribution",
   "createFlightsRuntimePortContribution",
   "createMiceRuntimePortContribution",
   "createNotificationsRuntimePortContribution",

@@ -8,15 +8,13 @@ import {
 const rootArgumentIndex = process.argv.indexOf("--root")
 const root = path.resolve(rootArgumentIndex >= 0 ? process.argv[rootArgumentIndex + 1] : ".")
 const read = (relativePath) => readFileSync(path.join(root, relativePath), "utf8")
-const adapters = [
-  {
-    packageName: "@voyant-travel/distribution-node",
-    directory: "distribution-node",
-    factory: "createDistributionNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/distribution"],
-  },
-]
+const adapters = []
 const consolidatedPackages = [
+  {
+    packageName: "@voyant-travel/distribution",
+    retiredPackageName: "@voyant-travel/distribution-node",
+    factory: "createDistributionRuntimePortContribution",
+  },
   {
     packageName: "@voyant-travel/finance",
     retiredPackageName: "@voyant-travel/finance-node",

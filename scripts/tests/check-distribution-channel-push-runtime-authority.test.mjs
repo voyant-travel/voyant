@@ -25,12 +25,10 @@ async function createFixture(overrides = {}) {
       'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
     "distribution/package.json":
       '{\n  "name": "@voyant-travel/distribution",\n  "exports": { "./runtime-contributor": "./src/runtime-contributor.ts" },\n  "voyant": { "runtime": { "export": "createDistributionRuntimePortContribution" } }\n}\n',
-    "distribution-node/package.json":
-      '{\n  "name": "@voyant-travel/distribution-node",\n  "voyant": { "runtime": { "export": "createDistributionNodeRuntimePortContribution" } }\n}\n',
-    "distribution-node/src/runtime-contributor.ts":
-      "host.getRuntimePort(catalogRuntimeServicesPort)\nconfigureDistributionStandardNodeRuntime(host.primitives, services)\n",
-    "distribution-node/src/standard-node-runtime.ts":
-      "requireCatalogRuntime().getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
+    "distribution/src/runtime-contributor.ts":
+      "Promise.resolve()\nhost.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
+    "distribution/src/runtime.ts":
+      "catalogRuntime.getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
     "operator/src/api/runtime/deployment-resources.ts":
       "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
     "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
@@ -55,8 +53,6 @@ async function runChecker(root) {
       path.join(root, "distribution"),
       "--operator-root",
       path.join(root, "operator"),
-      "--distribution-node-root",
-      path.join(root, "distribution-node"),
       "--deployment-graph-checker",
       path.join(root, "scripts/check-deployment-graph.ts"),
     ],
@@ -65,10 +61,22 @@ async function runChecker(root) {
 }
 
 describe("check-distribution-channel-push-runtime-authority", () => {
-  it("accepts a BOM-selected adapter without an Operator forwarder", async () => {
+  it("accepts a package-owned runtime without an Operator forwarder", async () => {
     const result = await runChecker(await createFixture())
 
     assert.match(result.stdout, /check-distribution-channel-push-runtime-authority: OK/)
+  })
+
+  it("rejects an eager Catalog lookup that can race Distribution extension registration", async () => {
+    const root = await createFixture({
+      "distribution/src/runtime-contributor.ts":
+        "host.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /must synchronously provide extensions and defer/)
+      return true
+    })
   })
 
   it("rejects a package-id binding and restored compatibility route", async () => {

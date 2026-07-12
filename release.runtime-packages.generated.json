@@ -9,7 +9,6 @@
     "@voyant-travel/commerce",
     "@voyant-travel/cruises",
     "@voyant-travel/distribution",
-    "@voyant-travel/distribution-node",
     "@voyant-travel/finance",
     "@voyant-travel/flights",
     "@voyant-travel/identity",

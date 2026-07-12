@@ -19,8 +19,8 @@ const sources = {
   financeContributor: read("packages/finance/src/runtime-contributor.ts"),
   inventoryContributor: read("packages/inventory/src/runtime-contributor.ts"),
   distributionPackage: read("packages/distribution/package.json"),
-  distributionAdapterPackage: read("packages/distribution-node/package.json"),
-  distributionContributor: read("packages/distribution-node/src/runtime-contributor.ts"),
+  distributionContributor: read("packages/distribution/src/runtime-contributor.ts"),
+  distributionRuntime: read("packages/distribution/src/runtime.ts"),
   workflowContributor: read("packages/workflow-runs/src/runtime-contributor.ts"),
   workflowRunner: read("packages/workflow-runs/src/runner.ts"),
 }
@@ -40,18 +40,6 @@ if (sources.actionPackage.includes('"./runtime-contributor"')) {
 }
 if (!sources.distributionPackage.includes('"createDistributionRuntimePortContribution"')) {
   violations.push("Distribution domain package must publish its neutral Catalog contributor")
-}
-for (const [name, source, packageName, factory] of [
-  [
-    "Distribution",
-    sources.distributionAdapterPackage,
-    "@voyant-travel/distribution-node",
-    "createDistributionNodeRuntimePortContribution",
-  ],
-]) {
-  if (!source.includes(`"name": "${packageName}"`) || !source.includes(`"export": "${factory}"`)) {
-    violations.push(`${name} Node adapter metadata is incomplete`)
-  }
 }
 for (const [port, method, contributor] of [
   ["actionLedgerBookingDriftRuntimePort", "checkBookingDrift", sources.bookingsContributor],
@@ -74,8 +62,16 @@ for (const [port, method, contributor] of [
 if (existsSync(path.join(root, "packages/action-ledger-node/package.json"))) {
   violations.push("packages/action-ledger-node must stay deleted")
 }
-if (!sources.distributionContributor.includes("host.primitives")) {
-  violations.push("Distribution Node contributor must use generic host primitives")
+if (
+  !sources.distributionContributor.includes(
+    "createDistributionRuntime(host.primitives, services)",
+  ) ||
+  !sources.distributionRuntime.includes("createChannelPushWorkflowRuntimeEntries")
+) {
+  violations.push("Distribution domain contributor must own channel-push runtime composition")
+}
+if (existsSync(path.join(root, "packages/distribution-node"))) {
+  violations.push("packages/distribution-node must stay deleted")
 }
 if (
   !sources.workflowContributor.includes("workflowRunnerRegistryService") ||
@@ -99,5 +95,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-action-distribution-workflow-runtime-authority: OK (Action Ledger static ports, Distribution leaf adapter, and package registry authority)",
+  "check-action-distribution-workflow-runtime-authority: OK (Action Ledger static ports, Distribution domain runtime, and package registry authority)",
 )

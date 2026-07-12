@@ -23,8 +23,8 @@ const fixturePaths = [
   "packages/finance/src/runtime-contributor.ts",
   "packages/inventory/src/runtime-contributor.ts",
   "packages/distribution/package.json",
-  "packages/distribution-node/package.json",
-  "packages/distribution-node/src/runtime-contributor.ts",
+  "packages/distribution/src/runtime-contributor.ts",
+  "packages/distribution/src/runtime.ts",
   "packages/workflow-runs/src/runtime-contributor.ts",
   "packages/workflow-runs/src/runner.ts",
 ]

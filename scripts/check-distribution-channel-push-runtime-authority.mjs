@@ -11,10 +11,6 @@ const pathOption = (name, fallback) => {
   return value
 }
 const distributionRoot = pathOption("--distribution-root", join(ROOT, "packages/distribution"))
-const distributionNodeRoot = pathOption(
-  "--distribution-node-root",
-  join(ROOT, "packages/distribution-node"),
-)
 const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
 const deploymentGraphCheckerPath = pathOption(
   "--deployment-graph-checker",
@@ -33,9 +29,8 @@ const manifest = readRequired(join(distributionRoot, "src/voyant.ts"))
 const extension = readRequired(join(distributionRoot, "src/channel-push/extension.ts"))
 const runtimePort = readRequired(join(distributionRoot, "src/channel-push/runtime-port.ts"))
 const domainPackage = readRequired(join(distributionRoot, "package.json"))
-const adapterPackage = readRequired(join(distributionNodeRoot, "package.json"))
-const adapterContributor = readRequired(join(distributionNodeRoot, "src/runtime-contributor.ts"))
-const standardRuntime = readRequired(join(distributionNodeRoot, "src/standard-node-runtime.ts"))
+const contributor = readRequired(join(distributionRoot, "src/runtime-contributor.ts"))
+const runtime = readRequired(join(distributionRoot, "src/runtime.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const workflowServices = readRequired(
   join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),
@@ -56,24 +51,29 @@ if (
     "Distribution domain package must publish its neutral Catalog extension contributor",
   )
 }
+if (existsSync(join(dirname(distributionRoot), "distribution-node"))) {
+  violations.push("The retired @voyant-travel/distribution-node package must stay deleted")
+}
 if (
-  !adapterPackage.includes('"name": "@voyant-travel/distribution-node"') ||
-  !adapterPackage.includes('"export": "createDistributionNodeRuntimePortContribution"') ||
-  !adapterContributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
-  !adapterContributor.includes(
-    "configureDistributionStandardNodeRuntime(host.primitives, services)",
-  )
+  !contributor.includes("Promise.resolve()") ||
+  !contributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
+  !contributor.includes("createDistributionRuntime(host.primitives, services)") ||
+  !contributor.includes("[channelPushRuntimePort.id]: channelPushRuntime") ||
+  !contributor.includes("[catalogDistributionRuntimeExtensionPort.id]") ||
+  !contributor.includes("[financeDistributionPaymentPolicyRuntimePort.id]")
 ) {
-  violations.push("Distribution Node adapter must own generated runtime contribution")
+  violations.push(
+    "Distribution contributor must synchronously provide extensions and defer its Catalog-backed runtime",
+  )
 }
 for (const required of [
-  "requireCatalogRuntime().getSourceRegistryFromContext",
+  "catalogRuntime.getSourceRegistryFromContext",
   "createChannelPushWorkflowRuntimeEntries",
   "primitives.database.resolve",
   "primitives.database.transaction",
 ]) {
-  if (!standardRuntime.includes(required)) {
-    violations.push(`Distribution Node runtime must contain ${JSON.stringify(required)}`)
+  if (!runtime.includes(required)) {
+    violations.push(`Distribution runtime must contain ${JSON.stringify(required)}`)
   }
 }
 if (
@@ -142,4 +142,4 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log("check-distribution-channel-push-runtime-authority: OK (BOM-selected Node adapter)")
+console.log("check-distribution-channel-push-runtime-authority: OK (package-owned runtime)")
