@@ -95,7 +95,16 @@ describe("deployment graph artifacts", () => {
           risk: "high",
         },
       ],
-      events: [{ id: "selected.event", eventType: "selected.changed" }],
+      events: [
+        {
+          id: "selected.event",
+          eventType: "selected.changed",
+          version: "1.0.0",
+          payloadSchema: { type: "object" },
+          visibility: "external",
+          audit: { sourceModule: "selected", category: "domain" },
+        },
+      ],
       webhooks: [{ id: "selected.webhook", direction: "outbound", eventId: "selected.event" }],
       actions: [
         {

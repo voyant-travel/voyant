@@ -38,8 +38,11 @@ export async function enqueueGraphWebhookEvent(
   return Promise.all(
     subscriptions.map((subscription) => {
       const idempotencyKey = `graph-webhook:${eventId}:${subscription.id}`
+      const graphEventId = stringMetadata(event, "graphEventId")
+      const graphEventVersion = stringMetadata(event, "graphEventVersion")
+      const sourceModule = stringMetadata(event, "graphEventSourceModule")
       return enqueue(db, {
-        sourceModule: "operator-webhooks",
+        sourceModule: sourceModule ?? "operator-webhooks",
         sourceEvent: event.name,
         ...sourceEntity(event.data),
         subscriptionId: subscription.id,
@@ -52,12 +55,19 @@ export async function enqueueGraphWebhookEvent(
           "content-type": "application/json",
           "idempotency-key": idempotencyKey,
           "x-voyant-event": event.name,
+          ...(graphEventId ? { "x-voyant-event-contract": graphEventId } : {}),
+          ...(graphEventVersion ? { "x-voyant-event-version": graphEventVersion } : {}),
         },
         requestBody: event,
         idempotencyKey,
       })
     }),
   )
+}
+
+function stringMetadata(event: EventEnvelope, key: string): string | null {
+  const value = event.metadata?.[key]
+  return typeof value === "string" && value.length > 0 ? value : null
 }
 
 function sourceEntity(data: unknown): {

@@ -91,6 +91,10 @@ describe("graph runtime composition", () => {
             eventId: "@acme/catalog#event.updated",
             eventUnitId: "@acme/catalog",
             eventType: "catalog.entity.updated",
+            eventVersion: "1.0.0",
+            payloadSchema: { type: "object" },
+            visibility: "external",
+            audit: { sourceModule: "catalog", category: "domain" },
             secretIds: [],
           },
         ],
@@ -115,7 +119,13 @@ describe("graph runtime composition", () => {
     expect(enqueue).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "catalog.entity.updated",
-        metadata: expect.objectContaining({ eventId: expect.stringMatching(/^evt_/) }),
+        metadata: expect.objectContaining({
+          eventId: expect.stringMatching(/^evt_/),
+          category: "domain",
+          graphEventId: "@acme/catalog#event.updated",
+          graphEventVersion: "1.0.0",
+          graphEventSourceModule: "catalog",
+        }),
       }),
       { deployment: "node" },
     )

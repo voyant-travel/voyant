@@ -210,6 +210,13 @@ export interface VoyantGraphOutboundWebhookPlanEntry {
   eventId: string
   eventUnitId: string
   eventType: string
+  eventVersion: string
+  payloadSchema: VoyantGraphJsonObject
+  visibility: "external"
+  audit: {
+    sourceModule: string
+    category: "domain" | "internal"
+  }
   secretIds: readonly string[]
 }
 
@@ -606,7 +613,7 @@ export function validateGraphUnitManifest(
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
   diagnostics.push(...validateFacetEntities(input.links, "links", source))
   diagnostics.push(...validateSubscribers(input.subscribers, source))
-  diagnostics.push(...validateFacetEntities(input.events, "events", source))
+  diagnostics.push(...validateEvents(input.events, source))
   diagnostics.push(...validateWorkflows(input.workflows, source))
   diagnostics.push(...validatePromotedFacets(input, source))
 
@@ -1339,6 +1346,78 @@ function validateFacetEntities(
   }
 
   return value.flatMap((entry, index) => validateEntityId(entry, `${facet}[${index}]`, source))
+}
+
+function validateEvents(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
+  const diagnostics = validateFacetEntities(value, "events", source)
+  validateEntityArray(value, "events", source, diagnostics, (entry, facet) => {
+    if (entry.eventType !== undefined) {
+      requireNonEmptyString(entry.eventType, `${facet}.eventType`, source, diagnostics)
+    }
+    if (entry.version !== undefined) {
+      if (typeof entry.version !== "string" || !/^\d+\.\d+\.\d+$/.test(entry.version)) {
+        invalidFacet(
+          `${facet}.version`,
+          source,
+          diagnostics,
+          "Event version must be a semantic version such as 1.0.0.",
+        )
+      }
+      if (!isRecord(entry.payloadSchema)) {
+        invalidFacet(
+          `${facet}.payloadSchema`,
+          source,
+          diagnostics,
+          "Versioned events must declare a JSON payload schema.",
+        )
+      }
+    } else if (entry.payloadSchema !== undefined) {
+      invalidFacet(
+        `${facet}.version`,
+        source,
+        diagnostics,
+        "Events with a payload schema must declare a semantic version.",
+      )
+    }
+    if (
+      entry.visibility !== undefined &&
+      entry.visibility !== "internal" &&
+      entry.visibility !== "external"
+    ) {
+      invalidFacet(
+        `${facet}.visibility`,
+        source,
+        diagnostics,
+        "Event visibility must be internal or external.",
+      )
+    }
+    if (entry.audit !== undefined) {
+      if (!isRecord(entry.audit)) {
+        invalidFacet(
+          `${facet}.audit`,
+          source,
+          diagnostics,
+          "Event audit metadata must declare sourceModule and category.",
+        )
+      } else {
+        requireNonEmptyString(
+          entry.audit.sourceModule,
+          `${facet}.audit.sourceModule`,
+          source,
+          diagnostics,
+        )
+        if (entry.audit.category !== "domain" && entry.audit.category !== "internal") {
+          invalidFacet(
+            `${facet}.audit.category`,
+            source,
+            diagnostics,
+            "Event audit category must be domain or internal.",
+          )
+        }
+      }
+    }
+  })
+  return diagnostics
 }
 
 function validatePromotedFacets(
@@ -2190,6 +2269,21 @@ function validateFacetReferences(
               message: `Outbound webhook event reference "${webhook.eventId}" must select an event with a concrete eventType.`,
             }),
           )
+        } else if (
+          event.visibility !== "external" ||
+          !event.version ||
+          !event.payloadSchema ||
+          !event.audit?.sourceModule ||
+          !event.audit.category
+        ) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_FACET",
+              source: unit.id,
+              facet: `${webhook.id}.eventId`,
+              message: `Outbound webhook event reference "${webhook.eventId}" must select an external, versioned event with payload schema and audit metadata.`,
+            }),
+          )
         }
       }
       for (const id of webhook.secretIds ?? []) {
@@ -2414,7 +2508,13 @@ function compileWebhookPlan(
       }
       if (webhook.direction === "outbound" && webhook.eventId) {
         const target = eventById.get(webhook.eventId)
-        if (target?.event.eventType?.trim()) {
+        if (
+          target?.event.eventType?.trim() &&
+          target.event.visibility === "external" &&
+          target.event.version &&
+          target.event.payloadSchema &&
+          target.event.audit
+        ) {
           outbound.push({
             id: webhook.id,
             unitId: unit.id,
@@ -2422,6 +2522,10 @@ function compileWebhookPlan(
             eventId: webhook.eventId,
             eventUnitId: target.unit.id,
             eventType: target.event.eventType,
+            eventVersion: target.event.version,
+            payloadSchema: target.event.payloadSchema,
+            visibility: target.event.visibility,
+            audit: target.event.audit,
             secretIds,
           })
         }

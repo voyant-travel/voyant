@@ -1001,7 +1001,14 @@ function validateRuntimeWebhookPlan(input: NormalizedVoyantGraphRuntimeInput): v
   for (const entry of input.webhookPlan.outbound) {
     validateOwner(entry)
     const eventOwner = unitById.get(entry.eventUnitId)
-    if (!eventOwner?.selectedIds.events.includes(entry.eventId) || !entry.eventType.trim()) {
+    if (
+      !eventOwner?.selectedIds.events.includes(entry.eventId) ||
+      !entry.eventType.trim() ||
+      !/^\d+\.\d+\.\d+$/.test(entry.eventVersion) ||
+      !entry.payloadSchema ||
+      entry.visibility !== "external" ||
+      !entry.audit?.sourceModule.trim()
+    ) {
       throw new Error(
         `createVoyantGraphRuntime: outbound webhook "${entry.id}" selects an invalid event target.`,
       )

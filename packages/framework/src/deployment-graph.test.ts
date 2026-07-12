@@ -220,7 +220,16 @@ describe("deployment graph v1", () => {
           risk: "high",
         },
       ],
-      events: [{ id: "@acme/voyant-loyalty#event.points-adjusted", eventType: "points.adjusted" }],
+      events: [
+        {
+          id: "@acme/voyant-loyalty#event.points-adjusted",
+          eventType: "points.adjusted",
+          version: "1.0.0",
+          payloadSchema: { type: "object" },
+          visibility: "external",
+          audit: { sourceModule: "loyalty", category: "domain" },
+        },
+      ],
       webhooks: [
         {
           id: "@acme/voyant-loyalty#webhook.points-adjusted",
@@ -278,6 +287,10 @@ describe("deployment graph v1", () => {
         eventId: "@acme/voyant-loyalty#event.points-adjusted",
         eventUnitId: "@acme/voyant-loyalty",
         eventType: "points.adjusted",
+        eventVersion: "1.0.0",
+        payloadSchema: { type: "object" },
+        visibility: "external",
+        audit: { sourceModule: "loyalty", category: "domain" },
         secretIds: ["@acme/voyant-loyalty#secret.webhook"],
       },
     ])
@@ -295,7 +308,16 @@ describe("deployment graph v1", () => {
           runtime: { entry: "@acme/voyant-hooks", export: "createHooksModule" },
         },
       ],
-      events: [{ id: "@acme/voyant-hooks#event.changed", eventType: "partner.changed" }],
+      events: [
+        {
+          id: "@acme/voyant-hooks#event.changed",
+          eventType: "partner.changed",
+          version: "1.0.0",
+          payloadSchema: { type: "object" },
+          visibility: "external",
+          audit: { sourceModule: "hooks", category: "domain" },
+        },
+      ],
     })
     const delivery = definePlugin({
       id: "@acme/voyant-delivery",

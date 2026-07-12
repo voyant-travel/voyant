@@ -1658,6 +1658,15 @@ surface without operator edits; all grants and message references validate.
 - migrate action-ledger declarations after route, tool, workflow, event, access,
   and copy ids are stable; keep ledger writes explicit
 
+Progress: outbound webhook eligibility is no longer an event-name-only allowlist.
+Every selected outbound declaration must reference an external event with a semantic
+version, JSON payload schema, and graph-owned audit source/category. Those fields lower
+into the selected webhook plan; generic composition copies the contract id/version and
+audit metadata onto the delivery envelope, and queued delivery persists the selected
+source instead of assigning all traffic to an Operator-owned source. Catalog is the
+first complete package-owned external event catalog. The Phase 5 event-authority
+checker rejects name-only outbound declarations across package manifests.
+
 Exit: package selection controls events, external delivery eligibility, agent
 tools, and audited action metadata without parallel operator catalogs.
 

@@ -412,16 +412,33 @@ function createGraphOutboundWebhookModule<TCapabilities>(
   input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
 ): HonoModule | undefined {
   const enqueue = input.outboundWebhooks?.enqueue
-  const eventTypes = input.runtime.webhooks.outboundEventTypes
-  if (!enqueue || eventTypes.length === 0) return undefined
+  if (!enqueue || input.runtime.webhooks.outbound.length === 0) return undefined
 
   return {
     module: {
       name: "graph-outbound-webhooks",
       bootstrap: ({ bindings, eventBus }) => {
-        for (const eventType of eventTypes) {
-          eventBus.subscribe(eventType, async (event) => {
-            await enqueue(event, bindings)
+        const declarations = new Map(
+          input.runtime.webhooks.outbound.map((declaration) => [
+            declaration.eventType,
+            declaration,
+          ]),
+        )
+        for (const declaration of declarations.values()) {
+          eventBus.subscribe(declaration.eventType, async (event) => {
+            await enqueue(
+              {
+                ...event,
+                metadata: {
+                  ...event.metadata,
+                  category: declaration.audit.category,
+                  graphEventId: declaration.eventId,
+                  graphEventVersion: declaration.eventVersion,
+                  graphEventSourceModule: declaration.audit.sourceModule,
+                },
+              },
+              bindings,
+            )
           })
         }
       },

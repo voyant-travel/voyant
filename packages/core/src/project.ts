@@ -158,6 +158,13 @@ export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
   version?: string
   /** JSON Schema used by graph tooling to validate payload compatibility before upgrade. */
   payloadSchema?: VoyantGraphJsonObject
+  /** External events may be selected by deployment-owned outbound webhook subscriptions. */
+  visibility?: "internal" | "external"
+  /** Stable provenance copied into outbound delivery audit records. */
+  audit?: {
+    sourceModule: string
+    category: "domain" | "internal"
+  }
 }
 
 export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
