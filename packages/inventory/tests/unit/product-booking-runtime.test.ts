@@ -68,22 +68,14 @@ vi.mock("drizzle-orm", () => ({
   or: vi.fn(),
 }))
 
-vi.mock("./booking-engine-db", () => ({
-  asPostgresDb: (db: unknown) => db,
-}))
-
-vi.mock("./db", () => ({
-  withDbFromEnv: (_env: unknown, callback: (db: unknown) => unknown) => callback("db"),
-}))
-
-vi.mock("./product-booking-handler-utils", () => ({
+vi.mock("../../src/booking-engine/product-runtime-support", () => ({
   deriveTravelerCategory: vi.fn(),
   humanizeFieldKey: (key: string) => key,
   persistBookingCreateTaxLines: vi.fn(),
   typeForFieldKey: vi.fn(),
 }))
 
-import { registerProductBookingHandler } from "./product-booking-handler"
+import { registerProductBookingHandler } from "../../src/booking-engine/product-runtime"
 
 describe("registerProductBookingHandler", () => {
   beforeEach(() => {
@@ -94,7 +86,9 @@ describe("registerProductBookingHandler", () => {
   it("wires anonymous owned-product billing resolution through Relationships", async () => {
     const registry = { register: vi.fn() }
 
-    registerProductBookingHandler(registry as never, {} as never)
+    registerProductBookingHandler(registry as never, {
+      withDatabase: (operation) => operation("db" as never),
+    })
 
     expect(registry.register).toHaveBeenCalledWith(mocks.handler)
     const options = mocks.capturedOptions.current as {

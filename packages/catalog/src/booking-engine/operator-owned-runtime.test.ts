@@ -5,7 +5,6 @@ const mocks = vi.hoisted(() => {
   const cruiseHandlerOptions: unknown[] = []
   const getAccommodationContent = vi.fn()
   const getCruiseContent = vi.fn()
-  const withDbFromEnv = vi.fn()
 
   const tables = {
     bookingActivityLog: { _name: "bookingActivityLog" },
@@ -39,7 +38,6 @@ const mocks = vi.hoisted(() => {
     getAccommodationContent,
     getCruiseContent,
     tables,
-    withDbFromEnv,
   }
 })
 
@@ -101,14 +99,6 @@ vi.mock("@voyant-travel/finance", () => ({
 vi.mock("drizzle-orm", () => ({
   asc: vi.fn((value) => ({ asc: value })),
   eq: vi.fn((left, right) => ({ left, right })),
-}))
-
-vi.mock("./booking-engine-db", () => ({
-  asPostgresDb: (db: unknown) => db,
-}))
-
-vi.mock("./db", () => ({
-  withDbFromEnv: mocks.withDbFromEnv,
 }))
 
 interface CapturedInsert {
@@ -227,16 +217,17 @@ beforeEach(() => {
   mocks.cruiseHandlerOptions.length = 0
 })
 
-describe("registerRetainedVerticalBookingHandlers", () => {
+describe("package-owned vertical booking handlers", () => {
   it("wires accommodation commits to booking, traveler, item, stay, and daily-rate rows", async () => {
-    const { registerRetainedVerticalBookingHandlers } = await import(
-      "./retained-vertical-booking-handlers"
+    const { registerAccommodationBookingHandler } = await import(
+      "@voyant-travel/accommodations/booking-engine/operator-runtime"
     )
     const registry = { register: vi.fn() }
     const { db, inserts } = createInsertDb()
-    mocks.withDbFromEnv.mockImplementation((_env, callback) => callback(db))
-
-    registerRetainedVerticalBookingHandlers(registry as never, {} as never, () => ({}) as never)
+    registerAccommodationBookingHandler(registry as never, {
+      getSourceRegistry: () => ({}) as never,
+      withDatabase: (operation) => operation(db as never),
+    })
     const options = mocks.accommodationHandlerOptions[0] as {
       commitBridge: (input: unknown, options?: { userId?: string }) => Promise<unknown>
     }
@@ -304,13 +295,16 @@ describe("registerRetainedVerticalBookingHandlers", () => {
   })
 
   it("falls back to local cruise rows when sourced cruise content is absent", async () => {
-    const { registerRetainedVerticalBookingHandlers } = await import(
-      "./retained-vertical-booking-handlers"
+    const { registerCruiseBookingHandler } = await import(
+      "@voyant-travel/cruises/booking-engine/operator-runtime"
     )
     const registry = { register: vi.fn() }
     mocks.getCruiseContent.mockResolvedValue(null)
 
-    registerRetainedVerticalBookingHandlers(registry as never, {} as never, () => ({}) as never)
+    registerCruiseBookingHandler(registry as never, {
+      getSourceRegistry: () => ({}) as never,
+      withDatabase: (operation) => operation(createReadDb() as never),
+    })
     const options = mocks.cruiseHandlerOptions[0] as {
       loadContent: (ctx: { db: unknown }, entityId: string) => Promise<unknown>
     }

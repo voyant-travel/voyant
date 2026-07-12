@@ -31,25 +31,31 @@ import {
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
-import { asPostgresDb } from "./booking-engine-db"
-import type { BookingEngineEnv } from "./booking-engine-runtime"
-import { withDbFromEnv } from "./db"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   deriveTravelerCategory,
   humanizeFieldKey,
   persistBookingCreateTaxLines,
   typeForFieldKey,
-} from "./product-booking-handler-utils"
+} from "./product-runtime-support.js"
+
+export interface ProductBookingRuntimeHost {
+  withDatabase<T>(operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>
+}
+
+function asPostgresDb(db: unknown): PostgresJsDatabase {
+  return db as never
+}
 
 export function registerProductBookingHandler(
   registry: OwnedBookingHandlerRegistry,
-  env: BookingEngineEnv,
+  host: ProductBookingRuntimeHost,
 ): void {
   registry.register(
     createProductsBookingHandler({
       holds: {
         async place(input) {
-          return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+          return host.withDatabase(async (rawDb) => {
             const db = asPostgresDb(rawDb)
             const result = await placeAvailabilityHold(db, input)
             if (result.status === "ok") {
@@ -77,7 +83,7 @@ export function registerProductBookingHandler(
           })
         },
         async extend(input) {
-          return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+          return host.withDatabase(async (rawDb) => {
             const db = asPostgresDb(rawDb)
             const result = await extendAvailabilityHold(db, input)
             if (result.status === "ok") return { status: "ok", expiresAt: result.expiresAt }
@@ -85,7 +91,7 @@ export function registerProductBookingHandler(
           })
         },
         async release(holdToken) {
-          await withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+          await host.withDatabase(async (rawDb) => {
             const db = asPostgresDb(rawDb)
             await releaseAvailabilityHold(db, holdToken)
           })
@@ -96,13 +102,13 @@ export function registerProductBookingHandler(
       // env is captured by the closure so the bridge can resolve
       // the per-request DB lazily.
       async createBooking(input, opts) {
-        // `withDbFromEnv` owns the per-call Pool — opens, runs the
+        // The host owns the per-call database lifecycle.
         // commit, closes in `finally`. `createFinanceBooking`'s
         // signature still asks for postgres-js; force-cast here since
         // the runtime is neon-serverless on Workers and the drizzle
         // PgDatabase surface is identical across flavors for the
         // ops we use.
-        return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+        return host.withDatabase(async (rawDb) => {
           const db = asPostgresDb(rawDb)
           // `input.initialStatus` is plumbed from the booking-engine
           // commit caller (e.g. trips reserve) so bookings land in
@@ -126,7 +132,7 @@ export function registerProductBookingHandler(
       // `resolveBillingPerson` wiring (framework composition) so both
       // booking arms link a customer the same way.
       async resolveBillingPerson(contact, ctx) {
-        return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+        return host.withDatabase(async (rawDb) => {
           const db = asPostgresDb(rawDb)
           const person = await relationshipsService.upsertPersonFromContact(db, contact, {
             source: ctx.source,
