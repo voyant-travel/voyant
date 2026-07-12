@@ -52,7 +52,7 @@
     "verify:operator-product-ui-authority": "node scripts/check-operator-product-ui-authority.mjs",
     "verify:operator-admin-presentation-authority": "node scripts/check-operator-admin-presentation-authority.mjs",
     "verify:admin-presentation-fallback-authority": "node --test scripts/tests/check-admin-presentation-fallback-authority.test.mjs && node scripts/check-admin-presentation-fallback-authority.mjs",
-    "verify:operator-auth-presentation-authority": "node scripts/check-operator-auth-presentation-authority.mjs && node scripts/check-operator-auth-backend-authority.mjs",
+    "verify:operator-auth-presentation-authority": "node --test scripts/tests/check-operator-auth-presentation-authority.test.mjs && node scripts/check-operator-auth-presentation-authority.mjs && node scripts/check-operator-auth-backend-authority.mjs",
     "verify:operator-route-posture": "node --test scripts/tests/check-operator-route-posture.test.mjs && node scripts/check-operator-route-posture.mjs",
     "verify:operator-smartbill-authority": "node --test scripts/tests/check-operator-smartbill-authority.test.mjs && node scripts/check-operator-smartbill-authority.mjs",
     "verify:legal-subscriber-authority": "node --test scripts/tests/check-legal-subscriber-authority.test.mjs && node scripts/check-legal-subscriber-authority.mjs",
