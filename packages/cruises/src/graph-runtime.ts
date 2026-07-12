@@ -1,4 +1,4 @@
-import { catalogContentRuntimePort } from "@voyant-travel/catalog/graph-runtime"
+import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 
 import { createCruiseContentHonoExtension } from "./routes-content.js"

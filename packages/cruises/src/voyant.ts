@@ -1,4 +1,4 @@
-import { catalogContentRuntimePort } from "@voyant-travel/catalog/graph-runtime"
+import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the cruises package. */

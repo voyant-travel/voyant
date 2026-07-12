@@ -28,6 +28,15 @@ describe("@voyant-travel/catalog package exports", () => {
     })
   })
 
+  it("publishes the import-cheap content runtime port", () => {
+    expect(packageJson.exports["./runtime-port"]).toBe("./src/content-runtime-port.ts")
+    expect(packageJson.publishConfig.exports["./runtime-port"]).toEqual({
+      types: "./dist/content-runtime-port.d.ts",
+      import: "./dist/content-runtime-port.js",
+      default: "./dist/content-runtime-port.js",
+    })
+  })
+
   it("publishes the draft-reaper workflow", () => {
     expect(packageJson.exports["./draft-reaper-workflow"]).toBe("./src/draft-reaper-workflow.ts")
     expect(packageJson.publishConfig.exports["./draft-reaper-workflow"]).toEqual({
