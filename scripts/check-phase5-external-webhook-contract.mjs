@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { inspectExternalWebhookDeliveryConvergence } from "./lib/phase5-external-webhook-convergence.mjs"
+import { inspectWebhookSubscriptionMutationBoundary } from "./lib/webhook-subscription-mutation-boundary.mjs"
 
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../..")
 const read = (file) => readFile(path.join(repoRoot, file), "utf8")
@@ -93,17 +94,32 @@ if ((catalog.match(/additionalProperties: false/g) ?? []).length < 2) {
   failures.push("Catalog's external payload schemas must use explicit field allowlists")
 }
 
-for (const file of await productionTypeScriptFiles(path.join(repoRoot, "packages"))) {
-  const source = await readFile(file, "utf8")
-  const mutatesSubscriptions =
-    /\.insert\(infraWebhookSubscriptionsTable\)/.test(source) ||
-    /\.update\(infraWebhookSubscriptionsTable\)[\s\S]{0,500}\.returning\(/.test(source)
-  if (mutatesSubscriptions && !file.endsWith("packages/webhook-delivery/src/postgres-store.ts")) {
-    failures.push(
-      `webhook subscription mutation bypasses the package-owned service: ${path.relative(repoRoot, file)}`,
-    )
-  }
-}
+const IGNORED_SOURCE_DIRECTORIES = new Set([
+  ".next",
+  ".open-next",
+  "build",
+  "dist",
+  "fixtures",
+  "node_modules",
+  "test",
+  "tests",
+])
+const productionRoots = ["apps", "dev", "examples", "packages", "starters", "templates"]
+const productionFiles = (
+  await Promise.all(
+    productionRoots.map((root) => productionTypeScriptFiles(path.join(repoRoot, root))),
+  )
+).flat()
+failures.push(
+  ...inspectWebhookSubscriptionMutationBoundary(
+    await Promise.all(
+      productionFiles.map(async (file) => ({
+        path: path.relative(repoRoot, file),
+        source: await readFile(file, "utf8"),
+      })),
+    ),
+  ),
+)
 requireSource(
   packageJson,
   /"@voyant-travel\/webhook-delivery": "workspace:\^"/,
@@ -123,15 +139,22 @@ if (failures.length > 0) {
 }
 
 async function productionTypeScriptFiles(directory) {
-  const entries = await readdir(directory, { withFileTypes: true })
+  const entries = await readdir(directory, { withFileTypes: true }).catch((error) => {
+    if (error.code === "ENOENT") return []
+    throw error
+  })
   const files = []
   for (const entry of entries) {
     const location = path.join(directory, entry.name)
     if (entry.isDirectory()) {
-      if (entry.name !== "tests" && entry.name !== "test") {
+      if (!IGNORED_SOURCE_DIRECTORIES.has(entry.name)) {
         files.push(...(await productionTypeScriptFiles(location)))
       }
-    } else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+    } else if (
+      (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) &&
+      !entry.name.includes(".test.") &&
+      !entry.name.includes(".spec.")
+    ) {
       files.push(location)
     }
   }
