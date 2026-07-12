@@ -13,11 +13,8 @@ import {
   type IdentityAccessRuntimeProvider,
   identityAccessRuntimePort,
 } from "@voyant-travel/auth/identity-access-runtime-port"
-import {
-  type BookingsRuntimeProvider,
-  bookingRequirementsRuntimePort,
-  bookingsRuntimePort,
-} from "@voyant-travel/bookings"
+import type { BookingsRuntimeProvider } from "@voyant-travel/bookings"
+import { createBookingsRuntimePortContribution } from "@voyant-travel/bookings/runtime-contributor"
 import type {
   CatalogSearchRuntime,
   EmbeddingProvider,
@@ -32,11 +29,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { channelPushRuntimePort, enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
-import {
-  financeBookingScheduleRuntimePort,
-  financeBookingTaxRuntimePort,
-  financeRuntimePort,
-} from "@voyant-travel/finance/runtime-port"
+import { createFinanceRuntimePortContribution } from "@voyant-travel/finance/runtime-contributor"
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
@@ -52,11 +45,7 @@ import {
 import { miceRuntimePort } from "@voyant-travel/mice"
 import { notificationsRuntimePort } from "@voyant-travel/notifications"
 import { smartbillRuntimeHostPort } from "@voyant-travel/plugin-smartbill/graph-runtime"
-import {
-  quotesProposalRuntimePort,
-  quotesRuntimePort,
-  quotesSnapshotRuntimePort,
-} from "@voyant-travel/quotes"
+import { createQuotesRuntimePortContribution } from "@voyant-travel/quotes/runtime-contributor"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
@@ -200,52 +189,56 @@ function createDeploymentPortResources(
       identityAccessRuntimePort,
       createOperatorIdentityAccessRuntime(capabilities),
     ),
-    [quotesRuntimePort.id]: runtimePortValue(quotesRuntimePort, {
-      resolveParticipantPersonById: async (db, personId) =>
-        (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+    ...createQuotesRuntimePortContribution({
+      quotes: {
+        resolveParticipantPersonById: async (db, personId) =>
+          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+      },
+      proposal: import("./quote-proposal-runtime").then((runtime) =>
+        runtime.createQuoteProposalRoutesOptions(),
+      ),
+      snapshot: import("./quote-proposal-runtime").then((runtime) =>
+        runtime.createQuoteProposalRoutesOptions(),
+      ),
     }),
     [miceRuntimePort.id]: runtimePortValue(miceRuntimePort, {
       resolveDelegatePersonById: async (db, personId) =>
         (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
     }),
-    [quotesProposalRuntimePort.id]: import("./quote-proposal-runtime").then((runtime) =>
-      runtime.createQuoteProposalRoutesOptions(),
-    ),
-    [quotesSnapshotRuntimePort.id]: import("./quote-proposal-runtime").then((runtime) =>
-      runtime.createQuoteProposalRoutesOptions(),
-    ),
-    [bookingsRuntimePort.id]: createOperatorBookingsRuntimeProvider(capabilities),
-    [bookingRequirementsRuntimePort.id]: {
-      publicRoutes: {
-        resolveProductSnapshot: capabilities.resolveBookingRequirementsProductSnapshot,
+    ...createBookingsRuntimePortContribution({
+      bookings: createOperatorBookingsRuntimeProvider(capabilities),
+      requirements: {
+        publicRoutes: {
+          resolveProductSnapshot: capabilities.resolveBookingRequirementsProductSnapshot,
+        },
       },
-    },
-    [financeRuntimePort.id]: createOperatorFinanceRuntimeProvider(capabilities),
-    [financeBookingScheduleRuntimePort.id]: Promise.all([
-      import("@voyant-travel/operator-settings"),
-      import("./booking-payment-policy-runtime"),
-    ]).then(([settings, runtime]) => ({
-      options: {
-        resolveDb: (context) => operatorPostgresDb(context.get("db")),
-        resolveOperatorDefaultPaymentPolicy: settings.resolveOperatorDefaultPaymentPolicy,
-        resolveSupplierPolicy: runtime.resolveSupplierPolicy,
-        resolveCategoryPolicy: runtime.resolveCategoryPolicy,
-        resolveListingPolicy: runtime.resolveListingPolicy,
-        resolveListingPolicyForEntity: runtime.resolveListingPolicyForEntity,
-        resolveCategoryPolicyForEntity: runtime.resolveCategoryPolicyForEntity,
-        resolveSupplierPolicyForEntity: runtime.resolveSupplierPolicyForEntity,
-        stampPolicySourceOnBooking: runtime.stampPolicySourceOnBooking,
-        readPolicySourceFromInternalNotes: runtime.readPolicySourceFromInternalNotes,
-      },
-      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
-        withDbFromEnv(bindings as AppBindings, operation),
-    })),
-    [financeBookingTaxRuntimePort.id]: import("@voyant-travel/operator-settings").then(
-      (settings) => ({
+    }),
+    ...createFinanceRuntimePortContribution({
+      finance: createOperatorFinanceRuntimeProvider(capabilities),
+      bookingSchedule: Promise.all([
+        import("@voyant-travel/operator-settings"),
+        import("./booking-payment-policy-runtime"),
+      ]).then(([settings, runtime]) => ({
+        options: {
+          resolveDb: (context) => operatorPostgresDb(context.get("db")),
+          resolveOperatorDefaultPaymentPolicy: settings.resolveOperatorDefaultPaymentPolicy,
+          resolveSupplierPolicy: runtime.resolveSupplierPolicy,
+          resolveCategoryPolicy: runtime.resolveCategoryPolicy,
+          resolveListingPolicy: runtime.resolveListingPolicy,
+          resolveListingPolicyForEntity: runtime.resolveListingPolicyForEntity,
+          resolveCategoryPolicyForEntity: runtime.resolveCategoryPolicyForEntity,
+          resolveSupplierPolicyForEntity: runtime.resolveSupplierPolicyForEntity,
+          stampPolicySourceOnBooking: runtime.stampPolicySourceOnBooking,
+          readPolicySourceFromInternalNotes: runtime.readPolicySourceFromInternalNotes,
+        },
+        withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+          withDbFromEnv(bindings as AppBindings, operation),
+      })),
+      bookingTax: import("@voyant-travel/operator-settings").then((settings) => ({
         resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
         updateBookingTaxSettings: settings.updateBookingTaxSettings,
-      }),
-    ),
+      })),
+    }),
     [smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost,
     [storefrontRuntimePort.id]: createOperatorStorefrontRuntimeProvider(capabilities),
     [storefrontPaymentLinkRuntimePort.id]: import("./payment-link-runtime").then((runtime) =>
@@ -645,7 +638,7 @@ async function createOperatorFinanceRuntimeProvider(capabilities: OperatorCapabi
     import("@voyant-travel/notifications"),
     import("@voyant-travel/operator-settings"),
   ])
-  return runtimePortValue(financeRuntimePort, {
+  return {
     resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
       capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
     resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
@@ -698,7 +691,7 @@ async function createOperatorFinanceRuntimeProvider(capabilities: OperatorCapabi
         offset: result.offset,
       }
     },
-  })
+  }
 }
 
 function runtimePortValue<T>(port: VoyantPort<T>, provider: T): T {

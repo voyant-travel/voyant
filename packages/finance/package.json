@@ -20,6 +20,7 @@
     "./validation": "./src/validation.ts",
     "./booking-tax": "./src/booking-tax.ts",
     "./runtime-port": "./src/runtime-port.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./booking-schedule-subscriber": "./src/booking-schedule/subscriber-runtime.ts",
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
@@ -148,6 +149,11 @@
         "types": "./dist/runtime-port.d.ts",
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./booking-schedule-subscriber": {
         "types": "./dist/booking-schedule/subscriber-runtime.d.ts",

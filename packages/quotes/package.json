@@ -11,6 +11,7 @@
     "./routes": "./src/routes/index.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./proposal-routes": "./src/proposal-routes.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
@@ -83,6 +84,11 @@
         "types": "./dist/proposal-routes.d.ts",
         "import": "./dist/proposal-routes.js",
         "default": "./dist/proposal-routes.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./tools": {
         "types": "./dist/mcp-runtime.d.ts",
