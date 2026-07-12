@@ -260,6 +260,7 @@ const regenerateScheduleResponseSchema = z.object({
 const regenerateScheduleRoute = createRoute({
   method: "post",
   path: "/{bookingId}/payment-schedule/regenerate",
+  "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.admin",
   request: { params: z.object({ bookingId: z.string() }) },
   responses: {
     200: {

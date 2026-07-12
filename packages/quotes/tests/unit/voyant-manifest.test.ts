@@ -21,6 +21,7 @@ describe("quotes deployment manifests", () => {
           id: "@voyant-travel/quotes#api",
           surface: "admin",
           mount: "quotes",
+          openapi: { document: "quotes" },
           transactional: true,
           runtime: { entry: "@voyant-travel/quotes", export: "createQuotesVoyantRuntime" },
         },
@@ -81,8 +82,10 @@ describe("quotes deployment manifests", () => {
         id: "@voyant-travel/quotes#proposal-extension",
         api: [
           {
+            id: "@voyant-travel/quotes#proposal-extension.api.admin",
             surface: "admin",
             mount: "quote-versions",
+            openapi: { document: "quotes" },
             runtime: {
               entry: "@voyant-travel/quotes",
               export: "createQuoteProposalVoyantRuntime",

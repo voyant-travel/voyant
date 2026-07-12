@@ -140,6 +140,7 @@ function getBookingCreateActionLedgerRequestContext(
 const createBookingRoute = createRoute({
   method: "post",
   path: "/create",
+  "x-voyant-api-id": "@voyant-travel/finance#bookings-create-extension.api",
   request: {
     body: {
       required: true,
@@ -172,6 +173,7 @@ const createBookingRoute = createRoute({
 const dualCreateBookingRoute = createRoute({
   method: "post",
   path: "/dual-create",
+  "x-voyant-api-id": "@voyant-travel/finance#bookings-create-extension.api",
   request: {
     body: {
       required: true,

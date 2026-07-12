@@ -74,6 +74,7 @@ describe("legal deployment manifest", () => {
         {
           id: "@voyant-travel/legal#contract-document.api",
           surface: "admin",
+          openapi: { document: "contract-document" },
           runtime: {
             entry: "@voyant-travel/legal/contract-document-routes",
             export: "createContractDocumentHonoModule",

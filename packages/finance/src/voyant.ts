@@ -245,6 +245,7 @@ export const financeBookingsCreateVoyantPlugin = defineExtension({
       id: "@voyant-travel/finance#bookings-create-extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
@@ -271,6 +272,7 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
       id: "@voyant-travel/finance#booking-schedule-extension.api.admin",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",

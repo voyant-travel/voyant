@@ -3673,6 +3673,7 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
 const listSupplierStatusesRoute = createRoute({
   method: "get",
   path: "/{id}/supplier-statuses",
+  "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
   request: { params: idParamSchema },
   responses: {
     200: dataResponse(z.array(bookingSupplierStatusSchema), "Booking supplier statuses"),
@@ -3682,6 +3683,7 @@ const listSupplierStatusesRoute = createRoute({
 const createSupplierStatusRoute = createRoute({
   method: "post",
   path: "/{id}/supplier-statuses",
+  "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
   request: {
     params: idParamSchema,
     body: jsonBody(insertSupplierStatusSchema, true, "Supplier status to create"),
@@ -3696,6 +3698,7 @@ const createSupplierStatusRoute = createRoute({
 const updateSupplierStatusRoute = createRoute({
   method: "patch",
   path: "/{id}/supplier-statuses/{statusId}",
+  "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
   request: {
     params: z.object({ id: z.string(), statusId: z.string() }),
     body: jsonBody(updateSupplierStatusSchema, false, "Partial supplier status update"),

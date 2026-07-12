@@ -110,6 +110,7 @@ describe("bookings deployment manifest", () => {
           id: "@voyant-travel/bookings#requirements.api",
           surface: "admin",
           mount: "booking-requirements",
+          openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
             export: "createBookingRequirementsHonoModule",
@@ -119,6 +120,7 @@ describe("bookings deployment manifest", () => {
           id: "@voyant-travel/bookings#requirements.api.public",
           surface: "public",
           mount: "booking-requirements",
+          openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
             export: "createBookingRequirementsHonoModule",
@@ -136,6 +138,7 @@ describe("bookings deployment manifest", () => {
           id: "@voyant-travel/bookings#booking-supplier-extension.api",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/bookings/extensions/suppliers",
             export: "bookingsSupplierExtension",

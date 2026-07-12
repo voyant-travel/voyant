@@ -271,6 +271,7 @@ const applyTripSnapshotRoute = createRoute({
 const sendQuoteVersionRoute = createRoute({
   method: "post",
   path: "/quote-versions/{id}/send",
+  "x-voyant-api-id": "@voyant-travel/quotes#proposal-extension.api.admin",
   description:
     "Send a quote version for client review. Accepts an optional `validUntil` JSON " +
     "body; an empty or absent body is accepted. The body is parsed in the handler " +

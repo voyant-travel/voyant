@@ -3,9 +3,13 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 
 const manifests = [
+  "packages/bookings/src/voyant.ts",
   "packages/catalog/src/voyant.ts",
   "packages/commerce/src/voyant.ts",
+  "packages/finance/src/voyant.ts",
   "packages/inventory/src/voyant.ts",
+  "packages/legal/src/voyant.ts",
+  "packages/quotes/src/voyant.ts",
 ].map((file) => [file, readFileSync(file, "utf8")])
 
 const claims = new Map([
@@ -28,6 +32,14 @@ const claims = new Map([
   ["@voyant-travel/inventory#content-extension.api.admin", "products"],
   ["@voyant-travel/inventory#content-extension.api.public", "products"],
   ["@voyant-travel/inventory#brochure-extension.api.admin", "products"],
+  ["@voyant-travel/bookings#requirements.api", "booking-requirements"],
+  ["@voyant-travel/bookings#requirements.api.public", "booking-requirements"],
+  ["@voyant-travel/bookings#booking-supplier-extension.api", "bookings"],
+  ["@voyant-travel/finance#bookings-create-extension.api", "bookings"],
+  ["@voyant-travel/finance#booking-schedule-extension.api.admin", "bookings"],
+  ["@voyant-travel/legal#contract-document.api", "contract-document"],
+  ["@voyant-travel/quotes#api", "quotes"],
+  ["@voyant-travel/quotes#proposal-extension.api.admin", "quotes"],
 ])
 
 for (const [apiId, document] of claims) {
@@ -52,6 +64,39 @@ for (const file of [
     readFileSync(file, "utf8"),
     /stampOpenApiRegistryApiId/,
     `${file} must preserve exact operation ownership at overlapping mounts`,
+  )
+}
+
+const exactOperationOwners = new Map([
+  [
+    "packages/bookings/src/routes-admin.ts",
+    ["@voyant-travel/bookings#booking-supplier-extension.api", 3],
+  ],
+  [
+    "packages/finance/src/routes-booking-create.ts",
+    ["@voyant-travel/finance#bookings-create-extension.api", 2],
+  ],
+  [
+    "packages/finance/src/payment-schedule/routes.ts",
+    ["@voyant-travel/finance#booking-schedule-extension.api.admin", 1],
+  ],
+  [
+    "packages/legal/src/contract-document-routes.ts",
+    ["@voyant-travel/legal#contract-document.api", 1],
+  ],
+  [
+    "packages/quotes/src/routes/quote-versions.ts",
+    ["@voyant-travel/quotes#proposal-extension.api.admin", 1],
+  ],
+])
+
+for (const [file, [apiId, expectedCount]] of exactOperationOwners) {
+  const source = readFileSync(file, "utf8")
+  const marker = `"x-voyant-api-id": "${apiId}"`
+  assert.equal(
+    source.split(marker).length - 1,
+    expectedCount,
+    `${file} must preserve ${expectedCount} exact operation ownership markers for ${apiId}`,
   )
 }
 

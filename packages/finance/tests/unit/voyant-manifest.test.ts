@@ -85,6 +85,10 @@ describe("finance deployment manifest", () => {
         id: "@voyant-travel/finance#bookings-create-extension",
         api: [
           {
+            id: "@voyant-travel/finance#bookings-create-extension.api",
+            surface: "admin",
+            mount: "bookings",
+            openapi: { document: "bookings" },
             runtime: { entry: "@voyant-travel/finance", export: "bookingsCreateExtension" },
           },
         ],
@@ -107,6 +111,7 @@ describe("finance deployment manifest", () => {
           id: "@voyant-travel/finance#booking-schedule-extension.api.admin",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/finance",
             export: "createBookingScheduleHonoExtension",

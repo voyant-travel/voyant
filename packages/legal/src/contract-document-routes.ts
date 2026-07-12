@@ -173,6 +173,7 @@ const generateContractDocumentEnvelopeSchema = z.object({
 const generateBookingContractRoute = createRoute({
   method: "post",
   path: "/v1/admin/bookings/{bookingId}/generate-contract",
+  "x-voyant-api-id": "@voyant-travel/legal#contract-document.api",
   request: { params: z.object({ bookingId: z.string() }) },
   responses: {
     200: {

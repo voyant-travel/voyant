@@ -16,6 +16,7 @@ export const quotesVoyantModule = defineModule({
       id: "@voyant-travel/quotes#api",
       surface: "admin",
       mount: "quotes",
+      openapi: { document: "quotes" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
@@ -190,6 +191,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
       id: "@voyant-travel/quotes#proposal-extension.api.admin",
       surface: "admin",
       mount: "quote-versions",
+      openapi: { document: "quotes" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
