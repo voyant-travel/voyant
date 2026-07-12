@@ -1,7 +1,11 @@
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import { relationshipsRouteRuntimePort } from "./runtime-port.js"
 
-export { relationshipsMiceRuntimePort, relationshipsRouteRuntimePort } from "./runtime-port.js"
+export {
+  type RelationshipsMiceRuntime,
+  relationshipsMiceRuntimePort,
+  relationshipsRouteRuntimePort,
+} from "./runtime-port.js"
 
 const relationshipsAdminRuntime = {
   entry: "@voyant-travel/relationships-react/admin",

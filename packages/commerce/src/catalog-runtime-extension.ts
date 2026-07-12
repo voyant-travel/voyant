@@ -9,7 +9,7 @@ import {
 import { createCatalogPromotionEvaluator } from "./promotions/service-catalog-evaluator.js"
 import { createProductPromotionsProjectionExtension } from "./promotions/service-catalog-plane-promotions.js"
 
-export const catalogCommerceRuntimeExtension = {
+export const catalogCommerceRuntimeExtension: CatalogCommerceRuntimeExtension = {
   async loadSliceInputs(db) {
     const [marketRows, localeRows] = await Promise.all([
       db
@@ -29,4 +29,4 @@ export const catalogCommerceRuntimeExtension = {
   createPricingProjectionExtension: () => createProductPricingProjectionExtension(),
   createPromotionsProjectionExtension: () =>
     createProductPromotionsProjectionExtension({ loadOriginalPrice: loadProductPriceFrom }),
-} satisfies CatalogCommerceRuntimeExtension
+}

@@ -1,5 +1,8 @@
 import type { VoyantPort } from "@voyant-travel/core/project"
-import { relationshipsMiceRuntimePort } from "@voyant-travel/relationships/voyant"
+import {
+  type RelationshipsMiceRuntime,
+  relationshipsMiceRuntimePort,
+} from "@voyant-travel/relationships/voyant"
 import { type MiceRuntime, miceRuntimePort } from "./runtime-port.js"
 
 export interface MiceRuntimeContributorHost {
@@ -11,7 +14,7 @@ export function createMiceRuntimePortContribution(
   host: MiceRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const mice = Promise.resolve()
-    .then(() => host.getRuntimePort(relationshipsMiceRuntimePort))
+    .then(() => host.getRuntimePort<RelationshipsMiceRuntime>(relationshipsMiceRuntimePort))
     .then(
       (relationships): MiceRuntime => ({
         resolveDelegatePersonById: (db, personId) => relationships.personExists(db, personId),

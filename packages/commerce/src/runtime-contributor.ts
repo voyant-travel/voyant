@@ -1,16 +1,24 @@
 import {
+  type CatalogRuntimeServices,
   catalogCommerceRuntimeExtensionPort,
   catalogRuntimeServicesPort,
 } from "@voyant-travel/catalog/runtime-contracts"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
+  type FinanceAccommodationsPaymentPolicyRuntime,
+  type FinanceCruisesPaymentPolicyRuntime,
+  type FinanceDistributionPaymentPolicyRuntime,
+  type FinanceInventoryPaymentPolicyRuntime,
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
   financeDistributionPaymentPolicyRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
+import {
+  type CheckoutInquiryRuntime,
+  checkoutInquiryRuntimePort,
+} from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import { catalogCommerceRuntimeExtension } from "./catalog-runtime-extension.js"
 import {
   bookingMaintenanceRuntimePort,
@@ -26,6 +34,9 @@ import {
 import { createCommerceRuntime } from "./runtime.js"
 import {
   type CommerceCardPaymentRuntime,
+  type CommerceInventoryRuntime,
+  type CommerceLegalRuntime,
+  type CommerceOperatorSettingsRuntime,
   commerceCardPaymentRuntimePort,
   commerceInventoryRuntimePort,
   commerceLegalRuntimePort,
@@ -46,15 +57,23 @@ export function createCommerceRuntimePortContribution(
   const contribution = Promise.resolve()
     .then(() =>
       Promise.all([
-        host.getRuntimePort(commerceOperatorSettingsRuntimePort),
-        host.getRuntimePort(commerceInventoryRuntimePort),
-        host.getRuntimePort(commerceLegalRuntimePort),
-        host.getRuntimePort(catalogRuntimeServicesPort),
-        host.getRuntimePort(financeDistributionPaymentPolicyRuntimePort),
-        host.getRuntimePort(financeAccommodationsPaymentPolicyRuntimePort),
-        host.getRuntimePort(financeCruisesPaymentPolicyRuntimePort),
-        host.getRuntimePort(financeInventoryPaymentPolicyRuntimePort),
-        host.getRuntimePort(checkoutInquiryRuntimePort),
+        host.getRuntimePort<CommerceOperatorSettingsRuntime>(commerceOperatorSettingsRuntimePort),
+        host.getRuntimePort<CommerceInventoryRuntime>(commerceInventoryRuntimePort),
+        host.getRuntimePort<CommerceLegalRuntime>(commerceLegalRuntimePort),
+        host.getRuntimePort<CatalogRuntimeServices>(catalogRuntimeServicesPort),
+        host.getRuntimePort<FinanceDistributionPaymentPolicyRuntime>(
+          financeDistributionPaymentPolicyRuntimePort,
+        ),
+        host.getRuntimePort<FinanceAccommodationsPaymentPolicyRuntime>(
+          financeAccommodationsPaymentPolicyRuntimePort,
+        ),
+        host.getRuntimePort<FinanceCruisesPaymentPolicyRuntime>(
+          financeCruisesPaymentPolicyRuntimePort,
+        ),
+        host.getRuntimePort<FinanceInventoryPaymentPolicyRuntime>(
+          financeInventoryPaymentPolicyRuntimePort,
+        ),
+        host.getRuntimePort<CheckoutInquiryRuntime>(checkoutInquiryRuntimePort),
         resolveOptionalPort(host, commerceCardPaymentRuntimePort),
       ]),
     )

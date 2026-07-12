@@ -1,9 +1,15 @@
-import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
-import { catalogCheckoutApiRuntimePort } from "@voyant-travel/commerce/checkout"
+import {
+  type CatalogRuntimeServices,
+  catalogRuntimeServicesPort,
+} from "@voyant-travel/catalog/runtime-contracts"
+import {
+  type CatalogCheckoutApiRuntime,
+  catalogCheckoutApiRuntimePort,
+} from "@voyant-travel/commerce/checkout"
 import { commerceCardPaymentRuntimePort } from "@voyant-travel/commerce/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
-import { flightsRuntimePort } from "@voyant-travel/flights"
+import { type FlightsRuntime, flightsRuntimePort } from "@voyant-travel/flights"
 import { storefrontPaymentLinkRuntimePort } from "@voyant-travel/storefront"
 import type { TripsRoutesOptionsProvider } from "./routes.js"
 import { createTripsRoutesRuntime } from "./runtime.js"
@@ -37,9 +43,9 @@ export function createTripsRuntimePortContribution(
   const tripsRoutes = Promise.resolve()
     .then(() =>
       Promise.all([
-        host.getRuntimePort(catalogRuntimeServicesPort),
-        host.getRuntimePort(catalogCheckoutApiRuntimePort),
-        host.getRuntimePort(flightsRuntimePort),
+        host.getRuntimePort<CatalogRuntimeServices>(catalogRuntimeServicesPort),
+        host.getRuntimePort<CatalogCheckoutApiRuntime>(catalogCheckoutApiRuntimePort),
+        host.getRuntimePort<FlightsRuntime>(flightsRuntimePort),
       ]),
     )
     .then(([catalog, checkout, flights]) =>
