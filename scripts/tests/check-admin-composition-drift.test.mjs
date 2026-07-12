@@ -164,7 +164,7 @@ test("rejects legacy committed admin generation artifacts and commands", () => {
   const presentation = join(dir, "admin-presentation.tsx")
   const compatibility = join(dir, "admin-extensions.tsx")
   const router = join(dir, "router.tsx")
-  const destinations = join(dir, "admin-destinations.ts")
+  const workspace = join(dir, "workspace.tsx")
   const operatorPackage = join(dir, "package.json")
   const adminHostDestinations = join(dir, "admin-host-destinations.ts")
   const legacyRoutes = join(dir, "admin.routes.generated.tsx")
@@ -176,7 +176,7 @@ test("rejects legacy committed admin generation artifacts and commands", () => {
     writeFileSync(bundle, "export const selectedGraphAdminExtensionFactories = {}\n")
     writePresentation(presentation)
     writeFileSync(router, "buildAdminExtensionRoutes(operatorAdminPresentation.extensions)\n")
-    writeFileSync(destinations, "operatorAdminPresentation.extensions\n")
+    writeFileSync(workspace, "createAdminHostDestinations(presentation.extensions)\n")
     writeFileSync(operatorPackage, JSON.stringify({ scripts: {} }))
     writeFileSync(adminHostDestinations, "buildAdminExtensionDestinations(extensions)\n")
 
@@ -187,7 +187,7 @@ test("rejects legacy committed admin generation artifacts and commands", () => {
       presentation,
       compatibility,
       router,
-      destinations,
+      workspace,
       operatorPackage,
       adminHostDestinations,
       legacyRoutes,
@@ -217,7 +217,7 @@ function runChecker({
   presentation,
   compatibility,
   router = join(ROOT, "starters/operator/src/router.tsx"),
-  destinations = join(ROOT, "starters/operator/src/lib/admin-destinations.ts"),
+  workspace = join(ROOT, "packages/admin-host/src/workspace.tsx"),
   operatorPackage = join(ROOT, "starters/operator/package.json"),
   adminHostDestinations = join(ROOT, "packages/admin-host/src/admin-destinations.ts"),
   legacyRoutes = join(ROOT, "starters/operator/src/admin.routes.generated.tsx"),
@@ -240,8 +240,8 @@ function runChecker({
       compatibility,
       "--router",
       router,
-      "--destinations-source",
-      destinations,
+      "--workspace-source",
+      workspace,
       "--operator-package",
       operatorPackage,
       "--admin-host-destinations",
