@@ -1,4 +1,3 @@
-import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
@@ -6,7 +5,6 @@ import {
   financeDistributionPaymentPolicyRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import {
   bookingMaintenanceRuntimePort,
@@ -27,6 +25,8 @@ import {
 } from "./runtime-port.js"
 
 const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-index"
+const catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" } as const
+const checkoutInquiryRuntimePortReference = { id: "quotes.checkout-inquiry.runtime" } as const
 const commerceAdminRuntime = {
   entry: "@voyant-travel/commerce-react/admin",
   export: "createCommerceAdminExtension",
@@ -60,12 +60,12 @@ export const commerceVoyantModule = defineModule({
     requirePort(commerceInventoryRuntimePort),
     requirePort(commerceLegalRuntimePort),
     requirePort(commerceCardPaymentRuntimePort, { optional: true }),
-    requirePort(catalogRuntimeServicesPort),
+    catalogRuntimeServicesPortReference,
     requirePort(financeDistributionPaymentPolicyRuntimePort),
     requirePort(financeAccommodationsPaymentPolicyRuntimePort),
     requirePort(financeCruisesPaymentPolicyRuntimePort),
     requirePort(financeInventoryPaymentPolicyRuntimePort),
-    requirePort(checkoutInquiryRuntimePort),
+    checkoutInquiryRuntimePortReference,
   ],
   api: [
     {

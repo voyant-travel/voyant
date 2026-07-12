@@ -19413,6 +19413,100 @@
         "x-voyant-surface": "admin"
       }
     },
+    "/v1/admin/bookings/{bookingId}/mice-details": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "MICE booking detail response."
+          }
+        },
+        "operationId": "getAdminBookingsByBookingIdMiceDetails",
+        "summary": "GET /v1/admin/bookings/{bookingId}/mice-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "put": {
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "MICE booking detail response."
+          }
+        },
+        "operationId": "putAdminBookingsByBookingIdMiceDetails",
+        "summary": "PUT /v1/admin/bookings/{bookingId}/mice-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "MICE booking detail response."
+          }
+        },
+        "operationId": "deleteAdminBookingsByBookingIdMiceDetails",
+        "summary": "DELETE /v1/admin/bookings/{bookingId}/mice-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/bookings/{bookingId}/quote-details": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/quotes#booking-extension.api",
+        "responses": {
+          "200": {
+            "description": "Quote booking detail response."
+          }
+        },
+        "operationId": "getAdminBookingsByBookingIdQuoteDetails",
+        "summary": "GET /v1/admin/bookings/{bookingId}/quote-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "put": {
+        "x-voyant-api-id": "@voyant-travel/quotes#booking-extension.api",
+        "responses": {
+          "200": {
+            "description": "Quote booking detail response."
+          }
+        },
+        "operationId": "putAdminBookingsByBookingIdQuoteDetails",
+        "summary": "PUT /v1/admin/bookings/{bookingId}/quote-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "x-voyant-api-id": "@voyant-travel/quotes#booking-extension.api",
+        "responses": {
+          "200": {
+            "description": "Quote booking detail response."
+          }
+        },
+        "operationId": "deleteAdminBookingsByBookingIdQuoteDetails",
+        "summary": "DELETE /v1/admin/bookings/{bookingId}/quote-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
     "/v1/admin/bookings/{bookingId}/payment-schedule/regenerate": {
       "post": {
         "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.admin",

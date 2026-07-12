@@ -40,7 +40,7 @@ describe("@voyant-travel/commerce package exports", () => {
       "checkout/subscriber-runtime",
     ],
     [
-      "./promotions/workflow-boundary-scheduler",
+      "./promotion-boundary-workflow",
       "./src/promotions/workflow-boundary-scheduler.ts",
       "promotions/workflow-boundary-scheduler",
     ],

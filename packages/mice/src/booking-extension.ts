@@ -87,6 +87,8 @@ type Env = {
 export const MICE_BOOKING_OPENAPI_API_ID = "@voyant-travel/mice#booking-extension.api.admin"
 
 export const miceBookingExtensionRoutes = new OpenAPIHono<Env>()
+
+miceBookingExtensionRoutes
   .get("/:bookingId/mice-details", async (c) => {
     const row = await miceBookingExtensionService.getDetails(c.get("db"), c.req.param("bookingId"))
     return c.json({ data: row })

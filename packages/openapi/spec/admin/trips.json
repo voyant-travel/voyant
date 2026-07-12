@@ -9525,6 +9525,23 @@
         "x-voyant-module": "trips",
         "x-voyant-surface": "admin"
       }
+    },
+    "/v1/admin/trips/{envelopeId}/quote-versions/{quoteVersionId}/snapshot": {
+      "post": {
+        "summary": "Freeze a Trip snapshot into a Quote Version",
+        "x-voyant-api-id": "@voyant-travel/quotes#quote-version-snapshot-extension.api",
+        "responses": {
+          "200": {
+            "description": "The updated Quote Version and frozen Trip snapshot."
+          }
+        },
+        "operationId": "postAdminTripsByEnvelopeIdQuoteVersionsByQuoteVersionIdSnapshot",
+        "tags": [
+          "trips"
+        ],
+        "x-voyant-module": "trips",
+        "x-voyant-surface": "admin"
+      }
     }
   },
   "webhooks": {}

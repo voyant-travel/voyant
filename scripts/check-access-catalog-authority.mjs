@@ -50,7 +50,7 @@ const byResource = new Map(
 assert.equal(byResource.get("bookings")?.unitId, "@voyant-travel/bookings")
 assert.deepEqual(
   byResource.get("bookings")?.actions.map(({ action }) => action),
-  ["read", "write"],
+  ["delete", "read", "write"],
 )
 assert.deepEqual(byResource.get("bookings")?.legacyActions, ["cancel"])
 assert.equal(byResource.get("bookings-pii")?.unitId, "@voyant-travel/bookings")
