@@ -17,10 +17,8 @@ export type FrameworkProviders = Record<never, never>
  * outbox, publicPaths, …) — minus the `manifest`/`registry`/`capabilities` the
  * framework now assembles for you.
  */
-export interface CreateVoyantAppConfig<
-  TBindings extends VoyantBindings,
-  TProviders,
-> extends Omit<CreateAppConfig<TBindings, TProviders>, "manifest" | "registry" | "capabilities"> {
+export interface CreateVoyantAppConfig<TBindings extends VoyantBindings, TProviders>
+  extends Omit<CreateAppConfig<TBindings, TProviders>, "manifest" | "registry" | "capabilities"> {
   /** Capabilities passed only to the explicitly supplied local factories. */
   providers: TProviders
   /** Explicit module factories. Standard product units come from the generated graph runtime. */
@@ -30,10 +28,9 @@ export interface CreateVoyantAppConfig<
 }
 
 /** Compose only explicitly supplied factories through the generic Hono machinery. */
-export function createVoyantApp<
-  TBindings extends VoyantBindings,
-  TProviders,
->(config: CreateVoyantAppConfig<TBindings, TProviders>) {
+export function createVoyantApp<TBindings extends VoyantBindings, TProviders>(
+  config: CreateVoyantAppConfig<TBindings, TProviders>,
+) {
   const { providers, modules = {}, extensions = {}, ...rest } = config
 
   const registry: CompositionRegistry<TProviders> = {

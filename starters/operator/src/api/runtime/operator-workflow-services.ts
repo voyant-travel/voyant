@@ -50,8 +50,8 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createProductBrochurePrinter } from "../../lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
 import { reportBackgroundFailure } from "../../lib/observability.js"
-import { createBulkReindexProductsService } from "../lib/bulk-reindex-service.js"
 import { ensureBookingEngineRegistry } from "../lib/booking-engine-runtime.js"
+import { createBulkReindexProductsService } from "../lib/bulk-reindex-service.js"
 import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
@@ -199,7 +199,6 @@ export function registerEventOutboxWorkflowService(
   container: ModuleContainer,
   bindings: OperatorWorkflowBindings,
 ): void {
-  const env = workflowEnvironment(bindings)
   const appBindings = operatorBindings(bindings)
   const runtime: EventOutboxWorkflowRuntime = {
     withDb: (operation) => withDbFromEnv(appBindings, (db) => operation(operatorPostgresDb(db))),

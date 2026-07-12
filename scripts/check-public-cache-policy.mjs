@@ -232,7 +232,6 @@ function checkSourceMarkers() {
       "content routes must not apply shared cache headers from route options",
     )
   }
-
 }
 
 checkPolicyDoc()
