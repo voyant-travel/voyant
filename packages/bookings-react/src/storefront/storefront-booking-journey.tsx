@@ -19,7 +19,7 @@ import {
   type PaymentPolicy,
   type PaymentPolicySource,
 } from "@voyant-travel/finance/payment-policy"
-import { type VoyantFetcher, useVoyantReactContext } from "@voyant-travel/react"
+import { useVoyantReactContext, type VoyantFetcher } from "@voyant-travel/react"
 
 import {
   type BookingEntitySummary,
@@ -131,10 +131,7 @@ export interface StorefrontBookingJourneyProps {
   messages?: StorefrontBookingJourneyMessages
   scope?: StorefrontBookingJourneyScope
   onNavigateToShop: () => void
-  onNavigateToConfirmation: (
-    bookingId: string,
-    kind?: StorefrontCheckoutConfirmationKind,
-  ) => void
+  onNavigateToConfirmation: (bookingId: string, kind?: StorefrontCheckoutConfirmationKind) => void
   onRedirectToPayment?: (url: string) => void
   className?: string
 }

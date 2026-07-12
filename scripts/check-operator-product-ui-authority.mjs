@@ -50,7 +50,10 @@ const requiredTokens = new Map([
   ],
   [
     "starters/operator/src/lib/admin-extensions.tsx",
-    ["../../.voyant/admin/selected-graph-admin.generated", 'import.meta.glob("../admin/*/index.tsx"'],
+    [
+      "../../.voyant/admin/selected-graph-admin.generated",
+      'import.meta.glob("../admin/*/index.tsx"',
+    ],
   ],
   ["starters/operator/src/router.tsx", ['from "./admin.routes.generated"']],
 ])

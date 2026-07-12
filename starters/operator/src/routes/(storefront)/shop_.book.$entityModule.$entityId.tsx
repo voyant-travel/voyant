@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, redirect, useNavigate, useParams, useSearch } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  redirect,
+  useNavigate,
+  useParams,
+  useSearch,
+} from "@tanstack/react-router"
 import type { AccommodationContent } from "@voyant-travel/accommodations/content-shape"
 import type { BookingEntitySummary } from "@voyant-travel/bookings-react/journey"
 import {
