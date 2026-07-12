@@ -7,14 +7,11 @@ const generatedGraph = join(".voyant", "deployment-graph.generated.json")
 const compatibilityGraph = ".voyant-admin-graph.generated.json"
 const check = process.argv.includes("--check")
 
-// @voyant-travel/cli@0.36 resolves package exports relative to the graph file.
-// Keep its compatibility input at the project root, then remove it even when
-// generation fails. The durable graph remains under .voyant/.
+// Keep the graph input at the project root because package exports resolve
+// relative to it. The durable generated graph remains under .voyant/.
 copyFileSync(generatedGraph, compatibilityGraph)
 try {
   assertNoCompatibilityExtensions("src/admin.extensions.generated.ts")
-  run(["--routes", "--out", "src/admin.routes.generated.tsx"])
-  run(["--destinations", "--out", "src/admin.destinations.generated.ts"])
 } finally {
   rmSync(compatibilityGraph, { force: true })
 }
