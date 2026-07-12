@@ -10,11 +10,11 @@ import type {
 import type { QuotesProposalRuntime } from "./runtime-port.js"
 
 /** Build standard Node Quotes runtimes from generic primitives and package services. */
-export function createQuotesRuntime(
+export async function createQuotesRuntime(
   host: QuotesRuntimeContributorHost,
   createTripsRoutesOptions: TripsRoutesOptionsProvider,
-): QuotesRuntimeContribution {
-  const tripRoutes = createTripsRoutesOptions()
+): Promise<QuotesRuntimeContribution> {
+  const tripRoutes = await createTripsRoutesOptions()
   const resolveDb: QuotesProposalRuntime["resolveDb"] = (context) =>
     host.primitives.database.fromContext<ReturnType<QuotesProposalRuntime["resolveDb"]>>(context)
   return {
