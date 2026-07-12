@@ -16,7 +16,10 @@ vi.mock("@voyant-travel/catalog-react/booking-engine", () => ({
   useBookingQuote: mocks.useBookingQuote,
 }))
 
-import { StorefrontUiProvider } from "@voyant-travel/storefront-react/storefront"
+import {
+  StorefrontUiProvider,
+  storefrontMessagesEn,
+} from "@voyant-travel/storefront-react/storefront"
 import { CruiseDetailPage } from "./cruise-detail-page.js"
 
 describe("CruiseDetailPage", () => {
@@ -62,11 +65,12 @@ function testStorefrontUiValue() {
     navigate: mocks.navigate,
     scope: {},
     messages: {
-      shop: {},
-      shopDetailProducts: {},
-      shopDetailAccommodations: {},
-      shopDetailCruises: {},
+      shop: storefrontMessagesEn.shop,
+      shopDetailProducts: storefrontMessagesEn.shopDetailProducts,
+      shopDetailAccommodations: storefrontMessagesEn.shopDetailAccommodations,
+      shopDetailCruises: storefrontMessagesEn.shopDetailCruises,
       shopDetailShared: {
+        ...storefrontMessagesEn.shopDetailShared,
         backToAll: "Back to all",
         bookThis: "Book this",
         detailUnavailable: "Detail content isn't available for this item yet.",

@@ -57,12 +57,12 @@ function runtimeClient(runtime: AdminRouteLoaderContext["runtime"]) {
  */
 function lazyWidget<TProps extends object>(
   load: () => Promise<{ default: ComponentType<TProps> }>,
-): ComponentType<Record<string, unknown>> {
+): ComponentType<TProps> {
   const Lazy = React.lazy(load)
-  return function LazyFinanceAdminWidget(props: Record<string, unknown>) {
+  return function LazyFinanceAdminWidget(props: TProps) {
     return (
       <React.Suspense fallback={null}>
-        <Lazy {...(props as TProps)} />
+        <Lazy {...props} />
       </React.Suspense>
     )
   }
@@ -388,7 +388,7 @@ export function createFinanceAdminExtension(
         id: "finance-booking-payment-controller",
         slot: bookingDetailPaymentControllerSlot,
         component: LazyBookingPaymentController,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<BookingDetailPaymentControllerSlotContext>,
       {
         id: "finance-booking-invoices",
         slot: bookingDetailInvoicesTabSlot,
@@ -396,7 +396,7 @@ export function createFinanceAdminExtension(
         // the typed contract is `BookingDetailHostSlotContext`, which the
         // bookings host passes verbatim to this slot's widgets.
         component: LazyBookingInvoicesWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<BookingInvoicesWidgetProps>,
       {
         id: "finance-booking-pending-payment-sessions",
         slot: bookingDetailFinanceStartSlot,
@@ -404,14 +404,14 @@ export function createFinanceAdminExtension(
         // `BookingDetailHostSlotContext`, which the bookings host passes
         // verbatim to this slot's widgets.
         component: LazyBookingPendingPaymentSessionsWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<BookingPendingPaymentSessionsWidgetProps>,
       {
         id: "finance-booking-payment-policy",
         slot: bookingDetailFinanceEndSlot,
         // Same untyped-registry cast; the typed contract is
         // `BookingDetailHostSlotContext`.
         component: LazyBookingPaymentPolicyWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<BookingPaymentPolicyWidgetProps>,
       {
         id: "finance-supplier-payment-policy",
         slot: supplierDetailPaymentPolicySlot,
@@ -419,7 +419,7 @@ export function createFinanceAdminExtension(
         // `SupplierDetailHostSlotContext`, which the supplier detail host
         // passes verbatim to this slot's widgets.
         component: LazySupplierPaymentPolicyWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<SupplierPaymentPolicyWidgetProps>,
     ],
   })
 }
