@@ -94,14 +94,17 @@ async function main(): Promise<void> {
 
   if (first.deployment.target !== "node") {
     failures.push(
-      `expected managed-cloud graph runtime target node, got ${first.deployment.target}`,
+      `expected standard Operator graph runtime target node, got ${first.deployment.target}`,
     )
   }
   if (
-    first.deployment.providers.auth !== "voyant-cloud" ||
-    first.deployment.providers.workflows !== "voyant-cloud"
+    first.deployment.mode !== "self-hosted" ||
+    first.deployment.providers.database !== "postgres" ||
+    first.deployment.providers.storage !== "memory" ||
+    first.deployment.providers.auth === "voyant-cloud" ||
+    first.deployment.providers.workflows === "voyant-cloud"
   ) {
-    failures.push("expected managed-cloud graph to preserve voyant-cloud auth/workflow providers")
+    failures.push("expected standard Operator graph to preserve self-hosted provider defaults")
   }
 
   if (!/^sha256:[a-f0-9]{64}$/.test(first.contentHash)) {

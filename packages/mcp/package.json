@@ -17,6 +17,11 @@
       "framework": ">=0.38.0",
       "targets": [
         "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
       ]
     }
   },
