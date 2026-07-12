@@ -606,7 +606,8 @@ function parseGeneratedStringConst(source: string, name: string): string | undef
     new RegExp(`export\\s+const\\s+${escapedName}\\s*=\\s*("(?:[^"\\\\]|\\\\.)*")\\s+as\\s+const`),
   )
   if (!match) return undefined
-  return JSON.parse(match[1]) as string
+  const serialized = match[1]
+  return serialized === undefined ? undefined : (JSON.parse(serialized) as string)
 }
 
 function assertGeneratedStringArrayConst(
@@ -625,9 +626,13 @@ function parseGeneratedStringArrayConst(source: string, name: string): string[] 
     new RegExp(`export\\s+const\\s+${escapedName}\\s*=\\s*\\[([\\s\\S]*?)\\]\\s+as\\s+const`),
   )
   if (!match) return undefined
-  return Array.from(match[1].matchAll(/"((?:[^"\\]|\\.)*)"/g), (entry) =>
-    JSON.parse(`"${entry[1]}"`),
-  )
+  const serialized = match[1]
+  if (serialized === undefined) return undefined
+  return Array.from(serialized.matchAll(/"((?:[^"\\]|\\.)*)"/g), (entry) => {
+    const value = entry[1]
+    if (value === undefined) throw new Error(`generated runtime entry ${name} is malformed`)
+    return JSON.parse(`"${value}"`) as string
+  })
 }
 
 function stringArraysEqual(actual: readonly string[], expected: readonly string[]): boolean {

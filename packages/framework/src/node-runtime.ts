@@ -124,7 +124,7 @@ export function createVoyantNodeRuntimeHostPrimitives(
     bindings && typeof bindings === "object" ? (bindings as VoyantNodeRuntimeEnv) : fallbackEnv
 
   return {
-    env: (bindings) => bindingsEnv(bindings) as Readonly<Record<string, unknown>>,
+    env: (bindings) => bindingsEnv(bindings) as unknown as Readonly<Record<string, unknown>>,
     database: {
       resolve: <TDatabase>(bindings: unknown) =>
         resolveDb(bindingsEnv(bindings)) as unknown as TDatabase,
