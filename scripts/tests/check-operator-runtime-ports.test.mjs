@@ -10,7 +10,12 @@ import { promisify } from "node:util"
 const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checkerPath = path.join(repoRoot, "scripts/check-operator-runtime-ports.mjs")
-async function createFixture({ appExtra = "", composition = false, framework = false } = {}) {
+async function createFixture({
+  appExtra = "",
+  composition = false,
+  framework = false,
+  assignedResources = false,
+} = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-package-authority-"))
   const app = path.join(root, "operator/src/api/app.ts")
   const resources = path.join(root, "operator/src/api/runtime/deployment-resources.ts")
@@ -19,7 +24,9 @@ async function createFixture({ appExtra = "", composition = false, framework = f
   await mkdir(path.dirname(frameworkFile), { recursive: true })
   await writeFile(
     app,
-    `const graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...createOperatorDeploymentResources(workflowRunnerRegistry) })\n${appExtra}\n`,
+    assignedResources
+      ? `const deploymentResources = createOperatorDeploymentResources(workflowRunnerRegistry)\nconst graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...deploymentResources })\n${appExtra}\n`
+      : `const graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...createOperatorDeploymentResources(workflowRunnerRegistry) })\n${appExtra}\n`,
   )
   await writeFile(resources, "export function createOperatorDeploymentResources() { return {} }\n")
   if (composition)
@@ -45,6 +52,11 @@ function runChecker(root) {
 describe("check-operator-runtime-ports", () => {
   it("accepts the opaque deployment-resource composition boundary", async () => {
     const result = await runChecker(await createFixture())
+    assert.match(result.stdout, /0 product runtime-port entries in app composition/)
+  })
+
+  it("accepts an assigned deployment-resource composition boundary", async () => {
+    const result = await runChecker(await createFixture({ assignedResources: true }))
     assert.match(result.stdout, /0 product runtime-port entries in app composition/)
   })
 
