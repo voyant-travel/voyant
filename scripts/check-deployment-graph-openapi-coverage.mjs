@@ -23,7 +23,7 @@ const CHECKED_SURFACES = new Set(["admin", "storefront"])
 // Ratchet only. The document names and owners remain authoritative in package
 // manifests; this prevents migrated bundles from silently falling back to the
 // Operator compatibility partition.
-const MIN_PACKAGE_OWNED_DOCUMENTS = 11
+const MIN_PACKAGE_OWNED_DOCUMENTS = 12
 const HTTP_METHODS = new Set([
   "connect",
   "delete",
@@ -36,12 +36,7 @@ const HTTP_METHODS = new Set([
   "trace",
 ])
 
-const DEFAULT_ALLOWLIST = new Map([
-  [
-    "@voyant-travel/plugin-smartbill#api.admin",
-    "SmartBill 0.140.0 owns its graph runtime but does not yet declare an OpenAPI document in package metadata",
-  ],
-])
+const DEFAULT_ALLOWLIST = new Map()
 
 const repoRoot = process.cwd()
 const options = parseArgs(process.argv.slice(2))

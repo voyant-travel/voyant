@@ -29,21 +29,22 @@ const app = readRequired(join(operatorRoot, "src/api/app.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const nodeHost = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 
-if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.0") {
-  violations.push("operator must depend on @voyant-travel/plugin-smartbill ^0.140.0")
+if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.1") {
+  violations.push("operator must depend on @voyant-travel/plugin-smartbill ^0.140.1")
 }
-if (installedPackage.version !== "0.140.0") {
-  violations.push("installed SmartBill package must resolve to 0.140.0")
+if (installedPackage.version !== "0.140.1") {
+  violations.push("installed SmartBill package must resolve to 0.140.1")
 }
 if (
   installedPackage.voyant?.kind !== "plugin" ||
   installedPackage.voyant?.manifest !== "./voyant" ||
   !installedPackage.exports?.["./voyant"] ||
   !installedPackage.exports?.["./graph-runtime"] ||
+  !installedPackage.exports?.["./runtime-contributor"] ||
   !installedPackage.exports?.["./subscriber-runtime"]
 ) {
   violations.push(
-    "SmartBill must advertise plugin metadata plus ./voyant, ./graph-runtime, and ./subscriber-runtime exports",
+    "SmartBill must advertise plugin metadata plus ./voyant, ./graph-runtime, ./runtime-contributor, and ./subscriber-runtime exports",
   )
 }
 if (!/resolve:\s*["']@voyant-travel\/plugin-smartbill["']/.test(config)) {
