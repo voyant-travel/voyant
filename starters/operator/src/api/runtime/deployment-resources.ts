@@ -7,8 +7,6 @@
  * registries.
  */
 
-import { cloudAdminMembersConfigFromRevalidate } from "@voyant-travel/auth/cloud-broker"
-import type { IdentityAccessRuntimeProvider } from "@voyant-travel/auth/identity-access-runtime-port"
 import type { BookingsRuntimeProvider } from "@voyant-travel/bookings"
 import type {
   CatalogSearchRuntime,
@@ -78,6 +76,7 @@ type OperatorRelationshipsService = Pick<
 >
 
 interface OperatorCapabilities {
+  customFields: typeof resolveOperatorCustomFields
   resolveNotificationProviders: typeof resolveNotificationProviders
   resolvePublicCheckoutBaseUrl: typeof resolvePublicCheckoutBaseUrlFromBindings
   resolveDocumentDownloadUrl: typeof resolveOperatorDocumentDownloadUrl
@@ -146,23 +145,15 @@ function createDeploymentPortResources(
   capabilities: OperatorCapabilities = createDeploymentCapabilities(),
 ) {
   return createGeneratedGraphRuntimePorts({
-    identityAccess: createOperatorIdentityAccessRuntime(capabilities),
+    capabilities,
     workflowRunnerRegistry,
     host: operatorSmartbillRuntimeHost,
-    quotes: {
-      resolveParticipantPersonById: async (db, personId) =>
-        (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-    },
     proposal: import("./quote-proposal-runtime").then((runtime) =>
       runtime.createQuoteProposalRoutesOptions(),
     ),
     snapshot: import("./quote-proposal-runtime").then((runtime) =>
       runtime.createQuoteProposalRoutesOptions(),
     ),
-    mice: {
-      resolveDelegatePersonById: async (db, personId) =>
-        (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-    },
     bookings: createOperatorBookingsRuntimeProvider(capabilities),
     requirements: {
       publicRoutes: {
@@ -274,7 +265,6 @@ function createDeploymentPortResources(
     health: import("./action-ledger-health-runtime").then((runtime) =>
       runtime.createOperatorActionLedgerHealthRuntime(),
     ),
-    relationshipsRoutes: { customFields: resolveOperatorCustomFields },
     flights: import("./flights-runtime").then((runtime) => runtime.operatorFlightsRuntime),
     notifications: createOperatorNotificationsRuntimeProvider(),
     legal: {
@@ -341,49 +331,6 @@ export function createOperatorDeploymentResources(
     outboundWebhooks: {
       enqueue: (event: Parameters<typeof enqueueGraphWebhookEvent>[1], bindings: unknown) =>
         enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
-    },
-  }
-}
-
-function createOperatorIdentityAccessRuntime(
-  capabilities: OperatorCapabilities,
-): IdentityAccessRuntimeProvider {
-  return {
-    resolveDeployment(bindings) {
-      const env = bindings as AppBindings
-      const appUrl = (env.APP_URL || env.DASH_BASE_URL || "http://localhost:3300")
-        .trim()
-        .replace(/\/$/, "")
-      const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
-      const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
-      const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
-      return {
-        appUrl,
-        authMode: env.VOYANT_ADMIN_AUTH_MODE?.trim() === "voyant-cloud" ? "voyant-cloud" : "local",
-        cloudAdminMembers:
-          deploymentId && revalidateUrl && clientToken
-            ? cloudAdminMembersConfigFromRevalidate({ revalidateUrl, deploymentId, clientToken })
-            : null,
-      }
-    },
-    async sendInvitationEmail(bindings, message) {
-      const provider = capabilities
-        .resolveNotificationProviders(bindings)
-        .find((candidate) => candidate.channels.includes("email"))
-      if (!provider) return false
-      try {
-        await provider.send({
-          channel: "email",
-          to: message.to,
-          template: "auth.invitation",
-          subject: "You've been invited to Voyant",
-          html: `<p>You've been invited to join a Voyant workspace.</p><p><a href="${message.acceptUrl}">Accept invitation</a></p><p>The link expires in ${message.expiresInHours} hours.</p>`,
-        })
-        return true
-      } catch (error) {
-        console.error("[invitations] email send failed:", error)
-        return false
-      }
     },
   }
 }

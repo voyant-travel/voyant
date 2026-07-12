@@ -1,14 +1,25 @@
 import { type MiceRuntime, miceRuntimePort } from "./runtime-port.js"
 
-type RuntimePortValue<T> = T | Promise<T>
+type ResolveDelegatePersonById = MiceRuntime["resolveDelegatePersonById"]
 
-export interface MiceRuntimePortContribution {
-  mice: RuntimePortValue<MiceRuntime>
+export interface MiceRuntimeContributorHost {
+  capabilities: {
+    relationshipsService: {
+      getPersonById(
+        db: Parameters<ResolveDelegatePersonById>[0],
+        personId: string,
+      ): Promise<unknown>
+    }
+  }
 }
 
 /** Package-owned registration map for MICE deployment adapters. */
 export function createMiceRuntimePortContribution(
-  contribution: MiceRuntimePortContribution,
+  host: MiceRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [miceRuntimePort.id]: contribution.mice }
+  const mice: MiceRuntime = {
+    resolveDelegatePersonById: async (db, personId) =>
+      (await host.capabilities.relationshipsService.getPersonById(db, personId)) != null,
+  }
+  return { [miceRuntimePort.id]: mice }
 }

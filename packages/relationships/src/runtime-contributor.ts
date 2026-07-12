@@ -1,15 +1,17 @@
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
 import { relationshipsRouteRuntimePort } from "./runtime-port.js"
 
-type RuntimePortValue<T> = T | Promise<T>
-
-export interface RelationshipsRuntimePortContribution {
-  relationshipsRoutes: RuntimePortValue<RelationshipsRouteRuntimeOptions>
+export interface RelationshipsRuntimeContributorHost {
+  capabilities: Pick<RelationshipsRouteRuntimeOptions, "customFields">
 }
 
 /** Package-owned registration map for Relationships deployment adapters. */
 export function createRelationshipsRuntimePortContribution(
-  contribution: RelationshipsRuntimePortContribution,
+  host: RelationshipsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [relationshipsRouteRuntimePort.id]: contribution.relationshipsRoutes }
+  return {
+    [relationshipsRouteRuntimePort.id]: {
+      customFields: host.capabilities.customFields,
+    } satisfies RelationshipsRouteRuntimeOptions,
+  }
 }
