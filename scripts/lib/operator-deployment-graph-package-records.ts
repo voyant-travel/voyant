@@ -59,6 +59,8 @@ const OPERATOR_GRAPH_COMPATIBILITY = {
   modes: ["local", "managed-cloud", "self-hosted"],
 } as const
 
+const OPERATOR_PACKAGE_RECORD_IMPORTERS = ["starters/operator", "packages/framework"] as const
+
 const OPERATOR_LOCAL_PACKAGE_RECORDS = [
   {
     packageName: "operator",
@@ -120,16 +122,22 @@ export async function resolveOperatorDeploymentGraph(
     admission: OPERATOR_GRAPH_ADMISSION_POLICY,
   } as const
   const discoveredGraph = await resolveDeploymentGraph(graphInput)
+  const discoveredPackageNames = new Set(
+    discoveredGraph.packageRecords.map((record) => record.packageName),
+  )
+  const additionalRuntimePackageNames = FRAMEWORK_RUNTIME_PACKAGES.filter(
+    (packageName) => !discoveredPackageNames.has(packageName),
+  )
   const selectedPackageRecords = withOperatorNodePackageCompatibility(
     withOperatorDeploymentLocalPackageRecords(
       readPnpmLockfilePackageRecords({
         repoRoot: options.repoRoot,
         projectRoot: options.projectRoot,
-        importerPaths: ["starters/operator"],
+        importerPaths: OPERATOR_PACKAGE_RECORD_IMPORTERS,
         packageNames: [
           "@voyant-travel/framework",
           "@voyant-travel/framework-migrations",
-          ...FRAMEWORK_RUNTIME_PACKAGES,
+          ...additionalRuntimePackageNames,
           ...discoveredGraph.packageRecords.map((record) => record.packageName),
         ],
       }),
@@ -155,7 +163,7 @@ export async function resolveOperatorDeploymentGraph(
         readPnpmLockfilePackageRecords({
           repoRoot: options.repoRoot,
           projectRoot: options.projectRoot,
-          importerPaths: ["starters/operator"],
+          importerPaths: OPERATOR_PACKAGE_RECORD_IMPORTERS,
           packageNames: [
             ...manifestedGraph.packageRecords.map((record) => record.packageName),
             ...referencedPackageNames,

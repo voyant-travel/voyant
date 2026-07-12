@@ -87,8 +87,21 @@ for (const domainPackageName of [
     violations.push(`${domainPackageName} must not export a target runtime contributor`)
   }
 }
-if (!graphResolver.includes("...FRAMEWORK_RUNTIME_PACKAGES")) {
+if (!graphResolver.includes("FRAMEWORK_RUNTIME_PACKAGES.filter(")) {
   violations.push("Operator graph resolution must admit standard BOM runtime package records")
+}
+if (
+  !graphResolver.includes("additionalRuntimePackageNames") ||
+  !graphResolver.includes("!discoveredPackageNames.has(packageName)")
+) {
+  violations.push("Operator graph resolution must not re-admit already selected product packages")
+}
+if (
+  !graphResolver.includes(
+    'OPERATOR_PACKAGE_RECORD_IMPORTERS = ["starters/operator", "packages/framework"]',
+  )
+) {
+  violations.push("Operator graph resolution must derive adapter provenance from the framework BOM")
 }
 if (!graphGenerator.includes("const runtime = record.metadata?.runtime")) {
   violations.push("Graph runtime generation must lower contributors from admitted package records")
