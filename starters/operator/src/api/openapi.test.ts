@@ -24,12 +24,21 @@ import { buildOperatorOpenApiDocuments, mergeOperatorOpenApiModuleDocuments } fr
 const OUT_DIR = join(process.cwd(), "openapi")
 const REPO_ROOT = resolve(process.cwd(), "../..")
 const PACKAGE_OPENAPI_ROOTS = new Map([
+  ["accommodations", join(REPO_ROOT, "packages/accommodations/openapi")],
+  ["accommodations-content-public", join(REPO_ROOT, "packages/accommodations/openapi")],
   ["action-ledger", join(REPO_ROOT, "packages/action-ledger/openapi")],
   ["distribution", join(REPO_ROOT, "packages/distribution/openapi")],
   ["external-refs", join(REPO_ROOT, "packages/distribution/openapi")],
+  ["flights", join(REPO_ROOT, "packages/flights/openapi")],
+  ["identity", join(REPO_ROOT, "packages/identity/openapi")],
   ["mice", join(REPO_ROOT, "packages/mice/openapi")],
+  ["notifications", join(REPO_ROOT, "packages/notifications/openapi")],
   ["operations", join(REPO_ROOT, "packages/operations/openapi")],
   ["operator-settings", join(REPO_ROOT, "packages/operator-settings/openapi")],
+  ["public-document-delivery", join(REPO_ROOT, "packages/public-document-delivery/openapi")],
+  ["quotes-proposal-public", join(REPO_ROOT, "packages/quotes/openapi")],
+  ["realtime-admin", join(REPO_ROOT, "packages/realtime/openapi")],
+  ["realtime-public", join(REPO_ROOT, "packages/realtime/openapi")],
   ["relationships", join(REPO_ROOT, "packages/relationships/openapi")],
   ["storage-media", join(REPO_ROOT, "packages/storage/openapi")],
   ["storage-uploads", join(REPO_ROOT, "packages/storage/openapi")],

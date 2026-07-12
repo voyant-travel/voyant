@@ -14,7 +14,9 @@
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud": "./src/providers/voyant-cloud.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/realtime-admin.json",
+    "./openapi/storefront": "./openapi/storefront/realtime-public.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -36,7 +38,8 @@
     "vitest": "catalog:"
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "publishConfig": {
     "access": "public",
@@ -95,7 +98,9 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/realtime-admin.json",
+      "./openapi/storefront": "./openapi/storefront/realtime-public.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

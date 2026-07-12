@@ -20,11 +20,18 @@ import {
 const DEFAULT_GRAPH = "starters/operator/.voyant/deployment-graph.generated.json"
 const DEFAULT_OPENAPI_DIR = "starters/operator/openapi"
 const DEFAULT_PACKAGE_OPENAPI_DIRS = [
+  "packages/accommodations/openapi",
   "packages/action-ledger/openapi",
   "packages/distribution/openapi",
+  "packages/flights/openapi",
+  "packages/identity/openapi",
   "packages/mice/openapi",
+  "packages/notifications/openapi",
   "packages/operations/openapi",
   "packages/operator-settings/openapi",
+  "packages/public-document-delivery/openapi",
+  "packages/quotes/openapi",
+  "packages/realtime/openapi",
   "packages/relationships/openapi",
   "packages/storage/openapi",
   "packages/storefront/openapi",
