@@ -16,6 +16,7 @@
     "@voyant-travel/identity",
     "@voyant-travel/inventory",
     "@voyant-travel/legal",
+    "@voyant-travel/legal-node",
     "@voyant-travel/mice",
     "@voyant-travel/notifications",
     "@voyant-travel/operations",

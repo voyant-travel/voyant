@@ -1,0 +1,35 @@
+{
+  "extends": "@voyant-travel/voyant-typescript-config/base.json",
+  "compilerOptions": {
+    "composite": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@voyant-travel/bookings": ["../bookings/dist/index.d.ts"],
+      "@voyant-travel/core": ["../core/dist/index.d.ts"],
+      "@voyant-travel/inventory/booking-payment-policy-runtime": [
+        "../inventory/dist/booking-payment-policy-runtime.d.ts"
+      ],
+      "@voyant-travel/legal": ["../legal/dist/index.d.ts"],
+      "@voyant-travel/legal/booking-contract-subscriber": [
+        "../legal/dist/contracts/booking-contract-subscriber-runtime.d.ts"
+      ],
+      "@voyant-travel/legal/contract-document": [
+        "../legal/dist/contracts/contract-document-service.d.ts"
+      ],
+      "@voyant-travel/legal/contract-document-routes": [
+        "../legal/dist/contract-document-routes.d.ts"
+      ],
+      "@voyant-travel/legal/contract-document-runtime-port": [
+        "../legal/dist/contract-document-runtime-port.d.ts"
+      ],
+      "@voyant-travel/legal/contract-variables": [
+        "../legal/dist/contracts/contract-variables.d.ts"
+      ],
+      "@voyant-travel/legal/runtime-port": ["../legal/dist/runtime-port.d.ts"],
+      "@voyant-travel/operator-settings": ["../operator-settings/dist/index.d.ts"],
+      "@voyant-travel/storage": ["../storage/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

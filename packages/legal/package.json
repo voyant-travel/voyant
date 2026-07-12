@@ -28,7 +28,8 @@
     "./policies/validation": "./src/policies/validation.ts",
     "./policies/routes": "./src/policies/routes.ts",
     "./policies/service": "./src/policies/service.ts",
-    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime-port": "./src/runtime-port.ts",
+    "./contract-document-runtime-port": "./src/contract-document-runtime-port.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/legal.json",
     "./openapi/admin/contract-document": "./openapi/admin/contract-document.json",
@@ -200,10 +201,15 @@
         "import": "./dist/policies/service.js",
         "default": "./dist/policies/service.js"
       },
-      "./runtime-contributor": {
-        "types": "./dist/runtime-contributor.d.ts",
-        "import": "./dist/runtime-contributor.js",
-        "default": "./dist/runtime-contributor.js"
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
+      },
+      "./contract-document-runtime-port": {
+        "types": "./dist/contract-document-runtime-port.d.ts",
+        "import": "./dist/contract-document-runtime-port.js",
+        "default": "./dist/contract-document-runtime-port.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
@@ -226,10 +232,6 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
-    "runtime": {
-      "entry": "./runtime-contributor",
-      "export": "createLegalRuntimePortContribution"
-    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

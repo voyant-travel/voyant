@@ -20,7 +20,7 @@ const packageFactories = {
   "finance-node": "createFinanceNodeRuntimePortContribution",
   flights: "createFlightsRuntimePortContribution",
   inventory: "createInventoryRuntimePortContribution",
-  legal: "createLegalRuntimePortContribution",
+  "legal-node": "createLegalNodeRuntimePortContribution",
   mice: "createMiceRuntimePortContribution",
   notifications: "createNotificationsRuntimePortContribution",
   quotes: "createQuotesRuntimePortContribution",

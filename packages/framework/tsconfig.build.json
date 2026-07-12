@@ -1015,6 +1015,13 @@
       "@voyant-travel/inventory/workflow-runtime": ["../inventory/dist/workflow-runtime.d.ts"],
       "@voyant-travel/inventory/workflows": ["../inventory/dist/workflow-entry.d.ts"],
       "@voyant-travel/legal": ["../legal/dist/index.d.ts"],
+      "@voyant-travel/legal-node": ["../legal-node/dist/runtime-contributor.d.ts"],
+      "@voyant-travel/legal-node/runtime-contributor": [
+        "../legal-node/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/legal-node/standard-node-runtime": [
+        "../legal-node/dist/standard-node-runtime.d.ts"
+      ],
       "@voyant-travel/legal-contracts": ["../legal-contracts/dist/index.d.ts"],
       "@voyant-travel/legal-contracts/contracts/validation": [
         "../legal-contracts/dist/contracts/validation.d.ts"
@@ -1048,6 +1055,9 @@
       "@voyant-travel/legal/contract-document-routes": [
         "../legal/dist/contract-document-routes.d.ts"
       ],
+      "@voyant-travel/legal/contract-document-runtime-port": [
+        "../legal/dist/contract-document-runtime-port.d.ts"
+      ],
       "@voyant-travel/legal/contract-variables": [
         "../legal/dist/contracts/contract-variables.d.ts"
       ],
@@ -1066,6 +1076,7 @@
       "@voyant-travel/legal/policies/service": ["../legal/dist/policies/service.d.ts"],
       "@voyant-travel/legal/policies/validation": ["../legal/dist/policies/validation.d.ts"],
       "@voyant-travel/legal/schema": ["../legal/dist/schema.d.ts"],
+      "@voyant-travel/legal/runtime-port": ["../legal/dist/runtime-port.d.ts"],
       "@voyant-travel/legal/terms": ["../legal/dist/terms/index.d.ts"],
       "@voyant-travel/legal/terms/linkables": ["../legal/dist/terms/linkables.d.ts"],
       "@voyant-travel/legal/terms/routes": ["../legal/dist/terms/routes.d.ts"],

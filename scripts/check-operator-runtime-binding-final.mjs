@@ -16,7 +16,7 @@ const contributorRequirements = {
   distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
   "finance-node": "createFinanceStandardNodeRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
-  legal: "host.capabilities.loadLegalRuntime()",
+  "legal-node": "createLegalStandardNodeRuntime",
   "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",
 }
 

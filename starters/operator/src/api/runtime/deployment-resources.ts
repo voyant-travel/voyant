@@ -11,7 +11,6 @@ import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import { lazyProvider } from "@voyant-travel/hono"
-import type { LegalBookingContractSubscriberRuntime } from "@voyant-travel/legal/booking-contract-subscriber"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import type { WorkflowRunnerRegistryRuntime } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -20,10 +19,8 @@ import { resolveOperatorCustomFields } from "../../lib/custom-fields"
 import { resolveNotificationProviders } from "../../lib/notifications"
 import { withDbFromEnv } from "../lib/db"
 import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
-import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-variables"
 import { createOperatorNotificationsRuntimeProvider } from "./notifications-runtime"
 import {
-  createOperatorBookingPiiService,
   createOperatorDocumentStorage,
   createOperatorInvoiceSettlementPollers,
   generateContractPdfForBooking,
@@ -31,7 +28,6 @@ import {
   operatorPostgresDb,
   operatorSmartbillRuntimeHost,
   readOperatorDocumentContentBase64,
-  resolveOperatorContractDocumentGenerator,
   resolveOperatorDb,
   resolveOperatorDocumentDownloadUrl,
 } from "./operator-runtime-adapter"
@@ -77,9 +73,6 @@ function createBaseDeploymentCapabilities() {
     withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
       withDbFromEnv(bindings as AppBindings, operation),
     createOperatorDocumentStorage,
-    resolveContractDocumentGenerator: resolveOperatorContractDocumentGenerator,
-    createBookingPiiService: createOperatorBookingPiiService,
-    autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
     relationshipsService: lazyProvider<OperatorRelationshipsService>(async () =>
       import("@voyant-travel/relationships").then(
         (m) => m.relationshipsService as AsyncMethodProvider<OperatorRelationshipsService>,
@@ -129,7 +122,6 @@ function createLegacyDeploymentCapabilities(
     resolveWorkflowRunnerRegistry: () => workflowRunnerRegistry,
     loadCommerceRuntime: createOperatorCommerceRuntime,
     loadInventoryRuntime: createOperatorInventoryRuntime,
-    loadLegalRuntime: createOperatorLegalRuntime,
     loadActionLedgerHealthRuntime: () =>
       import("./action-ledger-health-runtime").then((runtime) =>
         runtime.createOperatorActionLedgerHealthRuntime(),
@@ -230,9 +222,14 @@ function createOperatorCommerceRuntime() {
     })),
     checkoutContractPdf: {
       generate: ({ bindings, db, eventBus, bookingId, force }) =>
-        generateContractPdfForBooking(operatorBindings(bindings), db, eventBus, bookingId, {
-          force,
-        }),
+        generateContractPdfForBooking(
+          createNodeRuntimePrimitives(),
+          bindings,
+          db,
+          eventBus,
+          bookingId,
+          { force },
+        ),
     },
     promotionRedemptionDatabase: {
       withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
@@ -252,48 +249,6 @@ function createOperatorInventoryRuntime() {
     inventory: {
       bootstrap: ({ container, bindings }) =>
         registerInventoryWorkflowService(container, bindings as AppBindings),
-    },
-  }
-}
-
-function createOperatorLegalRuntime() {
-  return {
-    legal: {
-      resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
-      resolveDocumentStorage: createOperatorDocumentStorage,
-      resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
-      resolveBookingPiiService: createOperatorBookingPiiService,
-    },
-    contractDocument: import("./contract-document-runtime").then((runtime) =>
-      runtime.createOperatorContractDocumentRoutesOptions(),
-    ),
-    bookingContractSubscriber: {
-      createRuntime(bindings: unknown): LegalBookingContractSubscriberRuntime | null {
-        const documentGenerator = resolveOperatorContractDocumentGenerator(bindings)
-        if (!documentGenerator) {
-          console.error(
-            "[legal] autoGenerateContractOnConfirmed.enabled=true but no documentGenerator resolved; skipping subscriber.",
-          )
-          return null
-        }
-        return {
-          options: AUTO_GENERATE_CONTRACT_OPTIONS,
-          withDb: (runtimeBindings, operation) =>
-            withDbFromEnv(operatorBindings(runtimeBindings), (db) =>
-              operation(operatorPostgresDb(db)),
-            ),
-          documentGenerator,
-          documentStorage: createOperatorDocumentStorage(bindings),
-          resolveBookingPiiService: () => createOperatorBookingPiiService(bindings),
-          resolveVariables: AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
-          resolveActionLedgerContext: (event) => ({
-            userId: event.actorId,
-            actor: event.actorId ? "staff" : "system",
-            callerType: "internal",
-            isInternalRequest: true,
-          }),
-        }
-      },
     },
   }
 }

@@ -1,3 +1,4 @@
+import type { EventBus, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { InvoiceSettlementPoller, ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
 import {
@@ -18,7 +19,6 @@ import {
   readDocumentContentBase64,
   resolveDocumentDownloadUrl,
 } from "../lib/storage"
-import type { generateContractPdfForBooking as generateContractPdfForBookingImpl } from "./contract-document-runtime"
 
 export function operatorBindings(bindings: unknown): AppBindings {
   return bindings as AppBindings
@@ -54,36 +54,6 @@ export const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {
   resolveDatabase: (bindings) => operatorPostgresDb(resolveOperatorDb(bindings)),
   resolveConfig: resolveOperatorSmartbillConfig,
   resolveDocumentStorage: createOperatorDocumentStorage,
-}
-
-export function resolveOperatorContractDocumentGenerator(bindings: unknown) {
-  const env = operatorBindings(bindings)
-  if (!createDocumentStorage(env)) return undefined
-
-  const generator: NonNullable<
-    ReturnType<typeof import("./contract-document-runtime").resolveContractDocumentGenerator>
-  > = async (context) => {
-    const { resolveContractDocumentGenerator } = await import("./contract-document-runtime")
-    const resolved = resolveContractDocumentGenerator(env)
-    if (!resolved) {
-      throw new Error("Contract document generator is not configured")
-    }
-    return resolved(context)
-  }
-  return generator
-}
-
-export async function createOperatorBookingPiiService(bindings: unknown) {
-  const env = operatorBindings(bindings)
-  const { buildBookingRouteRuntime, createBookingPiiService } = await import(
-    "@voyant-travel/bookings"
-  )
-  const runtime = buildBookingRouteRuntime(env)
-  try {
-    return createBookingPiiService({ kms: await runtime.getKmsProvider() })
-  } catch {
-    return null
-  }
 }
 
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
@@ -134,10 +104,22 @@ export function createOperatorWorkflowDriver(bindings: unknown) {
 }
 
 export async function generateContractPdfForBooking(
-  ...args: Parameters<typeof generateContractPdfForBookingImpl>
-): ReturnType<typeof generateContractPdfForBookingImpl> {
-  const { generateContractPdfForBooking } = await import("./contract-document-runtime")
-  return generateContractPdfForBooking(...args)
+  primitives: VoyantRuntimeHostPrimitives,
+  bindings: unknown,
+  db: PostgresJsDatabase,
+  eventBus: EventBus | undefined,
+  bookingId: string,
+  options: { force?: boolean } = {},
+) {
+  const runtime = await import("@voyant-travel/legal-node/standard-node-runtime")
+  return runtime.generateContractPdfForBooking(
+    primitives,
+    bindings,
+    db,
+    eventBus,
+    bookingId,
+    options,
+  )
 }
 
 export function resolveOperatorSmartbillConfig(bindings: unknown): SmartbillRuntimeConfig | null {
