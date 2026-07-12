@@ -18,6 +18,7 @@ describe("Operator project config", () => {
       version: "1",
     })
     expect(config).not.toHaveProperty("presetLineage")
+    expect(config.deployment.migrations).toBeUndefined()
     expect(config.access?.presets?.map((preset) => preset.id)).toEqual([
       "agent-customer",
       "agent-staff",
@@ -73,6 +74,12 @@ describe("Operator project config", () => {
       webhooks: expect.arrayContaining([...(netopiaVoyantPlugin.webhooks ?? [])]),
     })
     expect(graph.diagnostics).toEqual([])
+    expect(graph.deployment.migrations).toBeUndefined()
+    expect(
+      artifacts.migrationPlan.migrations
+        .filter((migration) => migration.migrationKind === "schema")
+        .every((migration) => migration.source.kind === "package"),
+    ).toBe(true)
     const productBom = artifacts.files.find((file) => file.path === "product-bom.generated.json")
     expect(JSON.parse(productBom?.contents ?? "null")).toMatchObject({
       schemaVersion: "voyant.product-bom-expansion.v1",
