@@ -14,17 +14,71 @@ export const STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE = {
 export const STANDARD_OPERATOR_ACCESS: VoyantGraphProjectAccessDeclaration = {
   presets: [
     {
+      id: "catalog-read",
+      kind: "api-token",
+      label: "Catalog read",
+      grants: [
+        "catalog:read",
+        "catalog:search",
+        "products:read",
+        "departures:read",
+        "itineraries:read",
+      ],
+    },
+    {
       id: "commerce-read",
       kind: "api-token",
       label: "Commerce read",
-      grants: ["bookings:read"],
+      grants: ["availability:read", "products:read", "pricing:read", "suppliers:read"],
+    },
+    {
+      id: "automation",
+      kind: "api-token",
+      label: "Automation",
+      grants: ["workflows:trigger", "webhooks:relay"],
+    },
+    {
+      id: "read-only",
+      kind: "api-token",
+      label: "Read only",
+      grants: ["*:read"],
+    },
+    {
+      id: "full-access",
+      kind: "api-token",
+      label: "Full access",
+      grants: ["*:*"],
+    },
+    {
+      id: "agent-customer",
+      kind: "api-token-grant",
+      label: "Agent (customer)",
+      grants: ["catalog:read", "catalog:search", "products:read", "trips:read", "trips:write"],
+      audience: "customer",
     },
     {
       id: "agent-staff",
       kind: "api-token-grant",
       label: "Agent (staff)",
-      grants: ["bookings:read", "bookings:write"],
+      grants: [
+        "bookings:read",
+        "bookings:write",
+        "catalog:read",
+        "catalog:search",
+        "products:read",
+        "quotes:read",
+        "quotes:write",
+        "trips:read",
+        "trips:write",
+      ],
       audience: "staff",
+    },
+    {
+      id: "public-catalog-reader",
+      kind: "api-token-grant",
+      label: "Public catalog reader",
+      grants: ["catalog:read", "catalog:search", "products:read"],
+      audience: "customer",
     },
     {
       id: "editor",

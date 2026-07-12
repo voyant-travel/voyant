@@ -2,7 +2,6 @@ import type { Actor } from "@voyant-travel/core"
 import {
   type AccessCatalog,
   hasApiKeyPermission,
-  LEGACY_ACCESS_CATALOG,
   permissionStringsToPermissions,
 } from "@voyant-travel/types/api-keys"
 import type { MiddlewareHandler } from "hono"
@@ -76,7 +75,7 @@ function hasAnyApiKeyPermission(
   scopes: string[] | null | undefined,
   resource: string,
   actions: string[],
-  catalog: AccessCatalog = LEGACY_ACCESS_CATALOG,
+  catalog?: AccessCatalog,
 ) {
   if (!scopes || scopes.length === 0) return false
   const permissions = permissionStringsToPermissions(scopes)

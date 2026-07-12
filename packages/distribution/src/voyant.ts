@@ -50,6 +50,15 @@ export const distributionVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/distribution#access.suppliers",
+        resource: "suppliers",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   links: [
     {
       id: "@voyant-travel/distribution#linkable.supplier",

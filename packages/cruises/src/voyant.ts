@@ -45,6 +45,15 @@ export const cruisesVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/cruises#access.cruises",
+        resource: "cruises",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   links: [
     { id: "@voyant-travel/cruises#linkable.cruise", source: "@voyant-travel/cruises" },
     {

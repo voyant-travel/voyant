@@ -1650,4 +1650,27 @@ describe("deployment graph v1", () => {
       ]),
     )
   })
+
+  it("carries explicit action wildcard policy from package access declarations", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/notifications",
+            access: {
+              resources: [
+                {
+                  id: "@acme/notifications#access.notifications",
+                  resource: "notifications",
+                  actions: [{ action: "send", wildcard: "explicit" }],
+                },
+              ],
+            },
+          }),
+        ],
+      }),
+    })
+
+    expect(graph.accessCatalog.resources[0]?.actions[0]?.wildcard).toBe("explicit")
+  })
 })

@@ -10,6 +10,37 @@ import { z } from "zod"
 
 import { createMcpHonoApp } from "../src/index.js"
 
+const accessCatalog = {
+  resources: [
+    {
+      id: "catalog",
+      unitId: "@voyant-travel/catalog",
+      resource: "catalog",
+      label: "Catalog",
+      description: "Catalog",
+      wildcard: "allow" as const,
+      actions: [{ action: "read", label: "Read", description: "Read" }],
+    },
+    {
+      id: "notifications",
+      unitId: "@voyant-travel/notifications",
+      resource: "notifications",
+      label: "Notifications",
+      description: "Notifications",
+      wildcard: "allow" as const,
+      actions: [
+        {
+          action: "send",
+          label: "Send",
+          description: "Send",
+          wildcard: "explicit" as const,
+        },
+      ],
+    },
+  ],
+  presets: [],
+}
+
 const MCP_HEADERS = {
   "content-type": "application/json",
   accept: "application/json, text/event-stream",
@@ -79,7 +110,7 @@ function appWithScopes(scopes: string[]): Hono {
   const registry = createToolRegistry()
   registry.register(echoTool)
   registry.register(sendNotificationTool)
-  const mcp = createMcpHonoApp({ registry, buildContext })
+  const mcp = createMcpHonoApp({ accessCatalog, registry, buildContext })
 
   const outer = new Hono()
   outer.use("*", async (c, next) => {

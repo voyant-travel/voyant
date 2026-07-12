@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   type AccessCatalog,
   accessCatalogPermissionGroups,
-  createEffectiveAccessCatalog,
   hasApiKeyPermission,
   permissionStringsToPermissions,
 } from "@voyant-travel/types/api-keys"
@@ -71,7 +70,7 @@ const CLOUD_MEMBERS_QK = ["admin-team-members"] as const
 const CLOUD_INVITES_QK = ["admin-team-invitations"] as const
 
 export function memberPermissionGroups(accessCatalog?: AccessCatalog) {
-  return accessCatalogPermissionGroups(createEffectiveAccessCatalog(accessCatalog))
+  return accessCatalogPermissionGroups(accessCatalog ?? { resources: [], presets: [] })
 }
 
 export function CloudTeamView({ accessCatalog }: { accessCatalog?: AccessCatalog }) {
@@ -446,7 +445,7 @@ function MemberPermissionsDialog({
   // Full access is a real `*`, not an expansion of the visible catalog — so it
   // keeps PII + any future resources. Tracked separately from the checklist.
   const [wildcard, setWildcard] = useState(false)
-  const catalog = useMemo(() => createEffectiveAccessCatalog(accessCatalog), [accessCatalog])
+  const catalog = useMemo(() => accessCatalog ?? { resources: [], presets: [] }, [accessCatalog])
   const permissionGroups = useMemo(() => memberPermissionGroups(accessCatalog), [accessCatalog])
   const scopePresets = useMemo(
     () =>

@@ -1,23 +1,6 @@
 // agent-quality: file-size exception -- owner: types; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 
-export const API_KEY_ACTIONS = [
-  "read",
-  "write",
-  "delete",
-  "trigger",
-  "relay",
-  "search",
-  // Fine-grained agent operations that used to collapse to `write`/`trigger`.
-  "cancel",
-  "refund",
-  "void",
-  "publish",
-  "send",
-] as const
-
-export type ApiKeyAction = (typeof API_KEY_ACTIONS)[number]
-
 /**
  * Audiences a grant can represent. Mirrors the `Actor`/`Visibility` unions in
  * `@voyant-travel/core` / `@voyant-travel/catalog-contracts`, duplicated here so
@@ -28,56 +11,6 @@ export type ApiKeyAction = (typeof API_KEY_ACTIONS)[number]
 export const API_KEY_AUDIENCES = ["staff", "customer", "partner", "supplier"] as const
 
 export type ApiKeyAudience = (typeof API_KEY_AUDIENCES)[number]
-
-export const API_KEY_RESOURCES = [
-  "availability",
-  "bookings",
-  // PII-sensitive booking fields. Split from `bookings` so it can be granted (or
-  // withheld) independently; never covered by the `*` wildcard (see
-  // `PII_API_KEY_RESOURCES` / `hasApiKeyPermission`).
-  "bookings-pii",
-  "catalog",
-  "content",
-  "dashboard",
-  "media",
-  "crm",
-  "cruises",
-  "departures",
-  "finance",
-  "ground",
-  "accommodations",
-  "itineraries",
-  "legal",
-  "notifications",
-  "pricing",
-  "products",
-  "quotes",
-  "resources",
-  "storefront",
-  "suppliers",
-  "transactions",
-  "trips",
-  "webhooks",
-  "workflows",
-  "settings",
-  "team",
-] as const
-
-export type ApiKeyResource = (typeof API_KEY_RESOURCES)[number]
-
-/**
- * Resources that hold personally-identifiable information. These are **never**
- * granted through the `*` resource wildcard (not even by a full-access `*:*`
- * key) — a caller must name the resource explicitly (e.g. `bookings-pii:read`).
- * Keeps broad read/full grants from silently leaking PII.
- */
-export const PII_API_KEY_RESOURCES = new Set<string>(["bookings-pii"])
-
-/**
- * High-impact actions that must be granted as an exact `resource:action` scope.
- * These are **never** satisfied by `*`, `*:action`, or `resource:*` grants.
- */
-export const EXPLICIT_API_KEY_PERMISSIONS = new Set<string>(["notifications:send"])
 
 export type ApiKeyPermissions = Record<string, string[]>
 export type ApiKeyPermissionString =
@@ -132,542 +65,7 @@ export interface AccessCatalog {
   resources: readonly AccessCatalogResource[]
   presets: readonly AccessCatalogPreset[]
 }
-
-function permission(resource: string, action: string, label: string, description: string) {
-  return { resource, action, label, description }
-}
-
-export const API_KEY_PERMISSION_GROUPS = [
-  {
-    resource: "catalog",
-    label: "Catalog",
-    description: "Search and read unified catalog content.",
-    permissions: [
-      permission(
-        "catalog",
-        "read",
-        "Read catalog",
-        "Read catalog records and storefront-ready content.",
-      ),
-      permission(
-        "catalog",
-        "search",
-        "Search catalog",
-        "Run catalog search and discovery requests.",
-      ),
-    ],
-  },
-  {
-    resource: "products",
-    label: "Products",
-    description: "Read and manage products, options, content, and media.",
-    permissions: [
-      permission(
-        "products",
-        "read",
-        "Read products",
-        "Read product, option, media, category, and tag data.",
-      ),
-      permission(
-        "products",
-        "write",
-        "Write products",
-        "Create or update products and product content.",
-      ),
-      permission(
-        "products",
-        "delete",
-        "Delete products",
-        "Delete products and product-owned records.",
-      ),
-    ],
-  },
-  {
-    resource: "departures",
-    label: "Departures",
-    description: "Read and manage scheduled departures.",
-    permissions: [
-      permission(
-        "departures",
-        "read",
-        "Read departures",
-        "Read departure schedules and availability context.",
-      ),
-      permission(
-        "departures",
-        "write",
-        "Write departures",
-        "Create or update scheduled departures.",
-      ),
-    ],
-  },
-  {
-    resource: "itineraries",
-    label: "Itineraries",
-    description: "Read and manage day-by-day itinerary content.",
-    permissions: [
-      permission(
-        "itineraries",
-        "read",
-        "Read itineraries",
-        "Read itinerary days, services, and descriptions.",
-      ),
-      permission(
-        "itineraries",
-        "write",
-        "Write itineraries",
-        "Create or update itinerary content.",
-      ),
-    ],
-  },
-  {
-    resource: "bookings",
-    label: "Bookings",
-    description: "Read and manage booking records and booking workflows.",
-    permissions: [
-      permission(
-        "bookings",
-        "read",
-        "Read bookings",
-        "Read booking records and non-sensitive booking state.",
-      ),
-      permission(
-        "bookings",
-        "write",
-        "Write bookings",
-        "Create, update, confirm, or cancel bookings.",
-      ),
-      permission(
-        "bookings",
-        "delete",
-        "Delete bookings",
-        "Delete booking-owned records where supported.",
-      ),
-      permission(
-        "bookings",
-        "cancel",
-        "Cancel bookings",
-        "Cancel bookings and trigger cancellation workflows.",
-      ),
-    ],
-  },
-  {
-    resource: "bookings-pii",
-    label: "Booking PII",
-    description: "Personally-identifiable traveller data on bookings. Grant explicitly.",
-    permissions: [
-      permission(
-        "bookings-pii",
-        "read",
-        "Read booking PII",
-        "Read personally-identifiable traveller fields on bookings. Never granted by a wildcard.",
-      ),
-    ],
-  },
-  {
-    resource: "quotes",
-    label: "Quotes",
-    description: "Read and manage quote records, quote versions, and quote workflows.",
-    permissions: [
-      permission(
-        "quotes",
-        "read",
-        "Read quotes",
-        "Read quote records, quote versions, pipelines, and stages.",
-      ),
-      permission(
-        "quotes",
-        "write",
-        "Write quotes",
-        "Create or update quote records, quote versions, pipelines, and stages.",
-      ),
-    ],
-  },
-  {
-    resource: "trips",
-    label: "Trips",
-    description: "Read and manage composed trips, components, pricing, and reservations.",
-    permissions: [
-      permission(
-        "trips",
-        "read",
-        "Read trips",
-        "Read composed trips, components, snapshots, pricing, and reservation state.",
-      ),
-      permission(
-        "trips",
-        "write",
-        "Write trips",
-        "Create or update composed trips, components, pricing, and reservations.",
-      ),
-    ],
-  },
-  {
-    resource: "availability",
-    label: "Availability",
-    description: "Read and manage availability rules, slots, and closeouts.",
-    permissions: [
-      permission(
-        "availability",
-        "read",
-        "Read availability",
-        "Read availability slots, rules, pickup points, and closeouts.",
-      ),
-      permission(
-        "availability",
-        "write",
-        "Write availability",
-        "Create or update availability configuration.",
-      ),
-    ],
-  },
-  {
-    resource: "accommodations",
-    label: "Accommodations",
-    description: "Read and manage lodging catalog content, room options, and rate plans.",
-    permissions: [
-      permission(
-        "accommodations",
-        "read",
-        "Read accommodations",
-        "Read lodging content, room options, rate plans, and accommodation booking lines.",
-      ),
-      permission(
-        "accommodations",
-        "write",
-        "Write accommodations",
-        "Create or update accommodation catalog and resale records.",
-      ),
-    ],
-  },
-  {
-    resource: "ground",
-    label: "Ground",
-    description: "Read and manage ground transport operations.",
-    permissions: [
-      permission(
-        "ground",
-        "read",
-        "Read ground",
-        "Read transport schedules, vehicles, dispatch, and operations data.",
-      ),
-      permission("ground", "write", "Write ground", "Create or update ground transport records."),
-    ],
-  },
-  {
-    resource: "cruises",
-    label: "Cruises",
-    description: "Read and manage cruise products and sailing data.",
-    permissions: [
-      permission(
-        "cruises",
-        "read",
-        "Read cruises",
-        "Read cruise products, sailings, cabins, and itinerary data.",
-      ),
-      permission("cruises", "write", "Write cruises", "Create or update cruise records."),
-    ],
-  },
-  {
-    resource: "workflows",
-    label: "Workflows",
-    description: "Trigger workflow automation from external systems.",
-    permissions: [
-      permission(
-        "workflows",
-        "trigger",
-        "Trigger workflows",
-        "Trigger workflow runs and ingest workflow events.",
-      ),
-    ],
-  },
-  {
-    resource: "webhooks",
-    label: "Webhooks",
-    description: "Relay webhook events into Voyant runtimes.",
-    permissions: [
-      permission(
-        "webhooks",
-        "relay",
-        "Relay webhooks",
-        "Relay validated third-party webhook events.",
-      ),
-    ],
-  },
-  {
-    resource: "settings",
-    label: "Settings",
-    description: "Workspace configuration — profile, taxes, channels, tokens, payments.",
-    permissions: [
-      permission("settings", "read", "View settings", "Read workspace configuration."),
-      permission(
-        "settings",
-        "write",
-        "Manage settings",
-        "Change workspace configuration. Admin-only by default.",
-      ),
-      permission(
-        "settings",
-        "delete",
-        "Delete settings",
-        "Remove workspace configuration entries. Admin-only by default.",
-      ),
-    ],
-  },
-  {
-    resource: "team",
-    label: "Team",
-    description: "Members and their access to this workspace.",
-    permissions: [
-      permission("team", "read", "View team", "See members and pending invitations."),
-      permission(
-        "team",
-        "write",
-        "Manage team",
-        "Invite members and set their permissions. Admin-only by default.",
-      ),
-      permission(
-        "team",
-        "delete",
-        "Revoke invitations",
-        "Revoke pending invitations. Admin-only by default.",
-      ),
-    ],
-  },
-  {
-    resource: "finance",
-    label: "Finance",
-    description: "Read and manage invoices, payments, refunds, and voids.",
-    permissions: [
-      permission(
-        "finance",
-        "read",
-        "Read finance",
-        "Read invoices, payments, and settlement state.",
-      ),
-      permission(
-        "finance",
-        "write",
-        "Write finance",
-        "Create or update invoices and payment records.",
-      ),
-      permission(
-        "finance",
-        "refund",
-        "Refund payments",
-        "Issue refunds against captured payments.",
-      ),
-      permission(
-        "finance",
-        "void",
-        "Void documents",
-        "Void invoices or cancel uncaptured payments.",
-      ),
-    ],
-  },
-  {
-    resource: "content",
-    label: "Content",
-    description: "Read, write, and publish editorial content.",
-    permissions: [
-      permission("content", "read", "Read content", "Read editorial content and drafts."),
-      permission("content", "write", "Write content", "Create or update editorial content."),
-      permission("content", "publish", "Publish content", "Publish content to live surfaces."),
-    ],
-  },
-  {
-    resource: "media",
-    label: "Media",
-    description: "Read and manage media assets.",
-    permissions: [
-      permission("media", "read", "Read media", "Read media assets and metadata."),
-      permission("media", "write", "Write media", "Upload or update media assets."),
-    ],
-  },
-  {
-    resource: "notifications",
-    label: "Notifications",
-    description: "Read and send notifications.",
-    permissions: [
-      permission(
-        "notifications",
-        "read",
-        "Read notifications",
-        "Read notification records and status.",
-      ),
-      permission(
-        "notifications",
-        "send",
-        "Send notifications",
-        "Send email/SMS/push notifications.",
-      ),
-    ],
-  },
-  {
-    resource: "dashboard",
-    label: "Dashboard",
-    description: "Read analytics and dashboard data.",
-    permissions: [
-      permission(
-        "dashboard",
-        "read",
-        "Read dashboard",
-        "Read analytics, metrics, and dashboard data.",
-      ),
-    ],
-  },
-] as const satisfies readonly ApiKeyPermissionGroup[]
-
-export const API_KEY_PERMISSION_PRESETS = {
-  "catalog-read": {
-    label: "Catalog read",
-    description: "Read/search catalog, product, departure, and itinerary content.",
-    permissions: {
-      catalog: ["read", "search"],
-      products: ["read"],
-      departures: ["read"],
-      itineraries: ["read"],
-    },
-  },
-  "commerce-read": {
-    label: "Commerce read",
-    description: "Read bookings, availability, products, pricing, and suppliers.",
-    permissions: {
-      availability: ["read"],
-      products: ["read"],
-      pricing: ["read"],
-      suppliers: ["read"],
-    },
-  },
-  automation: {
-    label: "Automation",
-    description: "Trigger workflows and relay webhooks.",
-    permissions: {
-      workflows: ["trigger"],
-      webhooks: ["relay"],
-    },
-  },
-  "read-only": {
-    label: "Read only",
-    description: "Read across every resource that accepts API tokens.",
-    permissions: {
-      "*": ["read"],
-    },
-  },
-  "full-access": {
-    label: "Full access",
-    description: "All resources and all actions. Use only for trusted automation.",
-    permissions: {
-      "*": ["*"],
-    },
-  },
-} as const satisfies Record<
-  string,
-  { label: string; description: string; permissions: ApiKeyPermissions }
->
-
-export type ApiKeyPermissionPresetKey = keyof typeof API_KEY_PERMISSION_PRESETS
-
-/**
- * Grant presets bundle a scope subset **and** an audience — unlike
- * `API_KEY_PERMISSION_PRESETS` (permissions only), because audience is a grant
- * attribute that cannot be inferred from scopes (a `catalog:read` key may be a
- * `customer` public reader or an internal `staff` tool). Used at key-mint time.
- */
-export const API_KEY_GRANT_PRESETS = {
-  "agent-customer": {
-    label: "Agent (customer)",
-    description: "Customer-facing agent: read/search catalog + compose trips.",
-    audience: "customer",
-    permissions: {
-      catalog: ["read", "search"],
-      products: ["read"],
-      trips: ["read", "write"],
-    },
-  },
-  "agent-staff": {
-    label: "Agent (staff)",
-    description: "Staff-facing agent: catalog, trips, bookings, quotes.",
-    audience: "staff",
-    permissions: {
-      catalog: ["read", "search"],
-      products: ["read"],
-      trips: ["read", "write"],
-      quotes: ["read", "write"],
-    },
-  },
-  "public-catalog-reader": {
-    label: "Public catalog reader",
-    description: "Read-only, customer-audience catalog access for public surfaces.",
-    audience: "customer",
-    permissions: {
-      catalog: ["read", "search"],
-      products: ["read"],
-    },
-  },
-} as const satisfies Record<
-  string,
-  { label: string; description: string; audience: ApiKeyAudience; permissions: ApiKeyPermissions }
->
-
-export type ApiKeyGrantPresetKey = keyof typeof API_KEY_GRANT_PRESETS
-
-export const LEGACY_ACCESS_CATALOG: AccessCatalog = {
-  resources: API_KEY_RESOURCES.map((resource) => {
-    const group = API_KEY_PERMISSION_GROUPS.find((candidate) => candidate.resource === resource)
-    const permissions =
-      group?.permissions ??
-      (["read", "write"] as const).map((action) =>
-        permission(
-          resource,
-          action,
-          `${action === "read" ? "Read" : "Write"} ${resource}`,
-          `${action === "read" ? "Read" : "Create or update"} ${resource} records.`,
-        ),
-      )
-    const wildcard: AccessCatalogResource["wildcard"] = PII_API_KEY_RESOURCES.has(resource)
-      ? "explicit-resource"
-      : "allow"
-    return {
-      id: `legacy:${resource}`,
-      unitId: "@voyant-travel/types#legacy-access-catalog",
-      resource,
-      label:
-        group?.label ??
-        resource
-          .replace(/(^|-)([a-z])/g, (_match, _dash, letter) => ` ${letter.toUpperCase()}`)
-          .trim(),
-      description: group?.description ?? `Read and manage ${resource} records.`,
-      wildcard,
-      actions: permissions.map((descriptor) => ({
-        action: descriptor.action,
-        label: descriptor.label,
-        description: descriptor.description,
-        ...(EXPLICIT_API_KEY_PERMISSIONS.has(`${descriptor.resource}:${descriptor.action}`)
-          ? { wildcard: "explicit" as const }
-          : {}),
-      })),
-    }
-  }).sort((left, right) => left.resource.localeCompare(right.resource)),
-  presets: [],
-}
-
-/** Selected resources replace legacy descriptors; legacy-only resources remain compatible. */
-export function createEffectiveAccessCatalog(selected?: AccessCatalog | null): AccessCatalog {
-  const selectedResources = new Map(
-    (selected?.resources ?? []).map((resource) => [resource.resource, resource] as const),
-  )
-  const resources = [
-    ...selectedResources.values(),
-    ...LEGACY_ACCESS_CATALOG.resources.filter(
-      (resource) => !selectedResources.has(resource.resource),
-    ),
-  ].sort((left, right) => left.resource.localeCompare(right.resource))
-  return {
-    resources,
-    presets: [...(selected?.presets ?? [])].sort((left, right) => left.id.localeCompare(right.id)),
-  }
-}
+/** Resource and action descriptors are supplied by the selected deployment graph. */
 
 export function accessCatalogPermissionGroups(catalog: AccessCatalog): ApiKeyPermissionGroup[] {
   return catalog.resources.map((resource) => ({
@@ -703,7 +101,7 @@ export class UnknownApiKeyPermissionError extends Error {
  */
 export function assertKnownPermissions(
   permissions: string | ApiKeyPermissions | null | undefined,
-  catalog: AccessCatalog = LEGACY_ACCESS_CATALOG,
+  catalog: AccessCatalog,
 ): void {
   const normalized = normalizeApiKeyPermissions(permissions)
   const resources = new Map(catalog.resources.map((resource) => [resource.resource, resource]))
@@ -742,7 +140,7 @@ export function assertKnownPermissions(
 /** Non-throwing variant of {@link assertKnownPermissions}. */
 export function areKnownPermissions(
   permissions: string | ApiKeyPermissions | null | undefined,
-  catalog?: AccessCatalog,
+  catalog: AccessCatalog,
 ): boolean {
   try {
     assertKnownPermissions(permissions, catalog)
@@ -849,13 +247,13 @@ export function hasApiKeyPermission(
   permissions: string | ApiKeyPermissions | null | undefined,
   resource: string,
   action: string,
-  catalog: AccessCatalog = LEGACY_ACCESS_CATALOG,
+  catalog?: AccessCatalog,
 ): boolean {
   const normalized = normalizeApiKeyPermissions(permissions)
   const resourceKey = resource.trim().toLowerCase()
   const actionKey = action.trim().toLowerCase()
 
-  const descriptor = catalog.resources.find((resource) => resource.resource === resourceKey)
+  const descriptor = catalog?.resources.find((resource) => resource.resource === resourceKey)
   const actionDescriptor = descriptor?.actions.find((candidate) => candidate.action === actionKey)
 
   if (actionDescriptor?.wildcard === "explicit") {
@@ -882,9 +280,10 @@ export function hasApiKeyPermission(
 export function hasApiKeyPermissions(
   permissions: string | ApiKeyPermissions | null | undefined,
   required: ApiKeyPermissions,
+  catalog?: AccessCatalog,
 ): boolean {
   return Object.entries(normalizeApiKeyPermissions(required)).every(([resource, actions]) =>
-    actions.every((action) => hasApiKeyPermission(permissions, resource, action)),
+    actions.every((action) => hasApiKeyPermission(permissions, resource, action, catalog)),
   )
 }
 
@@ -962,23 +361,6 @@ export function calculateExpirationDate(
 export type ApiKeyScope = ApiKeyPermissionString
 /** @deprecated Use ApiKeyPermissionDescriptor. */
 export type ApiKeyScopeDescriptor = ApiKeyPermissionDescriptor & { scope: ApiKeyPermissionString }
-/** @deprecated Use API_KEY_PERMISSION_GROUPS. */
-export const API_KEY_SCOPE_GROUPS = API_KEY_PERMISSION_GROUPS.map((group) => ({
-  ...group,
-  scopes: group.permissions.map((item) => ({
-    ...item,
-    scope: `${item.resource}:${item.action}` as ApiKeyPermissionString,
-  })),
-}))
-/** @deprecated Use API_KEY_PERMISSION_PRESETS. */
-export const API_KEY_SCOPE_PRESETS = Object.fromEntries(
-  Object.entries(API_KEY_PERMISSION_PRESETS).map(([key, preset]) => [
-    key,
-    { ...preset, scopes: permissionsToStrings(preset.permissions) },
-  ]),
-) as Record<string, { label: string; description: string; scopes: ApiKeyPermissionString[] }>
-/** @deprecated Use ApiKeyPermissionPresetKey. */
-export type ApiKeyScopePresetKey = ApiKeyPermissionPresetKey
 /** @deprecated Use apiKeyPermissionStringSchema. */
 export const apiKeyScopeSchema = apiKeyPermissionStringSchema
 /** @deprecated Use array of apiKeyPermissionStringSchema only for display strings. */

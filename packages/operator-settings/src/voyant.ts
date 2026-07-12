@@ -60,6 +60,15 @@ export const operatorSettingsVoyantModule = defineModule({
       config: { engine: "postgres" },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/operator-settings#access.settings",
+        resource: "settings",
+        actions: ["read", "write", "delete"],
+      },
+    ],
+  },
   admin: {
     compositionOrder: 10,
     runtime: operatorSettingsAdminRuntime,

@@ -67,6 +67,25 @@ export const operationsVoyantModule = defineModule({
       audit: { sourceModule: "operations", category: "domain" },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/operations#access.dashboard",
+        resource: "dashboard",
+        actions: ["read"],
+      },
+      {
+        id: "@voyant-travel/operations#access.ground",
+        resource: "ground",
+        actions: ["read", "write"],
+      },
+      {
+        id: "@voyant-travel/operations#access.resources",
+        resource: "resources",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   admin: {
     compositionOrder: 10,
     runtime: {

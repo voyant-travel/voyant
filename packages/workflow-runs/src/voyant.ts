@@ -51,6 +51,11 @@ export const workflowRunsVoyantModule = defineModule({
         resource: "workflows",
         actions: ["trigger"],
       },
+      {
+        id: "@voyant-travel/workflow-runs#access.webhooks",
+        resource: "webhooks",
+        actions: ["relay"],
+      },
     ],
   },
   lifecycle: {

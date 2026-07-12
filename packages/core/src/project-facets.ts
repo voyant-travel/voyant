@@ -42,6 +42,8 @@ export interface VoyantGraphAccessAction {
   action: string
   label?: string
   description?: string
+  /** Explicit actions are never satisfied by wildcard grants. */
+  wildcard?: "allow" | "explicit"
 }
 
 export interface VoyantGraphAccessResource extends VoyantGraphFacetEntity {

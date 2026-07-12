@@ -26,6 +26,7 @@ import {
   type ToolRegistry,
 } from "@voyant-travel/tools"
 import {
+  type AccessCatalog,
   type ApiKeyPermissions,
   hasApiKeyPermission,
   permissionStringsToPermissions,
@@ -43,6 +44,8 @@ export interface McpHonoAppOptions {
   registry: ToolRegistry
   /** Build the per-request tool context from the Hono context (db/actor/audience/scope). */
   buildContext(c: Context): ToolContext | Promise<ToolContext>
+  /** Selected graph authority for wildcard and explicit-action policy. */
+  accessCatalog: AccessCatalog
   /** MCP server identity advertised in `initialize`. */
   serverInfo?: McpServerInfo
 }
@@ -57,6 +60,7 @@ export interface GraphMcpHonoAppOptions {
 }
 
 export interface GraphMcpRuntime {
+  accessCatalog: AccessCatalog
   tools: readonly {
     referenceId: string
     context?: readonly string[]
@@ -78,13 +82,15 @@ const DEFAULT_SERVER_INFO: McpServerInfo = { name: "voyant-mcp", version: "0.1.0
  *   to what the caller is authorized for.
  */
 export function createMcpHonoApp(options: McpHonoAppOptions): Hono {
-  const { registry, buildContext } = options
+  const { accessCatalog, registry, buildContext } = options
   const serverInfo = options.serverInfo ?? DEFAULT_SERVER_INFO
   const app = new Hono()
 
   app.get("/manifest", (c) => {
     const permissions = callerPermissions(c)
-    const tools = registry.list().filter((tool) => isAuthorized(tool.requiredScopes, permissions))
+    const tools = registry
+      .list()
+      .filter((tool) => isAuthorized(tool.requiredScopes, permissions, accessCatalog))
     return c.json({ version: TOOL_CONTRACT_VERSION, serverInfo, tools })
   })
 
@@ -94,7 +100,7 @@ export function createMcpHonoApp(options: McpHonoAppOptions): Hono {
     const server = new McpServer(serverInfo)
 
     for (const entry of registry.list()) {
-      if (!isAuthorized(entry.requiredScopes, permissions)) continue
+      if (!isAuthorized(entry.requiredScopes, permissions, accessCatalog)) continue
       const def = registry.get(entry.name)
       if (!def) continue
       server.tool(entry.name, entry.description, toRawShape(def.inputSchema), (args) =>
@@ -155,6 +161,7 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
   }
 
   return createMcpHonoApp({
+    accessCatalog: options.runtime.accessCatalog,
     registry,
     ...(options.serverInfo ? { serverInfo: options.serverInfo } : {}),
     buildContext: (c) => buildContributedContext(c, options, contributions.values()),
@@ -212,10 +219,16 @@ function callerPermissions(c: Context): ApiKeyPermissions {
 }
 
 /** AND semantics — the caller must hold every one of the tool's required scopes. */
-function isAuthorized(requiredScopes: readonly string[], permissions: ApiKeyPermissions): boolean {
+function isAuthorized(
+  requiredScopes: readonly string[],
+  permissions: ApiKeyPermissions,
+  accessCatalog: AccessCatalog,
+): boolean {
   return requiredScopes.every((scope) => {
     const [resource, action] = scope.split(":")
-    return Boolean(resource && action && hasApiKeyPermission(permissions, resource, action))
+    return Boolean(
+      resource && action && hasApiKeyPermission(permissions, resource, action, accessCatalog),
+    )
   })
 }
 

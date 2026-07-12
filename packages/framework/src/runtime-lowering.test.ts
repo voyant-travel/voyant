@@ -129,6 +129,23 @@ describe("graph runtime lowering", () => {
     const importRuntime = vi.fn(async () => ({ unitFactory, routeFactory }))
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:test",
+      accessCatalog: {
+        resources: [
+          {
+            id: "loyalty",
+            unitId: "@acme/loyalty",
+            resource: "loyalty",
+            label: "Loyalty",
+            description: "Loyalty",
+            wildcard: "allow",
+            actions: [
+              { action: "read", label: "Read", description: "Read" },
+              { action: "write", label: "Write", description: "Write" },
+            ],
+          },
+        ],
+        presets: [],
+      },
       entries: { "@acme/loyalty/runtime": importRuntime },
       modules: [
         {
@@ -397,6 +414,20 @@ describe("graph runtime lowering", () => {
     expect(() =>
       createVoyantGraphRuntime({
         graphHash: "sha256:test",
+        accessCatalog: {
+          resources: [
+            {
+              id: "loyalty",
+              unitId: "@acme/loyalty",
+              resource: "loyalty",
+              label: "Loyalty",
+              description: "Loyalty",
+              wildcard: "allow",
+              actions: [{ action: "read", label: "Read", description: "Read" }],
+            },
+          ],
+          presets: [],
+        },
         entries: { "@acme/loyalty/tools": importRuntime },
         modules: [
           {
@@ -431,6 +462,26 @@ describe("graph runtime lowering", () => {
       }),
     ).toThrow(/tool "loyalty-tool" requires undeclared access scope "loyalty:write"/)
     expect(importRuntime).not.toHaveBeenCalled()
+  })
+
+  it("rejects selected scopes when the graph access catalog is absent", () => {
+    expect(() =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:test",
+        entries: {},
+        modules: [
+          {
+            id: "@acme/loyalty",
+            kind: "module",
+            packageName: "@acme/loyalty",
+            order: 0,
+            accessScopes: ["loyalty:read"],
+            routes: [],
+          },
+        ],
+        plugins: [],
+      }),
+    ).toThrow(/accessCatalog is required/)
   })
 
   it("rejects duplicate actions and undeclared action bindings before imports", () => {

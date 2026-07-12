@@ -4,7 +4,7 @@ import {
 } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
-import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
+import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import { projectLinks } from "../../.voyant/runtime/project-links.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
@@ -78,7 +78,7 @@ export const app = mountApp<AppBindings>({
   // Package-owned anonymous posture comes from the selected graph.
   publicPaths: [...graphComposition.routePosture.publicPaths],
   accessResources: graphComposition.accessResources,
-  accessCatalog: effectiveAccessCatalog,
+  accessCatalog,
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>

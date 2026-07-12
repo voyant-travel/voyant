@@ -227,6 +227,11 @@ export const financeVoyantModule = defineModule({
         resource: "finance",
         actions: ["read", "write", "refund", "void"],
       },
+      {
+        id: "@voyant-travel/finance#access.transactions",
+        resource: "transactions",
+        actions: ["read", "write"],
+      },
     ],
   },
   tools: [

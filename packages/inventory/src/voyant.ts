@@ -112,7 +112,17 @@ export const inventoryVoyantModule = defineModule({
       {
         id: "@voyant-travel/inventory#access.products",
         resource: "products",
-        actions: ["read"],
+        actions: ["read", "write", "delete"],
+      },
+      {
+        id: "@voyant-travel/inventory#access.departures",
+        resource: "departures",
+        actions: ["read", "write"],
+      },
+      {
+        id: "@voyant-travel/inventory#access.itineraries",
+        resource: "itineraries",
+        actions: ["read", "write"],
       },
     ],
   },

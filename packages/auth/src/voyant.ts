@@ -49,5 +49,14 @@ export const authTeamVoyantModule = defineModule({
       },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/auth#access.team",
+        resource: "team",
+        actions: ["read", "write", "delete"],
+      },
+    ],
+  },
   meta: { ownership: "package" },
 })

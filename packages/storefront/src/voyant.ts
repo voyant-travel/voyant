@@ -97,6 +97,15 @@ export const storefrontVoyantModule = defineModule({
       config: { engine: "postgres" },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/storefront#access.storefront",
+        resource: "storefront",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

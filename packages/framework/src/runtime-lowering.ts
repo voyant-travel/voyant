@@ -420,35 +420,17 @@ function normalizeAccessCatalog(
   catalog: AccessCatalog | undefined,
   units: readonly VoyantGraphRuntimeUnitDefinition[],
 ): AccessCatalog {
-  const fallbackResources = new Map<string, Set<string>>()
   if (!catalog) {
-    for (const scope of units.flatMap((unit) => unit.accessScopes ?? [])) {
-      const [resource, action] = scope.split(":")
-      if (!resource || !action) continue
-      const actions = fallbackResources.get(resource) ?? new Set<string>()
-      actions.add(action)
-      fallbackResources.set(resource, actions)
+    const declaredScopes = units.flatMap((unit) => unit.accessScopes ?? [])
+    if (declaredScopes.length > 0) {
+      throw new Error(
+        "createVoyantGraphRuntime: accessCatalog is required when selected units declare access scopes.",
+      )
     }
+    return { resources: [], presets: [] }
   }
-  const fallbackCatalog: AccessCatalog = {
-    resources: [...fallbackResources].map(([resource, actions]) => ({
-      id: `runtime:${resource}`,
-      unitId: "runtime-compatibility",
-      resource,
-      label: resource,
-      description: `Access ${resource} resources.`,
-      wildcard: "allow",
-      actions: [...actions].map((action) => ({
-        action,
-        label: action,
-        description: `${action} access to ${resource}.`,
-      })),
-    })),
-    presets: [],
-  }
-  const source = catalog ?? fallbackCatalog
   return {
-    resources: [...source.resources]
+    resources: [...catalog.resources]
       .map((resource) => ({
         ...resource,
         actions: [...resource.actions].sort((left, right) =>
@@ -459,7 +441,7 @@ function normalizeAccessCatalog(
           : {}),
       }))
       .sort((left, right) => left.resource.localeCompare(right.resource)),
-    presets: [...source.presets]
+    presets: [...catalog.presets]
       .map((preset) => ({ ...preset, grants: sortedUnique(preset.grants) }))
       .sort((left, right) => left.id.localeCompare(right.id)),
   }

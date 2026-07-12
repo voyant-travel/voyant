@@ -1679,6 +1679,18 @@ function validateAccessFacet(
             source,
             diagnostics,
           )
+          if (
+            action.wildcard !== undefined &&
+            action.wildcard !== "allow" &&
+            action.wildcard !== "explicit"
+          ) {
+            invalidFacet(
+              `${facet}.actions[${index}].wildcard`,
+              source,
+              diagnostics,
+              'Access action wildcard policy must be "allow" or "explicit".',
+            )
+          }
         } else {
           invalidFacet(
             `${facet}.actions[${index}]`,
@@ -2379,6 +2391,9 @@ function compileAccessCatalog(
                     ? `${titleFromPermissionName(name)} access to ${resource.resource}.`
                     : (action.description ??
                       `${titleFromPermissionName(name)} access to ${resource.resource}.`),
+                ...(typeof action !== "string" && action.wildcard === "explicit"
+                  ? { wildcard: "explicit" as const }
+                  : {}),
               }
             })
             .sort((left, right) => left.action.localeCompare(right.action)),

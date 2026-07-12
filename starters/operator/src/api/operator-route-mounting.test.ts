@@ -14,7 +14,7 @@ import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
 import { describe, expect, it, vi } from "vitest"
 
-import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
+import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
 
@@ -106,7 +106,7 @@ function mountRoutePosture(composition: Awaited<ReturnType<typeof buildGraphComp
     publicPaths: [...composition.routePosture.publicPaths],
     dbTransactionalPaths: [...composition.routePosture.transactionalPaths],
     accessResources: composition.accessResources,
-    accessCatalog: effectiveAccessCatalog,
+    accessCatalog,
   }
 }
 

@@ -17,6 +17,15 @@ export const availabilityVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/availability#access.availability",
+        resource: "availability",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

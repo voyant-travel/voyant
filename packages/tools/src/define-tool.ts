@@ -28,7 +28,7 @@ export interface ToolDefinition<In, Out, Ctx extends ToolContext = ToolContext> 
   outputSchema: z.ZodType<Out>
   /**
    * Scopes required to call this tool, in `resource:action` form (from
-   * `@voyant-travel/types` `API_KEY_RESOURCES`/`API_KEY_ACTIONS`). Enforced by
+   * the selected deployment graph's access declarations. Enforced by
    * the transport with AND semantics — the caller must hold **all** of them.
    */
   requiredScopes: readonly string[]

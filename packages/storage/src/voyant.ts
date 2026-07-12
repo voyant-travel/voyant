@@ -49,6 +49,15 @@ export const storageVoyantModule = defineModule({
       required: false,
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/storage#access.media",
+        resource: "media",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   providers: [
     {
       id: "@voyant-travel/storage#provider.local",

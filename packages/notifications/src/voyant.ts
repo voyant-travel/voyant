@@ -121,7 +121,13 @@ export const notificationsVoyantModule = defineModule({
       {
         id: "@voyant-travel/notifications#access.notifications",
         resource: "notifications",
-        actions: ["read", "send"],
+        actions: [
+          "read",
+          {
+            action: "send",
+            wildcard: "explicit",
+          },
+        ],
       },
     ],
   },

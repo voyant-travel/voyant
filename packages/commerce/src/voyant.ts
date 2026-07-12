@@ -140,6 +140,15 @@ export const commerceVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/commerce#access.pricing",
+        resource: "pricing",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   events: [
     {
       id: "@voyant-travel/commerce#event.promotion.changed",

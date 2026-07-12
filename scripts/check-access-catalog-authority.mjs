@@ -5,6 +5,36 @@ import { fileURLToPath } from "node:url"
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const operatorRoot = path.join(repoRoot, "starters", "operator")
+const apiKeysSource = await readFile(path.join(repoRoot, "packages/types/src/api-keys.ts"), "utf8")
+const artifactSource = await readFile(
+  path.join(repoRoot, "packages/framework/src/deployment-artifacts.ts"),
+  "utf8",
+)
+const loweringSource = await readFile(
+  path.join(repoRoot, "packages/framework/src/runtime-lowering.ts"),
+  "utf8",
+)
+
+for (const forbidden of [
+  "LEGACY_ACCESS_CATALOG",
+  "createEffectiveAccessCatalog",
+  "API_KEY_ACTIONS",
+  "API_KEY_RESOURCES",
+  "API_KEY_PERMISSION_GROUPS",
+  "API_KEY_PERMISSION_PRESETS",
+  "API_KEY_GRANT_PRESETS",
+  "API_KEY_SCOPE_GROUPS",
+  "API_KEY_SCOPE_PRESETS",
+]) {
+  assert.doesNotMatch(apiKeysSource, new RegExp(`\\b${forbidden}\\b`))
+}
+assert.doesNotMatch(artifactSource, /createEffectiveAccessCatalog|legacy-compatible/)
+assert.doesNotMatch(loweringSource, /runtime-compatibility|fallbackCatalog|fallbackResources/)
+
+if (process.argv.includes("--source-only")) {
+  console.log("access catalog source authority: OK")
+  process.exit(0)
+}
 const graph = JSON.parse(
   await readFile(path.join(operatorRoot, ".voyant", "deployment-graph.generated.json"), "utf8"),
 )
@@ -25,10 +55,54 @@ assert.deepEqual(
 assert.deepEqual(byResource.get("bookings")?.legacyActions, ["cancel"])
 assert.equal(byResource.get("bookings-pii")?.unitId, "@voyant-travel/bookings")
 assert.equal(byResource.get("bookings-pii")?.wildcard, "explicit-resource")
+assert.equal(
+  byResource.get("notifications")?.actions.find(({ action }) => action === "send")?.wildcard,
+  "explicit",
+)
+
+for (const resource of graph.accessCatalog.resources) {
+  assert.notEqual(resource.unitId, "@voyant-travel/types#legacy-access-catalog")
+  assert.notEqual(resource.unitId, "runtime-compatibility")
+}
+
+const selectedScopes = new Set(
+  graph.accessCatalog.resources.flatMap((resource) =>
+    resource.actions.map((action) => `${resource.resource}:${action.action}`),
+  ),
+)
+const visit = (value) => {
+  if (!value || typeof value !== "object") return
+  if (Array.isArray(value)) {
+    for (const entry of value) visit(entry)
+    return
+  }
+  if (Array.isArray(value.requiredScopes)) {
+    for (const scope of value.requiredScopes) {
+      assert.ok(selectedScopes.has(scope), `required scope ${scope} must be selected`)
+    }
+  }
+  for (const entry of Object.values(value)) visit(entry)
+}
+visit({ modules: graph.modules, extensions: graph.extensions, plugins: graph.plugins })
 
 const presets = new Map(graph.accessCatalog.presets.map((preset) => [preset.id, preset]))
-assert.deepEqual(presets.get("commerce-read")?.grants, ["bookings:read"])
-assert.deepEqual(presets.get("agent-staff")?.grants, ["bookings:read", "bookings:write"])
+assert.deepEqual(presets.get("commerce-read")?.grants, [
+  "availability:read",
+  "pricing:read",
+  "products:read",
+  "suppliers:read",
+])
+assert.deepEqual(presets.get("agent-staff")?.grants, [
+  "bookings:read",
+  "bookings:write",
+  "catalog:read",
+  "catalog:search",
+  "products:read",
+  "quotes:read",
+  "quotes:write",
+  "trips:read",
+  "trips:write",
+])
 assert.deepEqual(presets.get("editor")?.grants, ["bookings:read", "bookings:write"])
 
 for (const relativePath of [

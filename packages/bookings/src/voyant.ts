@@ -175,6 +175,11 @@ export const bookingsVoyantModule = defineModule({
             label: "Manage bookings",
             description: "Create, update, confirm, or cancel bookings.",
           },
+          {
+            action: "delete",
+            label: "Delete bookings",
+            description: "Delete booking-owned records where supported.",
+          },
         ],
         legacyActions: ["cancel"],
       },

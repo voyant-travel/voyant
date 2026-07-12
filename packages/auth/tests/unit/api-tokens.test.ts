@@ -43,6 +43,27 @@ const selectedCatalog: AccessCatalog = {
       ],
       legacyActions: ["cancel"],
     },
+    {
+      id: "catalog",
+      unitId: "@voyant-travel/catalog",
+      resource: "catalog",
+      label: "Catalog",
+      description: "Catalog",
+      wildcard: "allow",
+      actions: [
+        { action: "read", label: "Read", description: "Read" },
+        { action: "search", label: "Search", description: "Search" },
+      ],
+    },
+    {
+      id: "products",
+      unitId: "@voyant-travel/inventory",
+      resource: "products",
+      label: "Products",
+      description: "Products",
+      wildcard: "allow",
+      actions: [{ action: "read", label: "Read", description: "Read" }],
+    },
   ],
   presets: [
     {
@@ -52,6 +73,14 @@ const selectedCatalog: AccessCatalog = {
       description: "Agent staff",
       grants: ["bookings:read", "bookings:write"],
       audience: "staff",
+    },
+    {
+      id: "public-catalog-reader",
+      kind: "api-token-grant",
+      label: "Public catalog reader",
+      description: "Public catalog reader",
+      grants: ["catalog:read", "catalog:search", "products:read"],
+      audience: "customer",
     },
   ],
 }
@@ -158,6 +187,7 @@ describe("handleApiTokenManagementRequest", () => {
         }),
       }),
       auth,
+      { accessCatalog: selectedCatalog },
     )
 
     expect(response?.status).toBe(201)
@@ -185,6 +215,7 @@ describe("handleApiTokenManagementRequest", () => {
         body: JSON.stringify({ enabled: false, permissions: { catalog: ["search"] } }),
       }),
       auth,
+      { accessCatalog: selectedCatalog },
     )
 
     expect(response?.status).toBe(200)
@@ -353,6 +384,7 @@ describe("handleApiTokenManagementRequest", () => {
         body: JSON.stringify({ name: "public reader", grantPreset: "public-catalog-reader" }),
       }),
       auth,
+      { accessCatalog: selectedCatalog },
     )
 
     expect(response?.status).toBe(201)
@@ -368,7 +400,7 @@ describe("handleApiTokenManagementRequest", () => {
     expect(call.body.userId).toBe("user_123")
   })
 
-  it("layers project-owned grant preset fragments over the legacy preset", async () => {
+  it("resolves a selected project grant preset", async () => {
     const auth = createAuthMock()
     const response = await handleApiTokenManagementRequest(
       new Request("https://example.com/auth/api-tokens", {

@@ -52,6 +52,15 @@ export const accommodationsVoyantModule = defineModule({
       export: "roomBlockSupplierLink",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/accommodations#access.accommodations",
+        resource: "accommodations",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

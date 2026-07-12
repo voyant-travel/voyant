@@ -3,10 +3,8 @@
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   type AccessCatalog,
-  API_KEY_PERMISSION_PRESETS,
   type ApiKeyPermissions,
   accessCatalogPermissionGroups,
-  createEffectiveAccessCatalog,
   describePermissions,
   hasApiKeyPermission,
   permissionStringsToPermissions,
@@ -116,39 +114,24 @@ export function ServiceApiKeysPage({
   description,
   accessCatalog,
 }: ServiceApiKeysPageProps) {
-  const catalog = useMemo(() => createEffectiveAccessCatalog(accessCatalog), [accessCatalog])
+  const catalog = useMemo(() => accessCatalog ?? { resources: [], presets: [] }, [accessCatalog])
   const permissionGroups = useMemo(() => accessCatalogPermissionGroups(catalog), [catalog])
-  const permissionPresets = useMemo(() => {
-    const merge = (base: ApiKeyPermissions, extra: ApiKeyPermissions): ApiKeyPermissions => {
-      const next = Object.fromEntries(
-        Object.entries(base).map(([resource, actions]) => [resource, [...actions]]),
-      )
-      for (const [resource, actions] of Object.entries(extra)) {
-        next[resource] = [...new Set([...(next[resource] ?? []), ...actions])].sort()
-      }
-      return next
-    }
-    return Object.fromEntries(
-      Object.entries(API_KEY_PERMISSION_PRESETS).map(([id, preset]) => {
-        const selected = catalog.presets.find(
-          (candidate) => candidate.kind === "api-token" && candidate.id === id,
-        )
-        return [
-          id,
-          {
-            ...preset,
-            permissions: merge(
-              preset.permissions,
-              permissionStringsToPermissions(selected?.grants ?? []),
-            ),
-          },
-        ]
-      }),
-    ) as Record<
-      keyof typeof API_KEY_PERMISSION_PRESETS,
-      (typeof API_KEY_PERMISSION_PRESETS)[keyof typeof API_KEY_PERMISSION_PRESETS]
-    >
-  }, [catalog])
+  const permissionPresets = useMemo(
+    () =>
+      Object.fromEntries(
+        catalog.presets
+          .filter((preset) => preset.kind === "api-token")
+          .map((preset) => [
+            preset.id,
+            {
+              label: preset.label,
+              description: preset.description,
+              permissions: permissionStringsToPermissions(preset.grants),
+            },
+          ]),
+      ) as Record<string, { label: string; description: string; permissions: ApiKeyPermissions }>,
+    [catalog],
+  )
   const messages = useAuthUiMessagesOrDefault().serviceApiKeysPage
   const pageTitle = title ?? messages.title
   const pageDescription = description ?? messages.description
@@ -165,9 +148,11 @@ export function ServiceApiKeysPage({
 
   const [name, setName] = useState("")
   const [expirationDays, setExpirationDays] = useState<number | null>(90)
-  const [selectedPermissions, setSelectedPermissions] = useState<ApiKeyPermissions>({
-    ...permissionPresets["catalog-read"].permissions,
-  })
+  const [selectedPermissions, setSelectedPermissions] = useState<ApiKeyPermissions>(() => ({
+    ...(permissionPresets["catalog-read"]?.permissions ??
+      Object.values(permissionPresets)[0]?.permissions ??
+      {}),
+  }))
   const [issuedKey, setIssuedKey] = useState<ApiTokenWithSecret | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -180,8 +165,9 @@ export function ServiceApiKeysPage({
     setSelectedPermissions((current) => togglePermission(current, resource, action, checked))
   }
 
-  const applyPreset = (preset: keyof typeof API_KEY_PERMISSION_PRESETS) => {
-    setSelectedPermissions({ ...permissionPresets[preset].permissions })
+  const applyPreset = (preset: string) => {
+    const selected = permissionPresets[preset]
+    if (selected) setSelectedPermissions({ ...selected.permissions })
   }
 
   const handleCreate = async (event: FormEvent) => {
@@ -291,11 +277,7 @@ export function ServiceApiKeysPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {(
-                Object.keys(API_KEY_PERMISSION_PRESETS) as Array<
-                  keyof typeof API_KEY_PERMISSION_PRESETS
-                >
-              ).map((key) => (
+              {Object.keys(permissionPresets).map((key) => (
                 <Button key={key} type="button" variant="outline" onClick={() => applyPreset(key)}>
                   {permissionPresets[key].label}
                 </Button>
