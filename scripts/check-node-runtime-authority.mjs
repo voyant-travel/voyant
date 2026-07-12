@@ -11,7 +11,7 @@ const violations = []
 
 for (const forbidden of [
   "voyant.managed-profile.v1",
-  "profile: \"operator\"",
+  'profile: "operator"',
   "@voyant-travel/framework/managed-runtime",
   "loadManagedProfileRuntime",
 ]) {
@@ -26,7 +26,9 @@ for (const required of [
   "deploymentRequirements: graph.requirements",
 ]) {
   if (!operatorRuntime.includes(required)) {
-    violations.push(`operator-runtime must consume graph-native Node runtime authority: ${required}`)
+    violations.push(
+      `operator-runtime must consume graph-native Node runtime authority: ${required}`,
+    )
   }
 }
 
@@ -47,7 +49,7 @@ if (managedRuntime.includes("function loadManagedProfileRuntime")) {
   violations.push("managed-runtime must not regain runtime implementation authority")
 }
 
-if (!deploymentArtifacts.includes('@voyant-travel/framework/node-runtime')) {
+if (!deploymentArtifacts.includes("@voyant-travel/framework/node-runtime")) {
   violations.push("generated deployment entries must import the generic Node runtime")
 }
 if (deploymentArtifacts.includes("profileSnapshotPath: resolveGeneratedProfileSnapshotPath()")) {
