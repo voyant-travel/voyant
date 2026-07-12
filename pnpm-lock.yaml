@@ -305,12 +305,12 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
-      '@voyant-travel/finance':
-        specifier: workspace:^
-        version: link:../finance
       '@voyant-travel/distribution':
         specifier: workspace:^
         version: link:../distribution
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
@@ -983,12 +983,12 @@ importers:
       '@voyant-travel/identity-react':
         specifier: workspace:^
         version: link:../identity-react
-      '@voyant-travel/inventory-react':
-        specifier: workspace:^
-        version: link:../inventory-react
       '@voyant-travel/inventory':
         specifier: workspace:^
         version: link:../inventory
+      '@voyant-travel/inventory-react':
+        specifier: workspace:^
+        version: link:../inventory-react
       '@voyant-travel/legal-react':
         specifier: workspace:^
         version: link:../legal-react
@@ -1034,12 +1034,12 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
-      '@voyant-travel/catalog-contracts':
-        specifier: workspace:^
-        version: link:../catalog-contracts
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../bookings
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyant-travel/connect-sdk':
         specifier: 0.9.1
         version: 0.9.1
@@ -1568,12 +1568,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
-      '@voyant-travel/catalog-react':
-        specifier: workspace:^
-        version: link:../catalog-react
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
         version: link:../catalog-contracts
+      '@voyant-travel/catalog-react':
+        specifier: workspace:^
+        version: link:../catalog-react
       '@voyant-travel/cruises':
         specifier: workspace:^
         version: link:../cruises
@@ -1677,12 +1677,12 @@ importers:
       '@voyant-travel/suppliers-contracts':
         specifier: workspace:^
         version: link:../suppliers-contracts
-      '@voyant-travel/webhook-delivery':
-        specifier: workspace:^
-        version: link:../webhook-delivery
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
+      '@voyant-travel/webhook-delivery':
+        specifier: workspace:^
+        version: link:../webhook-delivery
       '@voyant-travel/workflows':
         specifier: workspace:^
         version: link:../workflows
@@ -2528,12 +2528,12 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
-      '@voyant-travel/finance':
-        specifier: workspace:^
-        version: link:../finance
       '@voyant-travel/extras-contracts':
         specifier: workspace:^
         version: link:../extras-contracts
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
@@ -2635,12 +2635,12 @@ importers:
       '@voyant-travel/admin':
         specifier: workspace:^
         version: link:../admin
-      '@voyant-travel/catalog-react':
-        specifier: workspace:^
-        version: link:../catalog-react
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
         version: link:../catalog-contracts
+      '@voyant-travel/catalog-react':
+        specifier: workspace:^
+        version: link:../catalog-react
       '@voyant-travel/finance':
         specifier: workspace:^
         version: link:../finance
@@ -4216,12 +4216,12 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
-      '@voyant-travel/commerce':
-        specifier: workspace:^
-        version: link:../commerce
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
         version: link:../catalog-contracts
+      '@voyant-travel/commerce':
+        specifier: workspace:^
+        version: link:../commerce
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
