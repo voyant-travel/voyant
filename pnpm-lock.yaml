@@ -305,6 +305,9 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/distribution':
         specifier: workspace:^
         version: link:../distribution
@@ -1647,6 +1650,9 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono

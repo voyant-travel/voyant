@@ -14,6 +14,7 @@
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -31,6 +32,7 @@
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/identity": "workspace:^",
@@ -102,6 +104,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./payment-policy-runtime": {
+        "types": "./dist/payment-policy-runtime.d.ts",
+        "import": "./dist/payment-policy-runtime.js",
+        "default": "./dist/payment-policy-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

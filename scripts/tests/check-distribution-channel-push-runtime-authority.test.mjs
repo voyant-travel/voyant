@@ -24,11 +24,11 @@ async function createFixture(overrides = {}) {
     "distribution/src/channel-push/runtime-port.ts":
       'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
     "operator/src/api/runtime/deployment-resources.ts":
-      "export const ports = { [channelPushRuntimePort.id]: operatorChannelPushRuntime }\n",
+      'import { createDistributionRuntimePortContribution } from "@voyant-travel/distribution/runtime-contributor"\ncreateDistributionRuntimePortContribution({ channelPush: operatorChannelPushRuntime })\n',
     "operator/src/api/runtime/channel-push-runtime.ts":
       'import type { ChannelPushRuntime } from "@voyant-travel/distribution"\ngetBookingEngineRegistryFromContext\nregisterDistributionWorkflowService\n',
     "operator/src/api/runtime/operator-workflow-services.ts":
-      "createLazyWorkflowDb\nselectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)\n",
+      "createChannelPushWorkflowRuntimeEntries\nselectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)\n",
     "scripts/check-deployment-graph.ts":
       'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
     ...overrides,

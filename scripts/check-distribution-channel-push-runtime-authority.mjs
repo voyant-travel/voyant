@@ -55,7 +55,10 @@ if (
 ) {
   violations.push("Distribution must publish the typed channel-push runtime dependency contract")
 }
-if (!composition.includes("[channelPushRuntimePort.id]")) {
+if (
+  !composition.includes('from "@voyant-travel/distribution/runtime-contributor"') ||
+  !composition.includes("createDistributionRuntimePortContribution")
+) {
   violations.push("Operator must bind the Distribution channel-push runtime port")
 }
 if (
@@ -72,7 +75,7 @@ if (
   violations.push("Operator must provide only the typed Node-host channel-push dependencies")
 }
 if (
-  !workflowServices.includes("createLazyWorkflowDb") ||
+  !workflowServices.includes("createChannelPushWorkflowRuntimeEntries") ||
   !workflowServices.includes("selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)")
 ) {
   violations.push("Operator must preserve lazy DB lifecycle and selected workflow service gating")

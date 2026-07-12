@@ -16,3 +16,4 @@ export type {
   TripCheckoutInput,
   TripCheckoutResult,
 } from "./types.js"
+export { createVoyantFxQuoter, type VoyantFxQuoteOptions } from "./voyant-fx.js"

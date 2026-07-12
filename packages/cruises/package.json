@@ -27,6 +27,7 @@
     "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
     "./service-pricing": "./src/service-pricing.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -182,6 +183,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./payment-policy-runtime": {
+        "types": "./dist/payment-policy-runtime.d.ts",
+        "import": "./dist/payment-policy-runtime.js",
+        "default": "./dist/payment-policy-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

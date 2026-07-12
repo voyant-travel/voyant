@@ -20,6 +20,7 @@
     "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
     "./routes-content": "./src/routes-content.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
+    "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -39,6 +40,7 @@
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/operations": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -142,6 +144,11 @@
         "types": "./dist/graph-runtime.d.ts",
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
+      },
+      "./payment-policy-runtime": {
+        "types": "./dist/payment-policy-runtime.d.ts",
+        "import": "./dist/payment-policy-runtime.js",
+        "default": "./dist/payment-policy-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

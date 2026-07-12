@@ -68,9 +68,10 @@ if (packageIndex.includes("tripsHonoModule")) {
   violations.push("Trips must not retain the preconfigured compatibility module export")
 }
 if (
-  !composition.includes('from "@voyant-travel/trips/voyant"') ||
-  !runtimePorts.includes("[tripsRoutesRuntimePort.id]") ||
-  !runtimePorts.includes("[tripsDatabaseRuntimePort.id]")
+  !composition.includes('from "@voyant-travel/trips/runtime-contributor"') ||
+  !runtimePorts.includes("createTripsRuntimePortContribution") ||
+  !runtimePorts.includes("routes: createOperatorTripsRoutesOptions") ||
+  !runtimePorts.includes("database:")
 ) {
   violations.push("Operator must supply only the generic Trips runtime ports")
 }

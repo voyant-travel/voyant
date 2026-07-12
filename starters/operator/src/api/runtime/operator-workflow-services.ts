@@ -1,7 +1,4 @@
-import {
-  BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
-  type BookingsExpireStaleHoldsWorkflowRuntime,
-} from "@voyant-travel/bookings/workflow-runtime"
+import { BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY } from "@voyant-travel/bookings/workflow-runtime"
 import { createIndexerService } from "@voyant-travel/catalog"
 import {
   CATALOG_DRAFT_REAPER_RUNTIME_KEY,
@@ -21,30 +18,16 @@ import {
   EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
   type EventOutboxWorkflowRuntime,
 } from "@voyant-travel/db/outbox-workflow"
+import { createChannelPushWorkflowRuntimeEntries } from "@voyant-travel/distribution/channel-push-workflows"
+import { createFinanceStaleBookingHoldsRuntime } from "@voyant-travel/finance/stale-booking-holds-runtime"
 import {
-  CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
-  type ChannelPushDeps,
-} from "@voyant-travel/distribution/channel-push-runtime"
-import {
-  CHANNEL_PUSH_RECONCILE_WORKFLOW_RUNTIME_KEY,
-  type ChannelPushReconcileWorkflowRuntime,
-} from "@voyant-travel/distribution/channel-push-workflows"
-import { closeTerminalBookingPaymentSchedules, financeService } from "@voyant-travel/finance"
-import { paymentSessions } from "@voyant-travel/finance/schema"
-import {
-  createDefaultProductBrochureTemplate,
-  loadProductBrochureTemplateContext,
-  renderProductBrochureTemplate,
-} from "@voyant-travel/inventory/tasks"
-import {
+  createProductsGeneratePdfWorkflowRuntime,
   PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
-  type ProductsGeneratePdfWorkflowRuntime,
 } from "@voyant-travel/inventory/workflow-runtime"
 import {
   NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
   type NotificationReminderWorkflowRuntime,
 } from "@voyant-travel/notifications/workflow-runtime"
-import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { createProductBrochurePrinter } from "../../lib/brochure-printer.js"
@@ -78,30 +61,10 @@ export function registerBookingsWorkflowService(
   bindings: OperatorWorkflowBindings,
 ): void {
   const env = workflowEnvironment(bindings)
-  const runtime: BookingsExpireStaleHoldsWorkflowRuntime = {
+  const runtime = createFinanceStaleBookingHoldsRuntime({
     resolveDb: () => createWorkflowDb(env),
-    resolveRuntime: () => ({
-      expirePaymentSessionsForBooking: async (db, bookingId) => {
-        const staleSessions = await db
-          .select({ id: paymentSessions.id })
-          .from(paymentSessions)
-          .where(
-            and(
-              eq(paymentSessions.bookingId, bookingId),
-              inArray(paymentSessions.status, ["pending", "requires_redirect", "processing"]),
-            ),
-          )
-
-        for (const session of staleSessions) {
-          await financeService.expirePaymentSession(db, session.id, {
-            notes: "Booking hold expired",
-          })
-        }
-      },
-      closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
-    }),
     userId: "system",
-  }
+  })
   container.register(BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY, runtime)
 }
 
@@ -112,18 +75,14 @@ export async function registerDistributionWorkflowService(
   const env = workflowEnvironment(bindings)
   const appBindings = operatorBindings(bindings)
   const { ensureBookingEngineRegistry } = await import("../lib/booking-engine-runtime.js")
-  const runtime: ChannelPushDeps = {
-    db: createLazyWorkflowDb(() => createWorkflowDb(env)),
-    registry: await ensureBookingEngineRegistry(env),
+  const entries = await createChannelPushWorkflowRuntimeEntries({
+    resolveDb: () => createWorkflowDb(env),
+    withDb: (operation) => withDbFromEnv(appBindings, operation),
+    resolveRegistry: () => ensureBookingEngineRegistry(env),
+  })
+  for (const [key, runtime] of entries) {
+    container.register(key, runtime)
   }
-  container.register(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY, runtime)
-  const reconcileRuntime: ChannelPushReconcileWorkflowRuntime = {
-    withDeps: (operation) =>
-      withDbFromEnv(appBindings, async (db) =>
-        operation({ db, registry: await ensureBookingEngineRegistry(env) }),
-      ),
-  }
-  container.register(CHANNEL_PUSH_RECONCILE_WORKFLOW_RUNTIME_KEY, reconcileRuntime)
 }
 
 export function registerInventoryWorkflowService(
@@ -131,22 +90,10 @@ export function registerInventoryWorkflowService(
   bindings: OperatorWorkflowBindings,
 ): void {
   const env = workflowEnvironment(bindings)
-  const runtime: ProductsGeneratePdfWorkflowRuntime = {
+  const runtime = createProductsGeneratePdfWorkflowRuntime({
     resolveDb: () => createWorkflowDb(env),
-    render: async (db, input) => {
-      const context = await loadProductBrochureTemplateContext(db, input.productId)
-      const rendered = await renderProductBrochureTemplate(
-        createDefaultProductBrochureTemplate(),
-        context,
-      )
-      const printed = await createProductBrochurePrinter(env)({ template: rendered, context })
-      return {
-        base64: Buffer.from(printed.body).toString("base64"),
-        filename: rendered.filename,
-        sizeBytes: printed.fileSize ?? printed.body.byteLength,
-      }
-    },
-  }
+    resolvePrinter: () => createProductBrochurePrinter(env),
+  })
   container.register(PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY, runtime)
 }
 
@@ -281,30 +228,6 @@ function registerPromotionBoundaryWorkflowService(
     createReindexService: () => createBulkReindexProductsService(env as AppBindings),
   }
   container.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, runtime)
-}
-
-export function createLazyWorkflowDb<TDb extends object = PostgresJsDatabase>(
-  factory: () => TDb,
-): TDb {
-  let db: TDb | undefined
-  const resolveDb = () => (db ??= factory())
-
-  return new Proxy({} as TDb, {
-    get(_target, prop) {
-      const resolved = resolveDb()
-      const value = Reflect.get(resolved as object, prop, resolved)
-      return typeof value === "function" ? value.bind(resolved) : value
-    },
-    getOwnPropertyDescriptor(_target, prop) {
-      return Reflect.getOwnPropertyDescriptor(resolveDb() as object, prop)
-    },
-    has(_target, prop) {
-      return prop in (resolveDb() as object)
-    },
-    ownKeys() {
-      return Reflect.ownKeys(resolveDb() as object)
-    },
-  })
 }
 
 function createWorkflowDb(env: NodeJS.ProcessEnv): PostgresJsDatabase {
