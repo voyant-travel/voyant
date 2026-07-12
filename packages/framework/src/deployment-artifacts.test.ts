@@ -227,6 +227,39 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
   })
 
+  it("selects a canonical package contributor when compatibility provenance is stale", async () => {
+    const resolved = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/auth#invitations",
+        packageName: "operator",
+      }),
+    ])
+    const graph = {
+      ...resolved,
+      packageRecords: [
+        ...resolved.packageRecords,
+        {
+          packageName: "@acme/auth",
+          source: { kind: "workspace" as const },
+          metadata: {
+            schemaVersion: "voyant.package.v1" as const,
+            kind: "module" as const,
+            runtime: {
+              entry: "./runtime-contributor",
+              export: "createAuthRuntimePortContribution",
+            },
+          },
+        },
+      ],
+    }
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain(
+      'import { createAuthRuntimePortContribution as GENERATED_RUNTIME_CONTRIBUTOR_0 } from "@acme/auth/runtime-contributor"',
+    )
+  })
+
   it("lowers only opted-in package admin factories into one selected bundle", async () => {
     const graph = await graphWithSelectedUnits([
       defineModule({

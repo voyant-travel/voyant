@@ -17,7 +17,7 @@ import { createDbClient } from "@voyant-travel/db"
 import {
   createEventOutboxWorkflowRuntime,
   EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
-  resolveNodeWorkflowEnvironment,
+  resolveWorkflowEnvironment,
 } from "@voyant-travel/db/outbox-workflow"
 import { createChannelPushWorkflowRuntimeEntries } from "@voyant-travel/distribution/channel-push-workflows"
 import { createFinanceStaleBookingHoldsRuntime } from "@voyant-travel/finance/stale-booking-holds-runtime"
@@ -47,12 +47,16 @@ import { operatorPostgresDb } from "./operator-runtime-adapter.js"
 
 type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string, unknown>
 
+function workflowEnvironment(bindings: OperatorWorkflowBindings): NodeJS.ProcessEnv {
+  return resolveWorkflowEnvironment(bindings, process.env)
+}
+
 /** Deployment adapter consumed by the Bookings package bootstrap. */
 export function registerBookingsWorkflowService(
   container: ModuleContainer,
   bindings: OperatorWorkflowBindings,
 ): void {
-  const env = resolveNodeWorkflowEnvironment(bindings)
+  const env = workflowEnvironment(bindings)
   container.register(
     BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
     createFinanceStaleBookingHoldsRuntime({
@@ -67,7 +71,7 @@ export function registerInventoryWorkflowService(
   container: ModuleContainer,
   bindings: OperatorWorkflowBindings,
 ): void {
-  const env = resolveNodeWorkflowEnvironment(bindings)
+  const env = workflowEnvironment(bindings)
   container.register(
     PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
     createProductsGeneratePdfWorkflowRuntime({
@@ -82,7 +86,7 @@ export async function registerDistributionWorkflowService(
   container: ModuleContainer,
   bindings: OperatorWorkflowBindings,
 ): Promise<void> {
-  const env = resolveNodeWorkflowEnvironment(bindings)
+  const env = workflowEnvironment(bindings)
   const appBindings = operatorBindings(bindings)
   const { ensureBookingEngineRegistry } = await import("../lib/booking-engine-runtime.js")
   const entries = await createChannelPushWorkflowRuntimeEntries({
@@ -97,7 +101,7 @@ export async function registerDistributionWorkflowService(
 export function createNotificationsWorkflowRuntime(
   bindings: OperatorWorkflowBindings,
 ): NotificationReminderWorkflowRuntime {
-  const env = resolveNodeWorkflowEnvironment(bindings)
+  const env = workflowEnvironment(bindings)
   return createNotificationReminderWorkflowRuntime({
     resolveDb: () => createWorkflowDb(env),
     resolveEnv: () => env,
@@ -111,7 +115,7 @@ export async function createOperatorWorkflowServiceResolver(
   selectedUnitIds: ReadonlySet<string>,
 ): Promise<ModuleContainer> {
   const appBindings = operatorBindings(bindings)
-  const env = resolveNodeWorkflowEnvironment(bindings)
+  const env = workflowEnvironment(bindings)
   const { app } = await import("../app.js")
   await app.ready(appBindings)
 

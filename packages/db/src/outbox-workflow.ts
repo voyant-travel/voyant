@@ -19,11 +19,12 @@ export function createEventOutboxWorkflowRuntime(
   return runtime
 }
 
-/** Merge string deployment bindings into the Node process environment. */
-export function resolveNodeWorkflowEnvironment(
+/** Merge string deployment bindings into a host-provided environment. */
+export function resolveWorkflowEnvironment(
   bindings: Record<string, unknown>,
-): NodeJS.ProcessEnv {
-  const environment: NodeJS.ProcessEnv = { ...process.env }
+  baseEnvironment: Readonly<Record<string, string | undefined>> = {},
+): Record<string, string | undefined> {
+  const environment = { ...baseEnvironment }
   for (const [key, value] of Object.entries(bindings)) {
     if (typeof value === "string") environment[key] = value
   }
