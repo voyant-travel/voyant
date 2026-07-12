@@ -10,13 +10,13 @@
 
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { createMediaHonoModule } from "@voyant-travel/storage/routes"
-import { createStorageStandardNodeRuntime } from "@voyant-travel/storage/standard-node"
+import { createStorageRuntime } from "@voyant-travel/storage/runtime"
 
 const directEnvPrimitives = {
   env: (bindings: unknown) => bindings as Readonly<Record<string, unknown>>,
 }
 
-export const operatorStorageMediaRuntime = createStorageStandardNodeRuntime(directEnvPrimitives)
+export const operatorStorageMediaRuntime = createStorageRuntime(directEnvPrimitives)
 
 /** Build the upload + serve routes (`/v1/admin/uploads`, `/v1/admin/media/*`, …). */
 function buildMediaUploadAndServeModule() {

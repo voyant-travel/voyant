@@ -39,7 +39,7 @@ function getCloudClient(env: Readonly<Record<string, unknown>>, apiKey: string):
   return client
 }
 
-/** Resolve the standard Node transport without activating Realtime for local deployments. */
+/** Resolve the selected transport without activating Realtime for local deployments. */
 export function resolveRealtimeProviders(
   env: Readonly<Record<string, unknown>>,
 ): ReadonlyArray<RealtimeProvider> {
@@ -66,8 +66,8 @@ function firstId(event: unknown, ...keys: ReadonlyArray<string>): string | undef
   return undefined
 }
 
-/** Standard product event-to-channel invalidation policy, owned by Realtime. */
-export const standardNodeRealtimeRoutes = {
+/** Product event-to-channel invalidation policy, owned by Realtime. */
+export const realtimeInvalidationRoutes = {
   "product.created": (event) => adminHint("product", firstId(event, "id")),
   "product.updated": (event) => adminHint("product", firstId(event, "id")),
   "product.deleted": (event) => adminHint("product", firstId(event, "id")),
@@ -111,11 +111,11 @@ export const standardNodeRealtimeRoutes = {
   },
 } satisfies RealtimeRoutes
 
-function invalidationSubscriber(eventType: keyof typeof standardNodeRealtimeRoutes) {
+function invalidationSubscriber(eventType: keyof typeof realtimeInvalidationRoutes) {
   return createAdminInvalidationSubscriberRuntime({
     id: `@voyant-travel/realtime#subscriber.admin-invalidation.${eventType}`,
     eventType,
-    route: standardNodeRealtimeRoutes[eventType]!,
+    route: realtimeInvalidationRoutes[eventType]!,
   })
 }
 
@@ -180,8 +180,8 @@ export const realtimeAvailabilitySlotChangedInvalidationSubscriber = invalidatio
   "availability.slot.changed",
 )
 
-/** Build the package's standard Node runtime solely from domain-neutral host primitives. */
-export function createRealtimeStandardNodeRuntime(
+/** Build the package runtime solely from domain-neutral host primitives. */
+export function createRealtimeRuntime(
   primitives: VoyantRuntimeHostPrimitives,
 ): CreateRealtimeHonoModuleOptions {
   return {

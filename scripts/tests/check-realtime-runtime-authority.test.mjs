@@ -16,14 +16,14 @@ const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
 const providerPolicy = "VOYANT_ADMIN_AUTH_MODE voyant-cloud VOYANT_API_KEY VOYANT_CLOUD_API_KEY VOYANT_CLOUD_API_URL VOYANT_CLOUD_USER_AGENT"
 export function resolveRealtimeProviders() { return [] }
 createVoyantCloudRealtimeProvider()
-export const standardNodeRealtimeRoutes = {
+export const realtimeInvalidationRoutes = {
   "product.created": (event) => adminHint("product", firstId(event, "id")),
 }
 const bookingHint = (event) => ({ channels: ["admin", \`booking:\${bookingId}\`] })
 const availabilityHint = { channels: ["admin", \`product:\${productId}\`] }
 const invalidationSubscriber = () => descriptor
 export const realtimeProductCreatedInvalidationSubscriber = invalidationSubscriber("product.created")
-export function createRealtimeStandardNodeRuntime(primitives) {
+export function createRealtimeRuntime(primitives) {
   return { resolveProviders: (bindings) => resolveRealtimeProviders(primitives.env(bindings)) }
 }
 `
@@ -32,7 +32,7 @@ subscribers: [
   ["product.created", "realtimeProductCreatedInvalidationSubscriber"],
 ].map(([eventType, exportName]) => ({
   eventType,
-  source: "@voyant-travel/realtime/standard-node",
+  source: "@voyant-travel/realtime/runtime",
   runtime: { export: exportName },
 }))
 `
@@ -44,15 +44,15 @@ async function fixture(overrides = {}) {
     "packages/realtime/src/runtime-contributor.ts": `
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 type Host = { primitives: VoyantRuntimeHostPrimitives }
-createRealtimeStandardNodeRuntime(host.primitives)
+createRealtimeRuntime(host.primitives)
 `,
-    "packages/realtime/src/standard-node-runtime.ts": runtime,
+    "packages/realtime/src/runtime.ts": runtime,
     "packages/realtime/src/voyant.ts": manifest,
-    "scripts/fixtures/realtime-standard-node-route-policy.json": JSON.stringify({
+    "scripts/fixtures/realtime-route-policy.json": JSON.stringify({
       "product.created": { entity: "product", idKeys: ["id"], kind: "admin" },
     }),
     "packages/realtime/package.json": JSON.stringify({
-      exports: { "./standard-node": "./src/standard-node-runtime.ts" },
+      exports: { "./runtime": "./src/runtime.ts" },
       dependencies: { "@voyant-travel/cloud-sdk": "^0.11.0" },
     }),
     ...overrides,
@@ -92,7 +92,7 @@ describe("Realtime runtime authority checker", () => {
 
   it("rejects event-to-channel behavior drift", async () => {
     const root = await fixture({
-      "packages/realtime/src/standard-node-runtime.ts": runtime.replace(
+      "packages/realtime/src/runtime.ts": runtime.replace(
         'adminHint("product", firstId(event, "id"))',
         'adminHint("inventory", firstId(event, "id"))',
       ),
@@ -104,7 +104,7 @@ describe("Realtime runtime authority checker", () => {
     const root = await fixture({
       "packages/realtime/src/runtime-contributor.ts": `
 type Host = { capabilities: { loadRealtimeRuntime(): unknown } }
-createRealtimeStandardNodeRuntime(host.primitives)
+createRealtimeRuntime(host.primitives)
 `,
     })
     await assert.rejects(runChecker(root), /must consume generic VoyantRuntimeHostPrimitives/)

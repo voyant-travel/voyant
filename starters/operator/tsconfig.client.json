@@ -1951,13 +1951,11 @@
         "../../packages/realtime/dist/providers/voyant-cloud.d.ts"
       ],
       "@voyant-travel/realtime/routes": ["../../packages/realtime/dist/routes.d.ts"],
+      "@voyant-travel/realtime/runtime": ["../../packages/realtime/dist/runtime.d.ts"],
       "@voyant-travel/realtime/runtime-contributor": [
         "../../packages/realtime/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/realtime/service": ["../../packages/realtime/dist/service.d.ts"],
-      "@voyant-travel/realtime/standard-node": [
-        "../../packages/realtime/dist/standard-node-runtime.d.ts"
-      ],
       "@voyant-travel/realtime/types": ["../../packages/realtime/dist/types.d.ts"],
       "@voyant-travel/realtime/voyant": ["../../packages/realtime/dist/voyant.d.ts"],
       "@voyant-travel/relationships": ["../../packages/relationships/dist/index.d.ts"],
@@ -2044,14 +2042,12 @@
       "@voyant-travel/storage/providers/r2": ["../../packages/storage/dist/providers/r2.d.ts"],
       "@voyant-travel/storage/providers/s3": ["../../packages/storage/dist/providers/s3.d.ts"],
       "@voyant-travel/storage/routes": ["../../packages/storage/dist/routes.d.ts"],
+      "@voyant-travel/storage/runtime": ["../../packages/storage/dist/runtime.d.ts"],
       "@voyant-travel/storage/runtime-contributor": [
         "../../packages/storage/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/storage/runtime-port": ["../../packages/storage/dist/runtime-port.d.ts"],
       "@voyant-travel/storage/service": ["../../packages/storage/dist/service.d.ts"],
-      "@voyant-travel/storage/standard-node": [
-        "../../packages/storage/dist/standard-node-runtime.d.ts"
-      ],
       "@voyant-travel/storage/types": ["../../packages/storage/dist/types.d.ts"],
       "@voyant-travel/storage/voyant": ["../../packages/storage/dist/voyant.d.ts"],
       "@voyant-travel/storefront": ["../../packages/storefront/dist/index.d.ts"],

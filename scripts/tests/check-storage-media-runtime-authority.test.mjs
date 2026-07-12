@@ -9,7 +9,7 @@ const root = path.resolve(import.meta.dirname, "../..")
 const checker = path.join(root, "scripts/check-storage-media-runtime-authority.mjs")
 const fixturePaths = [
   "packages/storage/src/runtime-contributor.ts",
-  "packages/storage/src/standard-node-runtime.ts",
+  "packages/storage/src/runtime.ts",
   "packages/storage/package.json",
   "packages/inventory/src/runtime-contributor.ts",
   "packages/inventory/src/brochure-runtime.ts",
@@ -49,7 +49,7 @@ test("rejects a Storage contributor that returns to a starter capability", () =>
   writeFileSync(
     contributorPath,
     readFileSync(contributorPath, "utf8").replace(
-      "module.createStorageStandardNodeRuntime(host.primitives)",
+      "createStorageRuntime(host.primitives)",
       "host.capabilities.loadStorageMediaRuntime()",
     ),
   )

@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
+import { findDomainRuntimeNamingViolations } from "./lib/domain-runtime-naming-policy.mjs"
 import {
   adapterBoundaryViolations,
   findProductionDependencyCycles,
@@ -65,6 +66,7 @@ const graphGenerator = read("packages/framework/src/deployment-artifacts.ts")
 const graphResolver = read("scripts/lib/operator-deployment-graph-package-records.ts")
 const graphEmitter = read("scripts/emit-deployment-graph.ts")
 const violations = adapterBoundaryViolations(manifests, adapters)
+violations.push(...findDomainRuntimeNamingViolations(root))
 
 for (const cycle of findProductionDependencyCycles(manifests)) {
   violations.push(`workspace production dependency cycle: ${cycle.join(" -> ")}`)

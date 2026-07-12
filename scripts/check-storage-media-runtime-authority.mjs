@@ -7,7 +7,7 @@ const read = (relativePath) => readFileSync(path.join(root, relativePath), "utf8
 const failures = []
 
 const storageContributor = read("packages/storage/src/runtime-contributor.ts")
-const storageRuntime = read("packages/storage/src/standard-node-runtime.ts")
+const storageRuntime = read("packages/storage/src/runtime.ts")
 const inventoryContributor = read("packages/inventory/src/runtime-contributor.ts")
 const brochureRuntime = read("packages/inventory/src/brochure-runtime.ts")
 const inventoryGraphRuntime = read("packages/inventory/src/graph-runtime.ts")
@@ -24,9 +24,9 @@ if (!storageContributor.includes("primitives: VoyantRuntimeHostPrimitives")) {
 }
 if (
   /capabilities|loadStorageMediaRuntime/.test(storageContributor) ||
-  !storageContributor.includes("createStorageStandardNodeRuntime(host.primitives)")
+  !storageContributor.includes("createStorageRuntime(host.primitives)")
 ) {
-  failures.push("Storage contributor must construct its standard Node runtime package-side")
+  failures.push("Storage contributor must construct its runtime package-side")
 }
 if (
   !inventoryContributor.includes("createInventoryBrochureRuntime(host.primitives)") ||
@@ -45,24 +45,26 @@ for (const token of policy.brochureRuntimeTokens) {
 }
 
 if (
-  !storageFacade.includes('from "@voyant-travel/storage/standard-node"') ||
+  !storageFacade.includes('from "@voyant-travel/storage/runtime"') ||
   /createR2Provider|MIME_BY_EXT|DOCUMENTS_BUCKET/.test(storageFacade)
 ) {
   failures.push("Operator storage library must remain a package re-export facade")
 }
 if (
-  !mediaFacade.includes("createStorageStandardNodeRuntime(directEnvPrimitives)") ||
+  !mediaFacade.includes("createStorageRuntime(directEnvPrimitives)") ||
   /@voyant-travel\/inventory|InventoryBrochure|buildBrochureRoutes/.test(mediaFacade)
 ) {
   failures.push("Operator media compatibility runtime must not assemble Inventory behavior")
 }
 
 if (
-  storagePackage.exports["./standard-node"] !== "./src/standard-node-runtime.ts" ||
-  storagePackage.publishConfig?.exports?.["./standard-node"]?.import !==
-    "./dist/standard-node-runtime.js"
+  storagePackage.exports["./runtime"] !== "./src/runtime.ts" ||
+  storagePackage.publishConfig?.exports?.["./runtime"]?.import !== "./dist/runtime.js"
 ) {
-  failures.push("Storage must publish its standard Node runtime")
+  failures.push("Storage must publish its neutral runtime")
+}
+if (storagePackage.exports["./standard-node"]) {
+  failures.push("Storage must not publish a target-labelled runtime")
 }
 if (
   storagePackage.exports["./runtime-port"] !== "./src/runtime-port.ts" ||
@@ -84,7 +86,7 @@ if (
   failures.push("Inventory brochure routes must consume Storage through its neutral typed port")
 }
 if (
-  brochureRuntime.includes("@voyant-travel/storage/standard-node") ||
+  brochureRuntime.includes("@voyant-travel/storage/runtime") ||
   brochureRuntime.includes("createMediaStorage")
 ) {
   failures.push("Inventory brochure runtime must not import Storage's target-labelled runtime")

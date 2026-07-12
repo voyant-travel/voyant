@@ -5,7 +5,7 @@ import { createR2Provider, type R2BucketLike } from "./providers/r2.js"
 import type { MediaRoutesOptions, VideoUploadTicketRequest } from "./routes.js"
 import type { StorageProvider } from "./types.js"
 
-export type StorageStandardNodeEnv = Readonly<
+export type StorageRuntimeEnv = Readonly<
   Partial<
     Record<
       | "API_BASE_URL"
@@ -21,7 +21,7 @@ export type StorageStandardNodeEnv = Readonly<
     >
   >
 >
-type RuntimeEnv = StorageStandardNodeEnv
+type RuntimeEnv = StorageRuntimeEnv
 type StorageRuntimePrimitives = Pick<VoyantRuntimeHostPrimitives, "env">
 
 const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
@@ -104,7 +104,7 @@ export function guessMimeType(key: string): string {
   return MIME_BY_EXT[ext] ?? "application/octet-stream"
 }
 
-/** Resolve standard media storage from the graph-selected Node environment. */
+/** Resolve standard media storage from the graph-selected environment. */
 export function createMediaStorage(env: RuntimeEnv): StorageProvider | null {
   const appUrl = typeof env.APP_URL === "string" ? env.APP_URL.replace(/\/api$/, "") : ""
   return createR2BucketStorage(bucket(env, "MEDIA_BUCKET"), {
@@ -112,7 +112,7 @@ export function createMediaStorage(env: RuntimeEnv): StorageProvider | null {
   })
 }
 
-/** Resolve private document storage from the graph-selected Node environment. */
+/** Resolve private document storage from the graph-selected environment. */
 export function createDocumentStorage(env: RuntimeEnv): StorageProvider | null {
   return createR2BucketStorage(bucket(env, "DOCUMENTS_BUCKET"))
 }
@@ -179,7 +179,7 @@ export async function resolveDocumentDownloadUrl(
   return `${apiBaseUrl}/v1/admin/documents/files/${keyPath}`
 }
 
-/** Standard Voyant Cloud one-shot video upload ticket provider. */
+/** Voyant Cloud one-shot video upload ticket provider. */
 export function createVideoUploadTicket(
   env: RuntimeEnv,
   input: VideoUploadTicketRequest,
@@ -187,10 +187,8 @@ export function createVideoUploadTicket(
   return getCloudClient(env).video.videos.createUpload(input)
 }
 
-/** Build Storage's standard Node route runtime from generic host primitives. */
-export function createStorageStandardNodeRuntime(
-  primitives: StorageRuntimePrimitives,
-): MediaRoutesOptions {
+/** Build Storage's route runtime from generic host primitives. */
+export function createStorageRuntime(primitives: StorageRuntimePrimitives): MediaRoutesOptions {
   return {
     resolveStorage: (context) => createMediaStorage(primitives.env(context.env)),
     guessServedMimeType: guessMimeType,

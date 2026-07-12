@@ -10,7 +10,7 @@
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
-    "./standard-node": "./src/standard-node-runtime.ts",
+    "./runtime": "./src/runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/r2": "./src/providers/r2.ts",
@@ -65,10 +65,10 @@
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
       },
-      "./standard-node": {
-        "types": "./dist/standard-node-runtime.d.ts",
-        "import": "./dist/standard-node-runtime.js",
-        "default": "./dist/standard-node-runtime.js"
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "import": "./dist/runtime.js",
+        "default": "./dist/runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

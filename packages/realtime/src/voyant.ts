@@ -88,9 +88,9 @@ export const realtimeVoyantModule = defineModule({
   ].map(([eventType, exportName]) => ({
     id: `@voyant-travel/realtime#subscriber.admin-invalidation.${eventType}`,
     eventType,
-    source: "@voyant-travel/realtime/standard-node",
+    source: "@voyant-travel/realtime/runtime",
     runtime: {
-      entry: "@voyant-travel/realtime/standard-node",
+      entry: "@voyant-travel/realtime/runtime",
       export: exportName,
     },
   })),

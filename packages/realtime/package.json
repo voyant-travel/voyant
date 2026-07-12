@@ -14,7 +14,7 @@
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud": "./src/providers/voyant-cloud.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
-    "./standard-node": "./src/standard-node-runtime.ts",
+    "./runtime": "./src/runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/realtime-admin.json",
     "./openapi/storefront": "./openapi/storefront/realtime-public.json"
@@ -96,10 +96,10 @@
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
       },
-      "./standard-node": {
-        "types": "./dist/standard-node-runtime.d.ts",
-        "import": "./dist/standard-node-runtime.js",
-        "default": "./dist/standard-node-runtime.js"
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "import": "./dist/runtime.js",
+        "default": "./dist/runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

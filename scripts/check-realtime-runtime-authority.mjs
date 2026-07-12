@@ -10,12 +10,10 @@ const starterRuntimePath = "starters/operator/src/lib/realtime.ts"
 const starterTestPath = "starters/operator/src/lib/realtime.test.ts"
 const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
 const contributor = read("packages/realtime/src/runtime-contributor.ts")
-const runtime = read("packages/realtime/src/standard-node-runtime.ts")
+const runtime = read("packages/realtime/src/runtime.ts")
 const manifest = read("packages/realtime/src/voyant.ts")
 const packageJson = JSON.parse(read("packages/realtime/package.json"))
-const expectedRoutePolicy = JSON.parse(
-  read("scripts/fixtures/realtime-standard-node-route-policy.json"),
-)
+const expectedRoutePolicy = JSON.parse(read("scripts/fixtures/realtime-route-policy.json"))
 
 if (
   existsSync(path.join(root, starterRuntimePath)) ||
@@ -37,14 +35,12 @@ if (/capabilities|loadRealtimeRuntime/.test(contributor)) {
   failures.push("Realtime contributor must not depend on a package-specific host capability")
 }
 if (
-  !contributor.includes("createRealtimeStandardNodeRuntime(host.primitives)") ||
+  !contributor.includes("createRealtimeRuntime(host.primitives)") ||
   !runtime.includes(
     "resolveProviders: (bindings) => resolveRealtimeProviders(primitives.env(bindings))",
   )
 ) {
-  failures.push(
-    "Realtime standard Node runtime must derive bindings through generic env primitives",
-  )
+  failures.push("Realtime runtime must derive bindings through generic env primitives")
 }
 
 for (const token of [
@@ -62,9 +58,7 @@ if (!runtime.includes("return []") || !runtime.includes("createVoyantCloudRealti
   failures.push("Realtime provider policy must remain inert unless Voyant Cloud is configured")
 }
 if (runtime.includes("bridgeRoutes:")) {
-  failures.push(
-    "Realtime standard runtime must use selected subscriber descriptors, not bridgeRoutes",
-  )
+  failures.push("Realtime runtime must use selected subscriber descriptors, not bridgeRoutes")
 }
 
 const routeEvents = [...runtime.matchAll(/^\s{2}"([a-z][a-z0-9.-]+)":\s*(?:\(|\{)/gm)].map(
@@ -78,7 +72,7 @@ const manifestEntries = [
 ].map((match) => ({ eventType: match[1], exportName: match[2] }))
 
 const duplicates = (values) => values.filter((value, index) => values.indexOf(value) !== index)
-if (routeEvents.length === 0) failures.push("Realtime standard route table must not be empty")
+if (routeEvents.length === 0) failures.push("Realtime route table must not be empty")
 if (duplicates(routeEvents).length > 0) failures.push("Realtime route events must be unique")
 if (duplicates(descriptorEvents).length > 0) failures.push("Realtime descriptors must be unique")
 if (duplicates(manifestEntries.map(({ eventType }) => eventType)).length > 0) {
@@ -134,14 +128,17 @@ for (const { exportName } of manifestEntries) {
     failures.push(`Realtime manifest references missing runtime export ${exportName}`)
   }
 }
-if (!manifest.includes('source: "@voyant-travel/realtime/standard-node"')) {
-  failures.push("Realtime subscribers must load from the package-owned standard Node adapter")
+if (!manifest.includes('source: "@voyant-travel/realtime/runtime"')) {
+  failures.push("Realtime subscribers must load from the package-owned runtime")
 }
 if (packageJson.dependencies?.["@voyant-travel/cloud-sdk"] !== "^0.11.0") {
   failures.push("Realtime must directly declare its acyclic Cloud SDK provider dependency")
 }
-if (packageJson.exports?.["./standard-node"] !== "./src/standard-node-runtime.ts") {
-  failures.push("Realtime must export its standard Node runtime source entry")
+if (packageJson.exports?.["./runtime"] !== "./src/runtime.ts") {
+  failures.push("Realtime must export its neutral runtime source entry")
+}
+if (packageJson.exports?.["./standard-node"]) {
+  failures.push("Realtime must not export a target-labelled runtime entry")
 }
 
 if (failures.length > 0) {
