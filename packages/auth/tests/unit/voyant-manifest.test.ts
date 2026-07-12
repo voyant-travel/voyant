@@ -48,25 +48,13 @@ describe("auth identity/access deployment manifests", () => {
 
     const runtime = {} as Parameters<typeof createInvitationsAdminRoutes>[0]
     expect(operationClaims(documents[0])).toEqual(
-      routeClaims(
-        createInvitationsAdminRoutes(runtime).routes,
-        "/v1/admin/invitations",
-        "@voyant-travel/auth#invitations.api.admin",
-      ),
+      liveOperationClaims(createInvitationsAdminRoutes(runtime), "/v1/admin/invitations"),
     )
     expect(operationClaims(documents[1])).toEqual(
-      routeClaims(
-        createInvitationsPublicRoutes().routes,
-        "/v1/public/invitations",
-        "@voyant-travel/auth#invitations.api.public",
-      ),
+      liveOperationClaims(createInvitationsPublicRoutes(), "/v1/public/invitations"),
     )
     expect(operationClaims(documents[2])).toEqual(
-      routeClaims(
-        createTeamAdminRoutes(runtime).routes,
-        "/v1/admin/team",
-        "@voyant-travel/auth#team.api.admin",
-      ),
+      liveOperationClaims(createTeamAdminRoutes(runtime), "/v1/admin/team"),
     )
   })
 })
@@ -91,13 +79,20 @@ function operationClaims(document: OpenApiDocument): string[][] {
     .sort((left, right) => left.join(":").localeCompare(right.join(":")))
 }
 
-function routeClaims(
-  routes: Array<{ method: string; path: string }>,
+function liveOperationClaims(
+  app: { getOpenAPI31Document(input: Record<string, unknown>): OpenApiDocument },
   mount: string,
-  apiId: string,
 ): string[][] {
-  return routes
-    .map(({ method, path }) => [method, `${mount}${path === "/" ? "" : path}`, apiId])
-    .map(([method, path, id]) => [method, path.replace(/:([^/]+)/g, "{$1}"), id])
-    .sort((left, right) => left.join(":").localeCompare(right.join(":")))
+  const document = app.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "test", version: "1.0.0" },
+  })
+  return operationClaims({
+    paths: Object.fromEntries(
+      Object.entries(document.paths ?? {}).map(([path, item]) => [
+        `${mount}${path === "/" ? "" : path}`,
+        item,
+      ]),
+    ),
+  })
 }

@@ -138,7 +138,28 @@ describe("createMcpHonoApp", () => {
     const document = JSON.parse(
       await readFile(new URL("../openapi/admin/mcp.json", import.meta.url), "utf8"),
     ) as { paths: Record<string, Record<string, Record<string, unknown>>> }
-    const claims = Object.entries(document.paths)
+    const claims = operationClaims(document.paths)
+    const app = createMcpHonoApp({ accessCatalog, registry: createToolRegistry(), buildContext })
+    const liveDocument = app.getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "test", version: "1.0.0" },
+    })
+    const livePaths = Object.fromEntries(
+      Object.entries(liveDocument.paths ?? {}).map(([path, item]) => [
+        `/v1/admin/mcp${path === "/" ? "" : path}`,
+        item,
+      ]),
+    ) as Record<string, Record<string, Record<string, unknown>>>
+
+    expect(operationClaims(livePaths)).toEqual(claims)
+    expect(claims).toEqual([
+      ["GET", "/v1/admin/mcp/manifest", "@voyant-travel/mcp#api.admin"],
+      ["POST", "/v1/admin/mcp", "@voyant-travel/mcp#api.admin"],
+    ])
+  })
+
+  function operationClaims(paths: Record<string, Record<string, Record<string, unknown>>>) {
+    return Object.entries(paths)
       .flatMap(([path, pathItem]) =>
         Object.entries(pathItem).map(([method, operation]) => [
           method.toUpperCase(),
@@ -147,12 +168,7 @@ describe("createMcpHonoApp", () => {
         ]),
       )
       .sort((left, right) => left.join(":").localeCompare(right.join(":")))
-
-    expect(claims).toEqual([
-      ["GET", "/v1/admin/mcp/manifest", "@voyant-travel/mcp#api.admin"],
-      ["POST", "/v1/admin/mcp", "@voyant-travel/mcp#api.admin"],
-    ])
-  })
+  }
 
   it("lists and calls a tool when the caller holds its required scopes", async () => {
     const app = appWithScopes(["catalog:read"])

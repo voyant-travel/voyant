@@ -1,3 +1,4 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import {
   authAccount,
@@ -5,11 +6,9 @@ import {
   userInvitationsTable,
   userProfilesTable,
 } from "@voyant-travel/db/schema/iam"
-import { parseJsonBody, type VoyantDb } from "@voyant-travel/hono"
+import { openApiValidationHook, type VoyantDb } from "@voyant-travel/hono"
 import { hashPassword } from "better-auth/crypto"
 import { and, desc, eq, gt, isNull } from "drizzle-orm"
-import { Hono } from "hono"
-import { z } from "zod"
 
 import type { IdentityAccessRuntimeProvider } from "./identity-access-runtime-port.js"
 
@@ -34,6 +33,58 @@ const createInviteSchema = z.object({
 const redeemInviteSchema = z.object({
   name: z.string().min(1).max(200),
   password: z.string().min(8).max(128),
+})
+
+const invitationAdminApiId = "@voyant-travel/auth#invitations.api.admin"
+const invitationPublicApiId = "@voyant-travel/auth#invitations.api.public"
+const jsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
+  required: true,
+  content: { "application/json": { schema } },
+})
+const responses = (...statuses: number[]) =>
+  Object.fromEntries(statuses.map((status) => [status, { description: `HTTP ${status}` }]))
+
+const listInvitationsRoute = createRoute({
+  method: "get",
+  path: "/",
+  operationId: "listAuthInvitations",
+  "x-voyant-api-id": invitationAdminApiId,
+  responses: responses(200, 403),
+})
+const createInvitationRoute = createRoute({
+  method: "post",
+  path: "/",
+  operationId: "createAuthInvitation",
+  "x-voyant-api-id": invitationAdminApiId,
+  request: { body: jsonBody(createInviteSchema) },
+  responses: responses(200, 403, 409),
+})
+const deleteInvitationRoute = createRoute({
+  method: "delete",
+  path: "/{id}",
+  operationId: "deleteAuthInvitation",
+  "x-voyant-api-id": invitationAdminApiId,
+  request: { params: z.object({ id: z.string() }) },
+  responses: responses(200, 403),
+})
+const inspectInvitationRoute = createRoute({
+  method: "get",
+  path: "/{token}",
+  operationId: "inspectAuthInvitation",
+  "x-voyant-api-id": invitationPublicApiId,
+  request: { params: z.object({ token: z.string() }) },
+  responses: responses(200, 404, 410),
+})
+const redeemInvitationRoute = createRoute({
+  method: "post",
+  path: "/{token}/redeem",
+  operationId: "redeemAuthInvitation",
+  "x-voyant-api-id": invitationPublicApiId,
+  request: {
+    params: z.object({ token: z.string() }),
+    body: jsonBody(redeemInviteSchema),
+  },
+  responses: responses(200, 409, 410),
 })
 
 function randomTokenBase64Url(bytes: number): string {
@@ -61,9 +112,9 @@ async function isSuperAdmin(db: VoyantDb, userId: string): Promise<boolean> {
 }
 
 export function createInvitationsAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
-  const routes = new Hono<IdentityAccessEnv>()
+  const routes = new OpenAPIHono<IdentityAccessEnv>({ defaultHook: openApiValidationHook })
 
-  routes.get("/", async (c) => {
+  routes.openapi(listInvitationsRoute, async (c) => {
     const userId = c.get("userId")
     const db = c.get("db")
     if (!userId || !(await isSuperAdmin(db, userId))) return c.json({ error: "Forbidden" }, 403)
@@ -84,12 +135,12 @@ export function createInvitationsAdminRoutes(runtime: IdentityAccessRuntimeProvi
     return c.json({ data: rows })
   })
 
-  routes.post("/", async (c) => {
+  routes.openapi(createInvitationRoute, async (c) => {
     const userId = c.get("userId")
     const db = c.get("db")
     if (!userId || !(await isSuperAdmin(db, userId))) return c.json({ error: "Forbidden" }, 403)
 
-    const input = await parseJsonBody(c, createInviteSchema)
+    const input = c.req.valid("json")
     const email = input.email.trim().toLowerCase()
     const [existingUser] = await db
       .select({ id: authUser.id })
@@ -124,12 +175,12 @@ export function createInvitationsAdminRoutes(runtime: IdentityAccessRuntimeProvi
     })
   })
 
-  routes.delete("/:id", async (c) => {
+  routes.openapi(deleteInvitationRoute, async (c) => {
     const userId = c.get("userId")
     const db = c.get("db")
     if (!userId || !(await isSuperAdmin(db, userId))) return c.json({ error: "Forbidden" }, 403)
 
-    const id = c.req.param("id")
+    const { id } = c.req.valid("param")
     await db.delete(userInvitationsTable).where(eq(userInvitationsTable.id, id))
     return c.json({ data: { id } })
   })
@@ -138,10 +189,10 @@ export function createInvitationsAdminRoutes(runtime: IdentityAccessRuntimeProvi
 }
 
 export function createInvitationsPublicRoutes() {
-  const routes = new Hono<IdentityAccessEnv>()
+  const routes = new OpenAPIHono<IdentityAccessEnv>({ defaultHook: openApiValidationHook })
 
-  routes.get("/:token", async (c) => {
-    const tokenHash = await sha256Hex(c.req.param("token"))
+  routes.openapi(inspectInvitationRoute, async (c) => {
+    const tokenHash = await sha256Hex(c.req.valid("param").token)
     const [row] = await c
       .get("db")
       .select({
@@ -161,8 +212,8 @@ export function createInvitationsPublicRoutes() {
     return c.json({ valid: true, email: row.email, expiresAt: row.expiresAt.toISOString() })
   })
 
-  routes.post("/:token/redeem", async (c) => {
-    const input = await parseJsonBody(c, redeemInviteSchema)
+  routes.openapi(redeemInvitationRoute, async (c) => {
+    const input = c.req.valid("json")
     const db = c.get("db")
     const now = new Date()
     const [invite] = await db
@@ -170,7 +221,7 @@ export function createInvitationsPublicRoutes() {
       .from(userInvitationsTable)
       .where(
         and(
-          eq(userInvitationsTable.tokenHash, await sha256Hex(c.req.param("token"))),
+          eq(userInvitationsTable.tokenHash, await sha256Hex(c.req.valid("param").token)),
           isNull(userInvitationsTable.redeemedAt),
           gt(userInvitationsTable.expiresAt, now),
         ),

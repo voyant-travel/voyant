@@ -14,6 +14,7 @@
  * listed nor registered on the per-request server, so they cannot be called.
  */
 import { StreamableHTTPTransport } from "@hono/mcp"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
@@ -31,8 +32,7 @@ import {
   hasApiKeyPermission,
   permissionStringsToPermissions,
 } from "@voyant-travel/types/api-keys"
-import { type Context, Hono } from "hono"
-import { z } from "zod"
+import type { Context } from "hono"
 
 export interface McpServerInfo {
   name: string
@@ -74,6 +74,39 @@ export interface GraphMcpRuntime {
 }
 
 const DEFAULT_SERVER_INFO: McpServerInfo = { name: "voyant-mcp", version: "0.1.0" }
+const mcpAdminApiId = "@voyant-travel/mcp#api.admin"
+const getManifestRoute = createRoute({
+  method: "get",
+  path: "/manifest",
+  operationId: "getMcpManifest",
+  "x-voyant-api-id": mcpAdminApiId,
+  responses: { 200: { description: "The authorized MCP tool manifest" } },
+})
+const callMcpRoute = createRoute({
+  method: "post",
+  path: "/",
+  operationId: "callMcp",
+  "x-voyant-api-id": mcpAdminApiId,
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: z.object({
+            jsonrpc: z.literal("2.0"),
+            id: z.union([z.string(), z.number(), z.null()]).optional(),
+            method: z.string(),
+            params: z.record(z.string(), z.unknown()).optional(),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: { description: "The MCP JSON-RPC response" },
+    204: { description: "The MCP notification was accepted" },
+  },
+})
 
 /**
  * Build the MCP Hono sub-app. Mount at `/v1/admin/mcp`:
@@ -81,12 +114,12 @@ const DEFAULT_SERVER_INFO: McpServerInfo = { name: "voyant-mcp", version: "0.1.0
  * - `GET /manifest` — the tool discovery manifest (contract-versioned), filtered
  *   to what the caller is authorized for.
  */
-export function createMcpHonoApp(options: McpHonoAppOptions): Hono {
+export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
   const { accessCatalog, registry, buildContext } = options
   const serverInfo = options.serverInfo ?? DEFAULT_SERVER_INFO
-  const app = new Hono()
+  const app = new OpenAPIHono()
 
-  app.get("/manifest", (c) => {
+  app.openapi(getManifestRoute, (c) => {
     const permissions = callerPermissions(c)
     const tools = registry
       .list()
@@ -94,7 +127,7 @@ export function createMcpHonoApp(options: McpHonoAppOptions): Hono {
     return c.json({ version: TOOL_CONTRACT_VERSION, serverInfo, tools })
   })
 
-  app.all("/", async (c) => {
+  app.openapi(callMcpRoute, async (c) => {
     const permissions = callerPermissions(c)
     const ctx = await buildContext(c)
     const server = new McpServer(serverInfo)
@@ -113,14 +146,14 @@ export function createMcpHonoApp(options: McpHonoAppOptions): Hono {
       enableJsonResponse: true,
     })
     await server.connect(transport)
-    return transport.handleRequest(c)
+    return (await transport.handleRequest(c)) ?? c.body(null, 204)
   })
 
   return app
 }
 
 /** Compose selected tools and their package-owned context contributors from one graph. */
-export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Promise<Hono> {
+export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Promise<OpenAPIHono> {
   const registry = createToolRegistry()
   const contributions = new Map<string, ToolContextContribution>()
   const requiredContext = new Set<string>()

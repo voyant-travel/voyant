@@ -1,8 +1,8 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { cloudAuthUserLinks } from "@voyant-travel/db/schema/iam"
-import { parseJsonBody, type VoyantDb } from "@voyant-travel/hono"
+import { openApiValidationHook, parseJsonBody, type VoyantDb } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
-import { type Context, Hono } from "hono"
-import { z } from "zod"
+import type { Context } from "hono"
 
 import {
   type CloudAdminMembersConfig,
@@ -34,6 +34,82 @@ const permissionsSchema = z.object({
   permissions: z.array(z.string().trim().min(1).max(120)).max(200),
 })
 
+const teamAdminApiId = "@voyant-travel/auth#team.api.admin"
+const jsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
+  required: true,
+  content: { "application/json": { schema } },
+})
+const responses = (...statuses: number[]) =>
+  Object.fromEntries(statuses.map((status) => [status, { description: `HTTP ${status}` }]))
+const teamRoute = <M extends "get" | "post" | "put" | "delete", P extends string>(config: {
+  method: M
+  path: P
+  operationId: string
+  request?: Record<string, unknown>
+  statuses: number[]
+}) =>
+  createRoute({
+    method: config.method,
+    path: config.path,
+    operationId: config.operationId,
+    "x-voyant-api-id": teamAdminApiId,
+    ...(config.request ? { request: config.request } : {}),
+    responses: responses(...config.statuses),
+  })
+
+const listMembersRoute = teamRoute({
+  method: "get",
+  path: "/members",
+  operationId: "listTeamMembers",
+  statuses: [200, 401, 403, 404, 501],
+})
+const listRolesRoute = teamRoute({
+  method: "get",
+  path: "/roles",
+  operationId: "listTeamRoles",
+  statuses: [200, 401, 403, 404, 501],
+})
+const listTeamInvitationsRoute = teamRoute({
+  method: "get",
+  path: "/invitations",
+  operationId: "listTeamInvitations",
+  statuses: [200, 401, 403, 404, 501],
+})
+const createTeamInvitationRoute = teamRoute({
+  method: "post",
+  path: "/invitations",
+  operationId: "createTeamInvitation",
+  request: { body: jsonBody(inviteSchema) },
+  statuses: [201, 400, 401, 403, 404, 501],
+})
+const revokeTeamInvitationRoute = teamRoute({
+  method: "delete",
+  path: "/invitations/{invitationId}",
+  operationId: "revokeTeamInvitation",
+  request: { params: z.object({ invitationId: z.string() }) },
+  statuses: [204, 401, 403, 404, 501],
+})
+const setTeamMemberAccessRoute = teamRoute({
+  method: "put",
+  path: "/members/{membershipId}/access",
+  operationId: "setTeamMemberAccess",
+  request: {
+    params: z.object({ membershipId: z.string() }),
+    body: jsonBody(accessSchema),
+  },
+  statuses: [200, 400, 401, 403, 404, 501],
+})
+const setTeamMemberPermissionsRoute = teamRoute({
+  method: "put",
+  path: "/members/{membershipId}/permissions",
+  operationId: "setTeamMemberPermissions",
+  request: {
+    params: z.object({ membershipId: z.string() }),
+    body: jsonBody(permissionsSchema),
+  },
+  statuses: [200, 400, 401, 403, 404, 501],
+})
+
 async function resolveActingWorkosUserId(db: VoyantDb, userId: string): Promise<string | null> {
   const [link] = await db
     .select({ providerAccountId: cloudAuthUserLinks.providerAccountId })
@@ -44,7 +120,7 @@ async function resolveActingWorkosUserId(db: VoyantDb, userId: string): Promise<
 }
 
 export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
-  const routes = new Hono<IdentityAccessEnv>()
+  const routes = new OpenAPIHono<IdentityAccessEnv>({ defaultHook: openApiValidationHook })
 
   const resolveContext = async (c: TeamRouteContext): Promise<TeamContext | Response> => {
     const deployment = runtime.resolveDeployment(c.env)
@@ -70,7 +146,7 @@ export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
     throw error
   }
 
-  routes.get("/members", async (c) => {
+  routes.openapi(listMembersRoute, async (c) => {
     const context = await resolveContext(c)
     if (context instanceof Response) return context
     try {
@@ -79,7 +155,7 @@ export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
       return handleError(c, error)
     }
   })
-  routes.get("/roles", async (c) => {
+  routes.openapi(listRolesRoute, async (c) => {
     const context = await resolveContext(c)
     if (context instanceof Response) return context
     try {
@@ -88,7 +164,7 @@ export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
       return handleError(c, error)
     }
   })
-  routes.get("/invitations", async (c) => {
+  routes.openapi(listTeamInvitationsRoute, async (c) => {
     const context = await resolveContext(c)
     if (context instanceof Response) return context
     try {
@@ -97,7 +173,7 @@ export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
       return handleError(c, error)
     }
   })
-  routes.post("/invitations", async (c) => {
+  routes.openapi(createTeamInvitationRoute, async (c) => {
     const context = await resolveContext(c)
     if (context instanceof Response) return context
     const input = await parseJsonBody(c, inviteSchema)
@@ -107,7 +183,7 @@ export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
       return handleError(c, error)
     }
   })
-  routes.delete("/invitations/:invitationId", async (c) => {
+  routes.openapi(revokeTeamInvitationRoute, async (c) => {
     const context = await resolveContext(c)
     if (context instanceof Response) return context
     try {
@@ -120,7 +196,7 @@ export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
       return handleError(c, error)
     }
   })
-  routes.put("/members/:membershipId/access", async (c) => {
+  routes.openapi(setTeamMemberAccessRoute, async (c) => {
     const context = await resolveContext(c)
     if (context instanceof Response) return context
     const input = await parseJsonBody(c, accessSchema)
@@ -136,7 +212,7 @@ export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
       return handleError(c, error)
     }
   })
-  routes.put("/members/:membershipId/permissions", async (c) => {
+  routes.openapi(setTeamMemberPermissionsRoute, async (c) => {
     const context = await resolveContext(c)
     if (context instanceof Response) return context
     const input = await parseJsonBody(c, permissionsSchema)
