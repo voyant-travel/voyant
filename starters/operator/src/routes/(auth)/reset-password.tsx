@@ -2,21 +2,12 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { ResetPasswordPage, type ResetPasswordPageMessages } from "@voyant-travel/auth-react/ui"
 import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
+import { getLocalAuthRedirect } from "@/lib/local-auth-bootstrap"
 
 export const Route = createFileRoute("/(auth)/reset-password")({
   loader: async ({ location }) => {
-    const [user, bootstrap] = await Promise.all([getCurrentUser(), getBootstrapStatus()])
-
-    if (user) {
-      throw redirect({ to: "/" })
-    }
-
-    if (bootstrap.authMode === "voyant-cloud") {
-      throw redirect({ href: cloudAuthStartHref(location.href) })
-    }
-
-    return null
+    const destination = await getLocalAuthRedirect("reset-password", location.href)
+    if (destination) throw redirect(destination)
   },
   validateSearch: z.object({
     token: z.string().optional(),

@@ -4,22 +4,13 @@ import { VerifyEmailPage, type VerifyEmailPageMessages } from "@voyant-travel/au
 import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { authClient } from "@/lib/auth"
-import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
 import { getApiUrl } from "@/lib/env"
+import { getLocalAuthRedirect } from "@/lib/local-auth-bootstrap"
 
 export const Route = createFileRoute("/(auth)/verify-email")({
   loader: async ({ location }) => {
-    const [user, bootstrap] = await Promise.all([getCurrentUser(), getBootstrapStatus()])
-
-    if (user) {
-      throw redirect({ to: "/" })
-    }
-
-    if (bootstrap.authMode === "voyant-cloud") {
-      throw redirect({ href: cloudAuthStartHref(location.href) })
-    }
-
-    return null
+    const destination = await getLocalAuthRedirect("verify-email", location.href)
+    if (destination) throw redirect(destination)
   },
   validateSearch: z.object({
     email: z.string(),

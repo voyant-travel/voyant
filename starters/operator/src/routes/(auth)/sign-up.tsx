@@ -6,28 +6,12 @@ import {
 } from "@voyant-travel/auth-react/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { authClient } from "@/lib/auth"
-import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
+import { getLocalAuthRedirect } from "@/lib/local-auth-bootstrap"
 
 export const Route = createFileRoute("/(auth)/sign-up")({
   loader: async ({ location }) => {
-    const [user, bootstrap] = await Promise.all([getCurrentUser(), getBootstrapStatus()])
-
-    if (user) {
-      throw redirect({ to: "/" })
-    }
-
-    if (bootstrap.authMode === "voyant-cloud") {
-      throw redirect({ href: cloudAuthStartHref(location.href) })
-    }
-
-    // Sign-up is only reachable when the system has no users yet
-    // (bootstrap flow for the initial admin). Once there's at least one
-    // user, everyone arrives via admin-issued invitations.
-    if (bootstrap.hasUsers) {
-      throw redirect({ to: "/sign-in" })
-    }
-
-    return null
+    const destination = await getLocalAuthRedirect("sign-up", location.href)
+    if (destination) throw redirect(destination)
   },
   component: SignUpRoute,
 })

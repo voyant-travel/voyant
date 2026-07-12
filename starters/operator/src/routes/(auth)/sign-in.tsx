@@ -7,26 +7,13 @@ import {
 import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { authClient } from "@/lib/auth"
-import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
 import { getApiUrl } from "@/lib/env"
+import { getLocalAuthRedirect } from "@/lib/local-auth-bootstrap"
 
 export const Route = createFileRoute("/(auth)/sign-in")({
   loader: async ({ location }) => {
-    const [user, bootstrap] = await Promise.all([getCurrentUser(), getBootstrapStatus()])
-
-    if (user) {
-      throw redirect({ to: "/" })
-    }
-
-    if (bootstrap.authMode === "voyant-cloud") {
-      throw redirect({ href: cloudAuthStartHref(location.href) })
-    }
-
-    if (!bootstrap.hasUsers) {
-      throw redirect({ to: "/sign-up" })
-    }
-
-    return null
+    const destination = await getLocalAuthRedirect("sign-in", location.href)
+    if (destination) throw redirect(destination)
   },
   validateSearch: z.object({
     next: z.string().optional(),
