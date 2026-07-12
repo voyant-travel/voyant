@@ -3,6 +3,7 @@ import {
   type AdminRouteLoaderContext,
   type AdminRouteMessagesProvider,
   type AdminRouteMessagesProviderLoader,
+  type AdminSettingsPageContribution,
   type AdminUiRouteContribution,
   adminExtensionsFromGlob,
   createAdminExtensionRegistry,
@@ -18,8 +19,12 @@ type SelectedExtensionsFactory = (context: {
   navMessages: Readonly<Record<string, string>>
 }) => ReadonlyArray<AdminExtension>
 
+type CoreExtensionFactory = (
+  settingsPages: ReadonlyArray<AdminSettingsPageContribution>,
+) => AdminExtension
+
 export interface CreateAdminHostExtensionsOptions {
-  core: AdminExtension
+  core: CoreExtensionFactory
   selected: SelectedExtensionsFactory
   navMessages: Readonly<Record<string, string>>
   discovered?: ReadonlyArray<AdminExtension>
@@ -103,9 +108,12 @@ export function createAdminHostExtensions({
   navMessages,
   discovered = [],
 }: CreateAdminHostExtensionsOptions): ReadonlyArray<AdminExtension> {
+  const selectedExtensions = selected({ navMessages })
+  const settingsPages = selectedExtensions.flatMap((extension) => extension.settingsPages ?? [])
+
   return createAdminExtensionRegistry(
-    withCoreRouteMessages(core),
-    ...selected({ navMessages }),
+    withCoreRouteMessages(core(settingsPages)),
+    ...selectedExtensions,
     ...discovered,
   )
 }

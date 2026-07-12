@@ -32,6 +32,19 @@ describe("operator-settings deployment manifest", () => {
       schema: [{ id: "@voyant-travel/operator-settings#schema" }],
       migrations: [{ id: "@voyant-travel/operator-settings#migrations" }],
       resources: [{ id: "@voyant-travel/operator-settings#resource.database", kind: "database" }],
+      admin: {
+        compositionOrder: 10,
+        runtime: {
+          entry: "@voyant-travel/operator-settings-react/settings",
+          export: "createSelectedOperatorSettingsAdminExtension",
+        },
+        routes: [
+          {
+            id: "@voyant-travel/operator-settings#admin.route.operator-profile",
+            path: "/settings/operator",
+          },
+        ],
+      },
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
     expect(operatorSettingsVoyantModule.api?.every((route) => route.runtime)).toBe(true)

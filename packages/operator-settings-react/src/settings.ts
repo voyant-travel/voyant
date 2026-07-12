@@ -1,4 +1,8 @@
-import { adminRoutePageModule } from "@voyant-travel/admin/extensions"
+import {
+  type AdminExtension,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyant-travel/admin/extensions"
 import type { AdminCoreSettingsExtraPage } from "@voyant-travel/admin-app/core-extension"
 import { Building } from "lucide-react"
 
@@ -41,4 +45,12 @@ export function createOperatorProfileSettingsExtraPage(
         adminRoutePageModule(module.OperatorProfileSettingsPage),
       ),
   }
+}
+
+/** Selected-graph admin contribution owned by the operator-settings package. */
+export function createSelectedOperatorSettingsAdminExtension(): AdminExtension {
+  return defineAdminExtension({
+    id: "operator-settings",
+    settingsPages: [createOperatorProfileSettingsExtraPage()],
+  })
 }

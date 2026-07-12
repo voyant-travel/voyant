@@ -14,7 +14,7 @@ const starterFiles = [
   "src/lib/admin-i18n.tsx",
 ]
 const starterRoot = join(root, "starters/operator")
-const lineRatchet = 200
+const lineRatchet = 147
 
 const lines = starterFiles.reduce((total, relativePath) => {
   const path = join(starterRoot, relativePath)
@@ -45,7 +45,7 @@ const requiredTokens = new Map([
   ],
   [
     "starters/operator/src/lib/admin-destinations.ts",
-    ["generatedAdminDestinations", "createAdminHostDestinations"],
+    ["adminExtensions", "createAdminHostDestinations"],
   ],
   [
     "packages/admin-host/src/admin-presentation.ts",

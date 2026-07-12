@@ -6,7 +6,7 @@ import { DashboardSkeleton } from "@voyant-travel/admin/dashboard/skeleton"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
-  type AdminRoutePageModule,
+  type AdminSettingsPageContribution,
   type AdminUiRouteContribution,
   adminRoutePageModule,
   defineAdminExtension,
@@ -15,8 +15,6 @@ import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 
 import {
   type AdminCoreSettingsExtraNavEntry,
-  type AdminCoreSettingsNavGroup,
-  type AdminCoreSettingsNavIcon,
   type AdminCoreSettingsPageId,
   adminCoreSettingsNavEntries,
 } from "./settings-nav.js"
@@ -108,31 +106,7 @@ export interface AdminCoreSettingsOptions {
   extraPages?: ReadonlyArray<AdminCoreSettingsExtraPage>
 }
 
-export interface AdminCoreSettingsExtraPage {
-  /** Unique page id; the contribution id becomes `core-settings-<id>`. */
-  id: string
-  /** Path relative to the settings base path, starting with `/` (e.g. `"/operator"`). */
-  path: string
-  /** Route title ({@link AdminRoutePageModule} pages receive it as `title`). */
-  title: string
-  /**
-   * Settings sub-nav label. The function form resolves against the live
-   * operator admin messages (stays localized on locale switch); defaults
-   * to `title`.
-   */
-  label?: AdminCoreSettingsExtraNavEntry["label"]
-  icon?: AdminCoreSettingsNavIcon
-  /** Nav group. Default `"general"`. */
-  group?: AdminCoreSettingsNavGroup
-  /**
-   * Position within the group. Built-ins use 20–80 (general) and 10–20
-   * (products); pass e.g. `10` to lead the general group. Default `100`.
-   */
-  order?: number
-  page: () => Promise<AdminRoutePageModule>
-  loader?: (ctx: AdminRouteLoaderContext) => unknown
-  ssr?: boolean | "data-only"
-}
+export type AdminCoreSettingsExtraPage = AdminSettingsPageContribution
 
 /** Default fetcher for the built-in settings loaders (cookie-authenticated). */
 const coreFetcher = (url: string, init?: RequestInit) =>
@@ -222,6 +196,7 @@ function createSettingsContribution(options: AdminCoreSettingsOptions): AdminUiR
       title: page.title,
       page: page.page,
       loader: page.loader,
+      routeMessagesProvider: page.routeMessagesProvider,
       ssr: page.ssr,
     })),
   ]

@@ -90,11 +90,17 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
 
     writeFileSync(
       compatibility,
-      'import "@voyant-travel/action-ledger-react/admin"\nexport const extensions = []\n',
+      'import "@voyant-travel/operator-settings-react/settings"\nexport const extensions = []\n',
     )
     assert.throws(
       () => runChecker({ graph, extensions, bundle, compatibility }),
-      /remains imported by the Operator admin compatibility composition/,
+      /package admin authority must arrive through the selected graph/,
+    )
+
+    writeFileSync(compatibility, 'const path = "custom-fields"\nexport const extensions = []\n')
+    assert.throws(
+      () => runChecker({ graph, extensions, bundle, compatibility }),
+      /retains package-owned token custom-fields/,
     )
   } finally {
     rmSync(dir, { force: true, recursive: true })

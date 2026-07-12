@@ -82,11 +82,13 @@ function readGraphSelectedAdminPackages() {
   const units = [...(graph.modules ?? []), ...(graph.extensions ?? []), ...(graph.plugins ?? [])]
   const packages = new Set()
   const bundledPackages = new Set()
+  const bundledRuntimeEntries = new Map()
 
   for (const unit of units) {
     if (typeof unit?.packageName === "string" && unit.admin?.runtime) {
       packages.add(unit.packageName)
       bundledPackages.add(unit.packageName)
+      bundledRuntimeEntries.set(unit.packageName, unit.admin.runtime.entry)
     }
     if (
       typeof unit?.packageName === "string" &&
@@ -99,6 +101,7 @@ function readGraphSelectedAdminPackages() {
   return {
     packages: [...packages].sort(),
     bundledPackages: [...bundledPackages].sort(),
+    bundledRuntimeEntries,
   }
 }
 
@@ -119,16 +122,16 @@ function hasAdminSurface(moduleName) {
   }
 }
 
-/** Pull the `@voyant-travel/<m>-react/admin` base modules wired into a file. */
-function adminImportsIn(file) {
+/** Pull all static first-party module specifiers wired into a source file. */
+function firstPartyImportsIn(file) {
   if (!existsSync(file)) return new Set()
   const src = readFileSync(file, "utf-8")
   const set = new Set()
-  const re = /@voyant-travel\/([a-z0-9-]+)-react\/admin/g
-  let m = re.exec(src)
-  while (m) {
-    set.add(`@voyant-travel/${m[1]}`)
-    m = re.exec(src)
+  const re = /(?:from\s+|import\s*)["'](@voyant-travel\/[^"']+)["']/g
+  let match = re.exec(src)
+  while (match) {
+    set.add(match[1])
+    match = re.exec(src)
   }
   return set
 }
@@ -208,11 +211,15 @@ for (const legacyToken of [
   }
 }
 
-const { packages: selected, bundledPackages } = readGraphSelectedAdminPackages()
+const {
+  packages: selected,
+  bundledPackages,
+  bundledRuntimeEntries,
+} = readGraphSelectedAdminPackages()
 const expected = selected.filter(hasAdminSurface)
 const bundled = new Set(bundledPackages)
-const actualBundle = adminImportsIn(BUNDLE)
-const compatibilityImports = adminImportsIn(COMPATIBILITY)
+const actualBundleEntries = firstPartyImportsIn(BUNDLE)
+const compatibilityImports = firstPartyImportsIn(COMPATIBILITY)
 const compatibilitySelectedFactories = selectedFactoryReferencesIn(COMPATIBILITY)
 
 // Silently-dropped admin: graph-selected + has ./admin, but not bundled.
@@ -225,9 +232,10 @@ for (const name of expected) {
 }
 
 for (const name of bundled) {
-  if (!actualBundle.has(name)) {
+  const runtimeEntry = bundledRuntimeEntries.get(name)
+  if (!runtimeEntry || !actualBundleEntries.has(runtimeEntry)) {
     violations.push(
-      `${name} declares admin.runtime but is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
+      `${name} declares admin.runtime entry ${runtimeEntry ?? "<missing>"} but it is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
     )
   }
   if (compatibilitySelectedFactories.has(name)) {
@@ -238,16 +246,37 @@ for (const name of bundled) {
 }
 
 for (const name of compatibilityImports) {
+  if (
+    name === "@voyant-travel/admin/extensions" ||
+    name === "@voyant-travel/admin-app/core-extension" ||
+    name === "@voyant-travel/admin-host/presentation"
+  ) {
+    continue
+  }
   violations.push(
-    `${name} remains imported by the Operator admin compatibility composition after selected-graph migration`,
+    `${name} remains imported by the Operator admin compatibility composition; package admin authority must arrive through the selected graph`,
   )
 }
 
-for (const name of actualBundle) {
-  if (!bundled.has(name)) {
+for (const entry of actualBundleEntries) {
+  if (entry === "@voyant-travel/admin") continue
+  if (![...bundledRuntimeEntries.values()].includes(entry)) {
     violations.push(
-      `selected-graph-admin.generated.ts wires ${name} without a selected admin.runtime declaration`,
+      `selected-graph-admin.generated.ts wires ${entry} without a selected admin.runtime declaration`,
     )
+  }
+}
+
+const compatibilitySource = existsSync(COMPATIBILITY) ? readFileSync(COMPATIBILITY, "utf8") : ""
+for (const token of [
+  "createOperatorProfileSettingsExtraPage",
+  "CustomFieldDefinitionsPage",
+  "getCustomFieldDefinitionsQueryOptions",
+  "custom-fields",
+  "SlidersHorizontal",
+]) {
+  if (compatibilitySource.includes(token)) {
+    violations.push(`Operator admin compatibility composition retains package-owned token ${token}`)
   }
 }
 

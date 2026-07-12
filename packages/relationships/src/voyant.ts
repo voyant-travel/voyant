@@ -163,6 +163,11 @@ export const relationshipsVoyantModule = defineModule({
         path: "/organizations/$id",
         runtime: relationshipsAdminRuntime,
       },
+      {
+        id: "@voyant-travel/relationships#admin.route.custom-fields",
+        path: "/settings/custom-fields",
+        runtime: relationshipsAdminRuntime,
+      },
     ],
     slots: [
       {
