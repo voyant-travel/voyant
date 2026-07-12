@@ -35,8 +35,10 @@ const migratedPorts = [
   "quotesSnapshotRuntimePort",
   "smartbillRuntimeHostPort",
   "storefrontCustomerPortalRuntimePort",
+  "storefrontBookingIntentsRuntimePort",
+  "storefrontIntakeRuntimePort",
+  "storefrontOffersRuntimePort",
   "storefrontPaymentLinkRuntimePort",
-  "storefrontRuntimePort",
   "storefrontVerificationRuntimePort",
 ]
 
@@ -56,11 +58,9 @@ for (const legacyExport of [
 for (const legacyBuilder of ["buildOperatorProviders", "buildOperatorRuntimePorts"]) {
   if (resources.includes(legacyBuilder)) violations.push(`${legacyBuilder} must stay deleted`)
 }
-const directResourceComposition = app.includes(
-  "...createOperatorDeploymentResources(workflowRunnerRegistry)",
-)
+const directResourceComposition = /\.\.\.createOperatorDeploymentResources\([^)]*\)/.test(app)
 const resourceAssignment = app.match(
-  /const\s+([A-Za-z_$][\w$]*)\s*=\s*createOperatorDeploymentResources\(workflowRunnerRegistry\)/,
+  /const\s+([A-Za-z_$][\w$]*)\s*=\s*createOperatorDeploymentResources\([^)]*\)/,
 )
 const assignedResourceComposition =
   resourceAssignment !== null && app.includes(`...${resourceAssignment[1]}`)

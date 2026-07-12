@@ -1,8 +1,10 @@
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import {
+  storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
+  storefrontIntakeRuntimePort,
+  storefrontOffersRuntimePort,
   storefrontPaymentLinkRuntimePort,
-  storefrontRuntimePort,
   storefrontVerificationRuntimePort,
 } from "./runtime-port.js"
 
@@ -12,7 +14,11 @@ export const storefrontVoyantModule = defineModule({
   packageName: "@voyant-travel/storefront",
   localId: "storefront",
   runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
-  runtimePorts: [requirePort(storefrontRuntimePort)],
+  runtimePorts: [
+    requirePort(storefrontOffersRuntimePort),
+    requirePort(storefrontBookingIntentsRuntimePort),
+    requirePort(storefrontIntakeRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/storefront#api.admin",

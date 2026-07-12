@@ -17,7 +17,8 @@ const result = checkStorefrontPresentationAuthority({
   messageAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
   intakeAdapter: read("starters/operator/src/api/runtime/deployment-resources.ts"),
   packagePresentation: read("packages/storefront-react/src/storefront/presentation-routes.tsx"),
-  packageIntake: read("packages/storefront/src/relationships-intake-persistence.ts"),
+  packageIntake: read("packages/relationships/src/storefront-intake-runtime.ts"),
+  relationshipsContributor: read("packages/relationships/src/runtime-contributor.ts"),
   graphDeclaration: read("packages/storefront/src/voyant.ts"),
 })
 

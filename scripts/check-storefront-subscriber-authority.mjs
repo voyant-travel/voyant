@@ -12,6 +12,10 @@ const paths = {
   storefrontModule: "packages/storefront/src/index.ts",
   operatorComposition: "starters/operator/src/api/runtime/deployment-resources.ts",
   operatorApp: "starters/operator/src/api/app.ts",
+  storefrontContributor: "packages/storefront/src/runtime-contributor.ts",
+  relationshipsContributor: "packages/relationships/src/runtime-contributor.ts",
+  notificationsContributor: "packages/notifications/src/runtime-contributor.ts",
+  tripsContributor: "packages/trips/src/runtime-contributor.ts",
 }
 
 const sources = Object.fromEntries(
@@ -64,19 +68,34 @@ requireMatch(
 
 requireMatch(
   sources.manifest,
-  /runtime:\s*\{\s*entry:\s*["']@voyant-travel\/storefront["'],\s*export:\s*["']createStorefrontVoyantRuntime["']\s*\}[\s\S]*runtimePorts:\s*\[requirePort\(storefrontRuntimePort\)\]/,
-  "Storefront manifest must compose through its typed runtime port",
+  /runtime:\s*\{\s*entry:\s*["']@voyant-travel\/storefront["'],\s*export:\s*["']createStorefrontVoyantRuntime["']\s*\}[\s\S]*requirePort\(storefrontOffersRuntimePort\)[\s\S]*requirePort\(storefrontBookingIntentsRuntimePort\)[\s\S]*requirePort\(storefrontIntakeRuntimePort\)/,
+  "Storefront manifest must compose through its granular typed runtime ports",
 )
 
-requireMatch(
+rejectMatch(
   sources.operatorComposition,
-  /\[storefrontRuntimePort\.id\]:\s*createOperatorStorefrontRuntimeProvider\(capabilities\)/,
-  "Operator must bind the typed Storefront runtime port",
+  /loadStorefrontRuntime|storefrontRuntimePort|createOperatorStorefrontRuntimeProvider|import\([^)]*storefront/,
+  "Operator must not retain Storefront product runtime assembly",
 )
 requireMatch(
-  sources.operatorComposition,
-  /function createOperatorStorefrontRuntimeProvider[\s\S]*bookingIntents:[\s\S]*withDbFromEnv\(/,
-  "Operator Storefront host must preserve lifecycle-aware booking-intent database access",
+  sources.storefrontContributor,
+  /primitives\.database\.transaction[\s\S]*\[storefrontOffersRuntimePort\.id\]:\s*createCommerceStorefrontOfferResolvers[\s\S]*\[storefrontBookingIntentsRuntimePort\.id\]:\s*bookingIntents[\s\S]*\[storefrontCustomerPortalRuntimePort\.id\]/,
+  "Storefront contributor must statically provide offers and derive host adapters from generic primitives",
+)
+requireMatch(
+  sources.tripsContributor,
+  /\[storefrontPaymentLinkRuntimePort\.id\]:\s*createStandardPaymentLinkRouteOptions/,
+  "Trips contributor must own Storefront payment-link projection behavior",
+)
+requireMatch(
+  sources.relationshipsContributor,
+  /\[storefrontIntakeRuntimePort\.id\]:\s*createStorefrontIntakePersistence/,
+  "Relationships contributor must own Storefront intake persistence",
+)
+requireMatch(
+  sources.notificationsContributor,
+  /\[storefrontVerificationRuntimePort\.id\]:\s*verification/,
+  "Notifications contributor must own Storefront verification providers",
 )
 rejectMatch(
   sources.operatorComposition,

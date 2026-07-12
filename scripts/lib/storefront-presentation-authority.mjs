@@ -18,6 +18,7 @@ export function checkStorefrontPresentationAuthority({
   intakeAdapter,
   packagePresentation,
   packageIntake,
+  relationshipsContributor = "",
   graphDeclaration,
 }) {
   const failures = []
@@ -92,14 +93,14 @@ export function checkStorefrontPresentationAuthority({
     failures.push("Storefront message adapter must not implement the provider")
   }
 
-  if (
-    !intakeAdapter.includes('import("@voyant-travel/storefront/relationships-intake")') ||
-    intakeAdapter.includes('import("./storefront-intake-runtime")')
-  ) {
-    failures.push("Storefront intake host must call package authority directly")
+  if (intakeAdapter.includes("StorefrontIntake") || intakeAdapter.includes("storefrontIntake")) {
+    failures.push("Storefront intake authority must stay out of the starter")
+  }
+  if (!relationshipsContributor.includes("[storefrontIntakeRuntimePort.id]")) {
+    failures.push("Relationships contributor must provide the Storefront intake port")
   }
   for (const token of [
-    "createRelationshipsStorefrontIntakePersistence",
+    "createStorefrontIntakePersistence",
     "relationshipsService.createPerson",
     "customerSignals",
     "requireStorefrontDb",

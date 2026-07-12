@@ -2,14 +2,11 @@ import {
   type BookingsRelationshipsRuntime,
   bookingsRelationshipsRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
-import { lazyProvider } from "@voyant-travel/hono"
+import { storefrontIntakeRuntimePort } from "@voyant-travel/storefront"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
 import { relationshipsRouteRuntimePort } from "./runtime-port.js"
-
-type RelationshipsService = Pick<
-  typeof import("./service/index.js").relationshipsService,
-  "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
->
+import { relationshipsService } from "./service/index.js"
+import { createStorefrontIntakePersistence } from "./storefront-intake-runtime.js"
 
 export interface RelationshipsRuntimeContributorHost {
   capabilities: Pick<RelationshipsRouteRuntimeOptions, "customFields">
@@ -19,10 +16,8 @@ export interface RelationshipsRuntimeContributorHost {
 export function createRelationshipsRuntimePortContribution(
   host: RelationshipsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const relationshipsService = lazyProvider<RelationshipsService>(async () =>
-    import("./service/index.js").then((module) => module.relationshipsService),
-  )
   return {
+    [storefrontIntakeRuntimePort.id]: createStorefrontIntakePersistence(),
     [relationshipsRouteRuntimePort.id]: {
       customFields: host.capabilities.customFields,
     } satisfies RelationshipsRouteRuntimeOptions,

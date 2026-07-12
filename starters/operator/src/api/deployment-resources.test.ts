@@ -51,9 +51,11 @@ import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import {
+  storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
+  storefrontIntakeRuntimePort,
+  storefrontOffersRuntimePort,
   storefrontPaymentLinkRuntimePort,
-  storefrontRuntimePort,
   storefrontVerificationRuntimePort,
 } from "@voyant-travel/storefront"
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
@@ -707,8 +709,10 @@ describe("operator graph runtime composition", () => {
         realtimeRuntimePort.id,
         storageMediaRuntimePort.id,
         storefrontCustomerPortalRuntimePort.id,
+        storefrontBookingIntentsRuntimePort.id,
+        storefrontIntakeRuntimePort.id,
+        storefrontOffersRuntimePort.id,
         storefrontPaymentLinkRuntimePort.id,
-        storefrontRuntimePort.id,
         storefrontVerificationRuntimePort.id,
         promotionRedemptionDatabaseRuntimePort.id,
         promotionsBulkReindexRuntimePort.id,

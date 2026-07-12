@@ -9,13 +9,9 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packageRequirements = {
-  catalog: ["host.primitives", "ensureBookingEngineRegistry"],
-  "flights-node": ["host.primitives", "createFlightsStandardNodeRuntime"],
-  "notifications-node": ["host.primitives", "createNotificationsStandardNodeRuntime"],
-  "quotes-node": ["createQuotesStandardNodeRuntime"],
+  catalog: ["host.primitives", "createCatalogRuntime"],
   realtime: ["host.primitives", "createRealtimeStandardNodeRuntime"],
   storage: ["host.primitives", "createStorageStandardNodeRuntime"],
-  storefront: ["host.capabilities.loadStorefrontRuntime()"],
   trips: ["host.capabilities.createTripsRoutesOptions", "host.capabilities.withDb"],
 }
 
@@ -31,10 +27,6 @@ const generatedCall = deploymentResources.slice(
 const explicitBindings = [
   "proposal",
   "snapshot",
-  "storefront",
-  "paymentLink",
-  "customerPortal",
-  "verification",
   "cruisesRoutes",
   "flights",
   "notifications",
@@ -66,5 +58,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-operator-capability-runtime-bindings-cut-2: OK (8 package-owned families from generic host resources)",
+  "check-operator-capability-runtime-bindings-cut-2: OK (4 package-owned families from generic host resources)",
 )

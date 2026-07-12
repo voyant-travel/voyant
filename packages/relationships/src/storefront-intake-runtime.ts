@@ -1,9 +1,11 @@
-import { relationshipsService } from "@voyant-travel/relationships"
-import { customerSignals } from "@voyant-travel/relationships/schema"
+import type {
+  StorefrontIntakePersistence,
+  StorefrontRequestContext,
+} from "@voyant-travel/storefront"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { StorefrontRequestContext } from "./service.js"
-import type { StorefrontIntakePersistence } from "./service-intake.js"
+import { customerSignals } from "./schema.js"
+import { relationshipsService } from "./service/index.js"
 
 function requireStorefrontDb(context: StorefrontRequestContext): PostgresJsDatabase {
   if (!context.db) {
@@ -13,7 +15,7 @@ function requireStorefrontDb(context: StorefrontRequestContext): PostgresJsDatab
 }
 
 /** Standard graph adapter from Storefront intake to the selected Relationships package. */
-export function createRelationshipsStorefrontIntakePersistence(): StorefrontIntakePersistence {
+export function createStorefrontIntakePersistence(): StorefrontIntakePersistence {
   return {
     async findSignal({ context, kind, sourceSubmissionId }) {
       const db = requireStorefrontDb(context)

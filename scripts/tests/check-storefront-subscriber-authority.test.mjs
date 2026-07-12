@@ -16,7 +16,11 @@ async function createFixture(overrides = {}) {
   const files = {
     "packages/storefront/src/voyant.ts": `
 runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
-runtimePorts: [requirePort(storefrontRuntimePort)],
+runtimePorts: [
+  requirePort(storefrontOffersRuntimePort),
+  requirePort(storefrontBookingIntentsRuntimePort),
+  requirePort(storefrontIntakeRuntimePort),
+],
 subscribers: [{ runtime: { entry: "./booking-bootstrap-subscriber", export: "storefrontBookingBootstrapSubscriber" } }]
 `,
     "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts": `
@@ -30,12 +34,19 @@ export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor =
 `,
     "packages/storefront/src/index.ts":
       "registerStorefrontBookingBootstrapRuntime(container, runtime)\n",
-    "starters/operator/src/api/runtime/deployment-resources.ts": `
-[storefrontRuntimePort.id]: createOperatorStorefrontRuntimeProvider(capabilities)
-function createOperatorStorefrontRuntimeProvider() {
-  return { bookingIntents: { withDb: (bindings, operation) => withDbFromEnv(bindings, operation) } }
-}
+    "starters/operator/src/api/runtime/deployment-resources.ts": "export const resources = {}\n",
+    "packages/storefront/src/runtime-contributor.ts": `
+host.primitives.database.transaction
+[storefrontOffersRuntimePort.id]: createCommerceStorefrontOfferResolvers()
+[storefrontBookingIntentsRuntimePort.id]: bookingIntents
+[storefrontCustomerPortalRuntimePort.id]: customerPortal
 `,
+    "packages/relationships/src/runtime-contributor.ts":
+      "[storefrontIntakeRuntimePort.id]: createStorefrontIntakePersistence()\n",
+    "packages/notifications/src/runtime-contributor.ts":
+      "[storefrontVerificationRuntimePort.id]: verification\n",
+    "packages/trips/src/runtime-contributor.ts":
+      "[storefrontPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions()\n",
     "starters/operator/src/api/app.ts": "export const app = {}\n",
     ...overrides,
   }

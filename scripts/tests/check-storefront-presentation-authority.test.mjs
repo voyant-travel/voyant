@@ -31,7 +31,7 @@ const packagePresentation = [
   "createStorefrontMessagesProvider",
 ].join("\n")
 const packageIntake = [
-  "createRelationshipsStorefrontIntakePersistence",
+  "createStorefrontIntakePersistence",
   "relationshipsService.createPerson",
   "customerSignals",
   "requireStorefrontDb",
@@ -47,9 +47,11 @@ function fixture(overrides = {}) {
     routeHosts,
     hostAdapter,
     messageAdapter: "createStorefrontMessagesProvider",
-    intakeAdapter: 'import("@voyant-travel/storefront/relationships-intake")',
+    intakeAdapter: "export const resources = {}",
     packagePresentation,
     packageIntake,
+    relationshipsContributor:
+      "[storefrontIntakeRuntimePort.id]: createStorefrontIntakePersistence()",
     graphDeclaration,
     ...overrides,
   }
@@ -66,9 +68,9 @@ test("rejects route policy and intake authority returning to the starter", () =>
         ...routeHosts,
         "shop.tsx": `${routeHosts["shop.tsx"]}\nfunction ShopPage() { useNavigate() }`,
       },
-      intakeAdapter: "function createRelationshipsStorefrontIntakePersistence() {}",
+      intakeAdapter: "function createStorefrontIntakeRuntime() {}",
     }),
   )
   assert(result.failures.some((failure) => failure.includes("shop.tsx must not own function")))
-  assert(result.failures.includes("Storefront intake host must call package authority directly"))
+  assert(result.failures.includes("Storefront intake authority must stay out of the starter"))
 })

@@ -1,40 +1,32 @@
-import type { PublicCustomerPortalRouteOptions } from "./customer-portal/routes-public.js"
-import type { StorefrontHonoModuleOptions } from "./index.js"
-import type { PaymentLinkRoutesOptions } from "./payment-link/routes.js"
+import { createCommerceStorefrontOfferResolvers } from "@voyant-travel/commerce"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
+  type StorefrontBookingIntentsRuntime,
+  storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
-  storefrontPaymentLinkRuntimePort,
-  storefrontRuntimePort,
-  storefrontVerificationRuntimePort,
+  storefrontOffersRuntimePort,
 } from "./runtime-port.js"
-import type { StorefrontVerificationRoutesOptions } from "./verification/routes-public.js"
-
-type RuntimePortValue<T> = T | Promise<T>
-
-export interface StorefrontRuntimePortContribution {
-  storefront: RuntimePortValue<NonNullable<StorefrontHonoModuleOptions>>
-  paymentLink: RuntimePortValue<PaymentLinkRoutesOptions>
-  customerPortal: RuntimePortValue<PublicCustomerPortalRouteOptions>
-  verification: RuntimePortValue<StorefrontVerificationRoutesOptions>
-}
 
 export interface StorefrontRuntimeContributorHost {
-  capabilities: {
-    loadStorefrontRuntime(): RuntimePortValue<StorefrontRuntimePortContribution>
-  }
+  primitives: VoyantRuntimeHostPrimitives
 }
 
-/** Package-owned registration map for Storefront deployment adapters. */
+/** Storefront-owned adapters derived exclusively from generic Node primitives. */
 export function createStorefrontRuntimePortContribution(
   host: StorefrontRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const contribution = Promise.resolve(host.capabilities.loadStorefrontRuntime())
+  const bookingIntents = {
+    withDb: (bindings, operation) =>
+      host.primitives.database.transaction(bindings, (database) =>
+        operation(database as PostgresJsDatabase),
+      ),
+  } satisfies StorefrontBookingIntentsRuntime
   return {
-    [storefrontRuntimePort.id]: contribution.then((runtime) => runtime.storefront),
-    [storefrontPaymentLinkRuntimePort.id]: contribution.then((runtime) => runtime.paymentLink),
-    [storefrontCustomerPortalRuntimePort.id]: contribution.then(
-      (runtime) => runtime.customerPortal,
-    ),
-    [storefrontVerificationRuntimePort.id]: contribution.then((runtime) => runtime.verification),
+    [storefrontOffersRuntimePort.id]: createCommerceStorefrontOfferResolvers(),
+    [storefrontBookingIntentsRuntimePort.id]: bookingIntents,
+    [storefrontCustomerPortalRuntimePort.id]: {
+      resolveDocumentDownloadUrl: host.primitives.storage.downloadUrl,
+    },
   }
 }

@@ -8,21 +8,33 @@ function argument(name, fallback) {
 
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
-const [deploymentResources, storefrontContributor, legalContributor, inventoryContributor] =
-  await Promise.all([
-    read("starters/operator/src/api/runtime/deployment-resources.ts"),
-    read("packages/storefront/src/runtime-contributor.ts"),
-    read("packages/legal/src/runtime-contributor.ts"),
-    read("packages/inventory/src/runtime-contributor.ts"),
-  ])
+const [
+  deploymentResources,
+  storefrontContributor,
+  relationshipsContributor,
+  notificationsContributor,
+  tripsContributor,
+  legalContributor,
+  inventoryContributor,
+] = await Promise.all([
+  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("packages/storefront/src/runtime-contributor.ts"),
+  read("packages/relationships/src/runtime-contributor.ts"),
+  read("packages/notifications/src/runtime-contributor.ts"),
+  read("packages/trips/src/runtime-contributor.ts"),
+  read("packages/legal/src/runtime-contributor.ts"),
+  read("packages/inventory/src/runtime-contributor.ts"),
+])
 
 const packagePorts = {
   storefront: [
-    "storefrontRuntimePort",
-    "storefrontPaymentLinkRuntimePort",
+    "storefrontOffersRuntimePort",
+    "storefrontBookingIntentsRuntimePort",
     "storefrontCustomerPortalRuntimePort",
-    "storefrontVerificationRuntimePort",
   ],
+  relationships: ["storefrontIntakeRuntimePort"],
+  notifications: ["storefrontVerificationRuntimePort"],
+  trips: ["storefrontPaymentLinkRuntimePort"],
   legal: [
     "legalRuntimePort",
     "legalContractDocumentRuntimePort",
@@ -32,6 +44,9 @@ const packagePorts = {
 }
 const contributors = {
   storefront: storefrontContributor,
+  relationships: relationshipsContributor,
+  notifications: notificationsContributor,
+  trips: tripsContributor,
   legal: legalContributor,
   inventory: inventoryContributor,
 }

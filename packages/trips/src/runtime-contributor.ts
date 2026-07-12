@@ -1,9 +1,11 @@
+import { storefrontPaymentLinkRuntimePort } from "@voyant-travel/storefront"
 import type { TripsRoutesOptionsProvider } from "./routes.js"
 import {
   type TripsDatabaseRuntime,
   tripsDatabaseRuntimePort,
   tripsRoutesRuntimePort,
 } from "./runtime-port.js"
+import { createStandardPaymentLinkRouteOptions } from "./storefront-payment-link-runtime.js"
 
 type RuntimePortValue<T> = T | Promise<T>
 
@@ -25,6 +27,7 @@ export function createTripsRuntimePortContribution(
 ): Readonly<Record<string, unknown>> {
   const tripsDatabase: TripsDatabaseRuntime = { withDb: host.capabilities.withDb }
   return {
+    [storefrontPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions(),
     [tripsRoutesRuntimePort.id]: host.capabilities.createTripsRoutesOptions,
     [tripsDatabaseRuntimePort.id]: tripsDatabase,
   }

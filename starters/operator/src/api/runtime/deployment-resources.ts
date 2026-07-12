@@ -11,7 +11,6 @@ import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import { lazyProvider } from "@voyant-travel/hono"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createGeneratedGraphRuntimePorts } from "../../../.voyant/runtime/graph-runtime.generated"
 import { resolveOperatorCustomFields } from "../../lib/custom-fields"
 import { resolveNotificationProviders } from "../../lib/notifications"
@@ -69,31 +68,6 @@ function createBaseDeploymentCapabilities() {
       ),
     ),
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
-    loadStorefrontRuntime: async () => {
-      const [commerce, paymentLink, intake] = await Promise.all([
-        import("@voyant-travel/commerce"),
-        import("./payment-link-runtime"),
-        import("@voyant-travel/storefront/relationships-intake"),
-      ])
-      return {
-        storefront: {
-          offers: commerce.createCommerceStorefrontOfferResolvers(),
-          bookingIntents: {
-            withDb: (bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<unknown>) =>
-              withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-          },
-          intake: { persistence: intake.createRelationshipsStorefrontIntakePersistence() },
-        },
-        paymentLink: paymentLink.createOperatorPaymentLinkRouteOptions(),
-        customerPortal: {
-          resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
-        },
-        verification: {
-          resolveProviders: resolveNotificationProviders,
-          email: { subject: "Your verification code" },
-        },
-      }
-    },
   }
 }
 

@@ -1,39 +1,50 @@
-/**
- * Operator (deployment) wiring for the public payment-link routes.
- *
- * The route ORCHESTRATION (config / retry / resolve / start-card / trip &
- * booking summary / checkout-status handlers, validation, and the render
- * shapes) lives in `@voyant-travel/storefront` via `createPaymentLinkRoutes`.
- * This file supplies the deployment-specific access the package can't import
- * statically:
- *   - the bank-transfer beneficiary details + public checkout base URL
- *     (operator settings + `./payment-config`),
- *   - the card-payment provider start (finance + Netopia),
- *   - the trip envelope/component reconciliation + product-media enrichment
- *     (`@voyant-travel/trips` + `@voyant-travel/inventory`).
- *
- * Swapping the payment provider, or the catalog source, is a change here —
- * never in the route implementations.
- */
+/** Standard statically composed payment-link runtime selected by Storefront. */
 import { productMedia, products } from "@voyant-travel/inventory/schema"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
 } from "@voyant-travel/operator-settings"
+import { netopiaCardPaymentStarter } from "@voyant-travel/plugin-netopia"
 import type {
   PaymentLinkRoutesOptions,
   PaymentLinkTripData,
 } from "@voyant-travel/storefront/payment-link"
-import { tripsService } from "@voyant-travel/trips"
-import { tripComponents, tripEnvelopes } from "@voyant-travel/trips/schema"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { cardPaymentStarter } from "./card-payment"
-import {
-  bankTransferDetailsFromOperatorSettings,
-  resolvePublicCheckoutBaseUrlFromBindings,
-} from "./payment-config"
+import { tripComponents, tripEnvelopes } from "./schema.js"
+import { tripsService } from "./service.js"
+
+const cardPaymentStarter = netopiaCardPaymentStarter()
+
+interface PaymentConfigBindings {
+  APP_URL?: string
+  BANK_TRANSFER_BANK_NAME?: string
+  BANK_TRANSFER_BENEFICIARY?: string
+  BANK_TRANSFER_IBAN?: string
+  DASH_BASE_URL?: string
+  PUBLIC_CHECKOUT_BASE_URL?: string
+}
+
+function resolvePublicCheckoutBaseUrl(bindings: Record<string, unknown>): string | null {
+  const env = bindings as PaymentConfigBindings
+  return (
+    env.PUBLIC_CHECKOUT_BASE_URL?.trim() ||
+    env.DASH_BASE_URL?.trim() ||
+    env.APP_URL?.trim().replace(/\/api\/?$/, "") ||
+    null
+  )
+}
+
+function resolveEnvironmentBankTransferDetails(bindings: Record<string, unknown>) {
+  const env = bindings as PaymentConfigBindings
+  if (!env.BANK_TRANSFER_BENEFICIARY || !env.BANK_TRANSFER_IBAN) return null
+  return {
+    beneficiary: env.BANK_TRANSFER_BENEFICIARY,
+    iban: env.BANK_TRANSFER_IBAN,
+    bankName: env.BANK_TRANSFER_BANK_NAME ?? null,
+  }
+}
 
 function getDb(c: Context): PostgresJsDatabase {
   return c.get("db") as PostgresJsDatabase
@@ -46,16 +57,18 @@ async function resolveBankTransferDetails(c: Context) {
     getOperatorProfile(db),
     getOperatorPaymentInstructions(db),
   ])
-  const details = bankTransferDetailsFromOperatorSettings(
-    operatorProfile,
-    paymentInstructions,
-    c.env as Record<string, unknown>,
-  )
-  if (!details) return null
+  const environment = resolveEnvironmentBankTransferDetails(c.env as Record<string, unknown>)
+  const beneficiary =
+    paymentInstructions?.bankTransferBeneficiary ||
+    operatorProfile?.legalName ||
+    operatorProfile?.name ||
+    environment?.beneficiary
+  const iban = paymentInstructions?.iban || environment?.iban
+  if (!beneficiary || !iban) return null
   return {
-    beneficiary: details.beneficiary,
-    iban: details.iban,
-    bankName: details.bankName,
+    beneficiary,
+    iban,
+    bankName: paymentInstructions?.bank || environment?.bankName || null,
   }
 }
 
@@ -189,11 +202,11 @@ const resolveTripData: PaymentLinkRoutesOptions["resolveTripData"] = async (
 }
 
 /** Build the payment-link route-module options for this deployment. */
-export function createOperatorPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
+export function createStandardPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
   return {
     resolveBankTransferDetails,
     resolvePublicCheckoutBaseUrl: (c) =>
-      resolvePublicCheckoutBaseUrlFromBindings(c.env as Record<string, unknown>),
+      resolvePublicCheckoutBaseUrl(c.env as Record<string, unknown>),
     startCardPayment,
     resolveTripData,
   }

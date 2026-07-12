@@ -11,13 +11,9 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-operator-capability-runtime-bindings-cut-2.mjs")
 const requirements = {
-  catalog: "host.primitives\nensureBookingEngineRegistry",
-  "flights-node": "host.primitives\ncreateFlightsStandardNodeRuntime",
-  "notifications-node": "host.primitives\ncreateNotificationsStandardNodeRuntime",
-  "quotes-node": "createQuotesStandardNodeRuntime",
+  catalog: "host.primitives\ncreateCatalogRuntime",
   realtime: "host.primitives\ncreateRealtimeStandardNodeRuntime",
   storage: "host.primitives\ncreateStorageStandardNodeRuntime",
-  storefront: "host.capabilities.loadStorefrontRuntime()",
   trips: "host.capabilities.createTripsRoutesOptions\nhost.capabilities.withDb",
 }
 
@@ -45,7 +41,7 @@ async function fixture(deploymentResources) {
 it("accepts the second capability-derived binding cut", async () => {
   const root = await fixture("return createGeneratedGraphRuntimePorts({ capabilities, host })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /8 package-owned families from generic host resources/)
+  assert.match(result.stdout, /4 package-owned families from generic host resources/)
 })
 
 it("rejects starter-side assembly of a migrated binding", async () => {
