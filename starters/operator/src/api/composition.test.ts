@@ -647,15 +647,15 @@ describe("operator graph runtime composition", () => {
     expect(GENERATED_GRAPH_RUNTIME_EXTENSION_IDS).toContain("@voyant-travel/mice#booking-extension")
 
     expect(pluginIds).not.toContain("npm/operator#mcp")
+    expect(moduleIds).toContain("@voyant-travel/auth#invitations")
+    expect(moduleIds).toContain("@voyant-travel/auth#team")
     expect([...moduleIds].filter((id) => id.startsWith("npm/operator#")).sort()).toEqual([
-      "npm/operator#invitations",
       "npm/operator#mcp",
       "npm/operator#project-subscribers-links",
-      "npm/operator#team",
     ])
   })
 
-  it("composes index-only invitations, team, and MCP modules from generated imports", async () => {
+  it("composes package-owned invitations/team and the local MCP module", async () => {
     const composed = await composeOperatorGraph()
     const byName = (name: string) => composed.modules.find((module) => module.module.name === name)
 

@@ -43,6 +43,18 @@
     "./permissions": {
       "types": "./src/permissions.ts",
       "default": "./src/permissions.ts"
+    },
+    "./identity-access-runtime-port": {
+      "types": "./src/identity-access-runtime-port.ts",
+      "default": "./src/identity-access-runtime-port.ts"
+    },
+    "./identity-access-graph-runtime": {
+      "types": "./src/identity-access-graph-runtime.ts",
+      "default": "./src/identity-access-graph-runtime.ts"
+    },
+    "./voyant": {
+      "types": "./src/voyant.ts",
+      "default": "./src/voyant.ts"
     }
   },
   "publishConfig": {
@@ -89,6 +101,21 @@
         "types": "./dist/permissions.d.ts",
         "import": "./dist/permissions.js",
         "default": "./dist/permissions.js"
+      },
+      "./identity-access-runtime-port": {
+        "types": "./dist/identity-access-runtime-port.d.ts",
+        "import": "./dist/identity-access-runtime-port.js",
+        "default": "./dist/identity-access-runtime-port.js"
+      },
+      "./identity-access-graph-runtime": {
+        "types": "./dist/identity-access-graph-runtime.d.ts",
+        "import": "./dist/identity-access-graph-runtime.js",
+        "default": "./dist/identity-access-graph-runtime.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     }
   },
@@ -105,15 +132,30 @@
   },
   "dependencies": {
     "@better-auth/api-key": "1.6.23",
+    "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "better-auth": "1.6.23",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "catalog:"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "module",
+    "manifest": "./voyant",
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": ["node"],
+      "modes": ["local", "managed-cloud", "self-hosted"]
+    },
+    "requiresSchemas": ["@voyant-travel/db"]
   }
 }

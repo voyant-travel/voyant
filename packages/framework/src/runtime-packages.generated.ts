@@ -5,6 +5,7 @@
 export const FRAMEWORK_RUNTIME_PACKAGES = [
   "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
+  "@voyant-travel/auth",
   "@voyant-travel/bookings",
   "@voyant-travel/catalog",
   "@voyant-travel/commerce",
@@ -28,6 +29,7 @@ export const FRAMEWORK_STANDARD_PACKAGES = [
   "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
   "@voyant-travel/action-ledger-react",
+  "@voyant-travel/auth",
   "@voyant-travel/availability",
   "@voyant-travel/bookings",
   "@voyant-travel/bookings-react",

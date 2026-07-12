@@ -1532,17 +1532,17 @@ The Operator mounts both graph unions directly as `publicPaths` and
 `dbTransactionalPaths`. Its standard package bindings must not restate
 `anonymous`, `requiresTransactionalDb`, or transactional path/module metadata.
 The external Netopia plugin and root-mounted payment-link family are graph-owned.
-The deployment-local invitations unit continues to own its anonymous posture
-locally. `check-operator-route-posture` prevents graph-derived posture from
-being replaced by starter hand-lists.
+The auth-owned invitations unit declares its anonymous and transactional
+posture in the package manifest. `check-operator-route-posture` prevents that
+graph-derived posture from being replaced by starter hand-lists.
 
-The Operator's `invitations` and `team` families are explicitly project-local
-units discovered from `src/modules/*/index.ts`. Invitations owns deployment
-Better Auth credential issuance; Team owns the deployment-scoped Voyant Cloud
-membership proxy. Their executable route bodies therefore remain under the
-project unit until a reusable identity authority contract exists. They are not
-missing package migrations, and the generated graph ids
-`npm/operator#invitations` and `npm/operator#team` are their activation source.
+The Operator's `invitations` and `team` families are package-owned graph units
+from `@voyant-travel/auth`. Their route contracts, credential issuance, and
+cloud membership proxy live in the auth package; deployments provide normalized
+auth mode, deployment URLs/credentials, notification delivery, and the request
+database through a typed runtime port and shared Hono context. The selected ids
+are `@voyant-travel/auth#invitations` and `@voyant-travel/auth#team`; no
+package-id-specific starter units duplicate them.
 
 Scheduled travel and infrastructure work follows the same ownership rule as
 routes. Distribution owns its three channel-push reconciliation workflows,

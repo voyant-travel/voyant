@@ -39,7 +39,7 @@ honest.
 | `catalog-offers.ts` | mixed | 6 | lazy | `@voyant-travel/catalog` + connect | Connect-sourced offer/search/pricing (`@voyant-travel/connect-sdk`); operator search enrichment (Typesense, geo-resolver) stays as adapters. Split reusable contract from enrichment. |
 | `contract-document-routes.ts` | package-owned-manual | 2 | lazy | `@voyant-travel/legal` / document delivery | Contract generation + private document serving. Needs storage + generator adapters. |
 | `flights.ts` | package-owned-manual | 11 | lazy | `@voyant-travel/flights` | Package exists but ships **no HonoModule** — `createFlightsHonoModule` is net-new. The proving slice for lazy extraction (Phase 4). Demo connector stays in `@voyant-travel/plugin-flights-demo`. |
-| `invitations.ts` | deployment-owned | 5 | lazy | deployment-local | Better Auth user/account/profile inserts + single-tenant token flow. Wrap as deployment-local module (Phase 5). |
+| `invitations.ts` | package-owned-reusable | 0 | graph | `@voyant-travel/auth` | Moved with team management into auth-owned graph units; deployment config and notification delivery enter through a typed runtime port. |
 | `lazy-additional-routes.ts` | package-owned-manual | 7 | lazy | `@voyant-travel/finance` (checkout) | Public payment-link / checkout-status routes. Finance already receives the checkout options → public route contribution on the existing finance module. |
 | `mcp.ts` | deployment-owned | 1 | lazy | deployment / agent tooling | Agent tool dispatch over trips MCP tools. Keep local unless agents become supported framework surface. |
 | `media-upload-routes.ts` | mixed | 7 | lazy | storage/media + `@voyant-travel/inventory` | Upload/serve are reusable; product brochure generation is an inventory extension. Needs storage adapter, video ticket signer, public-URL policy. |
@@ -57,7 +57,7 @@ the app-level runner registry that bundle bootstraps populate at construction.
 - Package-owned extensions: `channel-push` (distribution), `booking-tax`
   (finance).
 - Deployment-local single-surface lazy modules/extensions (relative routes):
-  `flights`, `mcp`, `invitations`, `booking-schedule`, `quote-version-snapshot`,
+  `flights`, `mcp`, `booking-schedule`, `quote-version-snapshot`,
   `action-ledger-health`, `proposal`, `catalog-offers`, `catalog-checkout`,
   `booking-maintenance`.
 - Deployment-local multi-prefix lazy modules (`lazyRoutes` — explicit paths over
@@ -85,7 +85,7 @@ follow-up where a second deployment would reuse them.
 - **Phase 4 (extraction):** `flights.ts` (proving slice), `lazy-additional-routes.ts`,
   `proposal-routes.ts`, `media-upload-routes.ts`, `contract-document-routes.ts`,
   `catalog-offers.ts`.
-- **Phase 5 (classify local):** `action-ledger-health.ts`, `invitations.ts`,
+- **Phase 5 (classify local):** `action-ledger-health.ts`,
   `mcp.ts`, `catalog-checkout.ts` (composite), `settings.ts` (decide reusable vs
   local).
 

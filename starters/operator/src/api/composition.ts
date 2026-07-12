@@ -13,6 +13,11 @@
  */
 
 import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
+import { cloudAdminMembersConfigFromRevalidate } from "@voyant-travel/auth/cloud-broker"
+import {
+  type IdentityAccessRuntimeProvider,
+  identityAccessRuntimePort,
+} from "@voyant-travel/auth/identity-access-runtime-port"
 import {
   type BookingsRuntimeProvider,
   bookingRequirementsRuntimePort,
@@ -224,6 +229,10 @@ export function buildOperatorRuntimePorts(
   capabilities: OperatorCapabilities = buildOperatorProviders(),
 ): VoyantGraphRuntimePorts {
   return {
+    [identityAccessRuntimePort.id]: runtimePortValue(
+      identityAccessRuntimePort,
+      createOperatorIdentityAccessRuntime(capabilities),
+    ),
     [quotesRuntimePort.id]: runtimePortValue(quotesRuntimePort, {
       resolveParticipantPersonById: async (db, personId) =>
         (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
@@ -427,6 +436,49 @@ export function buildOperatorRuntimePorts(
     ...(workflowRunnerRegistry
       ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
       : {}),
+  }
+}
+
+function createOperatorIdentityAccessRuntime(
+  capabilities: OperatorCapabilities,
+): IdentityAccessRuntimeProvider {
+  return {
+    resolveDeployment(bindings) {
+      const env = bindings as AppBindings
+      const appUrl = (env.APP_URL || env.DASH_BASE_URL || "http://localhost:3300")
+        .trim()
+        .replace(/\/$/, "")
+      const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+      const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
+      const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
+      return {
+        appUrl,
+        authMode: env.VOYANT_ADMIN_AUTH_MODE?.trim() === "voyant-cloud" ? "voyant-cloud" : "local",
+        cloudAdminMembers:
+          deploymentId && revalidateUrl && clientToken
+            ? cloudAdminMembersConfigFromRevalidate({ revalidateUrl, deploymentId, clientToken })
+            : null,
+      }
+    },
+    async sendInvitationEmail(bindings, message) {
+      const provider = capabilities
+        .resolveNotificationProviders(bindings)
+        .find((candidate) => candidate.channels.includes("email"))
+      if (!provider) return false
+      try {
+        await provider.send({
+          channel: "email",
+          to: message.to,
+          template: "auth.invitation",
+          subject: "You've been invited to Voyant",
+          html: `<p>You've been invited to join a Voyant workspace.</p><p><a href="${message.acceptUrl}">Accept invitation</a></p><p>The link expires in ${message.expiresInHours} hours.</p>`,
+        })
+        return true
+      } catch (error) {
+        console.error("[invitations] email send failed:", error)
+        return false
+      }
+    },
   }
 }
 

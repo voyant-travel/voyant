@@ -54,10 +54,6 @@ See `docs/architecture/custom-modules.md` for the full guide.
 
 ## Operator-owned units
 
-`invitations` and `team` are intentional project-local graph units, not package
-bridges. Invitations creates credentials in this deployment's Better Auth and
-IAM tables. Team proxies membership for this specific Voyant Cloud deployment
-and depends on deployment credentials plus the local cloud-auth identity link.
-Those authority boundaries are application policy, so promoting either unit to
-a reusable package would be incorrect until a portable identity/membership
-contract replaces the deployment semantics.
+Keep only deployment-specific product behavior here. Reusable identity and
+access behavior, including credential invitations and cloud team management,
+is owned by `@voyant-travel/auth`; deployments supply its typed runtime port.

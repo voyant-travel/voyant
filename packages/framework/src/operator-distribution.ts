@@ -117,6 +117,8 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/quotes", legacyRuntime: true },
     { resolve: "@voyant-travel/operations", legacyRuntime: true },
     { resolve: "@voyant-travel/identity", legacyRuntime: true, required: true },
+    { resolve: "@voyant-travel/auth/invitations", legacyRuntime: true, required: true },
+    { resolve: "@voyant-travel/auth/team", legacyRuntime: true, required: true },
     { resolve: "@voyant-travel/distribution", legacyRuntime: true },
     { resolve: "@voyant-travel/inventory/extras", legacyRuntime: true },
     { resolve: "@voyant-travel/bookings/requirements", legacyRuntime: true },

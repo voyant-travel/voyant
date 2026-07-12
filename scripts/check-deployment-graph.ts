@@ -37,8 +37,6 @@ const operatorRoot = join(repoRoot, "starters", "operator")
 
 const OPERATOR_LOCAL_MODULE_IDS = [
   "npm/operator#mcp",
-  "npm/operator#invitations",
-  "npm/operator#team",
 ] as const
 const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
   "@voyant-travel/db",

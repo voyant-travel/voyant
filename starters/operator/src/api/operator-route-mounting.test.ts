@@ -141,7 +141,7 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/admin/mcp/manifest")).not.toBe(404)
   })
 
-  it("mounts lazy module admin + public surfaces (invitations)", async () => {
+  it("mounts package-owned invitations admin + public surfaces", async () => {
     expect(await status("/v1/admin/invitations")).not.toBe(404)
     expect(await status("/v1/public/invitations/tok_123")).not.toBe(404)
   })

@@ -199,6 +199,9 @@
         "../../packages/auth/dist/cloud-admin-session-public.d.ts"
       ],
       "@voyant-travel/auth/cloud-broker": ["../../packages/auth/dist/cloud-broker.d.ts"],
+      "@voyant-travel/auth/identity-access-runtime-port": [
+        "../../packages/auth/dist/identity-access-runtime-port.d.ts"
+      ],
       "@voyant-travel/auth/edge": ["../../packages/auth/dist/edge.d.ts"],
       "@voyant-travel/auth/permissions": ["../../packages/auth/dist/permissions.d.ts"],
       "@voyant-travel/auth/server": ["../../packages/auth/dist/server.d.ts"],

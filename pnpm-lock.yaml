@@ -707,9 +707,15 @@ importers:
       '@better-auth/api-key':
         specifier: 1.6.23
         version: 1.6.23(65171c1b8e0b052d19d6d26fc9c72ef6)
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -722,6 +728,12 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.9
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.6
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

@@ -12,6 +12,10 @@ const obsoleteStarterFiles = [
   "starters/operator/src/api/jobs/workflow-scheduled.ts",
   "starters/operator/src/api/jobs/outbox-drain-scheduled.ts",
   "starters/operator/src/local-scheduled-jobs.ts",
+  "starters/operator/src/api/routes/invitations.ts",
+  "starters/operator/src/api/routes/team.ts",
+  "starters/operator/src/modules/invitations/index.ts",
+  "starters/operator/src/modules/team/index.ts",
 ]
 
 for (const relativePath of obsoleteStarterFiles) {
@@ -30,8 +34,14 @@ const requiredSourceTokens = new Map([
   ],
   ["packages/db/src/voyant.ts", ["outbox-drain"]],
   ["starters/operator/src/entry.ts", ["@voyant-travel/workflow-runs/scheduled-workflow"]],
-  ["starters/operator/src/modules/invitations/index.ts", ["defineDeploymentModule"]],
-  ["starters/operator/src/modules/team/index.ts", ["defineDeploymentModule"]],
+  [
+    "packages/auth/src/voyant.ts",
+    ["authInvitationsVoyantModule", "authTeamVoyantModule", "identityAccessRuntimePort"],
+  ],
+  [
+    "packages/auth/src/identity-access-graph-runtime.ts",
+    ["createInvitationsVoyantRuntime", "createTeamVoyantRuntime"],
+  ],
 ])
 
 for (const [relativePath, tokens] of requiredSourceTokens) {
