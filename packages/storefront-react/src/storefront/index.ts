@@ -7,6 +7,7 @@ export type {
   StorefrontUiScope,
 } from "./context.js"
 export { StorefrontLink, StorefrontUiProvider, useStorefrontUi } from "./context.js"
+export type { AvailabilitySlot } from "./detail-shared.js"
 export {
   BackLink,
   BodyMissing,
@@ -20,4 +21,3 @@ export {
   PaxBlock,
   PaxStepper,
 } from "./detail-shared.js"
-export type { AvailabilitySlot } from "./detail-shared.js"

@@ -1,9 +1,9 @@
 import {
-  createContext,
-  useContext,
   type AnchorHTMLAttributes,
+  createContext,
   type MouseEvent,
   type ReactNode,
+  useContext,
 } from "react"
 
 export interface StorefrontUiScope {
@@ -53,6 +53,7 @@ export function useStorefrontUi(): StorefrontUiContextValue {
 
 export function StorefrontLink({
   children,
+  href,
   params,
   search,
   to,
@@ -77,7 +78,7 @@ export function StorefrontLink({
   }
 
   return (
-    <a {...anchorProps} onClick={onClick}>
+    <a {...anchorProps} href={href ?? to} onClick={onClick}>
       {children}
     </a>
   )

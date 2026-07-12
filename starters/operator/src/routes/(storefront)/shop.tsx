@@ -2,10 +2,10 @@
 
 import { createFileRoute } from "@tanstack/react-router"
 import {
-  shopSearchSchema,
   StorefrontBrowsePage,
-  StorefrontUiProvider,
   type StorefrontUiNavigation,
+  StorefrontUiProvider,
+  shopSearchSchema,
 } from "@voyant-travel/storefront-react/storefront"
 
 import { getApiUrl } from "@/lib/env"

@@ -6,8 +6,8 @@ import { ProductDetailPageProducts } from "@voyant-travel/inventory-react/storef
 import { getStorefrontCustomerProductDetailRoute } from "@voyant-travel/storefront-react"
 import {
   AccommodationDetailPage,
-  StorefrontUiProvider,
   type StorefrontUiNavigation,
+  StorefrontUiProvider,
 } from "@voyant-travel/storefront-react/storefront"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import type React from "react"
@@ -65,10 +65,7 @@ export function DetailPage(): React.ReactElement {
   )
 }
 
-function formatVerticalLabel(
-  vertical: string,
-  messages: Record<string, string>,
-): string {
+function formatVerticalLabel(vertical: string, messages: Record<string, string>): string {
   if (vertical === "products") return messages.verticalProducts
   if (vertical === "cruises") return messages.verticalCruises
   if (vertical === "accommodations") return messages.verticalAccommodations
