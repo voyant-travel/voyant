@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: storefront; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import type { EventBus } from "@voyant-travel/core"
+import type { StorefrontIntakeContext } from "@voyant-travel/relationships-contracts/storefront-intake"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -101,7 +102,7 @@ export interface StorefrontServiceOptions {
   bookingSessionBootstrap?: StorefrontBookingSessionBootstrapOptions
 }
 
-export interface StorefrontRequestContext {
+export interface StorefrontRequestContext extends StorefrontIntakeContext {
   db?: PostgresJsDatabase
   eventBus?: EventBus
   env?: unknown

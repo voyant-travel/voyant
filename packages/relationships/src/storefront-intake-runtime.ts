@@ -1,17 +1,17 @@
 import type {
+  StorefrontIntakeContext,
   StorefrontIntakePersistence,
-  StorefrontRequestContext,
-} from "@voyant-travel/storefront"
+} from "@voyant-travel/relationships-contracts/storefront-intake"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { customerSignals } from "./schema.js"
 import { relationshipsService } from "./service/index.js"
 
-function requireStorefrontDb(context: StorefrontRequestContext): PostgresJsDatabase {
+function requireStorefrontDb(context: StorefrontIntakeContext): PostgresJsDatabase {
   if (!context.db) {
     throw new Error("Storefront intake requires a request database")
   }
-  return context.db
+  return context.db as PostgresJsDatabase
 }
 
 /** Standard graph adapter from Storefront intake to the selected Relationships package. */

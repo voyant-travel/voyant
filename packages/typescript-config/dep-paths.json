@@ -1417,6 +1417,9 @@
       "@voyant-travel/realtime/voyant": ["../realtime/dist/voyant.d.ts"],
       "@voyant-travel/relationships": ["../relationships/dist/index.d.ts"],
       "@voyant-travel/relationships-contracts": ["../relationships-contracts/dist/index.d.ts"],
+      "@voyant-travel/relationships-contracts/storefront-intake": [
+        "../relationships-contracts/dist/storefront-intake.d.ts"
+      ],
       "@voyant-travel/relationships-contracts/validation": [
         "../relationships-contracts/dist/validation.d.ts"
       ],

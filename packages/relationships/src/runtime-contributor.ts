@@ -4,11 +4,14 @@ import {
 } from "@voyant-travel/bookings/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { CustomFieldRegistryResolver } from "@voyant-travel/core/custom-fields"
-import { storefrontIntakeRuntimePort } from "@voyant-travel/storefront"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
 import { relationshipsMiceRuntimePort, relationshipsRouteRuntimePort } from "./runtime-port.js"
 import { relationshipsService } from "./service/index.js"
 import { createStorefrontIntakePersistence } from "./storefront-intake-runtime.js"
+
+const storefrontIntakeRuntimePortReference = {
+  id: "storefront.intake.runtime",
+} as const
 
 export interface RelationshipsRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
@@ -26,7 +29,7 @@ export function createRelationshipsRuntimePortContribution(
     return resolver(db)
   }
   return {
-    [storefrontIntakeRuntimePort.id]: createStorefrontIntakePersistence(),
+    [storefrontIntakeRuntimePortReference.id]: createStorefrontIntakePersistence(),
     [relationshipsRouteRuntimePort.id]: {
       customFields,
     } satisfies RelationshipsRouteRuntimeOptions,
