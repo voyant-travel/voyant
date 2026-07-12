@@ -16,7 +16,6 @@
     "VOYANT_CLOUD_API_URL",
     "VOYANT_CLOUD_USER_AGENT",
     "voyant-cloud-browser",
-    "createMediaStorage",
     "brochureBodyToHtml"
   ]
 }

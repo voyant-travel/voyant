@@ -1,8 +1,6 @@
 import { getVoyantCloudClient, type VoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import { createMediaStorage } from "@voyant-travel/storage/standard-node"
-
-import type { ProductBrochureRoutesOptions } from "./routes-brochure.js"
+import type { InventoryBrochureRuntime } from "./runtime-ports.js"
 import {
   brochureBodyToHtml,
   type ProductBrochurePrinter,
@@ -64,7 +62,7 @@ function tryGetCloudClient(env: RuntimeEnv): VoyantCloudClient | null {
   return resolveVoyantApiKey(env) ? getCloudClient(env) : null
 }
 
-/** Voyant Cloud browser-backed brochure printer used by the standard Node runtime. */
+/** Voyant Cloud browser-backed brochure printer used by Inventory workflows and routes. */
 export function createProductBrochurePrinter(env: RuntimeEnv): ProductBrochurePrinter {
   const client = getCloudClient(env)
   return async ({ template, context }: ProductBrochurePrinterContext) => {
@@ -84,12 +82,11 @@ export function createProductBrochurePrinter(env: RuntimeEnv): ProductBrochurePr
   }
 }
 
-/** Build Inventory's brochure runtime from generic graph host primitives. */
-export function createInventoryBrochureStandardNodeRuntime(
+/** Build Inventory's brochure printer policy from generic graph host primitives. */
+export function createInventoryBrochureRuntime(
   primitives: BrochureRuntimePrimitives,
-): ProductBrochureRoutesOptions {
+): InventoryBrochureRuntime {
   return {
-    resolveStorage: (context) => createMediaStorage(primitives.env(context.env)),
     resolvePrinter: (context) => {
       const env = primitives.env(context.env)
       return tryGetCloudClient(env) ? createProductBrochurePrinter(env) : null

@@ -1459,9 +1459,6 @@
       "@voyant-travel/inventory/standard-links": [
         "../../packages/inventory/dist/standard-links.d.ts"
       ],
-      "@voyant-travel/inventory/standard-node/brochure-runtime": [
-        "../../packages/inventory/dist/standard-node-brochure-runtime.d.ts"
-      ],
       "@voyant-travel/inventory/tasks": ["../../packages/inventory/dist/tasks.d.ts"],
       "@voyant-travel/inventory/tools": ["../../packages/inventory/dist/mcp-runtime.d.ts"],
       "@voyant-travel/inventory/validation": ["../../packages/inventory/dist/validation.d.ts"],
@@ -2050,6 +2047,7 @@
       "@voyant-travel/storage/runtime-contributor": [
         "../../packages/storage/dist/runtime-contributor.d.ts"
       ],
+      "@voyant-travel/storage/runtime-port": ["../../packages/storage/dist/runtime-port.d.ts"],
       "@voyant-travel/storage/service": ["../../packages/storage/dist/service.d.ts"],
       "@voyant-travel/storage/standard-node": [
         "../../packages/storage/dist/standard-node-runtime.d.ts"

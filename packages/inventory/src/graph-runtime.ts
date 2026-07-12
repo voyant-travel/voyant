@@ -2,6 +2,7 @@ import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
 
 import { inventoryExtrasHonoModule } from "./extras.js"
 import { inventoryHonoModule } from "./interface.js"
@@ -81,11 +82,19 @@ export const createInventoryContentVoyantRuntime = defineGraphRuntimeFactory(
 )
 
 export const createInventoryBrochureVoyantRuntime = defineGraphRuntimeFactory(
-  async ({ api, getPort }) =>
-    selectedExtensionSurfaces(
-      createProductBrochureHonoExtension(await getPort(inventoryBrochureRuntimePort)),
+  async ({ api, getPort }) => {
+    const [brochure, storage] = await Promise.all([
+      getPort(inventoryBrochureRuntimePort),
+      getPort(storageMediaRuntimePort),
+    ])
+    return selectedExtensionSurfaces(
+      createProductBrochureHonoExtension({
+        ...brochure,
+        resolveStorage: storage.resolveStorage,
+      }),
       api,
-    ),
+    )
+  },
 )
 
 export type { InventoryRuntime } from "./runtime-ports.js"

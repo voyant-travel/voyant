@@ -3,17 +3,12 @@
  *
  * The route SHAPES live in packages:
  *   - upload + serve in `@voyant-travel/storage` (`createMediaHonoModule`),
- *   - product brochure generation in `@voyant-travel/inventory`
- *     (`createProductBrochureRoutes`).
- *
- * Package-owned standard Node runtimes now supply provider policy. This file is
- * only a compatibility facade for callers that have not yet switched to graph
- * runtime factories.
+ * Package-owned runtimes now supply provider policy. This file is only a
+ * compatibility facade for storage callers that have not yet switched to the
+ * graph runtime factory.
  */
 
 import { OpenAPIHono } from "@hono/zod-openapi"
-import { createProductBrochureRoutes } from "@voyant-travel/inventory/routes-brochure"
-import { createInventoryBrochureStandardNodeRuntime } from "@voyant-travel/inventory/standard-node/brochure-runtime"
 import { createMediaHonoModule } from "@voyant-travel/storage/routes"
 import { createStorageStandardNodeRuntime } from "@voyant-travel/storage/standard-node"
 
@@ -28,18 +23,8 @@ function buildMediaUploadAndServeModule() {
   return createMediaHonoModule(operatorStorageMediaRuntime)
 }
 
-/** Build the brochure route (`/v1/admin/products/:id/brochure/generate`). */
-export const operatorInventoryBrochureRuntime =
-  createInventoryBrochureStandardNodeRuntime(directEnvPrimitives)
-
-function buildBrochureRoutes() {
-  return createProductBrochureRoutes(operatorInventoryBrochureRuntime)
-}
-
 /**
- * Compatibility composition for the former combined operator media surface.
- * Storage upload/serve and inventory brochure generation now have separate
- * package ownership, while this loader preserves the existing mounted routes.
+ * Compatibility composition for the package-owned Storage surface.
  */
 export async function buildOperatorStorageRoutes(): Promise<OpenAPIHono> {
   const app = new OpenAPIHono()
@@ -47,20 +32,6 @@ export async function buildOperatorStorageRoutes(): Promise<OpenAPIHono> {
   return app
 }
 
-export async function buildOperatorInventoryBrochureRoutes(): Promise<OpenAPIHono> {
-  // OpenAPIHono parent so the brochure-generation sub-app's `.openapi()` def
-  // (`POST /v1/admin/products/{id}/brochure/generate`) surfaces in the operator
-  // spec via the build-time lazy-merge — `mergeLazyOpenApiPaths` skips plain
-  // `Hono` wrappers, which carry no registry (voyant#2114). The upload + binary
-  // serve routes from `@voyant-travel/storage` stay plain `Hono` (multipart /
-  // wildcard byte streams), so they remain undocumented.
-  const app = new OpenAPIHono()
-  app.route("/v1/admin/products", buildBrochureRoutes())
-  return app
-}
-
 export async function buildOperatorMediaRoutes(): Promise<OpenAPIHono> {
-  const app = await buildOperatorStorageRoutes()
-  app.route("/v1/admin/products", buildBrochureRoutes())
-  return app
+  return buildOperatorStorageRoutes()
 }

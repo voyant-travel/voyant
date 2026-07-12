@@ -9,6 +9,7 @@
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./standard-node": "./src/standard-node-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./providers/local": "./src/providers/local.ts",
@@ -58,6 +59,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./standard-node": {
         "types": "./dist/standard-node-runtime.d.ts",

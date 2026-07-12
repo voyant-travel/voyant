@@ -20,15 +20,10 @@ import {
   resolveWorkflowEnvironment,
 } from "@voyant-travel/db/outbox-workflow"
 import {
-  createProductsGeneratePdfWorkflowRuntime,
-  PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
-} from "@voyant-travel/inventory/workflow-runtime"
-import {
   createNotificationReminderWorkflowRuntime,
   type NotificationReminderWorkflowRuntime,
 } from "@voyant-travel/notifications/workflow-runtime"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { createProductBrochurePrinter } from "../../lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
 import { reportBackgroundFailure } from "../../lib/observability.js"
 import { createBulkReindexProductsService } from "../lib/bulk-reindex-service.js"
@@ -39,21 +34,6 @@ type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string,
 
 function workflowEnvironment(bindings: OperatorWorkflowBindings): NodeJS.ProcessEnv {
   return resolveWorkflowEnvironment(bindings, process.env)
-}
-
-/** Deployment adapter consumed by the Inventory package bootstrap. */
-export function registerInventoryWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  container.register(
-    PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
-    createProductsGeneratePdfWorkflowRuntime({
-      resolveDb: () => createWorkflowDb(env),
-      resolvePrinter: () => createProductBrochurePrinter(env),
-    }),
-  )
 }
 
 /** Deployment adapter consumed by the Notifications package bootstrap. */

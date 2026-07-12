@@ -146,7 +146,7 @@ describe("inventory deployment manifests", () => {
           runtime: { export: "createInventoryBrochureVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "inventory.brochure-runtime" }],
+      runtimePorts: [{ id: "inventory.brochure-runtime" }, { id: "storage.media-runtime" }],
     })
 
     const resolveRegistry = () => ({}) as never

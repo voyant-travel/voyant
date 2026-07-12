@@ -13,33 +13,49 @@ import {
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { and, eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { checkProductActionLedgerDrift } from "./action-ledger-drift.js"
 import {
   createInventoryPaymentPolicyRuntime,
   readPolicySourceFromInternalNotes,
   stampPolicySourceOnBooking,
 } from "./booking-payment-policy-runtime.js"
+import { createInventoryBrochureRuntime, createProductBrochurePrinter } from "./brochure-runtime.js"
 import { catalogInventoryRuntimeExtension } from "./catalog-runtime-extension.js"
-import type { ProductBrochureRoutesOptions } from "./routes-brochure.js"
 import {
   type InventoryRuntime,
   inventoryBrochureRuntimePort,
   inventoryRuntimePort,
 } from "./runtime-ports.js"
 import { productCapabilities, products } from "./schema.js"
-import { createInventoryBrochureStandardNodeRuntime } from "./standard-node-brochure-runtime.js"
+import {
+  createProductsGeneratePdfWorkflowRuntime,
+  PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
+} from "./workflow-runtime.js"
 
 type RuntimePortValue<T> = T | Promise<T>
 
 export interface InventoryRuntimePortContribution {
   inventory: RuntimePortValue<InventoryRuntime>
-  brochure: RuntimePortValue<ProductBrochureRoutesOptions>
+  brochure: RuntimePortValue<ReturnType<typeof createInventoryBrochureRuntime>>
 }
 
 export interface InventoryRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
-  capabilities: {
-    loadInventoryRuntime(): RuntimePortValue<Pick<InventoryRuntimePortContribution, "inventory">>
+}
+
+function createInventoryRuntime(primitives: VoyantRuntimeHostPrimitives): InventoryRuntime {
+  return {
+    bootstrap: ({ container, bindings }) => {
+      const env = primitives.env(bindings)
+      container.register(
+        PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
+        createProductsGeneratePdfWorkflowRuntime({
+          resolveDb: () => primitives.database.resolve<PostgresJsDatabase>(bindings),
+          resolvePrinter: () => createProductBrochurePrinter(env),
+        }),
+      )
+    },
   }
 }
 
@@ -47,14 +63,14 @@ export interface InventoryRuntimeContributorHost {
 export function createInventoryRuntimePortContribution(
   host: InventoryRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const contribution = Promise.resolve(host.capabilities.loadInventoryRuntime())
-  const brochure = createInventoryBrochureStandardNodeRuntime(host.primitives)
+  const inventory = createInventoryRuntime(host.primitives)
+  const brochure = createInventoryBrochureRuntime(host.primitives)
   return {
     [catalogInventoryRuntimeExtensionPort.id]: catalogInventoryRuntimeExtension,
     [actionLedgerInventoryDriftRuntimePort.id]: {
       checkProductDrift: checkProductActionLedgerDrift,
     } satisfies ActionLedgerInventoryDriftRuntime,
-    [inventoryRuntimePort.id]: contribution.then((runtime) => runtime.inventory),
+    [inventoryRuntimePort.id]: inventory,
     [inventoryBrochureRuntimePort.id]: brochure,
     [bookingsInventoryRuntimePort.id]: {
       resolveProductSnapshot: async (db, productId) => {

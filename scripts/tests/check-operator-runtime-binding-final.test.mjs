@@ -17,7 +17,7 @@ const contributors = {
   distribution: "createDistributionRuntime",
   finance: "financeHostRuntimePort",
   flights: "createFlightsRuntime",
-  inventory: "host.capabilities.loadInventoryRuntime()",
+  inventory: "createInventoryRuntime(host.primitives)",
   legal: "createLegalRuntime",
   notifications: "createNotificationsRuntime",
   quotes: "createQuotesRuntime",

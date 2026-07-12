@@ -16,6 +16,7 @@ const [
   tripsContributor,
   legalContributor,
   inventoryContributor,
+  inventoryWorkflowServices,
 ] = await Promise.all([
   read("starters/operator/src/api/runtime/deployment-resources.ts"),
   read("packages/storefront/src/runtime-contributor.ts"),
@@ -24,6 +25,7 @@ const [
   read("packages/trips/src/runtime-contributor.ts"),
   read("packages/legal/src/runtime-contributor.ts"),
   read("packages/inventory/src/runtime-contributor.ts"),
+  read("starters/operator/src/api/runtime/operator-workflow-services.ts"),
 ])
 
 const packagePorts = {
@@ -61,6 +63,28 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
       violations.push(`${packageName} runtime contributor must own ${port}`)
     }
   }
+}
+
+for (const token of [
+  "loadInventoryRuntime",
+  "createOperatorInventoryRuntime",
+  "registerInventoryWorkflowService",
+]) {
+  if (deploymentResources.includes(token) || inventoryWorkflowServices.includes(token)) {
+    violations.push(`Operator runtime code must not retain Inventory capability ${token}`)
+  }
+}
+for (const token of [
+  "createInventoryRuntime(host.primitives)",
+  "PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY",
+  "createProductsGeneratePdfWorkflowRuntime",
+]) {
+  if (!inventoryContributor.includes(token)) {
+    violations.push(`Inventory contributor must own ${token}`)
+  }
+}
+if (/host\.capabilities|loadInventoryRuntime/.test(inventoryContributor)) {
+  violations.push("Inventory contributor must use generic primitives without starter capabilities")
 }
 
 for (const factory of [

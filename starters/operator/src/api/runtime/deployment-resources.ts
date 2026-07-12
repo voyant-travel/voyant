@@ -27,7 +27,6 @@ import {
   resolveOperatorDb,
   resolveOperatorDocumentDownloadUrl,
 } from "./operator-runtime-adapter"
-import { registerInventoryWorkflowService } from "./operator-workflow-services"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
 type AsyncMethodProvider<T extends object> = {
@@ -76,7 +75,6 @@ function createLegacyDeploymentCapabilities() {
   return {
     ...capabilities,
     loadCommerceRuntime: createOperatorCommerceRuntime,
-    loadInventoryRuntime: createOperatorInventoryRuntime,
   }
 }
 
@@ -187,15 +185,6 @@ function createOperatorCommerceRuntime() {
         import("../lib/bulk-reindex-service").then((runtime) =>
           runtime.createBulkReindexProductsService(operatorBindings(bindings)),
         ),
-    },
-  }
-}
-
-function createOperatorInventoryRuntime() {
-  return {
-    inventory: {
-      bootstrap: ({ container, bindings }) =>
-        registerInventoryWorkflowService(container, bindings as AppBindings),
     },
   }
 }

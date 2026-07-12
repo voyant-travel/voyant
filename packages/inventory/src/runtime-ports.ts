@@ -20,15 +20,17 @@ export const inventoryRuntimePort = definePort<InventoryRuntime>({
   },
 })
 
-export const inventoryBrochureRuntimePort = definePort<ProductBrochureRoutesOptions>({
+export type InventoryBrochureRuntime = Pick<ProductBrochureRoutesOptions, "resolvePrinter">
+
+export const inventoryBrochureRuntimePort = definePort<InventoryBrochureRuntime>({
   id: "inventory.brochure-runtime",
   test(provider) {
     if (
       provider === null ||
       typeof provider !== "object" ||
-      typeof provider.resolveStorage !== "function"
+      typeof provider.resolvePrinter !== "function"
     ) {
-      throw new Error("inventory.brochure-runtime provider must implement resolveStorage().")
+      throw new Error("inventory.brochure-runtime provider must implement resolvePrinter().")
     }
   },
 })

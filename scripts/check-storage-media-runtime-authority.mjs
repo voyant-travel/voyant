@@ -9,10 +9,11 @@ const failures = []
 const storageContributor = read("packages/storage/src/runtime-contributor.ts")
 const storageRuntime = read("packages/storage/src/standard-node-runtime.ts")
 const inventoryContributor = read("packages/inventory/src/runtime-contributor.ts")
-const brochureRuntime = read("packages/inventory/src/standard-node-brochure-runtime.ts")
+const brochureRuntime = read("packages/inventory/src/brochure-runtime.ts")
+const inventoryGraphRuntime = read("packages/inventory/src/graph-runtime.ts")
+const inventoryManifest = read("packages/inventory/src/voyant.ts")
 const mediaFacade = read("starters/operator/src/api/runtime/media-runtime.ts")
 const storageFacade = read("starters/operator/src/api/lib/storage.ts")
-const brochureFacade = read("starters/operator/src/lib/brochure-printer.ts")
 const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
 const storagePackage = JSON.parse(read("packages/storage/package.json"))
 const inventoryPackage = JSON.parse(read("packages/inventory/package.json"))
@@ -28,10 +29,12 @@ if (
   failures.push("Storage contributor must construct its standard Node runtime package-side")
 }
 if (
-  !inventoryContributor.includes("createInventoryBrochureStandardNodeRuntime(host.primitives)") ||
-  /runtime\.brochure/.test(inventoryContributor)
+  !inventoryContributor.includes("createInventoryBrochureRuntime(host.primitives)") ||
+  /runtime\.brochure|host\.capabilities|loadInventoryRuntime/.test(inventoryContributor)
 ) {
-  failures.push("Inventory brochure port must be derived package-side from generic primitives")
+  failures.push(
+    "Inventory brochure printer port must be derived package-side from generic primitives",
+  )
 }
 
 for (const token of policy.storageRuntimeTokens) {
@@ -48,17 +51,10 @@ if (
   failures.push("Operator storage library must remain a package re-export facade")
 }
 if (
-  !brochureFacade.includes('from "@voyant-travel/inventory/standard-node/brochure-runtime"') ||
-  /browser\.pdf|brochureBodyToHtml|getCloudClient/.test(brochureFacade)
-) {
-  failures.push("Operator brochure printer must remain a package re-export facade")
-}
-if (
   !mediaFacade.includes("createStorageStandardNodeRuntime(directEnvPrimitives)") ||
-  !mediaFacade.includes("createInventoryBrochureStandardNodeRuntime(directEnvPrimitives)") ||
-  /createMediaStorage|createVideoUploadTicket|tryGetCloudClient/.test(mediaFacade)
+  /@voyant-travel\/inventory|InventoryBrochure|buildBrochureRoutes/.test(mediaFacade)
 ) {
-  failures.push("Operator media runtime must only adapt package-owned standard Node runtimes")
+  failures.push("Operator media compatibility runtime must not assemble Inventory behavior")
 }
 
 if (
@@ -69,12 +65,29 @@ if (
   failures.push("Storage must publish its standard Node runtime")
 }
 if (
-  inventoryPackage.exports["./standard-node/brochure-runtime"] !==
-    "./src/standard-node-brochure-runtime.ts" ||
-  inventoryPackage.publishConfig?.exports?.["./standard-node/brochure-runtime"]?.import !==
-    "./dist/standard-node-brochure-runtime.js"
+  storagePackage.exports["./runtime-port"] !== "./src/runtime-port.ts" ||
+  storagePackage.publishConfig?.exports?.["./runtime-port"]?.import !== "./dist/runtime-port.js"
 ) {
-  failures.push("Inventory must publish its standard Node brochure runtime")
+  failures.push("Storage must publish its neutral typed runtime port")
+}
+if (Object.keys(inventoryPackage.exports ?? {}).some((entry) => entry.includes("standard-node"))) {
+  failures.push("Inventory must not publish target-labelled standard-node APIs")
+}
+if (inventoryPackage.exports?.["./brochure-runtime"]) {
+  failures.push("Inventory's package-owned brochure runtime must remain private")
+}
+if (
+  !inventoryGraphRuntime.includes('from "@voyant-travel/storage/runtime-port"') ||
+  !inventoryGraphRuntime.includes("getPort(storageMediaRuntimePort)") ||
+  !inventoryManifest.includes("requirePort(storageMediaRuntimePort)")
+) {
+  failures.push("Inventory brochure routes must consume Storage through its neutral typed port")
+}
+if (
+  brochureRuntime.includes("@voyant-travel/storage/standard-node") ||
+  brochureRuntime.includes("createMediaStorage")
+) {
+  failures.push("Inventory brochure runtime must not import Storage's target-labelled runtime")
 }
 if (storagePackage.dependencies?.["@voyant-travel/inventory"]) {
   failures.push("Storage must not depend on Inventory")
@@ -85,11 +98,7 @@ if (storagePackage.dependencies?.["@voyant-travel/hono"]) {
 if (inventoryPackage.dependencies?.["@voyant-travel/storage"] !== "workspace:^") {
   failures.push("Inventory must retain the existing acyclic dependency on Storage")
 }
-if (
-  /loadStorageMediaRuntime|operatorStorageMediaRuntime|operatorInventoryBrochureRuntime/.test(
-    deploymentResources,
-  )
-) {
+if (/loadStorageMediaRuntime|operatorInventoryBrochureRuntime/.test(deploymentResources)) {
   failures.push("Operator deployment resources must not retain Storage or brochure capabilities")
 }
 
