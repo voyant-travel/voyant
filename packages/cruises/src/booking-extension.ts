@@ -365,6 +365,7 @@ type Env = {
 export const CRUISES_BOOKING_OPENAPI_API_ID = "@voyant-travel/cruises#booking-extension.api.admin"
 
 export const cruisesBookingExtensionRoutes = new OpenAPIHono<Env>()
+cruisesBookingExtensionRoutes
   .get("/:bookingId/cruise-details", async (c) => {
     const bookingId = c.req.param("bookingId")
     const row = await bookingCruiseDetailsService.get(c.get("db"), bookingId)

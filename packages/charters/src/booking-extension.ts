@@ -366,6 +366,7 @@ type Env = {
 export const CHARTERS_BOOKING_OPENAPI_API_ID = "@voyant-travel/charters#booking-extension.api.admin"
 
 export const chartersBookingExtensionRoutes = new OpenAPIHono<Env>()
+chartersBookingExtensionRoutes
   .get("/:bookingId/charter-details", async (c) => {
     const row = await bookingCharterDetailsService.get(c.get("db"), c.req.param("bookingId"))
     if (!row) return c.json({ error: "not_found" }, 404)
