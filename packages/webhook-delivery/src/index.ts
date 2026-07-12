@@ -7,18 +7,17 @@ export {
   assertWebhookSubscriptionUpdateEvents,
   prepareExternalWebhookEvent,
 } from "./contracts.js"
-export { createWebhookDeliveryEngine } from "./engine.js"
 export {
   hashWebhookPayload,
   redactWebhookHeaders,
   signWebhookPayload,
   webhookBodyExcerpt,
 } from "./security.js"
-export type { CreateSelectedExternalWebhookDeliveryEngineOptions } from "./selected-engine.js"
+export type { CreateSelectedExternalWebhookQueueOptions } from "./selected-queue.js"
 export {
-  createSelectedExternalWebhookDeliveryEngine,
+  createSelectedExternalWebhookQueue,
   externalContractFromEventMetadata,
-} from "./selected-engine.js"
+} from "./selected-queue.js"
 export type {
   WebhookSubscriptionMutationStore,
   WebhookSubscriptionService,
@@ -26,16 +25,16 @@ export type {
 export { createWebhookSubscriptionService } from "./subscriptions.js"
 export type {
   CompleteWebhookAttemptInput,
-  CreateWebhookDeliveryEngineOptions,
+  CreateWebhookDeliveryWorkerOptions,
   EnqueuedWebhookAttempt,
   EnqueueWebhookAttemptInput,
+  SelectedExternalWebhookQueue,
   WebhookDeliveryAuditEvent,
-  WebhookDeliveryEngine,
   WebhookDeliveryOutcome,
   WebhookDeliveryStore,
+  WebhookDeliveryWorker,
+  WebhookEnqueueOutcome,
   WebhookRetryOptions,
   WebhookSubscription,
-  WebhookVisibilityDecision,
-  WebhookVisibilityPolicy,
-  WebhookVisibilityPolicyInput,
 } from "./types.js"
+export { createWebhookDeliveryWorker } from "./worker.js"

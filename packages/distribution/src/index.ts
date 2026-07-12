@@ -224,4 +224,5 @@ export {
   redactHeaders,
   redactStringPii,
 } from "./webhook-deliveries.js"
+export { createDistributionWebhookDeliveryWorker } from "./webhook-worker.js"
 export { distributionService }

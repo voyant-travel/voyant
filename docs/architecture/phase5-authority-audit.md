@@ -23,9 +23,12 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
 - External payload delivery is schema-projected with package-owned property allowlists.
   Undeclared fields are dropped, while `writeOnly` and `x-voyant-redact` properties are
   replaced with a redaction marker.
-- Distribution's graph path delegates selected-contract projection, subscription fan-out,
-  signing, retry/backoff, audit callbacks, and dead-letter state to
-  `@voyant-travel/webhook-delivery`.
+- Distribution's graph enqueue path delegates selected-contract projection and durable payload
+  persistence to `@voyant-travel/webhook-delivery` without performing HTTP. Its worker binding
+  delegates claim/rehydration, signing, retry/backoff, audit callbacks, and dead-letter state to
+  the same package.
+- Payload and contract columns are nullable for migration compatibility. New pending rows require
+  both; legacy payload-less rows are claimed and abandoned fail-closed without an HTTP request.
 
 ## Existing Phase 5 Authority
 
@@ -37,8 +40,9 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
 - Action declarations validate route, tool, workflow, event, webhook, scope, and copy
   references before lowering into the action-ledger registry.
 - The webhook delivery engine implements signing, bounded audit excerpts, retry classification,
-  idempotency, audit callbacks, dead-letter state, and subscription outcome tracking. Distribution
-  binds its Postgres store but owns no external webhook execution policy.
+  idempotency, restart-safe payload rehydration, audit callbacks, dead-letter state, and
+  subscription outcome tracking. Distribution binds its Postgres queue/worker store but owns no
+  external webhook execution policy.
 - Distribution channel-push workflows remain separate: they call supplier APIs through
   package-owned adapters and workflow retry policy, not webhook subscriptions.
 
@@ -47,6 +51,8 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
 - Route the legacy Dash subscription mutations through the package-owned service. This repository
   contains no subscription mutation API or direct insert call outside the service factory, so
   end-to-end enforcement by that external control-plane caller is not yet demonstrated here.
+- Schedule `createDistributionWebhookDeliveryWorker` from the Node host. The package worker is
+  restart-safe and claim-driven, but host scheduling is outside this package-only cut.
 - Activate Realtime's package-owned invalidation declarations and remove its remaining
   Operator bridge without duplicate subscriptions.
 - Move Notifications' `booking.fully-paid` module-bootstrap subscription behind a selected

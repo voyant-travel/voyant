@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest"
 import { enqueueGraphWebhookEvent } from "../../src/outbound-webhooks.js"
 
 describe("enqueueGraphWebhookEvent", () => {
-  it("delegates a selected event to the package-owned delivery engine", async () => {
+  it("delegates a selected event to the package-owned durable queue", async () => {
     const enqueue = vi.fn(async () => [{ status: "succeeded" }] as never)
-    const engine = { enqueue }
+    const queue = { enqueue }
     const event = {
       name: "catalog.entity.updated",
       data: { entity_module: "products", entity_id: "prod_123", email: "private@test.io" },
@@ -28,7 +28,7 @@ describe("enqueueGraphWebhookEvent", () => {
       emittedAt: "2026-07-10T12:00:00.000Z",
     }
 
-    await enqueueGraphWebhookEvent({} as never, event, { engine })
+    await enqueueGraphWebhookEvent({} as never, event, { queue })
 
     expect(enqueue).toHaveBeenCalledOnce()
     expect(enqueue).toHaveBeenCalledWith(event)

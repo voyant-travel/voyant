@@ -8,7 +8,7 @@ import {
   infraWebhookSubscriptionsTable,
   infraWebhookSubscriptionUpdateSchema,
 } from "@voyant-travel/db/schema/infra"
-import { and, arrayContains, eq, lte, or, sql } from "drizzle-orm"
+import { and, arrayContains, asc, eq, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
 import {
@@ -39,13 +39,40 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
             arrayContains(infraWebhookSubscriptionsTable.events, [eventName]),
           ),
         )
-      return rows.map((row) => ({
-        id: row.id,
-        url: row.url,
-        secret: row.secret,
-        headers: row.headers ?? null,
-        maxRetries: row.maxRetries,
-      }))
+      return rows.map(toWebhookSubscription)
+    },
+
+    async getSubscription(id) {
+      const rows = await db
+        .select()
+        .from(infraWebhookSubscriptionsTable)
+        .where(eq(infraWebhookSubscriptionsTable.id, id))
+        .limit(1)
+      return rows[0] ? toWebhookSubscription(rows[0]) : null
+    },
+
+    async listReadyAttemptIds(now, staleBefore, limit) {
+      const rows = await db
+        .select({ id: infraWebhookDeliveriesTable.id })
+        .from(infraWebhookDeliveriesTable)
+        .where(
+          or(
+            and(
+              eq(infraWebhookDeliveriesTable.status, "pending"),
+              or(
+                isNull(infraWebhookDeliveriesTable.scheduledFor),
+                lte(infraWebhookDeliveriesTable.scheduledFor, now),
+              ),
+            ),
+            and(
+              eq(infraWebhookDeliveriesTable.status, "in_flight"),
+              lte(infraWebhookDeliveriesTable.startedAt, staleBefore),
+            ),
+          ),
+        )
+        .orderBy(asc(infraWebhookDeliveriesTable.scheduledFor), asc(infraWebhookDeliveriesTable.id))
+        .limit(limit)
+      return rows.map(({ id }) => id)
     },
 
     async enqueueAttempt(input): Promise<EnqueuedWebhookAttempt> {
@@ -96,7 +123,10 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
                 lte(infraWebhookDeliveriesTable.startedAt, staleBefore),
               ),
             ),
-            lte(infraWebhookDeliveriesTable.scheduledFor, now),
+            or(
+              isNull(infraWebhookDeliveriesTable.scheduledFor),
+              lte(infraWebhookDeliveriesTable.scheduledFor, now),
+            ),
           ),
         )
         .returning()
@@ -129,6 +159,38 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
       return infraWebhookDeliverySelectSchema.parse(row)
     },
 
+    async completeAndEnqueueRetry(completion, retry) {
+      return db.transaction(async (tx) => {
+        const completedRows = await tx
+          .update(infraWebhookDeliveriesTable)
+          .set(completedAttemptValues(completion))
+          .where(
+            and(
+              eq(infraWebhookDeliveriesTable.id, completion.id),
+              eq(infraWebhookDeliveriesTable.status, "in_flight"),
+            ),
+          )
+          .returning()
+        const completed = completedRows[0]
+        if (!completed) throw new Error(`Webhook attempt ${completion.id} was not in flight`)
+
+        const retryRows = await tx
+          .insert(infraWebhookDeliveriesTable)
+          .values(pendingAttemptValues(retry))
+          .returning()
+        const retryRow = retryRows[0]
+        if (!retryRow) {
+          throw new Error(
+            `Webhook retry ${retry.idempotencyKey}:${retry.attemptNumber} returned no row`,
+          )
+        }
+        return {
+          completed: infraWebhookDeliverySelectSchema.parse(completed),
+          retry: infraWebhookDeliverySelectSchema.parse(retryRow),
+        }
+      })
+    },
+
     async recordSubscriptionOutcome(subscriptionId, succeeded, at) {
       await db
         .update(infraWebhookSubscriptionsTable)
@@ -140,6 +202,38 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
         .where(eq(infraWebhookSubscriptionsTable.id, subscriptionId))
     },
   }
+}
+
+function toWebhookSubscription(row: {
+  id: string
+  url: string
+  secret: string
+  headers: Record<string, string> | null
+  maxRetries: number
+  active: boolean
+}) {
+  return {
+    id: row.id,
+    url: row.url,
+    secret: row.secret,
+    headers: row.headers ?? null,
+    maxRetries: row.maxRetries,
+    active: row.active,
+  }
+}
+
+function completedAttemptValues(input: CompleteWebhookAttemptInput) {
+  return {
+    status: input.status,
+    responseStatus: input.responseStatus,
+    responseHeaders: input.responseHeaders,
+    responseBodyExcerpt: input.responseBodyExcerpt,
+    errorClass: input.errorClass,
+    errorMessage: input.errorMessage,
+    finishedAt: input.finishedAt,
+    durationMs: input.durationMs,
+    updatedAt: input.finishedAt,
+  } as const
 }
 
 /** The only package-owned Postgres mutation boundary for webhook subscriptions. */
@@ -191,6 +285,8 @@ function pendingAttemptValues(input: EnqueueWebhookAttemptInput) {
     requestHeaders: input.requestHeaders,
     requestBodyHash: input.requestBodyHash,
     requestBodyExcerpt: input.requestBodyExcerpt,
+    requestPayload: input.requestPayload as Record<string, unknown>,
+    deliveryContract: input.deliveryContract as unknown as Record<string, unknown>,
     attemptNumber: input.attemptNumber,
     parentDeliveryId: input.parentDeliveryId,
     idempotencyKey: input.idempotencyKey,

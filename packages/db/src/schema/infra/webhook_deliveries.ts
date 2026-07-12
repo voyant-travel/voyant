@@ -20,8 +20,8 @@ import { typeId, typeIdSchema } from "../../lib/index.js"
  * Per docs/architecture/channel-push-architecture.md §11.
  *
  * IMPORTANT: callers MUST NOT INSERT directly. Use the
- * `prepareOutboundEnvelope` helper (in `@voyant-travel/voyant-distribution` or
- * a future shared infra package) — it enforces auth-header redaction,
+ * package-owned delivery helpers in `@voyant-travel/webhook-delivery` or the
+ * Distribution channel-push envelope — they enforce auth-header redaction,
  * PII redaction, and excerpt-bounding. Direct inserts are a lint
  * violation per §11.3.
  */
@@ -57,6 +57,10 @@ export const infraWebhookDeliveriesTable = pgTable(
     requestBodyHash: text("request_body_hash"),
     /** First N chars (bounded to 4 KB) for debugging. */
     requestBodyExcerpt: text("request_body_excerpt"),
+    /** Complete schema-projected envelope required for restart-safe delivery. */
+    requestPayload: jsonb("request_payload").$type<Record<string, unknown>>(),
+    /** Selected event contract snapshot used for headers, audit, and replay checks. */
+    deliveryContract: jsonb("delivery_contract").$type<Record<string, unknown>>(),
 
     // ── Response ──────────────────────────────────────────────────────
     responseStatus: integer("response_status"),
@@ -73,7 +77,7 @@ export const infraWebhookDeliveriesTable = pgTable(
     // ── Lifecycle ────────────────────────────────────────────────────
     /** "pending" | "in_flight" | "succeeded" | "failed" | "abandoned" */
     status: text("status").notNull(),
-    /** When set, a future scheduler picks the row up at this time; v1 dispatches inline. */
+    /** Package-owned workers claim rows when this timestamp is due. */
     scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
     startedAt: timestamp("started_at", { withTimezone: true }),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
@@ -88,7 +92,7 @@ export const infraWebhookDeliveriesTable = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    // Forward-compatible scheduler index (v1 doesn't run a worker yet).
+    // Claim-driven delivery worker index.
     index("idx_webhook_deliveries_pending").on(table.status, table.scheduledFor),
     // Module-scoped logs for the operator dashboard.
     index("idx_webhook_deliveries_module").on(table.sourceModule, table.createdAt),
@@ -141,6 +145,8 @@ export const infraWebhookDeliverySelectSchema = z.object({
   requestHeaders: z.record(z.string(), z.string()).nullable(),
   requestBodyHash: z.string().nullable(),
   requestBodyExcerpt: z.string().nullable(),
+  requestPayload: z.record(z.string(), z.unknown()).nullable(),
+  deliveryContract: z.record(z.string(), z.unknown()).nullable(),
   responseStatus: z.number().int().nullable(),
   responseHeaders: z.record(z.string(), z.string()).nullable(),
   responseBodyExcerpt: z.string().nullable(),

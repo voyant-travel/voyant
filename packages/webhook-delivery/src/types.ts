@@ -1,30 +1,15 @@
 import type { EventEnvelope } from "@voyant-travel/core"
 import type { InfraWebhookDelivery } from "@voyant-travel/db/schema/infra"
 
+import type { ExternalWebhookEventContract } from "./contracts.js"
+
 export interface WebhookSubscription {
   id: string
   url: string
   secret: string
   headers: Record<string, string> | null
   maxRetries: number
-}
-
-export interface WebhookVisibilityPolicyInput {
-  event: EventEnvelope
-  eventId: string
-  category: string | null
-  source: string | null
-  subscription: Readonly<Omit<WebhookSubscription, "secret">>
-}
-
-export type WebhookVisibilityDecision =
-  | { allowed: true; payload?: unknown }
-  | { allowed: false; reason: string }
-
-export interface WebhookVisibilityPolicy {
-  authorize(
-    input: WebhookVisibilityPolicyInput,
-  ): WebhookVisibilityDecision | Promise<WebhookVisibilityDecision>
+  active: boolean
 }
 
 export interface EnqueueWebhookAttemptInput {
@@ -38,6 +23,8 @@ export interface EnqueueWebhookAttemptInput {
   requestHeaders: Record<string, string>
   requestBodyHash: string
   requestBodyExcerpt: string | null
+  requestPayload: EventEnvelope
+  deliveryContract: ExternalWebhookEventContract
   attemptNumber: number
   parentDeliveryId: string | null
   idempotencyKey: string
@@ -63,34 +50,42 @@ export interface EnqueuedWebhookAttempt {
 
 export interface WebhookDeliveryStore {
   listActiveSubscriptions(eventName: string): Promise<WebhookSubscription[]>
+  getSubscription(id: string): Promise<WebhookSubscription | null>
   enqueueAttempt(input: EnqueueWebhookAttemptInput): Promise<EnqueuedWebhookAttempt>
+  listReadyAttemptIds(now: Date, staleBefore: Date, limit: number): Promise<string[]>
   claimAttempt(id: string, now: Date, staleBefore: Date): Promise<InfraWebhookDelivery | null>
   completeAttempt(input: CompleteWebhookAttemptInput): Promise<InfraWebhookDelivery>
+  completeAndEnqueueRetry(
+    completion: CompleteWebhookAttemptInput,
+    retry: EnqueueWebhookAttemptInput,
+  ): Promise<{ completed: InfraWebhookDelivery; retry: InfraWebhookDelivery }>
   recordSubscriptionOutcome(subscriptionId: string, succeeded: boolean, at: Date): Promise<void>
+}
+
+export type WebhookEnqueueOutcome = {
+  status: "pending" | "already_pending" | "already_completed"
+  subscriptionId: string
+  delivery: InfraWebhookDelivery
 }
 
 export type WebhookDeliveryOutcome =
   | {
-      status: "filtered"
-      subscriptionId: string
-      reason: string
-    }
-  | {
-      status: "succeeded" | "dead_lettered" | "already_completed" | "already_active"
-      subscriptionId: string
+      status: "succeeded" | "dead_lettered" | "retry_scheduled"
+      subscriptionId: string | null
       delivery: InfraWebhookDelivery
-      attempts: number
+      nextAttempt?: InfraWebhookDelivery
     }
+  | { status: "idle" }
 
 export interface WebhookDeliveryAuditEvent {
-  eventId: string
+  eventId: string | null
   eventName: string
   contractId?: string
   contractVersion?: string
-  subscriptionId: string
-  outcome: WebhookDeliveryOutcome["status"]
-  deliveryId?: string
-  attemptNumber?: number
+  subscriptionId: string | null
+  outcome: Exclude<WebhookDeliveryOutcome["status"], "idle">
+  deliveryId: string
+  attemptNumber: number
   reason?: string
 }
 
@@ -101,16 +96,19 @@ export interface WebhookRetryOptions {
   claimTimeoutMs?: number
 }
 
-export interface CreateWebhookDeliveryEngineOptions {
+export interface CreateWebhookDeliveryWorkerOptions {
   store: WebhookDeliveryStore
-  visibilityPolicy: WebhookVisibilityPolicy
   fetch?: typeof globalThis.fetch
   now?: () => Date
-  sleep?: (milliseconds: number) => Promise<void>
   retry?: WebhookRetryOptions
   onAudit?: (event: WebhookDeliveryAuditEvent) => void | Promise<void>
 }
 
-export interface WebhookDeliveryEngine {
-  enqueue(event: EventEnvelope, _bindings?: unknown): Promise<WebhookDeliveryOutcome[]>
+export interface WebhookDeliveryWorker {
+  runNext(): Promise<WebhookDeliveryOutcome>
+  drain(options?: { limit?: number }): Promise<WebhookDeliveryOutcome[]>
+}
+
+export interface SelectedExternalWebhookQueue {
+  enqueue(event: EventEnvelope): Promise<WebhookEnqueueOutcome[]>
 }

@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs"
 import { readdir, readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -11,9 +10,13 @@ const [
   contracts,
   subscriptions,
   postgres,
-  selectedEngine,
-  engine,
-  distribution,
+  selectedQueue,
+  worker,
+  distributionQueue,
+  distributionWorker,
+  deliverySchema,
+  deliveryMigration,
+  frameworkDeliveryMigration,
   composition,
   deploymentGraph,
   catalog,
@@ -23,9 +26,13 @@ const [
   read("packages/webhook-delivery/src/contracts.ts"),
   read("packages/webhook-delivery/src/subscriptions.ts"),
   read("packages/webhook-delivery/src/postgres-store.ts"),
-  read("packages/webhook-delivery/src/selected-engine.ts"),
-  read("packages/webhook-delivery/src/engine.ts"),
+  read("packages/webhook-delivery/src/selected-queue.ts"),
+  read("packages/webhook-delivery/src/worker.ts"),
   read("packages/distribution/src/outbound-webhooks.ts"),
+  read("packages/distribution/src/webhook-worker.ts"),
+  read("packages/db/src/schema/infra/webhook_deliveries.ts"),
+  read("packages/db/migrations/0003_webhook_delivery_payload.sql"),
+  read("packages/framework-migrations/migrations/0009_framework_baseline.sql"),
   read("packages/framework/src/runtime-composition.ts"),
   read("packages/framework/src/deployment-graph.ts"),
   read("packages/catalog/src/voyant.ts"),
@@ -60,12 +67,18 @@ requireSource(
 )
 failures.push(
   ...inspectExternalWebhookDeliveryConvergence({
-    distribution,
-    selectedEngine,
-    engine,
-    queueAdapterExists: existsSync(path.join(repoRoot, "packages/webhook-delivery/src/queue.ts")),
+    distributionQueue,
+    distributionWorker,
+    selectedQueue,
+    store: postgres,
+    worker,
+    schema: deliverySchema,
+    migration: deliveryMigration,
   }),
 )
+if (deliveryMigration.trim() !== frameworkDeliveryMigration.trim()) {
+  failures.push("package and framework webhook payload migrations must remain identical")
+}
 requireSource(
   composition,
   /graphEventPayloadSchema: declaration\.payloadSchema/,

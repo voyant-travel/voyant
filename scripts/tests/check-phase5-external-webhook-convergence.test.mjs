@@ -4,49 +4,63 @@ import { describe, it } from "node:test"
 import { inspectExternalWebhookDeliveryConvergence } from "../lib/phase5-external-webhook-convergence.mjs"
 
 const valid = {
-  distribution: `
-    import { createSelectedExternalWebhookDeliveryEngine } from "@voyant-travel/webhook-delivery"
-    import { createPostgresWebhookDeliveryStore } from "@voyant-travel/webhook-delivery/postgres"
-    const engine = createSelectedExternalWebhookDeliveryEngine({
-      store: createPostgresWebhookDeliveryStore(db),
-    })
-  `,
-  selectedEngine: `
-    const visibilityPolicy = { authorize: ({ event }) => prepareExternalWebhookEvent(event, contract) }
-    return createWebhookDeliveryEngine({ ...options, visibilityPolicy })
-  `,
-  engine: "signWebhookPayload retryDelay( dead_lettered onAudit",
-  queueAdapterExists: false,
+  distributionQueue: "createSelectedExternalWebhookQueue({ store })",
+  distributionWorker:
+    "createWebhookDeliveryWorker({ store: createPostgresWebhookDeliveryStore(db) })",
+  selectedQueue: "store.enqueueAttempt({ requestPayload: event, deliveryContract: contract })",
+  store: "requestPayload: input.requestPayload deliveryContract: input.deliveryContract",
+  worker:
+    "listReadyAttemptIds claimAttempt( hydrateAttempt( signWebhookPayload retryDelay( completeAndEnqueueRetry dead_lettered onAudit",
+  schema: "requestPayload: jsonb requestBodyHash deliveryContract: jsonb",
+  migration:
+    'ADD COLUMN IF NOT EXISTS "request_payload" jsonb ADD COLUMN IF NOT EXISTS "delivery_contract" jsonb',
 }
 
 describe("external webhook delivery convergence authority", () => {
-  it("accepts one package-owned execution engine with a thin Distribution adapter", () => {
+  it("accepts durable enqueue plus one package-owned execution worker", () => {
     assert.deepEqual(inspectExternalWebhookDeliveryConvergence(valid), [])
   })
 
-  it("rejects duplicate execution semantics in Distribution", () => {
+  it("rejects inline HTTP and retry behavior from enqueue paths", () => {
     const failures = inspectExternalWebhookDeliveryConvergence({
       ...valid,
-      distribution: `${valid.distribution}\nfetch(target)\nretryDelay(2)\ndead_lettered`,
+      distributionQueue: `${valid.distributionQueue}\nfetch(target)\nretryDelay(2)`,
     })
     assert.ok(failures.some((failure) => failure.includes("HTTP execution")))
     assert.ok(failures.some((failure) => failure.includes("retry/backoff")))
-    assert.ok(failures.some((failure) => failure.includes("dead-letter")))
   })
 
-  it("rejects a second pending-only queue adapter", () => {
+  it("rejects payload-less pending attempts", () => {
     const failures = inspectExternalWebhookDeliveryConvergence({
       ...valid,
-      queueAdapterExists: true,
+      selectedQueue: "store.enqueueAttempt({ requestBodyHash: hash })",
     })
-    assert.ok(failures.some((failure) => failure.includes("must stay deleted")))
+    assert.ok(failures.some((failure) => failure.includes("requestPayload")))
+    assert.ok(failures.some((failure) => failure.includes("deliveryContract")))
+
+    const droppedByStore = inspectExternalWebhookDeliveryConvergence({
+      ...valid,
+      store: "requestBodyHash: input.requestBodyHash",
+    })
+    assert.ok(droppedByStore.some((failure) => failure.includes("Postgres pending rows")))
   })
 
-  it("rejects a selected engine that bypasses canonical execution", () => {
+  it("rejects a worker without restart-safe claim and hydration", () => {
     const failures = inspectExternalWebhookDeliveryConvergence({
       ...valid,
-      selectedEngine: "prepareExternalWebhookEvent(event, contract)",
+      worker: "signWebhookPayload retryDelay( completeAndEnqueueRetry dead_lettered onAudit",
     })
-    assert.ok(failures.some((failure) => failure.includes("canonical engine")))
+    assert.ok(failures.some((failure) => failure.includes("listReadyAttemptIds")))
+    assert.ok(failures.some((failure) => failure.includes("hydrateAttempt")))
+  })
+
+  it("rejects a schema or migration that drops durable payload state", () => {
+    const failures = inspectExternalWebhookDeliveryConvergence({
+      ...valid,
+      schema: "requestBodyHash: text",
+      migration: "ALTER TABLE webhook_deliveries",
+    })
+    assert.ok(failures.some((failure) => failure.includes("delivery schema")))
+    assert.ok(failures.some((failure) => failure.includes("delivery migration")))
   })
 })
