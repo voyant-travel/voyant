@@ -11,6 +11,10 @@ const pathOption = (name, fallback) => {
   return value
 }
 const distributionRoot = pathOption("--distribution-root", join(ROOT, "packages/distribution"))
+const distributionNodeRoot = pathOption(
+  "--distribution-node-root",
+  join(ROOT, "packages/distribution-node"),
+)
 const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
 const deploymentGraphCheckerPath = pathOption(
   "--deployment-graph-checker",
@@ -28,6 +32,10 @@ function readRequired(path) {
 const manifest = readRequired(join(distributionRoot, "src/voyant.ts"))
 const extension = readRequired(join(distributionRoot, "src/channel-push/extension.ts"))
 const runtimePort = readRequired(join(distributionRoot, "src/channel-push/runtime-port.ts"))
+const domainPackage = readRequired(join(distributionRoot, "package.json"))
+const adapterPackage = readRequired(join(distributionNodeRoot, "package.json"))
+const adapterContributor = readRequired(join(distributionNodeRoot, "src/runtime-contributor.ts"))
+const standardRuntime = readRequired(join(distributionNodeRoot, "src/standard-node-runtime.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const provider = readRequired(join(operatorRoot, "src/api/runtime/channel-push-runtime.ts"))
 const workflowServices = readRequired(
@@ -40,6 +48,29 @@ if (
   !manifest.includes('export: "createChannelPushVoyantRuntime"')
 ) {
   violations.push("Distribution manifest must declare the channel-push runtime port and factory")
+}
+if (
+  domainPackage.includes('"./runtime-contributor"') ||
+  domainPackage.includes('"export": "createDistributionRuntimePortContribution"')
+) {
+  violations.push("Distribution domain package must not own the standard Node contributor")
+}
+if (
+  !adapterPackage.includes('"name": "@voyant-travel/distribution-node"') ||
+  !adapterPackage.includes('"export": "createDistributionNodeRuntimePortContribution"') ||
+  !adapterContributor.includes("configureDistributionStandardNodeRuntime(host.primitives)")
+) {
+  violations.push("Distribution Node adapter must own generated runtime contribution")
+}
+for (const required of [
+  "getBookingEngineRegistryFromContext",
+  "createChannelPushWorkflowRuntimeEntries",
+  "primitives.database.resolve",
+  "primitives.database.transaction",
+]) {
+  if (!standardRuntime.includes(required)) {
+    violations.push(`Distribution Node runtime must contain ${JSON.stringify(required)}`)
+  }
 }
 if (
   !extension.includes("defineGraphRuntimeFactory") ||
@@ -69,27 +100,20 @@ if (
   violations.push("Operator must not restore the channel-push package-id compatibility binding")
 }
 if (
-  !provider.includes('import type { ChannelPushRuntime } from "@voyant-travel/distribution"') ||
-  !provider.includes("getBookingEngineRegistryFromContext") ||
-  !provider.includes("registerDistributionWorkflowService")
+  !provider.includes('from "@voyant-travel/distribution-node/standard-node-runtime"') ||
+  provider.includes("getBookingEngineRegistryFromContext") ||
+  provider.includes("registerDistributionWorkflowService")
 ) {
-  violations.push("Operator must provide only the typed Node-host channel-push dependencies")
+  violations.push("Operator channel-push compatibility entrypoint must only forward the adapter")
 }
 if (
-  !workflowServices.includes("createChannelPushWorkflowRuntimeEntries") ||
-  !workflowServices.includes("export async function registerDistributionWorkflowService")
+  workflowServices.includes("createChannelPushWorkflowRuntimeEntries") ||
+  workflowServices.includes("registerDistributionWorkflowService")
 ) {
-  violations.push("Operator must preserve the lazy DB workflow-service adapter")
+  violations.push("Operator workflow services must not compose Distribution channel-push")
 }
 if (workflowServices.includes("OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution")) {
   violations.push("Operator must not restore central Distribution workflow selection")
-}
-if (
-  !/import\s*\{[^}]*\boperatorBindings\b[^}]*\}\s*from\s*["']\.\/operator-runtime-adapter\.js["']/.test(
-    workflowServices,
-  )
-) {
-  violations.push("Distribution workflow bootstrap must import its binding adapter")
 }
 const compatibilityRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")
 if (existsSync(compatibilityRoutePath)) {
@@ -116,5 +140,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-distribution-channel-push-runtime-authority: OK (package factory authority; Operator typed-port provider only)",
+  "check-distribution-channel-push-runtime-authority: OK (BOM-selected Node adapter; Operator forwarding-only)",
 )

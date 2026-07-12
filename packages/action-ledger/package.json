@@ -16,7 +16,6 @@
     "./timeline": "./src/timeline.ts",
     "./request-context": "./src/request-context.ts",
     "./routes": "./src/routes.ts",
-    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/action-ledger.json"
   },
@@ -110,11 +109,6 @@
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
       },
-      "./runtime-contributor": {
-        "types": "./dist/runtime-contributor.d.ts",
-        "import": "./dist/runtime-contributor.js",
-        "default": "./dist/runtime-contributor.js"
-      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
@@ -132,10 +126,6 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
-    "runtime": {
-      "entry": "./runtime-contributor",
-      "export": "createActionLedgerRuntimePortContribution"
-    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

@@ -1,0 +1,78 @@
+{
+  "name": "@voyant-travel/distribution-node",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/runtime-contributor.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./standard-node-runtime": "./src/standard-node-runtime.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./standard-node-runtime": {
+        "types": "./dist/standard-node-runtime.d.ts",
+        "import": "./dist/standard-node-runtime.js",
+        "default": "./dist/standard-node-runtime.js"
+      }
+    },
+    "main": "./dist/runtime-contributor.js",
+    "types": "./dist/runtime-contributor.d.ts"
+  },
+  "dependencies": {
+    "@voyant-travel/catalog-node": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/distribution": "workspace:^"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/distribution-node"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "library",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createDistributionNodeRuntimePortContribution"
+    },
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    }
+  }
+}

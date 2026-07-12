@@ -9,18 +9,18 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
-  "action-ledger": "host.capabilities.loadActionLedgerHealthRuntime()",
+  "action-ledger-node": "createActionLedgerStandardNodeRuntime",
   "bookings-node": "createBookingsStandardNodeRuntime",
   "catalog-node": "createCatalogStandardNodeRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
-  distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
+  "distribution-node": "configureDistributionStandardNodeRuntime",
   "finance-node": "createFinanceStandardNodeRuntime",
   "flights-node": "createFlightsStandardNodeRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
   "legal-node": "createLegalStandardNodeRuntime",
   "notifications-node": "createNotificationsStandardNodeRuntime",
   "quotes-node": "createQuotesStandardNodeRuntime",
-  "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",
+  "workflow-runs": "workflowRunnerRegistryService",
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([
@@ -74,5 +74,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-runtime-binding-final: OK (6 package-owned standard Node families; ${Object.keys(contributorRequirements).length - 6} legacy capability families)`,
+  `check-operator-runtime-binding-final: OK (10 package-owned runtime families; ${Object.keys(contributorRequirements).length - 10} legacy capability families)`,
 )

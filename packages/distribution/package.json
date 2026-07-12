@@ -13,7 +13,6 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
-    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/distribution.json",
@@ -105,11 +104,6 @@
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
       },
-      "./runtime-contributor": {
-        "types": "./dist/runtime-contributor.d.ts",
-        "import": "./dist/runtime-contributor.js",
-        "default": "./dist/runtime-contributor.js"
-      },
       "./payment-policy-runtime": {
         "types": "./dist/payment-policy-runtime.d.ts",
         "import": "./dist/payment-policy-runtime.js",
@@ -136,10 +130,6 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
-    "runtime": {
-      "entry": "./runtime-contributor",
-      "export": "createDistributionRuntimePortContribution"
-    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

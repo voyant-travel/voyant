@@ -1,14 +1,9 @@
-import {
-  type WorkflowRunnerRegistryRuntime,
-  workflowRunnerRegistryRuntimePort,
-} from "./runtime-port.js"
+import { workflowRunnerRegistryService } from "./runner.js"
+import { workflowRunnerRegistryRuntimePort } from "./runtime-port.js"
 
-/** Package-owned optional registration for the process-local workflow runner registry. */
-export function createWorkflowRunsRuntimePortContribution(host: {
-  capabilities: {
-    resolveWorkflowRunnerRegistry(): WorkflowRunnerRegistryRuntime | undefined
-  }
-}): Readonly<Record<string, unknown>> {
-  const registry = host.capabilities.resolveWorkflowRunnerRegistry()
-  return registry ? { [workflowRunnerRegistryRuntimePort.id]: registry } : {}
+/** Package-owned registration for the process-local workflow runner registry service. */
+export function createWorkflowRunsRuntimePortContribution(
+  _host: unknown,
+): Readonly<Record<string, unknown>> {
+  return { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistryService }
 }

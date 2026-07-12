@@ -40,6 +40,7 @@ export {
   type WorkflowRunner,
   WorkflowRunnerRegistry,
   type WorkflowTriggerContext,
+  workflowRunnerRegistryService,
 } from "./runner.js"
 export {
   type WorkflowRunnerRegistryRuntime,

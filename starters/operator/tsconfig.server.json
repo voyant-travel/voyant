@@ -50,6 +50,15 @@
       ],
       "@voyant-travel/accommodations/voyant": ["../../packages/accommodations/dist/voyant.d.ts"],
       "@voyant-travel/action-ledger": ["../../packages/action-ledger/dist/index.d.ts"],
+      "@voyant-travel/action-ledger-node": [
+        "../../packages/action-ledger-node/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/action-ledger-node/runtime-contributor": [
+        "../../packages/action-ledger-node/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/action-ledger-node/standard-node-runtime": [
+        "../../packages/action-ledger-node/dist/standard-node-runtime.d.ts"
+      ],
       "@voyant-travel/action-ledger-react": ["../../packages/action-ledger-react/dist/index.d.ts"],
       "@voyant-travel/action-ledger-react/admin": [
         "../../packages/action-ledger-react/dist/admin/index.d.ts"
@@ -856,6 +865,15 @@
       "@voyant-travel/db/voyant": ["../../packages/db/dist/voyant.d.ts"],
       "@voyant-travel/db/write-intents": ["../../packages/db/dist/write-intents.d.ts"],
       "@voyant-travel/distribution": ["../../packages/distribution/dist/index.d.ts"],
+      "@voyant-travel/distribution-node": [
+        "../../packages/distribution-node/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/distribution-node/runtime-contributor": [
+        "../../packages/distribution-node/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/distribution-node/standard-node-runtime": [
+        "../../packages/distribution-node/dist/standard-node-runtime.d.ts"
+      ],
       "@voyant-travel/distribution-react": ["../../packages/distribution-react/dist/index.d.ts"],
       "@voyant-travel/distribution-react/admin": [
         "../../packages/distribution-react/dist/admin/index.d.ts"

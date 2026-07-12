@@ -8,8 +8,8 @@ const packageBootstrapAssertions = [
   ["packages/bookings/src/index.ts", "provider.registerWorkflowService?.(context)"],
   ["packages/inventory/src/graph-runtime.ts", "bootstrap: runtime.bootstrap"],
   [
-    "packages/distribution/src/channel-push/extension.ts",
-    "await runtime.registerWorkflowService(context)",
+    "packages/distribution-node/src/standard-node-runtime.ts",
+    "createChannelPushWorkflowRuntimeEntries",
   ],
   [
     "packages/notifications/src/index.ts",
@@ -22,7 +22,12 @@ if (lineCount > 184) {
   throw new Error(`${workflowServicesPath} has ${lineCount} lines; expected at most 184.`)
 }
 
-for (const forbidden of ["createContainer", "OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS"]) {
+for (const forbidden of [
+  "createChannelPushWorkflowRuntimeEntries",
+  "createContainer",
+  "OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS",
+  "registerDistributionWorkflowService",
+]) {
   if (workflowServices.includes(forbidden)) {
     throw new Error(`${workflowServicesPath} must not contain ${JSON.stringify(forbidden)}.`)
   }

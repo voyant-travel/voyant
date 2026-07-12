@@ -25,7 +25,6 @@ import {
   EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
   resolveWorkflowEnvironment,
 } from "@voyant-travel/db/outbox-workflow"
-import { createChannelPushWorkflowRuntimeEntries } from "@voyant-travel/distribution/channel-push-workflows"
 import {
   createProductsGeneratePdfWorkflowRuntime,
   PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
@@ -61,24 +60,6 @@ export function registerInventoryWorkflowService(
       resolvePrinter: () => createProductBrochurePrinter(env),
     }),
   )
-}
-
-/** Deployment adapter consumed by the Distribution package bootstrap. */
-export async function registerDistributionWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): Promise<void> {
-  const env = workflowEnvironment(bindings)
-  const appBindings = operatorBindings(bindings)
-  const { ensureBookingEngineRegistry } = await import(
-    "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
-  )
-  const entries = await createChannelPushWorkflowRuntimeEntries({
-    resolveDb: () => createWorkflowDb(env),
-    withDb: (operation) => withDbFromEnv(appBindings, operation),
-    resolveRegistry: () => ensureBookingEngineRegistry(env),
-  })
-  for (const [key, runtime] of entries) container.register(key, runtime)
 }
 
 /** Deployment adapter consumed by the Notifications package bootstrap. */

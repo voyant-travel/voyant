@@ -11,18 +11,18 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-operator-runtime-binding-final.mjs")
 const contributors = {
-  "action-ledger": "host.capabilities.loadActionLedgerHealthRuntime()",
+  "action-ledger-node": "createActionLedgerStandardNodeRuntime",
   "bookings-node": "createBookingsStandardNodeRuntime",
   "catalog-node": "createCatalogStandardNodeRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
-  distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
+  "distribution-node": "configureDistributionStandardNodeRuntime",
   "finance-node": "createFinanceStandardNodeRuntime",
   "flights-node": "createFlightsStandardNodeRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
   "legal-node": "createLegalStandardNodeRuntime",
   "notifications-node": "createNotificationsStandardNodeRuntime",
   "quotes-node": "createQuotesStandardNodeRuntime",
-  "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",
+  "workflow-runs": "workflowRunnerRegistryService",
 }
 
 async function fixture(generatedArguments) {
@@ -56,7 +56,7 @@ it("accepts package-owned defaults, generic primitives, and the irreducible Smar
     "    capabilities,\n    primitives,\n    host: operatorSmartbillRuntimeHost,",
   )
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /6 package-owned standard Node families/)
+  assert.match(result.stdout, /10 package-owned runtime families/)
 })
 
 it("rejects a package-specific generated runtime argument", async () => {

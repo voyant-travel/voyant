@@ -23,12 +23,18 @@ async function createFixture(overrides = {}) {
       "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerWorkflowService(context) })\n",
     "distribution/src/channel-push/runtime-port.ts":
       'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
+    "distribution/package.json": '{"name":"@voyant-travel/distribution"}\n',
+    "distribution-node/package.json":
+      '{\n  "name": "@voyant-travel/distribution-node",\n  "voyant": { "runtime": { "export": "createDistributionNodeRuntimePortContribution" } }\n}\n',
+    "distribution-node/src/runtime-contributor.ts":
+      "configureDistributionStandardNodeRuntime(host.primitives)\n",
+    "distribution-node/src/standard-node-runtime.ts":
+      "getBookingEngineRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
     "operator/src/api/runtime/deployment-resources.ts":
       "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
     "operator/src/api/runtime/channel-push-runtime.ts":
-      'import type { ChannelPushRuntime } from "@voyant-travel/distribution"\ngetBookingEngineRegistryFromContext\nregisterDistributionWorkflowService\n',
-    "operator/src/api/runtime/operator-workflow-services.ts":
-      'import { operatorBindings } from "./operator-runtime-adapter.js"\ncreateChannelPushWorkflowRuntimeEntries\nexport async function registerDistributionWorkflowService() {}\n',
+      'export { distributionStandardNodeRuntime } from "@voyant-travel/distribution-node/standard-node-runtime"\n',
+    "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
     "scripts/check-deployment-graph.ts":
       'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
     ...overrides,
@@ -50,6 +56,8 @@ async function runChecker(root) {
       path.join(root, "distribution"),
       "--operator-root",
       path.join(root, "operator"),
+      "--distribution-node-root",
+      path.join(root, "distribution-node"),
       "--deployment-graph-checker",
       path.join(root, "scripts/check-deployment-graph.ts"),
     ],
@@ -58,7 +66,7 @@ async function runChecker(root) {
 }
 
 describe("check-distribution-channel-push-runtime-authority", () => {
-  it("accepts package factory authority with an Operator typed-port provider", async () => {
+  it("accepts a BOM-selected adapter with an Operator forwarder", async () => {
     const result = await runChecker(await createFixture())
 
     assert.match(result.stdout, /check-distribution-channel-push-runtime-authority: OK/)
@@ -94,14 +102,14 @@ describe("check-distribution-channel-push-runtime-authority", () => {
     })
   })
 
-  it("rejects a Distribution bootstrap with an unbound binding adapter reference", async () => {
+  it("rejects Distribution composition restored in Operator workflow services", async () => {
     const root = await createFixture({
       "operator/src/api/runtime/operator-workflow-services.ts":
-        "createChannelPushWorkflowRuntimeEntries\noperatorBindings(bindings)\nexport async function registerDistributionWorkflowService() {}\n",
+        "createChannelPushWorkflowRuntimeEntries\nexport async function registerDistributionWorkflowService() {}\n",
     })
 
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /must import its binding adapter/)
+      assert.match(error.stderr, /must not compose Distribution channel-push/)
       return true
     })
   })

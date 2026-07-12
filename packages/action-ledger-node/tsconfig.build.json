@@ -1,0 +1,9 @@
+{
+  "extends": ["./tsconfig.json", "../typescript-config/dep-paths.json"],
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false
+  }
+}

@@ -5,6 +5,7 @@
 export const FRAMEWORK_RUNTIME_PACKAGES = [
   "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
+  "@voyant-travel/action-ledger-node",
   "@voyant-travel/auth",
   "@voyant-travel/bookings",
   "@voyant-travel/bookings-node",
@@ -12,6 +13,7 @@ export const FRAMEWORK_RUNTIME_PACKAGES = [
   "@voyant-travel/catalog-node",
   "@voyant-travel/commerce",
   "@voyant-travel/distribution",
+  "@voyant-travel/distribution-node",
   "@voyant-travel/finance",
   "@voyant-travel/finance-node",
   "@voyant-travel/flights",
@@ -35,6 +37,7 @@ export const FRAMEWORK_RUNTIME_PACKAGES = [
 export const FRAMEWORK_STANDARD_PACKAGES = [
   "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
+  "@voyant-travel/action-ledger-node",
   "@voyant-travel/action-ledger-react",
   "@voyant-travel/auth",
   "@voyant-travel/availability",
@@ -52,6 +55,7 @@ export const FRAMEWORK_STANDARD_PACKAGES = [
   "@voyant-travel/cruises",
   "@voyant-travel/db",
   "@voyant-travel/distribution",
+  "@voyant-travel/distribution-node",
   "@voyant-travel/distribution-react",
   "@voyant-travel/finance",
   "@voyant-travel/finance-node",
