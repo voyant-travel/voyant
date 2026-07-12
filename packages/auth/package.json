@@ -28,6 +28,10 @@
       "types": "./src/backend.ts",
       "default": "./src/backend.ts"
     },
+    "./operator-node-runtime": {
+      "types": "./src/operator-node-runtime.ts",
+      "default": "./src/operator-node-runtime.ts"
+    },
     "./cloud-broker": {
       "types": "./src/cloud-broker.ts",
       "default": "./src/cloud-broker.ts"
@@ -81,6 +85,11 @@
         "types": "./dist/backend.d.ts",
         "import": "./dist/backend.js",
         "default": "./dist/backend.js"
+      },
+      "./operator-node-runtime": {
+        "types": "./dist/operator-node-runtime.d.ts",
+        "import": "./dist/operator-node-runtime.js",
+        "default": "./dist/operator-node-runtime.js"
       },
       "./cloud-broker": {
         "types": "./dist/cloud-broker.d.ts",
