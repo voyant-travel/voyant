@@ -11,27 +11,43 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-notifications-subscriber-authority.mjs")
 
+const manifest = `
+eventType: "booking.contract.generated"
+export: "notificationsBookingConfirmationAutoDispatchSubscriber"
+eventType: "booking.confirmed"
+export: "notificationsBookingConfirmedReminderSubscriber"
+eventType: "payment.completed"
+export: "notificationsPaymentCompletedReminderSubscriber"
+eventType: "booking.fully-paid"
+export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber"
+eventType: "booking.cancelled"
+export: "notificationsBookingCancelledReminderSubscriber"
+eventType: "booking.expired"
+export: "notificationsBookingExpiredReminderSubscriber"
+`
+
+const subscriberRuntime = `
+export const notificationsBookingConfirmationAutoDispatchSubscriber = factory()
+export const notificationsBookingConfirmedReminderSubscriber = factory()
+export const notificationsPaymentCompletedReminderSubscriber = factory()
+export const notificationsBookingFullyPaidDocumentLifecycleSubscriber = factory()
+export const notificationsBookingCancelledReminderSubscriber = factory()
+export const notificationsBookingExpiredReminderSubscriber = factory()
+eventBus.subscribe("booking.confirmed", handler)
+eventBus.subscribe("payment.completed", handler)
+eventBus.subscribe(BOOKING_FULLY_PAID_EVENT, handler)
+eventBus.emit(BOOKING_FULLY_PAID_EVENT, payload, { category: "domain", source: "subscriber" })
+runDocumentBundleLifecycle(runtime, bindings, eventBus, { trigger: "booking.confirmed" })
+runDocumentBundleLifecycle(runtime, bindings, eventBus, { trigger: BOOKING_FULLY_PAID_EVENT })
+`
+
 async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-notifications-authority-"))
   const files = {
-    "packages/notifications/src/voyant.ts": `
-runtimePorts: [requirePort(notificationsRuntimePort)]
-subscriber.booking-confirmation-auto-dispatch
-subscriber.reminder-booking-confirmed
-subscriber.reminder-payment-completed
-subscriber.reminder-booking-cancelled
-subscriber.reminder-booking-expired
-`,
-    "packages/notifications/src/index.ts": "export const selectedGraphOnly = true\n",
-    "packages/framework/src/operator-distribution.ts":
-      'resolve: "@voyant-travel/notifications/reminder-subscribers-extension"\n',
-    "starters/operator/src/api/runtime/deployment-resources.ts":
-      "const ports = { [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider() }\n",
-    "starters/operator/src/api/runtime/notifications-runtime.ts": `
-function createOperatorNotificationsRuntimeProvider() {
-  return { resolveProviders: providers, resolveDb: db, resolveReminderWorkflowRuntime: workflow }
-}
-`,
+    "packages/notifications/src/voyant.ts": manifest,
+    "packages/notifications/src/index.ts":
+      "const runtime = { documentBundleLifecycle: provider.documentBundleLifecycle }\n",
+    "packages/notifications/src/subscriber-runtime.ts": subscriberRuntime,
     ...overrides,
   }
   for (const [relativePath, source] of Object.entries(files)) {
@@ -45,26 +61,38 @@ function createOperatorNotificationsRuntimeProvider() {
 const runChecker = (root) => execFileAsync(process.execPath, [checker, "--root", root])
 
 describe("Notifications subscriber authority checker", () => {
-  it("accepts selected graph authority through the typed host port", async () => {
+  it("accepts package-owned lifecycle subscriber authority", async () => {
     const result = await runChecker(await createFixture())
-    assert.match(result.stdout, /Notifications subscriber authority: OK/)
+    assert.match(result.stdout, /0 hidden bootstrap subscriptions/)
+    assert.match(result.stdout, /0 duplicate lifecycle subscriptions/)
   })
 
-  it("rejects package-id Operator bindings", async () => {
+  it("rejects hidden module bootstrap subscriptions", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/runtime/deployment-resources.ts": `
-const ports = { [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider() }
-const bindings = { "@voyant-travel/notifications": configure }
+      "packages/notifications/src/index.ts": `
+const runtime = { documentBundleLifecycle: provider.documentBundleLifecycle }
+eventBus.subscribe("booking.confirmed", handler)
 `,
     })
-    await assert.rejects(runChecker(root), /must not bind Notifications by package id/)
+    await assert.rejects(runChecker(root), /must not hide eventBus subscriptions/)
   })
 
-  it("rejects compatibility subscriber registration in module bootstrap", async () => {
+  it("rejects an activated subscriber missing from the manifest", async () => {
     const root = await createFixture({
-      "packages/notifications/src/index.ts":
-        "createBookingConfirmationAutoDispatchSubscriberRuntime().register(context)\n",
+      "packages/notifications/src/voyant.ts": manifest.replace(
+        'export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber"',
+        "",
+      ),
     })
-    await assert.rejects(runChecker(root), /must not register selected-graph subscribers/)
+    await assert.rejects(runChecker(root), /must activate.*exactly once/)
+  })
+
+  it("rejects duplicate lifecycle subscriptions", async () => {
+    const root = await createFixture({
+      "packages/notifications/src/subscriber-runtime.ts": `${subscriberRuntime}
+eventBus.subscribe("payment.completed", duplicateHandler)
+`,
+    })
+    await assert.rejects(runChecker(root), /payment.completed exactly once \(found 2\)/)
   })
 })

@@ -242,6 +242,15 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       },
     },
     {
+      id: "@voyant-travel/notifications#subscriber.document-lifecycle-booking-fully-paid",
+      eventType: "booking.fully-paid",
+      source: "@voyant-travel/notifications/subscriber-runtime",
+      runtime: {
+        entry: "./subscriber-runtime",
+        export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber",
+      },
+    },
+    {
       id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",
       eventType: "booking.cancelled",
       source: "@voyant-travel/notifications/subscriber-runtime",
