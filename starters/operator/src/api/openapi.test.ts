@@ -93,7 +93,22 @@ describe("operator openapi spec", () => {
   it.each([
     ["identity", "@voyant-travel/identity#api.admin", "@voyant-travel/identity"],
     ["notifications", "@voyant-travel/notifications#api.admin", "@voyant-travel/notifications"],
-  ])("emits %s from its exact selected graph API authority", (document, apiId, packageName) => {
+    [
+      "finance",
+      ["@voyant-travel/finance#api.admin", "@voyant-travel/finance#api.public"],
+      "@voyant-travel/finance",
+    ],
+    [
+      "legal",
+      ["@voyant-travel/legal#api.admin", "@voyant-travel/legal#api.public"],
+      "@voyant-travel/legal",
+    ],
+    [
+      "trips",
+      ["@voyant-travel/trips#api.admin", "@voyant-travel/trips#api.public"],
+      "@voyant-travel/trips",
+    ],
+  ])("emits %s from its exact selected graph API authority", (document, apiIds, packageName) => {
     const selectedDocument = docs.modules.get(document)
     const operations = Object.values(selectedDocument?.paths ?? {}).flatMap((pathItem) =>
       Object.values(pathItem ?? {}).filter(
@@ -104,7 +119,7 @@ describe("operator openapi spec", () => {
 
     expect(operations.length).toBeGreaterThan(0)
     expect(new Set(operations.map((operation) => operation["x-voyant-api-id"]))).toEqual(
-      new Set([apiId]),
+      new Set(Array.isArray(apiIds) ? apiIds : [apiIds]),
     )
     expect(
       operations.every(

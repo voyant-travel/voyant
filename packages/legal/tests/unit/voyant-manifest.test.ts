@@ -16,6 +16,7 @@ describe("legal deployment manifest", () => {
           id: "@voyant-travel/legal#api.admin",
           surface: "admin",
           mount: "legal",
+          openapi: { document: "legal" },
           transactional: true,
           runtime: {
             entry: "@voyant-travel/legal",
@@ -26,6 +27,7 @@ describe("legal deployment manifest", () => {
           id: "@voyant-travel/legal#api.public",
           surface: "public",
           mount: "legal",
+          openapi: { document: "legal" },
           anonymous: true,
           transactional: true,
           runtime: {

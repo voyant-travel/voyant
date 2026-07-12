@@ -23,6 +23,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#api.admin",
       surface: "admin",
       mount: "finance",
+      openapi: { document: "finance" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
@@ -33,6 +34,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#api.public",
       surface: "public",
       mount: "finance",
+      openapi: { document: "finance" },
       anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
       transactional: true,
       runtime: {

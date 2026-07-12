@@ -23,12 +23,14 @@ describe("trips deployment manifest", () => {
         {
           id: "@voyant-travel/trips#api.admin",
           surface: "admin",
+          openapi: { document: "trips" },
           transactional: true,
           runtime: { entry: "@voyant-travel/trips", export: "createTripsVoyantRuntime" },
         },
         {
           id: "@voyant-travel/trips#api.public",
           surface: "public",
+          openapi: { document: "trips" },
           transactional: true,
           runtime: { entry: "@voyant-travel/trips", export: "createTripsVoyantRuntime" },
         },

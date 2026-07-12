@@ -19,11 +19,13 @@ describe("finance deployment manifest", () => {
         {
           id: "@voyant-travel/finance#api.admin",
           surface: "admin",
+          openapi: { document: "finance" },
           runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
         },
         {
           id: "@voyant-travel/finance#api.public",
           surface: "public",
+          openapi: { document: "finance" },
           anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
           runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
         },
