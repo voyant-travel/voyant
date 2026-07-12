@@ -9,6 +9,11 @@ import { fileURLToPath } from "node:url"
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 
 test("operator release archive contains only the minimal authored project", () => {
+  assert.equal(
+    existsSync(join(repoRoot, "packages/cli")),
+    false,
+    "CLI implementation must remain in the separate voyant-travel/cli repository",
+  )
   const fixture = packageAndExtract()
   try {
     const files = listFiles(fixture.extractDir)

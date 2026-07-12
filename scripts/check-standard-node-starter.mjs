@@ -183,6 +183,12 @@ function inspectPackageJson(packageJsonPath) {
 }
 
 function inspectRepositoryAuthority(repoRoot) {
+  if (existsSync(join(repoRoot, "packages/cli"))) {
+    violations.push(
+      "packages/cli must not exist; CLI implementation belongs to the separate voyant-travel/cli repository",
+    )
+  }
+
   const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")
   const deploymentArtifactsPath = join(repoRoot, "packages/framework/src/deployment-artifacts.ts")
   if (existsSync(operatorRuntimePath) && existsSync(deploymentArtifactsPath)) {

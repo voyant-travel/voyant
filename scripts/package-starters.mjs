@@ -14,7 +14,6 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const cliPackageJsonPath = join(repoRoot, "packages", "cli", "package.json")
 const args = parseArgs(process.argv.slice(2))
 const version = resolveVersion(args.version)
 const outDir = resolve(repoRoot, args.outDir ?? ".release/starters")
@@ -207,22 +206,10 @@ function parseArgs(argv) {
   return result
 }
 
-function readVersion(pkgPath) {
-  const raw = readFileSync(pkgPath, "utf8")
-  const pkg = JSON.parse(raw)
-  return pkg.version
-}
-
 function resolveVersion(explicitVersion) {
-  if (explicitVersion) {
-    return explicitVersion
-  }
-
-  if (existsSync(cliPackageJsonPath)) {
-    return readVersion(cliPackageJsonPath)
-  }
+  if (explicitVersion) return explicitVersion
 
   throw new Error(
-    "Starter packaging no longer has an implicit repo-wide package version. Pass --version explicitly.",
+    "Starter packaging requires the separately released @voyant-travel/cli version. Pass --version explicitly.",
   )
 }
