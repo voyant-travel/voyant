@@ -70,6 +70,11 @@ describe("graph runtime composition", () => {
     expect(typeof provider.resolveOperatorDefaultPaymentPolicy).toBe("function")
     expect(typeof provider.createPaymentPolicyRuntime).toBe("function")
     expect(typeof provider.resolvePaymentStarters).toBe("function")
+    expect(typeof provider.resolvePrinter).toBe("function")
+    expect(typeof provider.personExists).toBe("function")
+    expect(typeof provider.resolveBankTransferInstructions).toBe("function")
+    expect(typeof provider.createStartCardPayment).toBe("function")
+    expect(typeof provider.ensureSourceRegistry).toBe("function")
     expect(provider.provider).toBe("inspection")
     expect(typeof provider.poller).toBe("function")
     expect(provider.primitives).toMatchObject({
