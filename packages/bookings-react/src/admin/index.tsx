@@ -13,7 +13,6 @@ import {
 // augmentation (`person.list`, `organization.list`, ...) into this program;
 // this package already peer-depends on `@voyant-travel/relationships-react/ui`.
 import { personDetailBookingsTabSlot } from "@voyant-travel/relationships-react/admin"
-import type { ComponentType } from "react"
 import * as React from "react"
 import { z } from "zod"
 // Lean statics only: the client module (fetcher), query-key types, and the
@@ -320,16 +319,6 @@ function PersonBookingsWidgetLoader(props: PersonBookingsWidgetProps) {
   )
 }
 
-function adminWidgetComponent<Props extends object>(
-  Widget: ComponentType<Props>,
-): ComponentType<Record<string, unknown>> {
-  return function AdminWidgetComponent(props: Record<string, unknown>) {
-    return <Widget {...(props as Props)} />
-  }
-}
-
-const PersonBookingsWidgetContribution = adminWidgetComponent(PersonBookingsWidgetLoader)
-
 /**
  * The bookings admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-ui/admin` convention).
@@ -486,11 +475,8 @@ export function createBookingsAdminExtension(
       {
         id: "bookings-person-bookings",
         slot: personDetailBookingsTabSlot,
-        // The widget registry is untyped (`Record<string, unknown>` props);
-        // the typed contract is `PersonDetailBookingsTabContext`, which
-        // crm-ui's person detail host passes verbatim to this slot's widgets.
-        component: PersonBookingsWidgetContribution,
-      } satisfies AdminWidgetContribution,
+        component: PersonBookingsWidgetLoader,
+      } satisfies AdminWidgetContribution<PersonBookingsWidgetProps>,
     ],
   })
 }
