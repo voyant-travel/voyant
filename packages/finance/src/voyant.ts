@@ -390,6 +390,7 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
       id: "@voyant-travel/finance#booking-schedule-extension.api.public",
       surface: "public",
       mount: "payment-policy",
+      openapi: { document: "bookings" },
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/finance",

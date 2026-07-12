@@ -418,6 +418,7 @@ const resolvePolicyResponseSchema = z.object({
 const resolvePolicyRoute = createRoute({
   method: "post",
   path: "/resolve",
+  "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.public",
   request: {
     body: {
       required: true,

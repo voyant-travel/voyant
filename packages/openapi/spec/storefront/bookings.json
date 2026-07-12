@@ -1151,7 +1151,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}": {
@@ -1805,7 +1806,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       },
       "patch": {
         "parameters": [
@@ -2610,7 +2612,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/state": {
@@ -2716,7 +2719,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       },
       "put": {
         "parameters": [
@@ -2856,7 +2860,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/reprice": {
@@ -3744,7 +3749,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/confirm": {
@@ -4434,7 +4440,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/bookings/sessions/{sessionId}/expire": {
@@ -5124,7 +5131,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/bookings/overview": {
@@ -5664,7 +5672,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/bookings/guest-lookup": {
@@ -6207,7 +6216,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/bookings#api.public"
       }
     },
     "/v1/public/payment-policy/resolve": {
@@ -6333,7 +6343,8 @@
           "bookings"
         ],
         "x-voyant-module": "bookings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.public"
       }
     }
   },
