@@ -329,9 +329,7 @@ function discoverInstalledPackageOpenApiRoots(resolvedGraph, resolvedGraphPath) 
 
 function graphProjectRoot(resolvedGraphPath) {
   const graphDirectory = path.dirname(resolvedGraphPath)
-  return path.basename(graphDirectory) === ".voyant"
-    ? path.dirname(graphDirectory)
-    : graphDirectory
+  return path.basename(graphDirectory) === ".voyant" ? path.dirname(graphDirectory) : graphDirectory
 }
 
 function uniqueDirectories(directories) {
