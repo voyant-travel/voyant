@@ -1,11 +1,10 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
-import { parseJsonBody } from "@voyant-travel/hono"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
-import { z } from "zod"
 
 // ---------- schemas ----------
 
@@ -48,16 +47,104 @@ export type NewBookingItemProductDetail = typeof bookingItemProductDetails.$infe
 
 // ---------- validation ----------
 
-const bookingProductDetailSchema = z.object({
-  productId: z.string().optional().nullable(),
-  optionId: z.string().optional().nullable(),
+const bookingProductDetailSchema = z
+  .object({
+    productId: z.string().optional().nullable(),
+    optionId: z.string().optional().nullable(),
+  })
+  .openapi("BookingProductDetailsInput")
+
+const bookingItemProductDetailSchema = z
+  .object({
+    productId: z.string().optional().nullable(),
+    optionId: z.string().optional().nullable(),
+    unitId: z.string().optional().nullable(),
+    supplierServiceId: z.string().optional().nullable(),
+  })
+  .openapi("BookingItemProductDetailsInput")
+
+const bookingExtensionApiId = "@voyant-travel/inventory#booking-extension.api"
+const bookingIdParamsSchema = z.object({ bookingId: z.string() })
+const bookingItemIdParamsSchema = bookingIdParamsSchema.extend({ itemId: z.string() })
+
+const getBookingProductDetailsRoute = createRoute({
+  method: "get",
+  path: "/{bookingId}/product-details",
+  summary: "Get product details attached to a booking",
+  "x-voyant-api-id": bookingExtensionApiId,
+  request: { params: bookingIdParamsSchema },
+  responses: {
+    200: { description: "Booking product details, or null when absent" },
+  },
 })
 
-const bookingItemProductDetailSchema = z.object({
-  productId: z.string().optional().nullable(),
-  optionId: z.string().optional().nullable(),
-  unitId: z.string().optional().nullable(),
-  supplierServiceId: z.string().optional().nullable(),
+const putBookingProductDetailsRoute = createRoute({
+  method: "put",
+  path: "/{bookingId}/product-details",
+  summary: "Create or replace product details on a booking",
+  "x-voyant-api-id": bookingExtensionApiId,
+  request: {
+    params: bookingIdParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: bookingProductDetailSchema } },
+    },
+  },
+  responses: {
+    200: { description: "Booking product details were stored" },
+  },
+})
+
+const deleteBookingProductDetailsRoute = createRoute({
+  method: "delete",
+  path: "/{bookingId}/product-details",
+  summary: "Remove product details from a booking",
+  "x-voyant-api-id": bookingExtensionApiId,
+  request: { params: bookingIdParamsSchema },
+  responses: {
+    200: { description: "Booking product details were removed" },
+    404: { description: "No product details exist for the booking" },
+  },
+})
+
+const getBookingItemProductDetailsRoute = createRoute({
+  method: "get",
+  path: "/{bookingId}/items/{itemId}/product-details",
+  summary: "Get product details attached to a booking item",
+  "x-voyant-api-id": bookingExtensionApiId,
+  request: { params: bookingItemIdParamsSchema },
+  responses: {
+    200: { description: "Booking item product details, or null when absent" },
+  },
+})
+
+const putBookingItemProductDetailsRoute = createRoute({
+  method: "put",
+  path: "/{bookingId}/items/{itemId}/product-details",
+  summary: "Create or replace product details on a booking item",
+  "x-voyant-api-id": bookingExtensionApiId,
+  request: {
+    params: bookingItemIdParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: bookingItemProductDetailSchema } },
+    },
+  },
+  responses: {
+    200: { description: "Booking item product details were stored" },
+  },
+})
+
+const deleteBookingItemProductDetailsRoute = createRoute({
+  method: "delete",
+  path: "/{bookingId}/items/{itemId}/product-details",
+  summary: "Remove product details from a booking item",
+  "x-voyant-api-id": bookingExtensionApiId,
+  request: { params: bookingItemIdParamsSchema },
+  responses: {
+    200: { description: "Booking item product details were removed" },
+    404: { description: "No product details exist for the booking item" },
+  },
 })
 
 // ---------- service ----------
@@ -159,9 +246,11 @@ type Env = {
   }
 }
 
-const bookingProductExtensionRoutes = new Hono<Env>()
+export const bookingProductExtensionRoutes = new OpenAPIHono<Env>({
+  defaultHook: openApiValidationHook,
+})
 
-  .get("/:bookingId/product-details", async (c) => {
+  .openapi(getBookingProductDetailsRoute, async (c) => {
     const row = await bookingProductExtensionService.getBookingDetails(
       c.get("db"),
       c.req.param("bookingId"),
@@ -172,8 +261,8 @@ const bookingProductExtensionRoutes = new Hono<Env>()
     return c.json({ data: row })
   })
 
-  .put("/:bookingId/product-details", async (c) => {
-    const data = await parseJsonBody(c, bookingProductDetailSchema)
+  .openapi(putBookingProductDetailsRoute, async (c) => {
+    const data = c.req.valid("json")
     const row = await bookingProductExtensionService.upsertBookingDetails(
       c.get("db"),
       c.req.param("bookingId"),
@@ -182,7 +271,7 @@ const bookingProductExtensionRoutes = new Hono<Env>()
     return c.json({ data: row })
   })
 
-  .delete("/:bookingId/product-details", async (c) => {
+  .openapi(deleteBookingProductDetailsRoute, async (c) => {
     const row = await bookingProductExtensionService.removeBookingDetails(
       c.get("db"),
       c.req.param("bookingId"),
@@ -193,7 +282,7 @@ const bookingProductExtensionRoutes = new Hono<Env>()
     return c.json({ success: true })
   })
 
-  .get("/:bookingId/items/:itemId/product-details", async (c) => {
+  .openapi(getBookingItemProductDetailsRoute, async (c) => {
     const row = await bookingProductExtensionService.getItemDetails(
       c.get("db"),
       c.req.param("itemId"),
@@ -204,8 +293,8 @@ const bookingProductExtensionRoutes = new Hono<Env>()
     return c.json({ data: row })
   })
 
-  .put("/:bookingId/items/:itemId/product-details", async (c) => {
-    const data = await parseJsonBody(c, bookingItemProductDetailSchema)
+  .openapi(putBookingItemProductDetailsRoute, async (c) => {
+    const data = c.req.valid("json")
     const row = await bookingProductExtensionService.upsertItemDetails(
       c.get("db"),
       c.req.param("itemId"),
@@ -214,7 +303,7 @@ const bookingProductExtensionRoutes = new Hono<Env>()
     return c.json({ data: row })
   })
 
-  .delete("/:bookingId/items/:itemId/product-details", async (c) => {
+  .openapi(deleteBookingItemProductDetailsRoute, async (c) => {
     const row = await bookingProductExtensionService.removeItemDetails(
       c.get("db"),
       c.req.param("itemId"),
