@@ -1,8 +1,5 @@
 import { defineLink } from "@voyant-travel/core"
-import {
-  organizationLinkable,
-  personLinkable,
-} from "@voyant-travel/relationships/linkables"
+import { organizationLinkable, personLinkable } from "@voyant-travel/relationships/linkables"
 
 import { inventoryProductCompatibilityLinkable as productLinkable } from "./linkables.js"
 

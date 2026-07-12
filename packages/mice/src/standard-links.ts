@@ -7,10 +7,7 @@ import {
   spaceBlockLinkable,
 } from "@voyant-travel/operations/places/linkables"
 import { quoteLinkable } from "@voyant-travel/quotes/linkables"
-import {
-  organizationLinkable,
-  personLinkable,
-} from "@voyant-travel/relationships/linkables"
+import { organizationLinkable, personLinkable } from "@voyant-travel/relationships/linkables"
 
 import {
   bidLinkable,

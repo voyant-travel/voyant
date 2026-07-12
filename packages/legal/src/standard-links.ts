@@ -3,10 +3,7 @@ import { defineLink } from "@voyant-travel/core"
 import { supplierLinkable } from "@voyant-travel/distribution/suppliers/linkables"
 import { invoiceLinkable } from "@voyant-travel/finance/linkables"
 import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyant-travel/inventory/linkables"
-import {
-  organizationLinkable,
-  personLinkable,
-} from "@voyant-travel/relationships/linkables"
+import { organizationLinkable, personLinkable } from "@voyant-travel/relationships/linkables"
 
 import { contractLinkable, policyAcceptanceLinkable, policyLinkable } from "./linkables.js"
 

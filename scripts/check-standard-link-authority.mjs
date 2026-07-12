@@ -33,7 +33,10 @@ if (existsSync(starterLinks)) {
 
 for (const [owner, links] of Object.entries(expected)) {
   const manifest = readFileSync(path.join(root, `packages/${owner}/src/voyant.ts`), "utf8")
-  const definitions = readFileSync(path.join(root, `packages/${owner}/src/standard-links.ts`), "utf8")
+  const definitions = readFileSync(
+    path.join(root, `packages/${owner}/src/standard-links.ts`),
+    "utf8",
+  )
   for (const link of links) {
     if (!manifest.includes(`#link.${link}"`)) {
       violations.push(`${owner} manifest does not own ${link}`)
