@@ -40,7 +40,7 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime composition", () => {
-  it("creates non-thenable generic stubs for package-owned runtime ports", () => {
+  it("creates conforming non-thenable stubs for package-owned runtime ports", () => {
     const graphRuntime = createVoyantGraphRuntime({
       graphHash: "sha256:runtime-port-stub",
       entries: {},
@@ -63,6 +63,7 @@ describe("graph runtime composition", () => {
 
     expect(provider.then).toBeUndefined()
     expect(typeof provider.resolveDeployment).toBe("function")
+    expect(provider.settings).toBeUndefined()
   })
 
   it("registers outbound subscribers from graph selections without a deployment event catalog", async () => {

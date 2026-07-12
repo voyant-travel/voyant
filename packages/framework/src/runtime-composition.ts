@@ -97,6 +97,8 @@ function runtimePortStub(id: string): unknown {
     resolveDelegatePersonById: unavailableAsync,
     resolveDb: unavailable,
     resolveProviders: () => [],
+    resolveDeployment: unavailable,
+    sendInvitationEmail: unavailableAsync,
     resolveReminderWorkflowRuntime: () => runtimeServiceStub(id),
     resolveDocumentDownloadUrl: unavailableAsync,
     resolveDocumentStorage: unavailable,
@@ -118,12 +120,7 @@ function runtimePortStub(id: string): unknown {
     signContract: unavailableAsync,
     generate: unavailableAsync,
   }
-  return new Proxy(stub, {
-    get(target, property, receiver) {
-      if (property === "then") return undefined
-      return Reflect.has(target, property) ? Reflect.get(target, property, receiver) : unavailable
-    },
-  })
+  return stub
 }
 
 function runtimeServiceStub(id: string): Record<string, (...args: unknown[]) => Promise<never>> {
