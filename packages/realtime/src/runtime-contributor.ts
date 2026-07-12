@@ -1,17 +1,16 @@
-import type { CreateRealtimeHonoModuleOptions } from "./index.js"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { realtimeRuntimePort } from "./runtime-port.js"
 
-type RuntimePortValue<T> = T | Promise<T>
-
 export interface RealtimeRuntimeContributorHost {
-  capabilities: {
-    loadRealtimeRuntime(): RuntimePortValue<CreateRealtimeHonoModuleOptions>
-  }
+  primitives: VoyantRuntimeHostPrimitives
 }
 
 /** Package-owned registration map for Realtime deployment adapters. */
 export function createRealtimeRuntimePortContribution(
   host: RealtimeRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [realtimeRuntimePort.id]: host.capabilities.loadRealtimeRuntime() }
+  const runtime = import("./standard-node-runtime.js").then((module) =>
+    module.createRealtimeStandardNodeRuntime(host.primitives),
+  )
+  return { [realtimeRuntimePort.id]: runtime }
 }

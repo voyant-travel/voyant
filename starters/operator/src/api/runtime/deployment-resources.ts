@@ -18,7 +18,6 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createGeneratedGraphRuntimePorts } from "../../../.voyant/runtime/graph-runtime.generated"
 import { resolveOperatorCustomFields } from "../../lib/custom-fields"
 import { resolveNotificationProviders } from "../../lib/notifications"
-import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../../lib/realtime"
 import { withDbFromEnv } from "../lib/db"
 import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-variables"
@@ -96,10 +95,6 @@ function createBaseDeploymentCapabilities() {
     loadNotificationsRuntime: createOperatorNotificationsRuntimeProvider,
     loadStorageMediaRuntime: () =>
       import("./media-runtime").then((runtime) => runtime.operatorStorageMediaRuntime),
-    loadRealtimeRuntime: () => ({
-      resolveProviders: resolveRealtimeProviders,
-      bridgeRoutes: operatorRealtimeBridgeRoutes,
-    }),
     loadStorefrontRuntime: async () => {
       const [commerce, paymentLink] = await Promise.all([
         import("@voyant-travel/commerce"),
