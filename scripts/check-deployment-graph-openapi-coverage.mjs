@@ -9,7 +9,7 @@
  * one documented path for its surface/module, unless the bundle is in the
  * temporary allowlist below.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs"
 import path from "node:path"
 
 import {
@@ -49,7 +49,11 @@ const graphPath = path.resolve(repoRoot, options.graph)
 const openapiDir = path.resolve(repoRoot, options.openapiDir)
 
 const graph = readJson(graphPath)
-const docs = readOpenApiCoverage(discoverOpenApiRoots(openapiDir))
+const openapiRoots = [
+  ...discoverOpenApiRoots(openapiDir),
+  ...discoverInstalledPackageOpenApiRoots(graph, graphPath),
+]
+const docs = readOpenApiCoverage(uniqueDirectories(openapiRoots))
 const bundles = readApiBundles(graph)
 const bundlesById = new Map(bundles.map((bundle) => [bundle.apiId, bundle]))
 const documentClaims = new Set(
@@ -271,6 +275,73 @@ function discoverOpenApiRoots(root) {
     .map((entry) => path.join(root, entry.name, "openapi"))
     .filter((directory) => existsSync(directory) && statSync(directory).isDirectory())
     .sort()
+}
+
+function discoverInstalledPackageOpenApiRoots(resolvedGraph, resolvedGraphPath) {
+  const selectedPackageNames = new Set(
+    [
+      ...arrayOf(resolvedGraph.modules),
+      ...arrayOf(resolvedGraph.extensions),
+      ...arrayOf(resolvedGraph.plugins),
+    ]
+      .filter((unit) => arrayOf(unit?.api).some((api) => stringOrEmpty(api?.openapi?.document)))
+      .map((unit) => stringOrEmpty(unit?.packageName))
+      .filter(Boolean),
+  )
+  const installRoots = [...new Set([graphProjectRoot(resolvedGraphPath), repoRoot])]
+  const openapiRoots = []
+
+  for (const record of arrayOf(resolvedGraph.packageRecords)) {
+    const packageName = stringOrEmpty(record?.packageName)
+    if (
+      !packageName ||
+      record?.source?.kind === "workspace" ||
+      !selectedPackageNames.has(packageName)
+    ) {
+      continue
+    }
+
+    const packageRoot = installRoots
+      .map((root) => path.join(root, "node_modules", packageName))
+      .find((root) => existsSync(path.join(root, "package.json")))
+    if (!packageRoot) continue
+
+    const packageJson = readJson(path.join(packageRoot, "package.json"))
+    if (packageJson.name !== packageName) {
+      throw new Error(
+        `${relativeToRepo(packageRoot)} contains ${stringOrEmpty(packageJson.name) || "an unnamed package"}, expected ${packageName}`,
+      )
+    }
+    if (record.version && packageJson.version !== record.version) {
+      throw new Error(
+        `${packageName} package record selects ${record.version}, but ${relativeToRepo(packageRoot)} contains ${stringOrEmpty(packageJson.version) || "an unknown version"}`,
+      )
+    }
+
+    const openapiRoot = path.join(packageRoot, "openapi")
+    if (existsSync(openapiRoot) && statSync(openapiRoot).isDirectory()) {
+      openapiRoots.push(openapiRoot)
+    }
+  }
+
+  return openapiRoots.sort()
+}
+
+function graphProjectRoot(resolvedGraphPath) {
+  const graphDirectory = path.dirname(resolvedGraphPath)
+  return path.basename(graphDirectory) === ".voyant"
+    ? path.dirname(graphDirectory)
+    : graphDirectory
+}
+
+function uniqueDirectories(directories) {
+  const seen = new Set()
+  return directories.filter((directory) => {
+    const identity = realpathSync(directory)
+    if (seen.has(identity)) return false
+    seen.add(identity)
+    return true
+  })
 }
 
 function containsOpenApiDocument(directory) {
