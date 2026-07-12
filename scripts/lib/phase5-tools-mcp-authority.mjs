@@ -8,6 +8,8 @@ const FORBIDDEN_TOKENS = [
   "npm/operator#mcp",
   "OPERATOR_LOCAL_MODULE_IDS",
   "mcpRuntimePort",
+  "mcp-deployment-resources",
+  "buildMcpAdminRoutes",
 ]
 
 const REQUIRED_TOKENS = new Map([
