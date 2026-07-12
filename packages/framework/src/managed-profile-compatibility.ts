@@ -12,9 +12,9 @@ import {
   generateWorkspacePackageRecords,
   graphIdFromSpecifier,
   packageNameFromSpecifier,
+  type ResolveDeploymentGraphInput,
   type ResolvedVoyantDeploymentGraph,
   resolveDeploymentGraph,
-  type ResolveDeploymentGraphInput,
   type VoyantGraphDeployment,
 } from "./deployment-graph.js"
 import { getManagedProfileScheduledJobs } from "./managed-jobs.js"
@@ -26,7 +26,9 @@ import {
 import { moduleIdFromSpecifier } from "./profile-types.js"
 
 /** @deprecated Author a VoyantGraphProject directly. */
-export function defineProjectFromManagedProfile(project: VoyantProjectManifest): VoyantGraphProject {
+export function defineProjectFromManagedProfile(
+  project: VoyantProjectManifest,
+): VoyantGraphProject {
   const bridge = toCreateVoyantAppProfileConfig(project)
   return defineProject({
     presetLineage: `${project.profile}-standard`,

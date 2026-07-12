@@ -5,8 +5,8 @@ import {
   type ResolvedVoyantGraphUnit,
   type VoyantGraphRuntimeTarget,
 } from "./deployment-graph.js"
-import { lowerGraphRuntimeUnits } from "./graph-runtime-generation.js"
 import { DEPLOYMENT_PROVIDER_ROLES, type VoyantDeploymentMode } from "./deployment-types.js"
+import { lowerGraphRuntimeUnits } from "./graph-runtime-generation.js"
 import { createVoyantGraphRuntime, type VoyantGraphRuntime } from "./runtime-lowering.js"
 
 export {

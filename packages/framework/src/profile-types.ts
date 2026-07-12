@@ -1,5 +1,5 @@
 /** @deprecated Types for the serialized profile compatibility contract. */
-import { FRAMEWORK_CAPABILITY_GRAPH, FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+
 import {
   DEFAULT_MANAGED_CLOUD_PROVIDERS,
   DEPLOYMENT_PROVIDER_CONTRACTS,
@@ -11,6 +11,7 @@ import {
   type VoyantDeploymentProviders,
   type VoyantDeploymentResourceRequirement,
 } from "./deployment-types.js"
+import { FRAMEWORK_CAPABILITY_GRAPH, FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
 
 export const VOYANT_PROJECT_SCHEMA_VERSION = "voyant.managed-profile.v1" as const
 

@@ -15,12 +15,12 @@ import type {
   ResolvedVoyantDeploymentGraph,
   VoyantGraphDiagnostic,
 } from "../packages/framework/src/deployment-graph.ts"
-import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import {
   type ProjectArtifactWriteResult,
   writeProjectArtifacts,
 } from "../packages/framework/src/project-artifacts.ts"
 import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
+import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import {
   buildDeploymentGraphDoctorJson,
   buildDeploymentGraphDoctorReport,

@@ -191,7 +191,10 @@ function envForProvider(
   return []
 }
 
-function notesForProvider(role: VoyantDeploymentProviderRole, provider: string): string | undefined {
+function notesForProvider(
+  role: VoyantDeploymentProviderRole,
+  provider: string,
+): string | undefined {
   if (role === "scheduledJobs" && provider === "cloud-scheduler") {
     return "Cloud Scheduler should POST /__voyant/scheduled?schedule=<stable-id> with x-voyant-origin-trust."
   }

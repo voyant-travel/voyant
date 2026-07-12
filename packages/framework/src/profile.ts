@@ -1,11 +1,12 @@
 /** @deprecated Snapshot-era compatibility. Author graph-native projects instead. */
+
+import { resourceRequirementsFor } from "./deployment-requirements.js"
 import {
   FRAMEWORK_RUNTIME_MANIFEST,
   FRAMEWORK_SOURCE_FREE_UNSUPPORTED_SPECIFIER_SET,
   ownedExtensionsForExcludedModules,
   subsetStandardManifest,
 } from "./manifest.js"
-import { resourceRequirementsFor } from "./deployment-requirements.js"
 import {
   type DefineVoyantProjectInput,
   MANAGED_OPERATOR_DEFAULT_PROVIDERS,

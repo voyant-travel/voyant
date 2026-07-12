@@ -2,7 +2,6 @@
 import {
   defineExtension,
   defineModule,
-  definePlugin,
   defineProject,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
@@ -22,8 +21,8 @@ import {
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
-  type VoyantGraphProjectDeploymentMode,
   type VoyantGraphProjectDeploymentMigration,
+  type VoyantGraphProjectDeploymentMode,
   type VoyantGraphProjectSelections,
   type VoyantGraphProviderDeclaration,
   type VoyantGraphResourceDeclaration,
@@ -41,18 +40,21 @@ import {
   type VoyantGraphWorkflow,
   type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
+
+export { definePlugin } from "@voyant-travel/core/project"
+
 import type { AccessCatalog, AccessCatalogResource } from "@voyant-travel/types/api-keys"
-import {
-  type VoyantDeploymentEnvRequirement,
-  type VoyantDeploymentProviderRole,
-  type VoyantDeploymentResourceRequirement,
+import { resourceRequirementsForProvider } from "./deployment-requirements.js"
+import type {
+  VoyantDeploymentEnvRequirement,
+  VoyantDeploymentProviderRole,
+  VoyantDeploymentResourceRequirement,
 } from "./deployment-types.js"
 import {
   FRAMEWORK_CAPABILITY_GRAPH,
   FRAMEWORK_RUNTIME_MANIFEST,
   subsetStandardManifest,
 } from "./manifest.js"
-import { resourceRequirementsForProvider } from "./deployment-requirements.js"
 import { SCHEDULED_JOB_ROUTE, type VoyantScheduledJob } from "./scheduled-jobs.js"
 
 export const VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION = "voyant.deployment.v1" as const
@@ -70,7 +72,6 @@ export {
   type DefineVoyantGraphUnitInput,
   defineExtension,
   defineModule,
-  definePlugin,
   defineProject,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
@@ -969,11 +970,6 @@ export function childGraphEntityId(parentId: string, childId: string): string {
 
 export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonicalize(value))
-}
-
-function toGraphJsonObject(value: unknown): VoyantGraphJsonObject | undefined {
-  if (!isRecord(value)) return undefined
-  return JSON.parse(JSON.stringify(value)) as VoyantGraphJsonObject
 }
 
 function toGraphJsonValue(value: unknown): VoyantGraphJsonValue | undefined {
@@ -2855,24 +2851,6 @@ function mergePackageRecords(
     records.set(record.packageName, normalizePackageRecord(record))
   }
   return [...records.values()].sort((a, b) => a.packageName.localeCompare(b.packageName))
-}
-
-function generateWorkspacePackageRecords(
-  project: VoyantGraphProject,
-  frameworkVersion: string,
-): VoyantGraphPackageRecord[] {
-  const names = sortedUnique([
-    "@voyant-travel/framework",
-    "@voyant-travel/framework-migrations",
-    ...project.modules.map((unit) => unit.packageName ?? packageNameFromGraphId(unit.id)),
-    ...project.extensions.map((unit) => unit.packageName ?? packageNameFromGraphId(unit.id)),
-    ...project.plugins.map((unit) => unit.packageName ?? packageNameFromGraphId(unit.id)),
-  ])
-  return names.map((packageName) => ({
-    packageName,
-    ...(packageName === "@voyant-travel/framework" ? { version: frameworkVersion } : {}),
-    source: { kind: "unknown" },
-  }))
 }
 
 function normalizePackageRecord(record: VoyantGraphPackageRecord): VoyantGraphPackageRecord {
