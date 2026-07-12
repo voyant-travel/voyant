@@ -125,12 +125,14 @@ export const notificationsVoyantModule = defineModule({
         export: "listDeliveriesTool",
       },
       requiredScopes: ["notifications:read"],
+      context: ["notifications"],
     },
     {
       id: "@voyant-travel/notifications#tool.get-delivery",
       name: "get_notification_delivery",
       runtime: { entry: "@voyant-travel/notifications/tools", export: "getDeliveryTool" },
       requiredScopes: ["notifications:read"],
+      context: ["notifications"],
     },
     {
       id: "@voyant-travel/notifications#tool.send-notification",
@@ -140,6 +142,7 @@ export const notificationsVoyantModule = defineModule({
         export: "sendNotificationTool",
       },
       requiredScopes: ["notifications:send"],
+      context: ["notifications"],
     },
   ],
   admin: {

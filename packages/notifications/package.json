@@ -19,7 +19,7 @@
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
     "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -138,9 +138,9 @@
         "default": "./dist/providers/voyant-cloud-sms.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

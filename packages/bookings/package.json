@@ -30,7 +30,7 @@
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status": "./src/status.ts",
     "./status-dispatch": "./src/status-dispatch.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -201,9 +201,9 @@
         "default": "./dist/status-dispatch.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

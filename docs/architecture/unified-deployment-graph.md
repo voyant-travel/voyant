@@ -236,6 +236,14 @@ Specifically:
 - Node host bootstraps consume a resolved graph and provider bindings; they do
   not decide product composition
 
+Tool context follows the same rule. A selected tool runtime may export the
+conventional `voyantToolContextContribution` alongside its declared tool
+exports. The MCP host loads contributions only through admitted graph tool
+references, validates them against `tools[].context`, and merges them per
+request. Node hosts may provide environment-specific resources consumed by a
+contribution, but they must not enumerate product tools or assemble package
+services directly.
+
 ## Identity
 
 Every resolved graph unit has two identities:

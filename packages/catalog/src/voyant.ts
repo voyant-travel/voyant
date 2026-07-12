@@ -157,12 +157,14 @@ export const catalogVoyantModule = defineModule({
       name: "search_catalog",
       runtime: { entry: "@voyant-travel/catalog/tools", export: "searchCatalogTool" },
       requiredScopes: ["catalog:search"],
+      context: ["catalog"],
     },
     {
       id: "@voyant-travel/catalog#tool.get-catalog-entry",
       name: "get_catalog_entry",
       runtime: { entry: "@voyant-travel/catalog/tools", export: "getCatalogEntryTool" },
       requiredScopes: ["catalog:read"],
+      context: ["catalog"],
     },
   ],
   webhooks: [

@@ -8,7 +8,7 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./service": "./src/service.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./checkout": "./src/checkout/index.ts",
     "./catalog-component": "./src/catalog-component.ts",
     "./flight-component": "./src/flight-component.ts",
@@ -97,9 +97,9 @@
         "default": "./dist/service.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./checkout": {
         "types": "./dist/checkout/index.d.ts",

@@ -36,11 +36,13 @@ agents, HTTP) is a thin adapter over them.**
    discovery manifest with real JSON Schema (`z.toJSONSchema`). Authorization is **not**
    done here.
 
-2. **Each module owns its tools.** A domain package exports a tool array via a `./tools`
-   subpath (mirroring how it exports route bundles); the deployment aggregates them into
-   one registry and injects services onto the tool context by intersection. Genuinely
-   **cross-module / composed tools live in the composing layer** (e.g. `trips`), never
-   pushed into leaf packages.
+2. **Each module owns its tools and context contribution.** A domain package exports its
+   tools via a `./tools` subpath (mirroring how it exports route bundles). When selected
+   tools declare context keys, the same admitted runtime entry exports
+   `voyantToolContextContribution`; the generic MCP host discovers and merges that
+   package-owned contribution. The Operator supplies deployment resources only and does
+   not maintain a product tool/service catalog. Genuinely **cross-module / composed tools
+   live in the composing package** (e.g. `trips`), never pushed into leaf packages.
 
 3. **`@voyant-travel/mcp`** — the MCP server is a **Hono route group inside the operator
    deployment**, mounted at `/v1/admin/mcp` via the `operator/mcp` composition entry. It

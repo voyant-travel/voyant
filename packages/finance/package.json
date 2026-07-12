@@ -24,7 +24,7 @@
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./setup/vouchers": "./src/service-vouchers-migration.ts",
     "./voyant": "./src/voyant.ts"
   },
@@ -170,9 +170,9 @@
         "default": "./dist/validation-public.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

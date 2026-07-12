@@ -178,6 +178,8 @@ export interface VoyantGraphRuntimeRouteLoader extends VoyantGraphRuntimeRouteDe
 
 export interface VoyantGraphRuntimeReferenceLoader extends VoyantGraphRuntimeReferenceDefinition {
   load: <T = unknown>() => Promise<T>
+  /** Load the admitted module namespace that owns this reference. */
+  loadModule: <T extends Record<string, unknown> = Record<string, unknown>>() => Promise<T>
 }
 
 export interface VoyantGraphRuntimeToolLoader extends VoyantGraphRuntimeToolDefinition {
@@ -698,7 +700,28 @@ function createRuntimeReferenceLoader(
   return {
     ...definition,
     load: <T = unknown>() => load() as Promise<T>,
+    loadModule: <T extends Record<string, unknown> = Record<string, unknown>>() =>
+      loadRuntimeReferenceModule(definition, importEntry) as Promise<T>,
   }
+}
+
+async function loadRuntimeReferenceModule(
+  definition: VoyantGraphRuntimeReferenceDefinition,
+  importEntry: () => Promise<unknown>,
+): Promise<Record<string, unknown>> {
+  const namespace = await importEntry()
+  if (isRecord(namespace)) return namespace
+  throw new VoyantGraphRuntimeLoadError(
+    "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
+    {
+      referenceId: definition.id,
+      unitId: definition.unitId,
+      facet: definition.facet,
+      entityId: definition.entityId,
+      entry: definition.importEntry,
+    },
+    "the package import did not return a module namespace object",
+  )
 }
 
 function uniqueRuntimeRouteLoaders(

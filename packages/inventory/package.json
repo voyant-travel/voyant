@@ -8,7 +8,7 @@
     "./linkables": "./src/linkables.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./read-model": "./src/read-model.ts",
     "./routes": "./src/routes.ts",
     "./routes-brochure": "./src/routes-brochure.ts",
@@ -111,9 +111,9 @@
         "default": "./dist/validation.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./read-model": {
         "types": "./dist/read-model.d.ts",

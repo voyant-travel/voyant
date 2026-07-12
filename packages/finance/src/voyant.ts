@@ -138,18 +138,21 @@ export const financeVoyantModule = defineModule({
       name: "list_invoices",
       runtime: { entry: "@voyant-travel/finance/tools", export: "listInvoicesTool" },
       requiredScopes: ["finance:read"],
+      context: ["finance"],
     },
     {
       id: "@voyant-travel/finance#tool.get-invoice",
       name: "get_invoice",
       runtime: { entry: "@voyant-travel/finance/tools", export: "getInvoiceTool" },
       requiredScopes: ["finance:read"],
+      context: ["finance"],
     },
     {
       id: "@voyant-travel/finance#tool.void-invoice",
       name: "void_invoice",
       runtime: { entry: "@voyant-travel/finance/tools", export: "voidInvoiceTool" },
       requiredScopes: ["finance:void"],
+      context: ["finance"],
     },
   ],
   admin: {

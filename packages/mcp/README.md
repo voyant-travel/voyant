@@ -18,6 +18,13 @@ at `/v1/admin/mcp` (the `"operator/mcp"` composition entry):
 `buildContext(c)` maps the request's `c.var` (db lease / actor / audience / scope) into
 a `@voyant-travel/tools` `ToolContext`.
 
+Graph-driven hosts use
+`createGraphMcpHonoApp({ runtime, buildContext, buildResources? })`. It registers only
+tools admitted by the resolved graph and discovers the conventional
+`voyantToolContextContribution` export from those same runtime entries. Package
+contributions own service injection for their declared `tools[].context` keys;
+`buildResources` supplies only deployment-specific infrastructure adapters.
+
 ## Authentication (external MCP clients)
 
 External MCP clients (Claude Desktop, ChatGPT, …) authenticate with a **Bearer
@@ -52,3 +59,5 @@ agent.
   neither listed nor registered on the per-request server, so they cannot be called.
 - **Headless boundary:** the registry returns typed pure data; this adapter wraps it in
   the MCP `CallToolResult` envelope only at the transport edge.
+- **Graph-owned context:** selected tool runtime entries contribute only context keys
+  declared in package manifests. Missing or undeclared contributions fail closed.

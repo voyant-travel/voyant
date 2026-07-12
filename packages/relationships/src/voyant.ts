@@ -82,12 +82,14 @@ export const relationshipsVoyantModule = defineModule({
       name: "list_people",
       runtime: { entry: "@voyant-travel/relationships/tools", export: "listPeopleTool" },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
     {
       id: "@voyant-travel/relationships#tool.get-person",
       name: "get_person",
       runtime: { entry: "@voyant-travel/relationships/tools", export: "getPersonTool" },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
     {
       id: "@voyant-travel/relationships#tool.list-organizations",
@@ -97,12 +99,14 @@ export const relationshipsVoyantModule = defineModule({
         export: "listOrganizationsTool",
       },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
     {
       id: "@voyant-travel/relationships#tool.get-organization",
       name: "get_organization",
       runtime: { entry: "@voyant-travel/relationships/tools", export: "getOrganizationTool" },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
   ],
   actions: [
