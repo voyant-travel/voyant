@@ -18,7 +18,7 @@ describe("Operator project config", () => {
       version: "1",
     })
     expect(config).not.toHaveProperty("presetLineage")
-    expect(config.deployment.migrations).toBeUndefined()
+    expect(config.deployment?.migrations).toBeUndefined()
     expect(config.access?.presets?.map((preset) => preset.id)).toEqual([
       "agent-customer",
       "agent-staff",
