@@ -64,6 +64,8 @@ describe("graph runtime composition", () => {
     expect(provider.then).toBeUndefined()
     expect(typeof provider.resolveDeployment).toBe("function")
     expect(typeof provider.resolveSourceAdapterRegistry).toBe("function")
+    expect(typeof provider.readConfig).toBe("function")
+    expect(typeof provider.createStaleBookingHoldsRuntime).toBe("function")
     expect(provider.settings).toBeUndefined()
   })
 
