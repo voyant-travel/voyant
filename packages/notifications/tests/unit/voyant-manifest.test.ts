@@ -23,6 +23,7 @@ describe("notifications deployment manifest", () => {
         {
           id: "@voyant-travel/notifications#api.admin",
           surface: "admin",
+          openapi: { document: "notifications" },
           transactional: true,
           runtime: {
             entry: "@voyant-travel/notifications",

@@ -15,6 +15,7 @@ export const notificationsVoyantModule = defineModule({
       id: "@voyant-travel/notifications#api.admin",
       surface: "admin",
       mount: "notifications",
+      openapi: { document: "notifications" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/notifications",

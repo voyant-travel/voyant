@@ -352,7 +352,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "post": {
         "requestBody": {
@@ -574,7 +577,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/templates/{id}": {
@@ -721,7 +727,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "patch": {
         "parameters": [
@@ -966,7 +975,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "delete": {
         "parameters": [
@@ -1008,7 +1020,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/preview": {
@@ -1165,7 +1180,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/deliveries": {
@@ -1536,7 +1554,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/deliveries/{id}": {
@@ -1786,7 +1807,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/deliveries/{id}/resend": {
@@ -2054,7 +2078,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules": {
@@ -2270,7 +2297,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "post": {
         "requestBody": {
@@ -2514,7 +2544,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules/compose": {
@@ -3033,7 +3066,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}": {
@@ -3188,7 +3224,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "patch": {
         "parameters": [
@@ -3454,7 +3493,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "delete": {
         "parameters": [
@@ -3496,7 +3538,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages": {
@@ -3657,7 +3702,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "post": {
         "parameters": [
@@ -3959,7 +4007,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/reorder": {
@@ -4162,7 +4213,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/{stageId}": {
@@ -4485,7 +4539,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "delete": {
         "parameters": [
@@ -4535,7 +4592,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/{stageId}/channels": {
@@ -4664,7 +4724,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "post": {
         "parameters": [
@@ -4880,7 +4943,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-rules/{id}/stages/{stageId}/channels/{channelId}": {
@@ -5121,7 +5187,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "delete": {
         "parameters": [
@@ -5179,7 +5248,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/notification-settings": {
@@ -5286,7 +5358,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       },
       "patch": {
         "requestBody": {
@@ -5492,7 +5567,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminders/preview": {
@@ -5619,7 +5697,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-runs": {
@@ -6076,7 +6157,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminder-runs/{id}": {
@@ -6410,7 +6494,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/reminders/run-due": {
@@ -6479,7 +6566,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/payment-sessions/{id}/send": {
@@ -6903,7 +6993,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/invoices/{id}/send": {
@@ -7327,7 +7420,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/bookings/{id}/document-bundle": {
@@ -7519,7 +7615,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/bookings/{id}/confirm-and-dispatch": {
@@ -7984,7 +8083,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/bookings/{id}/send-documents": {
@@ -8220,7 +8322,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     },
     "/v1/admin/notifications/send": {
@@ -8659,7 +8764,10 @@
           "notifications"
         ],
         "x-voyant-module": "notifications",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/notifications#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/notifications",
+        "x-voyant-package-name": "@voyant-travel/notifications"
       }
     }
   },

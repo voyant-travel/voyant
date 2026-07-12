@@ -90,9 +90,12 @@ describe("operator openapi spec", () => {
     expect(Object.keys(perModule).length).toBeGreaterThan(0)
   })
 
-  it("emits identity from its exact selected graph API authority", () => {
-    const identity = docs.modules.get("identity")
-    const operations = Object.values(identity?.paths ?? {}).flatMap((pathItem) =>
+  it.each([
+    ["identity", "@voyant-travel/identity#api.admin", "@voyant-travel/identity"],
+    ["notifications", "@voyant-travel/notifications#api.admin", "@voyant-travel/notifications"],
+  ])("emits %s from its exact selected graph API authority", (document, apiId, packageName) => {
+    const selectedDocument = docs.modules.get(document)
+    const operations = Object.values(selectedDocument?.paths ?? {}).flatMap((pathItem) =>
       Object.values(pathItem ?? {}).filter(
         (value): value is Record<string, unknown> =>
           typeof value === "object" && value !== null && "responses" in value,
@@ -101,13 +104,13 @@ describe("operator openapi spec", () => {
 
     expect(operations.length).toBeGreaterThan(0)
     expect(new Set(operations.map((operation) => operation["x-voyant-api-id"]))).toEqual(
-      new Set(["@voyant-travel/identity#api.admin"]),
+      new Set([apiId]),
     )
     expect(
       operations.every(
         (operation) =>
-          operation["x-voyant-unit-id"] === "@voyant-travel/identity" &&
-          operation["x-voyant-package-name"] === "@voyant-travel/identity",
+          operation["x-voyant-unit-id"] === packageName &&
+          operation["x-voyant-package-name"] === packageName,
       ),
     ).toBe(true)
   })

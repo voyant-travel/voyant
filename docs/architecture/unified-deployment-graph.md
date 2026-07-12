@@ -902,8 +902,8 @@ RBAC/API-key/tool/action-ledger unification ships.
 OpenAPI metadata belongs with route declarations. The graph resolver should
 collect it after package admission, not require a separate OpenAPI facet first.
 
-The first selected-graph OpenAPI authority is active for
-`@voyant-travel/identity#api.admin`. A route bundle opts in with a stable
+Selected-graph OpenAPI authority is active for package-owned route bundles,
+including Identity and Notifications. A route bundle opts in with a stable
 document slug:
 
 ```ts
@@ -1626,9 +1626,10 @@ Progress: all fifteen first-party nav/route/page factories, their declared slots
 contributions, and their lightweight localization/icon adapters are lowered
 into the selected-graph admin bundle. The Operator composes these factories
 generically, with selection and deselection controlled only by the graph.
-No Operator admin factory compatibility registry remains. Identity admin routes
-are the first package-owned selected-graph OpenAPI authority; other API
-documents remain on the Operator compatibility path.
+No Operator admin factory compatibility registry remains. Eleven API documents,
+including Identity and Notifications, now have package-owned selected-graph
+OpenAPI authority; other API documents remain on the Operator compatibility
+path.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.

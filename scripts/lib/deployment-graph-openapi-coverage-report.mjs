@@ -17,6 +17,15 @@ export function buildDeploymentGraphOpenApiCoverageReport(input, relativePath) {
     [...bundles].sort((left, right) => left.apiId.localeCompare(right.apiId))
   const diagnostics = input.failures
     .map((failure) => {
+      if (failure.kind === "authority-regression") {
+        return {
+          code: "VOYANT_GRAPH_OPENAPI_AUTHORITY_REGRESSION",
+          severity: "error",
+          actual: failure.actual,
+          minimum: failure.minimum,
+          message: `Selected graph owns ${failure.actual} OpenAPI documents; expected at least ${failure.minimum}.`,
+        }
+      }
       if (failure.kind === "missing-docs") {
         return {
           code: "VOYANT_GRAPH_OPENAPI_MISSING_DOCS",
@@ -74,6 +83,9 @@ export function buildDeploymentGraphOpenApiCoverageReport(input, relativePath) {
 }
 
 export function formatDeploymentGraphOpenApiCoverageFailure(failure) {
+  if (failure.kind === "authority-regression") {
+    return `[deployment-graph-openapi-coverage:authority-regression] selected graph owns ${failure.actual} OpenAPI documents; expected at least ${failure.minimum}`
+  }
   if (failure.kind === "missing-docs") return formatGap(failure.bundle)
   if (failure.bundle) {
     return `[deployment-graph-openapi-coverage:stale-allowlist] ${failure.bundle.apiId} is allowlisted but now has documented ${failure.bundle.surface} paths for one of: ${failure.bundle.candidateModules.join(", ")}`

@@ -20,6 +20,10 @@ import {
 const DEFAULT_GRAPH = "starters/operator/.voyant/deployment-graph.generated.json"
 const DEFAULT_OPENAPI_DIR = "starters/operator/openapi"
 const CHECKED_SURFACES = new Set(["admin", "storefront"])
+// Ratchet only. The document names and owners remain authoritative in package
+// manifests; this prevents migrated bundles from silently falling back to the
+// Operator compatibility partition.
+const MIN_PACKAGE_OWNED_DOCUMENTS = 11
 const HTTP_METHODS = new Set([
   "connect",
   "delete",
@@ -55,6 +59,17 @@ const bundles = readApiBundles(graph)
 const failures = []
 const coveredBundles = []
 const allowlistedGaps = []
+
+if (options.useDefaultAllowlist) {
+  const packageOwnedDocuments = bundles.filter((bundle) => bundle.openapiDocument).length
+  if (packageOwnedDocuments < MIN_PACKAGE_OWNED_DOCUMENTS) {
+    failures.push({
+      kind: "authority-regression",
+      actual: packageOwnedDocuments,
+      minimum: MIN_PACKAGE_OWNED_DOCUMENTS,
+    })
+  }
+}
 
 for (const bundle of bundles) {
   if (!CHECKED_SURFACES.has(bundle.surface)) continue
