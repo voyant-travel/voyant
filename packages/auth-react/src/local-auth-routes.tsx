@@ -82,7 +82,11 @@ export function createLocalAuthRouteContribution<TUser>(
         getBootstrapStatus: runtime.getBootstrapStatus,
         getCloudAuthStartHref: runtime.cloudAuthStartHref,
       })
-      if (destination) throw redirect(destination)
+      if (!destination) return
+      if ("href" in destination) {
+        throw redirect({ href: destination.href, reloadDocument: true })
+      }
+      throw redirect(destination)
     }
 
   function AcceptInvitationRoute() {
