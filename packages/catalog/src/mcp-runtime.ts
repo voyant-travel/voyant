@@ -34,7 +34,9 @@ export const voyantToolContextContribution = defineToolContextContribution({
         try {
           return await executeSemanticSearch({
             adapter: indexer,
-            embeddings: runtime.embeddings,
+            embeddings: runtime.embeddings as Parameters<
+              typeof executeSemanticSearch
+            >[0]["embeddings"],
             slice,
             request,
           })

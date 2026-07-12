@@ -50,6 +50,7 @@ import type {
   VoyantDeploymentProviderRole,
   VoyantDeploymentResourceRequirement,
 } from "./deployment-types.js"
+import { DEPLOYMENT_PROVIDER_ROLES } from "./deployment-types.js"
 import {
   FRAMEWORK_CAPABILITY_GRAPH,
   FRAMEWORK_RUNTIME_MANIFEST,
@@ -501,7 +502,7 @@ export function deriveDeploymentRequirements(
   providers: Partial<Record<VoyantDeploymentProviderRole | string, string>> = {},
 ): VoyantGraphDeploymentRequirements {
   return normalizeDeploymentRequirements({
-    resources: PROVIDER_ROLES.flatMap((role) => {
+    resources: DEPLOYMENT_PROVIDER_ROLES.flatMap((role) => {
       const provider = providers[role]
       return typeof provider === "string" && provider.trim().length > 0
         ? resourceRequirementsForProvider(role, provider)
