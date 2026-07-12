@@ -255,31 +255,24 @@ describe("startCatalogCheckout", () => {
     }
     const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = []
     const updates: Record<string, unknown>[] = []
-    const selectRows = [[booking], [], []]
+    const selectRows = [[booking], []]
     const nextRows = () => selectRows.shift() ?? []
-    let selectCalls = 0
+    type AwaitableRows = Promise<unknown[]> & { limit: () => Promise<unknown[]> }
     type SelectChain = {
       from: () => SelectChain
-      where: () => SelectChain
-      limit: () => Promise<unknown[]>
+      where: () => AwaitableRows
     }
     const selectChain: SelectChain = {
       from: () => selectChain,
-      where: () => selectChain,
-      limit: async () => nextRows(),
+      where: () => {
+        const rows = nextRows()
+        const result = Promise.resolve(rows) as AwaitableRows
+        result.limit = async () => rows
+        return result
+      },
     }
     const db = {
-      select: () => {
-        selectCalls += 1
-        if (selectCalls === 3) {
-          return {
-            from: () => ({
-              where: async () => nextRows(),
-            }),
-          }
-        }
-        return selectChain
-      },
+      select: () => selectChain,
       insert: (table: unknown) => ({
         values: (values: Record<string, unknown>) => {
           inserts.push({ table, values })

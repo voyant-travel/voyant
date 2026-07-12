@@ -15,7 +15,7 @@ const { reindexEntity, ensureCollections, deleteEntity, buildProductSnapshotInpu
     }
   })
 
-vi.mock("@voyant-travel/catalog", () => ({
+vi.mock("../services/indexer-service.js", () => ({
   createIndexerService: () => ({ reindexEntity, ensureCollections, deleteEntity }),
 }))
 

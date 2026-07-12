@@ -13,19 +13,13 @@ vi.mock("@voyant-travel/connect-sdk", () => ({
   })),
 }))
 
-vi.mock("@voyant-travel/plugin-voyant-connect", async () => {
-  const actual = await vi.importActual<typeof import("@voyant-travel/plugin-voyant-connect")>(
-    "@voyant-travel/plugin-voyant-connect",
-  )
-  return {
-    ...actual,
-    resolveVoyantConnectEnv: vi.fn(() => ({
-      apiKey: ["connect", "key"].join("_"),
-      operatorId: "operator_1",
-      baseUrl: "https://connect.test",
-    })),
-  }
-})
+vi.mock("@voyant-travel/plugin-voyant-connect", () => ({
+  resolveVoyantConnectEnv: vi.fn(() => ({
+    apiKey: ["connect", "key"].join("_"),
+    operatorId: "operator_1",
+    baseUrl: "https://connect.test",
+  })),
+}))
 
 import { createOperatorCatalogBookingRouteModuleOptions } from "./booking-runtime.js"
 

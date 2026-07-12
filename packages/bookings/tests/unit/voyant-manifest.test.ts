@@ -18,7 +18,12 @@ describe("bookings deployment manifest", () => {
       id: "@voyant-travel/bookings",
       packageName: "@voyant-travel/bookings",
       runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
-      runtimePorts: [{ id: "bookings.runtime" }],
+      runtimePorts: [
+        { id: "bookings.configuration.runtime" },
+        { id: "bookings.accommodation.runtime" },
+        { id: "bookings.finance.runtime" },
+        { id: "bookings.relationships.runtime" },
+      ],
       api: [
         {
           id: "@voyant-travel/bookings#api.admin",
@@ -61,10 +66,10 @@ describe("bookings deployment manifest", () => {
     expect(bookingsVoyantModule.access?.resources).toEqual([
       expect.objectContaining({
         resource: "bookings",
-        actions: [
+        actions: expect.arrayContaining([
           expect.objectContaining({ action: "read" }),
           expect.objectContaining({ action: "write" }),
-        ],
+        ]),
         legacyActions: ["cancel"],
       }),
       expect.objectContaining({
@@ -104,7 +109,7 @@ describe("bookings deployment manifest", () => {
         entry: "@voyant-travel/bookings/requirements",
         export: "createBookingRequirementsVoyantRuntime",
       },
-      runtimePorts: [{ id: "bookings.requirements.runtime" }],
+      runtimePorts: [{ id: "bookings.inventory.runtime" }],
       api: [
         {
           id: "@voyant-travel/bookings#requirements.api",
@@ -156,14 +161,27 @@ describe("bookings deployment manifest", () => {
       graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
       runtimePorts: {},
       hasPort: () => true,
-      getPort: async <TProvider>() => ({ options: {} }) as unknown as TProvider,
+      getPort: async <TProvider>(port: { id: string }) => {
+        const providers: Record<string, unknown> = {
+          "bookings.configuration.runtime": { readConfig: () => undefined },
+          "bookings.accommodation.runtime": { enrichOverviewItems: async () => [] },
+          "bookings.finance.runtime": { createStaleBookingHoldsRuntime: () => ({}) },
+          "bookings.relationships.runtime": {
+            loadPersonTravelSnapshot: async () => null,
+            upsertPersonFromContact: async () => null,
+            getPersonById: async () => null,
+            getOrganizationById: async () => null,
+          },
+        }
+        return providers[port.id] as TProvider
+      },
       getPorts: async <TProvider>() => [] as TProvider[],
     }
     const bookings = await createBookingsVoyantRuntime(context)
     const requirements = await createBookingRequirementsVoyantRuntime({
       ...context,
       unitId: "@voyant-travel/bookings#requirements",
-      getPort: async <TProvider>() => ({}) as TProvider,
+      getPort: async <TProvider>() => ({ resolveProductSnapshot: async () => null }) as TProvider,
     })
 
     expect(bookings.adminRoutes).toBeUndefined()

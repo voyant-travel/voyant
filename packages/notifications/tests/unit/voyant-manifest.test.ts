@@ -96,6 +96,7 @@ describe("notifications deployment manifest", () => {
       "notificationsBookingConfirmationAutoDispatchSubscriber",
       "notificationsBookingConfirmedReminderSubscriber",
       "notificationsPaymentCompletedReminderSubscriber",
+      "notificationsBookingFullyPaidDocumentLifecycleSubscriber",
       "notificationsBookingCancelledReminderSubscriber",
       "notificationsBookingExpiredReminderSubscriber",
     ])

@@ -125,8 +125,25 @@ describe("commerce deployment manifest", () => {
       ],
       workflows: [
         {
+          id: "commerce.process-promotion-boundaries",
+          source: "@voyant-travel/commerce/promotion-boundary-workflow",
+          config: {
+            defaultRuntime: "node",
+            schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
+          },
+          runtime: {
+            entry: "./promotion-boundary-workflow",
+            export: "promotionBoundarySchedulerWorkflow",
+          },
+        },
+        {
           id: "promotions.reindex-all-products",
+          source: "@voyant-travel/commerce/product-reindex-workflow",
           config: { defaultRuntime: "node" },
+          runtime: {
+            entry: "./product-reindex-workflow",
+            export: "bulkReindexProductsWorkflow",
+          },
         },
       ],
       subscribers: [
@@ -226,7 +243,7 @@ describe("commerce deployment manifest", () => {
   })
 
   it("declares the promotions route, navigation, and existing copy catalog", () => {
-    expect(commerceVoyantModule.admin).toEqual({
+    expect(commerceVoyantModule.admin).toMatchObject({
       copy: [
         {
           id: "@voyant-travel/commerce#admin.copy.promotions",

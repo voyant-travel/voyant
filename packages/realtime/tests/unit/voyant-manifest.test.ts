@@ -68,11 +68,20 @@ describe("realtime deployment manifest", () => {
     expect(readApiId(publicDocument, "/token", "post")).toBe(REALTIME_OPENAPI_API_IDS.public)
   })
 
-  it("stages the publication capability without activating domain subscribers", () => {
+  it("publishes the package-owned invalidation subscribers", () => {
     expect(realtimeVoyantModule.provides?.ports).toContainEqual({
       id: "realtime.admin-invalidation-publication",
     })
-    expect(realtimeVoyantModule.subscribers).toBeUndefined()
+    expect(realtimeVoyantModule.subscribers).toHaveLength(34)
+    expect(realtimeVoyantModule.subscribers?.map(({ eventType }) => eventType)).toEqual(
+      expect.arrayContaining([
+        "product.created",
+        "booking.confirmed",
+        "payment.completed",
+        "availability.slot.changed",
+      ]),
+    )
+    expect(realtimeVoyantModule.subscribers?.every(({ runtime }) => runtime != null)).toBe(true)
   })
 
   it("ships a conformance kit for deployment realtime providers", async () => {

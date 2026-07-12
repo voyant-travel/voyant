@@ -53,7 +53,11 @@ describe("action-ledger deployment manifest", () => {
           },
         },
       ],
-      runtimePorts: [{ id: "action-ledger.health-runtime" }],
+      runtimePorts: [
+        { id: "action-ledger.booking-drift-runtime" },
+        { id: "action-ledger.finance-drift-runtime" },
+        { id: "action-ledger.inventory-drift-runtime" },
+      ],
     })
     expect(isGraphRuntimeFactory(createActionLedgerHealthVoyantRuntime)).toBe(true)
   })

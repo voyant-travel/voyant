@@ -51,6 +51,11 @@ describe("workflow-runs deployment manifest", () => {
             resource: "workflows",
             actions: ["trigger"],
           },
+          {
+            id: "@voyant-travel/workflow-runs#access.webhooks",
+            resource: "webhooks",
+            actions: ["relay"],
+          },
         ],
       },
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },

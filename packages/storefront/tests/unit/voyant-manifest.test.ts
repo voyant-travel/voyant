@@ -14,7 +14,11 @@ describe("storefront deployment manifest", () => {
       id: "@voyant-travel/storefront",
       packageName: "@voyant-travel/storefront",
       runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
-      runtimePorts: [{ id: "storefront.runtime" }],
+      runtimePorts: [
+        { id: "storefront.offers.runtime" },
+        { id: "storefront.booking-intents.runtime" },
+        { id: "storefront.intake.runtime" },
+      ],
       api: [
         {
           id: "@voyant-travel/storefront#api.admin",

@@ -1,5 +1,5 @@
-import { createDbClient } from "@voyant-travel/db"
 import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
+import { createDbClient } from "@voyant-travel/db/runtime"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { BookingRequirementsHonoModuleOptions } from "./requirements/index.js"
 import type {

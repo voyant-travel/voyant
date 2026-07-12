@@ -15,7 +15,11 @@ import {
   notificationsReminderSubscriberRuntimeDescriptors,
 } from "../../src/subscriber-runtime.js"
 
-const db = {} as PostgresJsDatabase
+const db = {
+  update: vi.fn(() => ({
+    set: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
+  })),
+} as unknown as PostgresJsDatabase
 const dispatcher = {} as NotificationService
 const attachmentResolver = vi.fn()
 
