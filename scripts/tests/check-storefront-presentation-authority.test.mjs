@@ -47,7 +47,7 @@ function fixture(overrides = {}) {
     routeHosts,
     hostAdapter,
     messageAdapter: "createStorefrontMessagesProvider",
-    intakeAdapter: "@voyant-travel/storefront/relationships-intake",
+    intakeAdapter: 'import("@voyant-travel/storefront/relationships-intake")',
     packagePresentation,
     packageIntake,
     graphDeclaration,
@@ -70,5 +70,5 @@ test("rejects route policy and intake authority returning to the starter", () =>
     }),
   )
   assert(result.failures.some((failure) => failure.includes("shop.tsx must not own function")))
-  assert(result.failures.includes("Storefront intake adapter must re-export package authority"))
+  assert(result.failures.includes("Storefront intake host must call package authority directly"))
 })

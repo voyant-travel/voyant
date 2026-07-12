@@ -11,7 +11,6 @@ import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import { lazyProvider } from "@voyant-travel/hono"
-import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import type { WorkflowRunnerRegistryRuntime } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createGeneratedGraphRuntimePorts } from "../../../.voyant/runtime/graph-runtime.generated"
@@ -57,13 +56,6 @@ type OperatorRelationshipsService = Pick<
  * Providers are bindings-deferred closures, so no `env` is needed here.
  */
 function createBaseDeploymentCapabilities() {
-  const storefrontIntakePersistence = lazyProvider<StorefrontIntakePersistence>(async () =>
-    import("./storefront-intake-runtime").then(
-      (m) =>
-        m.createRelationshipsStorefrontIntakePersistence() as AsyncMethodProvider<StorefrontIntakePersistence>,
-    ),
-  )
-
   return {
     customFields: resolveOperatorCustomFields,
     resolveNotificationProviders,
@@ -87,9 +79,10 @@ function createBaseDeploymentCapabilities() {
       ),
     loadNotificationsRuntime: createOperatorNotificationsRuntimeProvider,
     loadStorefrontRuntime: async () => {
-      const [commerce, paymentLink] = await Promise.all([
+      const [commerce, paymentLink, intake] = await Promise.all([
         import("@voyant-travel/commerce"),
         import("./payment-link-runtime"),
+        import("@voyant-travel/storefront/relationships-intake"),
       ])
       return {
         storefront: {
@@ -98,7 +91,7 @@ function createBaseDeploymentCapabilities() {
             withDb: (bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<unknown>) =>
               withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
           },
-          intake: { persistence: storefrontIntakePersistence },
+          intake: { persistence: intake.createRelationshipsStorefrontIntakePersistence() },
         },
         paymentLink: paymentLink.createOperatorPaymentLinkRouteOptions(),
         customerPortal: {

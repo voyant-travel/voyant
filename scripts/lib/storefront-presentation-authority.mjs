@@ -92,8 +92,11 @@ export function checkStorefrontPresentationAuthority({
     failures.push("Storefront message adapter must not implement the provider")
   }
 
-  if (!intakeAdapter.includes("@voyant-travel/storefront/relationships-intake")) {
-    failures.push("Storefront intake adapter must re-export package authority")
+  if (
+    !intakeAdapter.includes('import("@voyant-travel/storefront/relationships-intake")') ||
+    intakeAdapter.includes('import("./storefront-intake-runtime")')
+  ) {
+    failures.push("Storefront intake host must call package authority directly")
   }
   for (const token of [
     "createRelationshipsStorefrontIntakePersistence",

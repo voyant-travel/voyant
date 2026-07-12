@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
@@ -15,11 +15,15 @@ const result = checkStorefrontPresentationAuthority({
   ),
   hostAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
   messageAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
-  intakeAdapter: read("starters/operator/src/api/runtime/storefront-intake-runtime.ts"),
+  intakeAdapter: read("starters/operator/src/api/runtime/deployment-resources.ts"),
   packagePresentation: read("packages/storefront-react/src/storefront/presentation-routes.tsx"),
   packageIntake: read("packages/storefront/src/relationships-intake-persistence.ts"),
   graphDeclaration: read("packages/storefront/src/voyant.ts"),
 })
+
+if (existsSync(join(root, "starters/operator/src/api/runtime/storefront-intake-runtime.ts"))) {
+  result.failures.push("starter Storefront intake compatibility facade must stay deleted")
+}
 
 if (result.failures.length > 0) {
   console.error(
