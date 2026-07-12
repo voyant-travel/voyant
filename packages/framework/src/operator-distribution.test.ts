@@ -4,7 +4,6 @@ import {
   mergeOperatorDistributionDefaults,
   STANDARD_OPERATOR_DISTRIBUTION,
   STANDARD_OPERATOR_DISTRIBUTION_POLICY,
-  STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
   STANDARD_OPERATOR_PRODUCT_BOM,
   STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
   selectStandardOperatorDistribution,
@@ -58,14 +57,6 @@ describe("standard Operator distribution", () => {
       extensions: STANDARD_OPERATOR_DISTRIBUTION.extensions,
       plugins: [],
     })
-  })
-
-  it("projects the legacy runtime catalog from the standard distribution policy", () => {
-    expect(selectStandardOperatorDistribution({ legacyRuntimeOnly: true })).toEqual(
-      STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
-    )
-    expect(STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST.modules).toHaveLength(27)
-    expect(STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST.extensions).toHaveLength(19)
   })
 
   it("removes a module and every distribution extension that declares it as an owner", () => {

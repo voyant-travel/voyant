@@ -51,11 +51,6 @@ import type {
   VoyantDeploymentResourceRequirement,
 } from "./deployment-types.js"
 import { DEPLOYMENT_PROVIDER_ROLES } from "./deployment-types.js"
-import {
-  FRAMEWORK_CAPABILITY_GRAPH,
-  FRAMEWORK_RUNTIME_MANIFEST,
-  subsetStandardManifest,
-} from "./manifest.js"
 import { SCHEDULED_JOB_ROUTE, type VoyantScheduledJob } from "./scheduled-jobs.js"
 
 export const VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION = "voyant.deployment.v1" as const
@@ -871,56 +866,6 @@ export async function createTestDeployment(
   }
 }
 
-export function generateFrameworkModuleManifests(
-  specifiers: readonly string[] = subsetStandardManifest().modules,
-): VoyantGraphUnitManifest[] {
-  return specifiers.map((specifier) => {
-    const id = graphIdFromSpecifier(specifier)
-    const capabilities = (
-      FRAMEWORK_CAPABILITY_GRAPH as Record<
-        string,
-        { provides?: readonly string[]; requires?: readonly string[] }
-      >
-    )[specifier]
-    return defineModule({
-      id,
-      packageName: packageNameFromSpecifier(specifier),
-      localId: localIdFromSpecifier(specifier),
-      provides: normalizeCapabilities(capabilities?.provides),
-      requires: normalizeCapabilities(capabilities?.requires),
-      api: [
-        {
-          id: childGraphEntityId(id, "api"),
-          surface: "admin",
-          mount: specifier,
-        },
-      ],
-    })
-  })
-}
-
-export function generateFrameworkExtensionManifests(
-  specifiers: readonly string[] = subsetStandardManifest().extensions,
-): VoyantGraphUnitManifest[] {
-  const moduleIds = new Set(FRAMEWORK_RUNTIME_MANIFEST.modules.map(graphIdFromSpecifier))
-  return specifiers.map((specifier) => {
-    const baseId = graphIdFromSpecifier(specifier)
-    const id = moduleIds.has(baseId) ? childGraphEntityId(baseId, "extension") : baseId
-    return defineExtension({
-      id,
-      packageName: packageNameFromSpecifier(specifier),
-      localId: localIdFromSpecifier(specifier),
-      api: [
-        {
-          id: childGraphEntityId(id, "api"),
-          surface: "admin",
-          mount: specifier,
-        },
-      ],
-    })
-  })
-}
-
 export function generateCustomSourceModuleManifests(
   specifiers: readonly string[] = [],
 ): VoyantGraphUnitManifest[] {
@@ -946,9 +891,6 @@ export function generateCustomSourceExtensionManifests(
     }),
   )
 }
-
-/** @deprecated Use generateFrameworkExtensionManifests. */
-export const generateFrameworkPluginManifests = generateFrameworkExtensionManifests
 
 /** @deprecated Use generateCustomSourceExtensionManifests. */
 export const generateCustomSourcePluginManifests = generateCustomSourceExtensionManifests
@@ -2922,12 +2864,6 @@ function sortFacetEntities<T extends { id: string }>(entities: readonly T[]): T[
 
 function sortPorts(ports: readonly VoyantGraphPortDeclaration[]): VoyantGraphPortDeclaration[] {
   return [...ports].sort((a, b) => a.id.localeCompare(b.id))
-}
-
-function normalizeCapabilities(
-  capabilities: readonly string[] | undefined,
-): VoyantGraphCapabilityDeclaration | undefined {
-  return capabilities && capabilities.length > 0 ? { capabilities } : undefined
 }
 
 function validCustomSourceSpecifiers(specifiers: readonly string[]): string[] {

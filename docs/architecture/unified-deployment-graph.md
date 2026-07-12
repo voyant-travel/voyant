@@ -1297,20 +1297,17 @@ runtime shapes:
 - package `migrations/` metadata
 - existing workflow descriptors
 - existing event subscribers
-- `FRAMEWORK_RUNTIME_MANIFEST`
-- `FRAMEWORK_EXTENSION_OWNERSHIP`
-- `FRAMEWORK_CAPABILITY_GRAPH`
+- the historical framework runtime manifest, extension ownership, and capability
+  projections during initial package-manifest migration
 
 The standard Operator distribution is now the sole first-party selection-policy
 catalog. It records stable order, required modules, and extension removal
 cascades; it does not redeclare package facets. Resolution admits each selected
 package and loads the selected graph unit from that package's public `./voyant`
-manifest. `FRAMEWORK_RUNTIME_MANIFEST`, `FRAMEWORK_EXTENSION_OWNERSHIP`,
-and `FRAMEWORK_CAPABILITY_GRAPH` remain compatibility projections only. The
-snapshot-era `VOYANT_PROFILE_MODULES` projection and profile composition API
-have been removed. A repository checker rejects first-party product literals in
-the remaining compatibility views and rejects a standard selection without a
-matching package-owned manifest unit.
+manifest. The framework runtime manifest, extension-ownership, capability-graph,
+and profile projections have been removed. A repository checker prevents those
+projections from returning and rejects a standard selection without a matching
+package-owned manifest unit.
 
 This validates the manifest against reality before third-party authors depend
 on it, and avoids hand-retrofitting every package up front.
@@ -1457,7 +1454,7 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | Facet | Current substrate or bridge | End-state owner and declaration | Depends on | Migration exit test | Scope |
 | --- | --- | --- | --- | --- | --- |
 | Identity, selection, package metadata, admission | Deterministic v1 graph, package records, generated operator units, managed-profile compatibility | Package exports `voyant.package.v1` plus import-cheap `./voyant`; project explicitly selects normalized module/plugin package or path references | Phase 0 | Direct package resolution matches the bridge graph; no operator package catalog is consulted | #3080 |
-| Capabilities | `FRAMEWORK_CAPABILITY_GRAPH` and generated `provides`/`requires` | Package manifest owns coarse capability tokens; project graph closes them | Identity | Removing the central capability entry does not change resolution or diagnostics | #3080 |
+| Capabilities | Package manifests and resolved graph `provides`/`requires` | Package manifest owns coarse capability tokens; project graph closes them | Identity | No central capability projection exists; package removal still produces stable resolution diagnostics | #3080 |
 | Typed ports, providers, adapters | First public-port slice plus broad `FrameworkProviders` container and starter factories | Port-owning package exports contract and conformance kit; module declares requirements; plugin-distributed providers declare provisions; deployment selects routing/defaults only where needed | Capabilities, runtime contract, test harness | Selected providers satisfy facets and kits; no package-specific starter provider entry is required | #3080, demand-driven replacement |
 | Schema and migrations | D.2 collector, generated schema manifest, operator migration-source artifact, ADR-0007 monolithic bundle | Schema-owning package declares schema and ships namespaced migrations; project owns only cross-package link/deployment-local migrations | Identity, admission | `dev`, `doctor`, `migrate`, Cloud, and Docker derive the same dependency-ordered plan directly from selected packages | #3080 |
 | Setup/data migrations | Ad hoc seed/setup behavior and ordinary migrations | Package owns versioned, idempotent setup/data migrations with applied-work ids; project owns optional explicit seed scripts | Schema/migrations, lifecycle ledger | Install/upgrade replay is idempotent and no lifecycle hook is needed | #3080 |

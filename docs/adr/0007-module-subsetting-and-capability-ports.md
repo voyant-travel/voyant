@@ -1,8 +1,14 @@
 # ADR-0007: Module subsetting and required core modules
 
-- **Status:** Proposed (2026-06-22)
+- **Status:** Superseded by the unified deployment graph (2026-07-12)
 - **Relates to:** [consolidated-deployments-rfc](../architecture/consolidated-deployments-rfc.md) (Workstream B / D.1), [ADR-0006](./0006-live-availability-search-contract.md) (capability-gated adapters as precedent), [custom-modules](../architecture/custom-modules.md)
 - **Implemented by:** This PR — `createVoyantApp({ exclude })`, `FRAMEWORK_CAPABILITY_GRAPH` (marking the foundational core, incl. CRM, `isRequired`), and the pure `findCapabilityGaps` / `subsetStandardManifest` validators. A pluggable-implementation port (swap a required module for an external one) was considered and rejected for v1 — see Alternatives. Extension-ownership cascade shipped as a follow-up (voyant#2104/#3074); the schema side is decided as no-bundle-partitioning (see Phasing).
+
+> This ADR records the retired runtime-manifest implementation. Standard product
+> subtraction, required selections, and extension removal cascades now live in
+> `operator-distribution.ts`; package manifests and the resolved deployment graph
+> own capabilities and runtime behavior. The framework manifest projections and
+> synthetic framework unit generators have been deleted.
 
 ## Context
 

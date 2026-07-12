@@ -62,14 +62,6 @@ export {
   validateVoyantGraphEventCompatibility,
 } from "./graph-lifecycle.js"
 export {
-  FRAMEWORK_CAPABILITY_GRAPH,
-  FRAMEWORK_EXTENSION_OWNERSHIP,
-  FRAMEWORK_RUNTIME_MANIFEST,
-  type FrameworkManifest,
-  ownedExtensionsForExcludedModules,
-  subsetStandardManifest,
-} from "./manifest.js"
-export {
   type SelectStandardOperatorDistributionOptions,
   STANDARD_OPERATOR_ACCESS,
   STANDARD_OPERATOR_DEPLOYMENT,
