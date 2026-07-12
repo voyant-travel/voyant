@@ -85,6 +85,8 @@ export type WebhookDeliveryOutcome =
 export interface WebhookDeliveryAuditEvent {
   eventId: string
   eventName: string
+  contractId?: string
+  contractVersion?: string
   subscriptionId: string
   outcome: WebhookDeliveryOutcome["status"]
   deliveryId?: string

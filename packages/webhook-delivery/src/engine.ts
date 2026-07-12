@@ -92,7 +92,7 @@ export function createWebhookDeliveryEngine(
         body,
       )
       const enqueued = await options.store.enqueueAttempt({
-        sourceModule: "graph-outbound-webhooks",
+        sourceModule: stringMetadata(event, "graphEventSourceModule") ?? "graph-outbound-webhooks",
         sourceEvent: event.name,
         ...sourceEntity(event.data),
         subscriptionId: subscription.id,
@@ -127,7 +127,8 @@ export function createWebhookDeliveryEngine(
       const claimed = await options.store.claimAttempt(enqueued.attempt.id, startedAt, staleBefore)
       if (!claimed) {
         const replay = await options.store.enqueueAttempt({
-          sourceModule: "graph-outbound-webhooks",
+          sourceModule:
+            stringMetadata(event, "graphEventSourceModule") ?? "graph-outbound-webhooks",
           sourceEvent: event.name,
           ...sourceEntity(event.data),
           subscriptionId: subscription.id,
@@ -310,12 +311,16 @@ function signedHeaders(
   timestamp: string,
   body: string,
 ): Record<string, string> {
+  const contractId = stringMetadata(event, "graphEventId")
+  const contractVersion = stringMetadata(event, "graphEventVersion")
   return {
     ...(subscription.headers ?? {}),
     "content-type": "application/json",
     "idempotency-key": idempotencyKey,
     "x-voyant-event": event.name,
     "x-voyant-event-id": eventId,
+    ...(contractId ? { "x-voyant-event-contract": contractId } : {}),
+    ...(contractVersion ? { "x-voyant-event-version": contractVersion } : {}),
     "x-voyant-timestamp": timestamp,
     "x-voyant-signature": signWebhookPayload(subscription.secret, timestamp, body),
   }
@@ -386,9 +391,13 @@ async function audit(
   outcome: WebhookDeliveryOutcome,
 ): Promise<void> {
   if (!options.onAudit) return
+  const contractId = stringMetadata(event, "graphEventId")
+  const contractVersion = stringMetadata(event, "graphEventVersion")
   const auditEvent: WebhookDeliveryAuditEvent = {
     eventId: requireEventId(event),
     eventName: event.name,
+    ...(contractId ? { contractId } : {}),
+    ...(contractVersion ? { contractVersion } : {}),
     subscriptionId: outcome.subscriptionId,
     outcome: outcome.status,
     ...(outcome.status === "filtered"

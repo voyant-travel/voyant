@@ -8,17 +8,17 @@ export {
   prepareExternalWebhookEvent,
 } from "./contracts.js"
 export { createWebhookDeliveryEngine } from "./engine.js"
-export type {
-  QueuedWebhookSubscription,
-  QueueExternalWebhookAttemptInput,
-} from "./queue.js"
-export { queueExternalWebhookEvent } from "./queue.js"
 export {
   hashWebhookPayload,
   redactWebhookHeaders,
   signWebhookPayload,
   webhookBodyExcerpt,
 } from "./security.js"
+export type { CreateSelectedExternalWebhookDeliveryEngineOptions } from "./selected-engine.js"
+export {
+  createSelectedExternalWebhookDeliveryEngine,
+  externalContractFromEventMetadata,
+} from "./selected-engine.js"
 export type {
   WebhookSubscriptionMutationStore,
   WebhookSubscriptionService,

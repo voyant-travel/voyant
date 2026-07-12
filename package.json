@@ -65,7 +65,7 @@
     "verify:commerce-starter-executable-authority": "node scripts/check-commerce-starter-executable-authority.mjs",
     "verify:catalog-subscriber-authority": "node --test scripts/tests/check-catalog-subscriber-authority.test.mjs && node scripts/check-catalog-subscriber-authority.mjs",
     "verify:phase5-event-authority": "node --test scripts/tests/check-phase5-event-authority.test.mjs && node scripts/check-phase5-event-authority.mjs",
-    "verify:phase5-external-webhook-contract": "node scripts/check-phase5-external-webhook-contract.mjs",
+    "verify:phase5-external-webhook-contract": "node --test scripts/tests/check-phase5-external-webhook-convergence.test.mjs && node scripts/check-phase5-external-webhook-contract.mjs",
     "verify:phase5-tools-mcp-authority": "node --test scripts/tests/check-phase5-tools-mcp-authority.test.mjs && node scripts/check-phase5-tools-mcp-authority.mjs",
     "verify:graph-lifecycle-authority": "node --test scripts/tests/check-graph-lifecycle-authority.test.mjs && node scripts/check-graph-lifecycle-authority.mjs",
     "verify:client-package-boundaries": "node scripts/check-client-package-boundaries.mjs",

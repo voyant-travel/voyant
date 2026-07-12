@@ -5,6 +5,7 @@ import type { InfraWebhookDelivery } from "@voyant-travel/db/schema/infra"
 import { describe, expect, it, vi } from "vitest"
 
 import { createWebhookDeliveryEngine } from "../src/engine.js"
+import { createSelectedExternalWebhookDeliveryEngine } from "../src/selected-engine.js"
 import type {
   CompleteWebhookAttemptInput,
   EnqueueWebhookAttemptInput,
@@ -36,6 +37,60 @@ const SUBSCRIPTION: WebhookSubscription = {
 }
 
 describe("createWebhookDeliveryEngine", () => {
+  it("projects selected external payloads before the canonical signed delivery path", async () => {
+    const store = new MemoryWebhookDeliveryStore([SUBSCRIPTION])
+    const onAudit = vi.fn()
+    const request = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const headers = new Headers(init?.headers)
+      expect(JSON.parse(String(init?.body))).toMatchObject({
+        data: { entityModule: "bookings", entityId: "book_1" },
+      })
+      expect(String(init?.body)).not.toContain("private@example.test")
+      expect(headers.get("x-voyant-event-contract")).toBe("@acme/bookings#event.created")
+      expect(headers.get("x-voyant-event-version")).toBe("1.0.0")
+      expect(headers.get("x-voyant-signature")).toMatch(/^sha256=[a-f0-9]{64}$/)
+      return new Response(null, { status: 204 })
+    })
+    const engine = createSelectedExternalWebhookDeliveryEngine({
+      contracts: [
+        {
+          eventId: "@acme/bookings#event.created",
+          eventType: "booking.created",
+          eventVersion: "1.0.0",
+          payloadSchema: {
+            type: "object",
+            required: ["entityModule", "entityId"],
+            properties: {
+              entityModule: { type: "string" },
+              entityId: { type: "string" },
+            },
+          },
+        },
+      ],
+      store,
+      fetch: request as typeof fetch,
+      onAudit,
+    })
+
+    await engine.enqueue({
+      ...EVENT,
+      metadata: {
+        ...EVENT.metadata,
+        graphEventId: "@acme/bookings#event.created",
+        graphEventVersion: "1.0.0",
+      },
+    })
+
+    expect(request).toHaveBeenCalledOnce()
+    expect(onAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contractId: "@acme/bookings#event.created",
+        contractVersion: "1.0.0",
+        outcome: "succeeded",
+      }),
+    )
+  })
+
   it("signs and delivers a policy-approved event while persisting redacted audit data", async () => {
     const store = new MemoryWebhookDeliveryStore([SUBSCRIPTION])
     const request = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {

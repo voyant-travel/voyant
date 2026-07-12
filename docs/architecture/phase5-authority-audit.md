@@ -23,8 +23,9 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
 - External payload delivery is schema-projected with package-owned property allowlists.
   Undeclared fields are dropped, while `writeOnly` and `x-voyant-redact` properties are
   replaced with a redaction marker.
-- Distribution's queued graph path delegates contract validation, projection, headers, and
-  fan-out semantics to `@voyant-travel/webhook-delivery`.
+- Distribution's graph path delegates selected-contract projection, subscription fan-out,
+  signing, retry/backoff, audit callbacks, and dead-letter state to
+  `@voyant-travel/webhook-delivery`.
 
 ## Existing Phase 5 Authority
 
@@ -35,18 +36,17 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
   context contributions feed the in-deployment MCP adapter.
 - Action declarations validate route, tool, workflow, event, webhook, scope, and copy
   references before lowering into the action-ledger registry.
-- The webhook delivery engine already implements signing, bounded audit excerpts,
-  retry classification, idempotency, and subscription outcome tracking, but is not yet
-  the Operator's queued dispatch implementation.
+- The webhook delivery engine implements signing, bounded audit excerpts, retry classification,
+  idempotency, audit callbacks, dead-letter state, and subscription outcome tracking. Distribution
+  binds its Postgres store but owns no external webhook execution policy.
+- Distribution channel-push workflows remain separate: they call supplier APIs through
+  package-owned adapters and workflow retry policy, not webhook subscriptions.
 
 ## Residual Checklist
 
 - Route the legacy Dash subscription mutations through the package-owned service. This repository
   contains no subscription mutation API or direct insert call outside the service factory, so
   end-to-end enforcement by that external control-plane caller is not yet demonstrated here.
-- Converge queued dispatch and `@voyant-travel/webhook-delivery` so one implementation
-  owns signing, retries, visibility decisions, audit callbacks, and dead-letter state. Contract
-  validation and queued fan-out are shared; worker execution and retry state still need one owner.
 - Activate Realtime's package-owned invalidation declarations and remove its remaining
   Operator bridge without duplicate subscriptions.
 - Move Notifications' `booking.fully-paid` module-bootstrap subscription behind a selected

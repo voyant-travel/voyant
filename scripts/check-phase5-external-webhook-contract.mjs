@@ -1,6 +1,8 @@
+import { existsSync } from "node:fs"
 import { readdir, readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { inspectExternalWebhookDeliveryConvergence } from "./lib/phase5-external-webhook-convergence.mjs"
 
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../..")
 const read = (file) => readFile(path.join(repoRoot, file), "utf8")
@@ -9,7 +11,8 @@ const [
   contracts,
   subscriptions,
   postgres,
-  queue,
+  selectedEngine,
+  engine,
   distribution,
   composition,
   deploymentGraph,
@@ -20,7 +23,8 @@ const [
   read("packages/webhook-delivery/src/contracts.ts"),
   read("packages/webhook-delivery/src/subscriptions.ts"),
   read("packages/webhook-delivery/src/postgres-store.ts"),
-  read("packages/webhook-delivery/src/queue.ts"),
+  read("packages/webhook-delivery/src/selected-engine.ts"),
+  read("packages/webhook-delivery/src/engine.ts"),
   read("packages/distribution/src/outbound-webhooks.ts"),
   read("packages/framework/src/runtime-composition.ts"),
   read("packages/framework/src/deployment-graph.ts"),
@@ -54,15 +58,13 @@ requireSource(
   /isExternalWebhookPayloadSchema[\s\S]*x-voyant-redact[\s\S]*projectObject/,
   "external payloads must apply schema-owned field redaction and projection",
 )
-requireSource(
-  queue,
-  /prepareExternalWebhookEvent[\s\S]*x-voyant-event-contract/,
-  "queued webhook delivery must apply the external contract before persistence",
-)
-requireSource(
-  distribution,
-  /from "@voyant-travel\/webhook-delivery"[\s\S]*queueExternalWebhookEvent/,
-  "Distribution must delegate graph webhook queue semantics to webhook-delivery",
+failures.push(
+  ...inspectExternalWebhookDeliveryConvergence({
+    distribution,
+    selectedEngine,
+    engine,
+    queueAdapterExists: existsSync(path.join(repoRoot, "packages/webhook-delivery/src/queue.ts")),
+  }),
 )
 requireSource(
   composition,
