@@ -12,12 +12,105 @@ export interface StorefrontUiScope {
   currency?: string
 }
 
+type RequiredMessageSet<TKey extends string> = Record<TKey, string> & Record<string, string>
+
 export interface StorefrontUiMessages {
-  shop: Record<string, string>
-  shopDetailShared: Record<string, string>
-  shopDetailProducts: Record<string, string>
-  shopDetailAccommodations: Record<string, string>
-  shopDetailCruises: Record<string, string>
+  shop: RequiredMessageSet<
+    | "amountOff"
+    | "buildTrip"
+    | "emptyMatch"
+    | "emptyPrefix"
+    | "emptySuffix"
+    | "emptyYourFilters"
+    | "heading"
+    | "intro"
+    | "percentOff"
+    | "searchPlaceholder"
+    | "unavailableBody"
+    | "unavailableTitle"
+    | "verticalAccommodations"
+    | "verticalProducts"
+    | "viewAndBook"
+  >
+  shopDetailShared: RequiredMessageSet<
+    | "adults"
+    | "adultsHint"
+    | "backToAll"
+    | "book"
+    | "bookThis"
+    | "children"
+    | "childrenHint"
+    | "daysShort"
+    | "departure"
+    | "departuresUnavailable"
+    | "detailUnavailable"
+    | "guestPlural"
+    | "guestSingular"
+    | "infants"
+    | "infantsHint"
+    | "invalidCruiseNotFound"
+    | "invalidDepartureNotFound"
+    | "invalidDepartureUnavailable"
+    | "invalidNoPriceForOccupancy"
+    | "invalidNoSellAmount"
+    | "invalidProductNotFound"
+    | "invalidPropertyNotFound"
+    | "invalidUnavailable"
+    | "limitedContent"
+    | "machineTranslated"
+    | "nightsShort"
+    | "noChargeYet"
+    | "noUpcomingDepartures"
+    | "priceFrom"
+    | "pricePending"
+    | "refreshing"
+    | "servedIn"
+    | "slotLeft"
+    | "subtotal"
+    | "travelers"
+  >
+  shopDetailProducts: RequiredMessageSet<
+    "day" | "gallery" | "highlights" | "itinerary" | "policies"
+  >
+  shopDetailAccommodations: RequiredMessageSet<
+    | "cancellation"
+    | "checkIn"
+    | "checkOut"
+    | "chooseRoom"
+    | "includes"
+    | "ratePlan"
+    | "sleepsUpTo"
+    | "unavailableNoRatePlan"
+    | "unavailableNoRooms"
+    | "unavailableQuoteFailed"
+    | "unavailableTitle"
+  >
+  shopDetailCruises: RequiredMessageSet<
+    | "aboard"
+    | "available"
+    | "builtYear"
+    | "chooseCabin"
+    | "chooseSailing"
+    | "colDate"
+    | "colNights"
+    | "colRoute"
+    | "colStatus"
+    | "deckLabel"
+    | "deckPlan"
+    | "decksCount"
+    | "floorPlan"
+    | "grades"
+    | "guestsCount"
+    | "guestsInCabin"
+    | "nights"
+    | "occupancy"
+    | "openDeckPlan"
+    | "perPaxPricing"
+    | "pricingPerGuest"
+    | "sleeps"
+    | "soldOut"
+    | "wheelchairAccessible"
+  >
 }
 
 export interface StorefrontUiNavigation {
