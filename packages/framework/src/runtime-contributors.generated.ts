@@ -11,7 +11,7 @@ export { createDistributionRuntimePortContribution } from "@voyant-travel/distri
 export { createFinanceNodeRuntimePortContribution } from "@voyant-travel/finance-node/runtime-contributor"
 export { createFlightsRuntimePortContribution } from "@voyant-travel/flights/runtime-contributor"
 export { createInventoryRuntimePortContribution } from "@voyant-travel/inventory/runtime-contributor"
-export { createLegalRuntimePortContribution } from "@voyant-travel/legal/runtime-contributor"
+export { createLegalNodeRuntimePortContribution } from "@voyant-travel/legal-node/runtime-contributor"
 export { createMiceRuntimePortContribution } from "@voyant-travel/mice/runtime-contributor"
 export { createNotificationsRuntimePortContribution } from "@voyant-travel/notifications/runtime-contributor"
 export { createQuotesRuntimePortContribution } from "@voyant-travel/quotes/runtime-contributor"
