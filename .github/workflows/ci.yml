@@ -92,18 +92,13 @@ jobs:
       - name: Architecture checks
         run: pnpm verify:architecture
 
-      - name: Migration drift check (operator)
-        # Fails the build if the operator starter's generated managed profile
-        # drifts from the installed framework or resolved deployment graph.
-        #
-        # Runs through the operator workspace's own @voyant-travel/cli devDependency
-        # (a public package, already installed) — no extra root dependency.
+      - name: Build operator migration artifacts
+        # Resolves and validates the package-owned migration plan. Replay parity
+        # and fresh-union correctness are exercised in the db-checks job.
         env:
           NODE_OPTIONS: --conditions=development --max-old-space-size=8192
         working-directory: starters/operator
-        run: |
-          pnpm exec voyant build --json
-          pnpm exec voyant db doctor --fail-on-drift
+        run: pnpm exec voyant build --json
 
       - name: i18n checks
         run: pnpm i18n:check
