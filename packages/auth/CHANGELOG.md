@@ -1,5 +1,19 @@
 # @voyant-travel/auth
 
+## 0.125.0
+
+### Minor Changes
+
+- d771be3: Compile selected graph access catalogs, make Bookings the first package-owned access authority, and
+  wire exact-pair catalog validation through runtime authorization and permission editors.
+
+### Patch Changes
+
+- Updated dependencies [d771be3]
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/utils@0.106.1
+
 ## 0.124.2
 
 ### Patch Changes

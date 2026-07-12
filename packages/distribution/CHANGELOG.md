@@ -1,5 +1,30 @@
 # @voyant-travel/distribution
 
+## 0.142.0
+
+### Patch Changes
+
+- d771be3: Move channel-push graph runtime composition behind a package-owned typed runtime port while preserving its routes, subscribers, workflows, and lazy database lifecycle.
+- 8f537b0: Lower package-owned ordinary subscriber runtime descriptors from the selected deployment graph and move distribution channel-push subscribers out of the Operator hand list.
+- Updated dependencies [e68bdc1]
+- Updated dependencies [d771be3]
+- Updated dependencies [8e67fe8]
+- Updated dependencies [26fe0e5]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/catalog@0.150.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/bookings@0.152.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/identity@0.152.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/workflows@0.116.0
+
 ## 0.141.5
 
 ### Patch Changes

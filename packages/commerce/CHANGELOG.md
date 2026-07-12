@@ -1,5 +1,44 @@
 # @voyant-travel/commerce
 
+## 0.34.0
+
+### Minor Changes
+
+- d771be3: Activate the package-owned catalog checkout subscribers and workflow runner through selected-graph runtime ports, with explicit composition failure when required Node host services are missing.
+- 9b15ebe: Activate Commerce promotion redemption and its bulk-reindex host service through package-declared selected-graph runtime ports.
+
+### Patch Changes
+
+- 18d8aa0: Publish inert catalog-checkout subscriber descriptors and package-owned workflow runner registration contracts for later graph activation.
+- Updated dependencies [0c19298]
+- Updated dependencies [e68bdc1]
+- Updated dependencies [d771be3]
+- Updated dependencies [8e67fe8]
+- Updated dependencies [26fe0e5]
+- Updated dependencies [d771be3]
+- Updated dependencies [d771be3]
+- Updated dependencies [60b1970]
+- Updated dependencies [977c1bd]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [a799a34]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/quotes@0.127.0
+  - @voyant-travel/catalog@0.150.0
+  - @voyant-travel/workflow-runs@0.116.0
+  - @voyant-travel/distribution@0.142.0
+  - @voyant-travel/finance@0.152.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/legal@0.152.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/bookings@0.152.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/workflows@0.116.0
+
 ## 0.33.5
 
 ### Patch Changes

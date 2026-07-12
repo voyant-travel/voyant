@@ -1,5 +1,24 @@
 # @voyant-travel/mice-react
 
+## 0.20.0
+
+### Minor Changes
+
+- c54cd3d: Declare the package-owned MICE admin factory as a selected-graph runtime while
+  preserving its existing routes, destinations, localized navigation, icon, and
+  selection behavior.
+
+### Patch Changes
+
+- Updated dependencies [c54cd3d]
+- Updated dependencies [d771be3]
+- Updated dependencies [d771be3]
+  - @voyant-travel/mice@0.8.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/admin@0.121.0
+  - @voyant-travel/relationships-react@0.152.0
+  - @voyant-travel/utils@0.106.1
+
 ## 0.19.0
 
 ### Patch Changes

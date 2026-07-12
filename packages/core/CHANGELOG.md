@@ -1,5 +1,26 @@
 # @voyant-travel/core
 
+## 0.118.0
+
+### Minor Changes
+
+- 8f4c242: Derive anonymous public and transactional path posture from selected deployment graph API bundles, including partial transactional path declarations.
+- d771be3: Expose package-scoped project config through the generic graph runtime factory
+  context and reuse one typed context across each selected unit's API and
+  subscriber facets.
+- d26a820: Lower package-owned admin factories from the selected deployment graph into a
+  dedicated generated admin bundle, beginning with the action-ledger nav, route,
+  lazy page surface, localized Operator label, and standard icon. Selected admin
+  factories compose in stable graph-declared order.
+- d771be3: Compile selected graph access catalogs, make Bookings the first package-owned access authority, and
+  wire exact-pair catalog validation through runtime authorization and permission editors.
+- bd7a830: Emit selected-graph OpenAPI documents from route-owned metadata, beginning with
+  the identity admin API authority.
+
+### Patch Changes
+
+- 8f537b0: Lower package-owned ordinary subscriber runtime descriptors from the selected deployment graph and move distribution channel-push subscribers out of the Operator hand list.
+
 ## 0.117.0
 
 ### Minor Changes

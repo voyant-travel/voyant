@@ -1,5 +1,27 @@
 # @voyant-travel/mice
 
+## 0.8.0
+
+### Minor Changes
+
+- c54cd3d: Declare the package-owned MICE admin factory as a selected-graph runtime while
+  preserving its existing routes, destinations, localized navigation, icon, and
+  selection behavior.
+
+### Patch Changes
+
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/accommodations@0.112.5
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/operations@0.6.5
+  - @voyant-travel/db@0.112.2
+
 ## 0.7.4
 
 ### Patch Changes
